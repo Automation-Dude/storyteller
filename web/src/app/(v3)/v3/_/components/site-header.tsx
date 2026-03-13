@@ -12,7 +12,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@v3/_/components/ui/breadcrumb"
-import { Separator } from "@v3/_/components/ui/separator"
 import { SidebarTrigger } from "@v3/_/components/ui/sidebar"
 import { V3Link } from "@v3/_/components/v3-link"
 
@@ -31,7 +30,7 @@ export function SiteHeader({
   return (
     <header
       className={cn(
-        "flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)",
+        "flex h-(--header-height) shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)",
         className,
       )}
     >
@@ -39,10 +38,6 @@ export function SiteHeader({
         <>
           {/* Mobile only */}
           <SidebarTrigger className="-ml-1 block shrink-0 md:hidden" />
-          <Separator
-            orientation="vertical"
-            className="mx-2 block shrink-0 data-[orientation=vertical]:h-6 md:hidden"
-          />
         </>
         <Breadcrumb className="min-w-0 shrink-0">
           <BreadcrumbList className="flex-nowrap">
@@ -60,7 +55,7 @@ export function SiteHeader({
                       }
                     />
                   ) : idx === breadcrumbs.length - 1 ? (
-                    <h1 className="font-heading min-w-0 text-sm">
+                    <h1 className="font-heading min-w-0 text-base">
                       <BreadcrumbPage className="truncate">
                         {breadcrumb.label}
                       </BreadcrumbPage>

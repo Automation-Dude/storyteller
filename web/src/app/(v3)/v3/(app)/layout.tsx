@@ -32,7 +32,7 @@ export default async function AppLayout({
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 56)",
-          "--header-height": "calc(var(--spacing) * 12)",
+          "--header-height": "calc(var(--spacing) * 13)",
           "--sidebar-width-icon": "calc(var(--spacing) * 10)",
         } as React.CSSProperties
       }

@@ -1,13 +1,8 @@
 import type { Metadata, Viewport } from "next"
-import {
-  IBM_Plex_Serif,
-  Inter,
-  Source_Serif_4,
-  Young_Serif,
-} from "next/font/google"
-import Script from "next/script"
 import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
+import { IBM_Plex_Serif, Inter, Young_Serif } from "next/font/google"
+import Script from "next/script"
 import { NuqsAdapter } from "nuqs/adapters/next"
 
 import StoreProvider from "@/components/StoreProvider"
