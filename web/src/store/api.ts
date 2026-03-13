@@ -253,6 +253,52 @@ export const api = createApi({
         eventSource.close()
       },
     }),
+    listInfiniteBooks: build.infiniteQuery<
+      BookWithRelations[],
+      ListBooksQueryArg,
+      number
+    >({
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+
+        getNextPageParam: (
+          lastPage,
+          _allPages,
+          lastPageParam,
+          _allPageParams,
+          queryArg,
+        ) => {
+          const limit = queryArg.limit ?? 50
+          if (lastPage.length < limit) return undefined
+          return lastPageParam + 1
+        },
+        getPreviousPageParam: (
+          _firstPage,
+          _allPages,
+          firstPageParam,
+          _allPageParams,
+          _queryArg,
+        ) => {
+          return firstPageParam > 0 ? firstPageParam - 1 : undefined
+        },
+      },
+      query: ({ pageParam, queryArg }) => {
+        const limit = queryArg.limit ?? 50
+        const params = new URLSearchParams()
+        params.set("limit", String(limit))
+        params.set("offset", String(pageParam * limit))
+        if (queryArg.orderBy) params.set("orderBy", queryArg.orderBy)
+        if (queryArg.orderDirection)
+          params.set("orderDirection", queryArg.orderDirection)
+        if (queryArg.search) params.set("search", queryArg.search)
+        if (queryArg.collection) params.set("collection", queryArg.collection)
+        if (queryArg.series) params.set("series", queryArg.series)
+        if (queryArg.mediaFilter && queryArg.mediaFilter !== "all")
+          params.set("mediaFilter", queryArg.mediaFilter)
+        if (queryArg.statusFilter) params.set("status", queryArg.statusFilter)
+        return `/books?${params.toString()}`
+      },
+    }),
     processBook: build.mutation<
       void,
       {
@@ -703,6 +749,7 @@ export const {
   useListAuthorsQuery,
   useListCreatorsQuery,
   useListBooksQuery,
+  useListInfiniteBooksInfiniteQuery,
   useListCollectionsQuery,
   useListInvitesQuery,
   useListSeriesQuery,
@@ -760,4 +807,17 @@ export function getCoverUrl(
     searchParams.append("w", width.toString())
   }
   return `/api/v2/books/${bookUuid}/cover?${searchParams.toString()}&v=${new Date(updatedAt).getTime()}`
+}
+
+export type MediaFilter = "all" | "ebook" | "audiobook" | "synced"
+
+export type ListBooksQueryArg = {
+  limit?: number | undefined
+  orderBy?: "createdAt" | "updatedAt" | "title" | "publicationDate" | undefined
+  orderDirection?: "asc" | "desc" | undefined
+  search?: string | undefined
+  collection?: string | undefined
+  series?: string | undefined
+  mediaFilter?: MediaFilter | undefined
+  statusFilter?: string | undefined
 }
