@@ -171,7 +171,7 @@ function CollapsibleNavItem({
                                 e.stopPropagation()
                                 subItem.onRemove?.()
                               }}
-                              className="text-muted-foreground hover:text-destructive ml-auto opacity-0 transition-opacity group-hover/subitem:opacity-100"
+                              className="text-sidebar-foreground/50 hover:text-destructive ml-auto opacity-0 transition-opacity group-hover/subitem:opacity-100"
                             >
                               <IconX className="h-3 w-3" />
                             </button>

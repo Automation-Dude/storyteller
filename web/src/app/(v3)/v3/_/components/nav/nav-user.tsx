@@ -60,7 +60,7 @@ export function NavUser({
               >
                 <div className="grid w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden data-[state=open]:w-auto">
                   <span className="truncate font-medium">{displayName}</span>
-                  <span className="text-muted-foreground truncate text-xs">
+                  <span className="text-sidebar-foreground/60 truncate text-xs">
                     {displayEmail}
                   </span>
                 </div>

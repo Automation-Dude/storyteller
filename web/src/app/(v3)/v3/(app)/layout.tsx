@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
-import { type User } from "@/apiModels"
-import { fetchApiRoute } from "@/app/fetchApiRoute"
+import { nextAuth } from "@/auth/auth"
 import { getCurrentVersion } from "@/versions"
 
 import { AppSidebar } from "@v3/_/components/app-sidebar"
@@ -12,15 +12,23 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode
 }) {
-  const user = await fetchApiRoute<User>("/user")
+  // const user = await fetchApiRoute<User>("/user")
+  const session = await nextAuth.auth()
 
   const cookieStore = await cookies()
   const currentVersion = getCurrentVersion()
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
 
+  if (!session) {
+    return redirect("/login")
+  }
+
+  // usersettings
+
   return (
     <SidebarProvider
       defaultOpen={defaultOpen}
+      className="font-serif"
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 56)",
@@ -29,7 +37,11 @@ export default async function AppLayout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" user={user} currentVersion={currentVersion} />
+      <AppSidebar
+        variant="inset"
+        user={session.user}
+        currentVersion={currentVersion}
+      />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   )

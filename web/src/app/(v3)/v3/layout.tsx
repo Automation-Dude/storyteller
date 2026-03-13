@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from "next"
-import { Inter, Young_Serif } from "next/font/google"
+import {
+  IBM_Plex_Serif,
+  Inter,
+  Source_Serif_4,
+  Young_Serif,
+} from "next/font/google"
 import Script from "next/script"
 import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
@@ -26,6 +31,13 @@ const youngSerif = Young_Serif({
   display: "swap",
   weight: "400",
   variable: "--font-young-serif",
+})
+
+const trySerif = IBM_Plex_Serif({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "700"],
+  variable: "--font-try-serif",
 })
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -56,7 +68,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${youngSerif.variable}`}
+      className={`${inter.variable} ${youngSerif.variable} ${trySerif.variable}`}
     >
       <head>
         {env.NODE_ENV === "development" && env.ENABLE_REACT_SCAN && (
