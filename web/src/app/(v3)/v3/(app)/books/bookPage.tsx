@@ -3,12 +3,13 @@
 import { IconPencil, IconPencilMinus } from "@tabler/icons-react"
 import { useMemo } from "react"
 
-import { BookFilters, BookGrid } from "@/app/(v3)/v3/_/components/books"
-import { SelectionToolbar } from "@/app/(v3)/v3/_/components/books/SelectionToolbar"
-import { type HeaderAction } from "@/app/(v3)/v3/_/components/header-actions"
-import { useBookFilters } from "@/app/(v3)/v3/_/hooks/use-book-filters"
-import { useBookSelection } from "@/app/(v3)/v3/_/hooks/use-book-selection"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
+
+import { BookFilters, BookGrid } from "@v3/_/components/books"
+import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
+import { type HeaderAction } from "@v3/_/components/header-actions"
+import { useBookFilters } from "@v3/_/hooks/use-book-filters"
+import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 
 export default function BookPage() {
   const { isSelecting, startSelecting, stopSelecting } = useBookSelection()
@@ -33,7 +34,10 @@ export default function BookPage() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = useListInfiniteBooksInfiniteQuery(queryArg)
+  } = useListInfiniteBooksInfiniteQuery({
+    ...queryArg,
+    limit: 2,
+  })
 
   const books = data?.pages.flatMap((page) => page) ?? []
   const bookUuids = useMemo(() => books.map((b) => b.uuid), [books])

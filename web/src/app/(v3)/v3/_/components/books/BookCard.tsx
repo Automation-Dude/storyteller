@@ -10,6 +10,7 @@ import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
+import { BookCover } from "./BookCover"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -21,57 +22,7 @@ function getReadingProgress(book: BookWithRelations): number | null {
   return book.position.locator.locations.totalProgression
 }
 
-function CoverImage({
-  height,
-  width,
-  uuid,
-  updatedAt,
-  alt,
-  className,
-  onError,
-}: {
-  height: number
-  width: number
-  uuid: string
-  updatedAt: string
-  alt: string
-  className?: string
-  onError?: () => void
-}) {
-  return (
-    <img
-      height={height}
-      width={width}
-      src={getCoverUrl(uuid, {
-        width: width,
-        height: height,
-        updatedAt: updatedAt,
-      })}
-      alt={alt}
-      loading="lazy"
-      onError={onError}
-      className={cn(
-        "h-full w-full object-cover transition-transform duration-300 group-hover:scale-105",
-        className,
-      )}
-    />
-  )
-}
-
-function FallbackCover({ title }: { title: string }) {
-  return (
-    <div className="from-primary/10 to-primary/5 flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br p-4 text-center">
-      <IconBook className="text-muted-foreground/50 h-12 w-12" />
-      <span className="text-muted-foreground line-clamp-3 text-sm font-medium">
-        {title}
-      </span>
-    </div>
-  )
-}
-
 export function BookCard({ book, muted = false }: BookCardProps) {
-  const [ebookError, setEbookError] = useState(false)
-  const [audiobookError, setAudiobookError] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
 
   const selection = useOptionalBookSelection()
@@ -81,7 +32,6 @@ export function BookCard({ book, muted = false }: BookCardProps) {
   const startSelecting = selection?.startSelecting
 
   const hasAudiobook = book.audiobook !== null
-  const hasEbook = book.ebook !== null
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
 
@@ -89,19 +39,6 @@ export function BookCard({ book, muted = false }: BookCardProps) {
   const narrators = book.narrators
   const primarySeries = book.series.find((s) => s.featured) ?? book.series[0]
   const progress = getReadingProgress(book)
-
-  const ebookCoverUrl = getCoverUrl(book.uuid, {
-    width: 300,
-    height: 450,
-    audio: false,
-    updatedAt: book.ebook?.updatedAt ?? book.updatedAt,
-  })
-  const audiobookCoverUrl = getCoverUrl(book.uuid, {
-    width: 100,
-    height: 100,
-    audio: true,
-    updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
-  })
 
   const handleCheckboxClick = useCallback(
     (e: React.MouseEvent) => {
@@ -118,110 +55,10 @@ export function BookCard({ book, muted = false }: BookCardProps) {
 
   const showCheckbox = isSelecting || isHovering
 
-  const cover = useMemo(() => {
-    // synced: show both covers stacked (ebook in front, audiobook behind)
-    if (isSynced || (hasEbook && hasAudiobook)) {
-      return (
-        <div className="relative h-full w-full">
-          {!audiobookError ? (
-            <div className="absolute top-3/4 left-3/4 z-10 h-24 w-24 -translate-x-2/3 -translate-y-1/2 border-1 border-white/20 shadow-lg shadow-white/20">
-              <div className="h-full w-full overflow-hidden rounded-md">
-                <img
-                  src={audiobookCoverUrl}
-                  alt=""
-                  height={100}
-                  width={100}
-                  loading="lazy"
-                  onError={() => {
-                    setAudiobookError(true)
-                  }}
-                  crossOrigin="use-credentials"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="bg-muted absolute top-1 left-1 h-[80%] w-[80%] rounded-md" />
-          )}
-          <div className="absolute right-0 bottom-0 h-full w-full overflow-hidden rounded-lg transition-transform duration-300 group-hover:scale-105">
-            {!audiobookError && (
-              <div className="absolute top-0 left-0 h-full w-full overflow-hidden rounded-lg bg-gradient-to-t from-black/20 to-transparent shadow-lg" />
-            )}
-            {!ebookError ? (
-              <CoverImage
-                height={450}
-                width={300}
-                uuid={book.uuid}
-                updatedAt={book.updatedAt}
-                alt={book.title}
-                onError={() => {
-                  setEbookError(true)
-                }}
-              />
-            ) : (
-              <FallbackCover title={book.title} />
-            )}
-          </div>
-        </div>
-      )
-    }
-
-    // audiobook only: square aspect ratio, slightly smaller
-    if (hasAudiobook && !hasEbook) {
-      return (
-        <div className="flex h-full w-full items-center justify-center p-3">
-          <div className="aspect-square w-full overflow-hidden rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-105">
-            {!audiobookError ? (
-              <img
-                src={audiobookCoverUrl}
-                alt={book.title}
-                loading="lazy"
-                onError={() => {
-                  setAudiobookError(true)
-                }}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <FallbackCover title={book.title} />
-            )}
-          </div>
-        </div>
-      )
-    }
-
-    // ebook only (default)
-    if (!ebookError) {
-      return (
-        <CoverImage
-          height={450}
-          width={300}
-          uuid={book.uuid}
-          updatedAt={book.updatedAt}
-          alt={book.title}
-          onError={() => {
-            setEbookError(true)
-          }}
-        />
-      )
-    }
-
-    return <FallbackCover title={book.title} />
-  }, [
-    book.uuid,
-    book.updatedAt,
-    book.title,
-    isSynced,
-    hasEbook,
-    hasAudiobook,
-    audiobookError,
-    ebookError,
-    audiobookCoverUrl,
-  ])
-
   const cardContent = (
     <>
       <div className="bg-muted relative aspect-2/3 overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-xl">
-        {cover}
+        <BookCover book={book} width={300} />
 
         {selection && showCheckbox && (
           <div
