@@ -4,7 +4,7 @@ import { nextAuth } from "./auth/auth"
 import { getSetting } from "./database/settings"
 import { getUserCount } from "./database/users"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const isInitPage = request.nextUrl.pathname.startsWith("/init")
 
   const noUsers = (await getUserCount()) === 0
@@ -37,7 +37,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  runtime: "nodejs",
   matcher: [
     "/",
     "/books",
@@ -48,5 +47,5 @@ export const config = {
     "/users",
     "/account",
     "/init",
-  ],
+  ]
 }
