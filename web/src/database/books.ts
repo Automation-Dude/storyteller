@@ -680,10 +680,152 @@ export async function getNextQueuePosition() {
   return latestPosition + 1
 }
 
-export async function getBooks(bookUuids: UUID[] | null = null, userId?: UUID) {
+export type GetBooksOptions = {
+  limit?: number
+  offset?: number
+  orderBy?: "createdAt" | "updatedAt" | "title" | "publicationDate"
+  orderDirection?: "asc" | "desc"
+  search?: string
+  collection?: UUID
+  series?: UUID
+  mediaFilter?: "ebook" | "audiobook" | "synced"
+  status?: UUID
+}
+export async function getBooks(
+  bookUuids: UUID[] | null = null,
+  userId?: UUID,
+  opts?: GetBooksOptions,
+) {
   const books = await booksQuery(userId)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .$if(!!bookUuids, (qb) => qb.where("book.uuid", "in", bookUuids!))
+    .$if(!!opts?.search, (qb) => {
+      const searchTerm = `%${opts!.search!.toLowerCase()}%`
+      return qb.where((eb) =>
+        eb.or([
+          eb(sql`lower(book.title)`, "like", searchTerm),
+          eb.exists(
+            eb
+              .selectFrom("creator")
+              .select(sql.lit(1).as("one"))
+              .innerJoin(
+                "bookToCreator",
+                "bookToCreator.creatorUuid",
+                "creator.uuid",
+              )
+              .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
+              .where(sql`lower(creator.name)`, "like", searchTerm),
+          ),
+          eb.exists(
+            eb
+              .selectFrom("series")
+              .select(sql.lit(1).as("one"))
+              .innerJoin(
+                "bookToSeries",
+                "bookToSeries.seriesUuid",
+                "series.uuid",
+              )
+              .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
+              .where(sql`lower(series.name)`, "like", searchTerm),
+          ),
+        ]),
+      )
+    })
+    .$if(!!opts?.collection, (qb) =>
+      qb.where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("bookToCollection")
+            .select(sql.lit(1).as("one"))
+            .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
+            .where("bookToCollection.collectionUuid", "=", opts!.collection!),
+        ),
+      ),
+    )
+    .$if(!!opts?.series, (qb) =>
+      qb.where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("bookToSeries")
+            .select(sql.lit(1).as("one"))
+            .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
+            .where("bookToSeries.seriesUuid", "=", opts!.series!),
+        ),
+      ),
+    )
+    .$if(opts?.mediaFilter === "ebook", (qb) =>
+      qb
+        .where((eb) =>
+          eb.exists(
+            eb
+              .selectFrom("ebook")
+              .select(sql.lit(1).as("one"))
+              .whereRef("ebook.bookUuid", "=", "book.uuid"),
+          ),
+        )
+        .where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("audiobook")
+                .select(sql.lit(1).as("one"))
+                .whereRef("audiobook.bookUuid", "=", "book.uuid"),
+            ),
+          ),
+        ),
+    )
+    .$if(opts?.mediaFilter === "audiobook", (qb) =>
+      qb
+        .where((eb) =>
+          eb.exists(
+            eb
+              .selectFrom("audiobook")
+              .select(sql.lit(1).as("one"))
+              .whereRef("audiobook.bookUuid", "=", "book.uuid"),
+          ),
+        )
+        .where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("ebook")
+                .select(sql.lit(1).as("one"))
+                .whereRef("ebook.bookUuid", "=", "book.uuid"),
+            ),
+          ),
+        ),
+    )
+    .$if(opts?.mediaFilter === "synced", (qb) =>
+      qb.where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("readaloud")
+            .select(sql.lit(1).as("one"))
+            .whereRef("readaloud.bookUuid", "=", "book.uuid")
+            .where("readaloud.status", "=", "ALIGNED"),
+        ),
+      ),
+    )
+    .$if(!!opts?.status, (qb) =>
+      qb.where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("bookToStatus")
+            .select(sql.lit(1).as("one"))
+            .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
+            .where("bookToStatus.statusUuid", "=", opts!.status!)
+            .where("bookToStatus.userId", "=", userId!),
+        ),
+      ),
+    )
+    .$if(!!opts?.limit, (qb) => qb.limit(opts?.limit ?? 10))
+    .$if(!!opts?.offset, (qb) => qb.offset(opts?.offset ?? 0))
+    .$if(!!opts?.orderBy, (qb) =>
+      qb.orderBy(
+        opts?.orderBy ?? "book.createdAt",
+        opts?.orderDirection ?? "desc",
+      ),
+    )
     .execute()
 
   return books

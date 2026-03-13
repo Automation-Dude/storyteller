@@ -25,6 +25,7 @@ import { isAudioFile, isZipArchive } from "@/audio"
 import { withHasPermission } from "@/auth/auth"
 import {
   type BookWithRelations,
+  type GetBooksOptions,
   createBookFromAudiobook,
   createBookFromEpub,
   deleteBook,
@@ -44,7 +45,59 @@ export const dynamic = "force-dynamic"
  *       have been aligned by Storyteller successfully.
  */
 export const GET = withHasPermission("bookList")(async (request) => {
-  const books = await getBooks(null, request.auth.user.id)
+  const limitParam = request.nextUrl.searchParams.get("limit")
+  const offsetParam = request.nextUrl.searchParams.get("offset")
+  const orderByParam = request.nextUrl.searchParams.get("orderBy")
+  const orderDirectionParam = request.nextUrl.searchParams.get("orderDirection")
+  const searchParam = request.nextUrl.searchParams.get("search")
+  const collectionParam = request.nextUrl.searchParams.get("collection")
+  const seriesParam = request.nextUrl.searchParams.get("series")
+  const mediaFilterParam = request.nextUrl.searchParams.get("mediaFilter")
+  const statusParam = request.nextUrl.searchParams.get("status")
+
+  const opts: GetBooksOptions = {}
+
+  if (limitParam) {
+    opts.limit = parseInt(limitParam)
+  }
+
+  if (offsetParam) {
+    opts.offset = parseInt(offsetParam)
+  }
+
+  if (orderByParam) {
+    opts.orderBy = orderByParam as
+      | "createdAt"
+      | "updatedAt"
+      | "title"
+      | "publicationDate"
+  }
+
+  if (orderDirectionParam) {
+    opts.orderDirection = orderDirectionParam as "asc" | "desc"
+  }
+
+  if (searchParam) {
+    opts.search = searchParam
+  }
+
+  if (collectionParam) {
+    opts.collection = collectionParam as UUID
+  }
+
+  if (seriesParam) {
+    opts.series = seriesParam as UUID
+  }
+
+  if (mediaFilterParam) {
+    opts.mediaFilter = mediaFilterParam as "ebook" | "audiobook" | "synced"
+  }
+
+  if (statusParam) {
+    opts.status = statusParam as UUID
+  }
+
+  const books = await getBooks(null, request.auth.user.id, opts)
 
   return NextResponse.json(books)
 })
