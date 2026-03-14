@@ -45,7 +45,7 @@ export default async function AppLayout({
         currentVersion={currentVersion}
       />
       <SidebarInset className="overflow-x-hidden">
-        <ScrollArea className="relative max-h-screen w-full pt-12">
+        <ScrollArea className="relative max-h-screen w-full">
           {children}
         </ScrollArea>
       </SidebarInset>

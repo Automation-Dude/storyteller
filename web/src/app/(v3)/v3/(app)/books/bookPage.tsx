@@ -14,13 +14,23 @@ import { useCallback, useMemo } from "react"
 import { Drawer } from "vaul"
 
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { type HeaderAction } from "@v3/_/components/header-actions"
+import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
+import {
+  PageContent,
+  PageHeader,
+  PageLayout,
+  PageMain,
+  PagePanel,
+} from "@v3/_/components/ui/page-layout"
 import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
@@ -42,6 +52,10 @@ const DynamicBookDetailsContent = dynamic(
 
 export default function BookPage() {
   const isMobile = useIsMobile()
+  const dispatch = useAppDispatch()
+  const panelWidth = useAppSelector(
+    (state) => state.uiSettings.detailPanelWidth,
+  )
 
   const {
     isSelecting,
@@ -122,6 +136,13 @@ export default function BookPage() {
     void setSelectedBookUuid(null)
   }, [setSelectedBookUuid])
 
+  const handlePanelWidthChange = useCallback(
+    (width: number) => {
+      dispatch(uiSettingsSlice.actions.setDetailPanelWidth(width))
+    },
+    [dispatch],
+  )
+
   const panelBookIsSelected = selectedBookUuid
     ? isSelected(selectedBookUuid)
     : false
@@ -138,11 +159,12 @@ export default function BookPage() {
 
   return (
     <>
-      <div
-        className="flex overflow-hidden"
-        style={{ height: "calc(100svh - var(--header-height))" }}
-      >
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+      <PageLayout>
+        <PageMain>
+          <PageHeader>
+            <SiteHeader breadcrumbs={[{ label: "Books" }]} />
+          </PageHeader>
+
           <BookFilters
             state={state}
             onChange={onChange}
@@ -151,7 +173,7 @@ export default function BookPage() {
             showSaveSearch
           />
 
-          <div className="flex-1 p-4">
+          <PageContent className="p-4">
             <BookGrid
               books={books}
               isLoading={isLoading}
@@ -169,37 +191,36 @@ export default function BookPage() {
               selectedBookUuid={selectedBookUuid}
               onBookClick={handleBookClick}
             />
-          </div>
-        </div>
+          </PageContent>
+        </PageMain>
 
         {!isMobile && (
-          <div
-            className={cn(
-              "overflow-hidden border-l transition-[width] duration-300 ease-in-out",
-              panelOpen ? "w-[420px] min-w-[420px]" : "w-0 min-w-0",
-            )}
+          <PagePanel
+            open={panelOpen}
+            width={panelWidth}
+            onWidthChange={handlePanelWidthChange}
+            className="border-l"
           >
             {selectedBookUuid && (
-              <div className="flex h-full w-[420px] flex-col">
+              <>
                 <BookPanelHeader
                   bookUuid={selectedBookUuid}
                   isSelected={panelBookIsSelected}
-                  isSelecting={isSelecting}
                   onToggleSelection={handleTogglePanelBookSelection}
                   onClose={handleClosePanel}
                 />
 
-                <ScrollArea className="flex-1">
+                <ScrollArea className="h-full flex-1">
                   <DynamicBookDetailsContent
                     uuid={selectedBookUuid as UUID}
                     compact
                   />
                 </ScrollArea>
-              </div>
+              </>
             )}
-          </div>
+          </PagePanel>
         )}
-      </div>
+      </PageLayout>
 
       {isMobile && (
         <Drawer.Root
@@ -270,13 +291,11 @@ export default function BookPage() {
 function BookPanelHeader({
   bookUuid,
   isSelected,
-  isSelecting: _isSelecting,
   onToggleSelection,
   onClose,
 }: {
   bookUuid: string
   isSelected: boolean
-  isSelecting: boolean
   onToggleSelection: () => void
   onClose: () => void
 }) {
@@ -288,9 +307,13 @@ function BookPanelHeader({
       )}
     >
       <div className="flex items-center gap-3">
-        <div onClick={onToggleSelection} className="cursor-pointer">
-          <Checkbox checked={isSelected} className="h-5 w-5" tabIndex={-1} />
-        </div>
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => {
+            onToggleSelection()
+          }}
+          className="h-5 w-5"
+        />
 
         <Button
           variant="ghost"

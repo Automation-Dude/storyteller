@@ -7,6 +7,10 @@ import {
   loadGlobalPreferencesFromStorage,
   preferencesSlice,
 } from "@/store/slices/preferencesSlice"
+import {
+  loadUISettingsFromStorage,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
 import { type AppStore, makeStore } from "@/store/store"
 
 export default function StoreProvider({
@@ -21,12 +25,16 @@ export default function StoreProvider({
 
     initializeAudioPlayerBridge(storeRef.current)
 
-    // hydrate preferences from localStorage
     const storedPreferences = loadGlobalPreferencesFromStorage() ?? {}
     storeRef.current.dispatch(
       preferencesSlice.actions.initGlobalPreferences({
         preferences: storedPreferences,
       }),
+    )
+
+    const storedUISettings = loadUISettingsFromStorage() ?? {}
+    storeRef.current.dispatch(
+      uiSettingsSlice.actions.initUISettings(storedUISettings),
     )
   }
 

@@ -80,8 +80,8 @@ const mediaFilterOptions: {
     icon: <IconHeadphones className="h-4 w-4" />,
   },
   {
-    value: "synced",
-    label: "Synced",
+    value: "readaloud",
+    label: "ReadAloud",
     icon: <IconRefresh className="h-4 w-4" />,
   },
 ]

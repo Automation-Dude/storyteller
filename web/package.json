@@ -72,6 +72,7 @@
     "debounce": "^2.2.0",
     "embla-carousel": "^8.5.2",
     "embla-carousel-react": "^8.5.2",
+    "framer-motion": "^12.36.0",
     "fuse.js": "^7.1.0",
     "he": "^1.2.0",
     "jsonwebtoken": "^9.0.2",

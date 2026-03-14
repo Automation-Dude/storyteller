@@ -1,8 +1,8 @@
 import { type Variants, motion, useAnimationControls } from "framer-motion"
 import { useRef, useState } from "react"
 
-import { getCoverUrl } from "@/api/api"
-import { type BookWithRelations } from "@/api/models/books"
+import { getCoverUrl } from "@/store/api"
+import { type BookWithRelations } from "@/database/books"
 
 type HoverState = "idle" | "separated" | "audiobook-front"
 
@@ -84,7 +84,6 @@ export function BookDoubleCover({
         height: containerHeight,
         transformStyle: "preserve-3d",
         perspective: "2000px",
-        backgroundColor: "red",
       }}
       onHoverStart={() => {
         setGroupHover(true)

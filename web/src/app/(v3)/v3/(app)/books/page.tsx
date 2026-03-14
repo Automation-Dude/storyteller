@@ -3,8 +3,6 @@ import { getTranslations } from "next-intl/server"
 
 import { BookSelectionProvider } from "@/app/(v3)/v3/_/hooks/use-book-selection"
 
-import { SiteHeader } from "@v3/_/components/site-header"
-
 import BookPage from "./bookPage"
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,12 +12,9 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function Books() {
-  const t = await getTranslations("BooksPage")
-
+export default function Books() {
   return (
     <BookSelectionProvider>
-      <SiteHeader breadcrumbs={[{ label: t("title") }]} />
       <BookPage />
     </BookSelectionProvider>
   )

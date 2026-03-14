@@ -79,6 +79,13 @@ export const BookCard = memo(function BookCard({
           >
             <Checkbox
               checked={isBookSelected}
+              onCheckedChange={() => {
+                if (!isSelecting) onStartSelecting?.()
+                onToggleSelection(book.uuid)
+              }}
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation()
+              }}
               className="bg-background/80 h-5 w-5 border-2 shadow-sm backdrop-blur"
               tabIndex={-1}
             />

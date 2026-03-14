@@ -55,6 +55,8 @@ import { Textarea } from "@v3/_/components/ui/textarea"
 import { V3Link } from "@v3/_/components/v3-link"
 
 import BookDetailsSkeleton from "@/app/(v3)/v3/(app)/books/[uuid]/loading"
+import { BookDoubleCover } from "./BookDoubleCover"
+import React from "react"
 
 const bookFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -166,8 +168,8 @@ function FormatBadges({ book }: { book: BookWithRelations }) {
     <div className="flex flex-wrap gap-2">
       {isSynced && (
         <Badge className="gap-1 bg-orange-500 text-white hover:bg-orange-600">
-          <IconRefresh className="h-3 w-3" />
-          Synced
+          <IconReadaloud className="size-6" />
+          ReadAloud
         </Badge>
       )}
       {hasEbook && (
@@ -356,13 +358,22 @@ export function BookDetailsContent({
           >
             <div
               className={cn(
-                "shrink-0 overflow-hidden rounded-lg",
+                "shrink-0 rounded-lg",
                 compact
-                  ? "mx-auto h-64 w-44"
+                  ? "mx-auto h-64 w-60"
                   : "flex h-80 w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
               )}
             >
-              <BookCover book={book} width={compact ? 176 : 200} />
+              {/* <BookCover
+                book={book}
+                width={compact ? 176 : 200}
+                key={book.uuid}
+              /> */}
+              <BookDoubleCover
+                book={book}
+                // width={compact ? 176 : 200}
+                key={book.uuid}
+              />
             </div>
 
             {/* info */}
@@ -390,12 +401,7 @@ export function BookDetailsContent({
                   </div>
                 ) : (
                   <div className="flex-1">
-                    <h1
-                      className="font-heading text-3xl font-bold tracking-tight"
-                      style={{
-                        viewTransitionName: `book-title-${book.uuid}`,
-                      }}
-                    >
+                    <h1 className="font-heading text-3xl font-bold tracking-tight">
                       {book.title}
                     </h1>
                     {book.subtitle && (
@@ -445,20 +451,20 @@ export function BookDetailsContent({
 
               {/* authors */}
               {authors.length > 0 && (
-                <div className="text-muted-foreground mt-3 flex items-center gap-1 text-sm">
+                <p className="text-muted-foreground mt-3 flex items-center gap-1 text-sm">
                   <span>by</span>
                   {authors.map((author, idx) => (
-                    <span key={author.uuid}>
+                    <React.Fragment key={author.uuid}>
                       <V3Link
                         href={`/books?author=${author.uuid}`}
-                        className="hover:text-primary text-foreground font-medium hover:underline"
+                        className="hover:text-primary text-foreground line-clamp-1 inline font-medium break-all hover:underline"
                       >
                         {author.name}
                       </V3Link>
-                      {idx < authors.length - 1 && ", "}
-                    </span>
+                      <span>{idx < authors.length - 1 && ", "}</span>
+                    </React.Fragment>
                   ))}
-                </div>
+                </p>
               )}
 
               {/* narrators */}

@@ -200,7 +200,7 @@ function MediaTypeCell({ book }: { book: BookWithRelations }) {
     return (
       <Badge variant="secondary" className="gap-1">
         <RefreshCw className="h-3 w-3" />
-        Synced
+        ReadAloud
       </Badge>
     )
   }
