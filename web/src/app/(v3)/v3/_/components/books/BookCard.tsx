@@ -1,15 +1,13 @@
-import { IconBook, IconRefresh } from "@tabler/icons-react"
-import Image from "next/image"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useState } from "react"
 
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
-import { getCoverUrl } from "@/store/api"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
-import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
+
 import { BookCover } from "./BookCover"
 
 type BookCardProps = {
@@ -80,7 +78,7 @@ export function BookCard({ book, muted = false }: BookCardProps) {
         {isSynced && (
           <div className="absolute top-2 right-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500 shadow-md">
-              <IconRefresh className="h-3.5 w-3.5 text-white" />
+              <IconReadaloud className="size-6 text-white" />
             </div>
           </div>
         )}
@@ -165,17 +163,5 @@ export function BookCard({ book, muted = false }: BookCardProps) {
     >
       {cardContent}
     </V3Link>
-  )
-}
-
-export function BookCardSkeleton() {
-  return (
-    <div className="flex flex-col">
-      <Skeleton className="aspect-[2/3] rounded-lg" />
-      <div className="mt-2 flex flex-col gap-1 px-1">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-3 w-2/3" />
-      </div>
-    </div>
   )
 }

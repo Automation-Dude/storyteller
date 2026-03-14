@@ -22,21 +22,22 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { cn } from "@/cn"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import {
   getDownloadUrl,
+  useGetBookQuery,
   useListStatusesQuery,
   useUpdateBookMutation,
   useUpdateStatusMutation,
 } from "@/store/api"
+
 import { BookCover } from "@v3/_/components/books/BookCover"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
-import { V3Link } from "@v3/_/components/v3-link"
-
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -49,6 +50,9 @@ import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
 import { Textarea } from "@v3/_/components/ui/textarea"
+import { V3Link } from "@v3/_/components/v3-link"
+import { UUID } from "crypto"
+import BookDetailsSkeleton from "./loading"
 
 const bookFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -207,9 +211,14 @@ function MetadataRow({
   )
 }
 
-export function BookDetailsContent({ book }: { book: BookWithRelations }) {
+export function BookDetailsContent({ uuid }: { uuid: UUID }) {
+  const { data: book, isLoading: isLoadingBook } = useGetBookQuery({
+    uuid,
+  })
   const [updateBook, { isLoading: isSaving }] = useUpdateBookMutation()
   const [isEditing, setIsEditing] = useState(false)
+
+  console.log("book", book)
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
   const canEdit = true === true
@@ -218,16 +227,19 @@ export function BookDetailsContent({ book }: { book: BookWithRelations }) {
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
-    defaultValues: {
-      title: book.title,
-      subtitle: book.subtitle,
-      description: book.description,
-      language: book.language,
-      publicationDate: book.publicationDate,
-    },
+    // defaultValues: {
+    //   title: book.title,
+    //   subtitle: book.subtitle,
+    //   description: book.description,
+    //   language: book.language,
+    //   publicationDate: book.publicationDate,
+    // },
   })
 
   useEffect(() => {
+    if (!book) {
+      return
+    }
     form.reset({
       title: book.title,
       subtitle: book.subtitle,
@@ -241,7 +253,7 @@ export function BookDetailsContent({ book }: { book: BookWithRelations }) {
     async (values: BookFormValues) => {
       await updateBook({
         update: {
-          uuid: book.uuid,
+          uuid,
           title: values.title,
           subtitle: values.subtitle,
           description: values.description,
@@ -251,22 +263,24 @@ export function BookDetailsContent({ book }: { book: BookWithRelations }) {
       })
       setIsEditing(false)
     },
-    [book.uuid, updateBook],
+    [uuid, updateBook],
   )
 
-  const handleRatingChange = useCallback(
-    async (rating: number | null) => {
-      await updateBook({
-        update: {
-          uuid: book.uuid,
-          rating,
-        },
-      })
-    },
-    [book.uuid, updateBook],
-  )
+  const handleRatingChange = async (rating: number | null) => {
+    await updateBook({
+      update: {
+        uuid,
+        rating,
+      },
+    })
+  }
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
+    if (!book) {
+      setIsEditing(false)
+      return
+    }
+
     form.reset({
       title: book.title,
       subtitle: book.subtitle,
@@ -275,7 +289,27 @@ export function BookDetailsContent({ book }: { book: BookWithRelations }) {
       publicationDate: book.publicationDate,
     })
     setIsEditing(false)
-  }, [book, form])
+  }
+
+  if (isLoadingBook) {
+    return <BookDetailsSkeleton />
+  }
+
+  if (!book) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <SiteHeader
+          breadcrumbs={[
+            { label: "Books", url: "/books" },
+            { label: "Not Found" },
+          ]}
+        />
+        <div className="flex-1 flex-col items-center justify-center">
+          <h1 className="text-2xl font-bold">Book not found</h1>
+        </div>
+      </div>
+    )
+  }
 
   const authors = book.authors
   const narrators = book.narrators
@@ -291,7 +325,7 @@ export function BookDetailsContent({ book }: { book: BookWithRelations }) {
           {/* main content: cover + info */}
           <div className="flex flex-col gap-8 md:flex-row">
             {/* cover */}
-            <div className="flex shrink-0 justify-center md:justify-start">
+            <div className="flex h-80 w-[clamp(140px,25vw,200px)] shrink-0 justify-center md:justify-start">
               <BookCover book={book} width={140} />
             </div>
 
@@ -607,8 +641,8 @@ export function BookDetailsContent({ book }: { book: BookWithRelations }) {
                       variant="outline"
                       render={
                         <V3Link href={getDownloadUrl(book.uuid, "readaloud")}>
-                          <IconRefresh className="mr-2 h-4 w-4" />
-                          Download Synced
+                          <IconReadaloud className="text-st-orange-500 mr-2 h-4 w-4" />
+                          Download ReadAloud
                         </V3Link>
                       }
                     />
@@ -651,7 +685,7 @@ export function BookDetailsContent({ book }: { book: BookWithRelations }) {
               {book.readaloud?.filepath && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
-                    Synced file
+                    ReadAloud file
                   </span>
                   <code className="text-sm break-all">
                     {book.readaloud.filepath}

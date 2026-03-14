@@ -36,7 +36,6 @@ export default function BookPage() {
     fetchNextPage,
   } = useListInfiniteBooksInfiniteQuery({
     ...queryArg,
-    limit: 2,
   })
 
   const books = data?.pages.flatMap((page) => page) ?? []

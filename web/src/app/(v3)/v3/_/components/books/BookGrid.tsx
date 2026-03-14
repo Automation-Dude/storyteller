@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef } from "react"
 
 import { type BookWithRelations } from "@/database/books"
 
-import { BookCard, BookCardSkeleton } from "@v3/_/components/books/BookCard"
+import { BookCard } from "@v3/_/components/books/BookCard"
+import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
 

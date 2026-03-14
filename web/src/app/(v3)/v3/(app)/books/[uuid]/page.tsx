@@ -19,32 +19,32 @@ export default async function BookDetailsPage({
   const { uuid } = await params
   const session = await nextAuth.auth()
 
-  const book = await getBook(uuid, session?.user.id)
+  // const book = await getBook(uuid, session?.user.id)
 
-  const isError = !session?.user.id || !book
+  // const isError = !session?.user.id || !book
 
-  if (isError) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <SiteHeader
-          breadcrumbs={[
-            { label: "Books", url: "/books" },
-            { label: "Not Found" },
-          ]}
-        />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold">Book not found</h1>
-            <p className="text-muted-foreground mt-2">
-              The book you're looking for doesn't exist or you don't have access
-              to it.
-            </p>
-            <Button render={<V3Link href="/books">Back to Books</V3Link>} />
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // if (isError) {
+  //   return (
+  //     <div className="flex flex-1 flex-col">
+  //       <SiteHeader
+  //         breadcrumbs={[
+  //           { label: "Books", url: "/books" },
+  //           { label: "Not Found" },
+  //         ]}
+  //       />
+  //       <div className="flex flex-1 items-center justify-center">
+  //         <div className="text-center">
+  //           <h1 className="text-2xl font-bold">Book not found</h1>
+  //           <p className="text-muted-foreground mt-2">
+  //             The book you're looking for doesn't exist or you don't have access
+  //             to it.
+  //           </p>
+  //           <Button render={<V3Link href="/books">Back to Books</V3Link>} />
+  //         </div>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
-  return <BookDetailsContent book={book} />
+  return <BookDetailsContent uuid={uuid} />
 }
