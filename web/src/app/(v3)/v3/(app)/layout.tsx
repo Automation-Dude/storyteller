@@ -1,11 +1,13 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { ScrollArea } from "@/app/(v3)/v3/_/components/ui/scroll-area"
 import { nextAuth } from "@/auth/auth"
 import { getCurrentVersion } from "@/versions"
 
 import { AppSidebar } from "@v3/_/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
+
 
 export default async function AppLayout({
   children,
@@ -28,7 +30,7 @@ export default async function AppLayout({
   return (
     <SidebarProvider
       defaultOpen={defaultOpen}
-      className="font-serif"
+      className="z-50 font-serif"
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 56)",
@@ -40,9 +42,12 @@ export default async function AppLayout({
       <AppSidebar
         variant="inset"
         user={session.user}
+        className="absolute z-100"
         currentVersion={currentVersion}
       />
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="overflow-x-hidden">
+        <ScrollArea className="max-h-screen w-full">{children}</ScrollArea>
+      </SidebarInset>
     </SidebarProvider>
   )
 }
