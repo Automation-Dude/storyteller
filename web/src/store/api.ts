@@ -49,6 +49,7 @@ export const api = createApi({
     "UserReadingPreferences",
     "UserReadingState",
     "GpuBuildWarning",
+    "Books",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -146,6 +147,35 @@ export const api = createApi({
     }),
     getBook: build.query<BookWithRelations, { uuid: UUID }>({
       query: ({ uuid }) => `/books/${uuid}`,
+      providesTags: (result) =>
+        result
+          ? ([
+              { type: "Books" as const, id: result.uuid },
+              ...result.authors.map((author) => ({
+                type: "Authors" as const,
+                id: author.uuid,
+              })),
+              ...result.creators.map((creator) => ({
+                type: "Creators" as const,
+                id: creator.uuid,
+              })),
+              ...result.series.map((series) => ({
+                type: "Series" as const,
+                id: series.uuid,
+              })),
+              ...result.collections.map((collection) => ({
+                type: "Collections" as const,
+                id: collection.uuid,
+              })),
+              ...result.tags.map((tag) => ({
+                type: "Tags" as const,
+                id: tag.uuid,
+              })),
+              ...(result.status
+                ? [{ type: "Statuses" as const, id: result.status.uuid }]
+                : []),
+            ] as const)
+          : [],
     }),
     deleteBook: build.mutation<
       void,
@@ -298,6 +328,7 @@ export const api = createApi({
         if (queryArg.statusFilter) params.set("status", queryArg.statusFilter)
         return `/books?${params.toString()}`
       },
+      providesTags: ["Books"],
     }),
     processBook: build.mutation<
       void,
@@ -470,7 +501,40 @@ export const api = createApi({
           body,
         }
       },
-      invalidatesTags: ["Creators", "Authors", "Series", "Tags"],
+      invalidatesTags: (book) => [
+        "Creators",
+        "Authors",
+        "Series",
+        "Tags",
+        "Books",
+        ...(book ? [{ type: "Books", id: book.uuid }] : []),
+        ...(book
+          ? book.authors.map((author) => ({ type: "Authors", id: author.uuid }))
+          : []),
+        ...(book
+          ? book.creators.map((creator) => ({
+              type: "Creators",
+              id: creator.uuid,
+            }))
+          : []),
+        ...(book
+          ? book.series.map((series) => ({ type: "Series", id: series.uuid }))
+          : []),
+        ...(book
+          ? book.collections.map((collection) => ({
+              type: "Collections",
+              id: collection.uuid,
+            }))
+          : []),
+        ...(book
+          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
+          : []),
+        ...(book
+          ? book.status
+            ? [{ type: "Statuses", id: book.status.uuid }]
+            : []
+          : []),
+      ],
     }),
     updateStatus: build.mutation<void, { bookUuid: UUID; statusUuid: UUID }>({
       query: ({ bookUuid, statusUuid }) => ({
@@ -480,6 +544,12 @@ export const api = createApi({
           status: statusUuid,
         },
       }),
+      invalidatesTags: (_result, _error, { bookUuid, statusUuid }) => [
+        "Books",
+        "Statuses",
+        { type: "Books", id: bookUuid },
+        { type: "Statuses", id: statusUuid },
+      ],
     }),
     listStatuses: build.query<Status[], void>({
       query: () => `/statuses`,
@@ -526,6 +596,7 @@ export const api = createApi({
         body: update,
       }),
       invalidatesTags: (_result, _error, { uuid }) => [
+        "Series",
         { type: "Series", id: uuid },
       ],
     }),
@@ -534,7 +605,10 @@ export const api = createApi({
         url: `/series/${uuid}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Series"],
+      invalidatesTags: (_result, _error, { uuid }) => [
+        "Series",
+        { type: "Series", id: uuid },
+      ],
     }),
     listCollections: build.query<CollectionWithRelations[], void>({
       query: () => "/collections",
@@ -571,6 +645,7 @@ export const api = createApi({
         body: update,
       }),
       invalidatesTags: (_result, _error, { uuid }) => [
+        "Collections",
         { type: "Collections", id: uuid },
       ],
     }),
@@ -648,6 +723,12 @@ export const api = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: (book) => [
+        "Tags",
+        ...(book
+          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
+          : []),
+      ],
     }),
     removeTagsFromBooks: build.mutation<void, { tags: UUID[]; books: UUID[] }>({
       query: (body) => ({
@@ -655,6 +736,12 @@ export const api = createApi({
         method: "DELETE",
         body,
       }),
+      invalidatesTags: (book) => [
+        "Tags",
+        ...(book
+          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
+          : []),
+      ],
     }),
     updateReadingStatus: build.mutation<void, { status: UUID; books: UUID[] }>({
       query: (body) => ({
@@ -662,6 +749,12 @@ export const api = createApi({
         method: "PUT",
         body,
       }),
+      invalidatesTags: (book) => [
+        "Tags",
+        ...(book
+          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
+          : []),
+      ],
     }),
 
     getInfiniteChangelog: build.infiniteQuery<

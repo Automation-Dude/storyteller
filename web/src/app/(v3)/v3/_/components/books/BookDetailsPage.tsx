@@ -1,5 +1,7 @@
 "use client"
 
+import { type UUID } from "crypto"
+
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   IconBook,
@@ -51,8 +53,8 @@ import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
 import { Textarea } from "@v3/_/components/ui/textarea"
 import { V3Link } from "@v3/_/components/v3-link"
-import { UUID } from "crypto"
-import BookDetailsSkeleton from "./loading"
+
+import BookDetailsSkeleton from "@/app/(v3)/v3/(app)/books/[uuid]/loading"
 
 const bookFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -141,10 +143,9 @@ function ReadingStatusButton({
         {statuses.map((status) => (
           <DropdownMenuItem
             key={status.uuid}
-            onClick={() => handleStatusChange(String(status.uuid))}
+            onClick={() => handleStatusChange(status.uuid)}
             className={cn(
-              String(currentStatus?.uuid) === String(status.uuid) &&
-                "bg-accent",
+              String(currentStatus?.uuid) === status.uuid && "bg-accent",
             )}
           >
             {status.name}
@@ -211,14 +212,18 @@ function MetadataRow({
   )
 }
 
-export function BookDetailsContent({ uuid }: { uuid: UUID }) {
+export function BookDetailsContent({
+  uuid,
+  compact = false,
+}: {
+  uuid: UUID
+  compact?: boolean
+}) {
   const { data: book, isLoading: isLoadingBook } = useGetBookQuery({
     uuid,
   })
   const [updateBook, { isLoading: isSaving }] = useUpdateBookMutation()
   const [isEditing, setIsEditing] = useState(false)
-
-  console.log("book", book)
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
   const canEdit = true === true
@@ -292,10 +297,26 @@ export function BookDetailsContent({ uuid }: { uuid: UUID }) {
   }
 
   if (isLoadingBook) {
+    if (compact) {
+      return (
+        <div className="flex flex-1 items-center justify-center p-6">
+          <BookDetailsSkeleton />
+        </div>
+      )
+    }
+
     return <BookDetailsSkeleton />
   }
 
   if (!book) {
+    if (compact) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center p-6">
+          <h1 className="text-lg font-bold">Book not found</h1>
+        </div>
+      )
+    }
+
     return (
       <div className="flex flex-1 flex-col">
         <SiteHeader
@@ -316,17 +337,32 @@ export function BookDetailsContent({ uuid }: { uuid: UUID }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader
-        breadcrumbs={[{ label: "Books", url: "/books" }, { label: book.title }]}
-      />
+      {!compact && (
+        <SiteHeader
+          breadcrumbs={[
+            { label: "Books", url: "/books" },
+            { label: book.title },
+          ]}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-5xl p-6">
-          {/* main content: cover + info */}
-          <div className="flex flex-col gap-8 md:flex-row">
-            {/* cover */}
-            <div className="flex h-80 w-[clamp(140px,25vw,200px)] shrink-0 justify-center md:justify-start">
-              <BookCover book={book} width={140} />
+        <div className={cn("p-6", !compact && "mx-auto max-w-5xl")}>
+          <div
+            className={cn(
+              "flex gap-8",
+              compact ? "flex-col" : "flex-col md:flex-row",
+            )}
+          >
+            <div
+              className={cn(
+                "shrink-0 overflow-hidden rounded-lg",
+                compact
+                  ? "mx-auto h-64 w-44"
+                  : "flex h-80 w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
+              )}
+            >
+              <BookCover book={book} width={compact ? 176 : 200} />
             </div>
 
             {/* info */}

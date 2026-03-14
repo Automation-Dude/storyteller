@@ -1,11 +1,10 @@
-import { useCallback, useState } from "react"
+import Link from "next/link"
+import { memo, useCallback, useState } from "react"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
-import { V3Link } from "@v3/_/components/v3-link"
-import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
 
 import { BookCover } from "./BookCover"
@@ -13,6 +12,12 @@ import { BookCover } from "./BookCover"
 type BookCardProps = {
   book: BookWithRelations
   muted?: boolean
+  selected?: boolean
+  isSelecting?: boolean
+  isBookSelected?: boolean
+  onToggleSelection?: (uuid: string) => void
+  onStartSelecting?: () => void
+  onClick?: (book: BookWithRelations) => void
 }
 
 function getReadingProgress(book: BookWithRelations): number | null {
@@ -20,14 +25,17 @@ function getReadingProgress(book: BookWithRelations): number | null {
   return book.position.locator.locations.totalProgression
 }
 
-export function BookCard({ book, muted = false }: BookCardProps) {
+export const BookCard = memo(function BookCard({
+  book,
+  muted = false,
+  selected = false,
+  isSelecting = false,
+  isBookSelected = false,
+  onToggleSelection,
+  onStartSelecting,
+  onClick,
+}: BookCardProps) {
   const [isHovering, setIsHovering] = useState(false)
-
-  const selection = useOptionalBookSelection()
-  const isSelecting = selection?.isSelecting ?? false
-  const isSelected = selection?.isSelected(book.uuid) ?? false
-  const toggleSelection = selection?.toggleSelection
-  const startSelecting = selection?.startSelecting
 
   const hasAudiobook = book.audiobook !== null
   const hasReadaloud = book.readaloud !== null
@@ -40,37 +48,39 @@ export function BookCard({ book, muted = false }: BookCardProps) {
 
   const handleCheckboxClick = useCallback(
     (e: React.MouseEvent) => {
-      console.log("handleCheckboxClick", e)
       e.preventDefault()
       e.stopPropagation()
+
       if (!isSelecting) {
-        startSelecting?.()
+        onStartSelecting?.()
       }
-      toggleSelection?.(book.uuid)
+
+      onToggleSelection?.(book.uuid)
     },
-    [toggleSelection, book.uuid, isSelecting, startSelecting],
+    [onToggleSelection, book.uuid, isSelecting, onStartSelecting],
   )
 
-  const showCheckbox = isSelecting || isHovering
+  const showCheckbox = onToggleSelection && (isSelecting || isHovering)
 
   const cardContent = (
     <>
       <div className="bg-muted relative aspect-2/3 overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-xl">
         <BookCover book={book} width={300} />
 
-        {selection && showCheckbox && (
+        {showCheckbox && (
           <div
             className={cn(
               "absolute top-2 left-2 z-20 transition-opacity",
               !isSelecting &&
-                !isSelected &&
+                !isBookSelected &&
                 "opacity-0 group-hover:opacity-100",
             )}
             onClick={handleCheckboxClick}
           >
             <Checkbox
-              checked={isSelected}
+              checked={isBookSelected}
               className="bg-background/80 h-5 w-5 border-2 shadow-sm backdrop-blur"
+              tabIndex={-1}
             />
           </div>
         )}
@@ -84,7 +94,7 @@ export function BookCard({ book, muted = false }: BookCardProps) {
         )}
 
         {primarySeries && (
-          <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent px-2 pt-6 pb-2">
+          <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/80 to-transparent px-2 pt-6 pb-2">
             <span className="line-clamp-1 text-xs font-medium text-white/90">
               {primarySeries.name}
               {primarySeries.position && ` #${primarySeries.position}`}
@@ -111,11 +121,13 @@ export function BookCard({ book, muted = false }: BookCardProps) {
         >
           {book.title}
         </h3>
+
         {authors.length > 0 && (
           <p className="text-muted-foreground line-clamp-1 text-xs">
             {authors.map((a) => a.name).join(", ")}
           </p>
         )}
+
         {narrators.length > 0 && hasAudiobook && (
           <p className="text-muted-foreground/70 line-clamp-1 text-xs">
             Narrated by {narrators.map((n) => n.name).join(", ")}
@@ -125,16 +137,17 @@ export function BookCard({ book, muted = false }: BookCardProps) {
     </>
   )
 
-  // when selecting, clicking the card toggles selection instead of navigating
   if (isSelecting) {
     return (
       <div
         className={cn(
           "group relative flex cursor-pointer flex-col transition-opacity duration-200",
           muted && "opacity-50",
-          isSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
+          isBookSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
         )}
-        onClick={() => toggleSelection?.(book.uuid)}
+        onClick={() => {
+          onToggleSelection?.(book.uuid)
+        }}
         onMouseEnter={() => {
           setIsHovering(true)
         }}
@@ -147,21 +160,34 @@ export function BookCard({ book, muted = false }: BookCardProps) {
     )
   }
 
-  return (
-    <V3Link
-      href={`/books/${book.uuid}`}
-      className={cn(
-        "group relative flex flex-col transition-opacity duration-200",
-        muted && "opacity-50",
-      )}
+  return onClick ? (
+    <div
+      onClick={() => {
+        onClick(book)
+      }}
       onMouseEnter={() => {
         setIsHovering(true)
       }}
       onMouseLeave={() => {
         setIsHovering(false)
       }}
+      className={cn(
+        "group relative flex cursor-pointer flex-col transition-opacity duration-200",
+        muted && "opacity-50",
+        selected && "ring-primary rounded-lg ring-2 ring-offset-2",
+      )}
     >
       {cardContent}
-    </V3Link>
+    </div>
+  ) : (
+    <Link
+      href={`/v3/books/${book.uuid}`}
+      className={cn(
+        "group relative flex flex-col transition-opacity duration-200",
+        muted && "opacity-50",
+      )}
+    >
+      {cardContent}
+    </Link>
   )
-}
+})

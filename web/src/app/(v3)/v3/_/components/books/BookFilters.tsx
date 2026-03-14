@@ -224,14 +224,14 @@ export function BookFilters({
     <div className="bg-background/95 sticky top-0 z-50 backdrop-blur">
       <div className="flex flex-col gap-3 px-4 py-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 sm:max-w-sm">
-          <IconSearch className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <IconSearch className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search books, authors, series..."
             value={state.searchInput}
             onChange={(e) => {
               onChange("searchInput", e.target.value)
             }}
-            className="pr-9 pl-9"
+            className="rounded-b-none border-0 border-b bg-transparent px-7"
           />
           {state.searchInput && (
             <Button
@@ -250,7 +250,7 @@ export function BookFilters({
           <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
             <PopoverTrigger
               render={
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="ghost" size="sm" className="gap-2">
                   <IconFilter className="h-4 w-4" />
                   Filters
                   {activeFilterCount > 0 && (
@@ -386,7 +386,10 @@ export function BookFilters({
               onChange("sortField", value as SortField)
             }}
           >
-            <SelectTrigger className="w-[120px]" size="sm">
+            <SelectTrigger
+              className="w-[120px] border-0 bg-transparent"
+              size="sm"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -401,7 +404,7 @@ export function BookFilters({
           <ButtonGroup>
             <Button
               size="sm"
-              variant={state.sortDirection === "asc" ? "default" : "outline"}
+              variant={state.sortDirection === "asc" ? "default" : "ghost"}
               onClick={() => {
                 onChange("sortDirection", "asc")
               }}

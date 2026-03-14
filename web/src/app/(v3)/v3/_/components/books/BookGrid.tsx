@@ -6,6 +6,7 @@ import { type BookWithRelations } from "@/database/books"
 import { BookCard } from "@v3/_/components/books/BookCard"
 import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
+import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
 
 type BookGridProps = {
@@ -19,6 +20,8 @@ type BookGridProps = {
   emptySubMessage?: string | undefined
   onClearFilters?: () => void
   hasActiveFilters?: boolean
+  selectedBookUuid?: string | null
+  onBookClick?: (book: BookWithRelations) => void
 }
 
 export function BookGrid({
@@ -32,8 +35,11 @@ export function BookGrid({
   emptySubMessage,
   onClearFilters,
   hasActiveFilters,
+  selectedBookUuid,
+  onBookClick,
 }: BookGridProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null)
+  const selection = useOptionalBookSelection()
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -63,7 +69,7 @@ export function BookGrid({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-[repeat(auto-fit,_minmax(160px,_1fr))] gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
         {Array.from({ length: 12 }).map((_, i) => (
           <BookCardSkeleton key={i} />
         ))}
@@ -77,6 +83,7 @@ export function BookGrid({
         <IconSearch className="h-12 w-12 opacity-40" />
         <p className="text-lg font-medium">{emptyMessage}</p>
         {emptySubMessage && <p className="text-sm">{emptySubMessage}</p>}
+
         {hasActiveFilters && onClearFilters && (
           <Button
             variant="outline"
@@ -95,12 +102,24 @@ export function BookGrid({
     <>
       <div
         className={cn(
-          "grid max-w-screen grid-cols-[repeat(auto-fit,_minmax(160px,_1fr))] gap-4 transition-opacity duration-200",
+          "grid max-w-screen grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 transition-opacity duration-200",
           showMuted && "opacity-60",
         )}
       >
         {books.map((book) => (
-          <BookCard key={book.uuid} book={book} muted={showMuted} />
+          <BookCard
+            key={book.uuid}
+            book={book}
+            muted={showMuted}
+            selected={book.uuid === selectedBookUuid}
+            isSelecting={selection?.isSelecting ?? false}
+            isBookSelected={selection?.isSelected(book.uuid) ?? false}
+            {...(selection ? {
+              onToggleSelection: selection.toggleSelection,
+              onStartSelecting: selection.startSelecting,
+            } : {})}
+            {...(onBookClick ? { onClick: onBookClick } : {})}
+          />
         ))}
       </div>
 

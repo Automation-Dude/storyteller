@@ -1,11 +1,6 @@
-import { SiteHeader } from "@/app/(v3)/v3/_/components/site-header"
-import { Button } from "@/app/(v3)/v3/_/components/ui/button"
-import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
-import { nextAuth } from "@/auth/auth"
-import { getBook } from "@/database/books"
 import { type UUID } from "@/uuid"
 
-import { BookDetailsContent } from "./bookDetailsPage"
+import { BookDetailsContent } from "@v3/_/components/books/BookDetailsPage"
 
 export type BookDetailsPageProps = {
   params: Promise<{
@@ -17,7 +12,6 @@ export default async function BookDetailsPage({
   params,
 }: BookDetailsPageProps) {
   const { uuid } = await params
-  const session = await nextAuth.auth()
 
   // const book = await getBook(uuid, session?.user.id)
 
