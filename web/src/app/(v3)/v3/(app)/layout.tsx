@@ -8,7 +8,6 @@ import { getCurrentVersion } from "@/versions"
 import { AppSidebar } from "@v3/_/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
 
-
 export default async function AppLayout({
   children,
 }: {
@@ -46,7 +45,9 @@ export default async function AppLayout({
         currentVersion={currentVersion}
       />
       <SidebarInset className="overflow-x-hidden">
-        <ScrollArea className="max-h-screen w-full">{children}</ScrollArea>
+        <ScrollArea className="relative max-h-screen w-full pt-12">
+          {children}
+        </ScrollArea>
       </SidebarInset>
     </SidebarProvider>
   )
