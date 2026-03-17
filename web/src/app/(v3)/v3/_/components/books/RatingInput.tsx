@@ -60,7 +60,10 @@ export function RatingInput({
 
   const renderStars = (interactive: boolean) => (
     <div
-      className={cn("flex items-center gap-0.5", !readOnly && "cursor-pointer")}
+      className={cn(
+        "flex h-8 items-center gap-0.5",
+        !readOnly && "cursor-pointer",
+      )}
       onMouseLeave={() => {
         if (interactive) setHoverValue(null)
       }}
