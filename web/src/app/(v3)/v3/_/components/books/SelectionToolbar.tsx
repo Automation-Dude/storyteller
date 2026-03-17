@@ -54,12 +54,13 @@ export function SelectionToolbar({
 
   const {
     selectedBooks,
-    isSelecting,
     selectAll,
     selectNone,
     invertSelection,
     stopSelecting,
   } = useBookSelection()
+
+  const isSelecting = selectedBooks.size > 0
 
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -120,14 +121,14 @@ export function SelectionToolbar({
   return (
     <div
       className={cn(
-        "bg-background/95 fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg border p-2 shadow-lg",
+        "bg-muted fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg border p-2 shadow-lg",
         className,
       )}
     >
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="outline" size="sm">
+            <Button variant="ghost" size="sm">
               <IconSquareCheck className="mr-2 h-4 w-4" />
               Select
               <IconChevronDown className="ml-2 h-4 w-4" />
@@ -158,14 +159,14 @@ export function SelectionToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <span className="text-muted-foreground px-2 text-sm">
+      <span className="p-2 text-xs whitespace-nowrap">
         {selectedBooks.size} selected
       </span>
 
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="outline" size="sm" disabled={!hasSelection}>
+            <Button variant="ghost" size="sm" disabled={!hasSelection}>
               <IconPointer className="mr-2 h-4 w-4" />
               Actions
               <IconChevronDown className="ml-2 h-4 w-4" />

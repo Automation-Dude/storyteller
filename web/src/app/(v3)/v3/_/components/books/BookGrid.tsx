@@ -40,6 +40,7 @@ export function BookGrid({
 }: BookGridProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const selection = useOptionalBookSelection()
+  const isSelecting = (selection?.selectedBooks.size ?? 0) > 0
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -112,12 +113,11 @@ export function BookGrid({
             book={book}
             muted={showMuted}
             selected={book.uuid === selectedBookUuid}
-            isSelecting={selection?.isSelecting ?? false}
+            isSelecting={isSelecting}
             isBookSelected={selection?.isSelected(book.uuid) ?? false}
             {...(selection
               ? {
                   onToggleSelection: selection.toggleSelection,
-                  onStartSelecting: selection.startSelecting,
                 }
               : {})}
             {...(onBookClick ? { onClick: onBookClick } : {})}

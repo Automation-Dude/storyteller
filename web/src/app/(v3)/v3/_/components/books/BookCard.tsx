@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { memo, useCallback, useState } from "react"
+import { memo, useCallback } from "react"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
@@ -16,7 +16,6 @@ type BookCardProps = {
   isSelecting?: boolean
   isBookSelected?: boolean
   onToggleSelection?: (uuid: string) => void
-  onStartSelecting?: () => void
   onClick?: (book: BookWithRelations) => void
 }
 
@@ -28,22 +27,16 @@ function getReadingProgress(book: BookWithRelations): number | null {
 export const BookCard = memo(function BookCard({
   book,
   muted = false,
-  selected = false,
   isSelecting = false,
   isBookSelected = false,
   onToggleSelection,
-  onStartSelecting,
   onClick,
 }: BookCardProps) {
-  const [isHovering, setIsHovering] = useState(false)
-
-  const hasAudiobook = book.audiobook !== null
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
   const hasDualFormat = isDualFormat(book)
 
   const authors = book.authors
-  const narrators = book.narrators
   const primarySeries = book.series.find((s) => s.featured) ?? book.series[0]
   const progress = getReadingProgress(book)
 
@@ -52,16 +45,12 @@ export const BookCard = memo(function BookCard({
       e.preventDefault()
       e.stopPropagation()
 
-      if (!isSelecting) {
-        onStartSelecting?.()
-      }
-
       onToggleSelection?.(book.uuid)
     },
-    [onToggleSelection, book.uuid, isSelecting, onStartSelecting],
+    [onToggleSelection, book.uuid],
   )
 
-  const showCheckbox = onToggleSelection && (isSelecting || isHovering)
+  const showCheckbox = !!onToggleSelection
 
   const cardContent = (
     <>
@@ -69,7 +58,7 @@ export const BookCard = memo(function BookCard({
         className={cn(
           "relative flex aspect-2/3 flex-col items-center justify-center transition-shadow",
           hasDualFormat
-            ? "bg-muted overflow-visible rounded-lg shadow-md"
+            ? "overflow-visible rounded-lg"
             : "bg-muted overflow-hidden rounded-lg shadow-md group-hover:shadow-xl",
         )}
       >
@@ -79,8 +68,8 @@ export const BookCard = memo(function BookCard({
           <div
             className={cn(
               "absolute top-2 left-2 z-20 transition-opacity",
-              !isSelecting &&
-                !isBookSelected &&
+              !isBookSelected &&
+                !isSelecting &&
                 "opacity-0 group-hover:opacity-100",
             )}
             onClick={handleCheckboxClick}
@@ -88,7 +77,6 @@ export const BookCard = memo(function BookCard({
             <Checkbox
               checked={isBookSelected}
               onCheckedChange={() => {
-                if (!isSelecting) onStartSelecting?.()
                 onToggleSelection(book.uuid)
               }}
               onClick={(e: React.MouseEvent) => {
@@ -128,15 +116,14 @@ export const BookCard = memo(function BookCard({
       </div>
 
       <div className="mt-2 flex flex-col gap-0.5 px-1">
-        <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-medium">
-          {book.title}
-        </h3>
-
         {authors.length > 0 && (
-          <p className="text-muted-foreground line-clamp-1 text-xs">
+          <p className="text-muted-foreground/80 line-clamp-1 text-xs">
             {authors.map((a) => a.name).join(", ")}
           </p>
         )}
+        <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-medium">
+          {book.title}
+        </h3>
 
         {/* {narrators.length > 0 && hasAudiobook && (
           <p className="text-muted-foreground/70 line-clamp-1 text-xs">
@@ -147,45 +134,20 @@ export const BookCard = memo(function BookCard({
     </>
   )
 
-  if (isSelecting) {
-    return (
-      <div
-        className={cn(
-          "group relative flex cursor-pointer flex-col transition-opacity duration-200",
-          muted && "opacity-50",
-          isBookSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
-        )}
-        onClick={() => {
-          onToggleSelection?.(book.uuid)
-        }}
-        onMouseEnter={() => {
-          setIsHovering(true)
-        }}
-        onMouseLeave={() => {
-          setIsHovering(false)
-        }}
-      >
-        {cardContent}
-      </div>
-    )
-  }
-
   return onClick ? (
     <div
       key={book.uuid}
       onClick={() => {
-        onClick(book)
-      }}
-      onMouseEnter={() => {
-        setIsHovering(true)
-      }}
-      onMouseLeave={() => {
-        setIsHovering(false)
+        if (isSelecting) {
+          onToggleSelection?.(book.uuid)
+        } else {
+          onClick(book)
+        }
       }}
       className={cn(
         "group relative flex cursor-pointer flex-col transition-opacity duration-200",
         muted && "opacity-50",
-        selected && "ring-primary rounded-lg ring-2 ring-offset-2",
+        isBookSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
       )}
     >
       {cardContent}
