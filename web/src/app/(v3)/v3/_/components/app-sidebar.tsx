@@ -1,13 +1,19 @@
 "use client"
 
 import {
-  IconBook2,
   IconBook,
+  IconCalendar,
+  IconCircleCheck,
   IconHelpCircle,
   IconHome,
+  IconLanguage,
   IconList,
+  IconMicrophone2,
   IconSearch,
   IconSettings,
+  IconStar,
+  IconTag,
+  IconUser,
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
@@ -24,6 +30,10 @@ import {
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
+import {
+  NavLibrary,
+  type NavLibraryItem,
+} from "@v3/_/components/nav/nav-library"
 import { type NavItem, NavMain } from "@v3/_/components/nav/nav-main"
 import {
   NavSecondary,
@@ -41,6 +51,7 @@ import {
   SidebarPinButton,
 } from "@v3/_/components/ui/sidebar"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
 
 import { DISMISSED_VERSION_KEY } from "./settings-form/changelog-tab"
 
@@ -64,6 +75,7 @@ export function AppSidebar({
   currentVersion: string
 }) {
   const { data: collections } = useListCollectionsQuery()
+  const libraryCounts = useLibraryCounts()
 
   const { data: latestVersionData } = useGetLatestVersionQuery(
     {
@@ -161,20 +173,71 @@ export function AppSidebar({
         // isCollapsible: shelfSubItems.length > 0,
         // subItems: shelfSubItems,
       },
-      {
-        title: t("collections"),
-        allTitle: t("allCollections"),
-        url: "/collections",
-        icon: IconBook2,
-        isCollapsible: collectionSubItems.length > 0,
-        subItems: collectionSubItems,
-      },
-      {
-        title: t("series"),
-        url: "/series",
-        icon: IconList,
-      },
+      // {
+      //   title: t("collections"),
+      //   allTitle: t("allCollections"),
+      //   url: "/collections",
+      //   icon: IconBook2,
+      //   isCollapsible: collectionSubItems.length > 0,
+      //   subItems: collectionSubItems,
+      // },
+      // {
+      //   title: t("series"),
+      //   url: "/series",
+      //   icon: IconList,
+      // },
     ]
+
+  const libraryNav: NavLibraryItem[] = [
+    {
+      title: t("bySeries"),
+      url: "/series",
+      icon: IconList,
+      countKey: "series",
+    },
+    {
+      title: t("byAuthor"),
+      url: "/authors",
+      icon: IconUser,
+      countKey: "authors",
+    },
+    {
+      title: t("byNarrator"),
+      url: "/narrators",
+      icon: IconMicrophone2,
+      countKey: "narrators",
+    },
+    {
+      title: t("byTranslator"),
+      url: "/translators",
+      icon: IconLanguage,
+      countKey: "translators",
+    },
+    {
+      title: t("byTag"),
+      url: "/tags",
+      icon: IconTag,
+      countKey: "tags",
+    },
+    {
+      title: t("byPublicationYear"),
+      url: "/publication-years",
+      icon: IconCalendar,
+      countKey: "publicationYears",
+    },
+    {
+      title: t("byRating"),
+      url: "/ratings",
+      icon: IconStar,
+      countKey: "ratings",
+    },
+    {
+      title: t("byStatus"),
+      url: "/statuses",
+      icon: IconCircleCheck,
+      countKey: "statuses",
+    },
+  ]
 
   const navSecondary: NavSecondaryItem[] = [
     {
@@ -232,6 +295,11 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
+        <NavLibrary
+          label={t("library")}
+          items={libraryNav}
+          counts={libraryCounts}
+        />
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

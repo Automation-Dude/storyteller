@@ -72,7 +72,7 @@ export function BookCover({
               className="h-full w-full rounded-lg object-cover"
             />
           ) : (
-            <FallbackCover title={book.title} type="audiobook" />
+            <FallbackCover title={book.title} type="audiobook" width={width} />
           )}
         </div>
       </div>
@@ -95,18 +95,23 @@ export function BookCover({
     )
   }
 
-  return <FallbackCover title={book.title} type="ebook" />
+  return <FallbackCover title={book.title} type="ebook" width={width} />
 }
 
 export function FallbackCover({
   title,
   type,
+  width,
 }: {
   title: string
   type: "audiobook" | "ebook"
+  width: number
 }) {
   return (
-    <motion.div className="from-primary/10 to-primary/5 relative flex h-full w-full flex-col items-center justify-center gap-2 overflow-clip rounded-lg bg-gradient-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']">
+    <motion.div
+      className="from-primary/10 to-primary/5 relative flex flex-col items-center justify-center gap-2 overflow-clip rounded-lg bg-gradient-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']"
+      style={{ width: width, height: width * 1.5 }}
+    >
       {type === "audiobook" ? (
         <IconHeadphonesFilled className="text-muted-foreground/50 h-12 w-12" />
       ) : (

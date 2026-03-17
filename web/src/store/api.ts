@@ -45,6 +45,8 @@ export const api = createApi({
     "Tags",
     "CurrentUser",
     "Authors",
+    "Narrators",
+    "Translators",
     "MaxUploadChunkSize",
     "UserReadingPreferences",
     "UserReadingState",
@@ -574,6 +576,24 @@ export const api = createApi({
           id: creator.uuid,
         })) ?? ["Authors"],
     }),
+
+    listNarrators: build.query<Creator[], void>({
+      query: () => "/creators?role=nrt",
+      providesTags: (creators) =>
+        creators?.map((creator) => ({
+          type: "Narrators",
+          id: creator.uuid,
+        })) ?? ["Narrators"],
+    }),
+
+    listTranslators: build.query<Creator[], void>({
+      query: () => "/creators?role=trl",
+      providesTags: (creators) =>
+        creators?.map((creator) => ({
+          type: "Translators",
+          id: creator.uuid,
+        })) ?? ["Translators"],
+    }),
     listSeries: build.query<Series[], void>({
       query: () => "/series",
       providesTags: (series) =>
@@ -840,6 +860,8 @@ export const {
   useLazyListSeriesQuery,
   useLazyListTagsQuery,
   useListAuthorsQuery,
+  useListNarratorsQuery,
+  useListTranslatorsQuery,
   useListCreatorsQuery,
   useListBooksQuery,
   useListInfiniteBooksInfiniteQuery,
