@@ -52,6 +52,7 @@ import { ButtonGroup } from "@v3/_/components/ui/button-group"
 // } from "@v3/_/components/ui/dialog"
 // import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
+import { SearchInput } from "./SearchInput"
 
 export type SortField = "createdAt" | "updatedAt" | "title" | "publicationDate"
 export type SortDirection = "asc" | "desc"
@@ -223,29 +224,13 @@ export function BookFilters({
   return (
     <div className="bg-background/95 sticky top-0 z-50 backdrop-blur">
       <div className="flex flex-col gap-3 px-4 py-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 sm:max-w-sm">
-          <IconSearch className="text-muted-foreground absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
-          <Input
-            placeholder="Search books, authors, series..."
-            value={state.searchInput}
-            onChange={(e) => {
-              onChange("searchInput", e.target.value)
-            }}
-            className="rounded-b-none border-0 border-b bg-transparent px-7"
-          />
-          {state.searchInput && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 p-0"
-              onClick={() => {
-                onChange("searchInput", "")
-              }}
-            >
-              <IconX className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        <SearchInput
+          placeholder="Search books, authors, series..."
+          value={state.searchInput}
+          onChange={(value) => {
+            onChange("searchInput", value)
+          }}
+        />
         <div className="flex items-center gap-2">
           <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
             <PopoverTrigger

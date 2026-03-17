@@ -136,6 +136,7 @@ export function AppSidebar({
   }, [])
 
   const t = useTranslations("AppSidebar")
+  const tLibrary = useTranslations("LibraryPage")
 
   const collectionSubItems =
     collections?.map((collection) => {
@@ -190,49 +191,49 @@ export function AppSidebar({
 
   const libraryNav: NavLibraryItem[] = [
     {
-      title: t("bySeries"),
+      title: tLibrary("Series.by"),
       url: "/series",
       icon: IconList,
       countKey: "series",
     },
     {
-      title: t("byAuthor"),
+      title: tLibrary("Authors.by"),
       url: "/authors",
       icon: IconUser,
       countKey: "authors",
     },
     {
-      title: t("byNarrator"),
+      title: tLibrary("Narrators.by"),
       url: "/narrators",
       icon: IconMicrophone2,
       countKey: "narrators",
     },
     {
-      title: t("byTranslator"),
+      title: tLibrary("Translators.by"),
       url: "/translators",
       icon: IconLanguage,
       countKey: "translators",
     },
     {
-      title: t("byTag"),
+      title: tLibrary("Tags.by"),
       url: "/tags",
       icon: IconTag,
       countKey: "tags",
     },
     {
-      title: t("byPublicationYear"),
+      title: tLibrary("PublicationYear.by"),
       url: "/publication-years",
       icon: IconCalendar,
       countKey: "publicationYears",
     },
     {
-      title: t("byRating"),
+      title: tLibrary("Rating.by"),
       url: "/ratings",
       icon: IconStar,
       countKey: "ratings",
     },
     {
-      title: t("byStatus"),
+      title: tLibrary("Status.by"),
       url: "/statuses",
       icon: IconCircleCheck,
       countKey: "statuses",

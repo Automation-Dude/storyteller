@@ -27,6 +27,41 @@
   "BooksPage": {
     "title": "Boeken"
   },
+
+  "LibraryPage": {
+    "Series": {
+      "plain": "Serie",
+      "by": "Op Serie"
+    },
+    "Authors": {
+      "plain": "Auteur",
+      "by": "Op Auteur"
+    },
+    "Narrators": {
+      "plain": "Verteller",
+      "by": "Op Verteller"
+    },
+    "Translators": {
+      "plain": "Vertaler",
+      "by": "Op Vertaler"
+    },
+    "Tags": {
+      "plain": "Label",
+      "by": "Op Label"
+    },
+    "PublicationYear": {
+      "plain": "Jaar",
+      "by": "Op Jaar"
+    },
+    "Rating": {
+      "plain": "Beoordeling",
+      "by": "Op Beoordeling"
+    },
+    "Status": {
+      "plain": "Status",
+      "by": "Op Status"
+    }
+  },
   "SettingsPage": {
     "title": "Instellingen",
     "breadcrumb": "Instellingen",
@@ -250,14 +285,6 @@
     "allCollections": "Alle verzamelingen",
     "series": "Series",
     "library": "Bibliotheek",
-    "bySeries": "Op Serie",
-    "byAuthor": "Op Auteur",
-    "byNarrator": "Op Verteller",
-    "byTranslator": "Op Vertaler",
-    "byTag": "Op Tag",
-    "byPublicationYear": "Op Publicatiejaar",
-    "byRating": "Op Beoordeling",
-    "byStatus": "Op Status",
     "search": "Zoeken",
     "settings": "Instellingen",
     "documentation": "Documentatie",

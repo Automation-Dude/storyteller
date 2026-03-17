@@ -27,6 +27,40 @@
   "BooksPage": {
     "title": "Books"
   },
+  "LibraryPage": {
+    "Series": {
+      "plain": "Series",
+      "by": "By Series"
+    },
+    "Authors": {
+      "plain": "Authors",
+      "by": "By Author"
+    },
+    "Narrators": {
+      "plain": "Narrators",
+      "by": "By Narrator"
+    },
+    "Translators": {
+      "plain": "Translators",
+      "by": "By Translator"
+    },
+    "Tags": {
+      "plain": "Tags",
+      "by": "By Tag"
+    },
+    "PublicationYear": {
+      "plain": "Year",
+      "by": "By Year"
+    },
+    "Rating": {
+      "plain": "Rating",
+      "by": "By Rating"
+    },
+    "Status": {
+      "plain": "Status",
+      "by": "By Status"
+    }
+  },
   "SettingsPage": {
     "title": "Settings",
     "breadcrumb": "Settings",
@@ -258,14 +292,6 @@
     "allCollections": "All collections",
     "series": "Series",
     "library": "Library",
-    "bySeries": "By Series",
-    "byAuthor": "By Author",
-    "byNarrator": "By Narrator",
-    "byTranslator": "By Translator",
-    "byTag": "By Tag",
-    "byPublicationYear": "By Publication Year",
-    "byRating": "By Rating",
-    "byStatus": "By Status",
     "search": "Search",
     "settings": "Settings",
     "documentation": "Documentation",

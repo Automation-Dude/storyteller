@@ -210,4 +210,115 @@ function PagePanel({
   )
 }
 
-export { PageLayout, PageMain, PageHeader, PageContent, PagePanel }
+const MIN_SIDEBAR_WIDTH = 220
+const MAX_SIDEBAR_WIDTH = 480
+
+function PageSidebar({
+  width,
+  onWidthChange,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & {
+  width: number
+  onWidthChange?: (width: number) => void
+}) {
+  const [isResizing, setIsResizing] = useState(false)
+  const liveWidth = useRef(width)
+
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      setIsResizing(true)
+      liveWidth.current = width
+
+      const startX = e.clientX
+      const startWidth = width
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const newWidth = Math.round(
+          Math.max(
+            MIN_SIDEBAR_WIDTH,
+            Math.min(MAX_SIDEBAR_WIDTH, startWidth + (e.clientX - startX)),
+          ),
+        )
+
+        liveWidth.current = newWidth
+
+        if (sidebarRef.current) {
+          sidebarRef.current.style.width = `${newWidth}px`
+          sidebarRef.current.style.minWidth = `${newWidth}px`
+        }
+
+        if (innerRef.current) {
+          innerRef.current.style.width = `${newWidth}px`
+        }
+      }
+
+      const handleMouseUp = () => {
+        setIsResizing(false)
+        onWidthChange?.(liveWidth.current)
+        document.removeEventListener("mousemove", handleMouseMove)
+        document.removeEventListener("mouseup", handleMouseUp)
+        document.body.style.cursor = ""
+        document.body.style.userSelect = ""
+      }
+
+      document.addEventListener("mousemove", handleMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+      document.body.style.cursor = "col-resize"
+      document.body.style.userSelect = "none"
+    },
+    [width, onWidthChange],
+  )
+
+  return (
+    <>
+      <div
+        ref={sidebarRef}
+        data-slot="page-sidebar"
+        className={cn(
+          "flex h-full shrink-0 flex-col overflow-y-auto",
+          !isResizing &&
+            "transition-[width,min-width] duration-300 ease-in-out",
+          className,
+        )}
+        style={{
+          width,
+          minWidth: width,
+        }}
+        {...props}
+      >
+        <div ref={innerRef} className="flex h-full flex-col" style={{ width }}>
+          {children}
+        </div>
+      </div>
+
+      {onWidthChange && (
+        <div
+          data-slot="page-sidebar-resize-handle"
+          className="group relative z-10 flex w-0 items-stretch"
+        >
+          <div
+            className="absolute top-0 -right-2 bottom-0 w-4 cursor-col-resize"
+            onMouseDown={handleResizeStart}
+          >
+            <div
+              className={cn(
+                "bg-border mx-auto h-full w-px transition-colors",
+                isResizing
+                  ? "bg-primary w-0.5"
+                  : "group-hover:bg-primary/40 group-hover:w-0.5",
+              )}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+export { PageContent, PageHeader, PageLayout, PageMain, PagePanel, PageSidebar }

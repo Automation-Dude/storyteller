@@ -2,12 +2,14 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 
 export type UISettings = {
   detailPanelWidth: number
+  librarySidebarWidth: number
 }
 
 const STORAGE_KEY = "ui-settings"
 
 const defaults: UISettings = {
   detailPanelWidth: 420,
+  librarySidebarWidth: 280,
 }
 
 export const loadUISettingsFromStorage = (): Partial<UISettings> | null => {
@@ -45,6 +47,11 @@ export const uiSettingsSlice = createSlice({
       state.detailPanelWidth = action.payload
       saveToStorage(state)
     },
+
+    setLibrarySidebarWidth: (state, action: PayloadAction<number>) => {
+      state.librarySidebarWidth = action.payload
+      saveToStorage(state)
+    },
   },
 })
 
@@ -52,3 +59,7 @@ export const uiSettingsReducer = uiSettingsSlice.reducer
 
 export const selectDetailPanelWidth = (state: { uiSettings: UISettings }) =>
   state.uiSettings.detailPanelWidth
+
+export const selectLibrarySidebarWidth = (state: {
+  uiSettings: UISettings
+}) => state.uiSettings.librarySidebarWidth
