@@ -29,6 +29,7 @@
   },
 
   "LibraryPage": {
+    "emptyState": "Selecteer een item om de bijbehorende boeken te zien",
     "Series": {
       "plain": "Serie",
       "by": "Op Serie"
@@ -299,5 +300,44 @@
       "en": "Engels",
       "nl": "Nederlands"
     }
+  },
+  "BookDetailsPage": {
+    "bookNotFound": "Boek niet gevonden",
+    "noDescriptionAvailable": "Geen beschrijving",
+    "narratedBy": "verteld door",
+    "writtenBy": "door",
+    "edit": "Bewerken",
+    "deleteBook": "Boek verwijderen",
+    "saving": "Aan het opslaan...",
+    "save": "Opslaan",
+    "downloads": {
+      "downloadReadaloud": "Download Readaloud",
+      "downloadEbook": "Download Ebook",
+      "downloadAudiobook": "Download Audiobook"
+    },
+    "fileInformation": {
+      "readaloud": "Readaloud bestand",
+      "ebook": "Ebook bestand",
+      "audiobook": "Audiobook bestand",
+      "title": "Bestand informatie",
+      "lastAligned": "Laatst gesynchroniseerd",
+      "transcriptionEngine": "Transcriptie engine",
+      "storytellerVersion": "Storyteller versie"
+    }
+  },
+  "Labels": {
+    "title": "Titel",
+    "subtitle": "Ondertitel",
+    "description": "Beschrijving",
+    "language": "Taal",
+    "publicationDate": "Publicatie datum",
+    "collections": "Verzamelingen",
+    "tags": "Labels",
+    "bookDetails": "Boek details",
+    "added": "Toegevoegd",
+    "lastUpdated": "Laatst bijgewerkt",
+    "otherContributors": "Andere bijdragers",
+    "downloads": "Downloads",
+    "fileInformation": "Bestand informatie"
   }
 }

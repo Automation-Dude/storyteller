@@ -28,6 +28,7 @@
     "title": "Books"
   },
   "LibraryPage": {
+    "emptyState": "Select an item to see its books",
     "Series": {
       "plain": "Series",
       "by": "By Series"
@@ -306,5 +307,45 @@
       "en": "English",
       "nl": "Dutch"
     }
+  },
+  "BookDetailsPage": {
+    "bookNotFound": "Book not found",
+    "noDescriptionAvailable": "No description available",
+    "narratedBy": "narrated by",
+    "writtenBy": "by",
+    "edit": "Edit",
+    "deleteBook": "Delete book",
+    "saving": "Saving...",
+    "save": "Save",
+    "downloads": {
+      "downloadReadaloud": "Download Readaloud",
+      "downloadEbook": "Download Ebook",
+      "downloadAudiobook": "Download Audiobook"
+    },
+    "fileInformation": {
+      "readaloud": "Readaloud file",
+      "ebook": "Ebook file",
+      "audiobook": "Audiobook file",
+      "title": "File Information",
+      "lastAligned": "Last aligned",
+      "transcriptionEngine": "Transcription engine",
+      "storytellerVersion": "Storyteller version"
+    }
+  },
+
+  "Labels": {
+    "title": "Title",
+    "subtitle": "Subtitle",
+    "description": "Description",
+    "tags": "Tags",
+    "language": "Language",
+    "publicationDate": "Publication Date",
+    "collections": "Collections",
+    "bookDetails": "Book Details",
+    "added": "Added",
+    "lastUpdated": "Last Updated",
+    "otherContributors": "Other Contributors",
+    "downloads": "Downloads",
+    "fileInformation": "File Information"
   }
 }

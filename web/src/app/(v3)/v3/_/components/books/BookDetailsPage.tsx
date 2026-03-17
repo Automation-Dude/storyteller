@@ -14,15 +14,16 @@ import {
   IconFolder,
   IconHeadphones,
   IconLanguage,
-  IconRefresh,
   IconTag,
   IconUser,
   IconX,
 } from "@tabler/icons-react"
-import { useCallback, useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
+import { Fragment, useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import BookDetailsSkeleton from "@/app/(v3)/v3/(app)/books/[uuid]/loading"
 import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
@@ -53,10 +54,6 @@ import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
 import { Textarea } from "@v3/_/components/ui/textarea"
 import { V3Link } from "@v3/_/components/v3-link"
-
-import BookDetailsSkeleton from "@/app/(v3)/v3/(app)/books/[uuid]/loading"
-import { BookDoubleCover } from "./BookDoubleCover"
-import React from "react"
 
 const bookFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -162,7 +159,7 @@ function FormatBadges({ book }: { book: BookWithRelations }) {
   const hasEbook = book.ebook !== null
   const hasAudiobook = book.audiobook !== null
   const isSynced =
-    book.readaloud !== null && book.readaloud?.status === "ALIGNED"
+    book.readaloud !== null && book.readaloud.status === "ALIGNED"
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -226,6 +223,8 @@ export function BookDetailsContent({
   })
   const [updateBook, { isLoading: isSaving }] = useUpdateBookMutation()
   const [isEditing, setIsEditing] = useState(false)
+  const tLabels = useTranslations("Labels")
+  const t = useTranslations("BookDetailsPage")
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
   const canEdit = true === true
@@ -314,7 +313,7 @@ export function BookDetailsContent({
     if (compact) {
       return (
         <div className="flex flex-1 flex-col items-center justify-center p-6">
-          <h1 className="text-lg font-bold">Book not found</h1>
+          <h1 className="text-lg font-bold">{t("bookNotFound")}</h1>
         </div>
       )
     }
@@ -328,7 +327,7 @@ export function BookDetailsContent({
           ]}
         />
         <div className="flex-1 flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold">Book not found</h1>
+          <h1 className="text-2xl font-bold">{t("bookNotFound")}</h1>
         </div>
       </div>
     )
@@ -378,7 +377,7 @@ export function BookDetailsContent({
                 {isEditing ? (
                   <div className="flex flex-1 flex-col gap-3">
                     <div>
-                      <Label htmlFor="title">Title</Label>
+                      <Label htmlFor="title">{tLabels("title")}</Label>
                       <Input
                         id="title"
                         {...form.register("title")}
@@ -386,7 +385,7 @@ export function BookDetailsContent({
                       />
                     </div>
                     <div>
-                      <Label htmlFor="subtitle">Subtitle</Label>
+                      <Label htmlFor="subtitle">{tLabels("subtitle")}</Label>
                       <Input
                         id="subtitle"
                         {...form.register("subtitle")}
@@ -425,7 +424,7 @@ export function BookDetailsContent({
                           disabled={isSaving}
                         >
                           <IconCheck className="mr-1 h-4 w-4" />
-                          {isSaving ? "Saving..." : "Save"}
+                          {isSaving ? t("saving") : t("save")}
                         </Button>
                       </>
                     ) : (
@@ -437,7 +436,7 @@ export function BookDetailsContent({
                         }}
                       >
                         <IconEdit className="mr-1 h-4 w-4" />
-                        Edit
+                        {t("edit")}
                       </Button>
                     )}
                   </div>
@@ -446,18 +445,18 @@ export function BookDetailsContent({
 
               {/* authors */}
               {authors.length > 0 && (
-                <p className="text-muted-foreground mt-3 flex items-center gap-1 text-sm">
-                  <span>by</span>
+                <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-1 text-sm">
+                  <span>{t("writtenBy")}</span>
                   {authors.map((author, idx) => (
-                    <React.Fragment key={author.uuid}>
+                    <Fragment key={author.uuid}>
                       <V3Link
                         href={`/books?author=${author.uuid}`}
-                        className="hover:text-primary text-foreground line-clamp-1 inline font-medium break-all hover:underline"
+                        className="hover:text-primary text-foreground line-clamp-1 inline font-medium break-all hyphens-auto hover:underline"
                       >
                         {author.name}
                       </V3Link>
                       <span>{idx < authors.length - 1 && ", "}</span>
-                    </React.Fragment>
+                    </Fragment>
                   ))}
                 </p>
               )}
@@ -465,7 +464,7 @@ export function BookDetailsContent({
               {/* narrators */}
               {narrators.length > 0 && (
                 <div className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
-                  <span>narrated by</span>
+                  <span>{t("narratedBy")}</span>
                   {narrators.map((narrator, idx) => (
                     <span key={narrator.uuid}>
                       <span className="text-foreground">{narrator.name}</span>
@@ -501,7 +500,6 @@ export function BookDetailsContent({
                 />
               </div>
 
-              {/* spacer */}
               <div className="flex-1" />
 
               {/* bottom section: year + formats on left, status on right */}
@@ -514,13 +512,7 @@ export function BookDetailsContent({
                   )}
                   <FormatBadges book={book} />
                 </div>
-                <ReadingStatusButton
-                  book={book}
-                  canEdit={canDownload}
-                  onStatusChange={() => {
-                    // TODO: refetch
-                  }}
-                />
+                <ReadingStatusButton book={book} canEdit={canDownload} />
               </div>
             </div>
           </div>
@@ -531,7 +523,7 @@ export function BookDetailsContent({
           <section className="mb-8">
             {isEditing ? (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{tLabels("description")}</Label>
                 <Textarea
                   id="description"
                   {...form.register("description")}
@@ -541,7 +533,7 @@ export function BookDetailsContent({
             ) : book.description ? (
               <div>
                 <h2 className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
-                  Description
+                  {tLabels("description")}
                 </h2>
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none"
@@ -550,7 +542,7 @@ export function BookDetailsContent({
               </div>
             ) : (
               <p className="text-muted-foreground text-sm italic">
-                No description available
+                {t("noDescriptionAvailable")}
               </p>
             )}
           </section>
@@ -559,7 +551,7 @@ export function BookDetailsContent({
           <section className="mb-8">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
               <IconTag className="h-4 w-4" />
-              Tags
+              {tLabels("tags")}
             </h2>
             <TagEditor
               bookUuid={book.uuid}
@@ -578,7 +570,7 @@ export function BookDetailsContent({
           <section className="mb-8">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
               <IconFolder className="h-4 w-4" />
-              Collections
+              {tLabels("collections")}
             </h2>
             <CollectionEditor
               bookUuid={book.uuid}
@@ -597,12 +589,14 @@ export function BookDetailsContent({
 
           {/* metadata grid */}
           <section className="mb-8">
-            <h2 className="mb-4 text-sm font-medium">Book Details</h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="mb-4 text-sm font-medium">
+              {tLabels("bookDetails")}
+            </h2>
+            <div className="flex flex-wrap gap-4">
               {isEditing ? (
                 <>
                   <div>
-                    <Label htmlFor="language">Language</Label>
+                    <Label htmlFor="language">{tLabels("language")}</Label>
                     <Input
                       id="language"
                       {...form.register("language")}
@@ -610,7 +604,9 @@ export function BookDetailsContent({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="publicationDate">Publication Date</Label>
+                    <Label htmlFor="publicationDate">
+                      {tLabels("publicationDate")}
+                    </Label>
                     <Input
                       id="publicationDate"
                       type="date"
@@ -621,16 +617,22 @@ export function BookDetailsContent({
                 </>
               ) : (
                 <>
-                  <MetadataRow icon={IconLanguage} label="Language">
+                  <MetadataRow icon={IconLanguage} label={tLabels("language")}>
                     {book.language}
                   </MetadataRow>
-                  <MetadataRow icon={IconCalendar} label="Publication Date">
+                  <MetadataRow
+                    icon={IconCalendar}
+                    label={tLabels("publicationDate")}
+                  >
                     {book.publicationDate && formatDate(book.publicationDate)}
                   </MetadataRow>
-                  <MetadataRow icon={IconCalendar} label="Added">
+                  <MetadataRow icon={IconCalendar} label={tLabels("added")}>
                     {formatDate(book.createdAt)}
                   </MetadataRow>
-                  <MetadataRow icon={IconCalendar} label="Last Updated">
+                  <MetadataRow
+                    icon={IconCalendar}
+                    label={tLabels("lastUpdated")}
+                  >
                     {formatDate(book.updatedAt)}
                   </MetadataRow>
                 </>
@@ -644,7 +646,7 @@ export function BookDetailsContent({
             <section className="mb-8">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
                 <IconUser className="h-4 w-4" />
-                Other Contributors
+                {tLabels("otherContributors")}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {book.creators
@@ -670,7 +672,7 @@ export function BookDetailsContent({
               <section className="mb-8">
                 <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">
                   <IconDownload className="h-4 w-4" />
-                  Downloads
+                  {tLabels("downloads")}
                 </h2>
                 <div className="flex flex-wrap gap-3">
                   {book.readaloud?.filepath && (
@@ -679,7 +681,7 @@ export function BookDetailsContent({
                       render={
                         <V3Link href={getDownloadUrl(book.uuid, "readaloud")}>
                           <IconReadaloud className="text-st-orange-500 mr-2 h-4 w-4" />
-                          Download ReadAloud
+                          {t("downloads.downloadReadaloud")}
                         </V3Link>
                       }
                     />
@@ -690,7 +692,7 @@ export function BookDetailsContent({
                       render={
                         <V3Link href={getDownloadUrl(book.uuid, "ebook")}>
                           <IconBook className="mr-2 h-4 w-4" />
-                          Download Ebook
+                          {t("downloads.downloadEbook")}
                         </V3Link>
                       }
                     />
@@ -701,7 +703,7 @@ export function BookDetailsContent({
                       render={
                         <V3Link href={getDownloadUrl(book.uuid, "audiobook")}>
                           <IconHeadphones className="mr-2 h-4 w-4" />
-                          Download Audiobook
+                          {t("downloads.downloadAudiobook")}
                         </V3Link>
                       }
                     />
@@ -716,13 +718,13 @@ export function BookDetailsContent({
           <section className="mb-8">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">
               <IconFileText className="h-4 w-4" />
-              File Information
+              {t("fileInformation.title")}
             </h2>
             <div className="bg-muted/50 space-y-3 rounded-lg p-4">
               {book.readaloud?.filepath && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
-                    ReadAloud file
+                    {t("fileInformation.readaloud")}
                   </span>
                   <code className="text-sm break-all">
                     {book.readaloud.filepath}
@@ -732,7 +734,7 @@ export function BookDetailsContent({
               {book.ebook && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
-                    Ebook file
+                    {t("fileInformation.ebook")}
                   </span>
                   <code className="text-sm break-all">
                     {book.ebook.filepath}
@@ -742,7 +744,7 @@ export function BookDetailsContent({
               {book.audiobook && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
-                    Audiobook file
+                    {t("fileInformation.audiobook")}
                   </span>
                   <code className="text-sm break-all">
                     {book.audiobook.filepath}
@@ -752,7 +754,7 @@ export function BookDetailsContent({
               {book.alignedAt && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
-                    Last aligned
+                    {t("fileInformation.lastAligned")}
                   </span>
                   <span className="text-sm">{formatDate(book.alignedAt)}</span>
                 </div>
@@ -760,7 +762,7 @@ export function BookDetailsContent({
               {book.alignedWith && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
-                    Transcription engine
+                    {t("fileInformation.transcriptionEngine")}
                   </span>
                   <span className="text-sm">{book.alignedWith}</span>
                 </div>
@@ -768,7 +770,7 @@ export function BookDetailsContent({
               {book.alignedByStorytellerVersion && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
-                    Storyteller version
+                    {t("fileInformation.storytellerVersion")}
                   </span>
                   <span className="text-sm">
                     {book.alignedByStorytellerVersion}

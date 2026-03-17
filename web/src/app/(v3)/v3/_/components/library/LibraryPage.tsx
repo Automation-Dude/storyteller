@@ -10,9 +10,11 @@ import {
 } from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo, useState } from "react"
 
+import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
 import { useListBooksQuery } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
@@ -26,7 +28,6 @@ import {
 } from "@v3/_/components/library/library-sections"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
-import { Input } from "@v3/_/components/ui/input"
 import {
   PageContent,
   PageHeader,
@@ -40,7 +41,6 @@ import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
-import { SearchInput } from "../books/SearchInput"
 
 const noop = () => {}
 
@@ -72,6 +72,7 @@ export function LibraryPage({
   section,
   defaultSidebarSort = "name",
 }: LibraryPageProps) {
+  const t = useTranslations("LibraryPage")
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
 
@@ -237,9 +238,7 @@ export function LibraryPage({
         ) : (
           <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
             <IconSearch className="h-12 w-12 opacity-40" />
-            <p className="text-lg font-medium">
-              Select an item to see its books
-            </p>
+            <p className="text-lg font-medium">{t("emptyState")}</p>
           </div>
         )}
       </PageContent>
