@@ -1,146 +1,287 @@
-import { type Variants, motion, useAnimationControls } from "framer-motion"
-import { useRef, useState } from "react"
+"use client"
 
-import { getCoverUrl } from "@/store/api"
+import { motion, useAnimationControls, useMotionValue } from "framer-motion"
+import { useCallback, useEffect, useRef, useState } from "react"
+
 import { type BookWithRelations } from "@/database/books"
+import { getCoverUrl } from "@/store/api"
 
-type HoverState = "idle" | "separated" | "audiobook-front"
+import { FallbackCover } from "./BookCover"
+
+type CoverState = "idle" | "separated" | "audiobook-front"
+
+const SPRING = { type: "spring" as const, stiffness: 400, damping: 30 }
+
+const DPR =
+  typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
 
 interface Props {
   book: BookWithRelations
-  ebookWidth?: number
-  ebookHeight?: number
-  audiobookSize?: number
-  defaultFront?: "ebook" | "audiobook"
+  width?: number
 }
 
-const TRANSITION = {
-  type: "spring" as const,
-  stiffness: 300,
-  damping: 30,
+const IDLE = {
+  ebook: { x: "-8%", scale: 1 },
+  audiobook: { x: "8%", scale: 1 },
 }
 
-export function BookDoubleCover({
-  book,
-  ebookWidth = 147,
-  ebookHeight = 220,
-  audiobookSize = 147,
-  defaultFront = "ebook",
-}: Props) {
+const SEPARATED = {
+  ebook: { x: "-14%", scale: 0.78 },
+  audiobook: { x: "14%", scale: 0.78 },
+}
+
+const PEAK = {
+  ebook: { x: "-40%", scale: 0.8 },
+  audiobook: { x: "40%", scale: 0.88 },
+}
+
+const AUDIOBOOK_FRONT = {
+  ebook: { x: "0%", scale: 0.82 },
+  audiobook: { x: "0%", scale: 1.0 },
+}
+
+export function BookDoubleCover({ book, width = 300 }: Props) {
   const ebookControls = useAnimationControls()
   const audiobookControls = useAnimationControls()
 
-  const containerWidth = ebookWidth * 1.4
-  const containerHeight = ebookHeight
+  const stateRef = useRef<CoverState>("idle")
+  const genRef = useRef(0)
 
-  // position values
-  const [groupHover, setGroupHover] = useState(false)
-  const [audiobookHover, setAudiobookHover] = useState(false)
+  const [zState, setZState] = useState<"ebook-front" | "audiobook-front">(
+    "ebook-front",
+  )
 
-  const audiobookVariants = {
-    idle: {
-      transform: [
-        null,
-        "translate3d(60px, 0, 0px)",
-        "translate3d(0px, 0, -100px)",
-      ],
-    },
-    zoomedOut: {
-      transform: "translate3d(20px, 0, -100px)",
-    },
-    "audiobook-front": {
-      transform: [
-        null,
-        "translate3d(60px, 0, -100px)",
-        "translate3d(0px, 0, 100px)",
-      ],
-    },
-  } as const satisfies Variants
+  const transitionTo = useCallback(
+    async (target: CoverState) => {
+      const gen = ++genRef.current
+      const prev = stateRef.current
+      const stale = () => genRef.current !== gen
 
-  const ebookVariants = {
-    idle: {
-      transform: [null, "translate3d(-60px, 0, 0px)", "translate3d(0, 0, 0px)"],
-    },
-    zoomedOut: {
-      transform: "translate3d(-20px, 0, 0px)",
-    },
-    "ebook-front": {
-      transform: [
-        null,
-        "translate3d(-60px, 0, 0px)",
-        "translate3d(0, 0, -100px)",
-      ],
-    },
-  } as const satisfies Variants
+      if (prev === target) return
+      stateRef.current = target
 
-  console.log("groupHover", groupHover)
-  console.log("audiobookHover", audiobookHover)
+      if (target === "separated") {
+        await Promise.all([
+          ebookControls.start({ ...SEPARATED.ebook, transition: SPRING }),
+          audiobookControls.start({
+            ...SEPARATED.audiobook,
+            transition: SPRING,
+          }),
+        ])
+
+        return
+      }
+
+      if (target === "audiobook-front") {
+        await Promise.all([
+          ebookControls.start({
+            ...PEAK.ebook,
+            transition: {
+              type: "tween",
+              duration: 0.2,
+              ease: "easeIn",
+            },
+          }),
+          audiobookControls.start({
+            ...PEAK.audiobook,
+            transition: {
+              type: "tween",
+              duration: 0.2,
+              ease: "easeIn",
+            },
+          }),
+        ])
+        if (stale()) return
+
+        setZState("audiobook-front")
+
+        await Promise.all([
+          ebookControls.start({
+            ...AUDIOBOOK_FRONT.ebook,
+            transition: {
+              type: "tween",
+              duration: 0.3,
+              ease: "easeOut",
+            },
+          }),
+          audiobookControls.start({
+            ...AUDIOBOOK_FRONT.audiobook,
+            transition: {
+              type: "tween",
+              duration: 0.3,
+              ease: "easeOut",
+            },
+          }),
+        ])
+
+        return
+      }
+
+      if (prev === "audiobook-front") {
+        await Promise.all([
+          ebookControls.start({
+            ...PEAK.ebook,
+            transition: {
+              type: "tween",
+              duration: 0.3,
+              ease: "easeOut",
+            },
+          }),
+          audiobookControls.start({
+            ...PEAK.audiobook,
+            transition: {
+              type: "tween",
+              duration: 0.3,
+              ease: "easeOut",
+            },
+          }),
+        ])
+        if (stale()) return
+
+        setZState("ebook-front")
+      }
+
+      await Promise.all([
+        ebookControls.start({
+          ...IDLE.ebook,
+          transition: {
+            type: "tween",
+            duration: 0.3,
+            ease: "easeOut",
+          },
+        }),
+        audiobookControls.start({
+          ...IDLE.audiobook,
+          transition: {
+            type: "tween",
+            duration: 0.3,
+            ease: "easeOut",
+          },
+        }),
+      ])
+    },
+    [ebookControls, audiobookControls],
+  )
+
+  const [ebookError, setEbookError] = useState(false)
+  const [audiobookError, setAudiobookError] = useState(false)
+
+  const ebookZ = useMotionValue(20)
+  const audiobookZ = useMotionValue(10)
+
+  useEffect(() => {
+    if (zState === "ebook-front") {
+      ebookZ.set(20)
+      audiobookZ.set(10)
+    } else {
+      ebookZ.set(10)
+      audiobookZ.set(20)
+    }
+  }, [zState, ebookZ, audiobookZ])
+
+  const scaledWidth = Math.round(width * DPR)
+  const scaledHeight = Math.round(width * 1.5 * DPR)
+
+  const ebookUrl = getCoverUrl(book.uuid, {
+    width: scaledWidth,
+    height: scaledHeight,
+    audio: false,
+    updatedAt: book.ebook?.updatedAt ?? book.updatedAt,
+  })
+
+  const audiobookUrl = getCoverUrl(book.uuid, {
+    width: scaledWidth,
+    height: scaledWidth,
+    audio: true,
+    updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
+  })
+
   return (
     <motion.div
-      className="relative z-10"
-      style={{
-        width: containerWidth,
-
-        height: containerHeight,
-        transformStyle: "preserve-3d",
-        perspective: "2000px",
-      }}
+      className="group/covers relative h-full w-full"
       onHoverStart={() => {
-        setGroupHover(true)
+        if (stateRef.current === "idle") {
+          void transitionTo("separated")
+        }
       }}
       onHoverEnd={() => {
-        setGroupHover(false)
-        setAudiobookHover(false)
+        void transitionTo("idle")
       }}
     >
-      <motion.img
-        variants={audiobookVariants}
-        src={getCoverUrl(book.uuid, {
-          width: audiobookSize,
-          height: audiobookSize,
-          audio: true,
-        })}
-        alt=""
-        aria-hidden
-        height={audiobookSize}
-        width={audiobookSize}
-        className="pointer-events-none absolute rounded-md shadow-md"
-        style={{
-          top: (containerHeight - audiobookSize) / 2,
-          right: 0,
-        }}
-        initial={"idle"}
-        animate={
-          audiobookHover
-            ? "audiobook-front"
-            : groupHover
-              ? "zoomedOut"
-              : undefined
-        }
-        onPointerEnter={() => {
-          setAudiobookHover(true)
-          setGroupHover(true)
-        }}
-        // onHoverStart={() => {
-        //   setAudiobookHover(true)
-        //   setGroupHover(true)
-        // }}
-      />
-      <motion.img
-        src={getCoverUrl(book.uuid, {
-          width: ebookWidth,
-          height: ebookHeight,
-        })}
-        alt={book.title}
-        variants={ebookVariants}
-        height={ebookHeight}
-        width={ebookWidth}
-        className="absolute top-0 left-0 rounded-md shadow-md"
-        initial={"idle"}
-        animate={
-          audiobookHover ? "ebook-front" : groupHover ? "zoomedOut" : undefined
-        }
-      />
+      {!audiobookError ? (
+        <motion.img
+          src={audiobookUrl}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="absolute inset-0 m-auto rounded-lg object-cover shadow-md ring-orange-400 transition-shadow group-hover/covers:ring-2"
+          style={{
+            width: "82%",
+            aspectRatio: "1 / 1",
+            zIndex: audiobookZ,
+          }}
+          initial={IDLE.audiobook}
+          animate={audiobookControls}
+          onPointerEnter={() => {
+            const current = stateRef.current
+            if (current === "separated" || current === "idle") {
+              void transitionTo("audiobook-front")
+            }
+          }}
+          onError={() => {
+            setAudiobookError(true)
+          }}
+        />
+      ) : (
+        <motion.div
+          className="absolute inset-0 m-auto rounded-lg object-cover shadow-md ring-orange-400 transition-shadow group-hover/covers:ring-2"
+          style={{
+            width: "82%",
+            aspectRatio: "1 / 1",
+            zIndex: audiobookZ,
+          }}
+          initial={IDLE.audiobook}
+          animate={audiobookControls}
+          onPointerEnter={() => {
+            const current = stateRef.current
+            if (current === "separated" || current === "idle") {
+              void transitionTo("audiobook-front")
+            }
+          }}
+        >
+          <FallbackCover title={book.title} type="audiobook" />
+        </motion.div>
+      )}
+
+      {!ebookError ? (
+        <motion.img
+          src={ebookUrl}
+          alt={book.title}
+          loading="lazy"
+          className="absolute inset-0 m-auto rounded-lg object-cover shadow-md ring-orange-400 transition-shadow group-hover/covers:ring-2"
+          style={{
+            width: "82%",
+            aspectRatio: "2 / 3",
+            zIndex: ebookZ,
+          }}
+          initial={IDLE.ebook}
+          animate={ebookControls}
+          onError={() => {
+            setEbookError(true)
+          }}
+        />
+      ) : (
+        <motion.div
+          className="absolute inset-0 m-auto rounded-lg object-cover shadow-md ring-orange-400 transition-shadow group-hover/covers:ring-2"
+          style={{
+            width: "82%",
+            aspectRatio: "2 / 3",
+            zIndex: ebookZ,
+          }}
+        >
+          <FallbackCover title={book.title} type="ebook" />
+        </motion.div>
+      )}
     </motion.div>
   )
 }

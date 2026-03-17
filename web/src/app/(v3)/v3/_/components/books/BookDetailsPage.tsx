@@ -358,20 +358,15 @@ export function BookDetailsContent({
           >
             <div
               className={cn(
-                "shrink-0 rounded-lg",
+                "flex shrink-0 flex-col items-center justify-center rounded-lg",
                 compact
-                  ? "mx-auto h-64 w-60"
-                  : "flex h-80 w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
+                  ? "mx-auto h-80 w-60"
+                  : "flex w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
               )}
             >
-              {/* <BookCover
+              <BookCover
                 book={book}
                 width={compact ? 176 : 200}
-                key={book.uuid}
-              /> */}
-              <BookDoubleCover
-                book={book}
-                // width={compact ? 176 : 200}
                 key={book.uuid}
               />
             </div>

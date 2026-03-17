@@ -7,7 +7,7 @@ import { type BookWithRelations } from "@/database/books"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
 
-import { BookCover } from "./BookCover"
+import { BookCover, isDualFormat } from "./BookCover"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -40,6 +40,7 @@ export const BookCard = memo(function BookCard({
   const hasAudiobook = book.audiobook !== null
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
+  const hasDualFormat = isDualFormat(book)
 
   const authors = book.authors
   const narrators = book.narrators
@@ -64,7 +65,14 @@ export const BookCard = memo(function BookCard({
 
   const cardContent = (
     <>
-      <div className="bg-muted relative aspect-2/3 overflow-hidden rounded-lg shadow-md transition-shadow group-hover:shadow-xl">
+      <div
+        className={cn(
+          "relative flex aspect-2/3 flex-col items-center justify-center transition-shadow",
+          hasDualFormat
+            ? "bg-muted overflow-visible rounded-lg shadow-md"
+            : "bg-muted overflow-hidden rounded-lg shadow-md group-hover:shadow-xl",
+        )}
+      >
         <BookCover book={book} width={300} />
 
         {showCheckbox && (
@@ -101,7 +109,7 @@ export const BookCard = memo(function BookCard({
         )}
 
         {primarySeries && (
-          <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/80 to-transparent px-2 pt-6 pb-2">
+          <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/30 via-black/10 to-transparent px-2 pt-6 pb-2">
             <span className="line-clamp-1 text-xs font-medium text-white/90">
               {primarySeries.name}
               {primarySeries.position && ` #${primarySeries.position}`}
@@ -120,12 +128,7 @@ export const BookCard = memo(function BookCard({
       </div>
 
       <div className="mt-2 flex flex-col gap-0.5 px-1">
-        <h3
-          className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-medium"
-          style={{
-            viewTransitionName: `book-title-${book.uuid}`,
-          }}
-        >
+        <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-medium">
           {book.title}
         </h3>
 
@@ -135,11 +138,11 @@ export const BookCard = memo(function BookCard({
           </p>
         )}
 
-        {narrators.length > 0 && hasAudiobook && (
+        {/* {narrators.length > 0 && hasAudiobook && (
           <p className="text-muted-foreground/70 line-clamp-1 text-xs">
             Narrated by {narrators.map((n) => n.name).join(", ")}
           </p>
-        )}
+        )} */}
       </div>
     </>
   )
@@ -169,6 +172,7 @@ export const BookCard = memo(function BookCard({
 
   return onClick ? (
     <div
+      key={book.uuid}
       onClick={() => {
         onClick(book)
       }}
