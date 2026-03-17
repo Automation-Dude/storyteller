@@ -1,8 +1,4 @@
-import {
-  IconBook,
-  IconBookFilled,
-  IconHeadphonesFilled,
-} from "@tabler/icons-react"
+import { IconBookFilled, IconHeadphonesFilled } from "@tabler/icons-react"
 import { motion } from "framer-motion"
 import { useState } from "react"
 
@@ -10,6 +6,7 @@ import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
 import { BookDoubleCover } from "./BookDoubleCover"
+import { cn } from "@/cn"
 
 // request 2x resolution for sharp rendering on retina/high-dpi screens
 const DPR =
@@ -59,7 +56,7 @@ export function BookCover({
 
   if (hasAudiobook && !hasEbook) {
     return (
-      <div className="p-3">
+      <div className="w-full p-3">
         <div className="aspect-square w-full overflow-hidden rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-105">
           {!audiobookError ? (
             <motion.img
@@ -72,7 +69,7 @@ export function BookCover({
               className="h-full w-full rounded-lg object-cover"
             />
           ) : (
-            <FallbackCover title={book.title} type="audiobook" width={width} />
+            <FallbackCover title={book.title} type="audiobook" />
           )}
         </div>
       </div>
@@ -90,7 +87,7 @@ export function BookCover({
         onError={() => {
           setEbookError(true)
         }}
-        className="h-full w-full rounded-lg object-cover"
+        className="h-full w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
       />
     )
   }
@@ -101,25 +98,27 @@ export function BookCover({
 export function FallbackCover({
   title,
   type,
-  width,
+  className,
 }: {
   title: string
   type: "audiobook" | "ebook"
-  width: number
+  className?: string
 }) {
   return (
     <motion.div
-      className="from-primary/10 to-primary/5 relative flex flex-col items-center justify-center gap-2 overflow-clip rounded-lg bg-gradient-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']"
-      style={{ width: width, height: width * 1.5 }}
+      className={cn(
+        "from-primary/10 to-primary/5 relative flex h-full w-full flex-col items-center justify-center gap-2 overflow-clip rounded-lg bg-gradient-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']",
+        className,
+      )}
     >
       {type === "audiobook" ? (
         <IconHeadphonesFilled className="text-muted-foreground/50 h-12 w-12" />
       ) : (
         <IconBookFilled className="text-muted-foreground/50 h-12 w-12" />
       )}
-      <span className="text-muted-foreground line-clamp-2 text-sm font-medium">
+      <h3 className="text-muted-foreground line-clamp-2 max-w-full text-center text-sm font-medium">
         {title}
-      </span>
+      </h3>
     </motion.div>
   )
 }

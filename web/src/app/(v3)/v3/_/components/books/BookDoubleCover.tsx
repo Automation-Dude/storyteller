@@ -36,8 +36,8 @@ const PEAK = {
 }
 
 const AUDIOBOOK_FRONT = {
-  ebook: { x: "0%", scale: 0.82 },
-  audiobook: { x: "0%", scale: 1.0 },
+  ebook: { x: "-8%", scale: 1 },
+  audiobook: { x: "8%", scale: 1 },
 }
 
 export function BookDoubleCover({ book, width = 300 }: Props) {

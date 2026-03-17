@@ -58,8 +58,8 @@ export const BookCard = memo(function BookCard({
         className={cn(
           "relative flex aspect-2/3 flex-col items-center justify-center transition-shadow",
           hasDualFormat
-            ? "overflow-visible rounded-lg"
-            : "bg-muted overflow-hidden rounded-lg shadow-md group-hover:shadow-xl",
+            ? "overflow-x-visible overflow-y-clip rounded-lg"
+            : "overflow-hidden rounded-lg",
         )}
       >
         <BookCover book={book} width={300} />
@@ -89,16 +89,30 @@ export const BookCard = memo(function BookCard({
         )}
 
         {isSynced && (
-          <div className="absolute top-2 right-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500 shadow-md">
+          <div className="absolute top-6 right-0">
+            <div className="flex size-6 items-center justify-center rounded-full bg-orange-500 shadow-md">
               <IconReadaloud className="size-6 text-white" />
             </div>
           </div>
         )}
 
         {primarySeries && (
-          <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/30 via-black/10 to-transparent px-2 pt-6 pb-2">
-            <span className="line-clamp-1 text-xs font-medium text-white/90">
+          <div
+            className={cn(
+              "absolute right-0 bottom-0 left-0 px-1 pt-6 pb-1",
+              hasDualFormat && "rounded-b-lg",
+              // only for epub only
+              // TODO: make this dependent on a setting
+              !book.audiobook &&
+                "bg-linear-to-t from-black/30 via-black/10 to-transparent",
+            )}
+          >
+            <span
+              className={cn(
+                "text-muted-foreground line-clamp-1 text-xs font-medium",
+                !book.audiobook && "text-white/90",
+              )}
+            >
               {primarySeries.name}
               {primarySeries.position && ` #${primarySeries.position}`}
             </span>
@@ -124,12 +138,6 @@ export const BookCard = memo(function BookCard({
         <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-medium">
           {book.title}
         </h3>
-
-        {/* {narrators.length > 0 && hasAudiobook && (
-          <p className="text-muted-foreground/70 line-clamp-1 text-xs">
-            Narrated by {narrators.map((n) => n.name).join(", ")}
-          </p>
-        )} */}
       </div>
     </>
   )
