@@ -56,7 +56,7 @@ export const BookCard = memo(function BookCard({
     <>
       <div
         className={cn(
-          "relative flex aspect-2/3 flex-col items-center justify-center transition-shadow",
+          "relative flex aspect-[6/8] flex-col items-center justify-center transition-shadow",
           hasDualFormat
             ? "overflow-x-visible overflow-y-clip rounded-lg"
             : "overflow-hidden rounded-lg",
@@ -89,7 +89,7 @@ export const BookCard = memo(function BookCard({
         )}
 
         {isSynced && (
-          <div className="absolute top-6 right-0">
+          <div className="absolute top-3 right-0">
             <div className="flex size-6 items-center justify-center rounded-full bg-orange-500 shadow-md">
               <IconReadaloud className="size-6 text-white" />
             </div>
@@ -99,18 +99,15 @@ export const BookCard = memo(function BookCard({
         {primarySeries && (
           <div
             className={cn(
-              "absolute right-0 bottom-0 left-0 px-1 pt-6 pb-1",
+              "absolute right-0 bottom-0 left-0 z-20 px-2 pt-6 pb-2",
+              "bg-linear-to-t from-black/50 via-black/20 to-transparent",
               hasDualFormat && "rounded-b-lg",
-              // only for epub only
-              // TODO: make this dependent on a setting
-              !book.audiobook &&
-                "bg-linear-to-t from-black/30 via-black/10 to-transparent",
             )}
           >
             <span
               className={cn(
                 "text-muted-foreground line-clamp-1 text-xs font-medium",
-                !book.audiobook && "text-white/90",
+                "text-white/90",
               )}
             >
               {primarySeries.name}

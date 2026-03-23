@@ -21,8 +21,8 @@ interface Props {
 }
 
 const IDLE = {
-  ebook: { x: "-8%", scale: 1 },
-  audiobook: { x: "8%", scale: 1 },
+  ebook: { x: "-10%", scale: 1 },
+  audiobook: { x: "10%", scale: 1 },
 }
 
 const SEPARATED = {
@@ -36,8 +36,8 @@ const PEAK = {
 }
 
 const AUDIOBOOK_FRONT = {
-  ebook: { x: "-8%", scale: 1 },
-  audiobook: { x: "8%", scale: 1 },
+  ebook: { x: "-10%", scale: 1 },
+  audiobook: { x: "10%", scale: 1 },
 }
 
 export function BookDoubleCover({ book, width = 300 }: Props) {
@@ -197,14 +197,14 @@ export function BookDoubleCover({ book, width = 300 }: Props) {
   })
 
   return (
-    <motion.div
+    <div
       className="group/covers relative h-full w-full"
-      onHoverStart={() => {
+      onMouseEnter={() => {
         if (stateRef.current === "idle") {
           void transitionTo("separated")
         }
       }}
-      onHoverEnd={() => {
+      onMouseLeave={() => {
         void transitionTo("idle")
       }}
     >
@@ -273,6 +273,8 @@ export function BookDoubleCover({ book, width = 300 }: Props) {
       ) : (
         <motion.div
           className="absolute inset-0 m-auto rounded-lg object-cover shadow-md ring-orange-400 transition-shadow group-hover/covers:ring-2"
+          initial={IDLE.ebook}
+          animate={ebookControls}
           style={{
             width: "82%",
             aspectRatio: "2 / 3",
@@ -282,6 +284,6 @@ export function BookDoubleCover({ book, width = 300 }: Props) {
           <FallbackCover title={book.title} type="ebook" />
         </motion.div>
       )}
-    </motion.div>
+    </div>
   )
 }

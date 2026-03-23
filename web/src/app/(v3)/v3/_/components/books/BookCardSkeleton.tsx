@@ -1,4 +1,4 @@
-import { Skeleton } from "../ui/skeleton"
+import { Skeleton } from "@v3/_/components/ui/skeleton"
 
 export function BookCardSkeleton() {
   return (

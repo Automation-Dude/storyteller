@@ -2,11 +2,11 @@ import { IconBookFilled, IconHeadphonesFilled } from "@tabler/icons-react"
 import { motion } from "framer-motion"
 import { useState } from "react"
 
+import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
 import { BookDoubleCover } from "./BookDoubleCover"
-import { cn } from "@/cn"
 
 // request 2x resolution for sharp rendering on retina/high-dpi screens
 const DPR =
@@ -59,7 +59,7 @@ export function BookCover({
       <div className="w-full p-3">
         <div className="aspect-square w-full overflow-hidden rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-105">
           {!audiobookError ? (
-            <motion.img
+            <img
               src={audiobookCoverUrl}
               alt={book.title}
               loading="lazy"
@@ -78,21 +78,23 @@ export function BookCover({
 
   if (!ebookError) {
     return (
-      <motion.img
-        src={ebookCoverUrl}
-        alt={book.title}
-        height={width * 1.5}
-        width={width}
-        loading="lazy"
-        onError={() => {
-          setEbookError(true)
-        }}
-        className="h-full w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
-      />
+      <p className="h-full w-full p-2">
+        <img
+          src={ebookCoverUrl}
+          alt={book.title}
+          height={width * 1.5}
+          width={width}
+          loading="lazy"
+          onError={() => {
+            setEbookError(true)
+          }}
+          className="h-full w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </p>
     )
   }
 
-  return <FallbackCover title={book.title} type="ebook" width={width} />
+  return <FallbackCover title={book.title} type="ebook" />
 }
 
 export function FallbackCover({
