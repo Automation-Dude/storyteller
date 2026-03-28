@@ -370,9 +370,7 @@ export function BookDetailsContent({
               />
             </div>
 
-            {/* info */}
             <div className="flex flex-1 flex-col">
-              {/* title row with edit toggle */}
               <div className="flex items-start justify-between gap-4">
                 {isEditing ? (
                   <div className="flex flex-1 flex-col gap-3">
@@ -395,7 +393,7 @@ export function BookDetailsContent({
                   </div>
                 ) : (
                   <div className="flex-1">
-                    <h1 className="font-heading text-3xl font-bold tracking-tight">
+                    <h1 className="font-heading text-xl font-semibold">
                       {book.title}
                     </h1>
                     {book.subtitle && (
@@ -406,7 +404,7 @@ export function BookDetailsContent({
                   </div>
                 )}
 
-                {canEdit && (
+                {canEdit && !compact && (
                   <div className="flex shrink-0 items-center gap-2">
                     {isEditing ? (
                       <>
@@ -443,7 +441,6 @@ export function BookDetailsContent({
                 )}
               </div>
 
-              {/* authors */}
               {authors.length > 0 && (
                 <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-1 text-sm">
                   <span>{t("writtenBy")}</span>
@@ -461,7 +458,6 @@ export function BookDetailsContent({
                 </p>
               )}
 
-              {/* narrators */}
               {narrators.length > 0 && (
                 <div className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
                   <span>{t("narratedBy")}</span>
@@ -483,7 +479,6 @@ export function BookDetailsContent({
                 />
               </div>
 
-              {/* series - with hover edit */}
               <div className="mt-4">
                 <SeriesEditor
                   bookUuid={book.uuid}
@@ -502,7 +497,6 @@ export function BookDetailsContent({
 
               <div className="flex-1" />
 
-              {/* bottom section: year + formats on left, status on right */}
               <div className="mt-6 flex items-center justify-between border-t pt-4">
                 <div className="flex flex-wrap items-center gap-4">
                   {book.publicationDate && !isEditing && (
@@ -519,7 +513,6 @@ export function BookDetailsContent({
 
           <Separator className="my-8" />
 
-          {/* description */}
           <section className="mb-8">
             {isEditing ? (
               <div className="flex flex-col gap-1.5">
@@ -547,7 +540,6 @@ export function BookDetailsContent({
             )}
           </section>
 
-          {/* tags - with hover edit */}
           <section className="mb-8">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
               <IconTag className="h-4 w-4" />
@@ -566,7 +558,6 @@ export function BookDetailsContent({
             />
           </section>
 
-          {/* collections - with hover edit */}
           <section className="mb-8">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
               <IconFolder className="h-4 w-4" />

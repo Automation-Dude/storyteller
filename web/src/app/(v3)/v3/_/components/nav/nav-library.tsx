@@ -3,8 +3,6 @@
 import { type TablerIcon } from "@tabler/icons-react"
 import { usePathname } from "next/navigation"
 
-import { type CountResult } from "@v3/_/hooks/use-library-counts"
-
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -15,6 +13,7 @@ import {
   SidebarMenuItem,
 } from "@v3/_/components/ui/sidebar"
 import { V3Link } from "@v3/_/components/v3-link"
+import { type CountResult } from "@v3/_/hooks/use-library-counts"
 
 export type NavLibraryItem = {
   title: string
@@ -37,7 +36,9 @@ export function NavLibrary({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupLabel className="font-sans text-xs font-semibold uppercase">
+        {label}
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className="gap-1">
           {items.map((item) => {
@@ -60,9 +61,7 @@ export function NavLibrary({
                     </V3Link>
                   }
                 />
-                {count != null && (
-                  <SidebarMenuBadge>{count}</SidebarMenuBadge>
-                )}
+                {count != null && <SidebarMenuBadge>{count}</SidebarMenuBadge>}
               </SidebarMenuItem>
             )
           })}

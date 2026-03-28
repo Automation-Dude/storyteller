@@ -288,7 +288,7 @@ export function AppSidebar({
             alt="Storyteller"
             className="size-7 shrink-0"
           />
-          <span className="font-heading w-auto text-base font-semibold opacity-100 transition-all duration-200 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+          <span className="font-heading w-auto text-base opacity-100 transition-all duration-200 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
             Storyteller
           </span>
         </V3Link>
