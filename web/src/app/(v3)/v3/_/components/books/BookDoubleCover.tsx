@@ -18,6 +18,7 @@ const DPR =
 interface Props {
   book: BookWithRelations
   width?: number
+  disableHover?: boolean
 }
 
 const IDLE = {
@@ -40,7 +41,11 @@ const AUDIOBOOK_FRONT = {
   audiobook: { x: "10%", scale: 1 },
 }
 
-export function BookDoubleCover({ book, width = 300 }: Props) {
+export function BookDoubleCover({
+  book,
+  width = 300,
+  disableHover = false,
+}: Props) {
   const ebookControls = useAnimationControls()
   const audiobookControls = useAnimationControls()
 
@@ -200,11 +205,14 @@ export function BookDoubleCover({ book, width = 300 }: Props) {
     <div
       className="group/covers relative h-full w-full"
       onMouseEnter={() => {
+        if (disableHover) return
+
         if (stateRef.current === "idle") {
           void transitionTo("separated")
         }
       }}
       onMouseLeave={() => {
+        if (disableHover) return
         void transitionTo("idle")
       }}
     >
@@ -223,6 +231,8 @@ export function BookDoubleCover({ book, width = 300 }: Props) {
           initial={IDLE.audiobook}
           animate={audiobookControls}
           onPointerEnter={() => {
+            if (disableHover) return
+
             const current = stateRef.current
             if (current === "separated" || current === "idle") {
               void transitionTo("audiobook-front")
@@ -243,6 +253,8 @@ export function BookDoubleCover({ book, width = 300 }: Props) {
           initial={IDLE.audiobook}
           animate={audiobookControls}
           onPointerEnter={() => {
+            if (disableHover) return
+
             const current = stateRef.current
             if (current === "separated" || current === "idle") {
               void transitionTo("audiobook-front")

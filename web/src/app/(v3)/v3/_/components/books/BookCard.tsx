@@ -62,7 +62,7 @@ export const BookCard = memo(function BookCard({
             : "overflow-hidden rounded-lg",
         )}
       >
-        <BookCover book={book} width={300} />
+        <BookCover book={book} width={300} disableHover={isSelecting} />
 
         {showCheckbox && (
           <div

@@ -22,9 +22,11 @@ export function isDualFormat(book: BookWithRelations): boolean {
 export function BookCover({
   book,
   width,
+  disableHover = false,
 }: {
   book: BookWithRelations
   width: number
+  disableHover?: boolean
 }) {
   const [audiobookError, setAudiobookError] = useState(false)
   const [ebookError, setEbookError] = useState(false)
@@ -51,13 +53,20 @@ export function BookCover({
   })
 
   if (isDualFormat(book)) {
-    return <BookDoubleCover book={book} width={width} />
+    return (
+      <BookDoubleCover book={book} width={width} disableHover={disableHover} />
+    )
   }
 
   if (hasAudiobook && !hasEbook) {
     return (
       <div className="w-full p-3">
-        <div className="aspect-square w-full overflow-hidden rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-105">
+        <div
+          className={cn(
+            "aspect-square w-full overflow-hidden rounded-lg shadow-lg transition-transform duration-300",
+            !disableHover && "group-hover:scale-105",
+          )}
+        >
           {!audiobookError ? (
             <img
               src={audiobookCoverUrl}
@@ -88,7 +97,10 @@ export function BookCover({
           onError={() => {
             setEbookError(true)
           }}
-          className="h-full w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
+          className={cn(
+            "h-full w-full rounded-lg object-cover transition-transform duration-300",
+            !disableHover && "group-hover:scale-105",
+          )}
         />
       </p>
     )

@@ -1,20 +1,15 @@
 import {
   IconArrowDown,
   IconArrowUp,
-  IconBadge,
   IconBook,
-  IconBookmark,
   IconFilter,
   IconHeadphones,
   IconRefresh,
-  IconSearch,
-  IconX,
 } from "@tabler/icons-react"
 import { useState } from "react"
 
 import { Badge } from "@/app/(v3)/v3/_/components/ui/badge"
 import { Button } from "@/app/(v3)/v3/_/components/ui/button"
-import { Input } from "@/app/(v3)/v3/_/components/ui/input"
 import {
   Popover,
   PopoverContent,
@@ -222,8 +217,8 @@ export function BookFilters({
   // }
 
   return (
-    <div className="bg-background/95 sticky top-0 z-50 backdrop-blur">
-      <div className="flex flex-col gap-3 px-4 py-1 sm:flex-row sm:items-center sm:justify-between">
+    <div className="bg-background/95 sticky top-0 z-50 mx-1 backdrop-blur">
+      <div className="flex flex-col gap-3 px-3 py-1 sm:flex-row sm:items-center sm:justify-between">
         <SearchInput
           placeholder="Search books, authors, series..."
           value={state.searchInput}
@@ -284,7 +279,7 @@ export function BookFilters({
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All Collections" />
+                          <SelectValue>All Collections</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Collections</SelectItem>
@@ -314,7 +309,7 @@ export function BookFilters({
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All Series" />
+                          <SelectValue>All Series</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Series</SelectItem>
@@ -375,7 +370,13 @@ export function BookFilters({
               className="w-[120px] border-0 bg-transparent"
               size="sm"
             >
-              <SelectValue />
+              <SelectValue>
+                {
+                  sortFieldOptions.find(
+                    (option) => option.value === state.sortField,
+                  )?.label
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {sortFieldOptions.map((option) => (
