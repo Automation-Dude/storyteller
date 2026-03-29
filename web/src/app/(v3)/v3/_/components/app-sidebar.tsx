@@ -191,49 +191,49 @@ export function AppSidebar({
 
   const libraryNav: NavLibraryItem[] = [
     {
-      title: tLibrary("Series.by"),
+      title: tLibrary("Series.plain"),
       url: "/series",
       icon: IconList,
       countKey: "series",
     },
     {
-      title: tLibrary("Authors.by"),
+      title: tLibrary("Authors.plain"),
       url: "/authors",
       icon: IconUser,
       countKey: "authors",
     },
     {
-      title: tLibrary("Narrators.by"),
+      title: tLibrary("Narrators.plain"),
       url: "/narrators",
       icon: IconMicrophone2,
       countKey: "narrators",
     },
     {
-      title: tLibrary("Translators.by"),
+      title: tLibrary("Translators.plain"),
       url: "/translators",
       icon: IconLanguage,
       countKey: "translators",
     },
     {
-      title: tLibrary("Tags.by"),
+      title: tLibrary("Tags.plain"),
       url: "/tags",
       icon: IconTag,
       countKey: "tags",
     },
     {
-      title: tLibrary("PublicationYear.by"),
+      title: tLibrary("PublicationYear.plain"),
       url: "/publication-years",
       icon: IconCalendar,
       countKey: "publicationYears",
     },
     {
-      title: tLibrary("Rating.by"),
+      title: tLibrary("Rating.plain"),
       url: "/ratings",
       icon: IconStar,
       countKey: "ratings",
     },
     {
-      title: tLibrary("Status.by"),
+      title: tLibrary("Status.plain"),
       url: "/statuses",
       icon: IconCircleCheck,
       countKey: "statuses",
