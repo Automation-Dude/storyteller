@@ -6,12 +6,14 @@ import { Skeleton } from "@v3/_/components/ui/skeleton"
 export const BookDetailsSkeleton = ({ compact }: { compact?: boolean }) => {
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader
-        breadcrumbs={[
-          { label: "Books", url: "/books" },
-          { label: "Loading..." },
-        ]}
-      />
+      {!compact && (
+        <SiteHeader
+          breadcrumbs={[
+            { label: "Books", url: "/books" },
+            { label: "Loading..." },
+          ]}
+        />
+      )}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl p-6">
           <div
@@ -20,7 +22,12 @@ export const BookDetailsSkeleton = ({ compact }: { compact?: boolean }) => {
               compact ? "flex-col" : "md:flex-row",
             )}
           >
-            <Skeleton className="h-80 w-52 shrink-0 rounded-lg" />
+            <Skeleton
+              className={cn(
+                "h-80 w-52 shrink-0 rounded-lg",
+                compact ? "mx-auto" : "",
+              )}
+            />
             <div className="flex flex-1 flex-col gap-4">
               <Skeleton className="h-10 w-3/4" />
               <Skeleton className="h-6 w-1/2" />

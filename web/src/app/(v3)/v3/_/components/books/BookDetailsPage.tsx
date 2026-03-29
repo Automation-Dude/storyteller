@@ -305,7 +305,7 @@ export function BookDetailsContent({
   if (isLoadingBook) {
     if (compact) {
       return (
-        <div className="flex flex-1 items-center justify-center p-6">
+        <div className="flex flex-1 items-center justify-center">
           <BookDetailsSkeleton compact={compact} />
         </div>
       )
@@ -395,7 +395,12 @@ export function BookDetailsContent({
               compact ? "flex-col" : "flex-col md:flex-row",
             )}
           >
-            <div className="flex h-80 w-52 items-center justify-center">
+            <div
+              className={cn(
+                "flex h-80 w-52 items-center justify-center",
+                compact ? "mx-auto" : "",
+              )}
+            >
               <Dialog>
                 <DialogTrigger
                   className={cn(

@@ -19,6 +19,7 @@ import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
+import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { type HeaderAction } from "@v3/_/components/header-actions"
 import { SiteHeader } from "@v3/_/components/site-header"
@@ -37,8 +38,6 @@ import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
-import BookDetailsSkeleton from "./[uuid]/loading"
-
 const DynamicBookDetailsContent = dynamic(
   () =>
     import("@v3/_/components/books/BookDetailsPage").then(
@@ -46,7 +45,7 @@ const DynamicBookDetailsContent = dynamic(
     ),
   {
     ssr: false,
-    loading: () => <BookDetailsSkeleton />,
+    loading: () => <BookDetailsSkeleton compact={true} />,
   },
 )
 
