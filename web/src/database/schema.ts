@@ -172,6 +172,7 @@ export interface Position {
 
 export interface Readaloud {
   bookUuid: import("@/uuid").UUID
+  coverBlurhash: string | null
   createdAt: Generated<string>
   currentStage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS"
   filepath: string | null

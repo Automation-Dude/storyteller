@@ -1,5 +1,3 @@
-ALTER TABLE ebook
-ADD COLUMN cover_blurhash TEXT;
+SELECT
+    2;
 
-ALTER TABLE audiobook
-ADD COLUMN cover_blurhash TEXT;
