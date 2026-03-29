@@ -349,10 +349,16 @@ export async function writeExtractedEbookCover(
   await mkdir(ebookCoverDir, { recursive: true })
   await writeFile(join(ebookCoverDir, filename), data)
 
-  const blurhash = await generateBlurhash(Buffer.from(data))
+  const blurhash = await generateBlurhash(Buffer.from(data), "ebook")
   if (blurhash) {
     await db
       .updateTable("ebook")
+      .set({ coverBlurhash: blurhash })
+      .where("bookUuid", "=", book.uuid)
+      .execute()
+
+    await db
+      .updateTable("readaloud")
       .set({ coverBlurhash: blurhash })
       .where("bookUuid", "=", book.uuid)
       .execute()
@@ -376,7 +382,7 @@ export async function writeExtractedAudiobookCover(
   await mkdir(audiobookCoverDir, { recursive: true })
   await writeFile(join(audiobookCoverDir, filename), data)
 
-  const blurhash = await generateBlurhash(Buffer.from(data))
+  const blurhash = await generateBlurhash(Buffer.from(data), "audiobook")
   if (blurhash) {
     await db
       .updateTable("audiobook")

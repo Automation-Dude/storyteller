@@ -99,30 +99,26 @@ export function BookCover({
 
   if (hasAudiobook && !hasEbook) {
     return (
-      <div className="w-full p-3">
-        <CoverImage
-          src={audiobookCoverUrl}
-          alt={book.title}
-          blurhash={book.audiobook?.coverBlurhash}
-          type="audiobook"
-          disableHover={disableHover}
-          className="aspect-square w-full rounded-lg shadow-lg"
-        />
-      </div>
+      <CoverImage
+        src={audiobookCoverUrl}
+        alt={book.title}
+        blurhash={book.audiobook?.coverBlurhash}
+        type="audiobook"
+        disableHover={disableHover}
+        className="aspect-square w-full rounded-lg shadow-lg"
+      />
     )
   }
 
   return (
-    <div className="h-full w-full p-3">
-      <CoverImage
-        src={ebookCoverUrl}
-        alt={book.title}
-        blurhash={book.ebook?.coverBlurhash}
-        type="ebook"
-        disableHover={disableHover}
-        className="h-full w-full rounded-lg"
-      />
-    </div>
+    <CoverImage
+      src={ebookCoverUrl}
+      alt={book.title}
+      blurhash={book.ebook?.coverBlurhash}
+      type="ebook"
+      disableHover={disableHover}
+      className="h-full w-full rounded-lg"
+    />
   )
 }
 

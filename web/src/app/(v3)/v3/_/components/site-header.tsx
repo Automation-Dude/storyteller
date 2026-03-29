@@ -30,7 +30,7 @@ export function SiteHeader({
   return (
     <header
       className={cn(
-        "flex h-(--header-height) shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)",
+        "bg-background sticky top-0 z-10 flex h-(--header-height) shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)",
         className,
       )}
     >

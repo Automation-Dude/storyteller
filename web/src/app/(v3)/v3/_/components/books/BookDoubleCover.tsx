@@ -19,23 +19,23 @@ const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
 
 const IDLE = {
-  ebook: { x: "-8%", scale: 0.9 },
-  audiobook: { x: "8%", scale: 0.9 },
+  ebook: { x: "-11%", scale: 1.1 },
+  audiobook: { x: "11%", scale: 1.1 },
 }
 
 const SEPARATED = {
-  ebook: { x: "-14%", scale: 0.78 },
-  audiobook: { x: "14%", scale: 0.78 },
+  ebook: { x: "-18%", scale: 0.8 },
+  audiobook: { x: "18%", scale: 0.8 },
 }
 
 const PEAK = {
-  ebook: { x: "-40%", scale: 0.8 },
-  audiobook: { x: "40%", scale: 0.88 },
+  ebook: { x: "-50%", scale: 0.9 },
+  audiobook: { x: "50%", scale: 0.9 },
 }
 
 const AUDIOBOOK_FRONT = {
-  ebook: { x: "-10%", scale: 1 },
-  audiobook: { x: "10%", scale: 1 },
+  ebook: { x: "-11%", scale: 1.1 },
+  audiobook: { x: "11%", scale: 1.1 },
 }
 
 const COVER_BASE =

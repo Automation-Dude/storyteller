@@ -57,7 +57,7 @@ export const BookCard = memo(function BookCard({
     <>
       <div
         className={cn(
-          "relative flex aspect-[6/8] flex-col items-center justify-center transition-shadow",
+          "relative flex aspect-[13/16] flex-col items-center justify-center transition-shadow",
           hasDualFormat
             ? "overflow-x-visible overflow-y-clip rounded-lg"
             : "overflow-hidden rounded-lg",
@@ -66,10 +66,15 @@ export const BookCard = memo(function BookCard({
         <BlurhashCanvas
           className="from-primary/10 to-primary/5 rounded-lg bg-linear-to-br opacity-30"
           blurhash={
-            book.ebook?.coverBlurhash || book.audiobook?.coverBlurhash || null
+            book.readaloud?.coverBlurhash ||
+            book.ebook?.coverBlurhash ||
+            book.audiobook?.coverBlurhash ||
+            null
           }
         />
-        <BookCover book={book} width={300} disableHover={isSelecting} />
+        <div className="flex h-full w-full items-center justify-center p-3">
+          <BookCover book={book} width={300} disableHover={isSelecting} />
+        </div>
 
         {showCheckbox && (
           <div
@@ -89,21 +94,21 @@ export const BookCard = memo(function BookCard({
               onClick={(e: React.MouseEvent) => {
                 e.stopPropagation()
               }}
-              className="bg-background/80 h-5 w-5 border-2 shadow-sm backdrop-blur"
+              className="hover:border-primary h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors"
               tabIndex={-1}
             />
           </div>
         )}
 
         {isSynced && (
-          <div className="absolute top-3 right-0">
-            <div className="flex size-6 items-center justify-center rounded-full bg-orange-500 shadow-md">
+          <div className="absolute top-2 right-2">
+            <div className="bg-primary flex size-5 items-center justify-center rounded-full shadow-md">
               <IconReadaloud className="size-6 text-white" />
             </div>
           </div>
         )}
 
-        {primarySeries && (
+        {/* {primarySeries && (
           <div
             className={cn(
               "absolute right-0 bottom-0 left-0 z-20 px-2 pt-6 pb-2",
@@ -121,7 +126,7 @@ export const BookCard = memo(function BookCard({
               {primarySeries.position && ` #${primarySeries.position}`}
             </span>
           </div>
-        )}
+        )} */}
 
         {progress !== null && progress > 0 && (
           <div className="absolute right-0 bottom-0 left-0 h-1 bg-black/30">
@@ -149,6 +154,20 @@ export const BookCard = memo(function BookCard({
   return onClick ? (
     <div
       key={book.uuid}
+      // im sorry a11y gods
+      role="button"
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          e.stopPropagation()
+          if (isSelecting) {
+            onToggleSelection?.(book.uuid)
+          } else {
+            onClick(book)
+          }
+        }
+      }}
+      tabIndex={0}
       onClick={() => {
         if (isSelecting) {
           onToggleSelection?.(book.uuid)
@@ -160,6 +179,7 @@ export const BookCard = memo(function BookCard({
         "group relative flex cursor-pointer flex-col transition-opacity duration-200",
         muted && "opacity-50",
         isBookSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
+        "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
       )}
     >
       {cardContent}

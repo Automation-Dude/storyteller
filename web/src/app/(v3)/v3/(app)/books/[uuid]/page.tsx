@@ -1,3 +1,7 @@
+import { notFound, redirect } from "next/navigation"
+
+import { hasPermission, nextAuth } from "@/auth/auth"
+import { getBook } from "@/database/books"
 import { type UUID } from "@/uuid"
 
 import { BookDetailsContent } from "@v3/_/components/books/BookDetailsPage"
@@ -12,6 +16,18 @@ export default async function BookDetailsPage({
   params,
 }: BookDetailsPageProps) {
   const { uuid } = await params
+
+  const session = await nextAuth.auth()
+
+  if (!session) {
+    redirect("/login")
+  }
+
+  const book = await getBook(uuid, session.user.id)
+
+  if (!book) {
+    notFound()
+  }
 
   // const book = await getBook(uuid, session?.user.id)
 
@@ -40,5 +56,12 @@ export default async function BookDetailsPage({
   //   )
   // }
 
-  return <BookDetailsContent uuid={uuid} />
+  return (
+    <BookDetailsContent
+      uuid={uuid}
+      canEdit={hasPermission("bookUpdate", session.user)}
+      canDownload={hasPermission("bookDownload", session.user)}
+      canDelete={hasPermission("bookDelete", session.user)}
+    />
+  )
 }

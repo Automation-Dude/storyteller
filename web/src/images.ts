@@ -75,12 +75,13 @@ export async function optimizeImage({
 
 export async function generateBlurhash(
   imageData: Buffer | Uint8Array,
+  type: "ebook" | "audiobook",
 ): Promise<string | null> {
   try {
     const sharp = await getSharp()
 
     const { data, info } = await sharp(imageData)
-      .resize(32, 32, { fit: "inside" })
+      .resize(type === "ebook" ? 64 : 32, 32, { fit: "inside" })
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true })

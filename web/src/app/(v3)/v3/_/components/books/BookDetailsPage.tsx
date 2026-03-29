@@ -154,11 +154,13 @@ export function BookDetailsContent({
   compact = false,
   canEdit = false,
   canDownload = false,
+  canDelete = false,
 }: {
   uuid: UUID
   compact?: boolean
   canEdit?: boolean
   canDownload?: boolean
+  canDelete?: boolean
 }) {
   const { data: book, isLoading: isLoadingBook } = useGetBookQuery({
     uuid,
@@ -279,7 +281,7 @@ export function BookDetailsContent({
   const narrators = book.narrators
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col">
       {!compact && (
         <SiteHeader
           breadcrumbs={[
@@ -353,7 +355,7 @@ export function BookDetailsContent({
                   />
                 </DialogTrigger>
 
-                <DialogContent className="p-0">
+                <DialogContent className="p-0!">
                   <BookCover
                     book={book}
                     width={compact ? 176 : 200}
@@ -368,19 +370,21 @@ export function BookDetailsContent({
                 {isEditing ? (
                   <div className="flex flex-1 flex-col gap-3">
                     <div>
-                      <Label htmlFor="title">{tLabels("title")}</Label>
                       <Input
                         id="title"
                         {...form.register("title")}
                         className="mt-1 text-2xl font-semibold"
+                        placeholder={tLabels("title")}
+                        aria-label={tLabels("title")}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="subtitle">{tLabels("subtitle")}</Label>
                       <Input
                         id="subtitle"
                         {...form.register("subtitle")}
                         className="mt-1"
+                        placeholder={tLabels("subtitle")}
+                        aria-label={tLabels("subtitle")}
                       />
                     </div>
                   </div>
@@ -427,12 +431,10 @@ export function BookDetailsContent({
                 </div>
               )}
 
-              {/* rating - interactive */}
               <div className="mt-3">
                 <RatingInput
                   value={book.rating}
                   onChange={handleRatingChange}
-                  readOnly={!canEdit}
                 />
               </div>
 
@@ -461,7 +463,7 @@ export function BookDetailsContent({
                       {formatYear(book.publicationDate)}
                     </span>
                   )}
-                  <FormatBadges book={book} />
+                  {/* <FormatBadges book={book} /> */}
                 </div>
                 <ReadingStatusButton book={book} />
               </div>

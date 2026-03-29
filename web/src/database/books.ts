@@ -600,6 +600,7 @@ export function booksQuery(userId?: UUID) {
             "readaloud.uuid",
             "readaloud.filepath",
             "readaloud.missing",
+            "readaloud.coverBlurhash",
             "readaloud.status",
             "readaloud.currentStage",
             "readaloud.stageProgress",

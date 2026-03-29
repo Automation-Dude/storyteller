@@ -128,7 +128,7 @@ export function SelectionToolbar({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="">
               <IconSquareCheck className="mr-2 h-4 w-4" />
               Select
               <IconChevronDown className="ml-2 h-4 w-4" />
@@ -159,7 +159,7 @@ export function SelectionToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <span className="p-2 text-xs whitespace-nowrap">
+      <span className="p-2 font-sans text-xs whitespace-nowrap">
         {selectedBooks.size} selected
       </span>
 
@@ -173,7 +173,7 @@ export function SelectionToolbar({
             </Button>
           }
         />
-        <DropdownMenuContent align="start">
+        <DropdownMenuContent align="start" className="min-w-[12rem]">
           {canUpdate && (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
