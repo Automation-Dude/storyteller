@@ -186,8 +186,8 @@ function PagePanel({
         data-slot="page-panel"
         className={cn(
           "overflow-hidden",
-          !isResizing &&
-            "transition-[width,min-width] duration-300 ease-in-out",
+          // !isResizing &&
+          //   "transition-[width,min-width] duration-300 ease-in-out",
           className,
         )}
         style={{

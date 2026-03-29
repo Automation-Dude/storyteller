@@ -103,7 +103,7 @@ export function BookGrid({
     <>
       <div
         className={cn(
-          "grid max-w-screen grid-cols-[repeat(auto-fill,160px)] gap-4 transition-opacity duration-200",
+          "grid max-w-screen grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 transition-opacity duration-200",
           showMuted && "opacity-60",
         )}
       >
