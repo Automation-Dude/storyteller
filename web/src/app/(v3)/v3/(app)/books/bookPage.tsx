@@ -37,6 +37,7 @@ import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+import { UserPermissionSet } from "@/database/users"
 
 const DynamicBookDetailsContent = dynamic(
   () =>
@@ -49,7 +50,11 @@ const DynamicBookDetailsContent = dynamic(
   },
 )
 
-export default function BookPage() {
+export default function BookPage({
+  permissions,
+}: {
+  permissions: UserPermissionSet
+}) {
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
   const panelWidth = useAppSelector(
@@ -272,6 +277,8 @@ export default function BookPage() {
               <div className="flex-1 overflow-y-auto px-0 pb-8">
                 {selectedBookUuid && (
                   <DynamicBookDetailsContent
+                    canEdit={permissions.bookUpdate}
+                    canDownload={permissions.bookDownload}
                     uuid={selectedBookUuid as UUID}
                     compact
                   />

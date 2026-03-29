@@ -301,6 +301,7 @@ export function AppSidebar({
           items={libraryNav}
           counts={libraryCounts}
         />
+
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

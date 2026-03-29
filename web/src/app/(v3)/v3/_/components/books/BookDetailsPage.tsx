@@ -43,6 +43,7 @@ import { BookCover } from "@v3/_/components/books/BookCover"
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
+import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
@@ -90,74 +91,6 @@ function formatYear(dateString: string | null): string {
   } catch {
     return ""
   }
-}
-
-function ReadingStatusButton({
-  book,
-  canEdit,
-  onStatusChange,
-}: {
-  book: BookWithRelations
-  canEdit: boolean
-  onStatusChange?: () => void
-}) {
-  const { data: statuses = [] } = useListStatusesQuery()
-  const [updateStatus] = useUpdateStatusMutation()
-
-  const currentStatus = book.status
-
-  const handleStatusChange = useCallback(
-    async (statusUuid: string) => {
-      await updateStatus({
-        bookUuid: book.uuid,
-        statusUuid:
-          statusUuid as `${string}-${string}-${string}-${string}-${string}`,
-      })
-      onStatusChange?.()
-    },
-    [book.uuid, updateStatus, onStatusChange],
-  )
-
-  if (!canEdit) {
-    return currentStatus ? (
-      <Badge variant="secondary" className="text-sm">
-        {currentStatus.name}
-      </Badge>
-    ) : null
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="outline"
-            className={cn(
-              "gap-2",
-              currentStatus && "border-primary bg-primary/5 text-primary",
-            )}
-          >
-            <IconBook className="h-4 w-4" />
-            {currentStatus?.name ?? "Set Status"}
-            <IconChevronDown className="h-4 w-4" />
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end">
-        {statuses.map((status) => (
-          <DropdownMenuItem
-            key={status.uuid}
-            onClick={() => handleStatusChange(status.uuid)}
-            className={cn(
-              String(currentStatus?.uuid) === status.uuid && "bg-accent",
-            )}
-          >
-            {status.name}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
 }
 
 function FormatBadges({ book }: { book: BookWithRelations }) {
@@ -219,9 +152,13 @@ function MetadataRow({
 export function BookDetailsContent({
   uuid,
   compact = false,
+  canEdit = false,
+  canDownload = false,
 }: {
   uuid: UUID
   compact?: boolean
+  canEdit?: boolean
+  canDownload?: boolean
 }) {
   const { data: book, isLoading: isLoadingBook } = useGetBookQuery({
     uuid,
@@ -231,10 +168,10 @@ export function BookDetailsContent({
   const tLabels = useTranslations("Labels")
   const t = useTranslations("BookDetailsPage")
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
-  const canEdit = true === true
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
-  const canDownload = true === true
+  // // // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
+  // // const canEdit = true === true
+  // // // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
+  // const canDownload = true === true
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
@@ -350,8 +287,7 @@ export function BookDetailsContent({
             { label: book.title },
           ]}
           actions={
-            canEdit &&
-            !compact && [
+            canEdit && [
               isEditing ? (
                 <>
                   <Button
@@ -527,7 +463,7 @@ export function BookDetailsContent({
                   )}
                   <FormatBadges book={book} />
                 </div>
-                <ReadingStatusButton book={book} canEdit={canDownload} />
+                <ReadingStatusButton book={book} />
               </div>
             </div>
           </div>
