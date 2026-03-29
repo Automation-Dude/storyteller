@@ -32,6 +32,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   ).default,
   "59_migrate_hrefs.sql": (await import("./migrations/59_migrate_hrefs.sql"))
     .default,
+  "66_add_cover_blurhash.sql": (
+    await import("./migrations/66_add_cover_blurhash.sql")
+  ).default,
 }
 
 async function isFirstStartup() {

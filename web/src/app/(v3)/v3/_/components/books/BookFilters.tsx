@@ -390,21 +390,18 @@ export function BookFilters({
           <ButtonGroup>
             <Button
               size="sm"
-              variant={state.sortDirection === "asc" ? "default" : "ghost"}
               onClick={() => {
-                onChange("sortDirection", "asc")
+                onChange(
+                  "sortDirection",
+                  state.sortDirection === "asc" ? "desc" : "asc",
+                )
               }}
             >
-              <IconArrowUp className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={state.sortDirection === "desc" ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                onChange("sortDirection", "desc")
-              }}
-            >
-              <IconArrowDown className="h-4 w-4" />
+              {state.sortDirection === "asc" ? (
+                <IconArrowUp className="h-4 w-4" />
+              ) : (
+                <IconArrowDown className="h-4 w-4" />
+              )}
             </Button>
           </ButtonGroup>
 

@@ -23,7 +23,11 @@ import { Fragment, useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import BookDetailsSkeleton from "@/app/(v3)/v3/(app)/books/[uuid]/loading"
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/app/(v3)/v3/_/components/ui/dialog"
 import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
@@ -36,6 +40,7 @@ import {
 } from "@/store/api"
 
 import { BookCover } from "@v3/_/components/books/BookCover"
+import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
@@ -301,7 +306,7 @@ export function BookDetailsContent({
     if (compact) {
       return (
         <div className="flex flex-1 items-center justify-center p-6">
-          <BookDetailsSkeleton />
+          <BookDetailsSkeleton compact={compact} />
         </div>
       )
     }
@@ -344,6 +349,41 @@ export function BookDetailsContent({
             { label: "Books", url: "/books" },
             { label: book.title },
           ]}
+          actions={
+            canEdit &&
+            !compact && [
+              isEditing ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    <IconX className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={form.handleSubmit(handleSave)}
+                    disabled={isSaving}
+                  >
+                    <IconCheck className="mr-1 h-4 w-4" />
+                    {isSaving ? t("saving") : t("save")}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setIsEditing(true)
+                  }}
+                >
+                  <IconEdit className="mr-1 h-4 w-4" />
+                  {t("edit")}
+                </Button>
+              ),
+            ]
+          }
         />
       )}
 
@@ -355,19 +395,31 @@ export function BookDetailsContent({
               compact ? "flex-col" : "flex-col md:flex-row",
             )}
           >
-            <div
-              className={cn(
-                "flex shrink-0 flex-col items-center justify-center rounded-lg",
-                compact
-                  ? "mx-auto h-80 w-60"
-                  : "flex w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
-              )}
-            >
-              <BookCover
-                book={book}
-                width={compact ? 176 : 200}
-                key={book.uuid}
-              />
+            <div className="flex h-80 w-52 items-center justify-center">
+              <Dialog>
+                <DialogTrigger
+                  className={cn(
+                    "flex shrink-0 cursor-zoom-in flex-col items-center justify-center rounded-lg",
+                    compact
+                      ? "mx-auto h-80 w-60"
+                      : "flex w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
+                  )}
+                >
+                  <BookCover
+                    book={book}
+                    width={compact ? 176 : 200}
+                    key={book.uuid}
+                  />
+                </DialogTrigger>
+
+                <DialogContent className="p-0">
+                  <BookCover
+                    book={book}
+                    width={compact ? 176 : 200}
+                    key={book.uuid}
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
 
             <div className="flex flex-1 flex-col">
@@ -400,42 +452,6 @@ export function BookDetailsContent({
                       <p className="text-muted-foreground mt-1 text-lg">
                         {book.subtitle}
                       </p>
-                    )}
-                  </div>
-                )}
-
-                {canEdit && !compact && (
-                  <div className="flex shrink-0 items-center gap-2">
-                    {isEditing ? (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleCancel}
-                          disabled={isSaving}
-                        >
-                          <IconX className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={form.handleSubmit(handleSave)}
-                          disabled={isSaving}
-                        >
-                          <IconCheck className="mr-1 h-4 w-4" />
-                          {isSaving ? t("saving") : t("save")}
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setIsEditing(true)
-                        }}
-                      >
-                        <IconEdit className="mr-1 h-4 w-4" />
-                        {t("edit")}
-                      </Button>
                     )}
                   </div>
                 )}
@@ -516,7 +532,12 @@ export function BookDetailsContent({
           <section className="mb-8">
             {isEditing ? (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="description">{tLabels("description")}</Label>
+                <Label
+                  htmlFor="description"
+                  className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase"
+                >
+                  {tLabels("description")}
+                </Label>
                 <Textarea
                   id="description"
                   {...form.register("description")}

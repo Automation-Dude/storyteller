@@ -15,6 +15,7 @@ import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo, useState } from "react"
 
 import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
+import { BookSelectionProvider } from "@/app/(v3)/v3/_/hooks/use-book-selection"
 import { useListBooksQuery } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
@@ -218,23 +219,25 @@ export function LibraryPage({
 
       <PageContent className="p-4">
         {selectedItem ? (
-          <BookGrid
-            books={filteredBooks}
-            isLoading={booksLoading}
-            isFetchingNextPage={false}
-            hasNextPage={false}
-            fetchNextPage={noop}
-            showMuted={showMuted}
-            emptySubMessage={
-              deferredSearch || activeFilterCount > 0
-                ? "Try adjusting your search or filters"
-                : undefined
-            }
-            onClearFilters={clearFilters}
-            hasActiveFilters={activeFilterCount > 0}
-            selectedBookUuid={selectedBookUuid}
-            onBookClick={handleBookClick}
-          />
+          <BookSelectionProvider key={selectedItem}>
+            <BookGrid
+              books={filteredBooks}
+              isLoading={booksLoading}
+              isFetchingNextPage={false}
+              hasNextPage={false}
+              fetchNextPage={noop}
+              showMuted={showMuted}
+              emptySubMessage={
+                deferredSearch || activeFilterCount > 0
+                  ? "Try adjusting your search or filters"
+                  : undefined
+              }
+              onClearFilters={clearFilters}
+              hasActiveFilters={activeFilterCount > 0}
+              selectedBookUuid={selectedBookUuid}
+              onBookClick={handleBookClick}
+            />
+          </BookSelectionProvider>
         ) : (
           <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
             <IconSearch className="h-12 w-12 opacity-40" />

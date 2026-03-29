@@ -14,6 +14,8 @@ import {
   getBookOrThrow,
   touchBook,
 } from "@/database/books"
+import { db } from "@/database/connection"
+import { generateBlurhash } from "@/images"
 import { type UUID } from "@/uuid"
 
 import { getAudioCoverItem } from "./metadata"
@@ -338,12 +340,24 @@ export async function writeExtractedEbookCover(
   data: Uint8Array,
 ) {
   const ebookCoverDir = getEbookCoverDirectory(book)
+
   const existing = await getExtractedEbookCover(book)
   if (existing) {
     await rm(join(ebookCoverDir, existing.filename))
   }
+
   await mkdir(ebookCoverDir, { recursive: true })
   await writeFile(join(ebookCoverDir, filename), data)
+
+  const blurhash = await generateBlurhash(Buffer.from(data))
+  if (blurhash) {
+    await db
+      .updateTable("ebook")
+      .set({ coverBlurhash: blurhash })
+      .where("bookUuid", "=", book.uuid)
+      .execute()
+  }
+
   await touchBook(book.uuid)
 }
 
@@ -353,11 +367,23 @@ export async function writeExtractedAudiobookCover(
   data: Uint8Array,
 ) {
   const audiobookCoverDir = getAudiobookCoverDirectory(book)
+
   const existing = await getExtractedAudiobookCover(book)
   if (existing) {
     await rm(join(audiobookCoverDir, existing.filename))
   }
+
   await mkdir(audiobookCoverDir, { recursive: true })
   await writeFile(join(audiobookCoverDir, filename), data)
+
+  const blurhash = await generateBlurhash(Buffer.from(data))
+  if (blurhash) {
+    await db
+      .updateTable("audiobook")
+      .set({ coverBlurhash: blurhash })
+      .where("bookUuid", "=", book.uuid)
+      .execute()
+  }
+
   await touchBook(book.uuid)
 }

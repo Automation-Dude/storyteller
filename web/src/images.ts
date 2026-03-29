@@ -1,3 +1,5 @@
+import { encode } from "blurhash"
+
 import { env } from "./env"
 
 let _sharp: typeof import("sharp") | undefined
@@ -69,4 +71,22 @@ export async function optimizeImage({
   const optimizedBuffer = await transformer.toBuffer()
 
   return optimizedBuffer
+}
+
+export async function generateBlurhash(
+  imageData: Buffer | Uint8Array,
+): Promise<string | null> {
+  try {
+    const sharp = await getSharp()
+
+    const { data, info } = await sharp(imageData)
+      .resize(32, 32, { fit: "inside" })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+
+    return encode(new Uint8ClampedArray(data), info.width, info.height, 4, 3)
+  } catch {
+    return null
+  }
 }

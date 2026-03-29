@@ -29,6 +29,7 @@ export interface Account {
 
 export interface Audiobook {
   bookUuid: import("@/uuid").UUID
+  coverBlurhash: string | null
   createdAt: Generated<string>
   filepath: string
   missing: Generated<boolean>
@@ -139,6 +140,7 @@ export interface DeviceAuthorization {
 
 export interface Ebook {
   bookUuid: import("@/uuid").UUID
+  coverBlurhash: string | null
   createdAt: Generated<string>
   filepath: string
   missing: Generated<boolean>

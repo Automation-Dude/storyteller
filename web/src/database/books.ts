@@ -574,6 +574,7 @@ export function booksQuery(userId?: UUID) {
             "ebook.uuid",
             "ebook.filepath",
             "ebook.missing",
+            "ebook.coverBlurhash",
             "ebook.createdAt",
             "ebook.updatedAt",
           ])
@@ -586,6 +587,7 @@ export function booksQuery(userId?: UUID) {
             "audiobook.uuid",
             "audiobook.filepath",
             "audiobook.missing",
+            "audiobook.coverBlurhash",
             "audiobook.createdAt",
             "audiobook.updatedAt",
           ])

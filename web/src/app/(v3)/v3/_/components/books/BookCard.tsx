@@ -8,6 +8,7 @@ import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
 
 import { BookCover, isDualFormat } from "./BookCover"
+import { BlurhashCanvas } from "./BlurhashCanvas"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -62,6 +63,12 @@ export const BookCard = memo(function BookCard({
             : "overflow-hidden rounded-lg",
         )}
       >
+        <BlurhashCanvas
+          className="from-primary/10 to-primary/5 rounded-lg bg-linear-to-br opacity-30"
+          blurhash={
+            book.ebook?.coverBlurhash || book.audiobook?.coverBlurhash || null
+          }
+        />
         <BookCover book={book} width={300} disableHover={isSelecting} />
 
         {showCheckbox && (
