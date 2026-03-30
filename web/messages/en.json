@@ -322,6 +322,19 @@
       "downloadEbook": "Download Ebook",
       "downloadAudiobook": "Download Audiobook"
     },
+
+    "series": {
+      "notInAnySeries": "Not in any series",
+      "seachOrCreateSeries": "Search or create series..."
+    },
+    "collections": {
+      "notInAnyCollections": "Not in any collections",
+      "seachOrCreateCollection": "Search or create collection..."
+    },
+    "tags": {
+      "notInAnyTags": "Not tags",
+      "seachOrCreateTag": "Search or create tag..."
+    },
     "fileInformation": {
       "readaloud": "Readaloud file",
       "ebook": "Ebook file",
@@ -346,6 +359,26 @@
     "lastUpdated": "Last Updated",
     "otherContributors": "Other Contributors",
     "downloads": "Downloads",
-    "fileInformation": "File Information"
+    "fileInformation": "File Information",
+    "create": {
+      "withInput": "Create {input}",
+      "plain": "Create"
+    },
+    "delete": {
+      "withInput": "Delete {input}",
+      "plain": "Delete"
+    },
+    "update": {
+      "withInput": "Update {input}",
+      "plain": "Update"
+    },
+    "edit": {
+      "withInput": "Edit {input}",
+      "plain": "Edit"
+    },
+    "add": {
+      "withInput": "Add {input}",
+      "plain": "Add"
+    }
   }
 }

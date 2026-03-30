@@ -1,4 +1,5 @@
 import { IconFolder, IconPlus, IconX } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
 import { useCallback, useMemo, useState } from "react"
 
 import { cn } from "@/cn"
@@ -43,6 +44,9 @@ export function CollectionEditor({
   const [isHovering, setIsHovering] = useState(false)
 
   const canInteract = editMode || (!isMobile && isHovering)
+
+  const t = useTranslations("BookDetailsPage.collections")
+  const tLabels = useTranslations("Labels")
 
   const bookCollectionUuids = useMemo(
     () => new Set(collections.map((c) => c.uuid)),
@@ -136,6 +140,9 @@ export function CollectionEditor({
             {canInteract && (
               <button
                 type="button"
+                aria-label={tLabels("delete.withInput", {
+                  input: collection.name,
+                })}
                 onClick={() => handleRemoveFromCollection(collection.uuid)}
                 className="hover:bg-destructive/20 ml-0.5 hidden rounded-full p-0.5 opacity-0 transition-opacity group-hover/badge:block group-hover/badge:opacity-100"
               >
@@ -147,7 +154,7 @@ export function CollectionEditor({
 
         {collections.length === 0 && !canInteract && (
           <span className="text-muted-foreground text-sm">
-            Not in any collections
+            {t("notInAnyCollections")}
           </span>
         )}
 
@@ -170,7 +177,7 @@ export function CollectionEditor({
             />
             <PopoverContent className="w-64 p-2" align="start">
               <Input
-                placeholder="Search collections..."
+                placeholder={t("seachOrCreateCollection")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -182,6 +189,9 @@ export function CollectionEditor({
                   <button
                     key={collection.uuid}
                     type="button"
+                    aria-label={tLabels("add.withInput", {
+                      input: collection.name,
+                    })}
                     onClick={() => {
                       void handleAddToCollection(collection.uuid)
                       setIsOpen(false)
@@ -194,6 +204,9 @@ export function CollectionEditor({
                 ))}
                 <button
                   type="button"
+                  aria-label={tLabels("create.withInput", {
+                    input: `"${search.trim()}"`,
+                  })}
                   onClick={() => {
                     setIsOpen(false)
                     setShowCreateDialog(true)
@@ -201,7 +214,7 @@ export function CollectionEditor({
                   className="hover:bg-accent text-primary flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
                 >
                   <IconPlus className="h-3 w-3" />
-                  Create new collection
+                  {tLabels("create.withInput", { input: `"${search.trim()}"` })}
                 </button>
               </div>
             </PopoverContent>

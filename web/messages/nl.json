@@ -315,6 +315,19 @@
       "downloadEbook": "Download Ebook",
       "downloadAudiobook": "Download Audiobook"
     },
+
+    "series": {
+      "notInAnySeries": "Geen deel van een serie",
+      "seachOrCreateSeries": "Zoek of maak een nieuwe serie ..."
+    },
+    "collections": {
+      "notInAnyCollections": "Geen deel van een verzameling",
+      "seachOrCreateCollection": "Zoek of maak een nieuwe verzameling ..."
+    },
+    "tags": {
+      "notInAnyTags": "Geen labels",
+      "seachOrCreateTag": "Zoek of maak een nieuw label ..."
+    },
     "fileInformation": {
       "readaloud": "Readaloud bestand",
       "ebook": "Ebook bestand",
@@ -332,12 +345,35 @@
     "language": "Taal",
     "publicationDate": "Publicatie datum",
     "collections": "Verzamelingen",
+    "dateAdded": "Toegevoegd op",
+    "dateUpdated": "Bijgewerkt op",
+
     "tags": "Labels",
-    "bookDetails": "Boek details",
+    "bookDetails": "Details",
     "added": "Toegevoegd",
     "lastUpdated": "Laatst bijgewerkt",
     "otherContributors": "Andere bijdragers",
     "downloads": "Downloads",
-    "fileInformation": "Bestand informatie"
+    "fileInformation": "Bestand informatie",
+    "delete": {
+      "withInput": "Verwijder {input}",
+      "plain": "Verwijder"
+    },
+    "create": {
+      "withInput": "Maak {input} aan",
+      "plain": "Creëer"
+    },
+    "update": {
+      "withInput": "Update {input}",
+      "plain": "Update"
+    },
+    "edit": {
+      "withInput": "Bewerk {input}",
+      "plain": "Bewerk"
+    },
+    "add": {
+      "withInput": "Voeg {input} toe",
+      "plain": "Voeg toe"
+    }
   }
 }

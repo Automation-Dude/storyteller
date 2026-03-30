@@ -1,4 +1,5 @@
 import { IconPlus, IconTag, IconX } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
 import { useCallback, useMemo, useState } from "react"
 
 import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
@@ -40,6 +41,9 @@ export function TagEditor({
   const [isHovering, setIsHovering] = useState(false)
 
   const canInteract = editMode || (!isMobile && isHovering)
+
+  const t = useTranslations("BookDetailsPage.tags")
+  const tLabels = useTranslations("Labels")
 
   const bookTagUuids = useMemo(() => new Set(tags.map((t) => t.uuid)), [tags])
 
@@ -103,6 +107,7 @@ export function TagEditor({
           {canInteract && (
             <button
               type="button"
+              aria-label={tLabels("delete.withInput", { input: tag.name })}
               onClick={() => handleRemoveTag(tag.uuid)}
               className="hover:bg-destructive/20 ml-0.5 hidden rounded-full p-0.5 opacity-0 transition-opacity group-hover/badge:block group-hover/badge:opacity-100"
             >
@@ -113,7 +118,9 @@ export function TagEditor({
       ))}
 
       {tags.length === 0 && !canInteract && (
-        <span className="text-muted-foreground text-sm">No tags</span>
+        <span className="text-muted-foreground text-sm">
+          {t("notInAnyTags")}
+        </span>
       )}
 
       {canInteract && (
@@ -134,7 +141,7 @@ export function TagEditor({
           />
           <PopoverContent className="w-64 p-2" align="start">
             <Input
-              placeholder="Search or create tag..."
+              placeholder={t("seachOrCreateTag")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -152,6 +159,7 @@ export function TagEditor({
                 <button
                   key={tag.uuid}
                   type="button"
+                  aria-label={tLabels("add.withInput", { input: tag.name })}
                   onClick={() => {
                     void handleAddTag(tag.name)
                     setIsOpen(false)
@@ -165,6 +173,9 @@ export function TagEditor({
               {search.trim() && !allTags.some((t) => t.name === search) && (
                 <button
                   type="button"
+                  aria-label={tLabels("create.withInput", {
+                    input: `"${search.trim()}"`,
+                  })}
                   onClick={() => {
                     void handleAddTag(search.trim())
                     setIsOpen(false)
@@ -172,7 +183,7 @@ export function TagEditor({
                   className="hover:bg-accent text-primary flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
                 >
                   <IconPlus className="h-3 w-3" />
-                  Create &quot;{search.trim()}&quot;
+                  {tLabels("create.withInput", { input: `"${search.trim()}"` })}
                 </button>
               )}
             </div>

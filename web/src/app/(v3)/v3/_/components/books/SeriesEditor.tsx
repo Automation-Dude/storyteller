@@ -1,4 +1,5 @@
 import { IconLibrary, IconPlus, IconX } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
 import { useCallback, useMemo, useState } from "react"
 
 import {
@@ -45,6 +46,9 @@ export function SeriesEditor({
   const [search, setSearch] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
+
+  const t = useTranslations("BookDetailsPage.series")
+  const tLabels = useTranslations("Labels")
 
   const canInteract = editMode || (!isMobile && isHovering)
 
@@ -126,6 +130,7 @@ export function SeriesEditor({
           {canInteract && (
             <button
               type="button"
+              aria-label={tLabels("delete.withInput", { input: s.name })}
               onClick={() => handleRemoveFromSeries(s.uuid)}
               className="hover:bg-destructive/20 ml-0.5 hidden rounded-full p-0.5 opacity-0 transition-opacity group-hover/badge:block group-hover/badge:opacity-100"
             >
@@ -136,7 +141,9 @@ export function SeriesEditor({
       ))}
 
       {series.length === 0 && !canInteract && (
-        <span className="text-muted-foreground text-sm">Not in any series</span>
+        <span className="text-muted-foreground text-sm">
+          {t("notInAnySeries")}
+        </span>
       )}
 
       {canInteract && (
@@ -157,7 +164,7 @@ export function SeriesEditor({
           />
           <PopoverContent className="w-64 p-2" align="start">
             <Input
-              placeholder="Search or create series..."
+              placeholder={t("seachOrCreateSeries")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -175,6 +182,7 @@ export function SeriesEditor({
                 <button
                   key={s.uuid}
                   type="button"
+                  aria-label={tLabels("add.withInput", { input: s.name })}
                   onClick={() => {
                     void handleAddToSeries(s.name, s.uuid)
                     setIsOpen(false)
@@ -188,6 +196,9 @@ export function SeriesEditor({
               {search.trim() && !allSeries.some((s) => s.name === search) && (
                 <button
                   type="button"
+                  aria-label={tLabels("create.withInput", {
+                    input: `"${search.trim()}"`,
+                  })}
                   onClick={() => {
                     void handleAddToSeries(search.trim())
                     setIsOpen(false)
@@ -195,7 +206,7 @@ export function SeriesEditor({
                   className="hover:bg-accent text-primary flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
                 >
                   <IconPlus className="h-3 w-3" />
-                  Create &quot;{search.trim()}&quot;
+                  {tLabels("create.withInput", { input: `"${search.trim()}"` })}
                 </button>
               )}
             </div>
