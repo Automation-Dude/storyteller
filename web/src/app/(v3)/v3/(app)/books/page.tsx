@@ -1,9 +1,8 @@
 import { type Metadata } from "next"
-import { redirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 
 import { BookSelectionProvider } from "@/app/(v3)/v3/_/hooks/use-book-selection"
-import { nextAuth } from "@/auth/auth"
+import { withPageAuth } from "@/app/(v3)/v3/_/server/page-auth-wrapper"
 
 import BookPage from "./bookPage"
 
@@ -14,16 +13,10 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function Books() {
-  const session = await nextAuth.auth()
-
-  if (!session) {
-    redirect("/login")
-  }
-
+export default withPageAuth(["bookList"])((_, user) => {
   return (
     <BookSelectionProvider>
-      <BookPage permissions={session.user.permissions} />
+      <BookPage permissions={user.permissions!} />
     </BookSelectionProvider>
   )
-}
+})

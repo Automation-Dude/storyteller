@@ -7,7 +7,6 @@ import {
   IconBook,
   IconCalendar,
   IconCheck,
-  IconChevronDown,
   IconDownload,
   IconEdit,
   IconFileText,
@@ -34,9 +33,7 @@ import { type BookWithRelations } from "@/database/books"
 import {
   getDownloadUrl,
   useGetBookQuery,
-  useListStatusesQuery,
   useUpdateBookMutation,
-  useUpdateStatusMutation,
 } from "@/store/api"
 
 import { BookCover } from "@v3/_/components/books/BookCover"
@@ -49,12 +46,6 @@ import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@v3/_/components/ui/dropdown-menu"
 import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
@@ -155,20 +146,24 @@ export function BookDetailsContent({
   canEdit = false,
   canDownload = false,
   canDelete = false,
+  initialBook,
 }: {
   uuid: UUID
+  initialBook?: BookWithRelations
   compact?: boolean
   canEdit?: boolean
   canDownload?: boolean
   canDelete?: boolean
 }) {
-  const { data: book, isLoading: isLoadingBook } = useGetBookQuery({
+  const { data: queryBook, isLoading: isLoadingBook } = useGetBookQuery({
     uuid,
   })
   const [updateBook, { isLoading: isSaving }] = useUpdateBookMutation()
   const [isEditing, setIsEditing] = useState(false)
   const tLabels = useTranslations("Labels")
   const t = useTranslations("BookDetailsPage")
+
+  const book = queryBook ?? initialBook
 
   // // // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
   // // const canEdit = true === true
@@ -241,7 +236,7 @@ export function BookDetailsContent({
     setIsEditing(false)
   }
 
-  if (isLoadingBook) {
+  if (isLoadingBook && !initialBook) {
     if (compact) {
       return (
         <div className="flex flex-1 items-center justify-center">
@@ -293,6 +288,7 @@ export function BookDetailsContent({
               isEditing ? (
                 <>
                   <Button
+                    key="cancel"
                     size="sm"
                     variant="ghost"
                     onClick={handleCancel}
@@ -301,6 +297,7 @@ export function BookDetailsContent({
                     <IconX className="h-4 w-4" />
                   </Button>
                   <Button
+                    key="save"
                     size="sm"
                     onClick={form.handleSubmit(handleSave)}
                     disabled={isSaving}
@@ -311,6 +308,7 @@ export function BookDetailsContent({
                 </>
               ) : (
                 <Button
+                  key="edit"
                   size="sm"
                   onClick={() => {
                     setIsEditing(true)
@@ -542,7 +540,6 @@ export function BookDetailsContent({
 
           <Separator className="my-8" />
 
-          {/* metadata grid */}
           <section className="mb-8">
             <h2 className="mb-4 text-sm font-medium">
               {tLabels("bookDetails")}
@@ -595,7 +592,6 @@ export function BookDetailsContent({
             </div>
           </section>
 
-          {/* other creators */}
           {book.creators.filter((c) => c.role !== "aut" && c.role !== "nrt")
             .length > 0 && (
             <section className="mb-8">
@@ -620,7 +616,6 @@ export function BookDetailsContent({
             </section>
           )}
 
-          {/* downloads */}
           {canDownload && (
             <>
               <Separator className="my-8" />
@@ -633,6 +628,7 @@ export function BookDetailsContent({
                   {book.readaloud?.filepath && (
                     <Button
                       variant="outline"
+                      nativeButton={false}
                       render={
                         <V3Link href={getDownloadUrl(book.uuid, "readaloud")}>
                           <IconReadaloud className="text-st-orange-500 mr-2 h-4 w-4" />
@@ -643,6 +639,7 @@ export function BookDetailsContent({
                   )}
                   {book.ebook && (
                     <Button
+                      nativeButton={false}
                       variant="outline"
                       render={
                         <V3Link href={getDownloadUrl(book.uuid, "ebook")}>
@@ -654,6 +651,7 @@ export function BookDetailsContent({
                   )}
                   {book.audiobook && (
                     <Button
+                      nativeButton={false}
                       variant="outline"
                       render={
                         <V3Link href={getDownloadUrl(book.uuid, "audiobook")}>
@@ -668,7 +666,6 @@ export function BookDetailsContent({
             </>
           )}
 
-          {/* file info */}
           <Separator className="my-8" />
           <section className="mb-8">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">

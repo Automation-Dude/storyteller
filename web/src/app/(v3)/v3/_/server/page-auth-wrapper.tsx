@@ -1,0 +1,34 @@
+import { forbidden, redirect } from "next/navigation"
+import type React from "react"
+
+import { nextAuth } from "@/auth/auth"
+import { type Permission, type UserWithPermissions } from "@/database/users"
+
+export function withPageAuth<
+  T extends {
+    params: Promise<Record<string, unknown>>
+    searchParams?: Promise<Record<string, unknown>> | undefined
+  },
+>(permissions: Permission[]) {
+  return (
+      page: (
+        props: T,
+        user: UserWithPermissions,
+      ) => Promise<React.ReactNode> | React.ReactNode,
+    ) =>
+    async (props: T) => {
+      const session = await nextAuth.auth()
+
+      if (!session) {
+        redirect("/login")
+      }
+
+      const hasPermission = permissions.every(
+        (permission) => session.user.permissions?.[permission],
+      )
+      if (!hasPermission) {
+        return forbidden()
+      }
+      return page(props, session.user)
+    }
+}

@@ -323,6 +323,7 @@ function BookPanelHeader({
 
         <Button
           variant="ghost"
+          nativeButton={false}
           size="sm"
           render={
             <Link href={`/v3/books/${bookUuid}`}>
