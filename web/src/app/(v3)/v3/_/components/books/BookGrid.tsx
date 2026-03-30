@@ -71,7 +71,7 @@ export function BookGrid({
   if (isLoading) {
     return (
       <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
-        {Array.from({ length: 12 }).map((_, i) => (
+        {Array.from({ length: 40 }).map((_, i) => (
           <BookCardSkeleton key={i} />
         ))}
       </div>
@@ -101,6 +101,13 @@ export function BookGrid({
 
   return (
     <>
+      {/* <div className="absolute right-4 left-4 z-20">
+        <div className="grid max-w-screen grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
+          {Array.from({ length: 40 }).map((_, i) => (
+            <BookCardSkeleton key={i} />
+          ))}
+        </div>
+      </div> */}
       <div
         className={cn(
           "grid max-w-screen grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 transition-opacity duration-200",

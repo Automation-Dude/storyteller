@@ -19,8 +19,8 @@ const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
 
 const IDLE = {
-  ebook: { x: "-11%", scale: 1.1 },
-  audiobook: { x: "11%", scale: 1.1 },
+  ebook: { x: "-15%", scale: 1 },
+  audiobook: { x: "15%", scale: 1 },
 }
 
 const SEPARATED = {
@@ -34,8 +34,8 @@ const PEAK = {
 }
 
 const AUDIOBOOK_FRONT = {
-  ebook: { x: "-11%", scale: 1.1 },
-  audiobook: { x: "11%", scale: 1.1 },
+  ebook: { x: "-15%", scale: 1 },
+  audiobook: { x: "15%", scale: 1 },
 }
 
 const COVER_BASE =
