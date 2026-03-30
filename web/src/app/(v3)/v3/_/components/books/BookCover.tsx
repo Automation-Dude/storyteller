@@ -47,7 +47,9 @@ function CoverImage({
           src={src}
           alt={alt}
           loading="lazy"
-          onError={() => setError(true)}
+          onError={() => {
+            setError(true)
+          }}
           className={cn(
             "relative z-10 h-full w-full rounded-lg object-contain",
             !disableHover &&

@@ -32,6 +32,9 @@ module.exports = {
     {
       files: ["**/*"],
       extends: ["next"],
+      rules: {
+        "@next/next/no-img-element": "off",
+      },
     },
     {
       files: ["**/*.ts", "**/*.tsx"],
