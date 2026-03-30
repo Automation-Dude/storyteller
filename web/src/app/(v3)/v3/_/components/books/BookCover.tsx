@@ -49,7 +49,7 @@ function CoverImage({
           loading="lazy"
           onError={() => setError(true)}
           className={cn(
-            "relative z-10 h-full w-full object-cover",
+            "relative z-10 h-full w-full rounded-lg object-contain",
             !disableHover &&
               "transition-transform duration-300 group-hover:scale-105",
           )}
@@ -117,7 +117,7 @@ export function BookCover({
       blurhash={book.ebook?.coverBlurhash}
       type="ebook"
       disableHover={disableHover}
-      className="h-full w-full rounded-lg"
+      className="h-full rounded-lg"
     />
   )
 }
