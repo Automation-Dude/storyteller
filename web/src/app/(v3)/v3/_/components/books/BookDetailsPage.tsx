@@ -84,35 +84,35 @@ function formatYear(dateString: string | null): string {
   }
 }
 
-function FormatBadges({ book }: { book: BookWithRelations }) {
-  const hasEbook = book.ebook !== null
-  const hasAudiobook = book.audiobook !== null
-  const isSynced =
-    book.readaloud !== null && book.readaloud.status === "ALIGNED"
+// function FormatBadges({ book }: { book: BookWithRelations }) {
+//   const hasEbook = book.ebook !== null
+//   const hasAudiobook = book.audiobook !== null
+//   const isSynced =
+//     book.readaloud !== null && book.readaloud.status === "ALIGNED"
 
-  return (
-    <div className="flex flex-wrap gap-2">
-      {isSynced && (
-        <Badge className="gap-1 bg-orange-500 text-white hover:bg-orange-600">
-          <IconReadaloud className="size-6" />
-          ReadAloud
-        </Badge>
-      )}
-      {hasEbook && (
-        <Badge variant="secondary" className="gap-1">
-          <IconBook className="h-3 w-3" />
-          Ebook
-        </Badge>
-      )}
-      {hasAudiobook && (
-        <Badge variant="secondary" className="gap-1">
-          <IconHeadphones className="h-3 w-3" />
-          Audiobook
-        </Badge>
-      )}
-    </div>
-  )
-}
+//   return (
+//     <div className="flex flex-wrap gap-2">
+//       {isSynced && (
+//         <Badge className="gap-1 bg-orange-500 text-white hover:bg-orange-600">
+//           <IconReadaloud className="size-6" />
+//           ReadAloud
+//         </Badge>
+//       )}
+//       {hasEbook && (
+//         <Badge variant="secondary" className="gap-1">
+//           <IconBook className="h-3 w-3" />
+//           Ebook
+//         </Badge>
+//       )}
+//       {hasAudiobook && (
+//         <Badge variant="secondary" className="gap-1">
+//           <IconHeadphones className="h-3 w-3" />
+//           Audiobook
+//         </Badge>
+//       )}
+//     </div>
+//   )
+// }
 
 function MetadataRow({
   icon: Icon,
@@ -145,7 +145,7 @@ export function BookDetailsContent({
   compact = false,
   canEdit = false,
   canDownload = false,
-  canDelete = false,
+  canDelete: _canDelete,
   initialBook,
 }: {
   uuid: UUID
@@ -356,7 +356,8 @@ export function BookDetailsContent({
                 <DialogContent className="p-0!">
                   <BookCover
                     book={book}
-                    width={compact ? 176 : 200}
+                    // get that high res
+                    width={400}
                     key={book.uuid}
                   />
                 </DialogContent>

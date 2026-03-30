@@ -13,6 +13,7 @@ import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 import { Drawer } from "vaul"
 
+import { type UserPermissionSet } from "@/database/users"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
@@ -37,7 +38,6 @@ import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
-import { UserPermissionSet } from "@/database/users"
 
 const DynamicBookDetailsContent = dynamic(
   () =>

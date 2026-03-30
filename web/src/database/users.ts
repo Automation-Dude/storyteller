@@ -141,7 +141,9 @@ export async function getUser(id: UUID, tr?: Transaction<DB>) {
             "settingsUpdate",
           ])
           .whereRef("user.userPermissionUuid", "=", "userPermission.uuid"),
-      ).as("permissions"),
+      )
+        .$notNull()
+        .as("permissions"),
     ])
     .where("id", "=", id)
     .executeTakeFirst()

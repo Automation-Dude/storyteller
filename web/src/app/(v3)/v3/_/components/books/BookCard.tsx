@@ -7,8 +7,8 @@ import { type BookWithRelations } from "@/database/books"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
 
-import { BookCover, isDualFormat } from "./BookCover"
 import { BlurhashCanvas } from "./BlurhashCanvas"
+import { BookCover, isDualFormat } from "./BookCover"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -38,7 +38,7 @@ export const BookCard = memo(function BookCard({
   const hasDualFormat = isDualFormat(book)
 
   const authors = book.authors
-  const primarySeries = book.series.find((s) => s.featured) ?? book.series[0]
+  // const primarySeries = book.series.find((s) => s.featured) ?? book.series[0]
   const progress = getReadingProgress(book)
 
   const handleCheckboxClick = useCallback(

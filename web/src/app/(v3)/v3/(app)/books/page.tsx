@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default withPageAuth(["bookList"])((_, user) => {
   return (
     <BookSelectionProvider>
-      <BookPage permissions={user.permissions!} />
+      <BookPage permissions={user.permissions} />
     </BookSelectionProvider>
   )
 })

@@ -26,9 +26,11 @@ export function withPageAuth<
       const hasPermission = permissions.every(
         (permission) => session.user.permissions?.[permission],
       )
+
       if (!hasPermission) {
         return forbidden()
       }
-      return page(props, session.user)
+
+      return page(props, session.user as UserWithPermissions)
     }
 }
