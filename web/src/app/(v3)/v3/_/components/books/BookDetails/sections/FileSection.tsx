@@ -2,18 +2,25 @@
 import { IconFileText } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 
+import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 
 import { useFormatDate } from "@v3/_/lib/date"
 
-import { FilePathRow } from "./FilePathRow"
+import { FilePathRow } from "../FilePathRow"
 
-export function FileSection({ book }: { book: BookWithRelations }) {
+export function FileSection({
+  book,
+  className,
+}: {
+  book: BookWithRelations
+  className?: string
+}) {
   const t = useTranslations("BookDetailsPage")
   const formatDate = useFormatDate()
 
   return (
-    <section className="mb-8">
+    <section className={cn(className)}>
       <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">
         <IconFileText className="h-4 w-4" />
         {t("fileInformation.title")}
