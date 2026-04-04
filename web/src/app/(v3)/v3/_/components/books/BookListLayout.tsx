@@ -27,7 +27,6 @@ import {
   PagePanel,
   PageSidebar,
 } from "@v3/_/components/ui/page-layout"
-import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
@@ -89,7 +88,7 @@ export function BookListLayout({
   )
 
   const panelBookIsSelected = selectedBookUuid
-    ? (selection?.isSelected(selectedBookUuid) ?? false)
+    ? selection?.isSelected(selectedBookUuid) ?? false
     : false
 
   const handleTogglePanelBookSelection = useCallback(() => {
@@ -185,14 +184,12 @@ export function BookListLayout({
                 }}
               />
 
-              <ScrollArea className="h-full flex-1">
-                <DynamicBookDetailsContent
-                  uuid={selectedBookUuid as UUID}
-                  compact
-                  isEditing={panelIsEditing}
-                  onEditingChange={setPanelIsEditing}
-                />
-              </ScrollArea>
+              <DynamicBookDetailsContent
+                uuid={selectedBookUuid as UUID}
+                compact
+                isEditing={panelIsEditing}
+                onEditingChange={setPanelIsEditing}
+              />
             </>
           )}
         </PagePanel>
@@ -214,7 +211,7 @@ export function BookDetailDrawer({
   const panelOpen = !!selectedBookUuid
 
   const panelBookIsSelected = selectedBookUuid
-    ? (selection?.isSelected(selectedBookUuid) ?? false)
+    ? selection?.isSelected(selectedBookUuid) ?? false
     : false
 
   const handleTogglePanelBookSelection = useCallback(() => {

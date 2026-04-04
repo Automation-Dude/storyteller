@@ -1,7 +1,6 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { ScrollArea } from "@/app/(v3)/v3/_/components/ui/scroll-area"
 import { nextAuth } from "@/auth/auth"
 import { getCurrentVersion } from "@/versions"
 
@@ -44,11 +43,7 @@ export default async function AppLayout({
         className="absolute z-100"
         currentVersion={currentVersion}
       />
-      <SidebarInset className="overflow-x-hidden">
-        <ScrollArea className="relative max-h-screen w-full">
-          {children}
-        </ScrollArea>
-      </SidebarInset>
+      <SidebarInset className="overflow-x-hidden">{children}</SidebarInset>
     </SidebarProvider>
   )
 }

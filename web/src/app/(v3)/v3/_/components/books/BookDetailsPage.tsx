@@ -1,10 +1,10 @@
 "use client"
 
 import { type UUID } from "crypto"
+import { useTranslations } from "next-intl"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
-  IconAlertTriangle,
   IconBook,
   IconCalendar,
   IconCamera,
@@ -17,14 +17,11 @@ import {
   IconLanguage,
   IconPlayerPlay,
   IconPlus,
-  IconProgress,
   IconTag,
-  IconTrash,
   IconUser,
   IconX,
 } from "@tabler/icons-react"
 import { useRouter } from "next/navigation"
-import { useTranslations } from "next-intl"
 import {
   Fragment,
   useCallback,
@@ -42,12 +39,15 @@ import {
   DialogTrigger,
 } from "@/app/(v3)/v3/_/components/ui/dialog"
 import { cn } from "@/cn"
+import {
+  type Role,
+  creatorRelators,
+} from "@/components/books/edit/marcRelators"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import {
   getDownloadUrl,
   useCancelProcessingMutation,
-  useDeleteBookMutation,
   useGetBookQuery,
   useProcessBookMutation,
   useUpdateBookMutation,
@@ -65,8 +65,6 @@ import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
-import { Separator } from "@v3/_/components/ui/separator"
-import { Textarea } from "@v3/_/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -74,12 +72,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
+import { Separator } from "@v3/_/components/ui/separator"
+import { Textarea } from "@v3/_/components/ui/textarea"
 import { V3Link } from "@v3/_/components/v3-link"
 
-import {
-  creatorRelators,
-  type Role,
-} from "@/components/books/edit/marcRelators"
+import { FilePathRow } from "./BookDetails/FilePathRow"
+import { MetadataRow } from "./BookDetails/MetadataRow"
+import { TranscriptionStatus } from "./BookDetails/TranscriptionStatus"
 
 function getLanguageDisplayName(code: string): string | null {
   const trimmed = code.trim()
@@ -140,62 +139,6 @@ function formatYear(dateString: string | null): string {
   }
 }
 
-// function FormatBadges({ book }: { book: BookWithRelations }) {
-//   const hasEbook = book.ebook !== null
-//   const hasAudiobook = book.audiobook !== null
-//   const isSynced =
-//     book.readaloud !== null && book.readaloud.status === "ALIGNED"
-
-//   return (
-//     <div className="flex flex-wrap gap-2">
-//       {isSynced && (
-//         <Badge className="gap-1 bg-orange-500 text-white hover:bg-orange-600">
-//           <IconReadaloud className="size-6" />
-//           ReadAloud
-//         </Badge>
-//       )}
-//       {hasEbook && (
-//         <Badge variant="secondary" className="gap-1">
-//           <IconBook className="h-3 w-3" />
-//           Ebook
-//         </Badge>
-//       )}
-//       {hasAudiobook && (
-//         <Badge variant="secondary" className="gap-1">
-//           <IconHeadphones className="h-3 w-3" />
-//           Audiobook
-//         </Badge>
-//       )}
-//     </div>
-//   )
-// }
-
-function MetadataRow({
-  icon: Icon,
-  label,
-  children,
-  className,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  children: React.ReactNode
-  className?: string
-}) {
-  if (!children) return null
-
-  return (
-    <div className={cn("flex items-start gap-3", className)}>
-      <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-      <div className="flex flex-col gap-0.5">
-        <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-          {label}
-        </span>
-        <div className="text-sm">{children}</div>
-      </div>
-    </div>
-  )
-}
-
 export function BookDetailsContent({
   uuid,
   compact = false,
@@ -220,14 +163,9 @@ export function BookDetailsContent({
     uuid,
   })
   const [updateBook, { isLoading: isSaving }] = useUpdateBookMutation()
-  const [deleteBook] = useDeleteBookMutation()
   const [processBook] = useProcessBookMutation()
   const [cancelProcessing] = useCancelProcessingMutation()
   const [localIsEditing, setLocalIsEditing] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [deleteAssetMode, setDeleteAssetMode] = useState<
-    "" | "internal" | "all"
-  >("")
   const tLabels = useTranslations("Labels")
   const t = useTranslations("BookDetailsPage")
 
@@ -412,7 +350,7 @@ export function BookDetailsContent({
   const narrators = book.narrators
 
   return (
-    <div className="relative flex flex-1 flex-col">
+    <article className="relative flex h-full flex-1 flex-col overflow-y-auto">
       {!compact && (
         <SiteHeader
           breadcrumbs={[
@@ -641,7 +579,9 @@ export function BookDetailsContent({
                     >
                       <Input
                         value={newAuthor}
-                        onChange={(e) => setNewAuthor(e.target.value)}
+                        onChange={(e) => {
+                          setNewAuthor(e.target.value)
+                        }}
                         placeholder={t("addAuthor")}
                         className="h-7 w-40 text-sm"
                       />
@@ -714,7 +654,9 @@ export function BookDetailsContent({
                     >
                       <Input
                         value={newNarrator}
-                        onChange={(e) => setNewNarrator(e.target.value)}
+                        onChange={(e) => {
+                          setNewNarrator(e.target.value)
+                        }}
                         placeholder={t("addNarrator")}
                         className="h-7 w-40 text-sm"
                       />
@@ -1121,7 +1063,7 @@ export function BookDetailsContent({
               <IconFileText className="h-4 w-4" />
               {t("fileInformation.title")}
             </h2>
-            <div className="bg-muted/50 space-y-3 rounded-lg p-4">
+            <div className="space-y-3">
               {book.readaloud?.filepath && (
                 <FilePathRow
                   label={t("fileInformation.readaloud")}
@@ -1147,278 +1089,32 @@ export function BookDetailsContent({
               )}
 
               {book.alignedAt && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {t("fileInformation.lastAligned")}
-                  </span>
-                  <span className="text-sm">{formatDate(book.alignedAt)}</span>
-                </div>
+                <FilePathRow
+                  label={t("fileInformation.lastAligned")}
+                  filepath={formatDate(book.alignedAt)}
+                  missing={false}
+                />
               )}
 
               {book.alignedWith && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {t("fileInformation.transcriptionEngine")}
-                  </span>
-                  <span className="text-sm">{book.alignedWith}</span>
-                </div>
+                <FilePathRow
+                  label={t("fileInformation.transcriptionEngine")}
+                  filepath={book.alignedWith}
+                  missing={false}
+                />
               )}
 
               {book.alignedByStorytellerVersion && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {t("fileInformation.storytellerVersion")}
-                  </span>
-                  <span className="text-sm">
-                    {book.alignedByStorytellerVersion}
-                  </span>
-                </div>
+                <FilePathRow
+                  label={t("fileInformation.storytellerVersion")}
+                  filepath={book.alignedByStorytellerVersion}
+                  missing={false}
+                />
               )}
             </div>
           </section>
-
-          {canDelete && (
-            <>
-              <Separator className="my-8" />
-              <section className="mb-8">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <IconTrash className="mr-1 h-4 w-4" />
-                  {t("deleteBook")}
-                </Button>
-
-                <Dialog
-                  open={showDeleteDialog}
-                  onOpenChange={setShowDeleteDialog}
-                >
-                  <DialogContent>
-                    <div className="flex flex-col gap-4 p-6">
-                      <h3 className="text-lg font-semibold">
-                        {t("deleteBook")}
-                      </h3>
-
-                      <p className="text-muted-foreground text-sm">
-                        Are you sure you want to delete{" "}
-                        <strong className="text-foreground">
-                          {book.title}
-                        </strong>
-                        {book.authors[0] && <> by {book.authors[0].name}</>}?
-                      </p>
-
-                      <fieldset className="flex flex-col gap-2">
-                        <legend className="mb-2 text-sm font-medium">
-                          Delete files?
-                        </legend>
-
-                        {(
-                          [
-                            {
-                              value: "" as const,
-                              label: "Leave all files in place",
-                            },
-                            {
-                              value: "internal" as const,
-                              label:
-                                "Delete Storyteller files (transcriptions, processed audio)",
-                            },
-                            {
-                              value: "all" as const,
-                              label:
-                                "Delete all files, including book assets (EPUB and audio)",
-                            },
-                          ] as const
-                        ).map((option) => (
-                          <label
-                            key={option.value}
-                            className="flex items-center gap-2 text-sm"
-                          >
-                            <input
-                              type="radio"
-                              name="deleteAssetMode"
-                              value={option.value}
-                              checked={deleteAssetMode === option.value}
-                              onChange={() => setDeleteAssetMode(option.value)}
-                              className="accent-primary"
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                      </fieldset>
-
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowDeleteDialog(false)}
-                        >
-                          Cancel
-                        </Button>
-
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={async () => {
-                            await deleteBook({
-                              uuid: book.uuid,
-                              ...(deleteAssetMode && {
-                                includeAssets: deleteAssetMode,
-                              }),
-                            })
-                            setShowDeleteDialog(false)
-                            router.push("/v3/books")
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </section>
-            </>
-          )}
         </div>
       </div>
-    </div>
-  )
-}
-
-const PROCESSING_STAGE_LABELS: Record<string, string> = {
-  SPLIT_TRACKS: "Pre-processing audio",
-  TRANSCRIBE_CHAPTERS: "Transcribing tracks",
-  SYNC_CHAPTERS: "Synchronizing chapters",
-}
-
-function TranscriptionStatus({
-  book,
-  onProcess,
-  onCancel,
-}: {
-  book: BookWithRelations
-  onProcess: () => void
-  onCancel: () => void
-}) {
-  const hasEbook = book.ebook !== null
-  const hasAudiobook = book.audiobook !== null
-  const canCreateReadaloud = hasEbook && hasAudiobook && !book.readaloud
-
-  const readaloudStatus = book.readaloud?.status
-
-  if (!readaloudStatus && !canCreateReadaloud) {
-    return null
-  }
-
-  return (
-    <section className="mb-8">
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
-        <IconProgress className="h-4 w-4" />
-        Transcription
-      </h2>
-
-      <div className="bg-muted/50 rounded-lg p-4">
-        {readaloudStatus === "ALIGNED" && (
-          <div className="flex items-center gap-2 text-sm">
-            <IconCheck className="h-4 w-4 text-green-600" />
-            <span>Aligned</span>
-          </div>
-        )}
-
-        {readaloudStatus === "QUEUED" && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Queued for alignment</span>
-            <Button variant="ghost" size="sm" onClick={onCancel}>
-              <IconX className="mr-1 h-3 w-3" />
-              Cancel
-            </Button>
-          </div>
-        )}
-
-        {readaloudStatus === "PROCESSING" && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">
-                {PROCESSING_STAGE_LABELS[book.readaloud?.currentStage ?? ""] ??
-                  "Processing"}
-              </span>
-              <Button variant="ghost" size="sm" onClick={onCancel}>
-                <IconX className="mr-1 h-3 w-3" />
-                Cancel
-              </Button>
-            </div>
-
-            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-              <div
-                className="bg-primary h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.floor((book.readaloud?.stageProgress ?? 0) * 100)}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {(readaloudStatus === "ERROR" || readaloudStatus === "STOPPED") && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <IconAlertTriangle className="text-destructive h-4 w-4" />
-              <span>
-                {readaloudStatus === "ERROR"
-                  ? "Processing failed"
-                  : "Processing stopped"}
-              </span>
-            </div>
-            <Button variant="outline" size="sm" onClick={onProcess}>
-              Retry
-            </Button>
-          </div>
-        )}
-
-        {canCreateReadaloud && (
-          <Button variant="outline" size="sm" onClick={onProcess}>
-            <IconReadaloud className="mr-1 h-4 w-4" />
-            Create readaloud
-          </Button>
-        )}
-      </div>
-    </section>
-  )
-}
-
-function FilePathRow({
-  label,
-  filepath,
-  missing,
-}: {
-  label: string
-  filepath: string
-  missing: boolean
-}) {
-  const lastSlash = filepath.lastIndexOf("/")
-  const directory = lastSlash >= 0 ? filepath.slice(0, lastSlash + 1) : ""
-  const filename = lastSlash >= 0 ? filepath.slice(lastSlash + 1) : filepath
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground text-xs font-medium">
-          {label}
-        </span>
-
-        {!!missing && (
-          <Badge variant="destructive" className="h-4 gap-0.5 px-1 text-[10px]">
-            <IconAlertTriangle className="h-2.5 w-2.5" />
-            Missing
-          </Badge>
-        )}
-      </div>
-
-      <div className="text-sm" title={filepath}>
-        <span className="text-muted-foreground">{directory}</span>
-        <code className="font-mono font-medium">{filename}</code>
-      </div>
-    </div>
+    </article>
   )
 }
