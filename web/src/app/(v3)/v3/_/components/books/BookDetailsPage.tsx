@@ -4,8 +4,10 @@ import { type UUID } from "crypto"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
+  IconAlertTriangle,
   IconBook,
   IconCalendar,
+  IconCamera,
   IconCheck,
   IconDownload,
   IconEdit,
@@ -13,12 +15,24 @@ import {
   IconFolder,
   IconHeadphones,
   IconLanguage,
+  IconPlayerPlay,
+  IconPlus,
+  IconProgress,
   IconTag,
+  IconTrash,
   IconUser,
   IconX,
 } from "@tabler/icons-react"
+import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { Fragment, useCallback, useEffect, useState } from "react"
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -32,7 +46,10 @@ import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import {
   getDownloadUrl,
+  useCancelProcessingMutation,
+  useDeleteBookMutation,
   useGetBookQuery,
+  useProcessBookMutation,
   useUpdateBookMutation,
 } from "@/store/api"
 
@@ -50,7 +67,46 @@ import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
 import { Textarea } from "@v3/_/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@v3/_/components/ui/select"
 import { V3Link } from "@v3/_/components/v3-link"
+
+import {
+  creatorRelators,
+  type Role,
+} from "@/components/books/edit/marcRelators"
+
+function getLanguageDisplayName(code: string): string | null {
+  const trimmed = code.trim()
+
+  if (!trimmed) {
+    return null
+  }
+
+  try {
+    new Intl.Locale(trimmed)
+    const displayNames = new Intl.DisplayNames(["en"], { type: "language" })
+    const name = displayNames.of(trimmed)
+
+    if (!name || name === trimmed) {
+      return null
+    }
+
+    return name
+  } catch {
+    return null
+  }
+}
+
+type EditableCreator = {
+  name: string
+  role: string
+}
 
 const bookFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -145,8 +201,10 @@ export function BookDetailsContent({
   compact = false,
   canEdit = false,
   canDownload = false,
-  canDelete: _canDelete,
+  canDelete = false,
   initialBook,
+  isEditing: controlledIsEditing,
+  onEditingChange,
 }: {
   uuid: UUID
   initialBook?: BookWithRelations
@@ -154,37 +212,67 @@ export function BookDetailsContent({
   canEdit?: boolean
   canDownload?: boolean
   canDelete?: boolean
+  isEditing?: boolean
+  onEditingChange?: (editing: boolean) => void
 }) {
+  const router = useRouter()
   const { data: queryBook, isLoading: isLoadingBook } = useGetBookQuery({
     uuid,
   })
   const [updateBook, { isLoading: isSaving }] = useUpdateBookMutation()
-  const [isEditing, setIsEditing] = useState(false)
+  const [deleteBook] = useDeleteBookMutation()
+  const [processBook] = useProcessBookMutation()
+  const [cancelProcessing] = useCancelProcessingMutation()
+  const [localIsEditing, setLocalIsEditing] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteAssetMode, setDeleteAssetMode] = useState<
+    "" | "internal" | "all"
+  >("")
   const tLabels = useTranslations("Labels")
   const t = useTranslations("BookDetailsPage")
 
-  const book = queryBook ?? initialBook
+  const isControlled = controlledIsEditing !== undefined
+  const isEditing = isControlled ? controlledIsEditing : localIsEditing
 
-  // // // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
-  // // const canEdit = true === true
-  // // // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare
-  // const canDownload = true === true
+  const setIsEditing = useCallback(
+    (value: boolean) => {
+      if (isControlled) {
+        onEditingChange?.(value)
+      } else {
+        setLocalIsEditing(value)
+      }
+    },
+    [isControlled, onEditingChange],
+  )
+
+  const [editAuthors, setEditAuthors] = useState<string[]>([])
+  const [editNarrators, setEditNarrators] = useState<string[]>([])
+  const [editCreators, setEditCreators] = useState<EditableCreator[]>([])
+  const [newAuthor, setNewAuthor] = useState("")
+  const [newNarrator, setNewNarrator] = useState("")
+  const textCoverRef = useRef<HTMLInputElement>(null)
+  const [textCoverFile, setTextCoverFile] = useState<File | null>(null)
+  const [audioCoverFile, setAudioCoverFile] = useState<File | null>(null)
+  const [textCoverPreview, setTextCoverPreview] = useState<string | null>(null)
+
+  const book = queryBook ?? initialBook
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
-    // defaultValues: {
-    //   title: book.title,
-    //   subtitle: book.subtitle,
-    //   description: book.description,
-    //   language: book.language,
-    //   publicationDate: book.publicationDate,
-    // },
   })
+
+  const languageValue = form.watch("language")
+
+  const languageDisplayName = useMemo(
+    () => getLanguageDisplayName(languageValue ?? ""),
+    [languageValue],
+  )
 
   useEffect(() => {
     if (!book) {
       return
     }
+
     form.reset({
       title: book.title,
       subtitle: book.subtitle,
@@ -193,6 +281,23 @@ export function BookDetailsContent({
       publicationDate: book.publicationDate,
     })
   }, [book, form])
+
+  useEffect(() => {
+    if (!book || !isEditing) {
+      return
+    }
+
+    setEditAuthors(book.authors.map((a) => a.name))
+    setEditNarrators(book.narrators.map((n) => n.name))
+    setEditCreators(
+      book.creators
+        .filter((c) => c.role !== "aut" && c.role !== "nrt")
+        .map((c): EditableCreator => ({ name: c.name, role: c.role ?? "" })),
+    )
+    setTextCoverFile(null)
+    setAudioCoverFile(null)
+    setTextCoverPreview(null)
+  }, [isEditing, book])
 
   const handleSave = useCallback(
     async (values: BookFormValues) => {
@@ -204,11 +309,31 @@ export function BookDetailsContent({
           description: values.description,
           language: values.language,
           publicationDate: values.publicationDate,
+          authors: editAuthors,
+          narrators: editNarrators,
+          creators: editCreators
+            .filter((c) => c.name.trim())
+            .map((c) => ({
+              name: c.name,
+              fileAs: c.name,
+              role: (c.role || "oth") as Role,
+            })),
         },
+        textCover: textCoverFile,
+        audioCover: audioCoverFile,
       })
       setIsEditing(false)
     },
-    [uuid, updateBook],
+    [
+      uuid,
+      updateBook,
+      editAuthors,
+      editNarrators,
+      editCreators,
+      textCoverFile,
+      audioCoverFile,
+      setIsEditing,
+    ],
   )
 
   const handleRatingChange = async (rating: number | null) => {
@@ -233,6 +358,17 @@ export function BookDetailsContent({
       language: book.language,
       publicationDate: book.publicationDate,
     })
+
+    setEditAuthors(book.authors.map((a) => a.name))
+    setEditNarrators(book.narrators.map((n) => n.name))
+    setEditCreators(
+      book.creators
+        .filter((c) => c.role !== "aut" && c.role !== "nrt")
+        .map((c): EditableCreator => ({ name: c.name, role: c.role ?? "" })),
+    )
+    setTextCoverFile(null)
+    setAudioCoverFile(null)
+    setTextCoverPreview(null)
     setIsEditing(false)
   }
 
@@ -323,6 +459,29 @@ export function BookDetailsContent({
         />
       )}
 
+      {compact && isEditing && (
+        <div className="bg-background sticky top-0 z-10 flex items-center justify-end gap-2 border-b px-4 py-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleCancel}
+            disabled={isSaving}
+          >
+            <IconX className="mr-1 h-4 w-4" />
+            {t("cancel")}
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={form.handleSubmit(handleSave)}
+            disabled={isSaving}
+          >
+            <IconCheck className="mr-1 h-4 w-4" />
+            {isSaving ? t("saving") : t("save")}
+          </Button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto">
         <div className={cn("p-6", !compact && "mx-auto max-w-5xl")}>
           <div
@@ -337,31 +496,74 @@ export function BookDetailsContent({
                 compact ? "mx-auto" : "",
               )}
             >
-              <Dialog>
-                <DialogTrigger
-                  className={cn(
-                    "flex shrink-0 cursor-zoom-in flex-col items-center justify-center rounded-lg",
-                    compact
-                      ? "mx-auto h-80 w-60"
-                      : "flex w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
+              {isEditing ? (
+                <div className="relative">
+                  {textCoverPreview ? (
+                    <img
+                      src={textCoverPreview}
+                      alt="New cover"
+                      className="h-full w-full rounded-lg object-contain"
+                      style={{
+                        maxWidth: compact ? 176 : 200,
+                        maxHeight: compact ? 280 : 300,
+                      }}
+                    />
+                  ) : (
+                    <BookCover
+                      book={book}
+                      width={compact ? 176 : 200}
+                      key={book.uuid}
+                    />
                   )}
-                >
-                  <BookCover
-                    book={book}
-                    width={compact ? 176 : 200}
-                    key={book.uuid}
-                  />
-                </DialogTrigger>
 
-                <DialogContent className="p-0!">
-                  <BookCover
-                    book={book}
-                    // get that high res
-                    width={400}
-                    key={book.uuid}
+                  <button
+                    type="button"
+                    onClick={() => textCoverRef.current?.click()}
+                    className="absolute flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg bg-black/50 transition-opacity hover:opacity-100"
+                  >
+                    <IconCamera className="h-6 w-6 text-white" />
+                    <span className="text-xs text-white">Change cover</span>
+                  </button>
+
+                  <input
+                    ref={textCoverRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) {
+                        return
+                      }
+
+                      setTextCoverFile(file)
+                      setAudioCoverFile(file)
+                      setTextCoverPreview(URL.createObjectURL(file))
+                    }}
                   />
-                </DialogContent>
-              </Dialog>
+                </div>
+              ) : (
+                <Dialog>
+                  <DialogTrigger
+                    className={cn(
+                      "flex shrink-0 cursor-zoom-in flex-col items-center justify-center rounded-lg",
+                      compact
+                        ? "mx-auto h-80 w-60"
+                        : "flex w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
+                    )}
+                  >
+                    <BookCover
+                      book={book}
+                      width={compact ? 176 : 200}
+                      key={book.uuid}
+                    />
+                  </DialogTrigger>
+
+                  <DialogContent className="p-0!">
+                    <BookCover book={book} width={400} key={book.uuid} />
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
 
             <div className="flex flex-1 flex-col">
@@ -401,33 +603,145 @@ export function BookDetailsContent({
                 )}
               </div>
 
-              {authors.length > 0 && (
-                <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-1 text-sm">
-                  <span>{t("writtenBy")}</span>
-                  {authors.map((author, idx) => (
-                    <Fragment key={author.uuid}>
-                      <V3Link
-                        href={`/books?author=${author.uuid}`}
-                        className="hover:text-primary text-foreground line-clamp-1 inline font-medium break-all hyphens-auto hover:underline"
+              {isEditing ? (
+                <div className="mt-3 flex flex-col gap-2">
+                  <span className="text-muted-foreground text-xs font-medium uppercase">
+                    {tLabels("authors")}
+                  </span>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {editAuthors.map((name, idx) => (
+                      <Badge key={idx} variant="outline" className="gap-1">
+                        {name}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditAuthors((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }}
+                          className="hover:bg-destructive/20 ml-0.5 rounded-full p-0.5"
+                        >
+                          <IconX className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+
+                    <form
+                      className="flex items-center gap-1"
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        const trimmed = newAuthor.trim()
+
+                        if (trimmed) {
+                          setEditAuthors((prev) => [...prev, trimmed])
+                          setNewAuthor("")
+                        }
+                      }}
+                    >
+                      <Input
+                        value={newAuthor}
+                        onChange={(e) => setNewAuthor(e.target.value)}
+                        placeholder={t("addAuthor")}
+                        className="h-7 w-40 text-sm"
+                      />
+
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={!newAuthor.trim()}
                       >
-                        {author.name}
-                      </V3Link>
-                      <span>{idx < authors.length - 1 && ", "}</span>
-                    </Fragment>
-                  ))}
-                </p>
+                        <IconPlus className="h-3 w-3" />
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              ) : (
+                authors.length > 0 && (
+                  <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-1 text-sm">
+                    <span>{t("writtenBy")}</span>
+                    {authors.map((author, idx) => (
+                      <Fragment key={author.uuid}>
+                        <V3Link
+                          href={`/books?author=${author.uuid}`}
+                          className="hover:text-primary text-foreground line-clamp-1 inline font-medium break-all hyphens-auto hover:underline"
+                        >
+                          {author.name}
+                        </V3Link>
+                        <span>{idx < authors.length - 1 && ", "}</span>
+                      </Fragment>
+                    ))}
+                  </p>
+                )
               )}
 
-              {narrators.length > 0 && (
-                <div className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
-                  <span>{t("narratedBy")}</span>
-                  {narrators.map((narrator, idx) => (
-                    <span key={narrator.uuid}>
-                      <span className="text-foreground">{narrator.name}</span>
-                      {idx < narrators.length - 1 && ", "}
-                    </span>
-                  ))}
+              {isEditing ? (
+                <div className="mt-2 flex flex-col gap-2">
+                  <span className="text-muted-foreground text-xs font-medium uppercase">
+                    {tLabels("narrators")}
+                  </span>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {editNarrators.map((name, idx) => (
+                      <Badge key={idx} variant="outline" className="gap-1">
+                        {name}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditNarrators((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            )
+                          }}
+                          className="hover:bg-destructive/20 ml-0.5 rounded-full p-0.5"
+                        >
+                          <IconX className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+
+                    <form
+                      className="flex items-center gap-1"
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        const trimmed = newNarrator.trim()
+
+                        if (trimmed) {
+                          setEditNarrators((prev) => [...prev, trimmed])
+                          setNewNarrator("")
+                        }
+                      }}
+                    >
+                      <Input
+                        value={newNarrator}
+                        onChange={(e) => setNewNarrator(e.target.value)}
+                        placeholder={t("addNarrator")}
+                        className="h-7 w-40 text-sm"
+                      />
+
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={!newNarrator.trim()}
+                      >
+                        <IconPlus className="h-3 w-3" />
+                      </Button>
+                    </form>
+                  </div>
                 </div>
+              ) : (
+                narrators.length > 0 && (
+                  <div className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
+                    <span>{t("narratedBy")}</span>
+                    {narrators.map((narrator, idx) => (
+                      <span key={narrator.uuid}>
+                        <span className="text-foreground">{narrator.name}</span>
+                        {idx < narrators.length - 1 && ", "}
+                      </span>
+                    ))}
+                  </div>
+                )
               )}
 
               <div className="mt-3">
@@ -455,16 +769,58 @@ export function BookDetailsContent({
 
               <div className="flex-1" />
 
-              <div className="mt-6 flex items-center justify-between border-t pt-4">
-                <div className="flex flex-wrap items-center gap-4">
-                  {book.publicationDate && !isEditing && (
-                    <span className="text-muted-foreground text-sm">
-                      {formatYear(book.publicationDate)}
-                    </span>
-                  )}
-                  {/* <FormatBadges book={book} /> */}
-                </div>
+              <div className="mt-6 flex flex-wrap items-center gap-3 border-t pt-4">
                 <ReadingStatusButton book={book} />
+
+                {book.publicationDate && !isEditing && (
+                  <span className="text-muted-foreground ml-auto text-sm">
+                    {formatYear(book.publicationDate)}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {book.readaloud?.status === "ALIGNED" && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
+                        <IconPlayerPlay className="mr-1 h-4 w-4" />
+                        Read
+                      </V3Link>
+                    }
+                  />
+                )}
+
+                {book.readaloud?.status !== "ALIGNED" && book.ebook && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
+                        <IconBook className="mr-1 h-4 w-4" />
+                        Read
+                      </V3Link>
+                    }
+                  />
+                )}
+
+                {book.readaloud?.status !== "ALIGNED" && book.audiobook && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
+                        <IconHeadphones className="mr-1 h-4 w-4" />
+                        Listen
+                      </V3Link>
+                    }
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -502,6 +858,12 @@ export function BookDetailsContent({
               </p>
             )}
           </section>
+
+          <TranscriptionStatus
+            book={book}
+            onProcess={() => void processBook({ uuid: book.uuid })}
+            onCancel={() => void cancelProcessing({ uuid: book.uuid })}
+          />
 
           <section className="mb-8">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
@@ -554,7 +916,20 @@ export function BookDetailsContent({
                       id="language"
                       {...form.register("language")}
                       className="mt-1"
+                      placeholder="e.g. en, nl, fr-FR"
                     />
+                    {languageValue && (
+                      <p
+                        className={cn(
+                          "mt-1 text-xs",
+                          languageDisplayName
+                            ? "text-muted-foreground"
+                            : "text-destructive",
+                        )}
+                      >
+                        {languageDisplayName ?? t("invalidLanguageCode")}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="publicationDate">
@@ -593,27 +968,100 @@ export function BookDetailsContent({
             </div>
           </section>
 
-          {book.creators.filter((c) => c.role !== "aut" && c.role !== "nrt")
-            .length > 0 && (
+          {(isEditing ||
+            book.creators.filter((c) => c.role !== "aut" && c.role !== "nrt")
+              .length > 0) && (
             <section className="mb-8">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
                 <IconUser className="h-4 w-4" />
                 {tLabels("otherContributors")}
               </h2>
-              <div className="flex flex-wrap gap-2">
-                {book.creators
-                  .filter((c) => c.role !== "aut" && c.role !== "nrt")
-                  .map((creator) => (
-                    <Badge key={creator.uuid} variant="outline">
-                      {creator.name}
-                      {creator.role && (
-                        <span className="text-muted-foreground ml-1">
-                          ({creator.role})
-                        </span>
-                      )}
-                    </Badge>
+
+              {isEditing ? (
+                <div className="flex flex-col gap-3">
+                  {editCreators.map((creator, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={creator.name}
+                        onChange={(e) => {
+                          setEditCreators((prev) =>
+                            prev.map((c, i) =>
+                              i === idx ? { ...c, name: e.target.value } : c,
+                            ),
+                          )
+                        }}
+                        placeholder="Name"
+                        className="h-8 flex-1 text-sm"
+                      />
+
+                      <Select
+                        value={creator.role}
+                        onValueChange={(value) => {
+                          setEditCreators((prev) =>
+                            prev.map(
+                              (c, i): EditableCreator =>
+                                i === idx ? { ...c, role: value ?? "" } : c,
+                            ),
+                          )
+                        }}
+                      >
+                        <SelectTrigger className="h-8 w-48 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {creatorRelators.map((r) => (
+                            <SelectItem key={r.value} value={r.value}>
+                              {r.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => {
+                          setEditCreators((prev) =>
+                            prev.filter((_, i) => i !== idx),
+                          )
+                        }}
+                      >
+                        <IconX className="h-3 w-3" />
+                      </Button>
+                    </div>
                   ))}
-              </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="self-start"
+                    onClick={() => {
+                      setEditCreators((prev) => [
+                        ...prev,
+                        { name: "", role: "" },
+                      ])
+                    }}
+                  >
+                    <IconPlus className="mr-1 h-3 w-3" />
+                    Add contributor
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {book.creators
+                    .filter((c) => c.role !== "aut" && c.role !== "nrt")
+                    .map((creator) => (
+                      <Badge key={creator.uuid} variant="outline">
+                        {creator.name}
+                        {creator.role && (
+                          <span className="text-muted-foreground ml-1">
+                            ({creator.role})
+                          </span>
+                        )}
+                      </Badge>
+                    ))}
+                </div>
+              )}
             </section>
           )}
 
@@ -675,35 +1123,29 @@ export function BookDetailsContent({
             </h2>
             <div className="bg-muted/50 space-y-3 rounded-lg p-4">
               {book.readaloud?.filepath && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {t("fileInformation.readaloud")}
-                  </span>
-                  <code className="text-sm break-all">
-                    {book.readaloud.filepath}
-                  </code>
-                </div>
+                <FilePathRow
+                  label={t("fileInformation.readaloud")}
+                  filepath={book.readaloud.filepath}
+                  missing={book.readaloud.missing}
+                />
               )}
+
               {book.ebook && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {t("fileInformation.ebook")}
-                  </span>
-                  <code className="text-sm break-all">
-                    {book.ebook.filepath}
-                  </code>
-                </div>
+                <FilePathRow
+                  label={t("fileInformation.ebook")}
+                  filepath={book.ebook.filepath}
+                  missing={book.ebook.missing}
+                />
               )}
+
               {book.audiobook && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    {t("fileInformation.audiobook")}
-                  </span>
-                  <code className="text-sm break-all">
-                    {book.audiobook.filepath}
-                  </code>
-                </div>
+                <FilePathRow
+                  label={t("fileInformation.audiobook")}
+                  filepath={book.audiobook.filepath}
+                  missing={book.audiobook.missing}
+                />
               )}
+
               {book.alignedAt && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
@@ -712,6 +1154,7 @@ export function BookDetailsContent({
                   <span className="text-sm">{formatDate(book.alignedAt)}</span>
                 </div>
               )}
+
               {book.alignedWith && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
@@ -720,6 +1163,7 @@ export function BookDetailsContent({
                   <span className="text-sm">{book.alignedWith}</span>
                 </div>
               )}
+
               {book.alignedByStorytellerVersion && (
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground text-xs font-medium">
@@ -732,7 +1176,248 @@ export function BookDetailsContent({
               )}
             </div>
           </section>
+
+          {canDelete && (
+            <>
+              <Separator className="my-8" />
+              <section className="mb-8">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <IconTrash className="mr-1 h-4 w-4" />
+                  {t("deleteBook")}
+                </Button>
+
+                <Dialog
+                  open={showDeleteDialog}
+                  onOpenChange={setShowDeleteDialog}
+                >
+                  <DialogContent>
+                    <div className="flex flex-col gap-4 p-6">
+                      <h3 className="text-lg font-semibold">
+                        {t("deleteBook")}
+                      </h3>
+
+                      <p className="text-muted-foreground text-sm">
+                        Are you sure you want to delete{" "}
+                        <strong className="text-foreground">
+                          {book.title}
+                        </strong>
+                        {book.authors[0] && <> by {book.authors[0].name}</>}?
+                      </p>
+
+                      <fieldset className="flex flex-col gap-2">
+                        <legend className="mb-2 text-sm font-medium">
+                          Delete files?
+                        </legend>
+
+                        {(
+                          [
+                            {
+                              value: "" as const,
+                              label: "Leave all files in place",
+                            },
+                            {
+                              value: "internal" as const,
+                              label:
+                                "Delete Storyteller files (transcriptions, processed audio)",
+                            },
+                            {
+                              value: "all" as const,
+                              label:
+                                "Delete all files, including book assets (EPUB and audio)",
+                            },
+                          ] as const
+                        ).map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <input
+                              type="radio"
+                              name="deleteAssetMode"
+                              value={option.value}
+                              checked={deleteAssetMode === option.value}
+                              onChange={() => setDeleteAssetMode(option.value)}
+                              className="accent-primary"
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                      </fieldset>
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowDeleteDialog(false)}
+                        >
+                          Cancel
+                        </Button>
+
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={async () => {
+                            await deleteBook({
+                              uuid: book.uuid,
+                              ...(deleteAssetMode && {
+                                includeAssets: deleteAssetMode,
+                              }),
+                            })
+                            setShowDeleteDialog(false)
+                            router.push("/v3/books")
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </section>
+            </>
+          )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+const PROCESSING_STAGE_LABELS: Record<string, string> = {
+  SPLIT_TRACKS: "Pre-processing audio",
+  TRANSCRIBE_CHAPTERS: "Transcribing tracks",
+  SYNC_CHAPTERS: "Synchronizing chapters",
+}
+
+function TranscriptionStatus({
+  book,
+  onProcess,
+  onCancel,
+}: {
+  book: BookWithRelations
+  onProcess: () => void
+  onCancel: () => void
+}) {
+  const hasEbook = book.ebook !== null
+  const hasAudiobook = book.audiobook !== null
+  const canCreateReadaloud = hasEbook && hasAudiobook && !book.readaloud
+
+  const readaloudStatus = book.readaloud?.status
+
+  if (!readaloudStatus && !canCreateReadaloud) {
+    return null
+  }
+
+  return (
+    <section className="mb-8">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
+        <IconProgress className="h-4 w-4" />
+        Transcription
+      </h2>
+
+      <div className="bg-muted/50 rounded-lg p-4">
+        {readaloudStatus === "ALIGNED" && (
+          <div className="flex items-center gap-2 text-sm">
+            <IconCheck className="h-4 w-4 text-green-600" />
+            <span>Aligned</span>
+          </div>
+        )}
+
+        {readaloudStatus === "QUEUED" && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Queued for alignment</span>
+            <Button variant="ghost" size="sm" onClick={onCancel}>
+              <IconX className="mr-1 h-3 w-3" />
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        {readaloudStatus === "PROCESSING" && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">
+                {PROCESSING_STAGE_LABELS[book.readaloud?.currentStage ?? ""] ??
+                  "Processing"}
+              </span>
+              <Button variant="ghost" size="sm" onClick={onCancel}>
+                <IconX className="mr-1 h-3 w-3" />
+                Cancel
+              </Button>
+            </div>
+
+            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+              <div
+                className="bg-primary h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.floor((book.readaloud?.stageProgress ?? 0) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {(readaloudStatus === "ERROR" || readaloudStatus === "STOPPED") && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <IconAlertTriangle className="text-destructive h-4 w-4" />
+              <span>
+                {readaloudStatus === "ERROR"
+                  ? "Processing failed"
+                  : "Processing stopped"}
+              </span>
+            </div>
+            <Button variant="outline" size="sm" onClick={onProcess}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {canCreateReadaloud && (
+          <Button variant="outline" size="sm" onClick={onProcess}>
+            <IconReadaloud className="mr-1 h-4 w-4" />
+            Create readaloud
+          </Button>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function FilePathRow({
+  label,
+  filepath,
+  missing,
+}: {
+  label: string
+  filepath: string
+  missing: boolean
+}) {
+  const lastSlash = filepath.lastIndexOf("/")
+  const directory = lastSlash >= 0 ? filepath.slice(0, lastSlash + 1) : ""
+  const filename = lastSlash >= 0 ? filepath.slice(lastSlash + 1) : filepath
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground text-xs font-medium">
+          {label}
+        </span>
+
+        {!!missing && (
+          <Badge variant="destructive" className="h-4 gap-0.5 px-1 text-[10px]">
+            <IconAlertTriangle className="h-2.5 w-2.5" />
+            Missing
+          </Badge>
+        )}
+      </div>
+
+      <div className="text-sm" title={filepath}>
+        <span className="text-muted-foreground">{directory}</span>
+        <code className="font-mono font-medium">{filename}</code>
       </div>
     </div>
   )

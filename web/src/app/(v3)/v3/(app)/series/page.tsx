@@ -1,17 +1,17 @@
-"use client"
+import { type Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 
-import { useTranslations } from "next-intl"
+import { withPageAuth } from "@/app/(v3)/v3/_/server/page-auth-wrapper"
 
-import { LibraryPage } from "@v3/_/components/library/LibraryPage"
-import { librarySections } from "@v3/_/components/library/library-sections"
+import { SeriesPageClient } from "./seriesPageClient"
 
-export default function SeriesPage() {
-  const t = useTranslations("LibraryPage")
-
-  return (
-    <>
-      <meta name="title" content={t("Series.by")} />
-      <LibraryPage title={t("Series.by")} section={librarySections.series} />
-    </>
-  )
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("LibraryPage")
+  return {
+    title: t("Series.by"),
+  }
 }
+
+export default withPageAuth(["bookList"])(() => {
+  return <SeriesPageClient />
+})

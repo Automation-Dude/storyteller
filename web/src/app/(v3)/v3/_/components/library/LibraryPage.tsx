@@ -2,26 +2,25 @@
 
 import {
   IconArrowLeft,
-  IconArrowUpRight,
   IconSearch,
   IconSortAscending,
   IconSortDescending,
-  IconX,
 } from "@tabler/icons-react"
-import dynamic from "next/dynamic"
-import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
 import { BookSelectionProvider } from "@/app/(v3)/v3/_/hooks/use-book-selection"
 import { useListBooksQuery } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
-import { type UUID } from "@/uuid"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
+import {
+  BookDetailDrawer,
+  BookListLayout,
+} from "@v3/_/components/books/BookListLayout"
 import { filterBooksClientSide } from "@v3/_/components/library/filter-books-client"
 import {
   type LibraryItem,
@@ -29,36 +28,13 @@ import {
 } from "@v3/_/components/library/library-sections"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
-import {
-  PageContent,
-  PageHeader,
-  PageLayout,
-  PageMain,
-  PagePanel,
-  PageSidebar,
-} from "@v3/_/components/ui/page-layout"
+import { PageContent } from "@v3/_/components/ui/page-layout"
 import { ScrollArea } from "@v3/_/components/ui/scroll-area"
-import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
 const noop = () => {}
-
-const DynamicBookDetailsContent = dynamic(
-  () =>
-    import("@v3/_/components/books/BookDetailsPage").then(
-      (mod) => mod.BookDetailsContent,
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="p-6">
-        <Skeleton className="h-60 w-full rounded-lg" />
-      </div>
-    ),
-  },
-)
 
 type SidebarSortMode = "name" | "count"
 
@@ -79,10 +55,6 @@ export function LibraryPage({
 
   const sidebarWidth = useAppSelector(
     (state) => state.uiSettings.librarySidebarWidth,
-  )
-
-  const panelWidth = useAppSelector(
-    (state) => state.uiSettings.detailPanelWidth,
   )
 
   const { data: books, isLoading: booksLoading } = useListBooksQuery()
@@ -132,6 +104,14 @@ export function LibraryPage({
     return items
   }, [allItems, sidebarSearch, sidebarSort])
 
+  useEffect(() => {
+    const firstItem = visibleItems[0]
+
+    if (!selectedItem && firstItem) {
+      void setSelectedItem(firstItem.key)
+    }
+  }, [selectedItem, visibleItems, setSelectedItem])
+
   const sectionBooks = useMemo(() => {
     if (!books || !selectedItem) return []
     return section.filterBooks(books, selectedItem)
@@ -154,13 +134,6 @@ export function LibraryPage({
   const handleSidebarWidthChange = useCallback(
     (width: number) => {
       dispatch(uiSettingsSlice.actions.setLibrarySidebarWidth(width))
-    },
-    [dispatch],
-  )
-
-  const handlePanelWidthChange = useCallback(
-    (width: number) => {
-      dispatch(uiSettingsSlice.actions.setDetailPanelWidth(width))
     },
     [dispatch],
   )
@@ -251,13 +224,20 @@ export function LibraryPage({
   if (isMobile) {
     if (selectedItem && selectedItemName) {
       return (
-        <MobileBookView
-          title={title}
-          selectedItemName={selectedItemName}
-          onBack={handleBackToList}
-        >
-          {booksContent}
-        </MobileBookView>
+        <>
+          <MobileBookView
+            title={title}
+            selectedItemName={selectedItemName}
+            onBack={handleBackToList}
+          >
+            {booksContent}
+          </MobileBookView>
+
+          <BookDetailDrawer
+            selectedBookUuid={selectedBookUuid}
+            onClose={handleClosePanel}
+          />
+        </>
       )
     }
 
@@ -272,61 +252,19 @@ export function LibraryPage({
   }
 
   return (
-    <PageLayout>
-      <PageSidebar
-        width={sidebarWidth}
-        onWidthChange={handleSidebarWidthChange}
-        className="border-r"
-      >
-        {sidebarContent}
-      </PageSidebar>
-
-      <PageMain>
-        <PageHeader>
-          <SiteHeader
-            breadcrumbs={[
-              { label: title, url: "" },
-              ...(selectedItemName ? [{ label: selectedItemName }] : []),
-            ]}
-          />
-        </PageHeader>
-        {booksContent}
-      </PageMain>
-
-      <PagePanel
-        open={!!selectedBookUuid}
-        width={panelWidth}
-        onWidthChange={handlePanelWidthChange}
-        className="border-l"
-      >
-        {selectedBookUuid && (
-          <>
-            <div className="flex items-center justify-between border-b px-4 py-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                render={
-                  <Link href={`/v3/books/${selectedBookUuid}`}>
-                    <IconArrowUpRight className="mr-1 h-4 w-4" />
-                    Open Full Page
-                  </Link>
-                }
-              />
-              <Button variant="ghost" size="icon-sm" onClick={handleClosePanel}>
-                <IconX className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <ScrollArea className="h-full flex-1">
-              <DynamicBookDetailsContent
-                uuid={selectedBookUuid as UUID}
-                compact
-              />
-            </ScrollArea>
-          </>
-        )}
-      </PagePanel>
-    </PageLayout>
+    <BookListLayout
+      sidebar={sidebarContent}
+      sidebarWidth={sidebarWidth}
+      onSidebarWidthChange={handleSidebarWidthChange}
+      headerBreadcrumbs={[
+        { label: title, url: "" },
+        ...(selectedItemName ? [{ label: selectedItemName }] : []),
+      ]}
+      selectedBookUuid={selectedBookUuid}
+      onClosePanel={handleClosePanel}
+    >
+      {booksContent}
+    </BookListLayout>
   )
 }
 
@@ -408,7 +346,6 @@ function SidebarPanel({
           placeholder="Search..."
           value={search}
           onChange={onSearchChange}
-          // className="h-8"
         />
       </div>
 
