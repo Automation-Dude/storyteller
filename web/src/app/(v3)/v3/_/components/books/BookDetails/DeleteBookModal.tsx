@@ -1,5 +1,5 @@
+import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import router from "next/router"
 import { useState } from "react"
 
 import { type BookWithRelations } from "@/database/books"
@@ -9,23 +9,14 @@ import { Button } from "@v3/_/components/ui/button"
 import { Dialog, DialogContent } from "@v3/_/components/ui/dialog"
 import { Separator } from "@v3/_/components/ui/separator"
 
-export function DeleteBookModal({
-  canDelete,
-  book,
-}: {
-  canDelete: boolean
-  book: BookWithRelations
-}) {
+export function DeleteBookModal({ book }: { book: BookWithRelations }) {
+  const router = useRouter()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteAssetMode, setDeleteAssetMode] = useState<
     "" | "internal" | "all"
   >("")
   const t = useTranslations("BookDetailsPage")
   const [deleteBook] = useDeleteBookMutation()
-
-  if (!canDelete) {
-    return null
-  }
 
   return (
     <>
@@ -106,6 +97,7 @@ export function DeleteBookModal({
                       }),
                     })
                     setShowDeleteDialog(false)
+
                     router.push("/v3/books")
                   }}
                 >
