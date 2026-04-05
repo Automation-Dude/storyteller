@@ -1,6 +1,5 @@
 "use client"
 
-import { motion, useAnimationControls, useMotionValue } from "framer-motion"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { type BookWithRelations } from "@/database/books"
@@ -11,35 +10,22 @@ import { FallbackCover } from "./BookCover"
 
 type CoverState = "idle" | "separated" | "audiobook-front"
 
-const SPRING = { type: "spring" as const, stiffness: 400, damping: 30 }
-const TWEEN_IN = { type: "tween" as const, duration: 0.2, ease: "easeIn" }
-const TWEEN_OUT = { type: "tween" as const, duration: 0.3, ease: "easeOut" }
-
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
 
-const IDLE = {
-  ebook: { x: "-15%", scale: 1 },
-  audiobook: { x: "15%", scale: 1 },
-}
-
-const SEPARATED = {
-  ebook: { x: "-18%", scale: 0.8 },
-  audiobook: { x: "18%", scale: 0.8 },
-}
-
-const PEAK = {
-  ebook: { x: "-50%", scale: 0.9 },
-  audiobook: { x: "50%", scale: 0.9 },
-}
-
-const AUDIOBOOK_FRONT = {
-  ebook: { x: "-15%", scale: 1 },
-  audiobook: { x: "15%", scale: 1 },
-}
+const T_SPRING =
+  "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.15s ease"
+const T_IN = "transform 0.2s ease-in, box-shadow 0.15s ease"
+const T_OUT = "transform 0.3s ease-out, box-shadow 0.15s ease"
 
 const COVER_BASE =
-  "absolute inset-0 m-auto overflow-hidden rounded-lg shadow-md ring-orange-400 transition-shadow group-hover/covers:ring-2"
+  "absolute inset-0 m-auto overflow-hidden rounded-lg shadow-md ring-orange-400 group-hover/covers:ring-2"
+
+type Pos = { x: string; scale: number; z: number }
+
+function tx(x: string, scale: number) {
+  return `translateX(${x}) scale(${scale})`
+}
 
 export function BookDoubleCover({
   book,
@@ -50,102 +36,114 @@ export function BookDoubleCover({
   width?: number
   disableHover?: boolean
 }) {
-  const ebookControls = useAnimationControls()
-  const audiobookControls = useAnimationControls()
-
   const stateRef = useRef<CoverState>("idle")
-  const genRef = useRef(0)
+  const zSwappedRef = useRef(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  const [zState, setZState] = useState<"ebook-front" | "audiobook-front">(
-    "ebook-front",
+  const ebookRef = useRef<HTMLDivElement>(null)
+  const audiobookRef = useRef<HTMLDivElement>(null)
+
+  const [ebookError, setEbookError] = useState(false)
+  const [audiobookError, setAudiobookError] = useState(false)
+
+  const apply = useCallback(
+    (transition: string, ebook: Pos, audiobook: Pos) => {
+      const eb = ebookRef.current
+      const ab = audiobookRef.current
+      if (!eb || !ab) return
+
+      eb.style.transition = transition
+      eb.style.transform = tx(ebook.x, ebook.scale)
+      eb.style.zIndex = String(ebook.z)
+
+      ab.style.transition = transition
+      ab.style.transform = tx(audiobook.x, audiobook.scale)
+      ab.style.zIndex = String(audiobook.z)
+    },
+    [],
   )
 
   const transitionTo = useCallback(
-    async (target: CoverState) => {
-      const gen = ++genRef.current
-      const prev = stateRef.current
-      const stale = () => genRef.current !== gen
+    (target: CoverState) => {
+      clearTimeout(timerRef.current)
 
+      const prev = stateRef.current
       if (prev === target) return
+
       stateRef.current = target
 
+      const ebZ = zSwappedRef.current ? 10 : 20
+      const abZ = zSwappedRef.current ? 20 : 10
+
       if (target === "separated") {
-        await Promise.all([
-          ebookControls.start({ ...SEPARATED.ebook, transition: SPRING }),
-          audiobookControls.start({
-            ...SEPARATED.audiobook,
-            transition: SPRING,
-          }),
-        ])
+        apply(
+          T_SPRING,
+          { x: "-18%", scale: 0.8, z: ebZ },
+          { x: "18%", scale: 0.8, z: abZ },
+        )
 
         return
       }
 
       if (target === "audiobook-front") {
-        await Promise.all([
-          ebookControls.start({ ...PEAK.ebook, transition: TWEEN_IN }),
-          audiobookControls.start({
-            ...PEAK.audiobook,
-            transition: TWEEN_IN,
-          }),
-        ])
-        if (stale()) return
+        // phase 1: spread apart, keep current z-order
+        apply(
+          T_IN,
+          { x: "-50%", scale: 0.9, z: ebZ },
+          { x: "50%", scale: 0.9, z: abZ },
+        )
 
-        setZState("audiobook-front")
+        // phase 2: swap z at peak spread (invisible), then settle
+        timerRef.current = setTimeout(() => {
+          zSwappedRef.current = true
 
-        await Promise.all([
-          ebookControls.start({
-            ...AUDIOBOOK_FRONT.ebook,
-            transition: TWEEN_OUT,
-          }),
-          audiobookControls.start({
-            ...AUDIOBOOK_FRONT.audiobook,
-            transition: TWEEN_OUT,
-          }),
-        ])
+          apply(
+            T_OUT,
+            { x: "-15%", scale: 1, z: 10 },
+            { x: "15%", scale: 1, z: 20 },
+          )
+        }, 200)
 
         return
       }
 
-      if (prev === "audiobook-front") {
-        await Promise.all([
-          ebookControls.start({ ...PEAK.ebook, transition: TWEEN_OUT }),
-          audiobookControls.start({
-            ...PEAK.audiobook,
-            transition: TWEEN_OUT,
-          }),
-        ])
-        if (stale()) return
+      // target === "idle"
+      if (zSwappedRef.current) {
+        // phase 1: spread apart with current (swapped) z-order
+        apply(
+          T_OUT,
+          { x: "-50%", scale: 0.9, z: 10 },
+          { x: "50%", scale: 0.9, z: 20 },
+        )
 
-        setZState("ebook-front")
+        // phase 2: swap z back at peak spread, then settle to idle
+        timerRef.current = setTimeout(() => {
+          zSwappedRef.current = false
+
+          apply(
+            T_OUT,
+            { x: "-15%", scale: 1, z: 20 },
+            { x: "15%", scale: 1, z: 10 },
+          )
+        }, 300)
+
+        return
       }
 
-      await Promise.all([
-        ebookControls.start({ ...IDLE.ebook, transition: TWEEN_OUT }),
-        audiobookControls.start({
-          ...IDLE.audiobook,
-          transition: TWEEN_OUT,
-        }),
-      ])
+      apply(
+        T_SPRING,
+        { x: "-15%", scale: 1, z: 20 },
+        { x: "15%", scale: 1, z: 10 },
+      )
     },
-    [ebookControls, audiobookControls],
+    [apply],
   )
 
-  const [ebookError, setEbookError] = useState(false)
-  const [audiobookError, setAudiobookError] = useState(false)
-
-  const ebookZ = useMotionValue(20)
-  const audiobookZ = useMotionValue(10)
-
   useEffect(() => {
-    if (zState === "ebook-front") {
-      ebookZ.set(20)
-      audiobookZ.set(10)
-    } else {
-      ebookZ.set(10)
-      audiobookZ.set(20)
+    return () => {
+      clearTimeout(timerRef.current)
     }
-  }, [zState, ebookZ, audiobookZ])
+  }, [])
 
   const scaledWidth = Math.round(width * DPR)
   const scaledHeight = Math.round(width * 1.5 * DPR)
@@ -167,15 +165,6 @@ export function BookDoubleCover({
   const ebookBlurhash = book.ebook?.coverBlurhash
   const audiobookBlurhash = book.audiobook?.coverBlurhash
 
-  const handleAudiobookHover = useCallback(() => {
-    if (disableHover) return
-
-    const current = stateRef.current
-    if (current === "separated" || current === "idle") {
-      void transitionTo("audiobook-front")
-    }
-  }, [disableHover, transitionTo])
-
   return (
     <div
       className="group/covers relative h-full w-full"
@@ -183,20 +172,32 @@ export function BookDoubleCover({
         if (disableHover) return
 
         if (stateRef.current === "idle") {
-          void transitionTo("separated")
+          transitionTo("separated")
         }
       }}
       onMouseLeave={() => {
         if (disableHover) return
-        void transitionTo("idle")
+        transitionTo("idle")
       }}
     >
-      <motion.div
+      <div
+        ref={audiobookRef}
         className={COVER_BASE}
-        style={{ width: "82%", aspectRatio: "1 / 1", zIndex: audiobookZ }}
-        initial={IDLE.audiobook}
-        animate={audiobookControls}
-        onPointerEnter={handleAudiobookHover}
+        style={{
+          width: "82%",
+          aspectRatio: "1 / 1",
+          zIndex: 10,
+          transform: tx("15%", 1),
+          transition: T_SPRING,
+        }}
+        onPointerEnter={() => {
+          if (disableHover) return
+
+          const current = stateRef.current
+          if (current === "separated" || current === "idle") {
+            transitionTo("audiobook-front")
+          }
+        }}
       >
         <BlurhashCanvas blurhash={audiobookBlurhash} />
 
@@ -206,19 +207,26 @@ export function BookDoubleCover({
             alt=""
             aria-hidden
             loading="lazy"
-            onError={() => setAudiobookError(true)}
+            onError={() => {
+              setAudiobookError(true)
+            }}
             className="relative z-10 h-full w-full object-cover"
           />
         ) : !audiobookBlurhash ? (
           <FallbackCover title={book.title} type="audiobook" />
         ) : null}
-      </motion.div>
+      </div>
 
-      <motion.div
+      <div
+        ref={ebookRef}
         className={COVER_BASE}
-        style={{ width: "82%", aspectRatio: "2 / 3", zIndex: ebookZ }}
-        initial={IDLE.ebook}
-        animate={ebookControls}
+        style={{
+          width: "82%",
+          aspectRatio: "2 / 3",
+          zIndex: 20,
+          transform: tx("-15%", 1),
+          transition: T_SPRING,
+        }}
       >
         <BlurhashCanvas blurhash={ebookBlurhash} />
 
@@ -227,13 +235,15 @@ export function BookDoubleCover({
             src={ebookUrl}
             alt={book.title}
             loading="lazy"
-            onError={() => setEbookError(true)}
+            onError={() => {
+              setEbookError(true)
+            }}
             className="relative z-10 h-full w-full object-cover"
           />
         ) : !ebookBlurhash ? (
           <FallbackCover title={book.title} type="ebook" />
         ) : null}
-      </motion.div>
+      </div>
     </div>
   )
 }

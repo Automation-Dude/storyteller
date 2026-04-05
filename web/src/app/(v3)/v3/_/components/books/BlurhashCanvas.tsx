@@ -20,9 +20,7 @@ export const BlurhashCanvas = memo(function BlurhashCanvas({
 }: BlurhashCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  console.log("blurhash", blurhash)
   useEffect(() => {
-    console.log("useEffect", blurhash)
     const canvas = canvasRef.current
     if (!canvas || !blurhash) return
 
