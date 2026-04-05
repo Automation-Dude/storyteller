@@ -48,6 +48,15 @@ module.exports = {
           "error",
           { alias: { "@": "./src" }, aliasForSubpaths: true },
         ],
+        "no-restricted-syntax": [
+          "error",
+          {
+            selector:
+              "MemberExpression[object.name=/form/i] > Identifier[name='watch']",
+            message:
+              "Do not use form.watch, it does not work with the React compiler. Use react-hook-form's useWatch instead.",
+          },
+        ],
       },
     },
     {
