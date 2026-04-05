@@ -12,7 +12,13 @@ import { cn } from "@v3/_/lib/utils"
 import { useBookForm } from "../BookFormProvider"
 import { MetadataRow } from "../MetadataRow"
 
-export function getLanguageDisplayName(code: string): string | null {
+type LocaleInfo = {
+  displayName: string
+  maximized: string | null
+  isPartial: boolean
+} | null
+
+function getLocaleInfo(code: string): LocaleInfo {
   const trimmed = code.trim()
 
   if (!trimmed) {
@@ -20,15 +26,22 @@ export function getLanguageDisplayName(code: string): string | null {
   }
 
   try {
-    new Intl.Locale(trimmed)
+    const locale = new Intl.Locale(trimmed)
+    const maximized = locale.maximize()
     const displayNames = new Intl.DisplayNames(["en"], { type: "language" })
-    const name = displayNames.of(trimmed)
+    const displayName = displayNames.of(maximized.toString())
 
-    if (!name || name === trimmed) {
+    if (!displayName) {
       return null
     }
 
-    return name
+    const isPartial = maximized.toString() !== trimmed
+
+    return {
+      displayName,
+      maximized: isPartial ? maximized.toString() : null,
+      isPartial,
+    }
   } catch {
     return null
   }
@@ -41,8 +54,8 @@ export function DetailsSection({ className }: { className?: string }) {
   const formatDate = useFormatDate()
 
   const languageValue = form.watch("language")
-  const languageDisplayName = useMemo(
-    () => getLanguageDisplayName(languageValue ?? ""),
+  const localeInfo = useMemo(
+    () => getLocaleInfo(languageValue ?? ""),
     [languageValue],
   )
 
@@ -67,12 +80,24 @@ export function DetailsSection({ className }: { className?: string }) {
                 <p
                   className={cn(
                     "mt-1 text-xs",
-                    languageDisplayName
+                    localeInfo
                       ? "text-muted-foreground"
                       : "text-destructive",
                   )}
                 >
-                  {languageDisplayName ?? t("invalidLanguageCode")}
+                  {localeInfo ? (
+                    <>
+                      {localeInfo.displayName}
+                      {localeInfo.maximized && (
+                        <span className="text-muted-foreground/70">
+                          {" "}
+                          (interpreted as {localeInfo.maximized})
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    t("invalidLanguageCode")
+                  )}
                 </p>
               )}
             </div>

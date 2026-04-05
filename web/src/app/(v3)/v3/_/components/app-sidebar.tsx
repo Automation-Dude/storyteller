@@ -279,7 +279,7 @@ export function AppSidebar({
       <SidebarHeader className="flex flex-row items-center justify-between gap-2">
         <V3Link
           href="/"
-          className="hover:bg-sidebar-accent flex items-center gap-2 rounded-md p-1"
+          className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-1"
         >
           <Image
             src="/Storyteller_Logo.png"
@@ -288,7 +288,7 @@ export function AppSidebar({
             alt="Storyteller"
             className="size-7 shrink-0"
           />
-          <span className="font-heading w-auto text-base opacity-100 transition-all duration-200 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+          <span className="font-heading w-auto text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
             Storyteller
           </span>
         </V3Link>

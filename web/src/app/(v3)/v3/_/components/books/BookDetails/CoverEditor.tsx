@@ -1,6 +1,6 @@
 "use client"
 
-import { IconCamera, IconX } from "@tabler/icons-react"
+import { IconBook, IconHeadphones, IconUpload, IconX } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 
 import { BookCover } from "@v3/_/components/books/BookCover"
@@ -14,24 +14,100 @@ import { cn } from "@v3/_/lib/utils"
 
 import { useBookForm } from "./BookFormProvider"
 
-export function CoverEditor({ compact }: { compact: boolean }) {
-  const { book, form, isEditing } = useBookForm()
-  const textCover = form.watch("textCover")
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+function useFilePreview(file: File | null): string | null {
+  const [url, setUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!textCover) {
-      setPreviewUrl(null)
+    if (!file) {
+      setUrl(null)
       return
     }
 
-    const url = URL.createObjectURL(textCover)
-    setPreviewUrl(url)
+    const objectUrl = URL.createObjectURL(file)
+    setUrl(objectUrl)
 
-    return () => URL.revokeObjectURL(url)
-  }, [textCover])
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [file])
 
+  return url
+}
+
+type CoverUploadRowProps = {
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  file: File | null
+  onFileChange: (file: File | null) => void
+}
+
+function CoverUploadRow({
+  label,
+  icon: Icon,
+  file,
+  onFileChange,
+}: CoverUploadRowProps) {
+  const previewUrl = useFilePreview(file)
+
+  return (
+    <div className="flex items-center gap-3">
+      {previewUrl && (
+        <img
+          src={previewUrl}
+          alt={`${label} preview`}
+          className="h-12 w-9 rounded object-cover"
+        />
+      )}
+
+      <div className="flex flex-1 items-center gap-2">
+        <Icon className="text-muted-foreground h-4 w-4 shrink-0" />
+
+        <span className="text-muted-foreground text-xs">
+          {file ? file.name : label}
+        </span>
+      </div>
+
+      <label
+        className={cn(
+          "text-muted-foreground hover:text-foreground hover:bg-accent inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+          file && "text-primary",
+        )}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const selected = e.target.files?.[0]
+            if (selected) onFileChange(selected)
+          }}
+        />
+        <IconUpload className="h-3.5 w-3.5" />
+        {file ? "Replace" : "Upload"}
+      </label>
+
+      {file && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => onFileChange(null)}
+        >
+          <IconX className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  )
+}
+
+export function CoverEditor({ compact }: { compact: boolean }) {
+  const { book, form, isEditing } = useBookForm()
   const coverWidth = compact ? 176 : 200
+
+  const canSetEbookCover = !!book.ebook || !!book.readaloud
+  const canSetAudioCover = !!book.audiobook || !!book.readaloud
+
+  const textCover = form.watch("textCover")
+  const audioCover = form.watch("audioCover")
+  const textPreviewUrl = useFilePreview(textCover)
 
   if (!isEditing) {
     return (
@@ -54,62 +130,40 @@ export function CoverEditor({ compact }: { compact: boolean }) {
     )
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    form.setValue("textCover", file)
-    form.setValue("audioCover", null)
-  }
-
-  const handleClear = () => {
-    form.setValue("textCover", null)
-    form.setValue("audioCover", null)
-  }
-
   return (
-    <div className="group/cover relative inline-flex">
-      {previewUrl ? (
-        <img
-          src={previewUrl}
-          alt="New cover preview"
-          className="rounded-lg object-contain"
-          style={{ maxWidth: coverWidth, maxHeight: compact ? 280 : 300 }}
-        />
-      ) : (
-        <BookCover book={book} width={coverWidth} key={book.uuid} />
-      )}
-
-      <label
-        className={cn(
-          "absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg transition-opacity",
-          "bg-black/50",
-          previewUrl
-            ? "opacity-0 group-hover/cover:opacity-100"
-            : "opacity-0 group-hover/cover:opacity-100",
+    <div className="flex flex-col gap-3">
+      <div className="relative">
+        {textPreviewUrl ? (
+          <img
+            src={textPreviewUrl}
+            alt="New cover preview"
+            className="rounded-lg object-contain"
+            style={{ maxWidth: coverWidth, maxHeight: compact ? 280 : 300 }}
+          />
+        ) : (
+          <BookCover book={book} width={coverWidth} key={book.uuid} />
         )}
-      >
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-        <IconCamera className="h-6 w-6 text-white" />
-        <span className="text-xs font-medium text-white">Change cover</span>
-      </label>
+      </div>
 
-      {previewUrl && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="bg-background/80 hover:bg-background absolute top-2 right-2 rounded-full shadow-sm"
-          onClick={handleClear}
-        >
-          <IconX className="h-3 w-3" />
-        </Button>
-      )}
+      <div className="flex w-52 flex-col gap-1.5">
+        {canSetEbookCover && (
+          <CoverUploadRow
+            label="Ebook cover"
+            icon={IconBook}
+            file={textCover}
+            onFileChange={(file) => form.setValue("textCover", file)}
+          />
+        )}
+
+        {canSetAudioCover && (
+          <CoverUploadRow
+            label="Audiobook cover"
+            icon={IconHeadphones}
+            file={audioCover}
+            onFileChange={(file) => form.setValue("audioCover", file)}
+          />
+        )}
+      </div>
     </div>
   )
 }

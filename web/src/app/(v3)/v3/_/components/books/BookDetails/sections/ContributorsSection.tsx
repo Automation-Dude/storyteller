@@ -6,6 +6,7 @@ import { Controller, useFieldArray } from "react-hook-form"
 
 import { creatorRelators } from "@/components/books/edit/marcRelators"
 
+import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
@@ -16,8 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
-
-import { useBookForm } from "../BookFormProvider"
 
 export function ContributorsSection({ className }: { className?: string }) {
   const { book, isEditing } = useBookForm()
@@ -81,7 +80,9 @@ function ContributorsEditor() {
             render={({ field: roleField }) => (
               <Select
                 value={roleField.value}
-                onValueChange={(value) => roleField.onChange(value ?? "")}
+                onValueChange={(value) => {
+                  roleField.onChange(value ?? "")
+                }}
               >
                 <SelectTrigger className="h-8 w-48 text-sm">
                   <SelectValue />
@@ -102,7 +103,9 @@ function ContributorsEditor() {
             type="button"
             variant="ghost"
             size="icon-sm"
-            onClick={() => remove(idx)}
+            onClick={() => {
+              remove(idx)
+            }}
           >
             <IconX className="h-3 w-3" />
           </Button>
@@ -114,7 +117,9 @@ function ContributorsEditor() {
         variant="outline"
         size="sm"
         className="self-start"
-        onClick={() => append({ name: "", role: "" })}
+        onClick={() => {
+          append({ name: "", role: "" })
+        }}
       >
         <IconPlus className="mr-1 h-3 w-3" />
         Add contributor

@@ -1,7 +1,13 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { createContext, useCallback, useContext, useEffect, useMemo } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+} from "react"
 import { useForm, type UseFormReturn } from "react-hook-form"
 
 import { type Role } from "@/components/books/edit/marcRelators"
@@ -72,9 +78,9 @@ export function BookFormProvider({
 
   // keep form in sync with book data when not editing
   useEffect(() => {
-    if (isEditing) return
+    // if (isEditing) return
     form.reset(bookToFormValues(book))
-  }, [book, form, isEditing])
+  }, [book])
 
   const submitFormValues = useCallback(
     async (values: BookFormValues) => {

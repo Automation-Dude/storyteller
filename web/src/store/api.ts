@@ -678,6 +678,13 @@ export const api = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: (_result, _error, { books, collections }) => [
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+        ...collections.map((uuid) => ({
+          type: "Collections" as const,
+          id: uuid,
+        })),
+      ],
     }),
     removeBooksFromCollections: build.mutation<
       void,
@@ -688,6 +695,13 @@ export const api = createApi({
         method: "DELETE",
         body,
       }),
+      invalidatesTags: (_result, _error, { books, collections }) => [
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+        ...collections.map((uuid) => ({
+          type: "Collections" as const,
+          id: uuid,
+        })),
+      ],
     }),
     createCollection: build.mutation<
       CollectionWithRelations,
@@ -721,6 +735,10 @@ export const api = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: (_result, _error, { relations }) => [
+        "Series",
+        ...relations.map((r) => ({ type: "Books" as const, id: r.bookUuid })),
+      ],
     }),
     removeBooksFromSeries: build.mutation<
       void,
@@ -731,6 +749,10 @@ export const api = createApi({
         method: "DELETE",
         body,
       }),
+      invalidatesTags: (_result, _error, { books, series }) => [
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+        ...series.map((uuid) => ({ type: "Series" as const, id: uuid })),
+      ],
     }),
     listTags: build.query<Tag[], void>({
       query: () => "/tags",
@@ -743,11 +765,9 @@ export const api = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: (book) => [
+      invalidatesTags: (_result, _error, { books }) => [
         "Tags",
-        ...(book
-          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
-          : []),
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
       ],
     }),
     removeTagsFromBooks: build.mutation<void, { tags: UUID[]; books: UUID[] }>({
@@ -756,11 +776,10 @@ export const api = createApi({
         method: "DELETE",
         body,
       }),
-      invalidatesTags: (book) => [
+      invalidatesTags: (_result, _error, { books, tags }) => [
         "Tags",
-        ...(book
-          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
-          : []),
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+        ...tags.map((uuid) => ({ type: "Tags" as const, id: uuid })),
       ],
     }),
     updateReadingStatus: build.mutation<void, { status: UUID; books: UUID[] }>({

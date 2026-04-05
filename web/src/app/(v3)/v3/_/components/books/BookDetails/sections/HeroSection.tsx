@@ -1,24 +1,22 @@
 "use client"
 
-import {
-  IconBook,
-  IconHeadphones,
-  IconPlayerPlay,
-} from "@tabler/icons-react"
+import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 import { Fragment } from "react"
 
+import {
+  AuthorEditor,
+  NarratorEditor,
+} from "@v3/_/components/books/AuthorEditor"
+import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
+import { CoverEditor } from "@v3/_/components/books/BookDetails/CoverEditor"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
-import { Input } from "@v3/_/components/ui/input"
 import { Button } from "@v3/_/components/ui/button"
+import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
 import { cn } from "@v3/_/lib/utils"
-
-import { useBookForm } from "../BookFormProvider"
-import { ChipListField } from "../ChipListField"
-import { CoverEditor } from "../CoverEditor"
 
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, form, isEditing, submitPartial } = useBookForm()
@@ -27,8 +25,6 @@ export function HeroSection({ compact }: { compact: boolean }) {
 
   const authors = book.authors
   const narrators = book.narrators
-  const formAuthors = form.watch("authors")
-  const formNarrators = form.watch("narrators")
 
   const handleRatingChange = async (rating: number | null) => {
     await submitPartial({ rating })
@@ -43,7 +39,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
     >
       <div
         className={cn(
-          "flex h-80 w-52 items-center justify-center",
+          "flex shrink-0 flex-col items-center gap-3",
           compact ? "mx-auto" : "",
         )}
       >
@@ -86,14 +82,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
         </div>
 
         {isEditing ? (
-          <div className="mt-3">
-            <ChipListField
-              values={formAuthors}
-              onChange={(values) => form.setValue("authors", values)}
-              label={tLabels("authors")}
-              addPlaceholder={t("addAuthor")}
-            />
-          </div>
+          <AuthorEditor />
         ) : (
           authors.length > 0 && (
             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-1 text-sm">
@@ -114,14 +103,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
         )}
 
         {isEditing ? (
-          <div className="mt-2">
-            <ChipListField
-              values={formNarrators}
-              onChange={(values) => form.setValue("narrators", values)}
-              label={tLabels("narrators")}
-              addPlaceholder={t("addNarrator")}
-            />
-          </div>
+          <NarratorEditor />
         ) : (
           narrators.length > 0 && (
             <div className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
@@ -156,17 +138,9 @@ export function HeroSection({ compact }: { compact: boolean }) {
 
         <div className="flex-1" />
 
-        <div className="mt-6 flex flex-wrap items-center gap-3 border-t pt-4">
-          <ReadingStatusButton book={book} />
+        <div className="mt-6 flex flex-wrap items-center gap-2 border-t pt-4">
+          <ReadingStatusButton book={book} size="sm" />
 
-          {book.publicationDate && !isEditing && (
-            <span className="text-muted-foreground ml-auto text-sm">
-              {new Date(book.publicationDate).getFullYear()}
-            </span>
-          )}
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
           {book.readaloud?.status === "ALIGNED" && (
             <Button
               variant="default"
@@ -207,6 +181,12 @@ export function HeroSection({ compact }: { compact: boolean }) {
                 </V3Link>
               }
             />
+          )}
+
+          {book.publicationDate && !isEditing && (
+            <span className="text-muted-foreground ml-auto text-sm">
+              {new Date(book.publicationDate).getFullYear()}
+            </span>
           )}
         </div>
       </div>

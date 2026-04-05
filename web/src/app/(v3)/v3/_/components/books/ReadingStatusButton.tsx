@@ -15,9 +15,11 @@ import {
 
 export function ReadingStatusButton({
   book,
+  size,
   onStatusChange,
 }: {
   book: BookWithRelations
+  size?: "sm" | "default"
   onStatusChange?: () => void
 }) {
   const { data: statuses = [] } = useListStatusesQuery()
@@ -43,6 +45,7 @@ export function ReadingStatusButton({
         render={
           <Button
             variant="outline"
+            size={size}
             className={cn(
               "gap-2",
               currentStatus && "border-primary bg-primary/5 text-primary",

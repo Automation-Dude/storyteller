@@ -166,7 +166,7 @@ function BookDetailsContentInner({
               !compact && "mx-auto max-w-5xl",
             )}
           >
-            <HeroSection compact={compact ?? false} />
+            <HeroSection compact={compact || false} />
 
             <Separator />
 
@@ -223,10 +223,7 @@ function BookDetailsHeader({ canEdit }: { canEdit: boolean | undefined }) {
 
   return (
     <SiteHeader
-      breadcrumbs={[
-        { label: "Books", url: "/books" },
-        { label: book.title },
-      ]}
+      breadcrumbs={[{ label: "Books", url: "/books" }, { label: book.title }]}
       actions={
         canEdit && [
           isEditing ? (
@@ -252,11 +249,7 @@ function BookDetailsHeader({ canEdit }: { canEdit: boolean | undefined }) {
               </Button>
             </>
           ) : (
-            <Button
-              key="edit"
-              size="sm"
-              onClick={() => setIsEditing(true)}
-            >
+            <Button key="edit" size="sm" onClick={() => setIsEditing(true)}>
               <IconEdit className="mr-1 h-4 w-4" />
               {t("edit")}
             </Button>
@@ -295,11 +288,7 @@ function CompactEditBar() {
         {t("cancel")}
       </Button>
 
-      <Button
-        size="sm"
-        onClick={() => void handleSave()}
-        disabled={isSaving}
-      >
+      <Button size="sm" onClick={() => void handleSave()} disabled={isSaving}>
         <IconCheck className="mr-1 h-4 w-4" />
         {isSaving ? t("saving") : t("save")}
       </Button>
