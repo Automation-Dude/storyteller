@@ -9,6 +9,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { BlurhashCanvas } from "./BlurhashCanvas"
 import { BookCover, isDualFormat } from "./BookCover"
+import { useTheme } from "next-themes"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -51,7 +52,14 @@ export const BookCard = memo(function BookCard({
     [onToggleSelection, book.uuid],
   )
 
+  const colorIndex = 0
+  const { resolvedTheme } = useTheme()
   const showCheckbox = !!onToggleSelection
+  const coverColors =
+    book.readaloud?.coverColors ||
+    book.ebook?.coverColors ||
+    book.audiobook?.coverColors ||
+    null
 
   const cardContent = (
     <>
@@ -63,16 +71,23 @@ export const BookCard = memo(function BookCard({
             : "overflow-hidden rounded-lg",
         )}
       >
-        <BlurhashCanvas
-          className="from-primary/10 to-primary/5 rounded-lg bg-linear-to-br opacity-30"
-          blurhash={
-            book.readaloud?.coverBlurhash ||
-            book.ebook?.coverBlurhash ||
-            book.audiobook?.coverBlurhash ||
-            null
-          }
-        />
-        <div className="flex h-full w-full items-center justify-center p-3">
+        {/* //   <BlurhashCanvas
+      //     className="from-primary/10 to-primary/5 rounded-lg bg-linear-to-br opacity-30"
+      //     blurhash={
+      //       book.readaloud?.coverBlurhash ||
+      //       book.ebook?.coverBlurhash ||
+      //       book.audiobook?.coverBlurhash ||
+      //       null
+      //     }
+      //   /> */}
+        <div
+          className="flex h-full w-full items-center justify-center bg-amber-100/50 p-3"
+          style={{
+            background: coverColors?.[0]
+              ? `rgba(${Object.values(coverColors[0]).join(",")}, ${resolvedTheme === "dark" ? 0.7 : 0.5})`
+              : undefined,
+          }}
+        >
           <BookCover book={book} width={300} disableHover={isSelecting} />
         </div>
 
@@ -102,7 +117,14 @@ export const BookCard = memo(function BookCard({
 
         {isSynced && (
           <div className="absolute top-2 right-2">
-            <div className="bg-primary flex size-5 items-center justify-center rounded-full shadow-md">
+            <div
+              className="flex size-5 items-center justify-center rounded-full shadow-md"
+              style={{
+                background: coverColors?.[0]
+                  ? `rgb(${Object.values(coverColors[0]).join(",")})`
+                  : "var(--primary)",
+              }}
+            >
               <IconReadaloud className="size-6 text-white" />
             </div>
           </div>
@@ -131,8 +153,13 @@ export const BookCard = memo(function BookCard({
         {progress !== null && progress > 0 && (
           <div className="absolute right-0 bottom-0 left-0 h-1 bg-black/30">
             <div
-              className="h-full bg-orange-500 transition-all"
-              style={{ width: `${progress * 100}%` }}
+              className="h-full transition-all"
+              style={{
+                width: `${progress * 100}%`,
+                background: coverColors?.[0]
+                  ? `rgb(${Object.values(coverColors[0]).join(",")})`
+                  : "var(--primary)",
+              }}
             />
           </div>
         )}

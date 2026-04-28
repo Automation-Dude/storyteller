@@ -162,9 +162,6 @@ export function BookDoubleCover({
     updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
   })
 
-  const ebookBlurhash = book.ebook?.coverBlurhash
-  const audiobookBlurhash = book.audiobook?.coverBlurhash
-
   return (
     <div
       className="group/covers relative h-full w-full"
@@ -199,8 +196,6 @@ export function BookDoubleCover({
           }
         }}
       >
-        <BlurhashCanvas blurhash={audiobookBlurhash} />
-
         {!audiobookError ? (
           <img
             src={audiobookUrl}
@@ -212,9 +207,13 @@ export function BookDoubleCover({
             }}
             className="relative z-10 h-full w-full object-cover"
           />
-        ) : !audiobookBlurhash ? (
-          <FallbackCover title={book.title} type="audiobook" />
-        ) : null}
+        ) : (
+          <FallbackCover
+            title={book.title}
+            type="audiobook"
+            colors={book.ebook?.coverColors ?? book.readaloud?.coverColors}
+          />
+        )}
       </div>
 
       <div
@@ -228,8 +227,6 @@ export function BookDoubleCover({
           transition: T_SPRING,
         }}
       >
-        <BlurhashCanvas blurhash={ebookBlurhash} />
-
         {!ebookError ? (
           <img
             src={ebookUrl}
@@ -240,9 +237,13 @@ export function BookDoubleCover({
             }}
             className="relative z-10 h-full w-full object-cover"
           />
-        ) : !ebookBlurhash ? (
-          <FallbackCover title={book.title} type="ebook" />
-        ) : null}
+        ) : (
+          <FallbackCover
+            title={book.title}
+            type="ebook"
+            colors={book.audiobook?.coverColors ?? book.readaloud?.coverColors}
+          />
+        )}
       </div>
     </div>
   )

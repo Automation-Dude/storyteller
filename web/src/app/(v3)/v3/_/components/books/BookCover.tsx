@@ -7,6 +7,7 @@ import { getCoverUrl } from "@/store/api"
 
 import { BlurhashCanvas } from "./BlurhashCanvas"
 import { BookDoubleCover } from "./BookDoubleCover"
+import { JsColor } from "@storyteller-platform/okmain"
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
@@ -127,18 +128,26 @@ export function BookCover({
 export function FallbackCover({
   title,
   type,
+  colors,
   className,
 }: {
   title: string
   type: "audiobook" | "ebook"
   className?: string
+  colors?: JsColor[]
 }) {
+  const colorIndex = 0
   return (
     <div
       className={cn(
         "from-primary/10 to-primary/5 relative flex h-full w-full flex-col items-center justify-center gap-2 overflow-clip rounded-lg bg-linear-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']",
         className,
       )}
+      style={{
+        background: colors?.[colorIndex]
+          ? `rgba(${Object.values(colors[colorIndex]).join(",")})`
+          : "white",
+      }}
     >
       {type === "audiobook" ? (
         <IconHeadphonesFilled className="text-muted-foreground/50 h-12 w-12" />

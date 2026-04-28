@@ -1,5 +1,7 @@
 import { encode } from "blurhash"
 
+import { colors, InputImage, JsColor } from "@storyteller-platform/okmain"
+
 import { env } from "./env"
 
 let _sharp: typeof import("sharp") | undefined
@@ -87,6 +89,19 @@ export async function generateBlurhash(
       .toBuffer({ resolveWithObject: true })
 
     return encode(new Uint8ClampedArray(data), info.width, info.height, 4, 3)
+  } catch {
+    return null
+  }
+}
+
+export function getCoverColors(
+  imageData: Buffer,
+  // type: "ebook" | "audiobook",
+): JsColor[] | null {
+  try {
+    const col = colors(InputImage.fromImage(imageData))
+
+    return col
   } catch {
     return null
   }
