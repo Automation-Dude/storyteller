@@ -82,7 +82,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif,
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-heading: var(--font-young-serif);
   --font-serif: var(--font-try-serif), Georgia, serif;
@@ -231,7 +232,7 @@
   --sidebar-foreground: oklch(0.88 0.01 60);
   --sidebar-primary: oklch(0.705 0.213 47.604);
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
-  --sidebar-accent: oklch(0.4 0.02 50);
+  --sidebar-accent: oklch(0.53 0.1212 48.08 / 0.72);
   --sidebar-accent-foreground: oklch(0.92 0.01 60);
   --sidebar-border: oklch(1 0.005 60 / 10%);
   --sidebar-ring: oklch(0.556 0.008 50);

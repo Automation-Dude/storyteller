@@ -3,6 +3,7 @@
  * Please do not edit it manually.
  */
 
+import { JsColor } from "@storyteller-platform/okmain"
 import type { ColumnType } from "kysely"
 
 export type Generated<T> =
@@ -29,6 +30,7 @@ export interface Account {
 
 export interface Audiobook {
   bookUuid: import("@/uuid").UUID
+  coverColors: Generated<JsColor[] | null>
   coverBlurhash: string | null
   createdAt: Generated<string>
   filepath: string
@@ -141,6 +143,7 @@ export interface DeviceAuthorization {
 export interface Ebook {
   bookUuid: import("@/uuid").UUID
   coverBlurhash: string | null
+  coverColors: Generated<JsColor[] | null>
   createdAt: Generated<string>
   filepath: string
   missing: Generated<boolean>
@@ -172,6 +175,7 @@ export interface Position {
 
 export interface Readaloud {
   bookUuid: import("@/uuid").UUID
+  coverColors: Generated<JsColor[] | null>
   coverBlurhash: string | null
   createdAt: Generated<string>
   currentStage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS"

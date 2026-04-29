@@ -12,6 +12,13 @@ import {
 import { useTranslations } from "next-intl"
 import { useCallback, useState } from "react"
 
+import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
+import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
+import { TagEditor } from "@v3/_/components/books/TagEditor"
+import { SiteHeader } from "@v3/_/components/site-header"
+import { Button } from "@v3/_/components/ui/button"
+import { Separator } from "@v3/_/components/ui/separator"
+
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -19,13 +26,6 @@ import {
   useGetBookQuery,
   useProcessBookMutation,
 } from "@/store/api"
-
-import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
-import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
-import { TagEditor } from "@v3/_/components/books/TagEditor"
-import { SiteHeader } from "@v3/_/components/site-header"
-import { Button } from "@v3/_/components/ui/button"
-import { Separator } from "@v3/_/components/ui/separator"
 
 import { BookFormProvider, useBookForm } from "./BookDetails/BookFormProvider"
 import { DeleteBookModal } from "./BookDetails/DeleteBookModal"
@@ -162,41 +162,43 @@ function BookDetailsContentInner({
         <div className="flex-1 overflow-y-auto">
           <div
             className={cn(
-              "flex flex-col gap-8 p-6",
+              "flex flex-col gap-4",
               !compact && "mx-auto max-w-5xl",
             )}
           >
             <HeroSection compact={compact || false} />
 
-            <Separator />
+            <div className="flex flex-col gap-4 p-6">
+              <Separator />
 
-            <DescriptionSection />
+              <DescriptionSection />
 
-            <TranscriptionStatus
-              book={book}
-              onProcess={() => void processBook({ uuid: book.uuid })}
-              onCancel={() => void cancelProcessing({ uuid: book.uuid })}
-            />
+              <TranscriptionStatus
+                book={book}
+                onProcess={() => void processBook({ uuid: book.uuid })}
+                onCancel={() => void cancelProcessing({ uuid: book.uuid })}
+              />
 
-            <TagsSection />
-            <CollectionsSection />
+              <TagsSection />
+              <CollectionsSection />
 
-            <Separator />
+              <Separator />
 
-            <ContributorsSection />
+              <ContributorsSection />
 
-            {canDownload && (
-              <>
-                <Separator />
-                <DownloadsSection />
-              </>
-            )}
+              {canDownload && (
+                <>
+                  <Separator />
+                  <DownloadsSection />
+                </>
+              )}
 
-            <DetailsSection />
+              <DetailsSection />
 
-            <Separator />
+              <Separator />
 
-            <FileSection book={book} />
+              <FileSection book={book} />
+            </div>
           </div>
         </div>
 
@@ -249,7 +251,13 @@ function BookDetailsHeader({ canEdit }: { canEdit: boolean | undefined }) {
               </Button>
             </>
           ) : (
-            <Button key="edit" size="sm" onClick={() => setIsEditing(true)}>
+            <Button
+              key="edit"
+              size="sm"
+              onClick={() => {
+                setIsEditing(true)
+              }}
+            >
               <IconEdit className="mr-1 h-4 w-4" />
               {t("edit")}
             </Button>

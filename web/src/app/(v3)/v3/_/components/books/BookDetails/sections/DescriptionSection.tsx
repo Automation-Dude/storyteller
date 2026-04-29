@@ -1,9 +1,8 @@
 import { useTranslations } from "next-intl"
 
+import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { Label } from "@v3/_/components/ui/label"
 import { Textarea } from "@v3/_/components/ui/textarea"
-
-import { useBookForm } from "../BookFormProvider"
 
 export function DescriptionSection({ className }: { className?: string }) {
   const { book, form, isEditing } = useBookForm()
@@ -16,7 +15,7 @@ export function DescriptionSection({ className }: { className?: string }) {
         <div className="flex flex-col gap-1.5">
           <Label
             htmlFor="description"
-            className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase"
+            className="text-muted-foreground mb-2 font-sans text-xs font-medium tracking-wide uppercase"
           >
             {tLabels("description")}
           </Label>
@@ -29,7 +28,7 @@ export function DescriptionSection({ className }: { className?: string }) {
         </div>
       ) : book.description ? (
         <div>
-          <h2 className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+          <h2 className="text-muted-foreground mb-2 font-sans text-xs font-medium tracking-wide uppercase">
             {tLabels("description")}
           </h2>
 

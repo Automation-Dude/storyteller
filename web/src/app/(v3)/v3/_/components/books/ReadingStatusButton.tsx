@@ -1,10 +1,6 @@
 import { IconBook, IconChevronDown } from "@tabler/icons-react"
 import { useCallback } from "react"
 
-import { cn } from "@/cn"
-import { type BookWithRelations } from "@/database/books"
-import { useListStatusesQuery, useUpdateStatusMutation } from "@/store/api"
-
 import { Button } from "@v3/_/components/ui/button"
 import {
   DropdownMenu,
@@ -13,13 +9,17 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 
+import { cn } from "@/cn"
+import { type BookWithRelations } from "@/database/books"
+import { useListStatusesQuery, useUpdateStatusMutation } from "@/store/api"
+
 export function ReadingStatusButton({
   book,
   size,
   onStatusChange,
 }: {
   book: BookWithRelations
-  size?: "sm" | "default"
+  size?: "sm" | "default" | "lg"
   onStatusChange?: () => void
 }) {
   const { data: statuses = [] } = useListStatusesQuery()

@@ -10,6 +10,8 @@ import { cn } from "@v3/_/lib/utils"
 import { BlurhashCanvas } from "./BlurhashCanvas"
 import { BookCover, isDualFormat } from "./BookCover"
 import { useTheme } from "next-themes"
+import { useCoverColors } from "./BookDetails/sections/useCoverColors"
+import { ProgressBar } from "./ProgressBar"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -52,14 +54,8 @@ export const BookCard = memo(function BookCard({
     [onToggleSelection, book.uuid],
   )
 
-  const colorIndex = 0
-  const { resolvedTheme } = useTheme()
+  const { background, accent } = useCoverColors(book)?.[0]
   const showCheckbox = !!onToggleSelection
-  const coverColors =
-    book.readaloud?.coverColors ||
-    book.ebook?.coverColors ||
-    book.audiobook?.coverColors ||
-    null
 
   const cardContent = (
     <>
@@ -83,9 +79,7 @@ export const BookCard = memo(function BookCard({
         <div
           className="flex h-full w-full items-center justify-center bg-amber-100/50 p-3"
           style={{
-            background: coverColors?.[0]
-              ? `rgba(${Object.values(coverColors[0]).join(",")}, ${resolvedTheme === "dark" ? 0.7 : 0.5})`
-              : undefined,
+            background,
           }}
         >
           <BookCover book={book} width={300} disableHover={isSelecting} />
@@ -120,9 +114,7 @@ export const BookCard = memo(function BookCard({
             <div
               className="flex size-5 items-center justify-center rounded-full shadow-md"
               style={{
-                background: coverColors?.[0]
-                  ? `rgb(${Object.values(coverColors[0]).join(",")})`
-                  : "var(--primary)",
+                background: accent ?? "var(--primary)",
               }}
             >
               <IconReadaloud className="size-6 text-white" />
@@ -151,17 +143,7 @@ export const BookCard = memo(function BookCard({
         )} */}
 
         {progress !== null && progress > 0 && (
-          <div className="absolute right-0 bottom-0 left-0 h-1 bg-black/30">
-            <div
-              className="h-full transition-all"
-              style={{
-                width: `${progress * 100}%`,
-                background: coverColors?.[0]
-                  ? `rgb(${Object.values(coverColors[0]).join(",")})`
-                  : "var(--primary)",
-              }}
-            />
-          </div>
+          <ProgressBar progress={progress} book={book} />
         )}
       </div>
 

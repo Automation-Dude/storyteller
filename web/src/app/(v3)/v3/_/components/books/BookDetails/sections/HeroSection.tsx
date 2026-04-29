@@ -18,6 +18,10 @@ import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
 import { cn } from "@v3/_/lib/utils"
 
+import { ProgressBar } from "@/app/(v3)/v3/_/components/books/ProgressBar"
+
+import { useCoverColors } from "./useCoverColors"
+
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, form, isEditing, submitPartial } = useBookForm()
   const tLabels = useTranslations("Labels")
@@ -30,6 +34,8 @@ export function HeroSection({ compact }: { compact: boolean }) {
     await submitPartial({ rating })
   }
 
+  const { background, accent } = useCoverColors(book)?.[0]
+
   return (
     <div
       className={cn(
@@ -37,16 +43,24 @@ export function HeroSection({ compact }: { compact: boolean }) {
         compact ? "flex-col" : "flex-col md:flex-row",
       )}
     >
-      <div
-        className={cn(
-          "flex shrink-0 flex-col items-center gap-3",
-          compact ? "mx-auto" : "",
+      <div className="relative w-full" style={{ background }}>
+        <div
+          className={cn(
+            "flex shrink-0 flex-col items-center gap-3 py-6",
+            compact ? "mx-auto" : "",
+          )}
+        >
+          <CoverEditor compact={compact} />
+        </div>
+        {book.position?.locator && (
+          <ProgressBar
+            progress={book.position.locator.locations?.totalProgression ?? 0}
+            book={book}
+          />
         )}
-      >
-        <CoverEditor compact={compact} />
       </div>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col p-6 py-0">
         <div className="flex items-start justify-between gap-4">
           {isEditing ? (
             <div className="flex flex-1 flex-col gap-3">
@@ -136,15 +150,13 @@ export function HeroSection({ compact }: { compact: boolean }) {
           />
         </div>
 
-        <div className="flex-1" />
-
         <div className="mt-6 flex flex-wrap items-center gap-2 border-t pt-4">
-          <ReadingStatusButton book={book} size="sm" />
+          <ReadingStatusButton book={book} size="lg" />
 
           {book.readaloud?.status === "ALIGNED" && (
             <Button
               variant="default"
-              size="sm"
+              size="lg"
               nativeButton={false}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
@@ -158,7 +170,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
           {book.readaloud?.status !== "ALIGNED" && book.ebook && (
             <Button
               variant="default"
-              size="sm"
+              size="lg"
               nativeButton={false}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
@@ -172,7 +184,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
           {book.readaloud?.status !== "ALIGNED" && book.audiobook && (
             <Button
               variant="default"
-              size="sm"
+              size="lg"
               nativeButton={false}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>

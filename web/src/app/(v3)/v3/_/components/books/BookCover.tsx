@@ -1,13 +1,15 @@
 import { IconBookFilled, IconHeadphonesFilled } from "@tabler/icons-react"
 import { useState } from "react"
 
+import { type JsColor } from "@storyteller-platform/okmain"
+
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
 import { BlurhashCanvas } from "./BlurhashCanvas"
+import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 import { BookDoubleCover } from "./BookDoubleCover"
-import { JsColor } from "@storyteller-platform/okmain"
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
@@ -136,7 +138,8 @@ export function FallbackCover({
   className?: string
   colors?: JsColor[]
 }) {
-  const colorIndex = 0
+  const { background, accent, contrast } = useCoverColors(colors ?? [])[0]
+
   return (
     <div
       className={cn(
@@ -144,17 +147,24 @@ export function FallbackCover({
         className,
       )}
       style={{
-        background: colors?.[colorIndex]
-          ? `rgba(${Object.values(colors[colorIndex]).join(",")})`
-          : "white",
+        background: accent ?? "white",
       }}
     >
       {type === "audiobook" ? (
-        <IconHeadphonesFilled className="text-muted-foreground/50 h-12 w-12" />
+        <IconHeadphonesFilled
+          className="h-12 w-12"
+          style={{ color: contrast ?? "black" }}
+        />
       ) : (
-        <IconBookFilled className="text-muted-foreground/50 h-12 w-12" />
+        <IconBookFilled
+          className="h-12 w-12"
+          style={{ color: contrast ?? "black" }}
+        />
       )}
-      <h3 className="text-muted-foreground line-clamp-2 max-w-full text-center text-sm font-medium">
+      <h3
+        className="line-clamp-2 max-w-full text-center text-sm font-medium"
+        style={{ color: contrast ?? "black" }}
+      >
         {title}
       </h3>
     </div>
