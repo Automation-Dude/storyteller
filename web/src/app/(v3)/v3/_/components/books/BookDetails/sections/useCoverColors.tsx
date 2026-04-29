@@ -4,21 +4,26 @@ import { type JsColor } from "@storyteller-platform/okmain"
 
 import { type BookWithRelations } from "@/database/books"
 
-export type CoverColors = {
+export type CoverColor = {
   background: string
   accent: string
   contrast: string
 }
 
-export function useCoverColors(colors: JsColor[]): CoverColors[]
+export type CoverColors = {
+  primary: CoverColor
+  others: CoverColor[]
+}
+
+export function useCoverColors(colors: JsColor[]): CoverColors
 export function useCoverColors(
   book: BookWithRelations,
   type?: "ebook" | "audiobook" | "readaloud",
-): CoverColors[]
+): CoverColors
 export function useCoverColors(
   bookOrColors: BookWithRelations | JsColor[],
   type?: "ebook" | "audiobook" | "readaloud",
-): CoverColors[] {
+): CoverColors {
   const { resolvedTheme } = useTheme()
   const colors =
     (Array.isArray(bookOrColors)
@@ -40,5 +45,12 @@ export function useCoverColors(
     }
   })
 
-  return cc
+  return {
+    primary: cc[0] ?? {
+      background: "var(--primary)",
+      accent: "var(--primary)",
+      contrast: "var(--primary-foreground)",
+    },
+    others: cc.slice(1),
+  }
 }

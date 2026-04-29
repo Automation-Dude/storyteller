@@ -1,17 +1,15 @@
 import Link from "next/link"
 import { memo, useCallback } from "react"
 
-import { IconReadaloud } from "@/components/icons/IconReadaloud"
-import { type BookWithRelations } from "@/database/books"
-
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
 
-import { BlurhashCanvas } from "./BlurhashCanvas"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
+import { type BookWithRelations } from "@/database/books"
+
 import { BookCover, isDualFormat } from "./BookCover"
-import { useTheme } from "next-themes"
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
-import { ProgressBar } from "./ProgressBar"
+import { ProgressDisplayBar } from "./ProgressDisplayBar"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -54,7 +52,9 @@ export const BookCard = memo(function BookCard({
     [onToggleSelection, book.uuid],
   )
 
-  const { background, accent } = useCoverColors(book)?.[0]
+  const {
+    primary: { background, accent },
+  } = useCoverColors(book)
   const showCheckbox = !!onToggleSelection
 
   const cardContent = (
@@ -67,15 +67,6 @@ export const BookCard = memo(function BookCard({
             : "overflow-hidden rounded-lg",
         )}
       >
-        {/* //   <BlurhashCanvas
-      //     className="from-primary/10 to-primary/5 rounded-lg bg-linear-to-br opacity-30"
-      //     blurhash={
-      //       book.readaloud?.coverBlurhash ||
-      //       book.ebook?.coverBlurhash ||
-      //       book.audiobook?.coverBlurhash ||
-      //       null
-      //     }
-      //   /> */}
         <div
           className="flex h-full w-full items-center justify-center bg-amber-100/50 p-3"
           style={{
@@ -114,7 +105,7 @@ export const BookCard = memo(function BookCard({
             <div
               className="flex size-5 items-center justify-center rounded-full shadow-md"
               style={{
-                background: accent ?? "var(--primary)",
+                background: accent,
               }}
             >
               <IconReadaloud className="size-6 text-white" />
@@ -143,7 +134,7 @@ export const BookCard = memo(function BookCard({
         )} */}
 
         {progress !== null && progress > 0 && (
-          <ProgressBar progress={progress} book={book} />
+          <ProgressDisplayBar progress={progress} book={book} />
         )}
       </div>
 

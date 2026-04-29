@@ -2,14 +2,16 @@ import { type BookWithRelations } from "@/database/books"
 
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 
-export function ProgressBar({
+export function ProgressDisplayBar({
   progress,
   book,
 }: {
   progress: number
   book: BookWithRelations
 }) {
-  const { accent } = useCoverColors(book)?.[0]
+  const {
+    primary: { accent },
+  } = useCoverColors(book)
 
   return (
     <div className="absolute right-0 bottom-0 left-0 h-1 bg-black/30">
@@ -17,7 +19,7 @@ export function ProgressBar({
         className="h-full transition-all"
         style={{
           width: `${progress * 100}%`,
-          background: accent ?? "var(--primary)",
+          background: accent,
         }}
       />
     </div>

@@ -18,7 +18,7 @@ import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
 import { cn } from "@v3/_/lib/utils"
 
-import { ProgressBar } from "@/app/(v3)/v3/_/components/books/ProgressBar"
+import { ProgressDisplayBar } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 
 import { useCoverColors } from "./useCoverColors"
 
@@ -34,7 +34,9 @@ export function HeroSection({ compact }: { compact: boolean }) {
     await submitPartial({ rating })
   }
 
-  const { background, accent } = useCoverColors(book)?.[0]
+  const {
+    primary: { background },
+  } = useCoverColors(book)
 
   return (
     <div
@@ -53,7 +55,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
           <CoverEditor compact={compact} />
         </div>
         {book.position?.locator && (
-          <ProgressBar
+          <ProgressDisplayBar
             progress={book.position.locator.locations?.totalProgression ?? 0}
             book={book}
           />

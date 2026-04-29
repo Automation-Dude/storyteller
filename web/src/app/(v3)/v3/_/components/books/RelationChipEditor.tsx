@@ -38,10 +38,7 @@ type RelationChipEditorProps<T extends RelationItem> = {
   canCreateInline?: boolean
   onCreateInline?: (name: string) => void | Promise<void>
 
-  renderCreateAction?: (
-    search: string,
-    closePopover: () => void,
-  ) => ReactNode
+  renderCreateAction?: (search: string, closePopover: () => void) => ReactNode
 
   renderBadgeExtra?: (item: T) => ReactNode
 }
@@ -108,12 +105,13 @@ export function RelationChipEditor<T extends RelationItem>({
 
   return (
     <div
-      className={cn(
-        `group/${groupName}`,
-        "flex flex-wrap items-center gap-2",
-      )}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      className={cn(`group/${groupName}`, "flex flex-wrap items-center gap-2")}
+      onMouseEnter={() => {
+        setIsHovering(true)
+      }}
+      onMouseLeave={() => {
+        setIsHovering(false)
+      }}
     >
       {items.map((item) => (
         <Badge
@@ -168,7 +166,9 @@ export function RelationChipEditor<T extends RelationItem>({
             <Input
               placeholder={searchPlaceholder}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+              }}
               className="mb-2"
               onKeyDown={(e) => {
                 if (e.key !== "Enter" || !search.trim()) {
@@ -187,7 +187,9 @@ export function RelationChipEditor<T extends RelationItem>({
                   key={item.uuid}
                   type="button"
                   aria-label={tLabels("add.withInput", { input: item.name })}
-                  onClick={() => handleSelect(item)}
+                  onClick={() => {
+                    handleSelect(item)
+                  }}
                   className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
                 >
                   <Icon className="h-3 w-3" />
@@ -211,7 +213,9 @@ export function RelationChipEditor<T extends RelationItem>({
                 </button>
               )}
 
-              {renderCreateAction?.(search, () => setIsOpen(false))}
+              {renderCreateAction?.(search, () => {
+                setIsOpen(false)
+              })}
             </div>
           </PopoverContent>
         </Popover>
