@@ -5,13 +5,13 @@ import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
 import { NuqsAdapter } from "nuqs/adapters/next"
 
+import { ThemeProvider } from "@v3/_/components/theme-provider"
+import { Toaster } from "@v3/_/components/ui/sonner"
+
 import StoreProvider from "@/components/StoreProvider"
 import { AudioProviderRedux } from "@/components/reader/AudioProviderRedux"
 import { PiPProvider } from "@/components/reader/PipProvider"
 import { env } from "@/env"
-
-import { ThemeProvider } from "@v3/_/components/theme-provider"
-import { Toaster } from "@v3/_/components/ui/sonner"
 
 import "./globals.css"
 

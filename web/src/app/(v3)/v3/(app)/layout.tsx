@@ -1,11 +1,11 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { nextAuth } from "@/auth/auth"
-import { getCurrentVersion } from "@/versions"
-
 import { AppSidebar } from "@v3/_/components/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
+
+import { nextAuth } from "@/auth/auth"
+import { getCurrentVersion } from "@/versions"
 
 export default async function AppLayout({
   children,
@@ -23,8 +23,6 @@ export default async function AppLayout({
     return redirect("/login")
   }
 
-  // usersettings
-
   return (
     <SidebarProvider
       defaultOpen={defaultOpen}
@@ -33,7 +31,7 @@ export default async function AppLayout({
         {
           "--sidebar-width": "calc(var(--spacing) * 56)",
           "--header-height": "calc(var(--spacing) * 13)",
-          "--sidebar-width-icon": "calc(var(--spacing) * 10)",
+          // "--sidebar-width-icon": "calc(var(--spacing) * 11)",
         } as React.CSSProperties
       }
     >

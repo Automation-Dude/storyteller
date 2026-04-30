@@ -20,16 +20,6 @@ import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import { toast } from "sonner"
 
-import { type User } from "@/apiModels"
-import {
-  // useDeleteUserShelfMutation,
-  // useGetSessionQuery,
-  useGetLatestVersionQuery,
-  useListCollectionsQuery,
-} from "@/store/api"
-import { extractEmojiIcon } from "@/strings"
-import { BETA_TAGS, compareVersions } from "@/versions"
-
 import {
   NavLibrary,
   type NavLibraryItem,
@@ -52,6 +42,11 @@ import {
 } from "@v3/_/components/ui/sidebar"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
+
+import { type User } from "@/apiModels"
+import { useGetLatestVersionQuery, useListCollectionsQuery } from "@/store/api"
+import { extractEmojiIcon } from "@/strings"
+import { BETA_TAGS, compareVersions } from "@/versions"
 
 import { DISMISSED_VERSION_KEY } from "./settings-form/changelog-tab"
 
@@ -279,14 +274,14 @@ export function AppSidebar({
       <SidebarHeader className="flex flex-row items-center justify-between gap-2">
         <V3Link
           href="/"
-          className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-1"
+          className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0"
         >
           <Image
             src="/Storyteller_Logo.png"
             width={28}
             height={28}
             alt="Storyteller"
-            className="size-7 shrink-0"
+            className="h-7! max-h-7! w-7! max-w-7! shrink-0"
           />
           <span className="font-heading w-auto text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
             Storyteller

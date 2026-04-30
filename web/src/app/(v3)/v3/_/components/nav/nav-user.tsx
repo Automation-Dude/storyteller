@@ -55,8 +55,8 @@ export function NavUser({
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                size="default"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-1!"
               >
                 <div className="grid w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden data-[state=open]:w-auto">
                   <span className="truncate font-medium">{displayName}</span>
@@ -64,7 +64,7 @@ export function NavUser({
                     {displayEmail}
                   </span>
                 </div>
-                <IconDotsVertical className="ml-auto size-4 group-data-[collapsible=icon]:ml-2" />
+                <IconDotsVertical className="size-4 data-[collapsible=icon]:-ml-4!" />
               </SidebarMenuButton>
             }
           />
