@@ -1,5 +1,4 @@
 "use client"
-import { cn } from "@/cn"
 
 export function MetadataRow({
   icon: Icon,

@@ -17,7 +17,7 @@ import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
 
-import { ProgressDisplayBar } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
+import { ProgressDisplayBar } from "@v3/_/components/books/ProgressDisplayBar"
 import { cn } from "@/cn"
 
 import { useCoverColors } from "./useCoverColors"

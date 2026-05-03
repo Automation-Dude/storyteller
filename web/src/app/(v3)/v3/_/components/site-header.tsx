@@ -63,7 +63,7 @@ export function SiteHeader({
                         />
                       ) : idx === breadcrumbs.length - 1 ? (
                         <h1 className="min-w-0">
-                          <BreadcrumbPage className="font-heading truncate text-base font-normal tracking-tight">
+                          <BreadcrumbPage className="font-heading font-tracking-tight truncate font-normal uppercase">
                             {breadcrumb.label}
                           </BreadcrumbPage>
                         </h1>

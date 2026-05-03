@@ -27,7 +27,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/app/(v3)/v3/_/components/ui/tooltip"
+} from "@v3/_/components/ui/tooltip"
 import { SettingsSchema } from "@/database/settingsTypes"
 import {
   useGetMaxUploadChunkSizeQuery,

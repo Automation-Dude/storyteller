@@ -10,7 +10,7 @@ import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 
-import { AddBookButton } from "@/app/(v3)/v3/_/components/AddBookButton"
+import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { type UserPermissionSet } from "@/database/users"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
 
@@ -89,7 +89,7 @@ export default function BookPage({
         headerBreadcrumbs={[
           {
             render: (
-              <h1 className="font-heading text-foreground mt-4 truncate text-3xl font-normal">
+              <h1 className="font-heading text-foreground truncate text-3xl font-normal">
                 {t("title")}
               </h1>
             ),

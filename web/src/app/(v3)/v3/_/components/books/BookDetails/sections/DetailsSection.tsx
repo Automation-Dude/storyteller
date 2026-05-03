@@ -64,7 +64,7 @@ export function DetailsSection({ className }: { className?: string }) {
     <section className={className}>
       <h2 className="section-label mb-4">{tLabels("bookDetails")}</h2>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+      <div className="grid grid-cols-2 items-center gap-x-4 gap-y-2">
         {isEditing ? (
           <>
             <div>

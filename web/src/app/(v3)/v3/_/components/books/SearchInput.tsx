@@ -1,7 +1,7 @@
 import { IconSearch, IconX } from "@tabler/icons-react"
 
-import { Button } from "@/app/(v3)/v3/_/components/ui/button"
-import { cn } from "@/app/(v3)/v3/_/lib/utils"
+import { Button } from "@v3/_/components/ui/button"
+import { cn } from "@v3/_/lib/utils"
 
 export function SearchInput({
   value,

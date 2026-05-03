@@ -1,7 +1,7 @@
 import { type Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 
-import { withPageAuth } from "@/app/(v3)/v3/_/server/page-auth-wrapper"
+import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
 import { NarratorsPageClient } from "./narratorsPageClient"
 

@@ -10,17 +10,12 @@ import { useTranslations } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
-import { BookSelectionProvider } from "@/app/(v3)/v3/_/hooks/use-book-selection"
-import { useListBooksQuery } from "@/store/api"
-import { useAppDispatch, useAppSelector } from "@/store/appState"
-import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
-
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import {
   BookDetailDrawer,
   BookListLayout,
 } from "@v3/_/components/books/BookListLayout"
+import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { filterBooksClientSide } from "@v3/_/components/library/filter-books-client"
 import {
   type LibraryItem,
@@ -31,8 +26,13 @@ import { Button } from "@v3/_/components/ui/button"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
+import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+
+import { useListBooksQuery } from "@/store/api"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 
 const noop = () => {}
 
@@ -182,6 +182,7 @@ export function LibraryPage({
   const booksContent = (
     <>
       <BookFilters
+        className="pt-1"
         state={filterState}
         onChange={onFilterChange}
         filterPopoverOpen={filterPopoverOpen}

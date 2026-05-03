@@ -5,36 +5,36 @@ import {
   IconChevronDown,
   IconFilter,
   IconHeadphones,
-  IconRefresh,
   IconX,
 } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 import { useMemo, useState } from "react"
 
-import { cn } from "@v3/_/lib/utils"
-
-import { Badge } from "@/app/(v3)/v3/_/components/ui/badge"
-import { Button } from "@/app/(v3)/v3/_/components/ui/button"
-import { ButtonGroup } from "@/app/(v3)/v3/_/components/ui/button-group"
+import { Badge } from "@v3/_/components/ui/badge"
+import { Button } from "@v3/_/components/ui/button"
+import { ButtonGroup } from "@v3/_/components/ui/button-group"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/app/(v3)/v3/_/components/ui/dropdown-menu"
+} from "@v3/_/components/ui/dropdown-menu"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/app/(v3)/v3/_/components/ui/popover"
+} from "@v3/_/components/ui/popover"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/(v3)/v3/_/components/ui/select"
-import { Separator } from "@/app/(v3)/v3/_/components/ui/separator"
+} from "@v3/_/components/ui/select"
+import { Separator } from "@v3/_/components/ui/separator"
+import { cn } from "@v3/_/lib/utils"
+
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import {
   type MediaFilter,
   useListCollectionsQuery,
@@ -43,7 +43,6 @@ import {
 } from "@/store/api"
 
 import { SearchInput } from "./SearchInput"
-import { IconReadaloud } from "@/components/icons/IconReadaloud"
 
 export type SortField = "createdAt" | "updatedAt" | "title" | "publicationDate"
 export type SortDirection = "asc" | "desc"
@@ -69,6 +68,7 @@ type BookFiltersProps = {
   hideCollectionFilter?: boolean
   hideSeriesFilter?: boolean
   showSaveSearch?: boolean
+  className?: string
 }
 
 export function BookFilters({
@@ -78,6 +78,7 @@ export function BookFilters({
   setFilterPopoverOpen,
   hideCollectionFilter = false,
   hideSeriesFilter = false,
+  className,
 }: BookFiltersProps) {
   const t = useTranslations("BooksPage")
   const { data: collections } = useListCollectionsQuery()
@@ -138,8 +139,12 @@ export function BookFilters({
   const activeStatus = statuses?.find((s) => s.uuid === state.statusFilter)
 
   return (
-    <div className="bg-background/95 sticky top-0 z-50 flex flex-col gap-3 border-b px-4 py-3 backdrop-blur">
-      {/* search + sort row */}
+    <div
+      className={cn(
+        "bg-background sticky top-0 z-50 flex flex-col gap-3 border-b px-4 py-3",
+        className,
+      )}
+    >
       <div className="flex items-center gap-2">
         <SearchInput
           placeholder={t("seachBooksPlaceholder")}
@@ -155,7 +160,7 @@ export function BookFilters({
               <Button
                 variant="outline"
                 size="default"
-                className="shrink-0 gap-1.5 text-sm font-normal"
+                className="shrink-0 gap-1.5 text-xs font-normal"
               >
                 <IconFilter className="h-3.5 w-3.5" />
                 {t("filters.filters")}
@@ -276,7 +281,7 @@ export function BookFilters({
             <DropdownMenuTrigger
               render={
                 <Button
-                  className="min-w-[100px] justify-between text-sm font-normal"
+                  className="min-w-[100px] justify-between text-xs font-normal"
                   variant="outline"
                 >
                   {
@@ -334,7 +339,7 @@ export function BookFilters({
         </DropdownMenu>
       </div>
 
-      <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto">
+      <div className="scroll-x flex items-center gap-1.5">
         {mediaFilterOptions.map((opt) => {
           const isActive = state.mediaFilter === opt.value
           return (
