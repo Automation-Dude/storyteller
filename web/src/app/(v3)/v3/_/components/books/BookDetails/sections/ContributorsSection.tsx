@@ -31,7 +31,7 @@ export function ContributorsSection({ className }: { className?: string }) {
 
   return (
     <section className={className}>
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
+      <h2 className="section-label mb-3">
         <IconUser className="h-4 w-4" />
         {tLabels("otherContributors")}
       </h2>

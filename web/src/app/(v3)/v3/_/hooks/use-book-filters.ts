@@ -9,13 +9,14 @@ import {
   useState,
 } from "react"
 
-import { type ListBooksQueryArg, type MediaFilter } from "@/store/api"
-
 import {
   type BookFiltersState,
   type SortDirection,
   type SortField,
 } from "@v3/_/components/books"
+
+import { type ListBooksQueryArg, type MediaFilter } from "@/store/api"
+
 // import { type SortableColumn } from "@/store/slices/viewSettingsSlice"
 
 const mediaFilterValues = ["all", "ebook", "audiobook", "synced"] as const
@@ -72,15 +73,15 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString)
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
 
-  const debouncedSearch = useDebounce(searchInput, 300)
+  const debouncedSearch = useDebounce(searchInput, 100)
   const deferredSearch = useDeferredValue(debouncedSearch)
   const isSearching = debouncedSearch !== deferredSearch
 
   const state: BookFiltersState = {
     searchInput,
-    sortField: sortField as SortField,
-    sortDirection: sortDirection as SortDirection,
-    mediaFilter: mediaFilter as MediaFilter,
+    sortField: sortField,
+    sortDirection: sortDirection,
+    mediaFilter: mediaFilter,
     collectionFilter: options.fixedCollection ?? collectionFilter,
     seriesFilter: options.fixedSeries ?? seriesFilter,
     statusFilter,
@@ -92,7 +93,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   ) => {
     switch (key) {
       case "searchInput":
-        void setSearchInput(value as string)
+        void setSearchInput(value)
         break
       case "sortField":
         void setSortField(value as SortField)
@@ -121,8 +122,8 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
 
   const queryArg = useMemo(() => {
     const arg: ListBooksQueryArg = {}
-    arg.orderBy = sortField as SortField
-    arg.orderDirection = sortDirection as SortDirection
+    arg.orderBy = sortField
+    arg.orderDirection = sortDirection
     if (deferredSearch) arg.search = deferredSearch
     if (mediaFilter !== "all") arg.mediaFilter = mediaFilter
     if (options.fixedCollection) {

@@ -25,7 +25,34 @@
     "title": "Collections"
   },
   "BooksPage": {
-    "title": "Books"
+    "title": "Books",
+    "addBook": "Add Book",
+    "seachBooksPlaceholder": "Search books, authors, series...",
+    "filters": {
+      "filters": "Filters",
+      "search": "Search",
+      "media": "Media",
+      "allMediaTypes": "All media types",
+      "collection": "Collection",
+      "allCollections": "All collections",
+      "series": "Series",
+      "allSeries": "All series",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "clearAllFilters": "Clear all filters"
+    },
+    "sortBy": {
+      "createdAt": "Date added",
+      "updatedAt": "Date updated",
+      "title": "Title",
+      "publicationDate": "Publication date"
+    },
+    "mediaTypes": {
+      "all": "All",
+      "ebook": "Ebook",
+      "audiobook": "Audiobook",
+      "readaloud": "Readaloud"
+    }
   },
   "LibraryPage": {
     "emptyState": "Select an item to see its books",
@@ -87,7 +114,6 @@
     "tabs": {
       "library": {
         "title": "Library",
-
         "sections": {
           "library": {
             "title": "Library Settings",

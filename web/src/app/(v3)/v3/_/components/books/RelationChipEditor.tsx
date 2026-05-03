@@ -117,24 +117,22 @@ export function RelationChipEditor<T extends RelationItem>({
         <Badge
           key={item.uuid}
           variant={badgeVariant}
-          className={cn(
-            "group/badge gap-1 transition-all",
-            canInteract && "hover:pr-1",
-          )}
+          className={cn("group/badge gap-0.5 font-normal transition-all")}
         >
-          <Icon className="h-3 w-3" />
+          {/* <Icon className="h-3 w-3" /> */}
           {item.name}
           {renderBadgeExtra?.(item)}
 
           {canInteract && (
-            <button
-              type="button"
+            <Button
+              size="icon-xs"
+              variant="ghost"
               aria-label={tLabels("delete.withInput", { input: item.name })}
               onClick={() => void onRemoveItem(item)}
-              className="hover:bg-destructive/20 ml-0.5 hidden rounded-full p-0.5 opacity-0 transition-opacity group-hover/badge:block group-hover/badge:opacity-100"
+              className="rounded-full"
             >
               <IconX className="h-3 w-3" />
-            </button>
+            </Button>
           )}
         </Badge>
       ))}
@@ -143,83 +141,77 @@ export function RelationChipEditor<T extends RelationItem>({
         <span className="text-muted-foreground text-sm">{emptyText}</span>
       )}
 
-      {canInteract && (
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-5 w-5 rounded-full p-0 transition-opacity",
-                  !editMode &&
-                    !isOpen &&
-                    `opacity-0 group-hover/${groupName}:opacity-100`,
-                )}
-              >
-                <IconPlus className="h-3 w-3" />
-              </Button>
-            }
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "border-border text-muted-foreground h-5 rounded-full border border-dashed text-xs transition-opacity",
+              )}
+            >
+              <IconPlus className="h-3 w-3" />
+              Add
+            </Button>
+          }
+        />
+
+        <PopoverContent className="w-64 p-2" align="start">
+          <Input
+            placeholder={searchPlaceholder}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || !search.trim()) {
+                return
+              }
+
+              if (canCreateInline) {
+                handleCreate()
+              }
+            }}
           />
 
-          <PopoverContent className="w-64 p-2" align="start">
-            <Input
-              placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-              }}
-              className="mb-2"
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" || !search.trim()) {
-                  return
-                }
+          <div className="scroll-y flex max-h-48 flex-col gap-0.5">
+            {filteredItems.map((item) => (
+              <button
+                key={item.uuid}
+                type="button"
+                aria-label={tLabels("add.withInput", { input: item.name })}
+                onClick={() => {
+                  handleSelect(item)
+                }}
+                className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
+              >
+                {item.name}
+              </button>
+            ))}
 
-                if (canCreateInline) {
-                  handleCreate()
-                }
-              }}
-            />
+            {showCreateInline && (
+              <button
+                type="button"
+                aria-label={tLabels("create.withInput", {
+                  input: `"${search.trim()}"`,
+                })}
+                onClick={handleCreate}
+                className="hover:bg-accent text-foreground flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs"
+              >
+                <IconPlus className="h-3 w-3" />
+                {tLabels("create.withInput", {
+                  input: `"${search.trim()}"`,
+                })}
+              </button>
+            )}
 
-            <div className="max-h-48 overflow-y-auto">
-              {filteredItems.map((item) => (
-                <button
-                  key={item.uuid}
-                  type="button"
-                  aria-label={tLabels("add.withInput", { input: item.name })}
-                  onClick={() => {
-                    handleSelect(item)
-                  }}
-                  className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-                >
-                  <Icon className="h-3 w-3" />
-                  {item.name}
-                </button>
-              ))}
-
-              {showCreateInline && (
-                <button
-                  type="button"
-                  aria-label={tLabels("create.withInput", {
-                    input: `"${search.trim()}"`,
-                  })}
-                  onClick={handleCreate}
-                  className="hover:bg-accent text-primary flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-                >
-                  <IconPlus className="h-3 w-3" />
-                  {tLabels("create.withInput", {
-                    input: `"${search.trim()}"`,
-                  })}
-                </button>
-              )}
-
-              {renderCreateAction?.(search, () => {
-                setIsOpen(false)
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
-      )}
+            {renderCreateAction?.(search, () => {
+              setIsOpen(false)
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

@@ -36,7 +36,7 @@ export function NavLibrary({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="font-sans text-xs font-semibold uppercase">
+      <SidebarGroupLabel className="font-sans text-[10px] font-medium tracking-[0.14em] uppercase opacity-60">
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>

@@ -1,10 +1,8 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
-
-import { type UserPermissionSet } from "@/database/users"
-import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
@@ -12,11 +10,17 @@ import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 
+import { AddBookButton } from "@/app/(v3)/v3/_/components/AddBookButton"
+import { type UserPermissionSet } from "@/database/users"
+import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
+
 export default function BookPage({
   permissions: _permissions,
 }: {
   permissions: UserPermissionSet
 }) {
+  const t = useTranslations("BooksPage")
+
   const { isSelecting, toggleSelection } = useBookSelection()
 
   const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
@@ -74,39 +78,56 @@ export default function BookPage({
   }, [setSelectedBookUuid])
 
   return (
-    <BookListLayout
-      headerBreadcrumbs={[{ label: "Books" }]}
-      selectedBookUuid={selectedBookUuid}
-      onClosePanel={handleClosePanel}
-      allBookUuids={bookUuids}
+    <div
+      style={
+        {
+          "--header-height": "6rem",
+        } as React.CSSProperties
+      }
     >
-      <BookFilters
-        state={state}
-        onChange={onChange}
-        filterPopoverOpen={filterPopoverOpen}
-        setFilterPopoverOpen={setFilterPopoverOpen}
-        showSaveSearch
-      />
-
-      <PageContent className="p-4">
-        <BookGrid
-          books={books}
-          isLoading={isLoading}
-          isFetchingNextPage={isFetchingNextPage}
-          hasNextPage={hasNextPage}
-          fetchNextPage={fetchNextPage}
-          showMuted={showMuted}
-          emptySubMessage={
-            deferredSearch || activeFilterCount > 0
-              ? "Try adjusting your search or filters"
-              : undefined
-          }
-          onClearFilters={clearFilters}
-          hasActiveFilters={activeFilterCount > 0}
-          selectedBookUuid={selectedBookUuid}
-          onBookClick={handleBookClick}
+      <BookListLayout
+        headerBreadcrumbs={[
+          {
+            render: (
+              <h1 className="font-heading text-foreground mt-4 truncate text-3xl font-normal">
+                {t("title")}
+              </h1>
+            ),
+          },
+        ]}
+        selectedBookUuid={selectedBookUuid}
+        onClosePanel={handleClosePanel}
+        allBookUuids={bookUuids}
+        headerActions={[<AddBookButton key="add-book" />]}
+      >
+        <BookFilters
+          state={state}
+          onChange={onChange}
+          filterPopoverOpen={filterPopoverOpen}
+          setFilterPopoverOpen={setFilterPopoverOpen}
+          showSaveSearch
         />
-      </PageContent>
-    </BookListLayout>
+
+        <PageContent className="p-4">
+          <BookGrid
+            books={books}
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            fetchNextPage={fetchNextPage}
+            showMuted={showMuted}
+            emptySubMessage={
+              deferredSearch || activeFilterCount > 0
+                ? "Try adjusting your search or filters"
+                : undefined
+            }
+            onClearFilters={clearFilters}
+            hasActiveFilters={activeFilterCount > 0}
+            selectedBookUuid={selectedBookUuid}
+            onBookClick={handleBookClick}
+          />
+        </PageContent>
+      </BookListLayout>
+    </div>
   )
 }

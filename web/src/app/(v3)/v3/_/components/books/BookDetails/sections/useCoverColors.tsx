@@ -15,27 +15,32 @@ export type CoverColors = {
   others: CoverColor[]
 }
 
-export function useCoverColors(colors: JsColor[]): CoverColors
+export function useCoverColors(
+  colors: JsColor[],
+  options?: { opacity?: number },
+): CoverColors
 export function useCoverColors(
   book: BookWithRelations,
-  type?: "ebook" | "audiobook" | "readaloud",
+  options?: { opacity?: number; type?: "ebook" | "audiobook" | "readaloud" },
 ): CoverColors
 export function useCoverColors(
   bookOrColors: BookWithRelations | JsColor[],
-  type?: "ebook" | "audiobook" | "readaloud",
+  options?: { opacity?: number; type?: "ebook" | "audiobook" | "readaloud" },
 ): CoverColors {
   const { resolvedTheme } = useTheme()
   const colors =
     (Array.isArray(bookOrColors)
       ? bookOrColors
-      : type
-        ? bookOrColors[type]?.coverColors
+      : options?.type
+        ? bookOrColors[options.type]?.coverColors
         : (bookOrColors.ebook?.coverColors ??
           bookOrColors.audiobook?.coverColors ??
           bookOrColors.readaloud?.coverColors)) ?? []
 
+  const baseOpacity = options?.opacity ?? 0.6
+  const opacity = resolvedTheme === "dark" ? baseOpacity : baseOpacity * 0.6
+
   const cc = colors.map((color) => {
-    const opacity = resolvedTheme === "dark" ? 0.6 : 0.4
     return {
       background: `rgba(${Object.values(color).join(",")}, ${opacity})`,
       accent: `rgba(${Object.values(color).join(",")})`,

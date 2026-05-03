@@ -25,7 +25,34 @@
     "title": "Verzamelingen"
   },
   "BooksPage": {
-    "title": "Boeken"
+    "title": "Boeken",
+    "addBook": "Voeg boek toe",
+    "seachBooksPlaceholder": "Zoek boeken, auteurs, series, enz.",
+    "filters": {
+      "filters": "Filters",
+      "search": "Zoeken",
+      "media": "Media",
+      "allMediaTypes": "Alle soorten media",
+      "collection": "Verzameling",
+      "allCollections": "Alle verzamelingen",
+      "series": "Series",
+      "allSeries": "Alle series",
+      "status": "Status",
+      "allStatuses": "Alle statusen",
+      "clearAllFilters": "Wis alle filters"
+    },
+    "sortBy": {
+      "createdAt": "Toegevoegd op",
+      "updatedAt": "Bijgewerkt op",
+      "title": "Titel",
+      "publicationDate": "Publicatie datum"
+    },
+    "mediaTypes": {
+      "all": "Alle",
+      "ebook": "Ebook",
+      "audiobook": "Audioboek",
+      "readaloud": "Readaloud"
+    }
   },
 
   "LibraryPage": {

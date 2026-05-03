@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { IBM_Plex_Serif, Inter, Young_Serif } from "next/font/google"
+import { Fraunces, IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google"
 import Script from "next/script"
 import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
@@ -15,17 +15,18 @@ import { env } from "@/env"
 
 import "./globals.css"
 
-const inter = Inter({
+const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-fraunces",
+  style: ["normal", "italic"],
 })
 
-const youngSerif = Young_Serif({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   display: "swap",
-  weight: "400",
-  variable: "--font-young-serif",
+  weight: ["400", "500", "600"],
+  variable: "--font-ibm-plex-sans",
 })
 
 const trySerif = IBM_Plex_Serif({
@@ -63,7 +64,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${youngSerif.variable} ${trySerif.variable}`}
+      className={`${fraunces.variable} ${ibmPlexSans.variable} ${trySerif.variable} antialiased`}
     >
       <head>
         {env.NODE_ENV === "development" && env.ENABLE_REACT_SCAN && (

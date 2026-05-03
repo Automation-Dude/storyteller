@@ -15,12 +15,9 @@ export function MetadataRow({
   if (!children) return null
 
   return (
-    <div className={cn("flex flex-col gap-0.5", className)}>
-      <span className="text-muted-foreground flex items-center gap-2 font-sans text-xs font-semibold tracking-wide uppercase">
-        <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-        {label}
-      </span>
-      <div className="text-sm">{children}</div>
-    </div>
+    <>
+      <span className="text-muted-foreground text-xs uppercase">{label}</span>
+      <div className="text-sm leading-0">{children}</div>
+    </>
   )
 }

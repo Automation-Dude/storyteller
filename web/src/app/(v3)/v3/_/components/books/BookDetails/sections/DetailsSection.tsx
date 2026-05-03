@@ -11,6 +11,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { useBookForm } from "../BookFormProvider"
 import { MetadataRow } from "../MetadataRow"
+import { useWatch } from "react-hook-form"
 
 type LocaleInfo = {
   displayName: string
@@ -53,7 +54,7 @@ export function DetailsSection({ className }: { className?: string }) {
   const tLabels = useTranslations("Labels")
   const formatDate = useFormatDate()
 
-  const languageValue = form.watch("language")
+  const languageValue = useWatch({ control: form.control, name: "language" })
   const localeInfo = useMemo(
     () => getLocaleInfo(languageValue ?? ""),
     [languageValue],
@@ -61,9 +62,9 @@ export function DetailsSection({ className }: { className?: string }) {
 
   return (
     <section className={className}>
-      <h2 className="mb-4 text-sm font-medium">{tLabels("bookDetails")}</h2>
+      <h2 className="section-label mb-4">{tLabels("bookDetails")}</h2>
 
-      <div className="flex flex-wrap gap-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         {isEditing ? (
           <>
             <div>
@@ -80,9 +81,7 @@ export function DetailsSection({ className }: { className?: string }) {
                 <p
                   className={cn(
                     "mt-1 text-xs",
-                    localeInfo
-                      ? "text-muted-foreground"
-                      : "text-destructive",
+                    localeInfo ? "text-muted-foreground" : "text-destructive",
                   )}
                 >
                   {localeInfo ? (
@@ -122,7 +121,8 @@ export function DetailsSection({ className }: { className?: string }) {
             </MetadataRow>
 
             <MetadataRow icon={IconCalendar} label={tLabels("publicationDate")}>
-              {book.publicationDate && formatDate(book.publicationDate)}
+              {book.publicationDate &&
+                formatDate(book.publicationDate, { timeStyle: undefined })}
             </MetadataRow>
 
             <MetadataRow icon={IconCalendar} label={tLabels("added")}>

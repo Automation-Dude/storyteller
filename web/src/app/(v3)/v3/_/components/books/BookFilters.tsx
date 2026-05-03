@@ -2,14 +2,26 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconBook,
+  IconChevronDown,
   IconFilter,
   IconHeadphones,
   IconRefresh,
+  IconX,
 } from "@tabler/icons-react"
-import { useState } from "react"
+import { useTranslations } from "next-intl"
+import { useMemo, useState } from "react"
+
+import { cn } from "@v3/_/lib/utils"
 
 import { Badge } from "@/app/(v3)/v3/_/components/ui/badge"
 import { Button } from "@/app/(v3)/v3/_/components/ui/button"
+import { ButtonGroup } from "@/app/(v3)/v3/_/components/ui/button-group"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/(v3)/v3/_/components/ui/dropdown-menu"
 import {
   Popover,
   PopoverContent,
@@ -22,65 +34,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/(v3)/v3/_/components/ui/select"
+import { Separator } from "@/app/(v3)/v3/_/components/ui/separator"
 import {
   type MediaFilter,
-  // type ShelfFilterCondition,
-  // type ShelfFilterNode,
-  // type ShelfOrderBy,
-  // useCreateUserShelfMutation,
   useListCollectionsQuery,
   useListSeriesQuery,
   useListStatusesQuery,
 } from "@/store/api"
 
-// import { ColumnSelector } from "@v3/_/components/books/ColumnSelector"
-// import { ViewSelector } from "@v3/_/components/books/ViewSelector"
-import { ButtonGroup } from "@v3/_/components/ui/button-group"
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogDescription,
-//   DialogFooter,
-//   DialogHeader,
-//   DialogTitle,
-//   DialogTrigger,
-// } from "@v3/_/components/ui/dialog"
-// import { Label } from "@v3/_/components/ui/label"
-import { Separator } from "@v3/_/components/ui/separator"
 import { SearchInput } from "./SearchInput"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
 
 export type SortField = "createdAt" | "updatedAt" | "title" | "publicationDate"
 export type SortDirection = "asc" | "desc"
-
-export const sortFieldOptions: { value: SortField; label: string }[] = [
-  { value: "createdAt", label: "Date Added" },
-  { value: "updatedAt", label: "Date Updated" },
-  { value: "title", label: "Title" },
-  { value: "publicationDate", label: "Publication Date" },
-]
-
-const mediaFilterOptions: {
-  value: MediaFilter
-  label: string
-  icon: React.ReactNode
-}[] = [
-  { value: "all", label: "All Media", icon: null },
-  {
-    value: "ebook",
-    label: "Ebook Only",
-    icon: <IconBook className="h-4 w-4" />,
-  },
-  {
-    value: "audiobook",
-    label: "Audiobook Only",
-    icon: <IconHeadphones className="h-4 w-4" />,
-  },
-  {
-    value: "readaloud",
-    label: "ReadAloud",
-    icon: <IconRefresh className="h-4 w-4" />,
-  },
-]
 
 export type BookFiltersState = {
   searchInput: string
@@ -105,59 +71,6 @@ type BookFiltersProps = {
   showSaveSearch?: boolean
 }
 
-function buildShelfFilter(state: BookFiltersState): ShelfFilterNode | null {
-  const conditions: ShelfFilterCondition[] = []
-
-  if (state.searchInput) {
-    conditions.push({
-      type: "condition",
-      field: "title",
-      operator: "contains",
-      value: state.searchInput,
-    })
-  }
-
-  if (state.mediaFilter !== "all") {
-    conditions.push({
-      type: "condition",
-      field: "mediaType",
-      operator: "is",
-      value: state.mediaFilter,
-    })
-  }
-
-  if (state.collectionFilter) {
-    conditions.push({
-      type: "condition",
-      field: "collections",
-      operator: "includes",
-      value: [state.collectionFilter],
-    })
-  }
-
-  if (state.seriesFilter) {
-    conditions.push({
-      type: "condition",
-      field: "series",
-      operator: "includes",
-      value: [state.seriesFilter],
-    })
-  }
-
-  if (state.statusFilter) {
-    conditions.push({
-      type: "condition",
-      field: "status",
-      operator: "is",
-      value: state.statusFilter,
-    })
-  }
-
-  if (conditions.length === 0) return null
-  if (conditions.length === 1) return conditions[0]!
-  return { type: "and", children: conditions }
-}
-
 export function BookFilters({
   state,
   onChange,
@@ -165,231 +78,217 @@ export function BookFilters({
   setFilterPopoverOpen,
   hideCollectionFilter = false,
   hideSeriesFilter = false,
-  showSaveSearch = false,
 }: BookFiltersProps) {
+  const t = useTranslations("BooksPage")
   const { data: collections } = useListCollectionsQuery()
   const { data: seriesList } = useListSeriesQuery()
   const { data: statuses } = useListStatusesQuery()
-  // const [createShelf, { isLoading: isCreatingShelf }] =
-  // useCreateUserShelfMutation()
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
-  const [searchName, setSearchName] = useState("")
+
+  const sortFieldOptions: { value: SortField; label: string }[] = useMemo(
+    () => [
+      { value: "createdAt", label: t("sortBy.createdAt") },
+      { value: "updatedAt", label: t("sortBy.updatedAt") },
+      { value: "title", label: t("sortBy.title") },
+      { value: "publicationDate", label: t("sortBy.publicationDate") },
+    ],
+    [t],
+  )
+
+  const mediaFilterOptions: {
+    value: MediaFilter
+    label: string
+    icon?: React.ReactNode
+  }[] = [
+    { value: "all", label: t("mediaTypes.all") },
+    {
+      value: "ebook",
+      label: t("mediaTypes.ebook"),
+      icon: <IconBook className="h-3 w-3" />,
+    },
+    {
+      value: "audiobook",
+      label: t("mediaTypes.audiobook"),
+      icon: <IconHeadphones className="h-3 w-3" />,
+    },
+    {
+      value: "synced",
+      label: t("mediaTypes.readaloud"),
+      icon: <IconReadaloud className="h-4 w-4" />,
+    },
+  ]
 
   const activeFilterCount = [
-    state.mediaFilter !== "all",
     !hideCollectionFilter && state.collectionFilter,
     !hideSeriesFilter && state.seriesFilter,
     state.statusFilter,
   ].filter(Boolean).length
 
-  const isDefaultSort =
-    state.sortField === "createdAt" && state.sortDirection === "desc"
-  const hasAnyFilter =
-    activeFilterCount > 0 || state.searchInput || !isDefaultSort
-
   const clearFilters = () => {
-    onChange("mediaFilter", "all")
     if (!hideCollectionFilter) onChange("collectionFilter", null)
     if (!hideSeriesFilter) onChange("seriesFilter", null)
     onChange("statusFilter", null)
   }
 
-  // const handleSaveSearch = async () => {
-  //   if (!searchName.trim()) return
-  //   const filter = buildShelfFilter(state)
+  const [sortFieldPopoverOpen, setSortFieldPopoverOpen] = useState(false)
 
-  //   const sortFieldToOrderBy: Record<SortField, ShelfOrderBy> = {
-  //     createdAt: "createdAt",
-  //     updatedAt: "updatedAt",
-  //     title: "title",
-  //     publicationDate: "publicationDate",
-  //   }
-
-  //   await createShelf({
-  //     name: searchName.trim(),
-  //     filter,
-  //     orderBy: sortFieldToOrderBy[state.sortField],
-  //     orderDirection: state.sortDirection,
-  //   }).unwrap()
-
-  //   setSearchName("")
-  //   setSaveDialogOpen(false)
-  // }
+  const activeCollection = collections?.find(
+    (c) => c.uuid === state.collectionFilter,
+  )
+  const activeSeries = seriesList?.find((s) => s.uuid === state.seriesFilter)
+  const activeStatus = statuses?.find((s) => s.uuid === state.statusFilter)
 
   return (
-    <div className="bg-background/95 sticky top-0 z-50 mx-1 backdrop-blur">
-      <div className="flex flex-col gap-3 px-3 py-1 sm:flex-row sm:items-center sm:justify-between">
+    <div className="bg-background/95 sticky top-0 z-50 flex flex-col gap-3 border-b px-4 py-3 backdrop-blur">
+      {/* search + sort row */}
+      <div className="flex items-center gap-2">
         <SearchInput
-          placeholder="Search books, authors, series..."
+          placeholder={t("seachBooksPlaceholder")}
           value={state.searchInput}
           onChange={(value) => {
             onChange("searchInput", value)
           }}
         />
-        <div className="flex items-center gap-2">
-          <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-            <PopoverTrigger
+
+        <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="outline"
+                size="default"
+                className="shrink-0 gap-1.5 text-sm font-normal"
+              >
+                <IconFilter className="h-3.5 w-3.5" />
+                {t("filters.filters")}
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            }
+          />
+          <PopoverContent className="w-72" align="end">
+            <div className="flex flex-col gap-4">
+              {!hideCollectionFilter && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                    {t("filters.collection")}
+                  </label>
+                  <Select
+                    value={state.collectionFilter ?? "all"}
+                    onValueChange={(v) => {
+                      onChange("collectionFilter", v === "all" ? null : v)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue>{t("filters.allCollections")}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {t("filters.allCollections")}
+                      </SelectItem>
+                      {collections?.map((c) => (
+                        <SelectItem key={c.uuid} value={c.uuid}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {!hideSeriesFilter && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                    {t("filters.series")}
+                  </label>
+                  <Select
+                    value={state.seriesFilter ?? "all"}
+                    onValueChange={(v) => {
+                      onChange("seriesFilter", v === "all" ? null : v)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue>{t("filters.allSeries")}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {t("filters.allSeries")}
+                      </SelectItem>
+                      {seriesList?.map((s) => (
+                        <SelectItem key={s.uuid} value={s.uuid}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                  {t("filters.status")}
+                </label>
+                <Select
+                  value={state.statusFilter ?? "all"}
+                  onValueChange={(v) => {
+                    onChange("statusFilter", v === "all" ? null : v)
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue>{t("filters.allStatuses")}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t("filters.allStatuses")}
+                    </SelectItem>
+                    {statuses?.map((s) => (
+                      <SelectItem key={s.uuid} value={s.uuid}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {activeFilterCount > 0 && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="w-full"
+                  >
+                    {t("filters.clearAllFilters")}
+                  </Button>
+                </>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu
+          open={sortFieldPopoverOpen}
+          onOpenChange={setSortFieldPopoverOpen}
+        >
+          <ButtonGroup className="shrink-0 text-sm">
+            <DropdownMenuTrigger
               render={
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <IconFilter className="h-4 w-4" />
-                  Filters
-                  {activeFilterCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                      {activeFilterCount}
-                    </Badge>
-                  )}
+                <Button
+                  className="min-w-[100px] justify-between text-sm font-normal"
+                  variant="outline"
+                >
+                  {
+                    sortFieldOptions.find((o) => o.value === state.sortField)
+                      ?.label
+                  }
+                  <IconChevronDown className="h-3 w-3" />
                 </Button>
               }
             />
-            <PopoverContent className="w-80" align="end">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Media Type</label>
-                  <Select
-                    value={state.mediaFilter}
-                    onValueChange={(v) => {
-                      onChange("mediaFilter", v as MediaFilter)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mediaFilterOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center gap-2">
-                            {option.icon}
-                            {option.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {!hideCollectionFilter && (
-                  <>
-                    <Separator />
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium">Collection</label>
-                      <Select
-                        value={state.collectionFilter ?? "all"}
-                        onValueChange={(v) => {
-                          onChange("collectionFilter", v === "all" ? null : v)
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>All Collections</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Collections</SelectItem>
-                          {collections?.map((collection) => (
-                            <SelectItem
-                              key={collection.uuid}
-                              value={collection.uuid}
-                            >
-                              {collection.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
-
-                {!hideSeriesFilter && (
-                  <>
-                    <Separator />
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium">Series</label>
-                      <Select
-                        value={state.seriesFilter ?? "all"}
-                        onValueChange={(v) => {
-                          onChange("seriesFilter", v === "all" ? null : v)
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>All Series</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Series</SelectItem>
-                          {seriesList?.map((series) => (
-                            <SelectItem key={series.uuid} value={series.uuid}>
-                              {series.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
-
-                <Separator />
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Reading Status</label>
-                  <Select
-                    value={state.statusFilter ?? "all"}
-                    onValueChange={(v) => {
-                      onChange("statusFilter", v === "all" ? null : v)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>All Statuses</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      {statuses?.map((status) => (
-                        <SelectItem key={status.uuid} value={status.uuid}>
-                          {status.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {activeFilterCount > 0 && (
-                  <>
-                    <Separator />
-                    <Button variant="outline" size="sm" onClick={clearFilters}>
-                      Clear All Filters
-                    </Button>
-                  </>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <Select
-            value={state.sortField}
-            onValueChange={(value) => {
-              onChange("sortField", value as SortField)
-            }}
-          >
-            <SelectTrigger
-              className="w-[120px] border-0 bg-transparent"
-              size="sm"
-            >
-              <SelectValue>
-                {
-                  sortFieldOptions.find(
-                    (option) => option.value === state.sortField,
-                  )?.label
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {sortFieldOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <ButtonGroup>
             <Button
-              size="sm"
+              variant="outline"
               onClick={() => {
                 onChange(
                   "sortDirection",
@@ -398,71 +297,104 @@ export function BookFilters({
               }}
             >
               {state.sortDirection === "asc" ? (
-                <IconArrowUp className="h-4 w-4" />
+                <IconArrowUp className="h-3 w-3" />
               ) : (
-                <IconArrowDown className="h-4 w-4" />
+                <IconArrowDown className="h-3 w-3" />
               )}
             </Button>
           </ButtonGroup>
+          <DropdownMenuContent>
+            {sortFieldOptions.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                className="justify-between"
+                onClick={() => {
+                  if (option.value === state.sortField) {
+                    onChange(
+                      "sortDirection",
+                      state.sortDirection === "asc" ? "desc" : "asc",
+                    )
+                  } else {
+                    onChange("sortField", option.value)
+                    onChange("sortDirection", "desc")
+                  }
+                }}
+              >
+                <span>{option.label} </span>
+                {option.value === state.sortField ? (
+                  state.sortDirection === "asc" ? (
+                    <IconArrowUp className="h-3 w-3" />
+                  ) : (
+                    <IconArrowDown className="h-3 w-3" />
+                  )
+                ) : null}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-          {/* {showSaveSearch && hasAnyFilter && (
-            <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Bookmark className="h-4 w-4" />
-                  Save as Shelf
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Save as Shelf</DialogTitle>
-                  <DialogDescription>
-                    Create a shelf with the current search and filters for quick
-                    access later.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="search-name">Name</Label>
-                    <Input
-                      id="search-name"
-                      placeholder="e.g., Audiobooks, Fantasy series..."
-                      value={searchName}
-                      onChange={(e) => {
-                        setSearchName(e.target.value)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !isCreatingShelf) {
-                          handleSaveSearch()
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSaveDialogOpen(false)
-                    }}
-                    disabled={isCreatingShelf}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveSearch}
-                    disabled={!searchName.trim() || isCreatingShelf}
-                  >
-                    {isCreatingShelf ? "Creating..." : "Create Shelf"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )} */}
+      <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto">
+        {mediaFilterOptions.map((opt) => {
+          const isActive = state.mediaFilter === opt.value
+          return (
+            <button
+              key={opt.value}
+              onClick={() => {
+                onChange("mediaFilter", opt.value)
+              }}
+              className={cn(
+                "inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                isActive
+                  ? "bg-primary/10 border-primary/30 text-primary"
+                  : "bg-muted text-muted-foreground hover:bg-muted-foreground/15 hover:text-foreground border-transparent",
+              )}
+            >
+              {opt.icon}
+              {opt.label}
+            </button>
+          )
+        })}
 
-          {/* <ColumnSelector /> */}
-          {/* <ViewSelector /> */}
-        </div>
+        {(activeCollection || activeSeries || activeStatus) && (
+          <div className="bg-border mx-1 h-4 w-px shrink-0" />
+        )}
+
+        {activeCollection && (
+          <button
+            onClick={() => {
+              onChange("collectionFilter", null)
+            }}
+            className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+          >
+            {activeCollection.name}
+            <IconX className="h-3 w-3" />
+          </button>
+        )}
+
+        {activeSeries && (
+          <button
+            onClick={() => {
+              onChange("seriesFilter", null)
+            }}
+            className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+          >
+            {activeSeries.name}
+            <IconX className="h-3 w-3" />
+          </button>
+        )}
+
+        {activeStatus && (
+          <button
+            onClick={() => {
+              onChange("statusFilter", null)
+            }}
+            className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+          >
+            {activeStatus.name}
+            <IconX className="h-3 w-3" />
+          </button>
+        )}
       </div>
     </div>
   )

@@ -1,8 +1,6 @@
 "use client"
 
-import { Fragment } from "react"
-
-import { cn } from "@/cn"
+import { Fragment, type ReactNode } from "react"
 
 import {
   Breadcrumb,
@@ -15,15 +13,14 @@ import {
 import { SidebarTrigger } from "@v3/_/components/ui/sidebar"
 import { V3Link } from "@v3/_/components/v3-link"
 
+import { cn } from "@/cn"
+
 export function SiteHeader({
   breadcrumbs,
   actions,
   className,
 }: {
-  breadcrumbs: {
-    label: string
-    url?: string
-  }[]
+  breadcrumbs: ({ label: string; url?: string } | { render: ReactNode })[]
   actions?: React.ReactNode
   className?: string
 }) {
@@ -42,28 +39,40 @@ export function SiteHeader({
         <Breadcrumb className="min-w-0 shrink-0">
           <BreadcrumbList className="flex-nowrap">
             {breadcrumbs.map((breadcrumb, idx) => (
-              <Fragment key={breadcrumb.url ?? breadcrumb.label}>
+              <Fragment
+                key={
+                  "render" in breadcrumb
+                    ? idx
+                    : (breadcrumb.url ?? breadcrumb.label)
+                }
+              >
                 <BreadcrumbItem className="min-w-0">
-                  {breadcrumb.url ? (
-                    <BreadcrumbLink
-                      href={breadcrumb.url}
-                      className="truncate"
-                      render={
-                        <V3Link href={breadcrumb.url}>
-                          {breadcrumb.label}
-                        </V3Link>
-                      }
-                    />
-                  ) : idx === breadcrumbs.length - 1 ? (
-                    <h1 className="min-w-0">
-                      <BreadcrumbPage className="truncate">
-                        {breadcrumb.label}
-                      </BreadcrumbPage>
-                    </h1>
+                  {"render" in breadcrumb ? (
+                    breadcrumb.render
                   ) : (
-                    <BreadcrumbPage className="truncate">
-                      {breadcrumb.label}
-                    </BreadcrumbPage>
+                    <>
+                      {breadcrumb.url ? (
+                        <BreadcrumbLink
+                          href={breadcrumb.url}
+                          className="truncate"
+                          render={
+                            <V3Link href={breadcrumb.url}>
+                              {breadcrumb.label}
+                            </V3Link>
+                          }
+                        />
+                      ) : idx === breadcrumbs.length - 1 ? (
+                        <h1 className="min-w-0">
+                          <BreadcrumbPage className="font-heading truncate text-base font-normal tracking-tight">
+                            {breadcrumb.label}
+                          </BreadcrumbPage>
+                        </h1>
+                      ) : (
+                        <BreadcrumbPage className="truncate">
+                          {breadcrumb.label}
+                        </BreadcrumbPage>
+                      )}
+                    </>
                   )}
                 </BreadcrumbItem>
                 {idx < breadcrumbs.length - 1 && (

@@ -17,7 +17,6 @@ import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
-import { Separator } from "@v3/_/components/ui/separator"
 
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
@@ -155,7 +154,7 @@ function BookDetailsContentInner({
       isEditing={isEditing}
       onEditingChange={handleEditingChange}
     >
-      <article className="relative flex h-full flex-1 flex-col overflow-y-auto">
+      <article className="scroll-y relative flex h-full flex-1 flex-col">
         {!compact && <BookDetailsHeader canEdit={canEdit} />}
         {compact && <CompactEditBar />}
 
@@ -168,9 +167,7 @@ function BookDetailsContentInner({
           >
             <HeroSection compact={compact || false} />
 
-            <div className="flex flex-col gap-4 p-6">
-              <Separator />
-
+            <div className="flex flex-col gap-5 p-6">
               <DescriptionSection />
 
               <TranscriptionStatus
@@ -182,20 +179,11 @@ function BookDetailsContentInner({
               <TagsSection />
               <CollectionsSection />
 
-              <Separator />
-
               <ContributorsSection />
 
-              {canDownload && (
-                <>
-                  <Separator />
-                  <DownloadsSection />
-                </>
-              )}
+              {canDownload && <DownloadsSection />}
 
               <DetailsSection />
-
-              <Separator />
 
               <FileSection book={book} />
             </div>
@@ -310,7 +298,7 @@ function TagsSection() {
 
   return (
     <section>
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
+      <h2 className="section-label mb-3">
         <IconTag className="h-4 w-4" />
         {tLabels("tags")}
       </h2>
@@ -331,7 +319,7 @@ function CollectionsSection() {
 
   return (
     <section>
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
+      <h2 className="section-label mb-3">
         <IconFolder className="h-4 w-4" />
         {tLabels("collections")}
       </h2>

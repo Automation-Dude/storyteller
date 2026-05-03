@@ -1,3 +1,5 @@
+"use client"
+
 import { IconBookFilled, IconHeadphonesFilled } from "@tabler/icons-react"
 import { useState } from "react"
 

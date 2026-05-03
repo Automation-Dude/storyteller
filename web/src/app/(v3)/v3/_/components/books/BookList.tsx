@@ -1,3 +1,5 @@
+"use client"
+
 import {
   IconBook,
   IconHeadphones,
@@ -8,9 +10,6 @@ import {
 import Image from "next/image"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import { type BookWithRelations } from "@/database/books"
-import { getCoverUrl } from "@/store/api"
-
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
@@ -18,6 +17,9 @@ import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
+
+import { type BookWithRelations } from "@/database/books"
+import { getCoverUrl } from "@/store/api"
 
 type BookListProps = {
   books: BookWithRelations[]

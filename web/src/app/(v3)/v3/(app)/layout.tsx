@@ -26,7 +26,7 @@ export default async function AppLayout({
   return (
     <SidebarProvider
       defaultOpen={defaultOpen}
-      className="z-50 font-serif"
+      className="z-50"
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 56)",

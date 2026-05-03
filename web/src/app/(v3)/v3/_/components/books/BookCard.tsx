@@ -144,7 +144,7 @@ export const BookCard = memo(function BookCard({
             {authors.map((a) => a.name).join(", ")}
           </p>
         )}
-        <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-medium">
+        <h3 className="group-hover:text-primary font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
           {book.title}
         </h3>
       </div>

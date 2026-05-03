@@ -1,13 +1,15 @@
+"use client"
+
 import { IconLoader, IconSearch } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef } from "react"
-
-import { type BookWithRelations } from "@/database/books"
 
 import { BookCard } from "@v3/_/components/books/BookCard"
 import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
+
+import { type BookWithRelations } from "@/database/books"
 
 type BookGridProps = {
   books: BookWithRelations[]

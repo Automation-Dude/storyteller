@@ -11,10 +11,6 @@ import Link from "next/link"
 import { type ReactNode, useCallback, useState } from "react"
 import { Drawer } from "vaul"
 
-import { useAppDispatch, useAppSelector } from "@/store/appState"
-import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
-import { type UUID } from "@/uuid"
-
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { SiteHeader } from "@v3/_/components/site-header"
@@ -30,6 +26,10 @@ import {
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
+import { type UUID } from "@/uuid"
 
 const DynamicBookDetailsContent = dynamic(
   () =>
@@ -47,7 +47,7 @@ type BookListLayoutProps = {
   sidebarWidth?: number
   onSidebarWidthChange?: (width: number) => void
 
-  headerBreadcrumbs: { label: string; url?: string }[]
+  headerBreadcrumbs: ({ label: string; url?: string } | { render: ReactNode })[]
   headerActions?: ReactNode
 
   children: ReactNode
@@ -88,7 +88,7 @@ export function BookListLayout({
   )
 
   const panelBookIsSelected = selectedBookUuid
-    ? selection?.isSelected(selectedBookUuid) ?? false
+    ? (selection?.isSelected(selectedBookUuid) ?? false)
     : false
 
   const handleTogglePanelBookSelection = useCallback(() => {
@@ -211,7 +211,7 @@ export function BookDetailDrawer({
   const panelOpen = !!selectedBookUuid
 
   const panelBookIsSelected = selectedBookUuid
-    ? selection?.isSelected(selectedBookUuid) ?? false
+    ? (selection?.isSelected(selectedBookUuid) ?? false)
     : false
 
   const handleTogglePanelBookSelection = useCallback(() => {
@@ -275,7 +275,7 @@ export function BookDetailDrawer({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-0 pb-8">
+          <div className="scroll-y flex-1 px-0 pb-8">
             {selectedBookUuid && (
               <DynamicBookDetailsContent
                 uuid={selectedBookUuid as UUID}

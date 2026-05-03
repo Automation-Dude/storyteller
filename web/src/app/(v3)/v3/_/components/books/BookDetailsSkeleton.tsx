@@ -1,33 +1,53 @@
 import { cn } from "@/cn"
 import { SiteHeader } from "@v3/_/components/site-header"
-import { Separator } from "@v3/_/components/ui/separator"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
 
 export const BookDetailsSkeleton = ({ compact }: { compact?: boolean }) => {
+  if (compact) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <div className="bg-muted/30 flex flex-col items-center gap-4 px-6 pt-7 pb-5">
+          <Skeleton className="h-52 w-36 rounded-lg" />
+          <div className="flex w-full flex-col items-center gap-2">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-20 rounded-full" />
+            <Skeleton className="h-8 w-16 rounded-full" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-5 p-6">
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-3 w-16" />
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-14 rounded-full" />
+              <Skeleton className="h-6 w-18 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-1 flex-col">
-      {!compact && (
-        <SiteHeader
-          breadcrumbs={[
-            { label: "Books", url: "/books" },
-            { label: "Loading..." },
-          ]}
-        />
-      )}
+      <SiteHeader
+        breadcrumbs={[
+          { label: "Books", url: "/books" },
+          { label: "Loading..." },
+        ]}
+      />
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl p-6">
-          <div
-            className={cn(
-              "flex flex-col gap-8",
-              compact ? "flex-col" : "md:flex-row",
-            )}
-          >
-            <Skeleton
-              className={cn(
-                "h-80 w-52 shrink-0 rounded-lg",
-                compact ? "mx-auto" : "",
-              )}
-            />
+          <div className={cn("flex flex-col gap-8", "md:flex-row")}>
+            <Skeleton className="h-80 w-52 shrink-0 rounded-lg" />
             <div className="flex flex-1 flex-col gap-4">
               <Skeleton className="h-10 w-3/4" />
               <Skeleton className="h-6 w-1/2" />
@@ -42,7 +62,7 @@ export const BookDetailsSkeleton = ({ compact }: { compact?: boolean }) => {
               </div>
             </div>
           </div>
-          <Separator className="my-8" />
+          <div className="my-8 h-px bg-border" />
           <Skeleton className="h-32 w-full" />
         </div>
       </div>

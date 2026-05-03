@@ -21,7 +21,7 @@ export function FileSection({
 
   return (
     <section className={cn(className)}>
-      <h2 className="mb-4 flex items-center gap-2 text-sm font-medium">
+      <h2 className="section-label mb-4">
         <IconFileText className="h-4 w-4" />
         {t("fileInformation.title")}
       </h2>
