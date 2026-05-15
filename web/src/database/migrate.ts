@@ -32,8 +32,8 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   ).default,
   "59_migrate_hrefs.sql": (await import("./migrations/59_migrate_hrefs.sql"))
     .default,
-  "68_add_cover_colors.sql": (
-    await import("./migrations/68_add_cover_colors.sql")
+  "73_add_cover_colors_blurhash.sql": (
+    await import("./migrations/73_add_cover_colors_blurhash.sql")
   ).default,
 }
 

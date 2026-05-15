@@ -1,30 +1,29 @@
+import type { Audiobook as AudiobookAsset } from "@storyteller-platform/audiobook"
+import type { Epub } from "@storyteller-platform/epub"
 import {
   type Insertable,
   type Selectable,
+  sql,
   type Transaction,
   type Updateable,
-  sql,
 } from "kysely"
 import { jsonArrayFrom, jsonObjectFrom } from "kysely/helpers/sqlite"
 
-import { type Audiobook as AudiobookAsset } from "@storyteller-platform/audiobook"
-import { type Epub } from "@storyteller-platform/epub"
-
-import {
-  type ProcessingTaskStatus,
-  type ProcessingTaskType,
+import type {
+  ProcessingTaskStatus,
+  ProcessingTaskType,
 } from "@/apiModels/models/ProcessingStatus"
 import {
   getMetadataFromAudiobook,
   getMetadataFromEpub,
 } from "@/assets/metadata"
 import { BookEvents } from "@/events"
-import { type UUID } from "@/uuid"
+import type { UUID } from "@/uuid"
 
 import { db } from "./connection"
-import { type NewCreator } from "./creators"
-import { type DB } from "./schema"
-import { type NewSeries } from "./series"
+import type { NewCreator } from "./creators"
+import type { DB } from "./schema"
+import type { NewSeries } from "./series"
 import { getDefaultStatus } from "./statuses"
 
 /**
