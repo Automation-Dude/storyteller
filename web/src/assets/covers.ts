@@ -15,8 +15,9 @@ import {
   touchBook,
 } from "@/database/books"
 import { db } from "@/database/connection"
-import { generateBlurhash } from "@/images"
-import { type UUID } from "@/uuid"
+import { generateBlurhash, getCoverColors } from "@/images"
+import { logger } from "@/logging"
+import type { UUID } from "@/uuid"
 
 import { getAudioCoverItem } from "./metadata"
 import { getAudiobookCoverDirectory, getEbookCoverDirectory } from "./paths"
@@ -349,19 +350,43 @@ export async function writeExtractedEbookCover(
   await mkdir(ebookCoverDir, { recursive: true })
   await writeFile(join(ebookCoverDir, filename), data)
 
-  const blurhash = await generateBlurhash(Buffer.from(data), "ebook")
-  if (blurhash) {
-    await db
-      .updateTable("ebook")
-      .set({ coverBlurhash: blurhash })
-      .where("bookUuid", "=", book.uuid)
-      .execute()
+  try {
+    const blurhash = await generateBlurhash(Buffer.from(data), "ebook")
+    if (blurhash) {
+      await db
+        .updateTable("ebook")
+        .set({ coverBlurhash: blurhash })
+        .where("bookUuid", "=", book.uuid)
+        .execute()
+    }
+  } catch (error) {
+    logger.error({
+      msg: `Failed to get blurhash for book ${book.title}`,
+      err: error,
+    })
+  }
 
-    await db
-      .updateTable("readaloud")
-      .set({ coverBlurhash: blurhash })
-      .where("bookUuid", "=", book.uuid)
-      .execute()
+  try {
+    const colors = getCoverColors(Buffer.from(data))
+    if (colors) {
+      const jsonColors = JSON.stringify(colors)
+      await db
+        .updateTable("ebook")
+        .set({ coverColors: jsonColors })
+        .where("bookUuid", "=", book.uuid)
+        .execute()
+
+      await db
+        .updateTable("readaloud")
+        .set({ coverColors: jsonColors })
+        .where("bookUuid", "=", book.uuid)
+        .execute()
+    }
+  } catch (error) {
+    logger.error({
+      msg: `Failed to get cover colors for book ${book.title}`,
+      err: error,
+    })
   }
 
   await touchBook(book.uuid)
@@ -382,13 +407,37 @@ export async function writeExtractedAudiobookCover(
   await mkdir(audiobookCoverDir, { recursive: true })
   await writeFile(join(audiobookCoverDir, filename), data)
 
-  const blurhash = await generateBlurhash(Buffer.from(data), "audiobook")
-  if (blurhash) {
-    await db
-      .updateTable("audiobook")
-      .set({ coverBlurhash: blurhash })
-      .where("bookUuid", "=", book.uuid)
-      .execute()
+  try {
+    const blurhash = await generateBlurhash(Buffer.from(data), "audiobook")
+    if (blurhash) {
+      await db
+        .updateTable("audiobook")
+        .set({ coverBlurhash: blurhash })
+        .where("bookUuid", "=", book.uuid)
+        .execute()
+    }
+  } catch (error) {
+    logger.error({
+      msg: `Failed to get blurhash for book ${book.title}`,
+      err: error,
+    })
+  }
+
+  try {
+    const colors = getCoverColors(Buffer.from(data))
+    if (colors) {
+      const jsonColors = JSON.stringify(colors)
+      await db
+        .updateTable("audiobook")
+        .set({ coverColors: jsonColors })
+        .where("bookUuid", "=", book.uuid)
+        .execute()
+    }
+  } catch (error) {
+    logger.error({
+      msg: `Failed to get cover colors for book ${book.title}`,
+      err: error,
+    })
   }
 
   await touchBook(book.uuid)

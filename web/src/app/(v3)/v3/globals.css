@@ -82,8 +82,7 @@
 }
 
 @theme inline {
-  --font-sans:
-    var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif,
+  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-heading: var(--font-fraunces);
   --font-serif: var(--font-try-serif), Georgia, serif;

@@ -1,30 +1,59 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from "react"
 
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
-import { BlurhashCanvas } from "./BlurhashCanvas"
-import { FallbackCover } from "./BookCover"
-
-type CoverState = "idle" | "separated" | "audiobook-front"
+import { CoverImage } from "./CoverImage"
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
 
-const T_SPRING =
-  "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.15s ease"
-const T_IN = "transform 0.2s ease-in, box-shadow 0.15s ease"
-const T_OUT = "transform 0.3s ease-out, box-shadow 0.15s ease"
-
-const COVER_BASE =
+const TILE_CLASS =
   "absolute inset-0 m-auto overflow-hidden rounded-lg shadow-md ring-orange-400 group-hover/covers:ring-2"
 
 type Pos = { x: string; scale: number; z: number }
+type CoverState = "idle" | "separated" | "audiobook-front"
 
-function tx(x: string, scale: number) {
-  return `translateX(${x}) scale(${scale})`
+const STATES: Record<CoverState, { audiobook: Pos; ebook: Pos }> = {
+  idle: {
+    audiobook: { x: "15%", scale: 1, z: 10 },
+    ebook: { x: "-15%", scale: 1, z: 20 },
+  },
+  separated: {
+    audiobook: { x: "18%", scale: 0.8, z: 10 },
+    ebook: { x: "-18%", scale: 0.8, z: 20 },
+  },
+  "audiobook-front": {
+    audiobook: { x: "5%", scale: 1.05, z: 20 },
+    ebook: { x: "-25%", scale: 0.9, z: 10 },
+  },
+}
+
+const PEAK = {
+  audiobook: { x: "48%", scale: 0.85 },
+  ebook: { x: "-48%", scale: 0.85 },
+}
+
+const SHUFFLE_MS = 450
+const SIMPLE_MS = 220
+const PEAK_FRACTION = 0.4
+
+function tx(p: { x: string; scale: number }) {
+  return `translateX(${p.x}) scale(${p.scale})`
+}
+
+function transformKeyframes(
+  target: Pos,
+  peak: typeof PEAK.audiobook,
+  shuffle: boolean,
+): Keyframe[] {
+  if (!shuffle) return [{ transform: tx(target) }]
+  return [
+    { offset: PEAK_FRACTION, transform: tx(peak) },
+    { offset: 1, transform: tx(target) },
+  ]
 }
 
 export function BookDoubleCover({
@@ -36,112 +65,89 @@ export function BookDoubleCover({
   width?: number
   disableHover?: boolean
 }) {
-  const stateRef = useRef<CoverState>("idle")
-  const zSwappedRef = useRef(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  const ebookRef = useRef<HTMLDivElement>(null)
   const audiobookRef = useRef<HTMLDivElement>(null)
+  const ebookRef = useRef<HTMLDivElement>(null)
 
-  const [ebookError, setEbookError] = useState(false)
-  const [audiobookError, setAudiobookError] = useState(false)
-
-  const apply = useCallback(
-    (transition: string, ebook: Pos, audiobook: Pos) => {
-      const eb = ebookRef.current
-      const ab = audiobookRef.current
-      if (!eb || !ab) return
-
-      eb.style.transition = transition
-      eb.style.transform = tx(ebook.x, ebook.scale)
-      eb.style.zIndex = String(ebook.z)
-
-      ab.style.transition = transition
-      ab.style.transform = tx(audiobook.x, audiobook.scale)
-      ab.style.zIndex = String(audiobook.z)
-    },
-    [],
+  const stateRef = useRef<CoverState>("idle")
+  const audiobookFrontRef = useRef(false)
+  const audiobookAnimRef = useRef<Animation | null>(null)
+  const ebookAnimRef = useRef<Animation | null>(null)
+  const swapTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
   )
 
-  const transitionTo = useCallback(
-    (target: CoverState) => {
-      clearTimeout(timerRef.current)
+  // apply initial transform/z-index once. we don't set these in JSX style
+  // because WAAPI's commitStyles() writes to inline style on interruption,
+  // we don't want React to mess with it on rerender
+  useEffect(() => {
+    const ab = audiobookRef.current
+    const eb = ebookRef.current
+    if (!ab || !eb) return
+    ab.style.transform = tx(STATES.idle.audiobook)
+    ab.style.zIndex = String(STATES.idle.audiobook.z)
+    eb.style.transform = tx(STATES.idle.ebook)
+    eb.style.zIndex = String(STATES.idle.ebook.z)
+  }, [])
 
-      const prev = stateRef.current
-      if (prev === target) return
+  const transitionTo = useCallback((target: CoverState) => {
+    const ab = audiobookRef.current
+    const eb = ebookRef.current
+    if (!ab || !eb) return
+    if (stateRef.current === target) return
 
-      stateRef.current = target
+    clearTimeout(swapTimerRef.current)
+    swapTimerRef.current = undefined
 
-      const ebZ = zSwappedRef.current ? 10 : 20
-      const abZ = zSwappedRef.current ? 20 : 10
+    try {
+      audiobookAnimRef.current?.commitStyles()
+    } catch {
+      // commitStyles can throw if the animation was already canceled / element detached
+    }
+    try {
+      ebookAnimRef.current?.commitStyles()
+    } catch {
+      // pass
+    }
+    audiobookAnimRef.current?.cancel()
+    ebookAnimRef.current?.cancel()
 
-      if (target === "separated") {
-        apply(
-          T_SPRING,
-          { x: "-18%", scale: 0.8, z: ebZ },
-          { x: "18%", scale: 0.8, z: abZ },
-        )
+    const targetIsFront = target === "audiobook-front"
+    const shuffle = targetIsFront !== audiobookFrontRef.current
+    const duration = shuffle ? SHUFFLE_MS : SIMPLE_MS
 
-        return
-      }
+    const tgtAudio = STATES[target].audiobook
+    const tgtEbook = STATES[target].ebook
 
-      if (target === "audiobook-front") {
-        // phase 1: spread apart, keep current z-order
-        apply(
-          T_IN,
-          { x: "-50%", scale: 0.9, z: ebZ },
-          { x: "50%", scale: 0.9, z: abZ },
-        )
+    audiobookAnimRef.current = ab.animate(
+      transformKeyframes(tgtAudio, PEAK.audiobook, shuffle),
+      { duration, easing: "ease-out", fill: "forwards" },
+    )
+    ebookAnimRef.current = eb.animate(
+      transformKeyframes(tgtEbook, PEAK.ebook, shuffle),
+      { duration, easing: "ease-out", fill: "forwards" },
+    )
 
-        // phase 2: swap z at peak spread (invisible), then settle
-        timerRef.current = setTimeout(() => {
-          zSwappedRef.current = true
+    if (shuffle) {
+      // flip z at peak spread, when cards are fully apart and the swap is invisible
+      swapTimerRef.current = setTimeout(() => {
+        ab.style.zIndex = String(tgtAudio.z)
+        eb.style.zIndex = String(tgtEbook.z)
+        audiobookFrontRef.current = targetIsFront
+        swapTimerRef.current = undefined
+      }, duration * PEAK_FRACTION)
+    } else {
+      ab.style.zIndex = String(tgtAudio.z)
+      eb.style.zIndex = String(tgtEbook.z)
+    }
 
-          apply(
-            T_OUT,
-            { x: "-15%", scale: 1, z: 10 },
-            { x: "15%", scale: 1, z: 20 },
-          )
-        }, 200)
-
-        return
-      }
-
-      // target === "idle"
-      if (zSwappedRef.current) {
-        // phase 1: spread apart with current (swapped) z-order
-        apply(
-          T_OUT,
-          { x: "-50%", scale: 0.9, z: 10 },
-          { x: "50%", scale: 0.9, z: 20 },
-        )
-
-        // phase 2: swap z back at peak spread, then settle to idle
-        timerRef.current = setTimeout(() => {
-          zSwappedRef.current = false
-
-          apply(
-            T_OUT,
-            { x: "-15%", scale: 1, z: 20 },
-            { x: "15%", scale: 1, z: 10 },
-          )
-        }, 300)
-
-        return
-      }
-
-      apply(
-        T_SPRING,
-        { x: "-15%", scale: 1, z: 20 },
-        { x: "15%", scale: 1, z: 10 },
-      )
-    },
-    [apply],
-  )
+    stateRef.current = target
+  }, [])
 
   useEffect(() => {
     return () => {
-      clearTimeout(timerRef.current)
+      clearTimeout(swapTimerRef.current)
+      audiobookAnimRef.current?.cancel()
+      ebookAnimRef.current?.cancel()
     }
   }, [])
 
@@ -162,88 +168,60 @@ export function BookDoubleCover({
     updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
   })
 
+  const fallbackColors = book.ebook?.coverColors ?? book.readaloud?.coverColors
+
   return (
     <div
       className="group/covers relative h-full w-full"
-      onMouseEnter={() => {
+      onPointerEnter={() => {
         if (disableHover) return
-
-        if (stateRef.current === "idle") {
-          transitionTo("separated")
-        }
+        if (stateRef.current === "idle") transitionTo("separated")
       }}
-      onMouseLeave={() => {
+      onPointerLeave={() => {
         if (disableHover) return
         transitionTo("idle")
       }}
     >
       <div
         ref={audiobookRef}
-        className={COVER_BASE}
-        style={{
-          width: "82%",
-          aspectRatio: "1 / 1",
-          zIndex: 10,
-          transform: tx("15%", 1),
-          transition: T_SPRING,
-        }}
+        className={TILE_CLASS}
+        style={{ width: "82%", aspectRatio: "1 / 1" }}
         onPointerEnter={() => {
           if (disableHover) return
-
-          const current = stateRef.current
-          if (current === "separated" || current === "idle") {
-            transitionTo("audiobook-front")
+          transitionTo("audiobook-front")
+        }}
+        onPointerLeave={(e) => {
+          if (disableHover) return
+          // if we're still inside the cover-stack, fall back to separated
+          const next = e.relatedTarget as Node | null
+          if (next && e.currentTarget.parentElement?.contains(next)) {
+            transitionTo("separated")
           }
         }}
       >
-        {!audiobookError ? (
-          <img
-            src={audiobookUrl}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            onError={() => {
-              setAudiobookError(true)
-            }}
-            className="relative z-10 h-full w-full object-cover"
-          />
-        ) : (
-          <FallbackCover
-            title={book.title}
-            type="audiobook"
-            colors={book.ebook?.coverColors ?? book.readaloud?.coverColors}
-          />
-        )}
+        <CoverImage
+          src={audiobookUrl}
+          alt={book.title}
+          ariaHidden
+          blurhash={book.audiobook?.coverBlurhash}
+          type="audiobook"
+          fallbackColors={fallbackColors}
+          className="h-full w-full"
+        />
       </div>
-
       <div
         ref={ebookRef}
-        className={COVER_BASE}
-        style={{
-          width: "82%",
-          aspectRatio: "2 / 3",
-          zIndex: 20,
-          transform: tx("-15%", 1),
-          transition: T_SPRING,
-        }}
+        className={TILE_CLASS}
+        style={{ width: "82%", aspectRatio: "2 / 3" }}
       >
-        {!ebookError ? (
-          <img
-            src={ebookUrl}
-            alt={book.title}
-            loading="lazy"
-            onError={() => {
-              setEbookError(true)
-            }}
-            className="relative z-10 h-full w-full object-cover"
-          />
-        ) : (
-          <FallbackCover
-            title={book.title}
-            type="ebook"
-            colors={book.audiobook?.coverColors ?? book.readaloud?.coverColors}
-          />
-        )}
+        <CoverImage
+          src={ebookUrl}
+          alt={book.title}
+          blurhash={book.ebook?.coverBlurhash}
+          type="ebook"
+          fallbackColors={fallbackColors}
+          className="h-full w-full"
+        />
       </div>
     </div>
   )

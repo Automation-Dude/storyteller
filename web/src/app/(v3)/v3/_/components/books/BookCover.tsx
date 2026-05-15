@@ -1,7 +1,6 @@
 "use client"
 
 import { IconBookFilled, IconHeadphonesFilled } from "@tabler/icons-react"
-import { useState } from "react"
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
@@ -9,9 +8,9 @@ import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
-import { BlurhashCanvas } from "./BlurhashCanvas"
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 import { BookDoubleCover } from "./BookDoubleCover"
+import { CoverImage } from "./CoverImage"
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
@@ -21,51 +20,6 @@ export function isDualFormat(book: BookWithRelations): boolean {
     book.readaloud !== null && book.readaloud.status === "ALIGNED"
 
   return isSynced || (book.ebook !== null && book.audiobook !== null)
-}
-
-function CoverImage({
-  src,
-  alt,
-  blurhash,
-  type,
-  disableHover,
-  className,
-}: {
-  src: string
-  alt: string
-  blurhash: string | null | undefined
-  type: "audiobook" | "ebook"
-  disableHover?: boolean
-  className?: string
-}) {
-  const [error, setError] = useState(false)
-
-  const hasBlurhash = !!blurhash
-  const showFallback = error && !hasBlurhash
-
-  return (
-    <div className={cn("relative overflow-hidden", className)}>
-      <BlurhashCanvas blurhash={blurhash} />
-
-      {!error && (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          onError={() => {
-            setError(true)
-          }}
-          className={cn(
-            "relative z-10 h-full w-full rounded-lg object-contain",
-            !disableHover &&
-              "transition-transform duration-300 group-hover:scale-105",
-          )}
-        />
-      )}
-
-      {showFallback && <FallbackCover title={alt} type={type} />}
-    </div>
-  )
 }
 
 export function BookCover({
@@ -104,6 +58,11 @@ export function BookCover({
     )
   }
 
+  const imgClassName = cn(
+    "rounded-lg object-contain",
+    !disableHover && "transition-transform duration-300 group-hover:scale-105",
+  )
+
   if (hasAudiobook && !hasEbook) {
     return (
       <CoverImage
@@ -111,8 +70,9 @@ export function BookCover({
         alt={book.title}
         blurhash={book.audiobook?.coverBlurhash}
         type="audiobook"
-        disableHover={disableHover}
+        fallbackColors={book.audiobook?.coverColors}
         className="aspect-square w-full rounded-lg shadow-lg"
+        imgClassName={imgClassName}
       />
     )
   }
@@ -123,8 +83,9 @@ export function BookCover({
       alt={book.title}
       blurhash={book.ebook?.coverBlurhash}
       type="ebook"
-      disableHover={disableHover}
+      fallbackColors={book.ebook?.coverColors}
       className="h-full rounded-lg"
+      imgClassName={imgClassName}
     />
   )
 }
@@ -138,7 +99,7 @@ export function FallbackCover({
   title: string
   type: "audiobook" | "ebook"
   className?: string
-  colors?: JsColor[]
+  colors?: JsColor[] | null
 }) {
   const {
     primary: { accent, contrast },

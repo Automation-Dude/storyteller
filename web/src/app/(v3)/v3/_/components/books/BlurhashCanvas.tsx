@@ -1,7 +1,7 @@
 "use client"
 
 import { decode } from "blurhash"
-import { memo, useEffect, useRef } from "react"
+import { type TransitionEventHandler, memo, useEffect, useRef } from "react"
 
 import { cn } from "@/cn"
 
@@ -10,6 +10,7 @@ type BlurhashCanvasProps = {
   width?: number
   height?: number
   className?: string
+  onTransitionEnd?: TransitionEventHandler<HTMLElement>
 }
 
 export const BlurhashCanvas = memo(function BlurhashCanvas({
@@ -17,6 +18,7 @@ export const BlurhashCanvas = memo(function BlurhashCanvas({
   width = 32,
   height = 32,
   className,
+  onTransitionEnd,
 }: BlurhashCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -33,19 +35,22 @@ export const BlurhashCanvas = memo(function BlurhashCanvas({
       imageData.data.set(pixels)
       ctx.putImageData(imageData, 0, 0)
     } catch {
+      console.error("Invalid blurhash string", blurhash)
       // invalid blurhash string
     }
   }, [blurhash, width, height])
 
-  if (!blurhash)
+  if (!blurhash) {
     return (
       <div
         className={cn(
           "from-primary/30 to-primary/10 absolute inset-0 h-full w-full bg-linear-to-br backdrop-blur-sm",
           className,
         )}
+        onTransitionEnd={onTransitionEnd}
       />
     )
+  }
 
   return (
     <canvas
@@ -53,6 +58,7 @@ export const BlurhashCanvas = memo(function BlurhashCanvas({
       width={width}
       height={height}
       className={cn("absolute inset-0 h-full w-full", className)}
+      onTransitionEnd={onTransitionEnd}
     />
   )
 })
