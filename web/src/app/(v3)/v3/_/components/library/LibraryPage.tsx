@@ -402,7 +402,7 @@ function SidebarItemList({
               onItemClick(item.key)
             }}
             className={cn(
-              "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+              "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left font-serif text-sm transition-colors",
               isSelected
                 ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                 : "hover:bg-sidebar-accent/50",
@@ -413,7 +413,7 @@ function SidebarItemList({
             <span
               className={cn(
                 "text-muted-foreground flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs tabular-nums",
-                isSelected && "bg-sidebar-accent-foreground/10",
+                isSelected && "bg-sidebar-accent-foreground text-foreground",
               )}
             >
               {item.bookCount}

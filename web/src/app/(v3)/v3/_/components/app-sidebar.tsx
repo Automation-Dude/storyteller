@@ -43,7 +43,7 @@ import {
 import { V3Link } from "@v3/_/components/v3-link"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
 
-import { type User } from "@/apiModels"
+import type { User } from "@/apiModels"
 import { useGetLatestVersionQuery, useListCollectionsQuery } from "@/store/api"
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
@@ -133,7 +133,7 @@ export function AppSidebar({
   const t = useTranslations("AppSidebar")
   const tLibrary = useTranslations("LibraryPage")
 
-  const collectionSubItems =
+  const _collectionSubItems =
     collections?.map((collection) => {
       const { icon, label } = extractEmojiIcon(collection.name)
       return {
@@ -277,6 +277,7 @@ export function AppSidebar({
           className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0"
         >
           <Image
+            loading="eager"
             src="/Storyteller_Logo.png"
             width={28}
             height={28}
