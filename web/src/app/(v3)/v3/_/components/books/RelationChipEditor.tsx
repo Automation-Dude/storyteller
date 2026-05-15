@@ -46,7 +46,7 @@ type RelationChipEditorProps<T extends RelationItem> = {
 export function RelationChipEditor<T extends RelationItem>({
   items,
   allItems,
-  icon: Icon,
+  icon: _Icon,
   badgeVariant = "outline",
   groupName,
   editMode,
@@ -113,9 +113,9 @@ export function RelationChipEditor<T extends RelationItem>({
         setIsHovering(false)
       }}
     >
-      {items.map((item) => (
+      {items.map((item, idx) => (
         <Badge
-          key={item.uuid}
+          key={`${item.uuid}-${idx}`}
           variant={badgeVariant}
           className={cn("group/badge gap-0.5 font-normal transition-all")}
         >
@@ -137,7 +137,7 @@ export function RelationChipEditor<T extends RelationItem>({
         </Badge>
       ))}
 
-      {items.length === 0 && !canInteract && (
+      {items.length === 0 && (
         <span className="text-muted-foreground text-sm">{emptyText}</span>
       )}
 
@@ -176,9 +176,9 @@ export function RelationChipEditor<T extends RelationItem>({
           />
 
           <div className="scroll-y flex max-h-48 flex-col gap-0.5">
-            {filteredItems.map((item) => (
+            {filteredItems.map((item, idx) => (
               <button
-                key={item.uuid}
+                key={`${item.uuid}-${idx}`}
                 type="button"
                 aria-label={tLabels("add.withInput", { input: item.name })}
                 onClick={() => {

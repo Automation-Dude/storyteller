@@ -10,6 +10,7 @@ import {
 } from "@v3/_/components/books/AuthorEditor"
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { CoverEditor } from "@v3/_/components/books/BookDetails/CoverEditor"
+import { ProgressDisplayBar } from "@v3/_/components/books/ProgressDisplayBar"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
@@ -17,7 +18,6 @@ import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
 
-import { ProgressDisplayBar } from "@v3/_/components/books/ProgressDisplayBar"
 import { cn } from "@/cn"
 
 import { useCoverColors } from "./useCoverColors"
@@ -141,7 +141,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
             <RatingInput value={book.rating} onChange={handleRatingChange} />
           </div>
 
-          <div className="mt-1 w-full">
+          <div className="mt-1">
             <SeriesEditor
               bookUuid={book.uuid}
               series={book.series.map((s) => ({
