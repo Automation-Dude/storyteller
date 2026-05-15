@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { memo, useCallback } from "react"
+import { memo } from "react"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
@@ -39,18 +39,7 @@ export const BookCard = memo(function BookCard({
   const hasDualFormat = isDualFormat(book)
 
   const authors = book.authors
-  // const primarySeries = book.series.find((s) => s.featured) ?? book.series[0]
   const progress = getReadingProgress(book)
-
-  const handleCheckboxClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-
-      onToggleSelection?.(book.uuid)
-    },
-    [onToggleSelection, book.uuid],
-  )
 
   const {
     primary: { background, accent },
@@ -84,15 +73,12 @@ export const BookCard = memo(function BookCard({
                 !isSelecting &&
                 "opacity-0 group-hover:opacity-100",
             )}
-            onClick={handleCheckboxClick}
+            // onClick={handleCheckboxClick}
           >
             <Checkbox
               checked={isBookSelected}
               onCheckedChange={() => {
                 onToggleSelection(book.uuid)
-              }}
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation()
               }}
               className="hover:border-primary h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors"
               tabIndex={-1}
@@ -112,27 +98,6 @@ export const BookCard = memo(function BookCard({
             </div>
           </div>
         )}
-
-        {/* {primarySeries && (
-          <div
-            className={cn(
-              "absolute right-0 bottom-0 left-0 z-20 px-2 pt-6 pb-2",
-              "bg-linear-to-t from-black/50 via-black/20 to-transparent",
-              hasDualFormat && "rounded-b-lg",
-            )}
-          >
-            <span
-              className={cn(
-                "text-muted-foreground line-clamp-1 text-xs font-medium",
-                "text-white/90",
-              )}
-            >
-              {primarySeries.name}
-              {primarySeries.position && ` #${primarySeries.position}`}
-            </span>
-          </div>
-        )} */}
-
         {progress !== null && progress > 0 && (
           <ProgressDisplayBar progress={progress} book={book} />
         )}
@@ -158,22 +123,12 @@ export const BookCard = memo(function BookCard({
       role="button"
       onKeyDown={(e: React.KeyboardEvent) => {
         if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          e.stopPropagation()
-          if (isSelecting) {
-            onToggleSelection?.(book.uuid)
-          } else {
-            onClick(book)
-          }
+          onClick(book)
         }
       }}
       tabIndex={0}
       onClick={() => {
-        if (isSelecting) {
-          onToggleSelection?.(book.uuid)
-        } else {
-          onClick(book)
-        }
+        onClick(book)
       }}
       className={cn(
         "group relative flex cursor-pointer flex-col transition-opacity duration-200",

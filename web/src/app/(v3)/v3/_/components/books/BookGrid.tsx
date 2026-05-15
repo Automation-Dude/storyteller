@@ -103,13 +103,6 @@ export function BookGrid({
 
   return (
     <>
-      {/* <div className="absolute right-4 left-4 z-20">
-        <div className="grid max-w-screen grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
-          {Array.from({ length: 40 }).map((_, i) => (
-            <BookCardSkeleton key={i} />
-          ))}
-        </div>
-      </div> */}
       <div
         className={cn(
           "grid max-w-screen grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 transition-opacity duration-200",
@@ -124,12 +117,10 @@ export function BookGrid({
             selected={book.uuid === selectedBookUuid}
             isSelecting={isSelecting}
             isBookSelected={selection?.isSelected(book.uuid) ?? false}
-            {...(selection
-              ? {
-                  onToggleSelection: selection.toggleSelection,
-                }
-              : {})}
-            {...(onBookClick ? { onClick: onBookClick } : {})}
+            onToggleSelection={(uuid) => {
+              selection?.toggleSelection(uuid)
+            }}
+            onClick={onBookClick}
           />
         ))}
       </div>

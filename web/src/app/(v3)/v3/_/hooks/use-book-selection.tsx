@@ -69,10 +69,13 @@ export function BookSelectionProvider({ children }: { children: ReactNode }) {
     setSelectedBooks(new Set())
   }, [])
 
+  // having some selected books counts as selecting
+  const isActuallySelcting = isSelecting || selectedBooks.size > 0
+
   const value = useMemo(
     () => ({
       selectedBooks,
-      isSelecting,
+      isSelecting: isActuallySelcting,
       toggleSelection,
       selectAll,
       selectNone,
@@ -83,7 +86,7 @@ export function BookSelectionProvider({ children }: { children: ReactNode }) {
     }),
     [
       selectedBooks,
-      isSelecting,
+      isActuallySelcting,
       toggleSelection,
       selectAll,
       selectNone,
