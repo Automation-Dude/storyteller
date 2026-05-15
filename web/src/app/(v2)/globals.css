@@ -1,9 +1,9 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss";
 @import "@mantine/core/styles.css" layer(base);
 @import "@mantine/dates/styles.css" layer(base);
 
-@source "../(v2)/"
-@source "../../components/"
+/* @source "../(v2)/";
+@source "../../components/"; */
 
 @custom-variant dark (&:where([data-mantine-color-scheme="dark"], [data-mantine-color-scheme="dark"] *));
 
