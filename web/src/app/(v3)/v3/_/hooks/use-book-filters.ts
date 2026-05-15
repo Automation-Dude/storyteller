@@ -1,13 +1,7 @@
 "use client"
 
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs"
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-} from "react"
+import { useCallback, useDeferredValue, useMemo, useState } from "react"
 
 import {
   type BookFiltersState,
@@ -17,7 +11,7 @@ import {
 
 import { type ListBooksQueryArg, type MediaFilter } from "@/store/api"
 
-// import { type SortableColumn } from "@/store/slices/viewSettingsSlice"
+import { useDebounce } from "./use-debounce"
 
 const mediaFilterValues = ["all", "ebook", "audiobook", "synced"] as const
 const sortFieldValues = [
@@ -27,21 +21,6 @@ const sortFieldValues = [
   "publicationDate",
 ] as const
 const sortDirectionValues = ["asc", "desc"] as const
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value)
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value)
-    }, delay)
-    return () => {
-      clearTimeout(handler)
-    }
-  }, [value, delay])
-
-  return debouncedValue
-}
 
 type UseBookFiltersOptions = {
   fixedCollection?: string

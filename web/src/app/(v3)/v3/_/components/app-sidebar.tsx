@@ -17,7 +17,7 @@ import {
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { toast } from "sonner"
 
 import {
@@ -48,6 +48,7 @@ import { useGetLatestVersionQuery, useListCollectionsQuery } from "@/store/api"
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
+import { CommandSearch, useCommandSearch } from "./command-search"
 import { DISMISSED_VERSION_KEY } from "./settings-form/changelog-tab"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
@@ -121,14 +122,7 @@ export function AppSidebar({
     })
   }, [hasUpdate, latestVersion])
 
-  const openSearch = useCallback(() => {
-    const event = new KeyboardEvent("keydown", {
-      key: "k",
-      metaKey: true,
-      bubbles: true,
-    })
-    document.dispatchEvent(event)
-  }, [])
+  const { openSearch } = useCommandSearch()
 
   const t = useTranslations("AppSidebar")
   const tLibrary = useTranslations("LibraryPage")
@@ -270,45 +264,48 @@ export function AppSidebar({
   ]
 
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
-      <SidebarHeader className="flex flex-row items-center justify-between gap-2">
-        <V3Link
-          href="/"
-          className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0"
-        >
-          <Image
-            loading="eager"
-            src="/Storyteller_Logo.png"
-            width={28}
-            height={28}
-            alt="Storyteller"
-            className="h-7! max-h-7! w-7! max-w-7! shrink-0"
+    <>
+      <Sidebar variant="inset" collapsible="icon" {...props}>
+        <SidebarHeader className="flex flex-row items-center justify-between gap-2">
+          <V3Link
+            href="/"
+            className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0"
+          >
+            <Image
+              loading="eager"
+              src="/Storyteller_Logo.png"
+              width={28}
+              height={28}
+              alt="Storyteller"
+              className="h-7! max-h-7! w-7! max-w-7! shrink-0"
+            />
+            <span className="font-heading w-auto text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+              Storyteller
+            </span>
+          </V3Link>
+          <SidebarPinButton className="group-data-[collapsible=icon]:hidden" />
+        </SidebarHeader>
+        <SidebarContent>
+          <NavMain items={navMain} />
+          <NavLibrary
+            label={t("library")}
+            items={libraryNav}
+            counts={libraryCounts}
           />
-          <span className="font-heading w-auto text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
-            Storyteller
-          </span>
-        </V3Link>
-        <SidebarPinButton className="group-data-[collapsible=icon]:hidden" />
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={navMain} />
-        <NavLibrary
-          label={t("library")}
-          items={libraryNav}
-          counts={libraryCounts}
-        />
 
-        <NavSecondary items={navSecondary} className="mt-auto" />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser
-          user={{
-            name: user.name ?? null,
-            email: user.email,
-            username: user.username ?? null,
-          }}
-        />
-      </SidebarFooter>
-    </Sidebar>
+          <NavSecondary items={navSecondary} className="mt-auto" />
+        </SidebarContent>
+        <SidebarFooter>
+          <NavUser
+            user={{
+              name: user.name ?? null,
+              email: user.email,
+              username: user.username ?? null,
+            }}
+          />
+        </SidebarFooter>
+      </Sidebar>
+      <CommandSearch />
+    </>
   )
 }
