@@ -107,15 +107,14 @@ export function HeroSection({ compact }: { compact: boolean }) {
               <p className="text-muted-foreground mt-0.5 flex flex-wrap justify-center gap-x-1 text-xs">
                 <span>{t("writtenBy")}</span>
                 {authors.map((author, idx) => (
-                  <Fragment key={author.uuid}>
-                    <V3Link
-                      href={`/books?author=${author.uuid}`}
-                      className="hover:text-primary text-foreground font-medium hover:underline"
-                    >
-                      {author.name}
-                    </V3Link>
+                  <V3Link
+                    key={author.uuid}
+                    href={`/authors?item=${author.uuid}`}
+                    className="hover:text-primary text-foreground font-serif font-medium hover:underline"
+                  >
+                    {author.name.trim()}
                     {idx < authors.length - 1 && <span>,</span>}
-                  </Fragment>
+                  </V3Link>
                 ))}
               </p>
             )
@@ -128,10 +127,14 @@ export function HeroSection({ compact }: { compact: boolean }) {
               <p className="text-muted-foreground flex flex-wrap justify-center gap-x-1 text-xs">
                 <span className="italic">{t("narratedBy")}</span>
                 {narrators.map((narrator, idx) => (
-                  <span key={narrator.uuid}>
-                    <span className="text-foreground">{narrator.name}</span>
-                    {idx < narrators.length - 1 && ", "}
-                  </span>
+                  <V3Link
+                    key={narrator.uuid}
+                    href={`/narrators?item=${narrator.uuid}`}
+                    className="hover:text-primary text-foreground hover:underline"
+                  >
+                    {narrator.name.trim()}
+                    {idx < narrators.length - 1 && <span>,</span>}
+                  </V3Link>
                 ))}
               </p>
             )

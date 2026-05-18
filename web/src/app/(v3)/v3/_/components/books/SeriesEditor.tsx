@@ -67,9 +67,17 @@ export function SeriesEditor({
     [removeFromSeries, bookUuid, onUpdate],
   )
 
+  const seriesItems = series.map((s) => ({
+    uuid: s.uuid,
+    name: s.name,
+    url: `/series?item=${s.uuid}`,
+    position: s.position,
+    featured: s.featured,
+  }))
+
   return (
     <RelationChipEditor
-      items={series}
+      items={seriesItems}
       allItems={allSeries}
       icon={IconLibrary}
       badgeVariant="outline"

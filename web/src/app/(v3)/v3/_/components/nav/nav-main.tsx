@@ -136,7 +136,7 @@ function CollapsibleNavItem({
                   isActive={isItemActive}
                   render={
                     <V3Link href={item.url}>
-                      <span>{allTitle}</span>
+                      <span className="font-serif">{allTitle}</span>
                     </V3Link>
                   }
                 />
@@ -160,7 +160,7 @@ function CollapsibleNavItem({
                           ) : (
                             subItem.icon
                           )}
-                          <span className="flex-1 truncate">
+                          <span className="flex-1 truncate font-serif">
                             {subItem.title}
                           </span>
                           {subItem.onRemove && (

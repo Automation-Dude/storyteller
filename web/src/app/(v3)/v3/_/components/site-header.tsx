@@ -57,7 +57,9 @@ export function SiteHeader({
                           className="truncate"
                           render={
                             <V3Link href={breadcrumb.url}>
-                              {breadcrumb.label}
+                              <span className="font-heading">
+                                {breadcrumb.label}
+                              </span>
                             </V3Link>
                           }
                         />

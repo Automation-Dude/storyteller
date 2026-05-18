@@ -15,9 +15,12 @@ import {
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
+import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+
 type RelationItem = {
   uuid: string
   name: string
+  url?: string
 }
 
 type RelationChipEditorProps<T extends RelationItem> = {
@@ -41,6 +44,69 @@ type RelationChipEditorProps<T extends RelationItem> = {
   renderCreateAction?: (search: string, closePopover: () => void) => ReactNode
 
   renderBadgeExtra?: (item: T) => ReactNode
+}
+
+const RelationChip = ({
+  item,
+  badgeVariant,
+  canInteract,
+  onRemoveItem,
+  renderBadgeExtra,
+  label,
+}: {
+  item: RelationItem
+  badgeVariant: "outline" | "secondary"
+  canInteract: boolean
+  onRemoveItem: (item: RelationItem) => void
+  renderBadgeExtra?: (item: RelationItem) => ReactNode
+  label: string
+}) => {
+  const base = (
+    <>
+      {/* <Icon className="h-3 w-3" /> */}
+      {item.name}
+      {renderBadgeExtra?.(item)}
+
+      {canInteract && (
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          aria-label={label}
+          onClick={() => {
+            onRemoveItem(item)
+          }}
+          className="rounded-full"
+        >
+          <IconX className="h-3 w-3" />
+        </Button>
+      )}
+    </>
+  )
+
+  if (item.url) {
+    return (
+      <Badge
+        variant={badgeVariant}
+        className={cn("group/badge gap-0.5 font-normal transition-all")}
+        render={
+          <V3Link
+            href={item.url}
+            className="hover:text-primary hover:underline"
+          >
+            {base}
+          </V3Link>
+        }
+      />
+    )
+  }
+  return (
+    <Badge
+      variant={badgeVariant}
+      className={cn("group/badge gap-0.5 font-normal transition-all")}
+    >
+      {base}
+    </Badge>
+  )
 }
 
 export function RelationChipEditor<T extends RelationItem>({
@@ -114,27 +180,17 @@ export function RelationChipEditor<T extends RelationItem>({
       }}
     >
       {items.map((item, idx) => (
-        <Badge
+        <RelationChip
           key={`${item.uuid}-${idx}`}
-          variant={badgeVariant}
-          className={cn("group/badge gap-0.5 font-normal transition-all")}
-        >
-          {/* <Icon className="h-3 w-3" /> */}
-          {item.name}
-          {renderBadgeExtra?.(item)}
-
-          {canInteract && (
-            <Button
-              size="icon-xs"
-              variant="ghost"
-              aria-label={tLabels("delete.withInput", { input: item.name })}
-              onClick={() => void onRemoveItem(item)}
-              className="rounded-full"
-            >
-              <IconX className="h-3 w-3" />
-            </Button>
-          )}
-        </Badge>
+          item={item}
+          badgeVariant={badgeVariant}
+          canInteract={canInteract}
+          onRemoveItem={() => void onRemoveItem(item)}
+          renderBadgeExtra={
+            renderBadgeExtra as (item: RelationItem) => ReactNode
+          }
+          label={tLabels("delete.withInput", { input: item.name })}
+        />
       ))}
 
       {items.length === 0 && (

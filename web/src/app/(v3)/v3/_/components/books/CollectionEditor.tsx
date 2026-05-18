@@ -67,6 +67,12 @@ export function CollectionEditor({
     [addToCollections, bookUuid, onUpdate],
   )
 
+  const collectionItems = collections.map((c) => ({
+    uuid: c.uuid,
+    name: c.name,
+    url: `/collections?item=${c.uuid}`,
+  }))
+
   return (
     <>
       <CreateCollectionDialog
@@ -77,7 +83,7 @@ export function CollectionEditor({
       />
 
       <RelationChipEditor
-        items={collections}
+        items={collectionItems}
         allItems={allCollections}
         icon={IconFolder}
         badgeVariant="secondary"

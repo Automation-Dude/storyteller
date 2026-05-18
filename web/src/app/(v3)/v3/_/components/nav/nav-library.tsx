@@ -57,7 +57,7 @@ export function NavLibrary({
                   render={
                     <V3Link href={item.url}>
                       {item.icon && <item.icon />}
-                      <span>{item.title}</span>
+                      <span className="font-serif">{item.title}</span>
                     </V3Link>
                   }
                 />
