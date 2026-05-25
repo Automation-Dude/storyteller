@@ -1,6 +1,14 @@
-import { type ChildProcess, execSync, spawn } from "node:child_process"
+import {
+  type ChildProcess,
+  type ExecException,
+  exec,
+  execSync,
+  spawn,
+} from "node:child_process"
 import { isAbsolute, join, resolve } from "node:path"
 import { setTimeout as sleep } from "node:timers/promises"
+
+import { type ReadiumWebPublicationManifest } from "@storyteller-platform/align/readium"
 
 import { DATA_DIR } from "@/directories"
 import { env } from "@/env"
@@ -263,9 +271,11 @@ export class ReadiumService {
       : join(DATA_DIR, filepath)
 
     // resolve the path to the absolute path
-    const resolvedPath = resolve(fullBookPath)
+    const resolvedPath = resolve(fullBookPath).slice(1)
+    // manually encode the hash in filepaths, readium makes big sad otherwise
+    const hashEncodedPath = resolvedPath.replace(/#/g, "%23")
 
-    const filePathEncoded = ReadiumService.base64Encode(resolvedPath.slice(1))
+    const filePathEncoded = ReadiumService.base64Encode(hashEncodedPath)
 
     return `/webpub/${filePathEncoded}/${assetPath}`
   }
@@ -359,6 +369,40 @@ export class ReadiumService {
 
   getPort(): number {
     return this.port
+  }
+
+  static async getManifest(
+    filepath: string,
+    options: {
+      signal?: AbortSignal
+      inferPageCount?: boolean
+    },
+  ): Promise<ReadiumWebPublicationManifest> {
+    const res = await new Promise((resolve, reject) => {
+      exec(
+        `readium manifest "${filepath}"${options.inferPageCount ? " --infer-page-count" : ""}`,
+        {
+          signal: options.signal,
+        },
+        (error: ExecException | null, stdout: string, stderr: string) => {
+          if (error) {
+            reject(error)
+          } else {
+            if (stderr) {
+              reject(new Error(stderr))
+            } else {
+              resolve(stdout)
+            }
+          }
+        },
+      )
+    })
+
+    try {
+      return JSON.parse(res as string) as ReadiumWebPublicationManifest
+    } catch (error) {
+      throw new Error(`Failed to parse manifest: ${error as string}`)
+    }
   }
 }
 

@@ -6,34 +6,34 @@ public class ReadiumModule: Module {
     public func definition() -> ModuleDefinition {
         OnCreate {
             Task { @AudiobookPlayerActor in
-                await AudiobookPlayerActor.shared.observeClipChanged(self.onClipChanged(overlayPar:))
+                await AudiobookPlayerActor.shared.observeClipChanged(self.onClipChanged(overlayPar:locator:))
                 await AudiobookPlayerActor.shared.observeTrackChanged(self.onTrackChanged(track:position:index:))
                 await AudiobookPlayerActor.shared.observeIsPlayingChanged(self.onIsPlayingChanged(isPlaying:))
                 await AudiobookPlayerActor.shared.observePositionChanged(self.onPositionChanged(position:))
             }
         }
-        
+
         Name("Readium")
-        
+
         Events("clipChanged", "isPlayingChanged", "positionChanged", "trackChanged")
-        
+
         AsyncFunction("getIsPlaying") {
             return await AudiobookPlayerActor.shared.getIsPlaying()
         }
-        
+
         AsyncFunction("getCurrentClip") {
             return await AudiobookPlayerActor.shared.getCurrentClip()?.toJson()
         }
-        
+
         AsyncFunction("loadTracks") { (tracksJson: [[String:Any?]]) in
             let tracks = tracksJson.map { Track.fromJson(json: $0) }
             return try? await AudiobookPlayerActor.shared.loadTracks(tracks: tracks)
         }
-        
+
         AsyncFunction("getPosition") {
             return await AudiobookPlayerActor.shared.getPosition()
         }
-        
+
         AsyncFunction("getCurrentTrack") {
             return await AudiobookPlayerActor.shared.getCurrentTrack()?.toJson()
         }
@@ -41,39 +41,39 @@ public class ReadiumModule: Module {
         AsyncFunction("getCurrentTrackIndex") {
             return await AudiobookPlayerActor.shared.getCurrentTrackIndex()
         }
-        
+
         AsyncFunction("getTracks") {
             return await AudiobookPlayerActor.shared.getTracks().map { $0.toJson() }
         }
-        
+
         AsyncFunction("play") { (automaticRewind: Bool?) in
             await AudiobookPlayerActor.shared.play(automaticRewind: automaticRewind ?? true)
         }
-        
+
         AsyncFunction("pause") {
             await AudiobookPlayerActor.shared.pause()
         }
-        
+
         AsyncFunction("unload") {
             await AudiobookPlayerActor.shared.unload()
         }
-        
+
         AsyncFunction("skip") { (position: Double) in
             await AudiobookPlayerActor.shared.skip(to: position)
         }
-        
+
         AsyncFunction("seekTo") { (relativeUri: String, position: Double, skipEmit: Bool?) in
             await AudiobookPlayerActor.shared.seekTo(relativeUri: relativeUri, position: position, skipEmit: skipEmit ?? false)
         }
-        
+
         AsyncFunction("seekBy") { (amount: Double) in
             await AudiobookPlayerActor.shared.seekBy(amount: amount, bounded: false)
         }
-        
+
         AsyncFunction("next") {
             await AudiobookPlayerActor.shared.next()
         }
-        
+
         AsyncFunction("prev") {
             await AudiobookPlayerActor.shared.prev()
         }
@@ -81,7 +81,7 @@ public class ReadiumModule: Module {
         AsyncFunction("setRate") { (rate: Double) in
             await AudiobookPlayerActor.shared.setRate(rate: rate)
         }
-        
+
         AsyncFunction("setAutomaticRewind") { (config: [String:Any]) in
             await AudiobookPlayerActor.shared.setAutomaticRewind(
                 enabled: config["enabled"] as! Bool,
@@ -89,7 +89,7 @@ public class ReadiumModule: Module {
                 afterBreak: config["afterBreak"] as! Double
             )
         }
-        
+
         AsyncFunction("extractArchive") { (archiveUrl: URL, extractedUrl: URL) in
             try BookService.shared.extractArchive(archiveUrl: archiveUrl, extractedUrl: extractedUrl)
         }
@@ -99,7 +99,7 @@ public class ReadiumModule: Module {
             let pub = try await BookService.shared.openPublication(for: bookId, at: FileURL(url: publicationUri)!, clips: clips)
             return pub.jsonManifest ?? "{}"
         }
-        
+
         AsyncFunction("getOverlayClips") { (bookId: String) in
             return BookService.shared.getOverlayClips(for: bookId).map { $0.toJson() }
         }
@@ -141,10 +141,13 @@ public class ReadiumModule: Module {
                   let fragment = BookService.shared.getFragment(for: bookId, clipUrl: clipUrl, position: position) else {
                 return nil
             }
+            guard let locator = try? await BookService.shared.getLocatorFor(bookId: bookId, href: fragment.textResource, fragment: fragment.fragmentId) else {
+                return nil
+            }
             return [
-                "href": fragment.locator.href,
+                "href": locator.href,
                 "fragment": fragment.fragmentId,
-                "locator": fragment.locator.json
+                "locator": locator.json
             ]
         }
 
@@ -153,11 +156,14 @@ public class ReadiumModule: Module {
                   let previous = BookService.shared.getFragment(for: bookId, before: locator) else {
                 return nil
             }
+            guard let locator = try? await BookService.shared.getLocatorFor(bookId: bookId, href: previous.textResource, fragment: previous.fragmentId) else {
+                return nil
+            }
 
             return [
-                "href": previous.locator.href,
+                "href": locator.href,
                 "fragment": previous.fragmentId,
-                "locator": previous.locator.json
+                "locator": locator.json
             ]
         }
 
@@ -166,11 +172,14 @@ public class ReadiumModule: Module {
                   let next = BookService.shared.getFragment(for: bookId, after: locator) else {
                 return nil
             }
+            guard let locator = try? await BookService.shared.getLocatorFor(bookId: bookId, href: next.textResource, fragment: next.fragmentId) else {
+                return nil
+            }
 
             return [
-                "href": next.locator.href,
+                "href": locator.href,
                 "fragment": next.fragmentId,
-                "locator": next.locator.json
+                "locator": locator.json
             ]
         }
 
@@ -182,6 +191,18 @@ public class ReadiumModule: Module {
 
         View(EPUBView.self) {
             Events("onLocatorChange", "onMiddleTouch", "onSelection", "onDoubleTouch", "onError", "onHighlightTap", "onBookmarksActivate")
+
+            AsyncFunction("goForward") { (view: EPUBView) in
+                await view.navigator?.goForward(options: .animated)
+            }
+
+            AsyncFunction("goBackward") { (view: EPUBView) in
+                await view.navigator?.goBackward(options: .animated)
+            }
+
+            AsyncFunction("getFragmentPageProportion") { (view: EPUBView, fragmentId: String) -> [String: Any]? in
+                return await view.getFragmentPageProportion(fragmentId: fragmentId)
+            }
 
             Prop("bookUuid") { (view: EPUBView, prop: String) in
                 view.pendingProps.bookId = prop
@@ -290,27 +311,28 @@ public class ReadiumModule: Module {
             }
         }
     }
-    
-    func onClipChanged(overlayPar: OverlayPar) {
+
+    func onClipChanged(overlayPar: OverlayPar, locator: Locator) {
         sendEvent("clipChanged", [
             "relativeUrl": overlayPar.relativeUrl.absoluteString,
             "fragmentId": overlayPar.fragmentId,
             "start": overlayPar.start,
             "end": overlayPar.end,
             "duration": overlayPar.end - overlayPar.start,
-            "locator": overlayPar.locator.json
+            "locator": locator.json
         ])
     }
-    
+
     func onIsPlayingChanged(isPlaying: Bool) {
         sendEvent("isPlayingChanged", ["isPlaying": isPlaying])
     }
-    
+
     func onPositionChanged(position: Double) {
         sendEvent("positionChanged", ["position": position])
     }
-    
+
     func onTrackChanged(track: Track, position: Double, index: Int) {
         sendEvent("trackChanged", ["track": track.toJson(), "position": position, "index": index])
     }
+
 }

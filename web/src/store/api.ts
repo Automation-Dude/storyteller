@@ -19,12 +19,17 @@ import {
 import { type ChangelogEntry } from "@/database/changelog"
 import { type CollectionWithRelations } from "@/database/collections"
 import { type Creator } from "@/database/creators"
+import { type ImportRuleWithCollections } from "@/database/importRules"
 import { type Position } from "@/database/positions"
 import {
   type NewSeries,
   type NewSeriesRelation,
   type Series,
 } from "@/database/series"
+import {
+  type ImportMode,
+  type MetadataFieldOverrides,
+} from "@/database/settingsTypes"
 import { type Status } from "@/database/statuses"
 import { type Tag } from "@/database/tags"
 import { type UserPermissionSet } from "@/database/users"
@@ -52,6 +57,7 @@ export const api = createApi({
     "UserReadingState",
     "GpuBuildWarning",
     "Books",
+    "ImportRules",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -149,6 +155,8 @@ export const api = createApi({
     }),
     getBook: build.query<BookWithRelations, { uuid: UUID }>({
       query: ({ uuid }) => `/books/${uuid}`,
+
+      // need to decide on what approach to take here
       providesTags: (result) =>
         result
           ? ([
@@ -178,16 +186,46 @@ export const api = createApi({
                 : []),
             ] as const)
           : [],
+      onCacheEntryAdded: async (
+        { uuid },
+        /* eslint-disable-next-line @typescript-eslint/unbound-method */
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved },
+      ) => {
+        try {
+          await cacheDataLoaded
+        } catch {
+          /* empty */
+        }
+
+        if (typeof EventSource === "undefined") return
+
+        const eventSource = new EventSource("/api/v2/books/events")
+        eventSource.addEventListener("message", (m: MessageEvent<string>) => {
+          const event = JSON.parse(m.data) as BookEvent
+          if (event.bookUuid !== uuid) return
+          if (event.type !== "bookUpdated") return
+
+          updateCachedData((draft) => {
+            Object.assign(draft, event.payload)
+          })
+        })
+
+        await cacheEntryRemoved
+        eventSource.close()
+      },
     }),
     deleteBook: build.mutation<
       void,
-      { uuid: UUID; includeAssets?: "all" | "internal" }
+      {
+        uuid: UUID
+        preventReImport?: boolean
+      }
     >({
-      query: ({ uuid, includeAssets }) => ({
+      query: ({ uuid, preventReImport }) => ({
         url: `/books/${uuid}`,
         method: "DELETE",
         params: {
-          includeAssets,
+          preventReImport,
         },
       }),
     }),
@@ -204,16 +242,103 @@ export const api = createApi({
     ),
     deleteBooks: build.mutation<
       void,
-      { books: UUID[]; includeAssets?: "all" | "internal" }
+      {
+        books: UUID[]
+        preventReImport?: boolean
+      }
     >({
-      query: ({ books, includeAssets }) => ({
+      query: ({ books, preventReImport }) => ({
         url: `/books`,
         method: "DELETE",
         body: {
           books,
-          includeAssets,
+          preventReImport,
         },
       }),
+    }),
+    replaceBookAsset: build.mutation<
+      BookWithRelations,
+      {
+        uuid: UUID
+        format: "ebook" | "audiobook" | "readaloud"
+        path: string
+        importMode?: ImportMode
+        metadataFieldOverrides?: MetadataFieldOverrides
+      }
+    >({
+      query: ({ uuid, ...body }) => ({
+        url: `/books/${uuid}/replace-asset`,
+        method: "POST",
+        body,
+      }),
+    }),
+    removeBookAsset: build.mutation<
+      BookWithRelations,
+      {
+        uuid: UUID
+        format: "ebook" | "audiobook" | "readaloud"
+      }
+    >({
+      query: ({ uuid, format }) => ({
+        url: `/books/${uuid}/replace-asset`,
+        method: "DELETE",
+        params: { format },
+      }),
+    }),
+    getImportRules: build.query<ImportRuleWithCollections[], void>({
+      query: () => `/import-rules`,
+      providesTags: ["ImportRules"],
+    }),
+    getUserImportRules: build.query<ImportRuleWithCollections[], void>({
+      query: () => `/import-rules?source=user`,
+      providesTags: ["ImportRules"],
+    }),
+    createImportRule: build.mutation<
+      ImportRuleWithCollections,
+      {
+        kind: "watch" | "ignore"
+        path: string
+        importMode?: string | null
+        collectionUuids?: UUID[]
+      }
+    >({
+      query: (body) => ({
+        url: `/import-rules`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["ImportRules"],
+    }),
+    updateImportRule: build.mutation<
+      ImportRuleWithCollections,
+      {
+        uuid: UUID
+        path?: string
+        importMode?: string | null
+        collectionUuids?: UUID[]
+      }
+    >({
+      query: ({ uuid, ...body }) => ({
+        url: `/import-rules/${uuid}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["ImportRules"],
+    }),
+    deleteImportRule: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({
+        url: `/import-rules/${uuid}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["ImportRules"],
+    }),
+    deleteImportRules: build.mutation<void, { uuids: UUID[] }>({
+      query: ({ uuids }) => ({
+        url: `/import-rules`,
+        method: "DELETE",
+        body: { uuids },
+      }),
+      invalidatesTags: ["ImportRules"],
     }),
     getPosition: build.query<Position, { uuid: UUID }>({
       query: ({ uuid }) => `/books/${uuid}/positions`,
@@ -359,6 +484,59 @@ export const api = createApi({
         method: "DELETE",
       }),
     }),
+    triggerBookScan: build.mutation<
+      void,
+      {
+        uuid: UUID
+        force?: boolean
+        metadataFieldOverrides?: Record<string, string>
+      }
+    >({
+      query: ({ uuid, force, metadataFieldOverrides }) => ({
+        url: `/books/${uuid}/scan`,
+        method: "POST",
+        ...(force && { params: { force: "true" } }),
+        ...(metadataFieldOverrides && {
+          body: { metadataFieldOverrides },
+        }),
+      }),
+    }),
+    triggerScan: build.mutation<
+      void,
+      {
+        force?: boolean
+        metadataFieldOverrides?: Record<string, string>
+      } | void
+    >({
+      query: (args) => ({
+        url: "/books/scan",
+        method: "POST",
+        ...(args?.force && { params: { force: "true" } }),
+        ...(args?.metadataFieldOverrides && {
+          body: { metadataFieldOverrides: args.metadataFieldOverrides },
+        }),
+      }),
+    }),
+    scanBooks: build.mutation<void, { bookUuids: string[]; force?: boolean }>({
+      query: (args) => ({
+        url: "/books/scan",
+        method: "POST",
+        ...(args.force && { params: { force: "true" } }),
+        body: { bookUuids: args.bookUuids },
+      }),
+    }),
+    cancelScan: build.mutation<void, void>({
+      query: () => ({
+        url: "/books/scan",
+        method: "DELETE",
+      }),
+    }),
+    getScanState: build.query<
+      { running: boolean; source: string | null; startedAt: number | null },
+      void
+    >({
+      query: () => "/books/scan",
+    }),
     upgradeBookEpub: build.mutation<
       Record<string, UpgradeResult>,
       { uuid: UUID; createBackup?: boolean; backupSuffix?: string }
@@ -384,6 +562,7 @@ export const api = createApi({
       {
         collection: UUID | undefined
         paths: string[]
+        importMode?: ImportMode
       }
     >({
       query: (body) => ({
@@ -404,6 +583,8 @@ export const api = createApi({
           publicationDate?: BookUpdate["publicationDate"]
           authors?: string[]
           creators?: CreatorRelation[]
+          pageCount?: number | null
+          duration?: number | null
           series?: SeriesRelation[]
           collections?: UUID[]
           tags?: string[]
@@ -451,6 +632,12 @@ export const api = createApi({
         }
         if (updatedFields.includes("rating")) {
           body.append("rating", JSON.stringify(update.rating))
+        }
+        if (updatedFields.includes("pageCount")) {
+          body.append("pageCount", JSON.stringify(update.pageCount))
+        }
+        if (updatedFields.includes("duration")) {
+          body.append("duration", JSON.stringify(update.duration))
         }
 
         if (update.tags) {
@@ -503,37 +690,44 @@ export const api = createApi({
           body,
         }
       },
+      // maybe just rely on the eventsource
       invalidatesTags: (book) => [
         "Creators",
         "Authors",
         "Series",
         "Tags",
         "Books",
-        ...(book ? [{ type: "Books", id: book.uuid }] : []),
+        ...(book ? [{ type: "Books" as const, id: book.uuid }] : []),
         ...(book
-          ? book.authors.map((author) => ({ type: "Authors", id: author.uuid }))
+          ? book.authors.map((author) => ({
+              type: "Authors" as const,
+              id: author.uuid,
+            }))
           : []),
         ...(book
           ? book.creators.map((creator) => ({
-              type: "Creators",
+              type: "Creators" as const,
               id: creator.uuid,
             }))
           : []),
         ...(book
-          ? book.series.map((series) => ({ type: "Series", id: series.uuid }))
+          ? book.series.map((series) => ({
+              type: "Series" as const,
+              id: series.uuid,
+            }))
           : []),
         ...(book
           ? book.collections.map((collection) => ({
-              type: "Collections",
+              type: "Collections" as const,
               id: collection.uuid,
             }))
           : []),
         ...(book
-          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
+          ? book.tags.map((tag) => ({ type: "Tags" as const, id: tag.uuid }))
           : []),
         ...(book
           ? book.status
-            ? [{ type: "Statuses", id: book.status.uuid }]
+            ? [{ type: "Statuses" as const, id: book.status.uuid }]
             : []
           : []),
       ],
@@ -655,7 +849,6 @@ export const api = createApi({
           public?: boolean
           users?: UUID[]
           books?: UUID[]
-          importPath?: string | null
         }
       }
     >({
@@ -710,10 +903,9 @@ export const api = createApi({
         description: string
         public: boolean
         users: string[]
-        importPath: string | null
       }
     >({
-      query: ({ name, description, public: isPublic, users, importPath }) => ({
+      query: ({ name, description, public: isPublic, users }) => ({
         url: "/collections",
         method: "POST",
         body: {
@@ -721,7 +913,6 @@ export const api = createApi({
           description,
           public: isPublic,
           ...(!isPublic && { users }),
-          importPath,
         },
       }),
       invalidatesTags: ["Collections"],
@@ -782,18 +973,15 @@ export const api = createApi({
         ...tags.map((uuid) => ({ type: "Tags" as const, id: uuid })),
       ],
     }),
-    updateReadingStatus: build.mutation<void, { status: UUID; books: UUID[] }>({
+    updateReadingStatus: build.mutation<
+      BookWithRelations,
+      { status: UUID; books: UUID[] }
+    >({
       query: (body) => ({
         url: "/books/status",
         method: "PUT",
         body,
       }),
-      invalidatesTags: (book) => [
-        "Tags",
-        ...(book
-          ? book.tags.map((tag) => ({ type: "Tags", id: tag.uuid }))
-          : []),
-      ],
     }),
 
     getInfiniteChangelog: build.infiniteQuery<
@@ -857,12 +1045,15 @@ export const {
   useAddBooksToSeriesMutation,
   useAddTagsToBooksMutation,
   useCancelProcessingMutation,
+  useGetScanStateQuery,
   useCreateBookMutation,
   useCreateCollectionMutation,
   useCreateInviteMutation,
   useDeleteBookAssetsMutation,
   useDeleteBookMutation,
   useDeleteBooksMutation,
+  useReplaceBookAssetMutation,
+  useRemoveBookAssetMutation,
   useGetPositionQuery,
   useGetBookQuery,
   useUpdatePositionMutation,
@@ -892,6 +1083,10 @@ export const {
   useListUsersQuery,
   useMergeBooksMutation,
   useProcessBookMutation,
+  useTriggerBookScanMutation,
+  useCancelScanMutation,
+  useTriggerScanMutation,
+  useScanBooksMutation,
   useRemoveBooksFromCollectionsMutation,
   useRemoveBooksFromSeriesMutation,
   useRemoveTagsFromBooksMutation,
@@ -906,6 +1101,12 @@ export const {
   useGetChangelogQuery,
   useGetLatestVersionQuery,
   useUpgradeBookEpubMutation,
+  useGetImportRulesQuery,
+  useGetUserImportRulesQuery,
+  useCreateImportRuleMutation,
+  useUpdateImportRuleMutation,
+  useDeleteImportRuleMutation,
+  useDeleteImportRulesMutation,
 } = api
 
 export function getDownloadUrl(

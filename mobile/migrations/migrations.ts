@@ -29,6 +29,14 @@ import {
   down as ratingAsRealsDown,
   up as ratingAsRealsUp,
 } from "./1774713471283_rating_as_reals"
+import {
+  down as clearClipsDown,
+  up as clearClipsUp,
+} from "./1779735566760_clear_clips"
+import {
+  down as bookToCreatorRoleUniqueDown,
+  up as bookToCreatorRoleUniqueUp,
+} from "./1779753600000_book_to_creator_role_unique"
 
 export const migrations = {
   "1757893743063_init": {
@@ -64,5 +72,13 @@ export const migrations = {
   "1774713471283_rating_as_reals": {
     up: ratingAsRealsUp,
     down: ratingAsRealsDown,
+  },
+  "1779753600000_book_to_creator_role_unique": {
+    up: bookToCreatorRoleUniqueUp,
+    down: bookToCreatorRoleUniqueDown,
+  },
+  "1779735566760_clear_clips": {
+    up: clearClipsUp,
+    down: clearClipsDown,
   },
 }

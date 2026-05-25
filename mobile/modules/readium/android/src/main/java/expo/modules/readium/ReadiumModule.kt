@@ -21,8 +21,12 @@ import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.data.decodeString
 import org.readium.r2.shared.util.data.readDecodeOrNull
 import androidx.core.graphics.toColorInt
+import org.readium.r2.shared.util.Url
+import org.readium.r2.shared.util.fromEpubHref
 
 class ReadiumModule : Module(), Listener {
+    private lateinit var player: AudiobookPlayer
+
     // Each module class must implement the definition function. The definition consists of
     // components
     // that describes the module's functionality and behavior.
@@ -30,7 +34,7 @@ class ReadiumModule : Module(), Listener {
     @RequiresApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalReadiumApi::class)
     override fun definition() = ModuleDefinition {
-        val player = AudiobookPlayer(appContext, this@ReadiumModule)
+        player = AudiobookPlayer(appContext, this@ReadiumModule)
 
         // Sets the name of the module that JavaScript code will use to refer to the module. Takes a
         // string as an argument.
@@ -170,10 +174,11 @@ class ReadiumModule : Module(), Listener {
                     val clip =
                         BookService.getFragment(bookUuid, clipUrl, position)
                             ?: return@Coroutine null
+                    val locator = BookService.buildFragmentLocator(bookUuid, Url.fromEpubHref(clip.textResource)!!, clip.fragmentId)
                     return@Coroutine mutableMapOf(
-                        "href" to clip.locator.href,
+                        "href" to locator.href,
                         "fragment" to clip.fragmentId,
-                        "locator" to clip.locator.toJSON().toMap()
+                        "locator" to locator.toJSON().toMap()
                     )
                 }
 
@@ -181,10 +186,12 @@ class ReadiumModule : Module(), Listener {
             val locatorJson = JSONObject(locatorMap)
             val locator = Locator.fromJSON(locatorJson) ?: return@Coroutine null
             val next = BookService.getNextFragment(bookUuid, locator) ?: return@Coroutine null
+            val nextLocator = BookService.buildFragmentLocator(bookUuid, Url.fromEpubHref(next.textResource)!!, next.fragmentId)
+
             mutableMapOf(
-                "href" to next.locator.href,
+                "href" to nextLocator.href,
                 "fragment" to next.fragmentId,
-                "locator" to next.locator.toJSON().toMap()
+                "locator" to nextLocator.toJSON().toMap()
             )
         }
 
@@ -193,10 +200,12 @@ class ReadiumModule : Module(), Listener {
             val locator = Locator.fromJSON(locatorJson) ?: return@Coroutine null
             val previous =
                 BookService.getPreviousFragment(bookUuid, locator) ?: return@Coroutine null
+            val previousLocator = BookService.buildFragmentLocator(bookUuid, Url.fromEpubHref(previous.textResource)!!, previous.fragmentId)
+
             mutableMapOf(
-                "href" to previous.locator.href,
+                "href" to previousLocator.href,
                 "fragment" to previous.fragmentId,
-                "locator" to previous.locator.toJSON().toMap()
+                "locator" to previousLocator.toJSON().toMap()
             )
         }
 
@@ -230,6 +239,10 @@ class ReadiumModule : Module(), Listener {
             AsyncFunction("goBackward") { view: EpubView ->
                 val navigator = view.navigator ?: return@AsyncFunction
                 navigator.goBackward(animated = false)
+            }
+
+            AsyncFunction("getFragmentPageProportion") Coroutine { view: EpubView, fragmentId: String ->
+                return@Coroutine view.getFragmentPageProportion(fragmentId)
             }
 
             Prop("locator") { view: EpubView, prop: Map<String, Any>? ->
@@ -321,14 +334,17 @@ class ReadiumModule : Module(), Listener {
             }
 
             OnViewDidUpdateProps { view: EpubView ->
+                view.player = player
                 view.finalizeProps()
             }
         }
     }
 
-    override fun onClipChanged(overlayPar: OverlayPar) {
+    override fun onClipChanged(overlayPar: OverlayPar, locator: Locator) {
+        val json = overlayPar.toJson().toMutableMap()
+        json["locator"] = locator.toJSON().toMap()
         this.sendEvent(
-            "clipChanged", overlayPar.toJson()
+            "clipChanged", json
         )
     }
 
@@ -343,4 +359,5 @@ class ReadiumModule : Module(), Listener {
     override fun onTrackChanged(track: Track, position: Double, index: Int) {
         this.sendEvent("trackChanged", mapOf("track" to track.toJson(), "position" to position, "index" to index))
     }
+
 }
