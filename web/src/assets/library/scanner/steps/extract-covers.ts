@@ -68,38 +68,42 @@ export const extractTextCoverStep = defineStep(
           ? input.epub
           : input.book.readaloud?.filepath ?? null
 
-      const cover = await extractAndPersistTextCover(input.book, ebookSource, readaloudSource)
+      const cover = await extractAndPersistTextCover(
+        input.book,
+        ebookSource,
+        readaloudSource,
+      )
 
-      if(!cover){
+      if (!cover) {
         return input
       }
 
       let blurhash: string | null = null
-  try {
-    const blurhash = await generateBlurhash(Buffer.from(cover.data), "ebook")
-  } catch (error) {
-    ctx.logger.error({
-      msg: `Failed to get blurhash for book ${input.book.title}`,
-      err: error,
-    })
-  }
+      try {
+        const blurhash = await generateBlurhash(
+          Buffer.from(cover.data),
+          "ebook",
+        )
+      } catch (error) {
+        ctx.logger.error({
+          msg: `Failed to get blurhash for book ${input.book.title}`,
+          err: error,
+        })
+      }
 
-  let colors: CoverColor[] | null = null
-  try {
-    colors = getCoverColors(Buffer.from(cover.data))
-
-  } catch (error) {
-    ctx.logger.warn({
-      msg: `Failed to get cover colors for book ${input.book.title}`,
-      err: error,
-    })
-  }
+      let colors: CoverColor[] | null = null
+      try {
+        colors = getCoverColors(Buffer.from(cover.data))
+      } catch (error) {
+        ctx.logger.warn({
+          msg: `Failed to get cover colors for book ${input.book.title}`,
+          err: error,
+        })
+      }
 
       return {
         ...input,
-        extractedRelations: getFormatRelationPatch {
-
-        }
+        // extractedRelations: getFormatRelationPatch {
       }
     } catch (error) {
       ctx.report.warn({
