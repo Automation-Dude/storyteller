@@ -12,6 +12,9 @@ import {
   type ExtractedAudiobookMetadata,
   type ExtractedEpubMetadata,
 } from "./extract-metadata"
+import { generateBlurhash, getCoverColors } from "@/images"
+import { CoverColor } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
+import { getFormatRelationPatch } from "../formatRelations"
 
 const STEP = "extract-cover"
 
@@ -65,9 +68,39 @@ export const extractTextCoverStep = defineStep(
           ? input.epub
           : input.book.readaloud?.filepath ?? null
 
-      await extractAndPersistTextCover(input.book, ebookSource, readaloudSource)
+      const cover = await extractAndPersistTextCover(input.book, ebookSource, readaloudSource)
 
-      return input
+      if(!cover){
+        return input
+      }
+
+      let blurhash: string | null = null
+  try {
+    const blurhash = await generateBlurhash(Buffer.from(cover.data), "ebook")
+  } catch (error) {
+    ctx.logger.error({
+      msg: `Failed to get blurhash for book ${input.book.title}`,
+      err: error,
+    })
+  }
+
+  let colors: CoverColor[] | null = null
+  try {
+    colors = getCoverColors(Buffer.from(cover.data))
+
+  } catch (error) {
+    ctx.logger.warn({
+      msg: `Failed to get cover colors for book ${input.book.title}`,
+      err: error,
+    })
+  }
+
+      return {
+        ...input,
+        extractedRelations: getFormatRelationPatch {
+
+        }
+      }
     } catch (error) {
       ctx.report.warn({
         step: STEP,
