@@ -8,6 +8,13 @@ import {
   type Shelves,
   type User,
 } from "@/apiModels"
+import {
+  type HomeShelfWithDetails,
+  type HomeShelfType,
+  type ShelfWithBooks,
+  type ShelfOrderBy,
+} from "@/database/shelves"
+import { type ShelfFilter } from "@/database/shelfFilter"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
 import {
   type BookRelationsUpdate,
@@ -61,6 +68,8 @@ export const api = createApi({
     "Books",
     "ImportRules",
     "UserRatings",
+    "HomeShelves",
+    "UserShelves",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -1085,6 +1094,136 @@ export const api = createApi({
       query: ({ component = "web", beta = false }) =>
         `/changelog/latest?component=${component}&beta=${beta}`,
     }),
+
+    // shelves
+    listHomeShelves: build.query<HomeShelfWithDetails[], void>({
+      query: () => "/shelves/home",
+      providesTags: ["HomeShelves"],
+    }),
+
+    setHomeShelves: build.mutation<
+      HomeShelfWithDetails[],
+      Array<{ shelfUuid?: string | null; shelfType: HomeShelfType }>
+    >({
+      query: (body) => ({
+        url: "/shelves/home",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["HomeShelves"],
+    }),
+
+    addHomeShelf: build.mutation<
+      HomeShelfWithDetails,
+      { shelfUuid?: string | null; shelfType: HomeShelfType }
+    >({
+      query: (body) => ({
+        url: "/shelves/home",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["HomeShelves"],
+    }),
+
+    removeHomeShelf: build.mutation<void, { uuid: string }>({
+      query: ({ uuid }) => ({
+        url: `/shelves/home/${uuid}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["HomeShelves"],
+    }),
+
+    listUserShelves: build.query<ShelfWithBooks[], void>({
+      query: () => "/shelves",
+      providesTags: ["UserShelves"],
+    }),
+
+    createUserShelf: build.mutation<
+      ShelfWithBooks,
+      {
+        name: string
+        description?: string | null
+        filter?: ShelfFilter | null
+        orderBy?: ShelfOrderBy
+        orderDirection?: "asc" | "desc"
+        limitCount?: number | null
+        books?: string[]
+      }
+    >({
+      query: (body) => ({
+        url: "/shelves",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["UserShelves"],
+    }),
+
+    updateUserShelf: build.mutation<
+      ShelfWithBooks,
+      {
+        uuid: string
+        name?: string
+        description?: string | null
+        filter?: ShelfFilter | null
+        orderBy?: ShelfOrderBy
+        orderDirection?: "asc" | "desc"
+        limitCount?: number | null
+        books?: string[]
+      }
+    >({
+      query: ({ uuid, ...body }) => ({
+        url: `/shelves/${uuid}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["UserShelves"],
+    }),
+
+    deleteUserShelf: build.mutation<void, { uuid: string }>({
+      query: ({ uuid }) => ({
+        url: `/shelves/${uuid}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["UserShelves", "HomeShelves"],
+    }),
+
+    listShelfBooks: build.query<
+      BookWithRelations[],
+      {
+        shelfUuid: string
+        limit?: number
+        offset?: number
+        orderBy?: ShelfOrderBy
+        orderDirection?: "asc" | "desc"
+      }
+    >({
+      query: ({ shelfUuid, ...params }) => {
+        const searchParams = new URLSearchParams()
+
+        if (params.limit) searchParams.set("limit", String(params.limit))
+        if (params.offset) searchParams.set("offset", String(params.offset))
+        if (params.orderBy) searchParams.set("orderBy", params.orderBy)
+        if (params.orderDirection) searchParams.set("orderDirection", params.orderDirection)
+
+        return `/shelves/${shelfUuid}/books?${searchParams.toString()}`
+      },
+    }),
+
+    previewShelfFilter: build.mutation<
+      BookWithRelations[],
+      {
+        filter: ShelfFilter
+        orderBy?: string
+        orderDirection?: "asc" | "desc"
+        limit?: number
+      }
+    >({
+      query: (body) => ({
+        url: "/shelves/preview",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 })
 
@@ -1159,6 +1298,16 @@ export const {
   useSetBookRatingMutation,
   useDeleteBookRatingMutation,
   useListUserRatingsQuery,
+  useListHomeShelvesQuery,
+  useSetHomeShelvesMutation,
+  useAddHomeShelfMutation,
+  useRemoveHomeShelfMutation,
+  useListUserShelvesQuery,
+  useCreateUserShelfMutation,
+  useUpdateUserShelfMutation,
+  useDeleteUserShelfMutation,
+  useListShelfBooksQuery,
+  usePreviewShelfFilterMutation,
 } = api
 
 export function getDownloadUrl(

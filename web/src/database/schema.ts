@@ -161,6 +161,16 @@ export interface DeviceAuthorization {
   userCode: string
 }
 
+export interface HomeShelf {
+  createdAt: Generated<string>
+  position: number
+  shelfType: string
+  shelfUuid: import("@/uuid").UUID | null
+  updatedAt: Generated<string>
+  userId: import("@/uuid").UUID
+  uuid: Generated<import("@/uuid").UUID>
+}
+
 export interface Ebook {
   bookUuid: import("@/uuid").UUID
   coverBlurhash: string | null
@@ -250,6 +260,40 @@ export interface Readaloud {
     "CREATED" | "QUEUED" | "PROCESSING" | "STOPPED" | "ERROR" | "ALIGNED"
   >
   updatedAt: Generated<string>
+  uuid: Generated<import("@/uuid").UUID>
+}
+
+export interface Shelf {
+  createdAt: Generated<string>
+  description: string | null
+  filter: import("kysely").ColumnType<
+    import("@/database/shelfFilter").ShelfFilter | null,
+    string | null,
+    string | null
+  >
+  limitCount: number | null
+  name: string
+  orderBy: Generated<string>
+  orderDirection: Generated<"asc" | "desc">
+  updatedAt: Generated<string>
+  userId: import("@/uuid").UUID
+  uuid: Generated<import("@/uuid").UUID>
+}
+
+export interface ShelfBook {
+  bookUuid: import("@/uuid").UUID
+  createdAt: Generated<string>
+  position: number | null
+  shelfUuid: import("@/uuid").UUID
+  updatedAt: Generated<string>
+  uuid: Generated<import("@/uuid").UUID>
+}
+
+export interface ShelfFilterReference {
+  createdAt: Generated<string>
+  entityType: "tag" | "collection" | "series" | "status" | "creator"
+  entityUuid: string
+  shelfUuid: import("@/uuid").UUID
   uuid: Generated<import("@/uuid").UUID>
 }
 
@@ -370,6 +414,7 @@ export interface DB {
   creator: Creator
   deviceAuthorization: DeviceAuthorization
   ebook: Ebook
+  homeShelf: HomeShelf
   importRule: ImportRule
   importRuleToCollection: ImportRuleToCollection
   migration: Migration
@@ -378,6 +423,9 @@ export interface DB {
   series: Series
   session: Session
   settings: Settings
+  shelf: Shelf
+  shelfBook: ShelfBook
+  shelfFilterReference: ShelfFilterReference
   status: Status
   tag: Tag
   tokenRevokation: TokenRevokation
