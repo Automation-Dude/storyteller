@@ -26,6 +26,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -186,14 +187,13 @@ function FormatFileRow({
 export function FileSection({
   book,
   assetsDir,
-  canEdit,
   className,
 }: {
   book: BookWithRelations
   assetsDir?: string
-  canEdit?: boolean
   className?: string
 }) {
+  const canEdit = usePermission("bookUpdate")
   const t = useTranslations("BookDetailsPage")
   const formatDate = useFormatDate()
   const [removeAsset, { isLoading: isRemoving }] = useRemoveBookAssetMutation()
@@ -238,11 +238,11 @@ export function FileSection({
                 </Button>
               }
             />
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-fit">
               {missingFormats.map((f, i) => {
                 const FormatIcon = FORMAT_ICONS[f]
                 return (
-                  <div key={f}>
+                  <DropdownMenuGroup key={f}>
                     {i > 0 && <DropdownMenuSeparator />}
                     <DropdownMenuLabel className="flex items-center gap-1.5">
                       <FormatIcon className="h-3 w-3" />
@@ -264,7 +264,7 @@ export function FileSection({
                       <IconUpload className="mr-2 h-4 w-4" />
                       Upload
                     </DropdownMenuItem>
-                  </div>
+                  </DropdownMenuGroup>
                 )
               })}
             </DropdownMenuContent>
@@ -295,7 +295,6 @@ export function FileSection({
           <FilePathRow
             label={t("fileInformation.lastAligned")}
             filepath={formatDate(book.alignedAt)}
-            missing={false}
           />
         )}
 
@@ -303,7 +302,6 @@ export function FileSection({
           <FilePathRow
             label={t("fileInformation.transcriptionEngine")}
             filepath={book.alignedWith}
-            missing={false}
           />
         )}
 
@@ -311,7 +309,6 @@ export function FileSection({
           <FilePathRow
             label={t("fileInformation.storytellerVersion")}
             filepath={book.alignedByStorytellerVersion}
-            missing={false}
           />
         )}
 

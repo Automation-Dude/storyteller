@@ -121,7 +121,6 @@ function BookDetailsContentInner({
   canEdit,
   canDownload,
   canDelete,
-  canProcess,
   assetsDir,
   isEditing: controlledIsEditing,
   onEditingChange,
@@ -174,7 +173,7 @@ function BookDetailsContentInner({
             <div className="flex flex-col gap-5 p-6">
               <DescriptionSection />
 
-              <TranscriptionStatus book={book} canProcess={true} />
+              <TranscriptionStatus book={book} />
 
               <TagsSection />
               <CollectionsSection />
@@ -185,11 +184,7 @@ function BookDetailsContentInner({
 
               <DetailsSection />
 
-              <FileSection
-                book={book}
-                assetsDir={assetsDir}
-                canEdit={canEdit}
-              />
+              <FileSection book={book} assetsDir={assetsDir} />
             </div>
 
             {canDelete && <DeleteBookModal book={book} />}

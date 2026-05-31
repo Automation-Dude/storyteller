@@ -7,8 +7,15 @@ import { useRef, useState } from "react"
 
 import { cn } from "@v3/_/lib/utils"
 
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/app/(v3)/v3/_/components/ui/item"
 import { formatBytes } from "@/strings"
-
 
 // v3-styled replacement for the Uppy Dashboard: a drop target + file list with
 // progress, driven by Uppy core state. No Mantine, no Uppy default chrome.
@@ -72,9 +79,7 @@ export function UploadDropzone({
         <span className="text-sm font-medium">
           Drop files here or click to browse
         </span>
-        {hint && (
-          <span className="text-muted-foreground text-xs">{hint}</span>
-        )}
+        {hint && <span className="text-muted-foreground text-xs">{hint}</span>}
         <input
           ref={inputRef}
           type="file"
@@ -95,41 +100,48 @@ export function UploadDropzone({
             const isDone = file.progress.uploadComplete
 
             return (
-              <li
+              <Item
                 key={file.id}
                 className="bg-muted/50 flex items-center gap-2 rounded-md px-3 py-2"
               >
-                <IconFile className="text-muted-foreground h-4 w-4 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm">{file.name}</span>
+                <ItemMedia variant="icon">
+                  <IconFile className="text-muted-foreground h-4 w-4 shrink-0" />
+                </ItemMedia>
+                <ItemContent className="gap-1">
+                  <ItemTitle className="truncate text-sm">
+                    {file.name}
+                  </ItemTitle>
+                  <ItemDescription className="text-muted-foreground shrink-0 text-xs">
                     <span className="text-muted-foreground shrink-0 text-xs">
                       {formatBytes(file.size ?? 0)}
                     </span>
-                  </div>
-                  <div className="bg-muted mt-1 h-1 w-full overflow-hidden rounded-full">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        isDone ? "bg-green-600" : "bg-primary",
-                      )}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
+
+                    <div className="bg-muted mt-1 h-1 w-full overflow-hidden rounded-full">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all",
+                          isDone ? "bg-green-600" : "bg-primary",
+                        )}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </ItemDescription>
+                </ItemContent>
                 {!isDone && (
-                  <button
-                    type="button"
-                    aria-label={`Remove ${file.name}`}
-                    onClick={() => {
-                      uppy.removeFile(file.id)
-                    }}
-                    className="text-muted-foreground hover:text-foreground shrink-0"
-                  >
-                    <IconX className="h-4 w-4" />
-                  </button>
+                  <ItemActions>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${file.name}`}
+                      onClick={() => {
+                        uppy.removeFile(file.id)
+                      }}
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      <IconX className="h-4 w-4" />
+                    </button>
+                  </ItemActions>
                 )}
-              </li>
+              </Item>
             )
           })}
         </ul>

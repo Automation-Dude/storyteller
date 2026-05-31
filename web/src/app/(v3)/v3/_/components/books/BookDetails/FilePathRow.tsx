@@ -1,15 +1,9 @@
-import { IconAlertTriangle } from "@tabler/icons-react"
-
-import { Badge } from "@v3/_/components/ui/badge"
-
 export function FilePathRow({
   label,
   filepath,
-  missing,
 }: {
   label: string
   filepath: string
-  missing: boolean | null
 }) {
   const lastSlash = filepath.lastIndexOf("/")
   const directory = lastSlash >= 0 ? filepath.slice(0, lastSlash + 1) : ""
@@ -21,13 +15,6 @@ export function FilePathRow({
         <span className="text-muted-foreground font-sans text-xs font-semibold uppercase">
           {label}
         </span>
-
-        {!!missing && (
-          <Badge variant="destructive" className="h-4 gap-0.5 px-1 text-[10px]">
-            <IconAlertTriangle className="h-2.5 w-2.5" />
-            Missing
-          </Badge>
-        )}
       </div>
 
       <div className="text-sm" title={filepath}>
