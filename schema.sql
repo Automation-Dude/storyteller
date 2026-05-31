@@ -285,7 +285,9 @@ CREATE TABLE "readaloud" (
   is_epub2 BOOLEAN NOT NULL DEFAULT FALSE,
   "duration" real,
   "file_size" integer,
-  "fingerprint" text
+  "fingerprint" text,
+  "cover_colors" text,
+  "cover_blurhash" text
 );
 
 CREATE TRIGGER aligned_book_update_trigger AFTER
@@ -309,7 +311,9 @@ CREATE TABLE ebook (
   "page_count" integer,
   is_epub2 BOOLEAN NOT NULL DEFAULT FALSE,
   "file_size" integer,
-  "fingerprint" text
+  "fingerprint" text,
+  "cover_colors" text,
+  "cover_blurhash" text
 );
 
 CREATE TRIGGER ebook_update_trigger AFTER
@@ -332,7 +336,9 @@ CREATE TABLE audiobook (
   "manifest" jsonb,
   "duration" real,
   "file_size" integer,
-  "fingerprint" text
+  "fingerprint" text,
+  "cover_colors" text,
+  "cover_blurhash" text
 );
 
 CREATE TRIGGER audiobook_update_trigger AFTER

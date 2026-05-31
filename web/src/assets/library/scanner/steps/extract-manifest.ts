@@ -2,6 +2,7 @@ import {
   type ReadiumWebPublicationManifest,
   generateReadiumManifest,
 } from "@storyteller-platform/align/readium"
+import { type JsColor } from "@storyteller-platform/okmain"
 
 import { getNumericValue } from "@/assets/library/scanner/manifestValue"
 import { defineStep } from "@/assets/library/scanner/step"
@@ -77,6 +78,8 @@ export type ExtractedEbookManifest = ExtractedEpubMetadata & {
   manifest: ReadiumWebPublicationManifest
   pageCount: number | null
   duration: null
+  coverColors: JsColor[] | null
+  coverBlurhash: string | null
 }
 
 export const extractReadaloudManifestStep = defineStep(
@@ -105,6 +108,8 @@ export type ExtractedReadaloudManifest = ExtractedEpubMetadata & {
   manifest: ReadiumWebPublicationManifest
   pageCount: number | null
   duration: number | null
+  coverColors: JsColor[] | null
+  coverBlurhash: string | null
 }
 
 export const extractAudiobookManifestStep = defineStep(
@@ -140,4 +145,6 @@ export type ExtractedAudiobookManifest = ExtractedAudiobookMetadata & {
   manifest: ReadiumWebPublicationManifest
   pageCount: null
   duration: number | null
+  coverColors: JsColor[] | null
+  coverBlurhash: string | null
 }

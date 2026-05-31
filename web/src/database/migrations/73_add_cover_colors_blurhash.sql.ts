@@ -1,7 +1,4 @@
-import {
-  getExtractedAudiobookCover,
-  getExtractedEbookCover,
-} from "@/assets/covers"
+import { getExtractedCover } from "@/assets/covers"
 import { db } from "@/database/connection"
 import { generateBlurhash, getCoverColors } from "@/images"
 import { logger } from "@/logging"
@@ -39,8 +36,8 @@ export default async function migrate() {
 
   for (const book of books) {
     const [ebookCover, audiobookCover] = await Promise.all([
-      getExtractedEbookCover(book),
-      getExtractedAudiobookCover(book),
+      getExtractedCover(book, "ebook"),
+      getExtractedCover(book, "audiobook"),
     ])
 
     if (ebookCover) {

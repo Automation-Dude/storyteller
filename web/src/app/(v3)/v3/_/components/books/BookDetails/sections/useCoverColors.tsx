@@ -33,9 +33,9 @@ export function useCoverColors(
       ? bookOrColors
       : options?.type
         ? bookOrColors[options.type]?.coverColors
-        : (bookOrColors.ebook?.coverColors ??
+        : bookOrColors.ebook?.coverColors ??
           bookOrColors.audiobook?.coverColors ??
-          bookOrColors.readaloud?.coverColors)) ?? []
+          bookOrColors.readaloud?.coverColors) ?? []
 
   const baseOpacity = options?.opacity ?? 0.6
   const opacity = resolvedTheme === "dark" ? baseOpacity : baseOpacity * 0.6

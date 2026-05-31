@@ -44,6 +44,7 @@ export const BookCard = memo(function BookCard({
   const {
     primary: { background, accent },
   } = useCoverColors(book)
+
   const showCheckbox = !!onToggleSelection
 
   const cardContent = (

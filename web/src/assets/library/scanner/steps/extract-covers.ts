@@ -1,4 +1,8 @@
+import { type JsColor } from "@storyteller-platform/okmain"
+
 import {
+  type CoverData,
+  type CoverKind,
   extractAndPersistAudioCover,
   extractAndPersistTextCover,
   getExtractedCover,
@@ -7,14 +11,12 @@ import { type ScanCtx } from "@/assets/library/scanner/ctx"
 import { defineStep } from "@/assets/library/scanner/step"
 import { getSetting } from "@/database/settings"
 import { type MetadataFieldMode } from "@/database/settingsTypes"
+import { generateBlurhash, getCoverColors } from "@/images"
 
 import {
   type ExtractedAudiobookMetadata,
   type ExtractedEpubMetadata,
 } from "./extract-metadata"
-import { generateBlurhash, getCoverColors } from "@/images"
-import { CoverColor } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
-import { getFormatRelationPatch } from "../formatRelations"
 
 const STEP = "extract-cover"
 
@@ -26,10 +28,30 @@ async function getCoverMode(ctx: ScanCtx): Promise<MetadataFieldMode> {
   return overrides.cover
 }
 
+async function persistCoverDerivedData(
+  cover: CoverData,
+  kind: CoverKind,
+): Promise<{ coverBlurhash?: string; coverColors?: JsColor[] } | undefined> {
+  const buffer = Buffer.from(cover.data)
+  const colors = getCoverColors(buffer)
+  const blurhash = await generateBlurhash(buffer, kind)
+
+  const update = {
+    ...(blurhash && { coverBlurhash: blurhash }),
+    ...(colors && { coverColors: colors }),
+  }
+
+  if (Object.keys(update).length === 0) return
+
+  return update
+}
+
 export const extractTextCoverStep = defineStep(
   "extract-text-cover",
   async (input: ExtractedEpubMetadata, ctx) => {
     const mode = await getCoverMode(ctx)
+    const colors = input.book[input.format]?.coverColors
+    const blurhash = input.book[input.format]?.coverBlurhash
 
     if (mode === "skip") {
       ctx.report.skipped({
@@ -46,13 +68,25 @@ export const extractTextCoverStep = defineStep(
         const existing = await getExtractedCover(input.book, "ebook")
 
         if (existing) {
-          ctx.report.skipped({
-            step: STEP,
-            book: input.book,
-            format: input.format,
-            reason: "cover-already-exists",
-          })
-          return input
+          if (colors && blurhash) {
+            ctx.report.skipped({
+              step: STEP,
+              book: input.book,
+              format: input.format,
+              reason: "cover-already-exists",
+            })
+            return input
+          }
+
+          const update = await persistCoverDerivedData(existing, "ebook")
+
+          return {
+            ...input,
+            ...(update?.coverColors && { coverColors: update.coverColors }),
+            ...(update?.coverBlurhash && {
+              coverBlurhash: update.coverBlurhash,
+            }),
+          }
         }
       }
 
@@ -74,36 +108,16 @@ export const extractTextCoverStep = defineStep(
         readaloudSource,
       )
 
-      if (!cover) {
-        return input
-      }
-
-      let blurhash: string | null = null
-      try {
-        const blurhash = await generateBlurhash(
-          Buffer.from(cover.data),
-          "ebook",
-        )
-      } catch (error) {
-        ctx.logger.error({
-          msg: `Failed to get blurhash for book ${input.book.title}`,
-          err: error,
-        })
-      }
-
-      let colors: CoverColor[] | null = null
-      try {
-        colors = getCoverColors(Buffer.from(cover.data))
-      } catch (error) {
-        ctx.logger.warn({
-          msg: `Failed to get cover colors for book ${input.book.title}`,
-          err: error,
-        })
-      }
+      const update = cover
+        ? await persistCoverDerivedData(cover, "ebook")
+        : undefined
 
       return {
         ...input,
-        // extractedRelations: getFormatRelationPatch {
+        ...(update?.coverColors && { coverColors: update.coverColors }),
+        ...(update?.coverBlurhash && {
+          coverBlurhash: update.coverBlurhash,
+        }),
       }
     } catch (error) {
       ctx.report.warn({
@@ -121,6 +135,8 @@ export const extractAudiobookCoverStep = defineStep(
   "extract-audiobook-cover",
   async (input: ExtractedAudiobookMetadata, ctx) => {
     const mode = await getCoverMode(ctx)
+    const colors = input.book.audiobook?.coverColors
+    const blurhash = input.book.audiobook?.coverBlurhash
 
     if (mode === "skip") {
       ctx.report.skipped({
@@ -137,26 +153,48 @@ export const extractAudiobookCoverStep = defineStep(
         const existing = await getExtractedCover(input.book, "audiobook")
 
         if (existing) {
-          ctx.report.skipped({
-            step: STEP,
-            book: input.book,
-            format: input.format,
-            reason: "cover-already-exists",
-          })
-          return input
+          if (colors && blurhash) {
+            ctx.report.skipped({
+              step: STEP,
+              book: input.book,
+              format: input.format,
+              reason: "cover-already-exists",
+            })
+            return input
+          }
+
+          const update = await persistCoverDerivedData(existing, "audiobook")
+
+          return {
+            ...input,
+            ...(update?.coverColors && { coverColors: update.coverColors }),
+            ...(update?.coverBlurhash && {
+              coverBlurhash: update.coverBlurhash,
+            }),
+          }
         }
       }
 
       const readaloudPath = input.book.readaloud?.filepath ?? null
 
-      await extractAndPersistAudioCover(
+      const cover = await extractAndPersistAudioCover(
         input.book,
         input.audiobook,
         readaloudPath,
         input.filepath,
       )
 
-      return input
+      const update = cover?.data
+        ? await persistCoverDerivedData(cover, "audiobook")
+        : undefined
+
+      return {
+        ...input,
+        ...(update?.coverColors && { coverColors: update.coverColors }),
+        ...(update?.coverBlurhash && {
+          coverBlurhash: update.coverBlurhash,
+        }),
+      }
     } catch (error) {
       ctx.report.warn({
         step: STEP,

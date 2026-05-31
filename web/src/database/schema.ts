@@ -5,8 +5,6 @@
 
 import type { ColumnType } from "kysely"
 
-import type { JsColor } from "@storyteller-platform/okmain"
-
 export type Generated<T> =
   T extends ColumnType<infer S, infer I, infer U>
     ? ColumnType<S, I | undefined, U>
@@ -31,8 +29,14 @@ export interface Account {
 
 export interface Audiobook {
   bookUuid: import("@/uuid").UUID
-  coverColors: ColumnType<JsColor[] | null, string, string> | null
   coverBlurhash: string | null
+  coverColors:
+    | import("kysely").ColumnType<
+        import("@storyteller-platform/okmain").JsColor[],
+        string,
+        string
+      >
+    | null
   createdAt: Generated<string>
   duration: number | null
   filepath: string
@@ -160,7 +164,13 @@ export interface DeviceAuthorization {
 export interface Ebook {
   bookUuid: import("@/uuid").UUID
   coverBlurhash: string | null
-  coverColors: ColumnType<JsColor[] | null, string, string> | null
+  coverColors:
+    | import("kysely").ColumnType<
+        import("@storyteller-platform/okmain").JsColor[],
+        string,
+        string
+      >
+    | null
   createdAt: Generated<string>
   filepath: string
   fileSize: number | null
@@ -180,7 +190,7 @@ export interface ImportRule {
   kind: "watch" | "ignore"
   path: string
   source: Generated<
-    "user" | "config" | "import-relocate" | "import-backup" | "prevent-reimport"
+    "user" | "import-relocate" | "import-backup" | "prevent-reimport"
   >
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>
@@ -215,8 +225,14 @@ export interface Position {
 
 export interface Readaloud {
   bookUuid: import("@/uuid").UUID
-  coverColors: ColumnType<JsColor[] | null, string, string> | null
   coverBlurhash: string | null
+  coverColors:
+    | import("kysely").ColumnType<
+        import("@storyteller-platform/okmain").JsColor[],
+        string,
+        string
+      >
+    | null
   createdAt: Generated<string>
   currentStage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS"
   duration: number | null

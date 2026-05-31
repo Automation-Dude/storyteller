@@ -50,6 +50,6 @@ async function regenBlurhash() {
 }
 
 if (import.meta.main) {
-  console.log("regenerating blurhashes")
+  // console.log("regenerating blurhashes")
   await regenBlurhash()
 }

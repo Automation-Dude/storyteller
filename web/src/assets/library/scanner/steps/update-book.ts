@@ -40,6 +40,10 @@ function buildFormatRelation(
       ...shared,
       isEpub2: input.isEpub2,
       pageCount: input.pageCount,
+      ...(input.coverColors && {
+        coverColors: JSON.stringify(input.coverColors),
+      }),
+      ...(input.coverBlurhash && { coverBlurhash: input.coverBlurhash }),
     })
   }
 
@@ -47,6 +51,10 @@ function buildFormatRelation(
     return getFormatRelationPatch(input, {
       ...shared,
       duration: input.duration,
+      ...(input.coverColors && {
+        coverColors: JSON.stringify(input.coverColors),
+      }),
+      ...(input.coverBlurhash && { coverBlurhash: input.coverBlurhash }),
     })
   }
 
@@ -56,6 +64,10 @@ function buildFormatRelation(
     isEpub2: input.isEpub2,
     pageCount: input.pageCount,
     duration: input.duration,
+    ...(input.coverColors && {
+      coverColors: JSON.stringify(input.coverColors),
+    }),
+    ...(input.coverBlurhash && { coverBlurhash: input.coverBlurhash }),
     ...(isNewReadaloudRow && {
       status: "ALIGNED" as const,
       currentStage: "SPLIT_TRACKS" as const,
