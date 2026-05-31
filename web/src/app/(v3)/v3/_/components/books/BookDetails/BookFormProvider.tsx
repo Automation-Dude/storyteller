@@ -8,13 +8,13 @@ import {
   useEffect,
   useMemo,
 } from "react"
-import { useForm, type UseFormReturn } from "react-hook-form"
+import { type UseFormReturn, useForm } from "react-hook-form"
 
 import { type Role } from "@/components/books/edit/marcRelators"
 import { type BookWithRelations } from "@/database/books"
 import { useUpdateBookMutation } from "@/store/api"
 
-import { bookFormSchema, type BookFormValues } from "./schema"
+import { type BookFormValues, bookFormSchema } from "./schema"
 
 function bookToFormValues(book: BookWithRelations): BookFormValues {
   return {
@@ -101,7 +101,7 @@ export function BookFormProvider({
               fileAs: c.name,
               role: (c.role || "oth") as Role,
             })),
-          rating: values.rating,
+          // rating is per-user and submitted separately via useSetBookRatingMutation
         },
         textCover: values.textCover,
         audioCover: values.audioCover,

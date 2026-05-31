@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation"
 
-import { hasPermission } from "@/auth/auth"
-import { getBook } from "@/database/books"
-import { type UUID } from "@/uuid"
-
 import { BookDetailsContent } from "@v3/_/components/books/BookDetailsPage"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
+
+import { hasPermission } from "@/auth/auth"
+import { getBook } from "@/database/books"
+import { ASSETS_DIR } from "@/directories"
+import { type UUID } from "@/uuid"
+
 
 export type BookDetailsPageProps = {
   params: Promise<{
@@ -56,6 +58,8 @@ export default withPageAuth<BookDetailsPageProps>(["bookRead"])(
         canEdit={hasPermission("bookUpdate", user)}
         canDownload={hasPermission("bookDownload", user)}
         canDelete={hasPermission("bookDelete", user)}
+        canProcess={hasPermission("bookProcess", user)}
+        assetsDir={ASSETS_DIR}
         initialBook={book}
       />
     )

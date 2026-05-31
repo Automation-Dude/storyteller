@@ -1,14 +1,29 @@
+"use client"
+
 import {
   IconAlertTriangle,
   IconCheck,
   IconProgress,
+  IconRefresh,
+  IconSettings,
   IconX,
 } from "@tabler/icons-react"
+import { useState } from "react"
+
+import { Button } from "@v3/_/components/ui/button"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
+import { usePermission } from "@/hooks/usePermission"
+import {
+  useCancelProcessingMutation,
+  useCancelScanMutation,
+  useGetScanStateQuery,
+  useProcessBookMutation,
+  useTriggerBookScanMutation,
+} from "@/store/api"
 
-import { Button } from "@v3/_/components/ui/button"
+import { ProcessingModal } from "./ProcessingModal"
 
 const PROCESSING_STAGE_LABELS: Record<string, string> = {
   SPLIT_TRACKS: "Pre-processing audio",
@@ -18,29 +33,90 @@ const PROCESSING_STAGE_LABELS: Record<string, string> = {
 
 export function TranscriptionStatus({
   book,
-  onProcess,
-  onCancel,
+  // canProcess,
 }: {
   book: BookWithRelations
-  onProcess: () => void
-  onCancel: () => void
+  // canProcess?: boolean
 }) {
+  const [processBook] = useProcessBookMutation()
+  const [cancelProcessing] = useCancelProcessingMutation()
+  const [triggerBookScan, { isLoading: isScanning }] =
+    useTriggerBookScanMutation()
+  const canProcess = usePermission("bookProcess")
+
+  const [cancelScan, { isLoading: isCancellingScan }] = useCancelScanMutation()
+
+  const { data: scanState } = useGetScanStateQuery(undefined, {
+    pollingInterval: 5_000,
+    skip: !canProcess,
+  })
+
+  const [processingModalOpen, setProcessingModalOpen] = useState(false)
+
   const hasEbook = book.ebook !== null
   const hasAudiobook = book.audiobook !== null
   const canCreateReadaloud = hasEbook && hasAudiobook && !book.readaloud
 
   const readaloudStatus = book.readaloud?.status
+  const aligned = !!book.readaloud?.filepath
+  const isBusy =
+    readaloudStatus === "QUEUED" || readaloudStatus === "PROCESSING"
 
-  if (!readaloudStatus && !canCreateReadaloud) {
+  if (!readaloudStatus && !canCreateReadaloud && !canProcess) {
     return null
   }
 
   return (
     <section className="mb-8">
-      <h2 className="section-label mb-3">
-        <IconProgress className="h-4 w-4" />
-        Transcription
-      </h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="section-label">
+          <IconProgress className="h-4 w-4" />
+          Transcription
+        </h2>
+
+        {canProcess && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isScanning}
+              onClick={() => {
+                void triggerBookScan({ uuid: book.uuid, force: true })
+              }}
+            >
+              <IconRefresh className="mr-1 h-3 w-3" />
+              {isScanning ? "Scanning…" : "Scan"}
+            </Button>
+
+            {scanState?.running && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive"
+                disabled={isCancellingScan}
+                onClick={() => {
+                  void cancelScan()
+                }}
+              >
+                Cancel scan
+              </Button>
+            )}
+
+            {!isBusy && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Processing options"
+                onClick={() => {
+                  setProcessingModalOpen(true)
+                }}
+              >
+                <IconSettings className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="bg-muted/50 rounded-lg p-4">
         {readaloudStatus === "ALIGNED" && (
@@ -53,7 +129,11 @@ export function TranscriptionStatus({
         {readaloudStatus === "QUEUED" && (
           <div className="flex items-center justify-between">
             <span className="text-sm">Queued for alignment</span>
-            <Button variant="ghost" size="sm" onClick={onCancel}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void cancelProcessing({ uuid: book.uuid })}
+            >
               <IconX className="mr-1 h-3 w-3" />
               Cancel
             </Button>
@@ -67,7 +147,11 @@ export function TranscriptionStatus({
                 {PROCESSING_STAGE_LABELS[book.readaloud?.currentStage ?? ""] ??
                   "Processing"}
               </span>
-              <Button variant="ghost" size="sm" onClick={onCancel}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void cancelProcessing({ uuid: book.uuid })}
+              >
                 <IconX className="mr-1 h-3 w-3" />
                 Cancel
               </Button>
@@ -94,19 +178,40 @@ export function TranscriptionStatus({
                   : "Processing stopped"}
               </span>
             </div>
-            <Button variant="outline" size="sm" onClick={onProcess}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void processBook({ uuid: book.uuid })}
+            >
               Retry
             </Button>
           </div>
         )}
 
-        {canCreateReadaloud && (
-          <Button variant="outline" size="sm" onClick={onProcess}>
+        {!readaloudStatus && canCreateReadaloud && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void processBook({ uuid: book.uuid })}
+          >
             <IconReadaloud className="mr-1 h-4 w-4" />
             Create readaloud
           </Button>
         )}
+
+        {!readaloudStatus && !canCreateReadaloud && (
+          <span className="text-muted-foreground text-sm">Unprocessed</span>
+        )}
       </div>
+
+      {canProcess && (
+        <ProcessingModal
+          book={book}
+          aligned={aligned}
+          open={processingModalOpen}
+          onOpenChange={setProcessingModalOpen}
+        />
+      )}
     </section>
   )
 }

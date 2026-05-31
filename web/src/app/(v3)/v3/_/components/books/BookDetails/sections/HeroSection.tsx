@@ -2,7 +2,6 @@
 
 import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
-import { Fragment } from "react"
 
 import {
   AuthorEditor,
@@ -19,19 +18,22 @@ import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
 
 import { cn } from "@/cn"
+import { useSetBookRatingMutation } from "@/store/api"
 
 import { useCoverColors } from "./useCoverColors"
 
 export function HeroSection({ compact }: { compact: boolean }) {
-  const { book, form, isEditing, submitPartial } = useBookForm()
+  const { book, form, isEditing } = useBookForm()
   const tLabels = useTranslations("Labels")
   const t = useTranslations("BookDetailsPage")
+
+  const [setBookRating] = useSetBookRatingMutation()
 
   const authors = book.authors
   const narrators = book.narrators
 
   const handleRatingChange = async (rating: number | null) => {
-    await submitPartial({ rating })
+    await setBookRating({ bookUuid: book.uuid, rating })
   }
 
   const {
@@ -141,7 +143,10 @@ export function HeroSection({ compact }: { compact: boolean }) {
           )}
 
           <div className="mt-1">
-            <RatingInput value={book.rating} onChange={handleRatingChange} />
+            <RatingInput
+              value={book.rating?.rating ?? null}
+              onChange={handleRatingChange}
+            />
           </div>
 
           <div className="mt-1">

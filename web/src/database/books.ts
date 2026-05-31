@@ -454,6 +454,7 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
     .selectFrom("book")
     .selectAll("book")
     .select((eb) => [
+      "book.rating as globalBookRating",
       jsonArrayFrom(
         eb
           .selectFrom("creator")
@@ -592,6 +593,13 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
                 .whereRef("position.bookUuid", "=", "book.uuid")
                 .where("position.userId", "=", userId),
             ).as("position"),
+            jsonObjectFrom(
+              eb
+                .selectFrom("userBookRating")
+                .select(["userBookRating.rating"])
+                .whereRef("userBookRating.bookUuid", "=", "book.uuid")
+                .where("userBookRating.userId", "=", userId),
+            ).as("rating"),
           ]
         : []),
       jsonObjectFrom(

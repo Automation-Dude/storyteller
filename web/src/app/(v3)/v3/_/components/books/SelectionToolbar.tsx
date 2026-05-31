@@ -4,6 +4,7 @@ import {
   IconFolder,
   IconLibrary,
   IconPointer,
+  IconRefresh,
   IconSquare,
   IconSquareCheck,
   IconTrash,
@@ -11,13 +12,6 @@ import {
 } from "@tabler/icons-react"
 import { useCallback, useState } from "react"
 
-import {
-  useAddBooksToCollectionsMutation,
-  useAddBooksToSeriesMutation,
-  useDeleteBookMutation,
-  useListCollectionsQuery,
-  useListSeriesQuery,
-} from "@/store/api"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -33,6 +27,16 @@ import {
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
 
+import { usePermissions } from "@/hooks/usePermissions"
+import {
+  useAddBooksToCollectionsMutation,
+  useAddBooksToSeriesMutation,
+  useDeleteBookMutation,
+  useListCollectionsQuery,
+  useListSeriesQuery,
+  useScanBooksMutation,
+} from "@/store/api"
+
 type SelectionToolbarProps = {
   allBookUuids: string[]
   className?: string
@@ -42,15 +46,17 @@ export function SelectionToolbar({
   allBookUuids,
   className,
 }: SelectionToolbarProps) {
-  // TODO: Get permissions from session
-  const canUpdate = true
-  const canDelete = true
+  const permissions = usePermissions()
+  const canUpdate = !!permissions?.bookUpdate
+  const canDelete = !!permissions?.bookDelete
+  const canProcess = !!permissions?.bookProcess
 
   const { data: collections = [] } = useListCollectionsQuery()
   const { data: series = [] } = useListSeriesQuery()
   const [addToCollections] = useAddBooksToCollectionsMutation()
   const [addToSeries] = useAddBooksToSeriesMutation()
   const [deleteBook] = useDeleteBookMutation()
+  const [scanBooks] = useScanBooksMutation()
 
   const {
     selectedBooks,
@@ -98,6 +104,10 @@ export function SelectionToolbar({
     },
     [addToSeries, selectedArray],
   )
+
+  const handleScanSelected = useCallback(async () => {
+    await scanBooks({ bookUuids: selectedArray, force: true })
+  }, [scanBooks, selectedArray])
 
   const handleDeleteSelected = useCallback(async () => {
     if (
@@ -220,7 +230,17 @@ export function SelectionToolbar({
             </DropdownMenuSub>
           )}
 
-          {canDelete && (canUpdate ? <DropdownMenuSeparator /> : null)}
+          {canProcess && (
+            <>
+              {canUpdate && <DropdownMenuSeparator />}
+              <DropdownMenuItem onClick={handleScanSelected}>
+                <IconRefresh className="mr-2 h-4 w-4" />
+                Scan
+              </DropdownMenuItem>
+            </>
+          )}
+
+          {canDelete && (canUpdate || canProcess ? <DropdownMenuSeparator /> : null)}
 
           {canDelete && (
             <DropdownMenuItem

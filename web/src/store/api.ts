@@ -1009,6 +1009,8 @@ export const api = createApi({
       invalidatesTags: (_result, _error, { bookUuid }) => [
         { type: "UserRatings", id: bookUuid },
         "UserRatings",
+        // getBook embeds the per-user rating, so refresh it too
+        { type: "Books", id: bookUuid },
       ],
     }),
     deleteBookRating: build.mutation<void, { bookUuid: UUID }>({
@@ -1019,6 +1021,7 @@ export const api = createApi({
       invalidatesTags: (_result, _error, { bookUuid }) => [
         { type: "UserRatings", id: bookUuid },
         "UserRatings",
+        { type: "Books", id: bookUuid },
       ],
     }),
     listUserRatings: build.query<UserBookRating[], void>({

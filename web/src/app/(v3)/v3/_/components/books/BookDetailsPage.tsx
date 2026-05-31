@@ -20,11 +20,7 @@ import { Button } from "@v3/_/components/ui/button"
 
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
-import {
-  useCancelProcessingMutation,
-  useGetBookQuery,
-  useProcessBookMutation,
-} from "@/store/api"
+import { useGetBookQuery } from "@/store/api"
 
 import { BookFormProvider, useBookForm } from "./BookDetails/BookFormProvider"
 import { DeleteBookModal } from "./BookDetails/DeleteBookModal"
@@ -43,6 +39,8 @@ type BookDetailsContentProps = {
   canEdit?: boolean
   canDownload?: boolean
   canDelete?: boolean
+  canProcess?: boolean
+  assetsDir?: string
   isEditing?: boolean
   onEditingChange?: (isEditing: boolean) => void
 }
@@ -54,6 +52,8 @@ export function BookDetailsContent({
   canEdit,
   canDownload,
   canDelete,
+  canProcess,
+  assetsDir,
   isEditing,
   onEditingChange,
 }: BookDetailsContentProps) {
@@ -107,6 +107,8 @@ export function BookDetailsContent({
       canEdit={canEdit}
       canDownload={canDownload}
       canDelete={canDelete}
+      canProcess={canProcess}
+      assetsDir={assetsDir}
       isEditing={isEditing}
       onEditingChange={onEditingChange}
     />
@@ -119,6 +121,8 @@ function BookDetailsContentInner({
   canEdit,
   canDownload,
   canDelete,
+  canProcess,
+  assetsDir,
   isEditing: controlledIsEditing,
   onEditingChange,
 }: {
@@ -127,11 +131,11 @@ function BookDetailsContentInner({
   canEdit: boolean | undefined
   canDownload: boolean | undefined
   canDelete: boolean | undefined
+  canProcess: boolean | undefined
+  assetsDir: string | undefined
   isEditing: boolean | undefined
   onEditingChange: ((isEditing: boolean) => void) | undefined
 }) {
-  const [processBook] = useProcessBookMutation()
-  const [cancelProcessing] = useCancelProcessingMutation()
   const [localIsEditing, setLocalIsEditing] = useState(false)
 
   const isControlled = controlledIsEditing !== undefined
@@ -170,11 +174,7 @@ function BookDetailsContentInner({
             <div className="flex flex-col gap-5 p-6">
               <DescriptionSection />
 
-              <TranscriptionStatus
-                book={book}
-                onProcess={() => void processBook({ uuid: book.uuid })}
-                onCancel={() => void cancelProcessing({ uuid: book.uuid })}
-              />
+              <TranscriptionStatus book={book} canProcess={true} />
 
               <TagsSection />
               <CollectionsSection />
@@ -185,12 +185,16 @@ function BookDetailsContentInner({
 
               <DetailsSection />
 
-              <FileSection book={book} />
+              <FileSection
+                book={book}
+                assetsDir={assetsDir}
+                canEdit={canEdit}
+              />
             </div>
+
+            {canDelete && <DeleteBookModal book={book} />}
           </div>
         </div>
-
-        {canDelete && <DeleteBookModal book={book} />}
       </article>
     </BookFormProvider>
   )
