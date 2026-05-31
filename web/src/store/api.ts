@@ -15,6 +15,7 @@ import {
   type BookWithRelations,
   type CreatorRelation,
   type SeriesRelation,
+  type UserBookRatingRelation,
 } from "@/database/books"
 import { type ChangelogEntry } from "@/database/changelog"
 import { type CollectionWithRelations } from "@/database/collections"
@@ -32,6 +33,7 @@ import {
 } from "@/database/settingsTypes"
 import { type Status } from "@/database/statuses"
 import { type Tag } from "@/database/tags"
+import { type UserBookRating } from "@/database/userRatings"
 import { type UserPermissionSet } from "@/database/users"
 import { type BookEvent } from "@/events"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
@@ -58,6 +60,7 @@ export const api = createApi({
     "GpuBuildWarning",
     "Books",
     "ImportRules",
+    "UserRatings",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -589,7 +592,7 @@ export const api = createApi({
           collections?: UUID[]
           tags?: string[]
           narrators?: string[]
-          rating?: number | null
+          rating?: UserBookRatingRelation
           description?: string | null
         }
         textCover?: File | null
@@ -638,6 +641,9 @@ export const api = createApi({
         }
         if (updatedFields.includes("duration")) {
           body.append("duration", JSON.stringify(update.duration))
+        }
+        if (updatedFields.includes("rating")) {
+          body.append("rating", JSON.stringify(update.rating))
         }
 
         if (update.tags) {
@@ -730,6 +736,7 @@ export const api = createApi({
             ? [{ type: "Statuses" as const, id: book.status.uuid }]
             : []
           : []),
+        "UserRatings",
       ],
     }),
     updateStatus: build.mutation<void, { bookUuid: UUID; statusUuid: UUID }>({
@@ -984,6 +991,44 @@ export const api = createApi({
       }),
     }),
 
+    getBookRating: build.query<UserBookRating | null, { bookUuid: UUID }>({
+      query: ({ bookUuid }) => `/books/${bookUuid}/rating`,
+      providesTags: (_result, _error, { bookUuid }) => [
+        { type: "UserRatings", id: bookUuid },
+      ],
+    }),
+    setBookRating: build.mutation<
+      UserBookRating,
+      { bookUuid: UUID; rating?: number | null; review?: string | null }
+    >({
+      query: ({ bookUuid, ...body }) => ({
+        url: `/books/${bookUuid}/rating`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { bookUuid }) => [
+        { type: "UserRatings", id: bookUuid },
+        "UserRatings",
+      ],
+    }),
+    deleteBookRating: build.mutation<void, { bookUuid: UUID }>({
+      query: ({ bookUuid }) => ({
+        url: `/books/${bookUuid}/rating`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _error, { bookUuid }) => [
+        { type: "UserRatings", id: bookUuid },
+        "UserRatings",
+      ],
+    }),
+    listUserRatings: build.query<UserBookRating[], void>({
+      query: () => "/user/ratings",
+      providesTags: (ratings) =>
+        ratings?.map((r) => ({ type: "UserRatings", id: r.bookUuid })) ?? [
+          "UserRatings",
+        ],
+    }),
+
     getInfiniteChangelog: build.infiniteQuery<
       ChangelogEntry[],
       string,
@@ -1107,6 +1152,10 @@ export const {
   useUpdateImportRuleMutation,
   useDeleteImportRuleMutation,
   useDeleteImportRulesMutation,
+  useGetBookRatingQuery,
+  useSetBookRatingMutation,
+  useDeleteBookRatingMutation,
+  useListUserRatingsQuery,
 } = api
 
 export function getDownloadUrl(

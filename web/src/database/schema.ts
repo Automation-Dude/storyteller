@@ -180,7 +180,7 @@ export interface ImportRule {
   kind: "watch" | "ignore"
   path: string
   source: Generated<
-    "user" | "import-relocate" | "import-backup" | "prevent-reimport"
+    "user" | "config" | "import-relocate" | "import-backup" | "prevent-reimport"
   >
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>
@@ -298,6 +298,16 @@ export interface User {
   userPermissionUuid: import("@/uuid").UUID
 }
 
+export interface UserBookRating {
+  bookUuid: import("@/uuid").UUID
+  createdAt: Generated<string>
+  rating: number | null
+  review: string | null
+  updatedAt: Generated<string>
+  userId: import("@/uuid").UUID
+  uuid: Generated<import("@/uuid").UUID>
+}
+
 export interface UserPermission {
   bookCreate: Generated<boolean>
   bookDelete: Generated<boolean>
@@ -356,6 +366,7 @@ export interface DB {
   tag: Tag
   tokenRevokation: TokenRevokation
   user: User
+  userBookRating: UserBookRating
   userPermission: UserPermission
   verificationToken: VerificationToken
 }

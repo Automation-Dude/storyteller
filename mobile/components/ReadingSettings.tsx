@@ -6,6 +6,7 @@ import { useMemo } from "react"
 import { Platform, Pressable, StyleSheet, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
+import { Switch } from "@/components/ui/switch"
 import { defaultPreferences } from "@/database/preferencesTypes"
 import { formatNumber } from "@/formatting"
 import { cn } from "@/lib/utils"
@@ -175,7 +176,83 @@ export function ReadingSettings({ bookUuid }: Props) {
             updateGlobalPreference({ name: "readaloudColor", value })
           }}
         />
+        <View className="my-3 w-full flex-row items-center gap-10">
+          <Text className="text-lg">Floating toolbars</Text>
+          <Switch
+            checked={preferences.floatingToolbar}
+            onCheckedChange={(value) =>
+              updateGlobalPreference({
+                name: "floatingToolbar",
+                value,
+              })
+            }
+          />
+        </View>
       </View>
+      <Text variant="h2" className="mt-4">
+        Margins
+      </Text>
+      <View className="my-3 w-full flex-row items-center justify-between gap-4">
+        <Text maxFontSizeMultiplier={1} className="text-lg">
+          Left margin
+        </Text>
+        <Slider
+          className="h-2 grow"
+          start={0}
+          stop={50}
+          step={1}
+          value={preferences.layout.marginLeft ?? 0}
+          onValueChange={(value) => {
+            const update = {
+              ...preferences.layout,
+              marginLeft: Math.round(value),
+            }
+            if (bookUuid) {
+              updateBookPreference({
+                bookUuid,
+                name: "layout",
+                value: update,
+              })
+            } else {
+              updateGlobalPreference({ name: "layout", value: update })
+            }
+          }}
+        />
+        <Text maxFontSizeMultiplier={1} className="text-right text-sm">
+          {preferences.layout.marginLeft ?? 0}px
+        </Text>
+      </View>
+      <View className="my-3 w-full flex-row items-center justify-between gap-4">
+        <Text maxFontSizeMultiplier={1} className="text-lg">
+          Right margin
+        </Text>
+        <Slider
+          className="h-2 grow"
+          start={0}
+          stop={50}
+          step={1}
+          value={preferences.layout.marginRight ?? 0}
+          onValueChange={(value) => {
+            const update = {
+              ...preferences.layout,
+              marginRight: Math.round(value),
+            }
+            if (bookUuid) {
+              updateBookPreference({
+                bookUuid,
+                name: "layout",
+                value: update,
+              })
+            } else {
+              updateGlobalPreference({ name: "layout", value: update })
+            }
+          }}
+        />
+        <Text maxFontSizeMultiplier={1} className="text-right text-sm">
+          {preferences.layout.marginRight ?? 0}px
+        </Text>
+      </View>
+
       <View>
         <Text variant="h2">Typography{!bookUuid && " defaults"}</Text>
         {bookUuid ? (

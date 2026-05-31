@@ -33,7 +33,7 @@ CREATE TABLE "book" (
   subtitle TEXT,
   "duration" real,
   "page_count" integer,
-  asset_dir TEXT NOT NULL DEFAULT ''
+  asset_dir text NOT NULL DEFAULT ''
 );
 
 CREATE TRIGGER book_update_trigger AFTER
@@ -507,31 +507,6 @@ CREATE INDEX idx_changelog_component_released_at ON changelog (component, releas
 
 CREATE UNIQUE INDEX idx_settings_name ON settings (name);
 
-CREATE TABLE "collection" (
-  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
-  name TEXT NOT NULL UNIQUE,
-  public BOOLEAN NOT NULL DEFAULT 0,
-  description TEXT,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TRIGGER collection_update_trigger AFTER
-UPDATE ON "collection" FOR EACH ROW BEGIN
-UPDATE "collection"
-SET
-  updated_at = CURRENT_TIMESTAMP
-WHERE
-  uuid = OLD.uuid;
-
-END;
-
-CREATE TABLE import_rule_to_collection_new (
-  import_rule_uuid TEXT NOT NULL REFERENCES import_rule (uuid) ON DELETE CASCADE,
-  collection_uuid TEXT NOT NULL REFERENCES collection (uuid) ON DELETE CASCADE,
-  PRIMARY KEY (import_rule_uuid, collection_uuid)
-);
-
 CREATE TABLE import_rule (
   uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
   kind TEXT NOT NULL CHECK (kind IN ('watch', 'ignore')),
@@ -539,7 +514,7 @@ CREATE TABLE import_rule (
   import_mode TEXT DEFAULT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  source TEXT NOT NULL DEFAULT 'user' CHECK (
+  source text NOT NULL DEFAULT 'user' CHECK (
     source IN (
       'user',
       'import-relocate',
@@ -547,7 +522,7 @@ CREATE TABLE import_rule (
       'prevent-reimport'
     )
   ),
-  book_uuid TEXT DEFAULT NULL REFERENCES book (uuid) ON DELETE CASCADE
+  book_uuid text DEFAULT NULL REFERENCES book (uuid) ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX idx_import_rule_path ON import_rule (path);
@@ -568,6 +543,52 @@ CREATE TABLE import_rule_to_collection (
   PRIMARY KEY (import_rule_uuid, collection_uuid)
 );
 
+CREATE TABLE "collection" (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  name TEXT NOT NULL UNIQUE,
+  public BOOLEAN NOT NULL DEFAULT 0,
+  description TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER collection_update_trigger AFTER
+UPDATE ON "collection" FOR EACH ROW BEGIN
+UPDATE "collection"
+SET
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  uuid = OLD.uuid;
+
+END;
+
 CREATE INDEX idx_import_rule_book_uuid ON import_rule (book_uuid);
 
 CREATE UNIQUE INDEX idx_book_asset_dir ON book (asset_dir);
+
+CREATE TABLE user_book_rating (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  user_id TEXT NOT NULL,
+  book_uuid TEXT NOT NULL,
+  rating REAL,
+  review TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES user (id),
+  FOREIGN KEY (book_uuid) REFERENCES book (uuid),
+  UNIQUE (user_id, book_uuid),
+  CHECK (
+    rating IS NOT NULL
+    OR review IS NOT NULL
+  )
+);
+
+CREATE TRIGGER user_book_rating_update_trigger AFTER
+UPDATE ON user_book_rating FOR EACH ROW BEGIN
+UPDATE user_book_rating
+SET
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  uuid = OLD.uuid;
+
+END;

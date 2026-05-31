@@ -1,6 +1,6 @@
 import { type Dirent } from "node:fs"
 import { readdir, realpath } from "node:fs/promises"
-import { dirname, extname, join, resolve, sep } from "node:path"
+import { extname, join, resolve, sep } from "node:path"
 
 import { Epub, MemoryAdapter } from "@storyteller-platform/epub"
 
@@ -11,6 +11,7 @@ import { type BookWithRelations } from "@/database/books"
 import { getIgnorePaths } from "@/database/importRules"
 import { getSetting } from "@/database/settings"
 import { type ImportMode } from "@/database/settingsTypes"
+import { isEpubVersionError } from "@/epub"
 import { logger } from "@/logging"
 
 import { type ScanCtx } from "./ctx"
@@ -78,11 +79,18 @@ async function classifyFolder(
       using epub = await Epub.using(MemoryAdapter).from(epubPath)
       aligned = await isReadaloudEpub(epub)
     } catch (error) {
-      logger.warn({
-        msg: "Failed to classify epub during folder scan; treating as regular",
-        epubPath,
-        err: error,
-      })
+      if (isEpubVersionError(error)) {
+        logger.warn({
+          msg: "Can't classify epub as readaloud or regular ebook because it is an EPUB 2 file, treating as regular and continuing",
+          epubPath,
+        })
+      } else {
+        logger.warn({
+          msg: "Failed to classify epub as readaloud or regular ebook during folder scan; treating as regular",
+          epubPath,
+          err: error,
+        })
+      }
     }
     if (aligned) readaloudEpubs.push(epubPath)
     else regularEpubs.push(epubPath)
@@ -242,9 +250,7 @@ export async function listBookCandidates(
   const seen = new Set(existingCandidates.map(candidateKey))
 
   // If exactly one book already lives in this folder, treat it as the
-  // owner for any new format candidates we discover here. This implements
-  // the "books are folders" model: a folder holds at most one book, even
-  // when a new format shows up later (e.g. mp3s dropped next to an epub).
+  // owner for any new format candidates we discover here
   const folderOwner = knownBooks.length === 1 ? knownBooks[0] : undefined
 
   function pushIfNew(candidate: Candidate) {
@@ -338,22 +344,6 @@ export async function walkFolders(
 
     const parent = await canonicalizePath(entry.parentPath)
     folders.add(parent)
-  }
-
-  // include folders that books reference but readdir didn't yield
-  for (const book of opts.books) {
-    const paths = [
-      book.ebook?.filepath,
-      book.audiobook?.filepath,
-      book.readaloud?.filepath,
-    ].filter((p): p is string => !!p)
-    for (const path of paths) {
-      if (!pathBelongsTo(root, path)) continue
-      const folder = await canonicalizePath(
-        extname(path) ? dirname(path) : path,
-      )
-      folders.add(folder)
-    }
   }
 
   return [...folders]

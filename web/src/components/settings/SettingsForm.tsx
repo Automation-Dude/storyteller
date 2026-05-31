@@ -35,11 +35,13 @@ import {
 import { useMemo, useRef, useState } from "react"
 
 import type { Settings } from "@/apiModels"
+import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 import {
   cronExpressionToMinutes,
   minutesToCronExpression,
 } from "@/assets/library/scanner/triggers/cron"
 import { type Providers } from "@/auth/providers"
+import { cn } from "@/cn"
 import { ServerFileBrowser } from "@/components/books/modals/ServerFileBrowser"
 import {
   ADMIN_PERMISSIONS,
@@ -92,6 +94,7 @@ const IMPORT_MODE_OPTIONS = [
 ]
 
 const AUTO_SOURCE_LABELS: Record<Exclude<ImportRuleSource, "user">, string> = {
+  config: "Config",
   "import-relocate": "Relocated",
   "import-backup": "Backup copy",
   "prevent-reimport": "Re-import prevention",
@@ -124,32 +127,42 @@ function WatchRuleCard({
         />
 
         <Stack gap="xs" className="min-w-0 flex-1">
-          {editingPath ? (
-            <div className="max-h-80 overflow-hidden">
-              <ServerFileBrowser
-                directoriesOnly
-                startPath={rule.path}
-                onSelect={(folder) => {
-                  void updateRule({ uuid: rule.uuid, path: folder })
-                  setEditingPath(false)
-                }}
-              />
-            </div>
-          ) : (
-            <Button
-              variant="subtle"
-              className="min-w-0 self-start"
-              classNames={{ inner: "justify-start" }}
-              onClick={() => {
-                setEditingPath(true)
-              }}
-            >
-              <Text className="truncate text-sm" title={rule.path}>
-                {rule.path}
-              </Text>
-            </Button>
-          )}
+          <Group>
+            {editingPath ? (
+              <div className="max-h-80 overflow-hidden">
+                <ServerFileBrowser
+                  directoriesOnly
+                  startPath={rule.path}
+                  onSelect={(folder) => {
+                    void updateRule({ uuid: rule.uuid, path: folder })
+                    setEditingPath(false)
+                  }}
+                />
+              </div>
+            ) : (
+              <>
+                <Button
+                  variant="subtle"
+                  className="min-w-0 flex-1 items-center gap-2 self-start"
+                  classNames={{ inner: "justify-start" }}
+                  onClick={() => {
+                    setEditingPath(true)
+                  }}
+                  disabled={rule.source === "config"}
+                >
+                  <Text className="truncate text-sm" title={rule.path}>
+                    {rule.path}
+                  </Text>
+                </Button>
 
+                {rule.source === "config" && (
+                  <Badge size="xs" variant="light">
+                    config
+                  </Badge>
+                )}
+              </>
+            )}
+          </Group>
           <Group gap="sm" wrap="wrap">
             <NativeSelect
               size="sm"
@@ -159,6 +172,7 @@ function WatchRuleCard({
                 const mode = e.currentTarget.value || null
                 void updateRule({ uuid: rule.uuid, importMode: mode })
               }}
+              disabled={rule.source === "config"}
             >
               {IMPORT_MODE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -182,6 +196,7 @@ function WatchRuleCard({
                   collectionUuids: uuids as UUID[],
                 })
               }}
+              disabled={rule.source === "config"}
             />
           </Group>
         </Stack>
@@ -191,6 +206,7 @@ function WatchRuleCard({
           color="red"
           aria-label="Delete rule"
           onClick={onDelete}
+          disabled={rule.source === "config"}
         >
           <IconTrash size={14} />
         </ActionIcon>
@@ -216,15 +232,32 @@ function IgnoreRuleRow({
       wrap="nowrap"
       className="rounded border border-gray-200 px-3 py-2 dark:border-neutral-700"
     >
-      <Checkbox checked={selected} onChange={onToggle} size="sm" />
-      <Text className="min-w-0 flex-1 truncate text-sm" title={rule.path}>
+      <Checkbox
+        checked={selected}
+        onChange={onToggle}
+        size="sm"
+        disabled={rule.source === "config"}
+      />
+      <Text
+        className={cn(
+          "min-w-0 flex-1 truncate text-sm",
+          rule.source === "config" && "opacity-30",
+        )}
+        title={rule.path}
+      >
         {rule.path}
       </Text>
+      {rule.source === "config" && (
+        <Badge size="xs" variant="light">
+          config
+        </Badge>
+      )}
       <ActionIcon
         variant="subtle"
         color="red"
         aria-label="Delete rule"
         onClick={onDelete}
+        disabled={rule.source === "config"}
       >
         <IconTrash size={14} />
       </ActionIcon>
@@ -257,6 +290,7 @@ function AutoIgnoreRuleRow({
         checked={selected}
         onChange={onToggle}
         size="sm"
+        disabled={rule.source === "config"}
       />
       <Stack gap={2} className="min-w-0 flex-1">
         <Text className="truncate text-sm" title={rule.path}>
@@ -571,7 +605,7 @@ function ImportRulesSection({
     const autoIgnore: ImportRuleWithCollections[] = []
     for (const r of rules) {
       if (r.kind === "watch") watch.push(r)
-      else if (r.source === "user") userIgnore.push(r)
+      else if (r.source === "user" || r.source === "config") userIgnore.push(r)
       else autoIgnore.push(r)
     }
     return {
@@ -1339,19 +1373,12 @@ export function SettingsForm({
             {...form.getInputProps("bitrate")}
             disabled={isLocked("bitrate")}
           >
-            <option value="">Default (constant 48 kb/s)</option>
-            <option value="0">0 (high quality/low compression)</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">
-              4 (perceptually transparent/moderate compression)
-            </option>
-            <option value="5">5</option>
-            <option value="6">6 (acceptable quality/high compression)</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
+            <option value="">Default</option>
+            {MP3_CBR_BITRATE_OPTIONS.map(({ value, kbps }) => (
+              <option key={value} value={value}>
+                {kbps} kb/s
+              </option>
+            ))}
           </NativeSelect>
         )}
       </Fieldset>
