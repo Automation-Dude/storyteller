@@ -69,7 +69,7 @@ export function TranscriptionStatus({
   return (
     <section className="mb-8">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-label">
+        <h2 className="section-label flex-1">
           <IconProgress className="h-4 w-4" />
           Transcription
         </h2>

@@ -157,7 +157,7 @@ function BookDetailsContentInner({
       isEditing={isEditing}
       onEditingChange={handleEditingChange}
     >
-      <article className="scroll-y relative flex h-full flex-1 flex-col">
+      <article className="scroll-y bg-background relative flex h-full flex-1 flex-col">
         {!compact && <BookDetailsHeader canEdit={canEdit} />}
         {compact && <CompactEditBar />}
 

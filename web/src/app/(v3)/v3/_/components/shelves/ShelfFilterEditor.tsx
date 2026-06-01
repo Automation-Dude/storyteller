@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  IconLoader2,
-  IconPlus,
-  IconTrash,
-} from "@tabler/icons-react"
+import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -225,18 +221,16 @@ function FilterPreview({ books, isLoading, isInvalid }: FilterPreviewProps) {
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1 overflow-x-clip">
       <div className="text-muted-foreground text-xs">
         {books.length} book{books.length !== 1 ? "s" : ""} match
       </div>
 
-      <ScrollArea className="max-h-[160px]">
-        <div className="flex flex-col gap-0.5">
-          {books.map((book) => (
-            <PreviewBookItem key={book.uuid} book={book} />
-          ))}
-        </div>
-      </ScrollArea>
+      <div className="scroll-y max-h-[160px] max-w-full">
+        {books.map((book) => (
+          <PreviewBookItem key={book.uuid} book={book} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -346,19 +340,28 @@ function LogicalBlockEditor({
     onChange({ ...block, children: [...block.children, node] })
   }
 
+  const items = [
+    { value: "and", label: "AND" },
+    { value: "or", label: "OR" },
+  ]
+
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <Select
           value={block.type}
           onValueChange={(v) => handleTypeChange(v as "and" | "or")}
+          items={items}
         >
           <SelectTrigger className="h-6 w-16 text-xs font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="and">AND</SelectItem>
-            <SelectItem value="or">OR</SelectItem>
+            {items.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -497,6 +500,16 @@ function ConditionEditor({
     onChange({ ...condition, value: value ?? undefined })
   }
 
+  const fieldItems = Object.entries(FIELD_LABELS).map(([field, label]) => ({
+    value: field,
+    label,
+  }))
+
+  const operatorItems = operators.map((op) => ({
+    value: op,
+    label: OPERATOR_LABELS[op],
+  }))
+
   return (
     <div
       className={cn(
@@ -507,14 +520,15 @@ function ConditionEditor({
       <Select
         value={condition.field}
         onValueChange={(v) => handleFieldChange(v as ShelfFilterField)}
+        items={fieldItems}
       >
         <SelectTrigger className="h-7 w-[130px] text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {Object.entries(FIELD_LABELS).map(([field, label]) => (
-            <SelectItem key={field} value={field}>
-              {label}
+          {fieldItems.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -523,14 +537,15 @@ function ConditionEditor({
       <Select
         value={condition.operator}
         onValueChange={(v) => handleOperatorChange(v as ShelfFilterOperator)}
+        items={operatorItems}
       >
         <SelectTrigger className="h-7 w-[120px] text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {operators.map((op) => (
-            <SelectItem key={op} value={op}>
-              {OPERATOR_LABELS[op]}
+          {operatorItems.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -663,19 +678,24 @@ function ConditionValueInput({
         />
       )
     }
+    const mediaTypeItems = MEDIA_TYPE_VALUES.map((v) => ({
+      value: v,
+      label: v,
+    }))
 
     return (
       <Select
         value={typeof value === "string" ? value : ""}
         onValueChange={onChange}
+        items={mediaTypeItems}
       >
         <SelectTrigger className="h-7 text-xs">
           <SelectValue placeholder="Select..." />
         </SelectTrigger>
         <SelectContent>
-          {MEDIA_TYPE_VALUES.map((v) => (
-            <SelectItem key={v} value={v}>
-              {v}
+          {mediaTypeItems.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
             </SelectItem>
           ))}
         </SelectContent>
@@ -920,7 +940,7 @@ function MultiSelectValue({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-7 w-full items-center justify-between rounded-md border px-2 text-xs focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-7 w-full items-center justify-between rounded-md border px-2 text-xs focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span
           className={cn(

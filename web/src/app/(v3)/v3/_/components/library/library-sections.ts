@@ -16,9 +16,7 @@ export type LibrarySectionDef = {
 
 function buildRelationSection<
   T extends { uuid: string; name: string; fileAs?: string },
->(
-  getRelations: (book: BookWithRelations) => T[],
-): LibrarySectionDef {
+>(getRelations: (book: BookWithRelations) => T[]): LibrarySectionDef {
   return {
     extractItems(books) {
       const map = new Map<string, { name: string; count: number }>()
@@ -88,14 +86,12 @@ export const librarySections = {
     book.creators.filter((c) => c.role === "trl"),
   ),
   tags: buildRelationSection((book) => book.tags),
-  statuses: buildRelationSection((book) =>
-    book.status ? [book.status] : [],
-  ),
+  statuses: buildRelationSection((book) => (book.status ? [book.status] : [])),
   publicationYears: buildScalarSection((book) =>
     book.publicationDate?.slice(0, 4),
   ),
   ratings: buildScalarSection((book) =>
-    book.rating != null ? String(book.rating) : null,
+    book.rating != null ? String(book.rating.rating) : null,
   ),
 } as const satisfies Record<string, LibrarySectionDef>
 

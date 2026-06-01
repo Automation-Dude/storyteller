@@ -100,10 +100,9 @@ function FormatFileRow({
 
   return (
     <div className="flex items-start gap-2">
-      <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
+          <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
           <span className="text-muted-foreground font-sans text-xs font-semibold uppercase">
             {FORMAT_LABELS[format]}
           </span>
@@ -116,7 +115,7 @@ function FormatFileRow({
               Missing
             </Badge>
           )}
-          {!!isEpub2 && (
+          {isEpub2 && (
             <Badge variant="outline" className="h-4 px-1 text-[10px]">
               EPUB 2
             </Badge>
@@ -223,7 +222,7 @@ export function FileSection({
   return (
     <section className={cn(className)}>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="section-label">
+        <h2 className="section-label flex-1">
           <IconFileText className="h-4 w-4" />
           {t("fileInformation.title")}
         </h2>

@@ -26,6 +26,7 @@ export const BOOLEAN_FIELDS = [
   "inviteDelete",
   "inviteList",
   "isDefault",
+  "isEpub2",
   "missing",
   "public",
   "settingsUpdate",

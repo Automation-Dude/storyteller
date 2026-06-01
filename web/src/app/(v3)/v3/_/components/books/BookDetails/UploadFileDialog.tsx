@@ -3,7 +3,6 @@
 import { useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 
-
 import { UploadDropzone } from "@v3/_/components/files/UploadDropzone"
 import { useTusUpload } from "@v3/_/components/files/useTusUpload"
 import { Button } from "@v3/_/components/ui/button"
@@ -37,8 +36,7 @@ const agent = (nav && nav.userAgent) || ""
 const ie = /Edge\/(\d+)/.test(agent) || /MSIE \d/.test(agent)
 // eslint-disable-next-line @typescript-eslint/no-deprecated
 const safari = !ie && !!nav && /Apple Computer/.test(nav.vendor)
-const ios =
-  safari && (/Mobile\/\w+/.test(agent) || nav.maxTouchPoints > 2)
+const ios = safari && (/Mobile\/\w+/.test(agent) || nav.maxTouchPoints > 2)
 
 const epubFileTypes = ["application/epub+zip", ...(ios ? [] : [".epub"])]
 const audioFileTypes = ios
@@ -80,7 +78,8 @@ export function UploadFileDialog({
       endpoint: tusEndpointForBook(book.uuid),
       restrictions: {
         maxNumberOfFiles: format === "audiobook" ? null : 1,
-        allowedFileTypes: format === "audiobook" ? audioFileTypes : epubFileTypes,
+        allowedFileTypes:
+          format === "audiobook" ? audioFileTypes : epubFileTypes,
       },
       buildMeta: (file) => {
         const overrides = defaultMetadataFieldOverrides(metadataMode)
@@ -148,10 +147,16 @@ export function UploadFileDialog({
 
         <UploadDropzone
           uppy={uppy}
-          accept={format === "audiobook" ? "audio/*,video/mp4,.m4b,.m4a,.zip" : ".epub"}
+          accept={
+            format === "audiobook"
+              ? "audio/*,video/mp4,.m4b,.m4a,.zip"
+              : ".epub"
+          }
           multiple={format === "audiobook"}
           hint={
-            format === "audiobook" ? "Audio files (mp3, m4a, m4b…)" : ".epub file"
+            format === "audiobook"
+              ? "Audio files (mp3, m4a, m4b…)"
+              : ".epub file"
           }
         />
 
@@ -162,6 +167,10 @@ export function UploadFileDialog({
             onValueChange={(v) => {
               setMetadataMode(v as MetadataFieldMode)
             }}
+            items={METADATA_MODE_OPTIONS.map((opt) => ({
+              value: opt.value,
+              label: opt.label,
+            }))}
           >
             <SelectTrigger className="w-56">
               <SelectValue />

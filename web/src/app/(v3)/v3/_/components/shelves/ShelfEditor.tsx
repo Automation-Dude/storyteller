@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconPlus, IconSearch, IconX } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
@@ -17,7 +17,6 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
-import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -79,8 +78,7 @@ export function ShelfEditor({
         ? "manual"
         : "filter"
 
-  const [selectionMode, setSelectionMode] =
-    useState<SelectionMode>(initialMode)
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>(initialMode)
 
   const [filter, setFilter] = useState<ShelfFilterNode | null>(
     shelf?.filter ?? null,
@@ -191,9 +189,12 @@ export function ShelfEditor({
     setSelectedBookUuids(selectedBookUuids.filter((u) => u !== uuid))
   }
 
-  const orderBy = form.watch("orderBy")
-  const orderDirection = form.watch("orderDirection")
-  const limitCount = form.watch("limitCount")
+  const orderBy = useWatch({ control: form.control, name: "orderBy" })
+  const orderDirection = useWatch({
+    control: form.control,
+    name: "orderDirection",
+  })
+  const limitCount = useWatch({ control: form.control, name: "limitCount" })
 
   const hasNonDefaultSort =
     orderBy !== "createdAt" || orderDirection !== "desc" || limitCount !== null
@@ -461,7 +462,7 @@ function BookSelector({
   return (
     <div className="flex flex-col gap-2">
       <div className="relative">
-        <IconSearch className="text-muted-foreground absolute left-2 top-1/2 size-4 -translate-y-1/2" />
+        <IconSearch className="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2" />
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -483,26 +484,24 @@ function BookSelector({
       )}
 
       {searchResults.length > 0 && (
-        <ScrollArea className="max-h-[140px]">
-          <div className="flex flex-col gap-0.5">
-            {searchResults.map((book) => (
-              <BookListItem
-                key={book.uuid}
-                book={book}
-                action={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => onAdd(book.uuid)}
-                  >
-                    <IconPlus className="size-3" />
-                  </Button>
-                }
-              />
-            ))}
-          </div>
-        </ScrollArea>
+        <div className="scroll-y flex max-h-[140px] flex-col gap-0.5">
+          {searchResults.map((book) => (
+            <BookListItem
+              key={book.uuid}
+              book={book}
+              action={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => onAdd(book.uuid)}
+                >
+                  <IconPlus className="size-3" />
+                </Button>
+              }
+            />
+          ))}
+        </div>
       )}
 
       {selectedBooks.length > 0 && (
@@ -511,26 +510,24 @@ function BookSelector({
             {selectedBooks.length} selected
           </Label>
 
-          <ScrollArea className="max-h-[140px]">
-            <div className="flex flex-col gap-0.5">
-              {selectedBooks.map((book) => (
-                <BookListItem
-                  key={book.uuid}
-                  book={book}
-                  action={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => onRemove(book.uuid)}
-                    >
-                      <IconX className="size-3" />
-                    </Button>
-                  }
-                />
-              ))}
-            </div>
-          </ScrollArea>
+          <div className="scroll-y flex max-h-[140px] flex-col gap-0.5">
+            {selectedBooks.map((book) => (
+              <BookListItem
+                key={book.uuid}
+                book={book}
+                action={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => onRemove(book.uuid)}
+                  >
+                    <IconX className="size-3" />
+                  </Button>
+                }
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -552,7 +549,7 @@ function BookListItem({ book, action }: BookListItemProps) {
   const authorNames = book.authors.map((a) => a.name).join(", ")
 
   return (
-    <div className="hover:bg-muted/50 flex items-center gap-2 rounded-md py-1 pl-1 pr-1">
+    <div className="hover:bg-muted/50 flex items-center gap-2 rounded-md py-1 pr-1 pl-1">
       <img
         src={getCoverUrl(book.uuid, { height: 32, updatedAt: book.updatedAt })}
         alt=""

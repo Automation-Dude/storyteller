@@ -3,6 +3,8 @@
 import {
   IconArrowUpRight,
   IconEdit,
+  IconLoader2,
+  IconScan,
   IconSquareCheck,
   IconX,
 } from "@tabler/icons-react"
@@ -27,6 +29,12 @@ import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
+import { usePermission } from "@/hooks/usePermission"
+import {
+  useCancelScanMutation,
+  useGetScanStateQuery,
+  useTriggerBookScanMutation,
+} from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
@@ -88,7 +96,7 @@ export function BookListLayout({
   )
 
   const panelBookIsSelected = selectedBookUuid
-    ? (selection?.isSelected(selectedBookUuid) ?? false)
+    ? selection?.isSelected(selectedBookUuid) ?? false
     : false
 
   const handleTogglePanelBookSelection = useCallback(() => {
@@ -211,7 +219,7 @@ export function BookDetailDrawer({
   const panelOpen = !!selectedBookUuid
 
   const panelBookIsSelected = selectedBookUuid
-    ? (selection?.isSelected(selectedBookUuid) ?? false)
+    ? selection?.isSelected(selectedBookUuid) ?? false
     : false
 
   const handleTogglePanelBookSelection = useCallback(() => {
@@ -306,6 +314,17 @@ function BookPanelHeader({
   isEditing: boolean
   onToggleEdit: () => void
 }) {
+  const canEdit = usePermission("bookUpdate")
+  const canProcess = usePermission("bookProcess")
+  const canDelete = usePermission("bookDelete")
+
+  const [triggerBookScan, { isLoading: isScanning }] =
+    useTriggerBookScanMutation()
+  const [cancelScan, { isLoading: isCancellingScan }] = useCancelScanMutation()
+  const { data: scanState } = useGetScanStateQuery(undefined, {
+    pollingInterval: 5_000,
+    skip: !canProcess,
+  })
   return (
     <div
       className={cn(
@@ -338,6 +357,26 @@ function BookPanelHeader({
       </div>
 
       <div className="flex items-center gap-1">
+        {canProcess && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              if (isScanning) {
+                void cancelScan()
+              } else {
+                void triggerBookScan({ uuid: bookUuid as UUID, force: true })
+              }
+            }}
+            disabled={isScanning || isCancellingScan}
+          >
+            {isScanning ? (
+              <IconLoader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <IconScan className="h-4 w-4" />
+            )}
+          </Button>
+        )}
         <Button
           variant={isEditing ? "secondary" : "ghost"}
           size="icon-sm"

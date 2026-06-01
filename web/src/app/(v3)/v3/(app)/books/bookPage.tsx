@@ -61,21 +61,17 @@ export default function BookPage({
   const showMuted =
     isSearching || (isFetching && !isFetchingNextPage && books.length > 0)
 
-  const handleBookClick = useCallback(
-    (book: { uuid: string }) => {
-      if (isSelecting) {
-        toggleSelection(book.uuid)
-        return
-      }
+  const handleBookClick = (book: { uuid: string }) => {
+    if (isSelecting) {
+      toggleSelection(book.uuid)
+      return
+    }
+    void setSelectedBookUuid(book.uuid)
+  }
 
-      void setSelectedBookUuid(book.uuid)
-    },
-    [setSelectedBookUuid, isSelecting, toggleSelection],
-  )
-
-  const handleClosePanel = useCallback(() => {
+  const handleClosePanel = () => {
     void setSelectedBookUuid(null)
-  }, [setSelectedBookUuid])
+  }
 
   return (
     <div

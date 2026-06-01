@@ -108,10 +108,12 @@ function PagePanel({
 }) {
   const [isResizing, setIsResizing] = useState(false)
   const liveWidth = useRef(width)
-
   const panelRef = useRef<HTMLDivElement>(null)
-  const innerRef = useRef<HTMLDivElement>(null)
 
+  // while dragging, the panel is lifted out of the flex flow (position: fixed)
+  // and resizes live; a spacer holds its slot so the middle section keeps its
+  // width and only reflows once on release. this keeps the live preview without
+  // making the virtualized book grid re-layout on every frame.
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
@@ -133,11 +135,6 @@ function PagePanel({
 
         if (panelRef.current) {
           panelRef.current.style.width = `${newWidth}px`
-          panelRef.current.style.minWidth = `${newWidth}px`
-        }
-
-        if (innerRef.current) {
-          innerRef.current.style.width = `${newWidth}px`
         }
       }
 
@@ -170,15 +167,20 @@ function PagePanel({
             onMouseDown={handleResizeStart}
           >
             <div
-              className={cn(
-                "bg-border mx-auto h-full w-px transition-colors",
-                isResizing
-                  ? "bg-primary w-0.5"
-                  : "group-hover:bg-primary/40 group-hover:w-0.5",
-              )}
+              className={cn("bg-border mx-auto h-full w-px transition-colors")}
             />
           </div>
         </div>
+      )}
+
+      {/* holds the flex slot while the panel is lifted out of flow, so the
+          middle section keeps its width until the drag is committed */}
+      {isResizing && (
+        <div
+          aria-hidden
+          className="shrink-0"
+          style={{ width: open ? width : 0 }}
+        />
       )}
 
       <div
@@ -186,25 +188,16 @@ function PagePanel({
         data-slot="page-panel"
         className={cn(
           "overflow-hidden",
-          // !isResizing &&
-          //   "transition-[width,min-width] duration-300 ease-in-out",
+          isResizing && "fixed inset-y-0 right-0 z-40 border-l shadow-xl",
           className,
         )}
         style={{
           width: open ? width : 0,
-          minWidth: open ? width : 0,
+          minWidth: isResizing ? 0 : open ? width : 0,
         }}
         {...props}
       >
-        {open && (
-          <div
-            ref={innerRef}
-            className="flex h-full flex-col"
-            style={{ width }}
-          >
-            {children}
-          </div>
-        )}
+        {open && <div className="flex h-full w-full flex-col">{children}</div>}
       </div>
     </>
   )
@@ -225,10 +218,11 @@ function PageSidebar({
 }) {
   const [isResizing, setIsResizing] = useState(false)
   const liveWidth = useRef(width)
-
   const sidebarRef = useRef<HTMLDivElement>(null)
-  const innerRef = useRef<HTMLDivElement>(null)
 
+  // while dragging, the sidebar is lifted out of the flex flow (position: fixed)
+  // and resizes live; a spacer holds its slot so the middle section keeps its
+  // width and only reflows once on release.
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
@@ -250,11 +244,6 @@ function PageSidebar({
 
         if (sidebarRef.current) {
           sidebarRef.current.style.width = `${newWidth}px`
-          sidebarRef.current.style.minWidth = `${newWidth}px`
-        }
-
-        if (innerRef.current) {
-          innerRef.current.style.width = `${newWidth}px`
         }
       }
 
@@ -277,24 +266,26 @@ function PageSidebar({
 
   return (
     <>
+      {/* holds the flex slot while the sidebar is lifted out of flow */}
+      {isResizing && <div aria-hidden className="shrink-0" style={{ width }} />}
+
       <div
         ref={sidebarRef}
         data-slot="page-sidebar"
         className={cn(
-          "flex h-full shrink-0 flex-col overflow-y-auto",
-          !isResizing &&
-            "transition-[width,min-width] duration-300 ease-in-out",
+          "flex h-full flex-col overflow-y-auto bg-red-500",
+          isResizing
+            ? "fixed inset-y-0 left-0 z-50 shadow-xl"
+            : "shrink-0 transition-[width,min-width] duration-300 ease-in-out",
           className,
         )}
         style={{
           width,
-          minWidth: width,
+          minWidth: isResizing ? 0 : width,
         }}
         {...props}
       >
-        <div ref={innerRef} className="flex h-full flex-col" style={{ width }}>
-          {children}
-        </div>
+        <div className="flex h-full w-full flex-col">{children}</div>
       </div>
 
       {onWidthChange && (
@@ -307,12 +298,7 @@ function PageSidebar({
             onMouseDown={handleResizeStart}
           >
             <div
-              className={cn(
-                "bg-border mx-auto h-full w-px transition-colors",
-                isResizing
-                  ? "bg-primary w-0.5"
-                  : "group-hover:bg-primary/40 group-hover:w-0.5",
-              )}
+              className={cn("bg-border mx-auto h-full w-px transition-colors")}
             />
           </div>
         </div>
