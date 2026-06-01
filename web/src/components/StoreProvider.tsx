@@ -1,5 +1,5 @@
 "use client"
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 import { Provider } from "react-redux"
 
 import { initializeAudioPlayerBridge } from "@/services/audioPlayerBridge"
@@ -31,12 +31,16 @@ export default function StoreProvider({
         preferences: storedPreferences,
       }),
     )
+  }
 
+  // persist ui settings after mount
+  // to avoid hydration mismatch
+  useEffect(() => {
     const storedUISettings = loadUISettingsFromStorage() ?? {}
-    storeRef.current.dispatch(
+    storeRef.current?.dispatch(
       uiSettingsSlice.actions.initUISettings(storedUISettings),
     )
-  }
+  }, [])
 
   return <Provider store={storeRef.current}>{children}</Provider>
 }
