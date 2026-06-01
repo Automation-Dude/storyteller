@@ -42,9 +42,10 @@ import { type Status } from "@/database/statuses"
 import { type Tag } from "@/database/tags"
 import { type UserBookRating } from "@/database/userRatings"
 import { type UserPermissionSet } from "@/database/users"
-import { type BookEvent } from "@/events"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import { type UUID } from "@/uuid"
+
+import { subscribeToBookEventStream } from "./bookEventsStream"
 
 export const api = createApi({
   reducerPath: "api",
@@ -209,11 +210,7 @@ export const api = createApi({
           /* empty */
         }
 
-        if (typeof EventSource === "undefined") return
-
-        const eventSource = new EventSource("/api/v2/books/events")
-        eventSource.addEventListener("message", (m: MessageEvent<string>) => {
-          const event = JSON.parse(m.data) as BookEvent
+        const unsubscribe = subscribeToBookEventStream((event) => {
           if (event.bookUuid !== uuid) return
           if (event.type !== "bookUpdated") return
 
@@ -223,7 +220,7 @@ export const api = createApi({
         })
 
         await cacheEntryRemoved
-        eventSource.close()
+        unsubscribe()
       },
     }),
     deleteBook: build.mutation<
@@ -380,13 +377,7 @@ export const api = createApi({
           // in which case `cacheDataLoaded` will throw
         }
 
-        // Handle SSR
-        if (typeof EventSource === "undefined") return
-
-        const eventSource = new EventSource("/api/v2/books/events")
-
-        eventSource.addEventListener("message", (m: MessageEvent<string>) => {
-          const event = JSON.parse(m.data) as BookEvent
+        const unsubscribe = subscribeToBookEventStream((event) => {
           updateCachedData((draft) => {
             if (event.type === "bookCreated") {
               draft.push(event.payload)
@@ -419,7 +410,7 @@ export const api = createApi({
 
         await cacheEntryRemoved
 
-        eventSource.close()
+        unsubscribe()
       },
     }),
     listInfiniteBooks: build.infiniteQuery<
