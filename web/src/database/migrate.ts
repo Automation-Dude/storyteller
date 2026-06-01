@@ -52,6 +52,7 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   "73_add_cover_colors_blurhash.sql": (
     await import("./migrations/73_add_cover_colors_blurhash.sql")
   ).default,
+  "85_shelves.sql": (await import("./migrations/85_shelves.sql")).default,
 }
 
 async function isFirstStartup() {

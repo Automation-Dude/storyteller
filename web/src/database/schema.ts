@@ -161,16 +161,6 @@ export interface DeviceAuthorization {
   userCode: string
 }
 
-export interface HomeShelf {
-  createdAt: Generated<string>
-  position: number
-  shelfType: string
-  shelfUuid: import("@/uuid").UUID | null
-  updatedAt: Generated<string>
-  userId: import("@/uuid").UUID
-  uuid: Generated<import("@/uuid").UUID>
-}
-
 export interface Ebook {
   bookUuid: import("@/uuid").UUID
   coverBlurhash: string | null
@@ -191,6 +181,16 @@ export interface Ebook {
   pageCount: number | null
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>
+}
+
+export interface HomeShelf {
+  createdAt: Generated<string>
+  position: number
+  shelfType: string
+  shelfUuid: string | null
+  updatedAt: Generated<string>
+  userId: string
+  uuid: Generated<string>
 }
 
 export interface ImportRule {
@@ -263,40 +263,6 @@ export interface Readaloud {
   uuid: Generated<import("@/uuid").UUID>
 }
 
-export interface Shelf {
-  createdAt: Generated<string>
-  description: string | null
-  filter: import("kysely").ColumnType<
-    import("@/database/shelfFilter").ShelfFilter | null,
-    string | null,
-    string | null
-  >
-  limitCount: number | null
-  name: string
-  orderBy: Generated<string>
-  orderDirection: Generated<"asc" | "desc">
-  updatedAt: Generated<string>
-  userId: import("@/uuid").UUID
-  uuid: Generated<import("@/uuid").UUID>
-}
-
-export interface ShelfBook {
-  bookUuid: import("@/uuid").UUID
-  createdAt: Generated<string>
-  position: number | null
-  shelfUuid: import("@/uuid").UUID
-  updatedAt: Generated<string>
-  uuid: Generated<import("@/uuid").UUID>
-}
-
-export interface ShelfFilterReference {
-  createdAt: Generated<string>
-  entityType: "tag" | "collection" | "series" | "status" | "creator"
-  entityUuid: string
-  shelfUuid: import("@/uuid").UUID
-  uuid: Generated<import("@/uuid").UUID>
-}
-
 export interface Series {
   createdAt: Generated<string>
   description: string | null
@@ -321,6 +287,37 @@ export interface Settings {
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>
   value: string
+}
+
+export interface Shelf {
+  createdAt: Generated<string>
+  description: string | null
+  filter: string | null
+  limitCount: number | null
+  name: string
+  orderBy: Generated<string>
+  orderDirection: Generated<string>
+  updatedAt: Generated<string>
+  userId: string
+  uuid: Generated<string>
+}
+
+export interface ShelfBook {
+  bookUuid: string
+  createdAt: Generated<string>
+  position: number | null
+  shelfUuid: string
+  updatedAt: Generated<string>
+  uuid: Generated<string>
+}
+
+export interface ShelfFilterReference {
+  createdAt: Generated<string>
+  entityType: string
+  entityUuid: string
+  shelfUuid: string
+  updatedAt: Generated<string>
+  uuid: Generated<string>
 }
 
 export interface Status {

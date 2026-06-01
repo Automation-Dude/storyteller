@@ -76,19 +76,11 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
         </div>
 
         <div className="flex gap-1 opacity-0 transition-opacity group-hover/shelf:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={scrollLeft}
-          >
+          <Button variant="ghost" size="icon-sm" onClick={scrollLeft}>
             <IconChevronLeft className="size-4" />
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={scrollRight}
-          >
+          <Button variant="ghost" size="icon-sm" onClick={scrollRight}>
             <IconChevronRight className="size-4" />
           </Button>
         </div>
@@ -96,10 +88,13 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
 
       <div
         ref={scrollContainerRef}
-        className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted flex gap-4 overflow-x-auto px-4 pb-2"
+        className="scroll-x flex snap-x scroll-pl-4 gap-4 px-4 pb-2"
       >
         {books.map((book) => (
-          <div key={book.uuid} className="w-[150px] shrink-0">
+          <div
+            key={book.uuid}
+            className="w-[150px] shrink-0 snap-mandatory snap-start"
+          >
             <BookCard book={book} />
           </div>
         ))}
@@ -128,8 +123,7 @@ type UseShelfBooksResult = {
 }
 
 function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
-  const isCustomShelf =
-    shelf.shelfType === "custom" && shelf.shelfUuid !== null
+  const isCustomShelf = shelf.shelfType === "custom" && shelf.shelfUuid !== null
 
   const { data: shelfBooks = [], isLoading: isLoadingShelfBooks } =
     useListShelfBooksQuery(
@@ -271,8 +265,7 @@ function computeNextUpInSeries(
       if (!latestA || !latestB) return 0
 
       return (
-        (latestB.position?.timestamp ?? 0) -
-        (latestA.position?.timestamp ?? 0)
+        (latestB.position?.timestamp ?? 0) - (latestA.position?.timestamp ?? 0)
       )
     })
 }
