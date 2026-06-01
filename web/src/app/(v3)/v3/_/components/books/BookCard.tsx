@@ -47,6 +47,10 @@ export const BookCard = memo(function BookCard({
 
   const showCheckbox = !!onToggleSelection
 
+  const handleCheckboxClick = () => {
+    onToggleSelection?.(book.uuid)
+  }
+
   const cardContent = (
     <>
       <div
@@ -78,9 +82,7 @@ export const BookCard = memo(function BookCard({
           >
             <Checkbox
               checked={isBookSelected}
-              onCheckedChange={() => {
-                onToggleSelection(book.uuid)
-              }}
+              onCheckedChange={handleCheckboxClick}
               className="hover:border-primary h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors"
               tabIndex={-1}
             />

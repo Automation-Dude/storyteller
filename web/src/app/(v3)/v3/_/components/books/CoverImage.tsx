@@ -61,7 +61,7 @@ export function CoverImage({
         <BlurhashCanvas
           blurhash={blurhash}
           className={cn(
-            "transition-opacity duration-200",
+            "relative h-full w-full transition-opacity duration-200",
             loaded && "opacity-0",
           )}
           onTransitionEnd={(e) => {
@@ -77,10 +77,16 @@ export function CoverImage({
         alt={alt}
         aria-hidden={ariaHidden}
         loading="lazy"
-        onLoad={() => setLoaded(true)}
-        onError={() => setError(true)}
+        onLoad={() => {
+          setLoaded(true)
+        }}
+        onError={() => {
+          setError(true)
+        }}
         className={cn(
-          "relative z-10 h-full w-full object-cover",
+          "relative z-10 h-full w-full object-cover transition-opacity duration-200",
+          !loaded && "opacity-0",
+          loaded && "opacity-100",
           imgClassName,
         )}
       />
