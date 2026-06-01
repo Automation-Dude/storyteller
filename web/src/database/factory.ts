@@ -11,6 +11,7 @@ import { logger } from "@/logging"
 import { BooleanPlugin } from "./plugins/booleanPlugin"
 import { DatePlugin } from "./plugins/datePlugin"
 import type { DB } from "./schema"
+import { env } from "@/env"
 
 export const BOOLEAN_FIELDS = [
   "bookCreate",
@@ -49,6 +50,14 @@ export function createKyselyDb(sqlite: Database): Kysely<DB> {
       if (event.level === "error") {
         logger.error(event.query.sql)
         logger.error(event.error)
+      }
+      if (
+        env.STORYTELLER_LOG_LEVEL === "trace" &&
+        event.queryDurationMillis > 10
+      ) {
+        logger.trace(event.query.sql)
+        logger.trace(event.query.parameters)
+        logger.trace(`Completed in ${event.queryDurationMillis}ms`)
       }
     },
   })

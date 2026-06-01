@@ -457,13 +457,8 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
       "book.rating as globalBookRating",
       jsonArrayFrom(
         eb
-          .selectFrom("creator")
-          .distinct()
-          .innerJoin(
-            "bookToCreator",
-            "bookToCreator.creatorUuid",
-            "creator.uuid",
-          )
+          .selectFrom("bookToCreator")
+          .innerJoin("creator", "creator.uuid", "bookToCreator.creatorUuid")
           .select([
             "creator.uuid",
             "creator.id",
@@ -477,13 +472,8 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
       ).as("authors"),
       jsonArrayFrom(
         eb
-          .selectFrom("creator")
-          .distinct()
-          .innerJoin(
-            "bookToCreator",
-            "bookToCreator.creatorUuid",
-            "creator.uuid",
-          )
+          .selectFrom("bookToCreator")
+          .innerJoin("creator", "creator.uuid", "bookToCreator.creatorUuid")
           .select([
             "creator.uuid",
             "creator.id",
@@ -497,13 +487,8 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
       ).as("narrators"),
       jsonArrayFrom(
         eb
-          .selectFrom("creator")
-          .distinct()
-          .innerJoin(
-            "bookToCreator",
-            "bookToCreator.creatorUuid",
-            "creator.uuid",
-          )
+          .selectFrom("bookToCreator")
+          .innerJoin("creator", "creator.uuid", "bookToCreator.creatorUuid")
           .select([
             "creator.uuid",
             "creator.id",
@@ -519,9 +504,8 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
       ).as("creators"),
       jsonArrayFrom(
         eb
-          .selectFrom("series")
-          .distinct()
-          .innerJoin("bookToSeries", "bookToSeries.seriesUuid", "series.uuid")
+          .selectFrom("bookToSeries")
+          .innerJoin("series", "series.uuid", "bookToSeries.seriesUuid")
           .select([
             "series.uuid",
             "series.name",
@@ -534,20 +518,18 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
       ).as("series"),
       jsonArrayFrom(
         eb
-          .selectFrom("tag")
-          .distinct()
-          .innerJoin("bookToTag", "bookToTag.tagUuid", "tag.uuid")
+          .selectFrom("bookToTag")
+          .innerJoin("tag", "tag.uuid", "bookToTag.tagUuid")
           .select(["tag.uuid", "tag.name", "tag.createdAt", "tag.updatedAt"])
           .whereRef("bookToTag.bookUuid", "=", "book.uuid"),
       ).as("tags"),
       jsonArrayFrom(
         eb
-          .selectFrom("collection")
-          .distinct()
+          .selectFrom("bookToCollection")
           .innerJoin(
-            "bookToCollection",
-            "bookToCollection.collectionUuid",
+            "collection",
             "collection.uuid",
+            "bookToCollection.collectionUuid",
           )
           .select([
             "collection.uuid",
@@ -563,26 +545,20 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
         ? [
             jsonObjectFrom(
               eb
-                .selectFrom("status")
-                .distinct()
+                .selectFrom("bookToStatus")
+                .innerJoin("status", "status.uuid", "bookToStatus.statusUuid")
                 .select([
                   "status.uuid",
                   "status.name",
                   "status.createdAt",
                   "status.updatedAt",
                 ])
-                .innerJoin(
-                  "bookToStatus",
-                  "bookToStatus.statusUuid",
-                  "status.uuid",
-                )
                 .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
                 .where("bookToStatus.userId", "=", userId),
             ).as("status"),
             jsonObjectFrom(
               eb
                 .selectFrom("position")
-                .distinct()
                 .select([
                   "position.uuid",
                   "position.locator",
