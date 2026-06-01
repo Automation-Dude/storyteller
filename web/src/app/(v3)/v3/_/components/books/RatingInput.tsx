@@ -104,11 +104,11 @@ export function RatingInput({
           </div>
         )
       })}
-      {value !== null && (
+      {/* {value !== null && (
         <span className="text-muted-foreground ml-1.5 text-sm tabular-nums">
           {value}
         </span>
-      )}
+      )} */}
     </div>
   )
 
