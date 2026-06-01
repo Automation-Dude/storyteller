@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto"
 import type { Stats } from "node:fs"
-import { extname } from "node:path"
 
 import contentDisposition from "content-disposition"
+import { extension } from "mime-types"
+import { after } from "next/server"
 
 import { getExtractedCover } from "@/assets/covers"
 import { getCachedCoverImage, writeCachedCoverImage } from "@/assets/fs"
@@ -81,16 +82,22 @@ export const GET = withHasPermission<Params>("bookRead", {
   const notModified = new Response(null, { status: 304 })
 
   const audio = typeof request.nextUrl.searchParams.get("audio") === "string"
+  console.time(`getCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`)
   const cachedImage = await getCachedCoverImage(
     book.uuid,
     audio ? "audio" : "text",
     height,
     width,
   )
+  console.timeEnd(
+    `getCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`,
+  )
 
+  console.time(`getExtractedCover-${book.uuid}-${audio ? "audio" : "text"}`)
   const coverImage =
     cachedImage ??
     (await getExtractedCover(book, audio ? "audiobook" : "ebook"))
+  console.timeEnd(`getExtractedCover-${book.uuid}-${audio ? "audio" : "text"}`)
 
   if (!coverImage) {
     return new Response(null, {
@@ -105,33 +112,50 @@ export const GET = withHasPermission<Params>("bookRead", {
     return notModified
   }
 
-  const result =
-    cachedImage?.data ??
-    (height && width
-      ? await optimizeImage({
-          buffer: coverImage.data,
-          height,
-          width,
-          contentType: coverImage.mimeType,
-        })
-      : coverImage.data)
+  console.time(`optimizeImage-${book.uuid}-${audio ? "audio" : "text"}`)
 
-  if (height && width && !cachedImage) {
-    coverImage.data = result
-    await writeCachedCoverImage(
-      book.uuid,
-      audio ? "audio" : "text",
-      height,
-      width,
-      coverImage,
-    )
+  const needsOptimize = height && width && !cachedImage
+  const optimized = needsOptimize
+    ? await optimizeImage({
+        buffer: coverImage.data,
+        height,
+        width,
+        contentType: coverImage.mimeType,
+      })
+    : null
+
+  const resultData = cachedImage?.data ?? optimized?.data ?? coverImage.data
+  const resultMimeType = optimized?.mimeType ?? coverImage.mimeType
+
+  console.timeEnd(`optimizeImage-${book.uuid}-${audio ? "audio" : "text"}`)
+
+  if (optimized) {
+    after(async () => {
+      console.time(
+        `writeCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`,
+      )
+      await writeCachedCoverImage(
+        book.uuid,
+        audio ? "audio" : "text",
+        height,
+        width,
+        {
+          filename: coverImage.filename,
+          mimeType: resultMimeType,
+          stats: coverImage.stats,
+          data: optimized.data,
+        },
+      )
+      console.timeEnd(
+        `writeCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`,
+      )
+    })
   }
 
-  const ext = extname(coverImage.filename)
-
+  const ext = `.${extension(resultMimeType) || "jpg"}`
   const dispositionName = audio ? `audio cover${ext}` : `ebook cover${ext}`
 
-  return new Response(new Uint8Array(result), {
+  return new Response(new Uint8Array(resultData), {
     headers: {
       ...cacheHeaders,
       "Content-Disposition": contentDisposition(

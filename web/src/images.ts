@@ -8,7 +8,6 @@ let _sharp: typeof import("sharp") | undefined
 
 const AVIF = "image/avif"
 const WEBP = "image/webp"
-const PNG = "image/png"
 const JPEG = "image/jpeg"
 
 async function getSharp() {
@@ -26,6 +25,11 @@ async function getSharp() {
   return _sharp
 }
 
+export type OptimizedImage = {
+  data: Buffer
+  mimeType: string
+}
+
 export async function optimizeImage({
   buffer,
   contentType,
@@ -36,18 +40,14 @@ export async function optimizeImage({
   contentType: string
   width: number
   height?: number
-}): Promise<Buffer> {
-  // scale up images for hi-res displays
+}): Promise<OptimizedImage> {
   height = height && Math.round(height * 2)
   width = Math.round(width * 2)
 
   const quality = 75
   const sharp = await getSharp()
-  const transformer = sharp(buffer)
-    .timeout({
-      seconds: 7,
-    })
-    .rotate()
+
+  const transformer = sharp(buffer).timeout({ seconds: 7 })
 
   if (height) {
     transformer.resize(width, height)
@@ -57,22 +57,25 @@ export async function optimizeImage({
     })
   }
 
+  // png covers are common in epubs but png encoding is slow for
+  // photographic content; output jpeg instead since the result is cached
+  let outputMimeType = contentType
+
   if (contentType === AVIF) {
     transformer.avif({
       quality: Math.max(quality - 20, 1),
-      effort: 3,
+      effort: 1,
     })
   } else if (contentType === WEBP) {
     transformer.webp({ quality })
-  } else if (contentType === PNG) {
-    transformer.png({ quality })
-  } else if (contentType === JPEG) {
-    transformer.jpeg({ quality, mozjpeg: true })
+  } else {
+    transformer.jpeg({ quality })
+    outputMimeType = JPEG
   }
 
-  const optimizedBuffer = await transformer.toBuffer()
+  const data = await transformer.toBuffer()
 
-  return optimizedBuffer
+  return { data, mimeType: outputMimeType }
 }
 
 export async function generateBlurhash(

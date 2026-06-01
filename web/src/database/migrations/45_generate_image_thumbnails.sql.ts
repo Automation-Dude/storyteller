@@ -85,9 +85,12 @@ export default async function migrate() {
 
             await writeCachedCoverImage(book.uuid, "audio", 147, 147, {
               filename: audioCover.filename,
-              mimeType: audioCover.mimeType,
-              stats: { mtimeMs: Date.now(), size: optimized.length } as Stats,
-              data: Buffer.from(optimized),
+              mimeType: optimized.mimeType,
+              stats: {
+                mtimeMs: Date.now(),
+                size: optimized.data.length,
+              } as Stats,
+              data: Buffer.from(optimized.data),
             })
           }
         } catch (e) {
@@ -125,9 +128,12 @@ export default async function migrate() {
 
             await writeCachedCoverImage(book.uuid, "text", 225, 147, {
               filename: epubCover.filename,
-              mimeType: epubCover.mimeType,
-              stats: { mtimeMs: Date.now(), size: optimized.length } as Stats,
-              data: Buffer.from(optimized),
+              mimeType: optimized.mimeType,
+              stats: {
+                mtimeMs: Date.now(),
+                size: optimized.data.length,
+              } as Stats,
+              data: Buffer.from(optimized.data),
             })
           }
         } catch (e) {
