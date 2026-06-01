@@ -56,13 +56,20 @@ export function CoverImage({
   }
 
   return (
-    <div className={cn("relative overflow-hidden", className)}>
+    <div
+      className={cn(
+        "relative overflow-hidden",
+        !loaded && "animate-pulse",
+        className,
+      )}
+    >
       {showBlurhash && (
         <BlurhashCanvas
           blurhash={blurhash}
           className={cn(
             "relative h-full w-full transition-opacity duration-200",
-            loaded && "opacity-0",
+            loaded && "opacity-50",
+            type === "audiobook" ? "aspect-square" : "aspect-[2/3]",
           )}
           onTransitionEnd={(e) => {
             if (e.propertyName === "opacity" && loaded) {
