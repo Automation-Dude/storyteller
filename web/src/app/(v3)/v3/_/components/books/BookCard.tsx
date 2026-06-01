@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { memo } from "react"
+import { memo, useState } from "react"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
@@ -45,6 +45,8 @@ export const BookCard = memo(function BookCard({
     primary: { background, accent },
   } = useCoverColors(book)
 
+  const [coverLoading, setCoverLoading] = useState(true)
+
   const showCheckbox = !!onToggleSelection
 
   const handleCheckboxClick = () => {
@@ -55,19 +57,27 @@ export const BookCard = memo(function BookCard({
     <>
       <div
         className={cn(
-          "relative flex aspect-[13/16] flex-col items-center justify-center transition-shadow",
+          "relative flex aspect-13/16 flex-col items-center justify-center transition-shadow",
           hasDualFormat
             ? "overflow-x-visible overflow-y-clip rounded-lg"
             : "overflow-hidden rounded-lg",
         )}
       >
         <div
-          className="flex h-full w-full items-center justify-center bg-amber-100/50 p-3"
+          className={cn(
+            "flex h-full w-full items-center justify-center bg-amber-100/50 p-3",
+            coverLoading && "animate-pulse",
+          )}
           style={{
             background,
           }}
         >
-          <BookCover book={book} width={300} disableHover={isSelecting} />
+          <BookCover
+            book={book}
+            width={300}
+            disableHover={isSelecting}
+            onLoadingChange={setCoverLoading}
+          />
         </div>
 
         {showCheckbox && (

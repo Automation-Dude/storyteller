@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
 import { cn } from "@/cn"
 
-import { BlurhashCanvas } from "./BlurhashCanvas"
 import { FallbackCover } from "./BookCover"
+import { getBlurhashDataUri } from "./blurhash-data-uri"
 
 type CoverImageProps = {
   src: string
@@ -18,6 +18,7 @@ type CoverImageProps = {
   className?: string
   imgClassName?: string
   ariaHidden?: boolean
+  onLoadingChange?: (loading: boolean) => void
 }
 
 export function CoverImage({
@@ -29,20 +30,52 @@ export function CoverImage({
   className,
   imgClassName,
   ariaHidden,
+  onLoadingChange,
 }: CoverImageProps) {
   const imgRef = useRef<HTMLImageElement>(null)
-  const [error, setError] = useState(false)
-  const [loaded, setLoaded] = useState(false)
-  const [showBlurhash, setShowBlurhash] = useState(true)
+  const onLoadingChangeRef = useRef(onLoadingChange)
+  onLoadingChangeRef.current = onLoadingChange
 
-  // Cached images may already be complete by the time we mount,
-  // so onLoad never fires. Sync state from the DOM in that case.
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState(false)
+
+  const backgroundStyle = useMemo(() => {
+    const uri = getBlurhashDataUri(blurhash)
+    if (!uri) return undefined
+
+    return {
+      backgroundImage: `url(${uri})`,
+      backgroundSize: "cover",
+    } as const
+  }, [blurhash])
+
+  const handleLoad = useCallback(() => {
+    setLoaded(true)
+  }, [])
+
+  const handleError = useCallback(() => {
+    setError(true)
+  }, [])
+
+  useEffect(() => {
+    setLoaded(false)
+    setError(false)
+  }, [src])
+
   useEffect(() => {
     const img = imgRef.current
     if (!img || !img.complete) return
-    if (img.naturalWidth === 0) setError(true)
-    else setLoaded(true)
+
+    if (img.naturalWidth === 0) {
+      setError(true)
+    } else {
+      setLoaded(true)
+    }
   }, [src])
+
+  useEffect(() => {
+    onLoadingChangeRef.current?.(!loaded && !error)
+  }, [loaded, error])
 
   if (error) {
     return (
@@ -59,41 +92,22 @@ export function CoverImage({
     <div
       className={cn(
         "relative overflow-hidden",
-        !loaded && "animate-pulse",
+        type === "audiobook" ? "aspect-square" : "aspect-2/3",
         className,
       )}
+      style={backgroundStyle}
     >
-      {showBlurhash && (
-        <BlurhashCanvas
-          blurhash={blurhash}
-          className={cn(
-            "relative h-full w-full transition-opacity duration-200",
-            loaded && "opacity-50",
-            type === "audiobook" ? "aspect-square" : "aspect-[2/3]",
-          )}
-          onTransitionEnd={(e) => {
-            if (e.propertyName === "opacity" && loaded) {
-              setShowBlurhash(false)
-            }
-          }}
-        />
-      )}
       <img
         ref={imgRef}
         src={src}
         alt={alt}
         aria-hidden={ariaHidden}
         loading="lazy"
-        onLoad={() => {
-          setLoaded(true)
-        }}
-        onError={() => {
-          setError(true)
-        }}
+        onLoad={handleLoad}
+        onError={handleError}
         className={cn(
-          "relative z-10 h-full w-full object-cover transition-opacity duration-200",
-          !loaded && "opacity-0",
-          loaded && "opacity-100",
+          "h-full w-full object-cover transition-opacity duration-75",
+          loaded ? "opacity-100" : "opacity-0",
           imgClassName,
         )}
       />

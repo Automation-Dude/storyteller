@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
@@ -60,13 +60,25 @@ export function BookDoubleCover({
   book,
   width = 300,
   disableHover = false,
+  onLoadingChange,
 }: {
   book: BookWithRelations
   width?: number
   disableHover?: boolean
+  onLoadingChange?: (loading: boolean) => void
 }) {
   const audiobookRef = useRef<HTMLDivElement>(null)
   const ebookRef = useRef<HTMLDivElement>(null)
+
+  const [audioLoading, setAudioLoading] = useState(true)
+  const [ebookLoading, setEbookLoading] = useState(true)
+
+  const onLoadingChangeRef = useRef(onLoadingChange)
+  onLoadingChangeRef.current = onLoadingChange
+
+  useEffect(() => {
+    onLoadingChangeRef.current?.(audioLoading || ebookLoading)
+  }, [audioLoading, ebookLoading])
 
   const stateRef = useRef<CoverState>("idle")
   const audiobookFrontRef = useRef(false)
@@ -207,6 +219,7 @@ export function BookDoubleCover({
           type="audiobook"
           fallbackColors={fallbackColors}
           className="h-full w-full"
+          onLoadingChange={setAudioLoading}
         />
       </div>
       <div
@@ -221,6 +234,7 @@ export function BookDoubleCover({
           type="ebook"
           fallbackColors={fallbackColors}
           className="h-full w-full"
+          onLoadingChange={setEbookLoading}
         />
       </div>
     </div>

@@ -26,10 +26,12 @@ export function BookCover({
   book,
   width,
   disableHover = false,
+  onLoadingChange,
 }: {
   book: BookWithRelations
   width: number
   disableHover?: boolean
+  onLoadingChange?: (loading: boolean) => void
 }) {
   const hasAudiobook = book.audiobook !== null
   const hasEbook = book.ebook !== null
@@ -54,7 +56,12 @@ export function BookCover({
 
   if (isDualFormat(book)) {
     return (
-      <BookDoubleCover book={book} width={width} disableHover={disableHover} />
+      <BookDoubleCover
+        book={book}
+        width={width}
+        disableHover={disableHover}
+        onLoadingChange={onLoadingChange}
+      />
     )
   }
 
@@ -73,6 +80,7 @@ export function BookCover({
         fallbackColors={book.audiobook?.coverColors}
         className="aspect-square w-full rounded-lg shadow-lg"
         imgClassName={imgClassName}
+        onLoadingChange={onLoadingChange}
       />
     )
   }
@@ -86,6 +94,7 @@ export function BookCover({
       fallbackColors={book.ebook?.coverColors}
       className="h-full rounded-lg"
       imgClassName={imgClassName}
+      onLoadingChange={onLoadingChange}
     />
   )
 }
