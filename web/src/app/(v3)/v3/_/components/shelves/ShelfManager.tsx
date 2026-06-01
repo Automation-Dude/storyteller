@@ -52,12 +52,14 @@ export function ShelfManager({ className }: ShelfManagerProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className={className}>
-          <IconSettings className="mr-2 size-4" />
-          Customize
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm" className={className}>
+            <IconSettings className="mr-2 size-4" />
+            Customize
+          </Button>
+        }
+      />
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Customize Home Shelves</DialogTitle>
@@ -205,9 +207,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   }
 
   const handleEditShelf = (shelfUuid: string) => {
-    const shelf = userShelves.find(
-      (s: ShelfWithBooks) => s.uuid === shelfUuid,
-    )
+    const shelf = userShelves.find((s: ShelfWithBooks) => s.uuid === shelfUuid)
 
     if (shelf) {
       setEditingShelf(shelf)
@@ -431,11 +431,7 @@ function ShelfItem({
       </div>
 
       {onEdit && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onEdit}
-        >
+        <Button variant="ghost" size="icon-sm" onClick={onEdit}>
           <IconPencil className="size-4" />
         </Button>
       )}
