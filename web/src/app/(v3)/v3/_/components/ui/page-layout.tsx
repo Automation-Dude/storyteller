@@ -187,7 +187,7 @@ function PagePanel({
         ref={panelRef}
         data-slot="page-panel"
         className={cn(
-          "overflow-hidden",
+          "bg-background overflow-hidden",
           isResizing && "fixed inset-y-0 right-0 z-40 border-l shadow-xl",
           className,
         )}
@@ -273,9 +273,9 @@ function PageSidebar({
         ref={sidebarRef}
         data-slot="page-sidebar"
         className={cn(
-          "flex h-full flex-col overflow-y-auto",
+          "bg-background border-border flex h-full flex-col overflow-y-auto border-r",
           isResizing
-            ? "fixed inset-y-0 left-0 z-50 shadow-xl"
+            ? "fixed inset-y-0 z-50 shadow-xl"
             : "shrink-0 transition-[width,min-width] duration-300 ease-in-out",
           className,
         )}
