@@ -37,7 +37,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
   }
 
   const {
-    primary: { background },
+    primary: { background, accent, _contrast, contrastBw },
   } = useCoverColors(book, { opacity: 0.2 })
 
   // if (compact) {
@@ -172,6 +172,11 @@ export function HeroSection({ compact }: { compact: boolean }) {
               variant="default"
               size="sm"
               nativeButton={false}
+              style={{
+                background: _contrast >= 128 ? "black" : accent,
+                borderColor: _contrast >= 128 ? "black" : accent,
+                color: _contrast >= 128 ? "white" : contrastBw,
+              }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
                   <IconPlayerPlay className="mr-1 h-4 w-4" />
@@ -186,6 +191,11 @@ export function HeroSection({ compact }: { compact: boolean }) {
               variant="default"
               size="sm"
               nativeButton={false}
+              style={{
+                background: _contrast >= 128 ? "black" : accent,
+                borderColor: _contrast >= 128 ? "black" : accent,
+                color: _contrast >= 128 ? "white" : contrastBw,
+              }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
                   <IconBook className="mr-1 h-4 w-4" />
@@ -200,6 +210,11 @@ export function HeroSection({ compact }: { compact: boolean }) {
               variant="default"
               size="sm"
               nativeButton={false}
+              style={{
+                background: _contrast >= 128 ? "black" : accent,
+                borderColor: _contrast >= 128 ? "black" : accent,
+                color: _contrast >= 128 ? "white" : contrastBw,
+              }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
                   <IconHeadphones className="mr-1 h-4 w-4" />

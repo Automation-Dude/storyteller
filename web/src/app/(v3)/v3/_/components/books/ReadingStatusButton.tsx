@@ -12,6 +12,7 @@ import {
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { useListStatusesQuery, useUpdateStatusMutation } from "@/store/api"
+import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 
 export function ReadingStatusButton({
   book,
@@ -26,6 +27,8 @@ export function ReadingStatusButton({
   const [updateStatus] = useUpdateStatusMutation()
 
   const currentStatus = book.status
+
+  const coverColors = useCoverColors(book)
 
   const handleStatusChange = useCallback(
     async (statusUuid: string) => {
@@ -45,10 +48,20 @@ export function ReadingStatusButton({
         render={
           <Button
             variant="outline"
+            style={{
+              color:
+                coverColors.primary._contrast >= 128
+                  ? "black"
+                  : coverColors.primary.accent,
+              borderColor:
+                coverColors.primary._contrast >= 128
+                  ? "black"
+                  : coverColors.primary.accent,
+            }}
             size={size}
             className={cn(
               "gap-2",
-              currentStatus && "border-primary bg-primary/5 text-primary",
+              // currentStatus && "border-primary bg-primary/5 text-primary",
             )}
           >
             <IconBook className="h-4 w-4" />

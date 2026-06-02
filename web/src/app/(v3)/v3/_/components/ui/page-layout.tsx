@@ -273,7 +273,7 @@ function PageSidebar({
         ref={sidebarRef}
         data-slot="page-sidebar"
         className={cn(
-          "flex h-full flex-col overflow-y-auto bg-red-500",
+          "flex h-full flex-col overflow-y-auto",
           isResizing
             ? "fixed inset-y-0 left-0 z-50 shadow-xl"
             : "shrink-0 transition-[width,min-width] duration-300 ease-in-out",
