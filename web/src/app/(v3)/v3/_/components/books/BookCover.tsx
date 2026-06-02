@@ -78,7 +78,7 @@ export function BookCover({
         blurhash={book.audiobook?.coverBlurhash}
         type="audiobook"
         fallbackColors={book.audiobook?.coverColors}
-        className="aspect-square w-full rounded-lg shadow-lg"
+        className="aspect-square w-full shadow-lg"
         imgClassName={imgClassName}
         onLoadingChange={onLoadingChange}
       />
@@ -92,7 +92,7 @@ export function BookCover({
       blurhash={book.ebook?.coverBlurhash}
       type="ebook"
       fallbackColors={book.ebook?.coverColors}
-      className="h-full rounded-lg"
+      className="h-full"
       imgClassName={imgClassName}
       onLoadingChange={onLoadingChange}
     />

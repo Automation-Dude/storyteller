@@ -15,6 +15,14 @@ export type CoverColors = {
   others: CoverColor[]
 }
 
+const getContrast = (color: JsColor) => {
+  return (
+    Math.round(color.r * 0.2126) +
+    Math.round(color.g * 0.7152) +
+    Math.round(color.b * 0.0722)
+  )
+}
+
 export function useCoverColors(
   colors: JsColor[],
   options?: { opacity?: number },
@@ -40,22 +48,58 @@ export function useCoverColors(
   const baseOpacity = options?.opacity ?? 0.6
   const opacity = resolvedTheme === "dark" ? baseOpacity : baseOpacity * 0.6
 
-  const cc = colors.map((color) => {
-    return {
-      background: `rgba(${Object.values(color).join(",")}, ${opacity})`,
-      accent: `rgba(${Object.values(color).join(",")})`,
-      // taken from https://piccalil.li/blog/some-css-only-contrast-options-until-contrast-color-is-baseline-widely-available/
-      // as a decent substitute until color-contrast() is baseline
-      contrast: `calc(((((${color.r} * 299) + (${color.g} * 587) + (${color.b} * 114)) / 1000) - 128) * -1000)`,
-    }
+  const colorsWithContrast = colors.map((color) => ({
+    color,
+    contrast: getContrast(color),
+  }))
+  const primaryContrast = colorsWithContrast[0].contrast
+
+  const contrastWithPrimary = colorsWithContrast.map((color, index) => {
+    if (index === 0) return { ...color, contrastWithPrimary: 1 }
+
+    const lighter =
+      color.contrast > primaryContrast ? color.contrast : primaryContrast
+    const darker =
+      color.contrast < primaryContrast ? color.contrast : primaryContrast
+    return { ...color, contrastWithPrimary: (lighter + 0.05) / (darker + 0.05) }
   })
 
-  return {
-    primary: cc[0] ?? {
-      background: "var(--primary)",
-      accent: "var(--primary)",
-      contrast: "var(--primary-foreground)",
+  const cc = contrastWithPrimary.map(
+    ({ color, contrast, contrastWithPrimary }) => {
+      return {
+        background: `rgba(${Object.values(color).join(",")}, ${opacity})`,
+        accent: `rgba(${Object.values(color).join(",")})`,
+        contrast: contrast <= 128 ? "white" : "black",
+        _contrast: contrast,
+        _contrastWithPrimary: contrastWithPrimary,
+      }
     },
+  )
+
+  const firstWithHighContrast = cc.reduce(
+    (acc, curr) => {
+      if (
+        curr._contrastWithPrimary > acc._contrastWithPrimary &&
+        curr._contrastWithPrimary > 2
+      ) {
+        return {
+          accent: curr.accent,
+          _contrastWithPrimary: curr._contrastWithPrimary,
+        }
+      }
+      return acc
+    },
+    { accent: "", _contrastWithPrimary: 1 },
+  )
+
+  return {
+    primary: cc[0]
+      ? { ...cc[0], contrast: firstWithHighContrast.accent || cc[0].contrast }
+      : {
+          background: "var(--primary)",
+          accent: "var(--primary)",
+          contrast: "var(--primary-foreground)",
+        },
     others: cc.slice(1),
   }
 }
