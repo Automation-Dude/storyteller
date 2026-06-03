@@ -36,9 +36,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
     await setBookRating({ bookUuid: book.uuid, rating })
   }
 
-  const {
-    primary: { background },
-  } = useCoverColors(book, { opacity: 0.2 })
+  const { primary } = useCoverColors(book)
 
   // if (compact) {
   return (
@@ -49,7 +47,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
           ? "flex-col gap-5 text-center"
           : "flex-col gap-8 md:h-84 md:flex-row",
       )}
-      style={{ background }}
+      style={{ background: primary.alpha(0.2) }}
     >
       <CoverEditor compact={compact} />
 

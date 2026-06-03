@@ -40,11 +40,13 @@ export function ViewSelector() {
     >
       {viewOptions.map((option) => (
         <Tooltip key={option.value}>
-          <TooltipTrigger asChild>
-            <ToggleGroupItem value={option.value} aria-label={option.label}>
-              {option.icon}
-            </ToggleGroupItem>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={() => (
+              <ToggleGroupItem value={option.value} aria-label={option.label}>
+                {option.icon}
+              </ToggleGroupItem>
+            )}
+          />
           <TooltipContent side="bottom">{option.label} view</TooltipContent>
         </Tooltip>
       ))}

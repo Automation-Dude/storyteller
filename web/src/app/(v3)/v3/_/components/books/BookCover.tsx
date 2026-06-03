@@ -110,9 +110,7 @@ export function FallbackCover({
   className?: string
   colors?: JsColor[] | null
 }) {
-  const {
-    primary: { accent, contrast },
-  } = useCoverColors(colors ?? [])
+  const { primary } = useCoverColors(colors ?? [])
 
   return (
     <div
@@ -121,20 +119,23 @@ export function FallbackCover({
         className,
       )}
       style={{
-        background: accent,
+        background: primary.solid,
       }}
     >
       {type === "audiobook" ? (
         <IconHeadphonesFilled
           className="h-12 w-12"
-          style={{ color: contrast }}
+          style={{ color: primary.onColor }}
         />
       ) : (
-        <IconBookFilled className="h-12 w-12" style={{ color: contrast }} />
+        <IconBookFilled
+          className="h-12 w-12"
+          style={{ color: primary.onColor }}
+        />
       )}
       <h3
         className="line-clamp-2 max-w-full text-center text-sm font-medium"
-        style={{ color: contrast }}
+        style={{ color: primary.onColor }}
       >
         {title}
       </h3>

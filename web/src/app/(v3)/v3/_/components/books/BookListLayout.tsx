@@ -1,23 +1,12 @@
 "use client"
 
-import {
-  IconArrowUpRight,
-  IconEdit,
-  IconLoader2,
-  IconScan,
-  IconSquareCheck,
-  IconX,
-} from "@tabler/icons-react"
 import dynamic from "next/dynamic"
-import Link from "next/link"
-import { type ReactNode, useCallback, useState } from "react"
+import { type ReactNode, useCallback } from "react"
 import { Drawer } from "vaul"
 
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { SiteHeader } from "@v3/_/components/site-header"
-import { Button } from "@v3/_/components/ui/button"
-import { Checkbox } from "@v3/_/components/ui/checkbox"
 import {
   PageHeader,
   PageLayout,
@@ -25,16 +14,9 @@ import {
   PagePanel,
   PageSidebar,
 } from "@v3/_/components/ui/page-layout"
-import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { cn } from "@v3/_/lib/utils"
 
-import { usePermission } from "@/hooks/usePermission"
-import {
-  useCancelScanMutation,
-  useGetScanStateQuery,
-  useTriggerBookScanMutation,
-} from "@/store/api"
+import { type BookWithRelations } from "@/database/books"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
@@ -61,6 +43,9 @@ type BookListLayoutProps = {
   children: ReactNode
 
   selectedBookUuid: string | null
+  // the matching row from the list query. forwarded to the detail content,
+  // which seeds the getBook cache from it so the panel needs no extra fetch.
+  selectedBook?: BookWithRelations
   onClosePanel: () => void
 
   allBookUuids?: string[]
@@ -74,13 +59,12 @@ export function BookListLayout({
   headerActions,
   children,
   selectedBookUuid,
+  selectedBook,
   onClosePanel,
   allBookUuids,
 }: BookListLayoutProps) {
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
-  const selection = useOptionalBookSelection()
-  const [panelIsEditing, setPanelIsEditing] = useState(false)
 
   const panelWidth = useAppSelector(
     (state) => state.uiSettings.detailPanelWidth,
@@ -94,27 +78,6 @@ export function BookListLayout({
     },
     [dispatch],
   )
-
-  const panelBookIsSelected = selectedBookUuid
-    ? selection?.isSelected(selectedBookUuid) ?? false
-    : false
-
-  const handleTogglePanelBookSelection = useCallback(() => {
-    if (!selectedBookUuid || !selection) {
-      return
-    }
-
-    if (!selection.isSelecting) {
-      selection.startSelecting()
-    }
-
-    selection.toggleSelection(selectedBookUuid)
-  }, [selectedBookUuid, selection])
-
-  const handleClosePanel = useCallback(() => {
-    setPanelIsEditing(false)
-    onClosePanel()
-  }, [onClosePanel])
 
   const selectionToolbar = allBookUuids ? (
     <SelectionToolbar allBookUuids={allBookUuids} />
@@ -138,7 +101,8 @@ export function BookListLayout({
 
         <BookDetailDrawer
           selectedBookUuid={selectedBookUuid}
-          onClose={handleClosePanel}
+          selectedBook={selectedBook}
+          onClose={onClosePanel}
         />
 
         {selectionToolbar}
@@ -179,26 +143,12 @@ export function BookListLayout({
           className="border-l"
         >
           {selectedBookUuid && (
-            <>
-              <BookPanelHeader
-                bookUuid={selectedBookUuid}
-                isSelected={panelBookIsSelected}
-                onToggleSelection={handleTogglePanelBookSelection}
-                onClose={handleClosePanel}
-                showSelection={!!selection}
-                isEditing={panelIsEditing}
-                onToggleEdit={() => {
-                  setPanelIsEditing((prev) => !prev)
-                }}
-              />
-
-              <DynamicBookDetailsContent
-                uuid={selectedBookUuid as UUID}
-                compact
-                isEditing={panelIsEditing}
-                onEditingChange={setPanelIsEditing}
-              />
-            </>
+            <DynamicBookDetailsContent
+              uuid={selectedBookUuid as UUID}
+              initialBook={selectedBook}
+              compact
+              onClose={onClosePanel}
+            />
           )}
         </PagePanel>
       </PageLayout>
@@ -210,33 +160,16 @@ export function BookListLayout({
 
 export function BookDetailDrawer({
   selectedBookUuid,
+  selectedBook,
   onClose,
 }: {
   selectedBookUuid: string | null
+  selectedBook?: BookWithRelations
   onClose: () => void
 }) {
-  const selection = useOptionalBookSelection()
-  const panelOpen = !!selectedBookUuid
-
-  const panelBookIsSelected = selectedBookUuid
-    ? selection?.isSelected(selectedBookUuid) ?? false
-    : false
-
-  const handleTogglePanelBookSelection = useCallback(() => {
-    if (!selectedBookUuid || !selection) {
-      return
-    }
-
-    if (!selection.isSelecting) {
-      selection.startSelecting()
-    }
-
-    selection.toggleSelection(selectedBookUuid)
-  }, [selectedBookUuid, selection])
-
   return (
     <Drawer.Root
-      open={panelOpen}
+      open={!!selectedBookUuid}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
@@ -244,151 +177,23 @@ export function BookDetailDrawer({
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-black/40" />
 
-        <Drawer.Content className="bg-background fixed right-0 bottom-0 left-0 z-50 flex max-h-[85svh] flex-col rounded-t-2xl">
+        <Drawer.Content className="bg-background fixed right-0 bottom-0 left-0 z-50 flex max-h-[85svh] flex-col overflow-clip rounded-t-2xl">
           <div className="bg-muted-foreground/20 mx-auto mt-4 h-1.5 w-12 shrink-0 rounded-full" />
 
-          <div className="flex items-center justify-between px-4 py-3">
-            <Drawer.Title className="text-lg font-semibold">
-              Book Details
-            </Drawer.Title>
-
-            <div className="flex items-center gap-2">
-              {selection?.isSelecting && selectedBookUuid && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleTogglePanelBookSelection}
-                  className={cn(
-                    panelBookIsSelected &&
-                      "border-primary bg-primary/5 text-primary",
-                  )}
-                >
-                  <IconSquareCheck className="mr-1 h-4 w-4" />
-                  {panelBookIsSelected ? "Selected" : "Select"}
-                </Button>
-              )}
-
-              {selectedBookUuid && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  render={
-                    <Link href={`/v3/books/${selectedBookUuid}`}>
-                      <IconArrowUpRight className="mr-1 h-4 w-4" />
-                      Full Page
-                    </Link>
-                  }
-                />
-              )}
-            </div>
-          </div>
+          <Drawer.Title className="sr-only">Book Details</Drawer.Title>
 
           <div className="scroll-y flex-1 px-0 pb-8">
             {selectedBookUuid && (
               <DynamicBookDetailsContent
                 uuid={selectedBookUuid as UUID}
+                initialBook={selectedBook}
                 compact
+                onClose={onClose}
               />
             )}
           </div>
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
-  )
-}
-
-function BookPanelHeader({
-  bookUuid,
-  isSelected,
-  onToggleSelection,
-  onClose,
-  showSelection,
-  isEditing,
-  onToggleEdit,
-}: {
-  bookUuid: string
-  isSelected: boolean
-  onToggleSelection: () => void
-  onClose: () => void
-  showSelection: boolean
-  isEditing: boolean
-  onToggleEdit: () => void
-}) {
-  const canEdit = usePermission("bookUpdate")
-  const canProcess = usePermission("bookProcess")
-  const canDelete = usePermission("bookDelete")
-
-  const [triggerBookScan, { isLoading: isScanning }] =
-    useTriggerBookScanMutation()
-  const [cancelScan, { isLoading: isCancellingScan }] = useCancelScanMutation()
-  const { data: scanState } = useGetScanStateQuery(undefined, {
-    pollingInterval: 5_000,
-    skip: !canProcess,
-  })
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between border-b px-4 py-2 transition-colors",
-        isSelected && "border-primary/30 bg-primary/5",
-      )}
-    >
-      <div className="flex items-center gap-3">
-        {showSelection && (
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={() => {
-              onToggleSelection()
-            }}
-            className="h-5 w-5"
-          />
-        )}
-
-        <Button
-          variant="ghost"
-          nativeButton={false}
-          size="sm"
-          render={
-            <Link href={`/v3/books/${bookUuid}`}>
-              <IconArrowUpRight className="mr-1 h-4 w-4" />
-              Open Full Page
-            </Link>
-          }
-        />
-      </div>
-
-      <div className="flex items-center gap-1">
-        {canProcess && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              if (isScanning) {
-                void cancelScan()
-              } else {
-                void triggerBookScan({ uuid: bookUuid as UUID, force: true })
-              }
-            }}
-            disabled={isScanning || isCancellingScan}
-          >
-            {isScanning ? (
-              <IconLoader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <IconScan className="h-4 w-4" />
-            )}
-          </Button>
-        )}
-        <Button
-          variant={isEditing ? "secondary" : "ghost"}
-          size="icon-sm"
-          onClick={onToggleEdit}
-        >
-          <IconEdit className="h-4 w-4" />
-        </Button>
-
-        <Button variant="ghost" size="icon-sm" onClick={onClose}>
-          <IconX className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
   )
 }

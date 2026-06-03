@@ -9,9 +9,7 @@ export function ProgressDisplayBar({
   progress: number
   book: BookWithRelations
 }) {
-  const {
-    primary: { accent },
-  } = useCoverColors(book)
+  const { primary } = useCoverColors(book)
 
   return (
     <div className="absolute right-0 bottom-0 left-0 h-1 bg-black/30">
@@ -19,7 +17,7 @@ export function ProgressDisplayBar({
         className="h-full transition-all"
         style={{
           width: `${progress * 100}%`,
-          background: accent,
+          background: primary.solid,
         }}
       />
     </div>

@@ -141,7 +141,7 @@ export function BookFilters({
   return (
     <div
       className={cn(
-        "bg-background sticky top-0 z-50 flex flex-col gap-3 border-b px-4 py-3",
+        "bg-background sticky top-0 z-30 flex flex-col gap-3 border-b px-4 py-3",
         className,
       )}
     >

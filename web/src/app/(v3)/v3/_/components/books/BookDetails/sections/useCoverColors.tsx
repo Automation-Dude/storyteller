@@ -1,105 +1,111 @@
-import { useTheme } from "next-themes"
+import { useMemo } from "react"
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
 import { type BookWithRelations } from "@/database/books"
 
 export type CoverColor = {
-  background: string
-  accent: string
-  contrast: string
+  rgb: { r: number; g: number; b: number }
+  // perceived luminance, 0-255
+  luminance: number
+  isDark: boolean
+  // "rgb(r,g,b)"
+  solid: string
+  // "rgba(r,g,b,a)" at the given opacity
+  alpha: (a: number) => string
+  // readable text color to sit on top of solid
+  onColor: string
 }
 
 export type CoverColors = {
   primary: CoverColor
-  others: CoverColor[]
+  // highest-contrast swatch vs primary, falls back to primary
+  accent: CoverColor
+  // every swatch in source order
+  palette: CoverColor[]
 }
 
-const getContrast = (color: JsColor) => {
-  return (
-    Math.round(color.r * 0.2126) +
-    Math.round(color.g * 0.7152) +
-    Math.round(color.b * 0.0722)
+type CoverType = "ebook" | "audiobook" | "readaloud"
+
+function luminance(color: JsColor): number {
+  return Math.round(
+    color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722,
   )
 }
 
-export function useCoverColors(
-  colors: JsColor[],
-  options?: { opacity?: number },
-): CoverColors
-export function useCoverColors(
-  book: BookWithRelations,
-  options?: { opacity?: number; type?: "ebook" | "audiobook" | "readaloud" },
-): CoverColors
-export function useCoverColors(
-  bookOrColors: BookWithRelations | JsColor[],
-  options?: { opacity?: number; type?: "ebook" | "audiobook" | "readaloud" },
-): CoverColors {
-  const { resolvedTheme } = useTheme()
-  const colors =
-    (Array.isArray(bookOrColors)
-      ? bookOrColors
-      : options?.type
-        ? bookOrColors[options.type]?.coverColors
-        : bookOrColors.ebook?.coverColors ??
-          bookOrColors.audiobook?.coverColors ??
-          bookOrColors.readaloud?.coverColors) ?? []
+// crude contrast ratio between two luminance values (0-255 scale)
+function contrastRatio(a: number, b: number): number {
+  const lighter = Math.max(a, b)
+  const darker = Math.min(a, b)
+  return (lighter + 0.05) / (darker + 0.05)
+}
 
-  const baseOpacity = options?.opacity ?? 0.6
-  const opacity = resolvedTheme === "dark" ? baseOpacity : baseOpacity * 0.6
-
-  const colorsWithContrast = colors.map((color) => ({
-    color,
-    contrast: getContrast(color),
-  }))
-  const primaryContrast = colorsWithContrast[0].contrast
-
-  const contrastWithPrimary = colorsWithContrast.map((color, index) => {
-    if (index === 0) return { ...color, contrastWithPrimary: 1 }
-
-    const lighter =
-      color.contrast > primaryContrast ? color.contrast : primaryContrast
-    const darker =
-      color.contrast < primaryContrast ? color.contrast : primaryContrast
-    return { ...color, contrastWithPrimary: (lighter + 0.05) / (darker + 0.05) }
-  })
-
-  const cc = contrastWithPrimary.map(
-    ({ color, contrast, contrastWithPrimary }) => {
-      return {
-        background: `rgba(${Object.values(color).join(",")}, ${opacity})`,
-        accent: `rgba(${Object.values(color).join(",")})`,
-        contrast: contrast <= 128 ? "white" : "black",
-        _contrast: contrast,
-        _contrastWithPrimary: contrastWithPrimary,
-      }
-    },
-  )
-
-  const firstWithHighContrast = cc.reduce(
-    (acc, curr) => {
-      if (
-        curr._contrastWithPrimary > acc._contrastWithPrimary &&
-        curr._contrastWithPrimary > 2
-      ) {
-        return {
-          accent: curr.accent,
-          _contrastWithPrimary: curr._contrastWithPrimary,
-        }
-      }
-      return acc
-    },
-    { accent: "", _contrastWithPrimary: 1 },
-  )
-
+function toCoverColor(color: JsColor): CoverColor {
+  const { r, g, b } = color
+  const lum = luminance(color)
   return {
-    primary: cc[0]
-      ? { ...cc[0], contrast: firstWithHighContrast.accent || cc[0].contrast }
-      : {
-          background: "var(--primary)",
-          accent: "var(--primary)",
-          contrast: "var(--primary-foreground)",
-        },
-    others: cc.slice(1),
+    rgb: { r, g, b },
+    luminance: lum,
+    isDark: lum < 128,
+    solid: `rgb(${r}, ${g}, ${b})`,
+    alpha: (a: number) => `rgba(${r}, ${g}, ${b}, ${a})`,
+    onColor: lum < 128 ? "#fff" : "#000",
   }
+}
+
+const FALLBACK: CoverColor = {
+  rgb: { r: 0, g: 0, b: 0 },
+  luminance: 0,
+  isDark: true,
+  solid: "var(--primary)",
+  alpha: (a: number) =>
+    `color-mix(in srgb, var(--primary) ${a * 100}%, transparent)`,
+  onColor: "var(--primary-foreground)",
+}
+
+const FALLBACK_COLORS: CoverColors = {
+  primary: FALLBACK,
+  accent: FALLBACK,
+  palette: [FALLBACK],
+}
+
+function resolveColors(
+  bookOrColors: BookWithRelations | JsColor[],
+  type?: CoverType,
+): JsColor[] {
+  if (Array.isArray(bookOrColors)) return bookOrColors
+  if (type) return bookOrColors[type]?.coverColors ?? []
+  return (
+    bookOrColors.ebook?.coverColors ??
+    bookOrColors.audiobook?.coverColors ??
+    bookOrColors.readaloud?.coverColors ??
+    []
+  )
+}
+
+export function useCoverColors(colors: JsColor[]): CoverColors
+export function useCoverColors(
+  book: BookWithRelations | undefined,
+  options?: { type?: CoverType },
+): CoverColors
+export function useCoverColors(
+  bookOrColors: BookWithRelations | JsColor[] | undefined,
+  options?: { type?: CoverType },
+): CoverColors {
+  const type = options?.type
+
+  return useMemo(() => {
+    const colors = bookOrColors ? resolveColors(bookOrColors, type) : []
+    const [primary, ...rest] = colors.map(toCoverColor)
+    if (!primary) return FALLBACK_COLORS
+
+    // pick the swatch that reads most distinctly against the primary
+    const accent = rest.reduce((best, candidate) => {
+      const ratio = contrastRatio(candidate.luminance, primary.luminance)
+      const bestRatio = contrastRatio(best.luminance, primary.luminance)
+      return ratio > 2 && ratio > bestRatio ? candidate : best
+    }, primary)
+
+    return { primary, accent, palette: [primary, ...rest] }
+  }, [bookOrColors, type])
 }

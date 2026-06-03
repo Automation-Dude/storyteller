@@ -131,6 +131,11 @@ export function LibraryPage({
 
   const selectedItemName = allItems.find((i) => i.key === selectedItem)?.name
 
+  const selectedBook = useMemo(
+    () => books?.find((b) => b.uuid === selectedBookUuid),
+    [books, selectedBookUuid],
+  )
+
   const handleSidebarWidthChange = useCallback(
     (width: number) => {
       dispatch(uiSettingsSlice.actions.setLibrarySidebarWidth(width))
@@ -236,6 +241,7 @@ export function LibraryPage({
 
           <BookDetailDrawer
             selectedBookUuid={selectedBookUuid}
+            selectedBook={selectedBook}
             onClose={handleClosePanel}
           />
         </>
@@ -262,6 +268,7 @@ export function LibraryPage({
         ...(selectedItemName ? [{ label: selectedItemName }] : []),
       ]}
       selectedBookUuid={selectedBookUuid}
+      selectedBook={selectedBook}
       onClosePanel={handleClosePanel}
     >
       {booksContent}
