@@ -1,6 +1,11 @@
 "use client"
 
-import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
+import {
+  IconBook,
+  IconClock,
+  IconHeadphones,
+  IconPlayerPlay,
+} from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 
 import {
@@ -16,8 +21,10 @@ import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
+import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 
 import { cn } from "@/cn"
+import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { useSetBookRatingMutation } from "@/store/api"
 
 import { useCoverColors } from "./useCoverColors"
@@ -31,6 +38,11 @@ export function HeroSection({ compact }: { compact: boolean }) {
 
   const authors = book.authors
   const narrators = book.narrators
+
+  // unified length, prominent and format-agnostic (user override wins). the
+  // per-format breakdown still lives in the file section below.
+  const pages = bookPageCount(book)
+  const totalDuration = bookDuration(book)
 
   const handleRatingChange = async (rating: number | null) => {
     await setBookRating({ bookUuid: book.uuid, rating })
@@ -138,6 +150,28 @@ export function HeroSection({ compact }: { compact: boolean }) {
                 ))}
               </p>
             )
+          )}
+
+          {!isEditing && (pages != null || totalDuration != null) && (
+            <div
+              className={cn(
+                "text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium",
+                compact ? "justify-center" : "justify-center md:justify-start",
+              )}
+            >
+              {pages != null && (
+                <span className="inline-flex items-center gap-1">
+                  <IconBook className="h-3.5 w-3.5" />
+                  {pages} pages
+                </span>
+              )}
+              {totalDuration != null && (
+                <span className="inline-flex items-center gap-1">
+                  <IconClock className="h-3.5 w-3.5" />
+                  {formatTimeHuman(totalDuration)}
+                </span>
+              )}
+            </div>
           )}
 
           <div className="mt-1">

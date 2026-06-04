@@ -6,6 +6,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react"
 
 import { Dialog, DialogContent, DialogTitle } from "@v3/_/components/ui/dialog"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { type SpineFit, fitSpine } from "@v3/_/lib/spineFit"
 
 import { type BookWithRelations } from "@/database/books"
@@ -18,11 +19,15 @@ import {
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
 
+// cap at 2x: the cover is the heaviest gpu texture here, 3x triples its area
+// for no visible gain on a small slab and chews memory while turning
 const DPR =
-  typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
+  typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 2
 
-const MIN_THICKNESS = 24
-const MAX_THICKNESS = 80
+// thickness is a *fraction of the cover width*, so a book looks like the same
+// book whether it renders in the panel or fullscreen (only width differs)
+const THICK_MIN_RATIO = 0.07
+const THICK_MAX_RATIO = 0.32
 
 // reference "long" values per metric, used to normalise thickness
 const DURATION_MAX = 108_000 // ~30h in seconds
@@ -41,17 +46,21 @@ const CD_EDGE_H =
   "linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(170,176,188,0.35) 45%, rgba(90,96,108,0.5))"
 
 // audiobook cd case: one disc per ~6h of audio, capped, each disc only adds a
-// little depth so a long listen reads as a fat multi-disc case (not a brick)
+// little depth so a long listen reads as a fat multi-disc case (not a brick).
+// also width-relative for the same panel/fullscreen consistency as books.
 const HOURS_PER_DISC = 6
 const MAX_DISCS = 6
-const CD_BASE_THICKNESS = 22
-const CD_PER_DISC = 7
+const CD_BASE_RATIO = 0.11
+const CD_PER_DISC_RATIO = 0.03
 
-// spine typography, shared with the pretext fitter so measurement matches render
-const SPINE_TITLE_SIZE = 14
-const SPINE_AUTHOR_SIZE = 11
-const SPINE_TITLE_FONT = `${SPINE_TITLE_SIZE}px Georgia, "Times New Roman", serif`
-const SPINE_AUTHOR_FONT = `${SPINE_AUTHOR_SIZE}px ui-sans-serif, system-ui, sans-serif`
+// spine type sizes scale with width too (clamped), so the spine reads the same
+// proportionally at any render size. the pretext fitter is fed these exact
+// values so its measurement matches what we render.
+const SPINE_TITLE_RATIO = 0.072
+const SPINE_TITLE_MIN = 10
+const SPINE_TITLE_MAX = 22
+const SPINE_FONT_SERIF = 'Georgia, "Times New Roman", serif'
+const SPINE_FONT_SANS = "ui-sans-serif, system-ui, sans-serif"
 
 // what to print along the spine
 export type SpineInfo = "title" | "pages" | "duration"
@@ -78,55 +87,45 @@ function formatDuration(seconds: number): string {
   return `${hours}h ${minutes}m`
 }
 
-function pageCount(book: BookWithRelations): number | null {
-  return book.ebook?.pageCount ?? book.readaloud?.pageCount ?? book.pageCount
-}
-
-function duration(book: BookWithRelations): number | null {
-  return book.audiobook?.duration ?? book.readaloud?.duration ?? null
-}
-
 function publicationYear(book: BookWithRelations): number | null {
   if (!book.publicationDate) return null
   const year = new Date(book.publicationDate).getFullYear()
   return Number.isFinite(year) ? year : null
 }
 
-// the best signal we have for how long a book is, by format
-function lengthMetric(
-  book: BookWithRelations,
-): { value: number; max: number } | null {
-  const audioDuration = duration(book)
-  if (audioDuration) return { value: audioDuration, max: DURATION_MAX }
-
-  const pages = pageCount(book)
+function paperMetric(book: BookWithRelations): { value: number; max: number } {
+  const pages = bookPageCount(book)
   if (pages) return { value: pages, max: PAGES_MAX }
 
-  const fileSize =
-    book.ebook?.fileSize ?? book.audiobook?.fileSize ?? book.readaloud?.fileSize
+  const fileSize = book.ebook?.fileSize ?? book.readaloud?.fileSize
   if (fileSize) return { value: fileSize, max: FILE_SIZE_MAX }
 
-  return null
+  const total = bookDuration(book)
+  if (total) return { value: total, max: DURATION_MAX }
+
+  return { value: 0.45 * PAGES_MAX, max: PAGES_MAX } // unknown → middling
 }
 
-export function getBookThickness(book: BookWithRelations): number {
-  const metric = lengthMetric(book)
-  if (!metric) return Math.round((MIN_THICKNESS + MAX_THICKNESS) / 2)
-
-  // sqrt keeps the very long books from dwarfing everything else
-  const norm = clamp(Math.sqrt(metric.value) / Math.sqrt(metric.max), 0, 1)
-  return Math.round(MIN_THICKNESS + norm * (MAX_THICKNESS - MIN_THICKNESS))
+export function getBookThickness(
+  book: BookWithRelations,
+  width: number,
+): number {
+  const metric = paperMetric(book)
+  const norm = clamp(metric.value / metric.max, 0, 1)
+  return Math.round(
+    width * (THICK_MIN_RATIO + norm * (THICK_MAX_RATIO - THICK_MIN_RATIO)),
+  )
 }
 
 // how many discs an audiobook holds, for the cd-case depth + the visible stack
 function discCount(book: BookWithRelations): number {
-  const total = duration(book)
+  const total = bookDuration(book)
   if (!total) return 1
   return clamp(Math.ceil(total / 3600 / HOURS_PER_DISC), 1, MAX_DISCS)
 }
 
-function cdThickness(discs: number): number {
-  return CD_BASE_THICKNESS + (discs - 1) * CD_PER_DISC
+function cdThickness(discs: number, width: number): number {
+  return Math.round(width * (CD_BASE_RATIO + (discs - 1) * CD_PER_DISC_RATIO))
 }
 
 // silver discs floating inside the (clear) jewel case, revealed when it turns
@@ -157,8 +156,9 @@ function DiscStack({
               transform: `translate(-50%, -50%) translateZ(${z}px)`,
               background:
                 "radial-gradient(circle at 50% 38%, #fdfdfe 4%, #d9dde4 30%, #aeb4bf 46%, #e9ecf1 56%, #b7bdc8 72%, #9097a3 88%)",
-              boxShadow:
-                "inset 0 0 0 1px rgba(255,255,255,0.45), 0 1px 6px rgba(0,0,0,0.18)",
+              // inset highlight only; a blurred drop shadow on every disc layer
+              // repaints expensively inside the 3d transform
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.45)",
             }}
           >
             <div
@@ -183,11 +183,11 @@ function spineLabel(
   info: SpineInfo,
 ): { left: string; right: string } {
   if (info === "pages") {
-    const pages = pageCount(book)
+    const pages = bookPageCount(book)
     return { left: "", right: pages ? `${pages} pages` : "—" }
   }
   if (info === "duration") {
-    const total = duration(book)
+    const total = bookDuration(book)
     return { left: "", right: total ? formatDuration(total) : "—" }
   }
   return {
@@ -248,6 +248,7 @@ function DescriptionBack({
     .trim()
 
   const fontSize = clamp(Math.round(width * 0.06), 8, 18)
+  const backFontSize = clamp(Math.round(width * 0.04), 8, 13)
   const pad = Math.round(width * 0.07)
 
   return (
@@ -261,9 +262,9 @@ function DescriptionBack({
     >
       {text ? (
         <p
-          className="text-left font-serif leading-relaxed first-letter:float-left first-letter:mr-[0.1em] first-letter:font-serif first-letter:text-[3.1em] first-letter:leading-[0.72] first-letter:font-semibold"
+          className="max-h-full text-left font-serif leading-relaxed first-letter:float-left first-letter:mr-[0.1em] first-letter:font-serif first-letter:text-[3.1em] first-letter:leading-[0.72] first-letter:font-semibold"
           style={{
-            fontSize,
+            fontSize: backFontSize,
             maskImage: "linear-gradient(to bottom, black 78%, transparent)",
             WebkitMaskImage:
               "linear-gradient(to bottom, black 78%, transparent)",
@@ -327,6 +328,14 @@ function Slab({
   const spineText = accent === primary ? primary.onColor : accent.solid
   const { left, right } = spineLabel(book, spine)
 
+  // spine type scales with width so it stays proportional across render sizes
+  const titleSize = clamp(
+    Math.round(width * SPINE_TITLE_RATIO),
+    SPINE_TITLE_MIN,
+    SPINE_TITLE_MAX,
+  )
+  const authorSize = Math.max(9, Math.round(titleSize * 0.8))
+
   const rotateY = useSpring(0, SPRING)
   const rotateX = useSpring(0, SPRING)
   const [view, setView] = useState(0)
@@ -345,13 +354,13 @@ function Slab({
         author: left,
         length: height - 24,
         thickness,
-        titleFont: SPINE_TITLE_FONT,
-        authorFont: SPINE_AUTHOR_FONT,
-        titleSize: SPINE_TITLE_SIZE,
-        authorSize: SPINE_AUTHOR_SIZE,
+        titleFont: `${titleSize}px ${SPINE_FONT_SERIF}`,
+        authorFont: `${authorSize}px ${SPINE_FONT_SANS}`,
+        titleSize,
+        authorSize,
       }),
     )
-  }, [spine, right, left, height, thickness])
+  }, [spine, right, left, height, thickness, titleSize, authorSize])
   // --- end pretext spine fitting ---
 
   const setViewAngles = (next: number) => {
@@ -432,7 +441,10 @@ function Slab({
         {/* front cover */}
         <div
           className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-clip rounded-r-xs [&_img]:rounded-none!"
-          style={{ transform: `translateZ(${half}px)` }}
+          style={{
+            transform: `translateZ(${half}px)`,
+            backfaceVisibility: "hidden",
+          }}
         >
           {front}
         </div>
@@ -440,7 +452,10 @@ function Slab({
         {/* back: description */}
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden rounded-l-xs"
-          style={{ transform: `rotateY(180deg) translateZ(${half}px)` }}
+          style={{
+            transform: `rotateY(180deg) translateZ(${half}px)`,
+            backfaceVisibility: "hidden",
+          }}
         >
           <DescriptionBack book={book} primary={primary} width={width} />
         </div>
@@ -453,6 +468,7 @@ function Slab({
             left: -half,
             transform: "rotateY(-90deg)",
             background: primary.solid,
+            backfaceVisibility: "hidden",
           }}
         >
           <div
@@ -469,7 +485,7 @@ function Slab({
                 <span
                   className="max-w-full font-serif"
                   style={{
-                    fontSize: SPINE_TITLE_SIZE,
+                    fontSize: titleSize,
                     display: "-webkit-box",
                     WebkitLineClamp: String(fit.titleLines),
                     WebkitBoxOrient: "vertical",
@@ -482,7 +498,7 @@ function Slab({
                   <span
                     className="max-w-full truncate font-sans uppercase opacity-75"
                     style={{
-                      fontSize: SPINE_AUTHOR_SIZE - 1,
+                      fontSize: authorSize,
                       letterSpacing: "0.04em",
                     }}
                   >
@@ -491,7 +507,10 @@ function Slab({
                 )}
               </div>
             ) : (
-              <span className="mx-auto truncate font-serif text-sm tabular-nums">
+              <span
+                className="mx-auto truncate font-serif tabular-nums"
+                style={{ fontSize: titleSize }}
+              >
                 {right}
               </span>
             )}
@@ -506,6 +525,7 @@ function Slab({
             right: -half,
             transform: "rotateY(90deg)",
             background: edgeV,
+            backfaceVisibility: "hidden",
           }}
         />
 
@@ -517,6 +537,7 @@ function Slab({
             top: -half,
             transform: "rotateX(90deg)",
             background: edgeH,
+            backfaceVisibility: "hidden",
           }}
         />
 
@@ -528,6 +549,7 @@ function Slab({
             bottom: -half,
             transform: "rotateX(-90deg)",
             background: edgeH,
+            backfaceVisibility: "hidden",
           }}
         />
 
@@ -558,7 +580,9 @@ function SingleBookStage({
 
   const height = audiobookOnly ? width : Math.round(width * 1.5)
   const discs = audiobookOnly ? discCount(book) : 0
-  const thickness = audiobookOnly ? cdThickness(discs) : getBookThickness(book)
+  const thickness = audiobookOnly
+    ? cdThickness(discs, width)
+    : getBookThickness(book, width)
 
   return (
     <Slab
@@ -598,9 +622,9 @@ function DualStage({
   const [active, setActive] = useState<"ebook" | "audiobook">("ebook")
 
   const w = Math.round(width * 0.78)
-  const ebookThickness = getBookThickness(book)
+  const ebookThickness = getBookThickness(book, w)
   const discs = discCount(book)
-  const audioThickness = cdThickness(discs)
+  const audioThickness = cdThickness(discs, w)
 
   const slabWrap = (id: "ebook" | "audiobook", node: ReactNode) => (
     <motion.div
@@ -706,7 +730,7 @@ export function Book3D({
           setFullscreen(true)
         }}
         aria-label="View full screen"
-        className="bg-background/70 text-foreground/70 hover:text-foreground absolute top-1 right-1 z-30 rounded-md p-1.5 opacity-100 backdrop-blur-sm transition-opacity md:opacity-0 md:group-hover:opacity-100"
+        className="bg-background/85 text-foreground/70 hover:text-foreground absolute top-1 right-1 z-30 rounded-md p-1.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
       >
         <IconArrowsMaximize className="h-4 w-4" />
       </button>
