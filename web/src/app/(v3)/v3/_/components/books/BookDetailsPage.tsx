@@ -15,6 +15,7 @@ import {
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { useCallback, useRef, useState } from "react"
+import { toast } from "sonner"
 
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
@@ -45,6 +46,7 @@ import { DetailsSection } from "./BookDetails/sections/DetailsSection"
 import { DownloadsSection } from "./BookDetails/sections/DownloadsSection"
 import { FileSection } from "./BookDetails/sections/FileSection"
 import { HeroSection } from "./BookDetails/sections/HeroSection"
+import { ReviewSection } from "./BookDetails/sections/ReviewSection"
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 
 type BookDetailsContentProps = {
@@ -185,25 +187,36 @@ function BookDetailsContentInner({
     [isControlled, onEditingChange],
   )
 
-  const { primary } = useCoverColors(book)
+  const { primary, accent } = useCoverColors(book)
 
   return (
     <BookFormProvider
       book={book}
+      canEdit={canEdit ?? false}
       isEditing={isEditing}
       onEditingChange={handleEditingChange}
     >
       <article
         className="scroll-y bg-background relative flex h-full flex-1 flex-col"
-        style={{
-          "--primary": primary.solid,
-        }}
+        style={
+          {
+            "--primary": primary.isDark ? primary.solid : primary.onColor,
+            "--primary-foreground": primary.isDark
+              ? primary.onColor
+              : primary.solid,
+            "--accent": accent.isDark ? accent.solid : accent.onColor,
+            "--accent-foreground": accent.isDark
+              ? accent.onColor
+              : accent.solid,
+          } as React.CSSProperties
+        }
       >
         {!compact && <BookDetailsHeader canEdit={canEdit} />}
         {compact && <BookPanelHeader onClose={onClose} />}
         {compact && <CompactEditBar />}
+        <InlineEditBar />
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="@container/book flex-1 overflow-y-auto">
           <div
             className={cn(
               "flex flex-col gap-4",
@@ -214,6 +227,8 @@ function BookDetailsContentInner({
 
             <div className="flex flex-col gap-5 p-6">
               <DescriptionSection />
+
+              <ReviewSection />
 
               <TranscriptionStatus book={book} />
 
@@ -238,18 +253,22 @@ function BookDetailsContentInner({
 }
 
 function BookDetailsHeader({ canEdit }: { canEdit: boolean | undefined }) {
-  const { book, isEditing, isSaving, setIsEditing, submitForm, form } =
+  const { book, isEditing, isSaving, setIsEditing, submitForm, discard } =
     useBookForm()
   const t = useTranslations("BookDetailsPage")
 
   const handleCancel = () => {
-    form.reset()
-    setIsEditing(false)
+    discard()
   }
 
   const handleSave = async () => {
     const success = await submitForm()
-    if (success) setIsEditing(false)
+    if (success) {
+      setIsEditing(false)
+      return
+    }
+
+    toast.error(t("saveFailed"))
   }
 
   return (
@@ -272,7 +291,10 @@ function BookDetailsHeader({ canEdit }: { canEdit: boolean | undefined }) {
               <Button
                 key="save"
                 size="sm"
-                onClick={() => void handleSave()}
+                type="submit"
+                onClick={() => {
+                  void handleSave()
+                }}
                 disabled={isSaving}
               >
                 <IconCheck className="mr-1 h-4 w-4" />
@@ -298,23 +320,28 @@ function BookDetailsHeader({ canEdit }: { canEdit: boolean | undefined }) {
 }
 
 function CompactEditBar() {
-  const { isEditing, isSaving, setIsEditing, submitForm, form } = useBookForm()
+  const { isEditing, isSaving, setIsEditing, submitForm, discard } =
+    useBookForm()
   const t = useTranslations("BookDetailsPage")
 
   if (!isEditing) return null
 
   const handleCancel = () => {
-    form.reset()
-    setIsEditing(false)
+    discard()
   }
 
   const handleSave = async () => {
     const success = await submitForm()
-    if (success) setIsEditing(false)
+    if (success) {
+      setIsEditing(false)
+      return
+    }
+
+    toast.error(t("saveFailed"))
   }
 
   return (
-    <div className="bg-background sticky top-0 z-10 flex items-center justify-end gap-2 border-b px-4 py-2">
+    <div className="bg-background absolute top-0 z-10 flex items-center justify-end gap-2 border-b px-4 py-2">
       <Button
         size="sm"
         variant="ghost"
@@ -325,9 +352,47 @@ function CompactEditBar() {
         {t("cancel")}
       </Button>
 
-      <Button size="sm" onClick={() => void handleSave()} disabled={isSaving}>
+      <Button
+        size="sm"
+        type="submit"
+        onClick={() => {
+          void handleSave()
+        }}
+        disabled={isSaving}
+      >
         <IconCheck className="mr-1 h-4 w-4" />
         {isSaving ? t("saving") : t("save")}
+      </Button>
+    </div>
+  )
+}
+
+// shown while a single field is being edited inline (outside global edit mode).
+// gives a way to bail out of an in-progress edit; saving happens on blur/Enter.
+function InlineEditBar() {
+  const { isEditing, isSaving, editingField, discard } = useBookForm()
+  const t = useTranslations("BookDetailsPage")
+
+  if (isEditing || editingField === null) return null
+
+  return (
+    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 absolute top-12 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur">
+      <span className="text-muted-foreground text-xs">
+        {isSaving ? t("saving") : t("editing")}
+      </span>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        // mousedown fires before the input blur, so we can cancel the edit
+        // without the blur handler committing it first
+        onMouseDown={(e) => {
+          e.preventDefault()
+          discard()
+        }}
+      >
+        <IconX className="mr-1 h-4 w-4" />
+        {t("discard")}
       </Button>
     </div>
   )
@@ -391,6 +456,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
         <Button
           variant="ghost"
           size="icon-sm"
+          nativeButton={false}
           render={
             <Link href={`/v3/books/${book.uuid}`}>
               <IconArrowUpRight className="size-4" />

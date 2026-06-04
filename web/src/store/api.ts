@@ -633,17 +633,11 @@ export const api = createApi({
         if (updatedFields.includes("description")) {
           body.append("description", JSON.stringify(update.description))
         }
-        if (updatedFields.includes("rating")) {
-          body.append("rating", JSON.stringify(update.rating))
-        }
         if (updatedFields.includes("pageCount")) {
           body.append("pageCount", JSON.stringify(update.pageCount))
         }
         if (updatedFields.includes("duration")) {
           body.append("duration", JSON.stringify(update.duration))
-        }
-        if (updatedFields.includes("rating")) {
-          body.append("rating", JSON.stringify(update.rating))
         }
 
         if (update.tags) {

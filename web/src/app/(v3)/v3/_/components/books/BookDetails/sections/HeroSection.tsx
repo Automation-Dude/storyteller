@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  IconBook,
-  IconClock,
-  IconHeadphones,
-  IconPlayerPlay,
-} from "@tabler/icons-react"
+import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 
 import {
@@ -14,50 +9,52 @@ import {
 } from "@v3/_/components/books/AuthorEditor"
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { CoverEditor } from "@v3/_/components/books/BookDetails/CoverEditor"
+import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
 import { ProgressDisplayBar } from "@v3/_/components/books/ProgressDisplayBar"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
-import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
-import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 
 import { cn } from "@/cn"
-import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
-import { useSetBookRatingMutation } from "@/store/api"
+import {
+  useDeleteBookRatingMutation,
+  useSetBookRatingMutation,
+} from "@/store/api"
 
 import { useCoverColors } from "./useCoverColors"
 
+const BOOK_SIZE = "@2xl/book"
+
 export function HeroSection({ compact }: { compact: boolean }) {
-  const { book, form, isEditing } = useBookForm()
+  const { book, isEditing, isFieldActive } = useBookForm()
   const tLabels = useTranslations("Labels")
   const t = useTranslations("BookDetailsPage")
 
   const [setBookRating] = useSetBookRatingMutation()
+  const [deleteBookRating] = useDeleteBookRatingMutation()
 
   const authors = book.authors
   const narrators = book.narrators
 
-  // unified length, prominent and format-agnostic (user override wins). the
-  // per-format breakdown still lives in the file section below.
-  const pages = bookPageCount(book)
-  const totalDuration = bookDuration(book)
-
   const handleRatingChange = async (rating: number | null) => {
-    await setBookRating({ bookUuid: book.uuid, rating })
+    if (rating == null) {
+      await deleteBookRating({ bookUuid: book.uuid })
+    } else {
+      await setBookRating({ bookUuid: book.uuid, rating })
+    }
   }
 
   const { primary } = useCoverColors(book)
 
-  // if (compact) {
   return (
     <div
       className={cn(
-        "relative flex items-center px-6 pt-7 pb-5",
-        compact
-          ? "flex-col gap-5 text-center"
-          : "flex-col gap-8 md:h-84 md:flex-row",
+        "relative flex flex-col items-center gap-5 px-6 pt-7 pb-5 text-center",
+        // layout reacts to the container width (panel or full page), not the
+        // viewport, so the side panel and main view share one layout
+        `@xl/book:h-80 @xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
       )}
       style={{ background: primary.alpha(0.2) }}
     >
@@ -65,58 +62,45 @@ export function HeroSection({ compact }: { compact: boolean }) {
 
       <div
         className={cn(
-          compact
-            ? "contents"
-            : "flex h-full grow flex-col items-center gap-5 md:items-start md:justify-between md:gap-1.5",
+          "flex h-full w-full grow flex-col items-center gap-5",
+          `@xl/book:items-start @xl/book:justify-between @xl/book:gap-1.5`,
         )}
       >
         <div
           className={cn(
-            "flex flex-col gap-1.5",
-            compact ? "items-center" : "items-center md:items-start",
+            "flex w-full flex-col items-center gap-1.5",
+            `@xl/book:items-start`,
           )}
         >
-          {isEditing ? (
-            <div className="flex w-full flex-col gap-2">
-              <Input
-                id="title"
-                {...form.register("title")}
-                className={cn(
-                  "text-xl font-semibold",
-                  compact ? "text-center" : "text-left",
-                )}
-                placeholder={tLabels("title")}
-                aria-label={tLabels("title")}
-              />
-              <Input
-                id="subtitle"
-                {...form.register("subtitle")}
-                className={cn(
-                  "text-center",
-                  compact ? "text-center" : "text-left",
-                )}
-                placeholder={tLabels("subtitle")}
-                aria-label={tLabels("subtitle")}
-              />
-            </div>
-          ) : (
-            <>
-              <h1 className="font-heading text-xl leading-tight font-normal tracking-tight text-balance">
-                {book.title}
-              </h1>
-              {book.subtitle && (
-                <p className="text-muted-foreground font-heading text-sm italic">
-                  {book.subtitle}
-                </p>
-              )}
-            </>
+          <EditableText
+            name="title"
+            as="h1"
+            className={cn(
+              "font-heading w-full text-center text-xl leading-tight font-normal tracking-tight text-balance",
+              `@xl/book:w-auto @xl/book:text-left`,
+            )}
+            placeholder={tLabels("title")}
+          />
+
+          {(book.subtitle || isFieldActive("subtitle")) && (
+            <EditableText
+              name="subtitle"
+              as="p"
+              className="text-muted-foreground font-heading text-sm italic"
+              placeholder={tLabels("subtitle")}
+            />
           )}
 
           {isEditing ? (
             <AuthorEditor />
           ) : (
             authors.length > 0 && (
-              <p className="text-muted-foreground mt-0.5 flex flex-wrap justify-center gap-x-1 text-xs">
+              <p
+                className={cn(
+                  "text-muted-foreground mt-0.5 flex flex-wrap justify-center gap-x-1 text-xs",
+                  `@xl/book:justify-start`,
+                )}
+              >
                 <span>{t("writtenBy")}</span>
                 {authors.map((author, idx) => (
                   <V3Link
@@ -136,7 +120,12 @@ export function HeroSection({ compact }: { compact: boolean }) {
             <NarratorEditor />
           ) : (
             narrators.length > 0 && (
-              <p className="text-muted-foreground flex flex-wrap justify-center gap-x-1 text-xs">
+              <p
+                className={cn(
+                  "text-muted-foreground flex flex-wrap justify-center gap-x-1 text-xs",
+                  `@xl/book:justify-start`,
+                )}
+              >
                 <span className="italic">{t("narratedBy")}</span>
                 {narrators.map((narrator, idx) => (
                   <V3Link
@@ -150,28 +139,6 @@ export function HeroSection({ compact }: { compact: boolean }) {
                 ))}
               </p>
             )
-          )}
-
-          {!isEditing && (pages != null || totalDuration != null) && (
-            <div
-              className={cn(
-                "text-primary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium",
-                compact ? "justify-center" : "justify-center md:justify-start",
-              )}
-            >
-              {pages != null && (
-                <span className="inline-flex items-center gap-1">
-                  <IconBook className="h-3.5 w-3.5" />
-                  {pages} pages
-                </span>
-              )}
-              {totalDuration != null && (
-                <span className="inline-flex items-center gap-1">
-                  <IconClock className="h-3.5 w-3.5" />
-                  {formatTimeHuman(totalDuration)}
-                </span>
-              )}
-            </div>
           )}
 
           <div className="mt-1">
@@ -196,7 +163,12 @@ export function HeroSection({ compact }: { compact: boolean }) {
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-2">
+        <div
+          className={cn(
+            "flex flex-wrap justify-center gap-2",
+            `w-full @xl/book:justify-between`,
+          )}
+        >
           <ReadingStatusButton book={book} size="sm" />
 
           {book.readaloud?.status === "ALIGNED" && (
@@ -204,11 +176,6 @@ export function HeroSection({ compact }: { compact: boolean }) {
               variant="default"
               size="sm"
               nativeButton={false}
-              style={{
-                background: primary.isDark ? primary.solid : "black",
-                borderColor: primary.isDark ? primary.solid : "black",
-                color: primary.isDark ? primary.onColor : "white",
-              }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
                   <IconPlayerPlay className="mr-1 h-4 w-4" />
@@ -223,11 +190,6 @@ export function HeroSection({ compact }: { compact: boolean }) {
               variant="default"
               size="sm"
               nativeButton={false}
-              style={{
-                background: primary.isDark ? primary.solid : "black",
-                borderColor: primary.isDark ? primary.solid : "black",
-                color: primary.isDark ? primary.onColor : "white",
-              }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
                   <IconBook className="mr-1 h-4 w-4" />
@@ -242,11 +204,6 @@ export function HeroSection({ compact }: { compact: boolean }) {
               variant="default"
               size="sm"
               nativeButton={false}
-              style={{
-                background: primary.isDark ? primary.solid : "black",
-                borderColor: primary.isDark ? primary.solid : "black",
-                color: primary.isDark ? primary.onColor : "white",
-              }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
                   <IconHeadphones className="mr-1 h-4 w-4" />
@@ -256,173 +213,14 @@ export function HeroSection({ compact }: { compact: boolean }) {
             />
           )}
         </div>
-
-        {book.position?.locator && (
-          <ProgressDisplayBar
-            progress={book.position.locator.locations?.totalProgression ?? 0}
-            book={book}
-          />
-        )}
       </div>
+
+      {book.position?.locator && (
+        <ProgressDisplayBar
+          progress={book.position.locator.locations?.totalProgression ?? 0}
+          book={book}
+        />
+      )}
     </div>
   )
-
-  // return (
-  //   <div className="flex flex-col gap-8 md:flex-row">
-  //     <div className="relative w-full" style={{ background }}>
-  //       <div className="flex shrink-0 flex-col items-center gap-3 py-6">
-  //         <CoverEditor compact={compact} />
-  //       </div>
-  //       {book.position?.locator && (
-  //         <ProgressDisplayBar
-  //           progress={book.position.locator.locations?.totalProgression ?? 0}
-  //           book={book}
-  //         />
-  //       )}
-
-  //       <div className="flex flex-1 flex-col p-6 py-0">
-  //         <div className="flex items-start justify-between gap-4">
-  //           {isEditing ? (
-  //             <div className="flex flex-1 flex-col gap-3">
-  //               <Input
-  //                 id="title"
-  //                 {...form.register("title")}
-  //                 className="mt-1 text-2xl font-semibold"
-  //                 placeholder={tLabels("title")}
-  //                 aria-label={tLabels("title")}
-  //               />
-
-  //               <Input
-  //                 id="subtitle"
-  //                 {...form.register("subtitle")}
-  //                 className="mt-1"
-  //                 placeholder={tLabels("subtitle")}
-  //                 aria-label={tLabels("subtitle")}
-  //               />
-  //             </div>
-  //           ) : (
-  //             <div className="flex-1">
-  //               <h1 className="font-heading text-2xl font-normal tracking-tight">
-  //                 {book.title}
-  //               </h1>
-
-  //               {book.subtitle && (
-  //                 <p className="text-muted-foreground font-heading mt-1 text-lg italic">
-  //                   {book.subtitle}
-  //                 </p>
-  //               )}
-  //             </div>
-  //           )}
-  //         </div>
-
-  //         {isEditing ? (
-  //           <AuthorEditor />
-  //         ) : (
-  //           authors.length > 0 && (
-  //             <p className="text-muted-foreground mt-3 flex flex-wrap items-center gap-1 text-sm">
-  //               <span>{t("writtenBy")}</span>
-  //               {authors.map((author, idx) => (
-  //                 <Fragment key={author.uuid}>
-  //                   <V3Link
-  //                     href={`/books?author=${author.uuid}`}
-  //                     className="hover:text-primary text-foreground line-clamp-1 inline font-medium break-all hyphens-auto hover:underline"
-  //                   >
-  //                     {author.name}
-  //                   </V3Link>
-  //                   <span>{idx < authors.length - 1 && ", "}</span>
-  //                 </Fragment>
-  //               ))}
-  //             </p>
-  //           )
-  //         )}
-
-  //         {isEditing ? (
-  //           <NarratorEditor />
-  //         ) : (
-  //           narrators.length > 0 && (
-  //             <div className="text-muted-foreground mt-1 flex items-center gap-1 text-sm">
-  //               <span className="italic">{t("narratedBy")}</span>
-  //               {narrators.map((narrator, idx) => (
-  //                 <span key={narrator.uuid}>
-  //                   <span className="text-foreground">{narrator.name}</span>
-  //                   {idx < narrators.length - 1 && ", "}
-  //                 </span>
-  //               ))}
-  //             </div>
-  //           )
-  //         )}
-
-  //         <div className="mt-3">
-  //           <RatingInput value={book.rating} onChange={handleRatingChange} />
-  //         </div>
-
-  //         <div className="mt-4">
-  //           <SeriesEditor
-  //             bookUuid={book.uuid}
-  //             series={book.series.map((s) => ({
-  //               uuid: s.uuid,
-  //               name: s.name,
-  //               position: s.position,
-  //               featured: s.featured,
-  //             }))}
-  //             onUpdate={() => {}}
-  //             editMode={isEditing}
-  //           />
-  //         </div>
-
-  //         <div className="mt-6 flex flex-wrap items-center gap-2 border-t pt-4">
-  //           <ReadingStatusButton book={book} size="lg" />
-
-  //           {book.readaloud?.status === "ALIGNED" && (
-  //             <Button
-  //               variant="default"
-  //               size="lg"
-  //               nativeButton={false}
-  //               render={
-  //                 <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
-  //                   <IconPlayerPlay className="mr-1 h-4 w-4" />
-  //                   Read
-  //                 </V3Link>
-  //               }
-  //             />
-  //           )}
-
-  //           {book.readaloud?.status !== "ALIGNED" && book.ebook && (
-  //             <Button
-  //               variant="default"
-  //               size="lg"
-  //               nativeButton={false}
-  //               render={
-  //                 <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
-  //                   <IconBook className="mr-1 h-4 w-4" />
-  //                   Read
-  //                 </V3Link>
-  //               }
-  //             />
-  //           )}
-
-  //           {book.readaloud?.status !== "ALIGNED" && book.audiobook && (
-  //             <Button
-  //               variant="default"
-  //               size="lg"
-  //               nativeButton={false}
-  //               render={
-  //                 <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
-  //                   <IconHeadphones className="mr-1 h-4 w-4" />
-  //                   Listen
-  //                 </V3Link>
-  //               }
-  //             />
-  //           )}
-
-  //           {book.publicationDate && !isEditing && (
-  //             <span className="text-muted-foreground ml-auto text-sm">
-  //               {new Date(book.publicationDate).getFullYear()}
-  //             </span>
-  //           )}
-  //         </div>
-  //       </div>
-  //     </div>
-  //   </div>
-  // )
 }

@@ -16,7 +16,6 @@ export const bookFormSchema = z.object({
   authors: z.array(z.string()),
   narrators: z.array(z.string()),
   creators: z.array(editableCreatorSchema),
-  rating: z.number().nullable(),
   textCover: z.instanceof(File).nullable(),
   audioCover: z.instanceof(File).nullable(),
 })

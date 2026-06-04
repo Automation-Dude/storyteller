@@ -272,11 +272,10 @@ function DescriptionBack({
         >
           {text}
         </p>
-      ) : (
-        <p className="m-auto font-serif italic opacity-70" style={{ fontSize }}>
-          No description
-        </p>
-      )}
+      ) : // <p className="m-auto font-serif italic opacity-70" style={{ fontSize }}>
+      //   No description
+      // </p>
+      null}
 
       {year !== null && (
         <span

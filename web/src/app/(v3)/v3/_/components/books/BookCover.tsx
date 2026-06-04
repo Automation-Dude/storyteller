@@ -67,7 +67,7 @@ export function BookCover({
 
   const imgClassName = cn(
     "rounded-lg object-contain",
-    !disableHover && "transition-transform duration-300 group-hover:scale-105",
+    // !disableHover && "transition-transform duration-300 group-hover:scale-105",
   )
 
   if (hasAudiobook && !hasEbook) {

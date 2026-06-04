@@ -3,11 +3,12 @@
 import { useTranslations } from "next-intl"
 import { useEffect, useRef, useState } from "react"
 
-import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
-import { Label } from "@v3/_/components/ui/label"
-import { Textarea } from "@v3/_/components/ui/textarea"
+import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
 
 import { cn } from "@/cn"
+import { PreviewCardPortal } from "@base-ui/react"
+import { createPortal } from "react-dom"
+import { useScroll } from "framer-motion"
 
 const COLLAPSED_HEIGHT = 96
 
@@ -22,15 +23,30 @@ function CollapsibleDescription({ html }: { html: string }) {
     setIsOverflowing(el.scrollHeight > COLLAPSED_HEIGHT + 8)
   }, [html])
 
+  const contentRect = contentRef.current?.getBoundingClientRect()
+  console.log(contentRect, contentRef.current?.scrollTop)
+
+  const { scrollY, scrollX, scrollYProgress } = useScroll({
+    target: contentRef,
+  })
+  console.log("scrollY", scrollY, scrollX, scrollYProgress)
+  scrollY.on("change", (latest) => {
+    console.log("latest", latest)
+  })
+
   return (
-    <div>
+    <div className="relative">
       <div className="relative">
         <div
           ref={contentRef}
           className={cn(
             "prose prose-sm dark:prose-invert max-w-none overflow-hidden text-xs transition-[max-height] duration-300",
           )}
-          style={{ maxHeight: expanded ? contentRef.current?.scrollHeight : COLLAPSED_HEIGHT }}
+          style={{
+            maxHeight: expanded
+              ? contentRef.current?.scrollHeight
+              : COLLAPSED_HEIGHT,
+          }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
 
@@ -39,51 +55,48 @@ function CollapsibleDescription({ html }: { html: string }) {
         )}
       </div>
 
-      {isOverflowing && (
-        <button
-          type="button"
-          onClick={() => {
-            setExpanded((prev) => !prev)
-          }}
-          className="text-primary mt-1 text-xs font-medium hover:underline"
-        >
-          {expanded ? "Hide" : "Show more"}
-        </button>
-      )}
+      {isOverflowing &&
+        createPortal(
+          <button
+            type="button"
+            onClick={() => {
+              setExpanded((prev) => !prev)
+            }}
+            // this needs to hover over the editable field
+            className="text-primary bg-red absolute z-50 mt-1 h-20 w-20 text-xs font-medium hover:underline"
+            style={{
+              // contentRef.current?.getBoundingClientRect().y +
+              top:
+                contentRef.current?.getBoundingClientRect().top -
+                  contentRef.current?.scrollTop ?? 0,
+              left:
+                contentRef.current?.getBoundingClientRect().left +
+                  contentRef.current?.scrollLeft ?? 0,
+            }}
+          >
+            {expanded ? "Hide" : "Show more"}
+          </button>,
+          document.body,
+        )}
     </div>
   )
 }
 
 export function DescriptionSection({ className }: { className?: string }) {
-  const { book, form, isEditing } = useBookForm()
   const t = useTranslations("BookDetailsPage")
   const tLabels = useTranslations("Labels")
 
   return (
     <section className={className}>
-      {isEditing ? (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="description" className="section-label mb-3">
-            {tLabels("description")}
-          </Label>
+      <h2 className="section-label mb-3">{tLabels("description")}</h2>
 
-          <Textarea
-            id="description"
-            {...form.register("description")}
-            className="min-h-32 resize-y"
-          />
-        </div>
-      ) : book.description ? (
-        <div>
-          <h2 className="section-label mb-3">{tLabels("description")}</h2>
-
-          <CollapsibleDescription html={book.description} />
-        </div>
-      ) : (
-        <p className="text-muted-foreground text-sm italic">
-          {t("noDescriptionAvailable")}
-        </p>
-      )}
+      <EditableText
+        name="description"
+        as="div"
+        multiline
+        placeholder={t("noDescriptionAvailable")}
+        renderDisplay={(html) => <CollapsibleDescription html={html} />}
+      />
     </section>
   )
 }

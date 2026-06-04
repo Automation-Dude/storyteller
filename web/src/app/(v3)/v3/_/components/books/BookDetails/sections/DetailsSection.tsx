@@ -1,17 +1,14 @@
 "use client"
 
-import { IconCalendar, IconLanguage } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
-import { useMemo } from "react"
 
-import { Input } from "@v3/_/components/ui/input"
-import { Label } from "@v3/_/components/ui/label"
+import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
+import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
+import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { useFormatDate } from "@v3/_/lib/date"
 import { cn } from "@v3/_/lib/utils"
 
-import { useBookForm } from "../BookFormProvider"
-import { MetadataRow } from "../MetadataRow"
-import { useWatch } from "react-hook-form"
+import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 
 type LocaleInfo = {
   displayName: string
@@ -48,92 +45,87 @@ function getLocaleInfo(code: string): LocaleInfo {
   }
 }
 
+// a single label + value pair occupying two grid cells, so the grid keeps the
+// same shape whether the value is read-only or an inline editor.
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  if (children == null || children === "") return null
+
+  return (
+    <>
+      <span className="text-muted-foreground self-center text-xs uppercase">
+        {label}
+      </span>
+      <div className="text-sm">{children}</div>
+    </>
+  )
+}
+
 export function DetailsSection({ className }: { className?: string }) {
-  const { book, form, isEditing } = useBookForm()
-  const t = useTranslations("BookDetailsPage")
+  const { book } = useBookForm()
   const tLabels = useTranslations("Labels")
   const formatDate = useFormatDate()
 
-  const languageValue = useWatch({ control: form.control, name: "language" })
-  const localeInfo = useMemo(
-    () => getLocaleInfo(languageValue ?? ""),
-    [languageValue],
-  )
+  const pages = bookPageCount(book)
+  const totalDuration = bookDuration(book)
 
   return (
     <section className={className}>
       <h2 className="section-label mb-4">{tLabels("bookDetails")}</h2>
 
-      <div className="grid grid-cols-2 items-center gap-x-4 gap-y-2">
-        {isEditing ? (
-          <>
-            <div>
-              <Label htmlFor="language">{tLabels("language")}</Label>
-
-              <Input
-                id="language"
-                {...form.register("language")}
-                className="mt-1"
-                placeholder="e.g. en, nl, fr-FR"
-              />
-
-              {languageValue && (
-                <p
-                  className={cn(
-                    "mt-1 text-xs",
-                    localeInfo ? "text-muted-foreground" : "text-destructive",
-                  )}
+      <div className="grid grid-cols-2 items-start gap-x-4 gap-y-2">
+        <DetailRow label={tLabels("language")}>
+          <EditableText
+            name="language"
+            className="text-sm"
+            placeholder="e.g. en, nl, fr-FR"
+            renderDisplay={(value) => {
+              const info = getLocaleInfo(value)
+              return (
+                <span
+                  className={cn(!info && "text-destructive")}
+                  title={info?.maximized ?? undefined}
                 >
-                  {localeInfo ? (
-                    <>
-                      {localeInfo.displayName}
-                      {localeInfo.maximized && (
-                        <span className="text-muted-foreground/70">
-                          {" "}
-                          (interpreted as {localeInfo.maximized})
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    t("invalidLanguageCode")
-                  )}
-                </p>
-              )}
-            </div>
+                  {info?.displayName ?? value}
+                </span>
+              )
+            }}
+          />
+        </DetailRow>
 
-            <div>
-              <Label htmlFor="publicationDate">
-                {tLabels("publicationDate")}
-              </Label>
+        <DetailRow label={tLabels("publicationDate")}>
+          <EditableText
+            name="publicationDate"
+            type="date"
+            className="text-sm"
+            renderDisplay={(value) =>
+              formatDate(value, { timeStyle: undefined })
+            }
+          />
+        </DetailRow>
 
-              <Input
-                id="publicationDate"
-                type="date"
-                {...form.register("publicationDate")}
-                className="mt-1"
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <MetadataRow icon={IconLanguage} label={tLabels("language")}>
-              {book.language}
-            </MetadataRow>
-
-            <MetadataRow icon={IconCalendar} label={tLabels("publicationDate")}>
-              {book.publicationDate &&
-                formatDate(book.publicationDate, { timeStyle: undefined })}
-            </MetadataRow>
-
-            <MetadataRow icon={IconCalendar} label={tLabels("added")}>
-              {formatDate(book.createdAt)}
-            </MetadataRow>
-
-            <MetadataRow icon={IconCalendar} label={tLabels("lastUpdated")}>
-              {formatDate(book.updatedAt)}
-            </MetadataRow>
-          </>
+        {pages != null && (
+          <DetailRow label={tLabels("pages")}>{pages}</DetailRow>
         )}
+
+        {totalDuration != null && (
+          <DetailRow label={tLabels("duration")}>
+            {formatTimeHuman(totalDuration)}
+          </DetailRow>
+        )}
+
+        <DetailRow label={tLabels("added")}>
+          {formatDate(book.createdAt)}
+        </DetailRow>
+
+        <DetailRow label={tLabels("lastUpdated")}>
+          {formatDate(book.updatedAt)}
+        </DetailRow>
       </div>
     </section>
   )
