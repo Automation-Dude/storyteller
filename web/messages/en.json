@@ -380,6 +380,8 @@
   "BookDetailsPage": {
     "bookNotFound": "Book not found",
     "noDescriptionAvailable": "No description available",
+    "showMore": "Show more",
+    "showLess": "Show less",
     "narratedBy": "narrated by",
     "writtenBy": "by",
     "addAuthor": "Add author...",

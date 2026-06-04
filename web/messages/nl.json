@@ -375,6 +375,8 @@
   "BookDetailsPage": {
     "bookNotFound": "Boek niet gevonden",
     "noDescriptionAvailable": "Geen beschrijving",
+    "showMore": "Meer tonen",
+    "showLess": "Minder tonen",
     "narratedBy": "verteld door",
     "writtenBy": "door",
     "addAuthor": "Auteur toevoegen...",

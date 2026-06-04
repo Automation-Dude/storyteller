@@ -77,8 +77,7 @@ export function EditableText({
   }, [inlineMode, type])
 
   if (!active) {
-    const text = (value ?? "").trim()
-    console.log("text", text, canEdit)
+    const text = value?.trim() ?? ""
     return (
       <As
         className={cn(
@@ -180,10 +179,14 @@ export function EditableText({
                   field.ref(el)
                   ref.current = el
                 }}
-                rows={5}
+                // single line for scalar fields, taller for multiline ones.
+                // when we measured the display box (inline edit) the size below
+                // takes over; in global edit there is nothing to measure, so we
+                // fall back to content sizing instead of a fixed 5-row height.
+                rows={multiline ? 5 : 1}
                 style={{
                   width: size?.width ?? "100%",
-                  height: size?.height ?? "100%",
+                  height: size?.height,
                 }}
                 className={cn(
                   commonProps.className,
@@ -196,7 +199,7 @@ export function EditableText({
                 type={type}
                 style={{
                   width: size?.width ?? "100%",
-                  height: size?.height ?? "100%",
+                  height: size?.height,
                 }}
                 ref={(el) => {
                   field.ref(el)

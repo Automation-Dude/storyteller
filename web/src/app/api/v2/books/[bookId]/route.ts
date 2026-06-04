@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { type CoverData, persistCover } from "@/assets/covers"
+import { type CoverData, type CoverKind, persistCover } from "@/assets/covers"
 import { deleteAssets } from "@/assets/fs"
 import { withHasPermission } from "@/auth/auth"
 import {
@@ -10,8 +10,10 @@ import {
   deleteBook,
   getBook,
   getBookUuid,
+  setFormatCoverData,
   updateBook,
 } from "@/database/books"
+import { generateBlurhash, getCoverColors } from "@/images"
 import { type UUID } from "@/uuid"
 import { queueWritesToFiles } from "@/writeToFiles/fileWriteDistributor"
 
@@ -199,15 +201,21 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
   const audioCover = formData.get("audioCover")?.valueOf() as File | undefined
 
   if (textCover) {
-    await persistCover(updated, "ebook", await coverDataFromFile(textCover))
+    const cover = await coverDataFromFile(textCover)
+    await persistCover(updated, "ebook", cover)
+    const derived = await coverDerivedData(cover, "ebook")
+    // the text cover backs both the ebook and the readaloud display
+    await setFormatCoverData(updated.uuid, "ebook", derived)
+    if (updated.readaloud) {
+      await setFormatCoverData(updated.uuid, "readaloud", derived)
+    }
   }
 
   if (audioCover) {
-    await persistCover(
-      updated,
-      "audiobook",
-      await coverDataFromFile(audioCover),
-    )
+    const cover = await coverDataFromFile(audioCover)
+    await persistCover(updated, "audiobook", cover)
+    const derived = await coverDerivedData(cover, "audiobook")
+    await setFormatCoverData(updated.uuid, "audiobook", derived)
   }
 
   void queueWritesToFiles(book.uuid, textCover, audioCover)
@@ -220,6 +228,16 @@ async function coverDataFromFile(file: File): Promise<CoverData> {
     filename: file.name,
     mimeType: file.type || "image/jpeg",
     data: await file.bytes(),
+  }
+}
+
+// blurhash + dominant colors for the placeholder / theme, mirroring what the
+// library scanner computes on ingest (see scanner/steps/extract-covers.ts).
+async function coverDerivedData(cover: CoverData, kind: CoverKind) {
+  const buffer = Buffer.from(cover.data)
+  return {
+    coverColors: getCoverColors(buffer),
+    coverBlurhash: await generateBlurhash(buffer, kind),
   }
 }
 

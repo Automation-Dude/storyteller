@@ -430,7 +430,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
     <div
       className="flex items-center justify-between border-b px-4 py-2"
       style={{
-        backgroundColor: primary.solid,
+        backgroundColor: primary.alpha(0.5),
         color: primary.onColor,
         ...(isSelected && { borderColor: accent.solid }),
       }}

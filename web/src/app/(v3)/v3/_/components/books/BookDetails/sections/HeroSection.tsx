@@ -37,10 +37,13 @@ export function HeroSection({ compact }: { compact: boolean }) {
   const narrators = book.narrators
 
   const handleRatingChange = async (rating: number | null) => {
-    if (rating == null) {
+    // preserve any existing review when changing / clearing the rating; only
+    // drop the whole row when there's nothing left to keep
+    const review = book.rating?.review ?? null
+    if (rating == null && !review) {
       await deleteBookRating({ bookUuid: book.uuid })
     } else {
-      await setBookRating({ bookUuid: book.uuid, rating })
+      await setBookRating({ bookUuid: book.uuid, rating, review })
     }
   }
 
@@ -52,7 +55,10 @@ export function HeroSection({ compact }: { compact: boolean }) {
         "relative flex flex-col items-center gap-5 px-6 pt-7 pb-5 text-center",
         // layout reacts to the container width (panel or full page), not the
         // viewport, so the side panel and main view share one layout
-        `@xl/book:h-80 @xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
+        `@xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
+        // fixed slim height only at rest; editing needs room for the cover
+        // upload slots (movement on entering edit mode is acceptable)
+        !isEditing && `@xl/book:h-80`,
       )}
       style={{ background: primary.alpha(0.2) }}
     >

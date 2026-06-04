@@ -9,6 +9,7 @@ import { jsonArrayFrom, jsonObjectFrom } from "kysely/helpers/sqlite"
 
 import type { Audiobook as AudiobookAsset } from "@storyteller-platform/audiobook"
 import type { EpubReader } from "@storyteller-platform/epub"
+import type { JsColor } from "@storyteller-platform/okmain"
 
 import type {
   ProcessingTaskStatus,
@@ -572,7 +573,7 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
             jsonObjectFrom(
               eb
                 .selectFrom("userBookRating")
-                .select(["userBookRating.rating"])
+                .select(["userBookRating.rating", "userBookRating.review"])
                 .whereRef("userBookRating.bookUuid", "=", "book.uuid")
                 .where("userBookRating.userId", "=", userId),
             ).as("rating"),
@@ -1518,6 +1519,53 @@ export async function touchBook(uuid: UUID, userId?: UUID) {
 }
 
 export type BookFormat = "ebook" | "audiobook" | "readaloud"
+
+/**
+ * persist the blurhash + dominant colors derived from a freshly uploaded cover.
+ * called after persistCover so the placeholder + theme reflect the new art
+ * instead of the old one.
+ */
+export async function setFormatCoverData(
+  uuid: UUID,
+  format: BookFormat,
+  data: { coverBlurhash?: string | null; coverColors?: JsColor[] | null },
+): Promise<void> {
+  const set = {
+    ...(data.coverBlurhash !== undefined && {
+      coverBlurhash: data.coverBlurhash,
+    }),
+    ...(data.coverColors !== undefined && {
+      coverColors:
+        data.coverColors == null ? null : JSON.stringify(data.coverColors),
+    }),
+  }
+
+  if (Object.keys(set).length === 0) return
+
+  switch (format) {
+    case "ebook":
+      await db
+        .updateTable("ebook")
+        .set(set)
+        .where("bookUuid", "=", uuid)
+        .execute()
+      break
+    case "audiobook":
+      await db
+        .updateTable("audiobook")
+        .set(set)
+        .where("bookUuid", "=", uuid)
+        .execute()
+      break
+    case "readaloud":
+      await db
+        .updateTable("readaloud")
+        .set(set)
+        .where("bookUuid", "=", uuid)
+        .execute()
+      break
+  }
+}
 
 /**
  * marks a format as missing in the database when we discover at runtime

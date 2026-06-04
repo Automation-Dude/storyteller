@@ -988,7 +988,7 @@ export const api = createApi({
     getBookRating: build.query<UserBookRating | null, { bookUuid: UUID }>({
       query: ({ bookUuid }) => `/books/${bookUuid}/rating`,
       providesTags: (_result, _error, { bookUuid }) => [
-        { type: "UserRatings", id: bookUuid },
+        { type: "UserRatings", id: `${bookUuid}-${_result?.userId}` },
       ],
     }),
     setBookRating: build.mutation<
@@ -1021,9 +1021,10 @@ export const api = createApi({
     listUserRatings: build.query<UserBookRating[], void>({
       query: () => "/user/ratings",
       providesTags: (ratings) =>
-        ratings?.map((r) => ({ type: "UserRatings", id: r.bookUuid })) ?? [
-          "UserRatings",
-        ],
+        ratings?.map((r) => ({
+          type: "UserRatings",
+          id: `${r.bookUuid}-${r.userId}`,
+        })) ?? ["UserRatings"],
     }),
 
     getInfiniteChangelog: build.infiniteQuery<
@@ -1188,7 +1189,8 @@ export const api = createApi({
         if (params.limit) searchParams.set("limit", String(params.limit))
         if (params.offset) searchParams.set("offset", String(params.offset))
         if (params.orderBy) searchParams.set("orderBy", params.orderBy)
-        if (params.orderDirection) searchParams.set("orderDirection", params.orderDirection)
+        if (params.orderDirection)
+          searchParams.set("orderDirection", params.orderDirection)
 
         return `/shelves/${shelfUuid}/books?${searchParams.toString()}`
       },

@@ -12,7 +12,6 @@ import { Textarea } from "@v3/_/components/ui/textarea"
 
 import {
   useDeleteBookRatingMutation,
-  useGetBookRatingQuery,
   useSetBookRatingMutation,
 } from "@/store/api"
 
@@ -20,12 +19,11 @@ export function ReviewSection({ className }: { className?: string }) {
   const { book } = useBookForm()
   const t = useTranslations("BookDetailsPage")
 
-  const { data: rating } = useGetBookRatingQuery({ bookUuid: book.uuid })
   const [setBookRating, { isLoading: isSaving }] = useSetBookRatingMutation()
   const [deleteBookRating] = useDeleteBookRatingMutation()
 
-  const currentRating = rating?.rating ?? null
-  const currentReview = rating?.review ?? ""
+  const currentRating = book.rating?.rating ?? null
+  const currentReview = book.rating?.review ?? ""
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
@@ -36,12 +34,18 @@ export function ReviewSection({ className }: { className?: string }) {
   }
 
   const handleRatingChange = async (value: number | null) => {
-    // clearing the only signal we have removes the row entirely
+    // clearing the rating with no review removes the row entirely; otherwise
+    // keep the review so it isn't dropped (and so the server doesn't 405 on a
+    // request with neither field set)
     if (value == null && !currentReview) {
       await deleteBookRating({ bookUuid: book.uuid })
       return
     }
-    await setBookRating({ bookUuid: book.uuid, rating: value })
+    await setBookRating({
+      bookUuid: book.uuid,
+      rating: value,
+      review: currentReview || null,
+    })
   }
 
   const handleSaveReview = async () => {
@@ -60,10 +64,19 @@ export function ReviewSection({ className }: { className?: string }) {
 
   return (
     <section className={className}>
-      <h2 className="section-label mb-3">
-        <IconStar className="h-4 w-4" />
-        {t("review.title")}
-      </h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="section-label flex-1">
+          <IconStar className="h-4 w-4" />
+          {t("review.title")}
+        </h2>
+
+        {!editing && (
+          <Button size="sm" variant="ghost" onClick={startEdit}>
+            <IconPencil className="mr-1 h-3.5 w-3.5" />
+            {currentReview ? t("review.edit") : t("review.addReview")}
+          </Button>
+        )}
+      </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
@@ -108,28 +121,10 @@ export function ReviewSection({ className }: { className?: string }) {
               </Button>
             </div>
           </Field>
-        ) : currentReview ? (
-          <button
-            type="button"
-            onClick={startEdit}
-            className="group hover:bg-input/10 -mx-1.5 rounded-md px-1.5 py-1 text-left transition-colors"
-          >
-            <p className="text-sm whitespace-pre-wrap">{currentReview}</p>
-            <span className="text-primary mt-1 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
-              <IconPencil className="h-3 w-3" />
-              {t("review.edit")}
-            </span>
-          </button>
         ) : (
-          <Button
-            size="sm"
-            variant="outline"
-            className="self-start"
-            onClick={startEdit}
-          >
-            <IconPencil className="mr-1 h-3.5 w-3.5" />
-            {t("review.addReview")}
-          </Button>
+          currentReview && (
+            <p className="text-sm whitespace-pre-wrap">{currentReview}</p>
+          )
         )}
       </div>
     </section>
