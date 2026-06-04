@@ -50,7 +50,7 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
   }
 
   return (
-    <section className="mb-8">
+    <section className="mb-3">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="section-label flex-1">
           <IconProgress className="h-4 w-4" />

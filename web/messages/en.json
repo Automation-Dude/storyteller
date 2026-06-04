@@ -390,6 +390,20 @@
     "saving": "Saving...",
     "save": "Save",
     "cancel": "Cancel",
+    "discard": "Discard",
+    "editing": "Editing…",
+    "saveFailed": "Failed to save changes",
+    "review": {
+      "title": "My notes & review",
+      "addReview": "Add a review",
+      "yourRating": "Your rating",
+      "yourReview": "Your review",
+      "reviewPlaceholder": "What did you think of this book?",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "clear": "Clear"
+    },
 
     "scan": {
       "title": "Scan",
@@ -448,6 +462,8 @@
     "publicationDate": "Publication Date",
     "collections": "Collections",
     "bookDetails": "Book Details",
+    "pages": "Pages",
+    "duration": "Duration",
     "added": "Added",
     "lastUpdated": "Last Updated",
     "authors": "Authors",

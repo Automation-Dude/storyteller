@@ -385,6 +385,20 @@
     "saving": "Aan het opslaan...",
     "save": "Opslaan",
     "cancel": "Annuleren",
+    "discard": "Verwerpen",
+    "editing": "Bezig met bewerken…",
+    "saveFailed": "Opslaan mislukt",
+    "review": {
+      "title": "Mijn notities & recensie",
+      "addReview": "Voeg een recensie toe",
+      "yourRating": "Jouw beoordeling",
+      "yourReview": "Jouw recensie",
+      "reviewPlaceholder": "Wat vond je van dit boek?",
+      "edit": "Bewerken",
+      "save": "Opslaan",
+      "cancel": "Annuleren",
+      "clear": "Wissen"
+    },
     "downloads": {
       "downloadReadaloud": "Download Readaloud",
       "downloadEbook": "Download Ebook",
@@ -425,6 +439,8 @@
 
     "tags": "Labels",
     "bookDetails": "Details",
+    "pages": "Pagina's",
+    "duration": "Duur",
     "added": "Toegevoegd",
     "lastUpdated": "Laatst bijgewerkt",
     "authors": "Auteurs",

@@ -232,8 +232,10 @@ function BookDetailsContentInner({
 
               <TranscriptionStatus book={book} />
 
-              <TagsSection />
-              <CollectionsSection />
+              <div className="flex w-full flex-col gap-4 @xl/book:grid @xl/book:grid-cols-2 @xl/book:gap-10">
+                <TagsSection />
+                <CollectionsSection />
+              </div>
 
               <ContributorsSection />
 

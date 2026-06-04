@@ -25,8 +25,6 @@ import {
 
 import { useCoverColors } from "./useCoverColors"
 
-const BOOK_SIZE = "@2xl/book"
-
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, isEditing, isFieldActive } = useBookForm()
   const tLabels = useTranslations("Labels")

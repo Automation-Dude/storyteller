@@ -124,8 +124,8 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="relative">
+    <div className="flex h-full flex-col gap-3">
+      <div className="relative h-full">
         {textPreviewUrl ? (
           <img
             src={textPreviewUrl}
@@ -138,7 +138,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
         )}
       </div>
 
-      <div className="flex w-52 flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 @xl/book:w-auto">
         {canSetEbookCover && (
           <CoverUploadRow
             label="Ebook cover"
