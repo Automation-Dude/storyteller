@@ -2,11 +2,11 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import {
-  getHomeShelves,
-  setHomeShelves,
-  addHomeShelf,
-  initializeDefaultHomeShelves,
   type HomeShelfType,
+  addHomeShelf,
+  getHomeShelves,
+  initializeDefaultHomeShelves,
+  setHomeShelves,
 } from "@/database/shelves"
 import { type UUID } from "@/uuid"
 

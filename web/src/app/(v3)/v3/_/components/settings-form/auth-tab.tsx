@@ -9,10 +9,6 @@ import {
   useWatch,
 } from "react-hook-form"
 
-import { Providers } from "@/auth/providers"
-import { cn } from "@/cn"
-import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
-import type { UserPermissionSet } from "@/database/users"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -41,6 +37,11 @@ import {
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+
+import { Providers } from "@/auth/providers"
+import { cn } from "@/cn"
+import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
+import type { UserPermissionSet } from "@/database/users"
 
 import { LockTooltip, useSettingsForm } from "./SettingsFormProvider"
 import { type SettingsFormForm, SettingsSection, safeUrl } from "./shared"

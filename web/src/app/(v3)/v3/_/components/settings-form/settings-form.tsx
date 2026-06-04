@@ -22,23 +22,24 @@ import { type FieldErrors, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { type z } from "zod"
 
-import { type Settings } from "@/apiModels"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@v3/_/components/ui/tooltip"
-import { SettingsSchema } from "@/database/settingsTypes"
-import {
-  useGetMaxUploadChunkSizeQuery,
-  useUpdateSettingsMutation,
-} from "@/store/api"
 
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { Tabs, TabsList, TabsTrigger } from "@v3/_/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@v3/_/components/ui/tooltip"
+
+import { type Settings } from "@/apiModels"
+import { SettingsSchema } from "@/database/settingsTypes"
+import {
+  useGetMaxUploadChunkSizeQuery,
+  useUpdateSettingsMutation,
+} from "@/store/api"
 
 import { SettingsFormProvider } from "./SettingsFormProvider"
 import { AuthTab } from "./auth-tab"

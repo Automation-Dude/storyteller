@@ -8,13 +8,6 @@ import {
   type Shelves,
   type User,
 } from "@/apiModels"
-import {
-  type HomeShelfWithDetails,
-  type HomeShelfType,
-  type ShelfWithBooks,
-  type ShelfOrderBy,
-} from "@/database/shelves"
-import { type ShelfFilter } from "@/database/shelfFilter"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
 import {
   type BookRelationsUpdate,
@@ -38,6 +31,13 @@ import {
   type ImportMode,
   type MetadataFieldOverrides,
 } from "@/database/settingsTypes"
+import { type ShelfFilter } from "@/database/shelfFilter"
+import {
+  type HomeShelfType,
+  type HomeShelfWithDetails,
+  type ShelfOrderBy,
+  type ShelfWithBooks,
+} from "@/database/shelves"
 import { type Status } from "@/database/statuses"
 import { type Tag } from "@/database/tags"
 import { type UserBookRating } from "@/database/userRatings"

@@ -12,7 +12,6 @@ import { useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 
 import { LocaleChanger } from "@v3/_/components/locale-changer"
-import { useVersionBasePath } from "@v3/_/components/version-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +30,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@v3/_/components/ui/sidebar"
+import { useVersionBasePath } from "@v3/_/components/version-context"
 
 export function NavUser({
   user,

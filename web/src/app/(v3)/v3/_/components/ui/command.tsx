@@ -1,9 +1,9 @@
 "use client"
 
-import * as React from "react"
+import { IconCheck, IconSearch } from "@tabler/icons-react"
 import { Command as CommandPrimitive } from "cmdk"
+import * as React from "react"
 
-import { cn } from "@v3/_/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
 import { InputGroup, InputGroupAddon } from "@v3/_/components/ui/input-group"
-import { IconSearch, IconCheck } from "@tabler/icons-react"
+import { cn } from "@v3/_/lib/utils"
+
 
 function Command({
   className,
@@ -183,11 +184,11 @@ function CommandShortcut({
 export {
   Command,
   CommandDialog,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
-  CommandShortcut,
+  CommandList,
   CommandSeparator,
+  CommandShortcut,
 }

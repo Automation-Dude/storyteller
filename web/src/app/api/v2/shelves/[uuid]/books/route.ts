@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import {
-  addBooksToShelf,
-  removeBooksFromShelf,
-  getShelfBooks,
   type GetShelfBooksOptions,
+  addBooksToShelf,
+  getShelfBooks,
+  removeBooksFromShelf,
 } from "@/database/shelves"
 import { type UUID } from "@/uuid"
 

@@ -2,15 +2,16 @@ import { type Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import { getMessages, getTranslations } from "next-intl/server"
 
-import { nextAuth } from "@/auth/auth"
-import { getConfigLockedKeys, getSettings } from "@/database/settings"
-import { getCurrentVersion } from "@/versions"
-
 import { SettingsForm } from "@v3/_/components/settings-form/settings-form"
 import {
   type SectionKeywords,
   settingsFormTabs,
 } from "@v3/_/components/settings-form/tabs"
+
+import { nextAuth } from "@/auth/auth"
+import { getConfigLockedKeys, getSettings } from "@/database/settings"
+import { getCurrentVersion } from "@/versions"
+
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("SettingsPage")

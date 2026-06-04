@@ -3,8 +3,6 @@ import { useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useUpdateSeriesMutation } from "@/store/api"
-import { type UUID } from "@/uuid"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -23,6 +21,9 @@ import {
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Textarea } from "@v3/_/components/ui/textarea"
+
+import { useUpdateSeriesMutation } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 const seriesSchema = z.object({
   name: z.string().min(1, "Name is required"),

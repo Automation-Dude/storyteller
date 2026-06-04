@@ -4,9 +4,6 @@ import { IconEye, IconEyeOff, IconLoader } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 
-import { type ChangelogEntry } from "@/database/changelog"
-import { api, useGetLatestVersionQuery } from "@/store/api"
-import { BETA_TAGS, compareVersions } from "@/versions"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -18,6 +15,10 @@ import {
   CardTitle,
 } from "@v3/_/components/ui/card"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+
+import { type ChangelogEntry } from "@/database/changelog"
+import { api, useGetLatestVersionQuery } from "@/store/api"
+import { BETA_TAGS, compareVersions } from "@/versions"
 
 export const DISMISSED_VERSION_KEY = "storyteller_dismissed_changelog_version"
 

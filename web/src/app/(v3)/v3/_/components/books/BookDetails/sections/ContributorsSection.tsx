@@ -4,7 +4,6 @@ import { IconPlus, IconUser, IconX } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 import { Controller, useFieldArray } from "react-hook-form"
 
-import { creatorRelators } from "@/components/books/edit/marcRelators"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { Badge } from "@v3/_/components/ui/badge"
@@ -17,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
+
+import { creatorRelators } from "@/components/books/edit/marcRelators"
 
 export function ContributorsSection({ className }: { className?: string }) {
   const { book, isEditing } = useBookForm()

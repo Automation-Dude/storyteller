@@ -6,6 +6,7 @@ import {
   IconProgress,
   IconX,
 } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -18,7 +19,6 @@ import {
   useProcessBookMutation,
 } from "@/store/api"
 
-import { useTranslations } from "next-intl"
 import { ProcessingModal } from "./ProcessingModal"
 
 const PROCESSING_STAGE_LABELS: Record<string, string> = {

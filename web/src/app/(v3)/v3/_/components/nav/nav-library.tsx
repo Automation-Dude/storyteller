@@ -12,8 +12,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@v3/_/components/ui/sidebar"
-import { useVersionBasePath } from "@v3/_/components/version-context"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useVersionBasePath } from "@v3/_/components/version-context"
 import { type CountResult } from "@v3/_/hooks/use-library-counts"
 
 export type NavLibraryItem = {

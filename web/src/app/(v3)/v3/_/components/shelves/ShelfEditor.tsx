@@ -1,9 +1,9 @@
 "use client"
 
+import { zodResolver } from "@hookform/resolvers/zod"
 import { IconLoader2, IconPlus, IconSearch, IconX } from "@tabler/icons-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -249,7 +249,7 @@ export function ShelfEditor({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => setFilter(null)}
+                      onClick={() => { setFilter(null); }}
                       className="h-6 gap-1 text-xs"
                     >
                       <IconX className="size-3" />
@@ -260,7 +260,7 @@ export function ShelfEditor({
                   <div className="bg-muted flex rounded-md p-0.5">
                     <button
                       type="button"
-                      onClick={() => handleModeChange("filter")}
+                      onClick={() => { handleModeChange("filter"); }}
                       className={`rounded px-2 py-1 text-xs transition-colors ${
                         selectionMode === "filter"
                           ? "bg-background shadow-sm"
@@ -271,7 +271,7 @@ export function ShelfEditor({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleModeChange("manual")}
+                      onClick={() => { handleModeChange("manual"); }}
                       className={`rounded px-2 py-1 text-xs transition-colors ${
                         selectionMode === "manual"
                           ? "bg-background shadow-sm"
@@ -302,7 +302,7 @@ export function ShelfEditor({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setSelectedBookUuids([])}
+                        onClick={() => { setSelectedBookUuids([]); }}
                         className="h-6 gap-1 text-xs"
                       >
                         <IconX className="size-3" />
@@ -350,7 +350,7 @@ export function ShelfEditor({
                   <Select
                     value={orderBy}
                     onValueChange={(v) =>
-                      form.setValue("orderBy", v as ShelfOrderBy)
+                      { form.setValue("orderBy", v as ShelfOrderBy); }
                     }
                   >
                     <SelectTrigger className="h-7 w-[130px] text-xs">
@@ -371,7 +371,7 @@ export function ShelfEditor({
                 <Select
                   value={orderDirection}
                   onValueChange={(v) =>
-                    form.setValue("orderDirection", v as "asc" | "desc")
+                    { form.setValue("orderDirection", v as "asc" | "desc"); }
                   }
                 >
                   <SelectTrigger className="h-7 w-[100px] text-xs">
@@ -408,7 +408,7 @@ export function ShelfEditor({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => { onOpenChange(false); }}
               disabled={isSaving}
             >
               Cancel
@@ -465,7 +465,7 @@ function BookSelector({
         <IconSearch className="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2" />
         <Input
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => { setSearchQuery(e.target.value); }}
           placeholder="Search by title or author..."
           className="pl-8"
         />
@@ -494,7 +494,7 @@ function BookSelector({
                   type="button"
                   variant="ghost"
                   size="icon-xs"
-                  onClick={() => onAdd(book.uuid)}
+                  onClick={() => { onAdd(book.uuid); }}
                 >
                   <IconPlus className="size-3" />
                 </Button>
@@ -520,7 +520,7 @@ function BookSelector({
                     type="button"
                     variant="ghost"
                     size="icon-xs"
-                    onClick={() => onRemove(book.uuid)}
+                    onClick={() => { onRemove(book.uuid); }}
                   >
                     <IconX className="size-3" />
                   </Button>

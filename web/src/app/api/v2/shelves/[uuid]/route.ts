@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
-import { deleteShelf, getShelf, updateShelf } from "@/database/shelves"
 import { type ShelfFilter } from "@/database/shelfFilter"
+import { deleteShelf, getShelf, updateShelf } from "@/database/shelves"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"

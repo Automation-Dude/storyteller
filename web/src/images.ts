@@ -1,6 +1,6 @@
 import { encode } from "blurhash"
 
-import { colors, InputImage, JsColor } from "@storyteller-platform/okmain"
+import { InputImage, type JsColor, colors } from "@storyteller-platform/okmain"
 
 import { env } from "./env"
 

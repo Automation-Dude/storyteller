@@ -1,6 +1,7 @@
-import { cn } from "@/cn"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
+
+import { cn } from "@/cn"
 
 export const BookDetailsSkeleton = ({ compact }: { compact?: boolean }) => {
   if (compact) {

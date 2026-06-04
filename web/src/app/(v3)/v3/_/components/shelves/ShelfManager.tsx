@@ -1,8 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { Reorder, useDragControls } from "framer-motion"
-import { motion } from "framer-motion"
 import {
   IconChevronDown,
   IconChevronRight,
@@ -15,6 +12,8 @@ import {
   IconSettings,
   IconTrash,
 } from "@tabler/icons-react"
+import { Reorder, motion, useDragControls  } from "framer-motion"
+import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -35,10 +34,10 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type HomeShelfType, type ShelfWithBooks } from "@/database/shelves"
 import {
-  useListHomeShelvesQuery,
-  useSetHomeShelvesMutation,
-  useListUserShelvesQuery,
   useDeleteUserShelfMutation,
+  useListHomeShelvesQuery,
+  useListUserShelvesQuery,
+  useSetHomeShelvesMutation,
 } from "@/store/api"
 
 import { ShelfEditor } from "./ShelfEditor"
@@ -67,7 +66,7 @@ export function ShelfManager({ className }: ShelfManagerProps) {
             Add, remove, and reorder the shelves shown on your home page.
           </DialogDescription>
         </DialogHeader>
-        <ShelfManagerContent onClose={() => setOpen(false)} />
+        <ShelfManagerContent onClose={() => { setOpen(false); }} />
       </DialogContent>
     </Dialog>
   )
@@ -252,11 +251,11 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
             shelf={shelf}
             index={index}
             total={shelves.length}
-            onMove={(dir) => moveShelf(index, dir)}
-            onHide={() => hideShelf(shelf.uuid)}
+            onMove={(dir) => { moveShelf(index, dir); }}
+            onHide={() => { hideShelf(shelf.uuid); }}
             canHide={shelves.length > 1}
             {...(shelf.shelfUuid
-              ? { onEdit: () => handleEditShelf(shelf.shelfUuid!) }
+              ? { onEdit: () => { handleEditShelf(shelf.shelfUuid!); } }
               : {})}
           />
         ))}
@@ -300,7 +299,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
                   key={shelfType}
                   name={getDefaultName(shelfType)}
                   description={getShelfDescription(shelfType)}
-                  onShow={() => showBuiltInShelf(shelfType)}
+                  onShow={() => { showBuiltInShelf(shelfType); }}
                 />
               ))}
 
@@ -309,7 +308,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
                   key={userShelf.uuid}
                   name={userShelf.name}
                   description="Custom shelf"
-                  onShow={() => showCustomShelf(userShelf)}
+                  onShow={() => { showCustomShelf(userShelf); }}
                   onDelete={() => handleDeleteCustomShelf(userShelf.uuid)}
                 />
               ))}
@@ -451,7 +450,7 @@ function ShelfItem({
         <Button
           variant="ghost"
           size="icon-xs"
-          onClick={() => onMove("up")}
+          onClick={() => { onMove("up"); }}
           disabled={index === 0}
         >
           <IconChevronUp className="size-3" />
@@ -460,7 +459,7 @@ function ShelfItem({
         <Button
           variant="ghost"
           size="icon-xs"
-          onClick={() => onMove("down")}
+          onClick={() => { onMove("down"); }}
           disabled={index === total - 1}
         >
           <IconChevronDown className="size-3" />

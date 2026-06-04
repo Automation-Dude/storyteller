@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl"
 import { useWatch } from "react-hook-form"
 
-import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 
 import {
   Card,
@@ -21,6 +20,8 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+
+import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 
 import { SettingsFormField, useSettingsForm } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"

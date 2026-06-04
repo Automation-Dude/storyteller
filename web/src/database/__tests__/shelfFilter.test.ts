@@ -2,26 +2,26 @@ import assert from "node:assert"
 import { describe, it } from "node:test"
 
 import {
+  FIELD_LABELS,
+  type ShelfFilterField,
+  type ShelfFilterNode,
+  createAndBlock,
+  createEmptyCondition,
+  createNotBlock,
+  createOrBlock,
+  extractEntityReferences,
+  getFieldType,
+  shelfFilterConditionSchema,
   shelfFilterFieldSchema,
   shelfFilterOperatorSchema,
-  shelfFilterConditionSchema,
   shelfFilterNodeSchema,
   shelfFilterValueSchema,
-  getFieldType,
   getOperatorsForField,
   operatorRequiresValue,
   operatorRequiresArrayValue,
   operatorRequiresRangeValue,
-  createEmptyCondition,
-  createAndBlock,
-  createOrBlock,
-  createNotBlock,
   isLogicalBlock,
-  extractEntityReferences,
   removeDeletedEntityReferences,
-  FIELD_LABELS,
-  type ShelfFilterField,
-  type ShelfFilterNode,
 } from "@/database/shelfFilter"
 
 // ---------------------------------------------------------------------------

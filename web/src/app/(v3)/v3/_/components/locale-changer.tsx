@@ -3,9 +3,6 @@
 import { useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 
-import { cn } from "@/cn"
-import { locales } from "@/i18n/locales"
-
 import { changeLocaleAction } from "@v3/_/actions/changeLocaleAction"
 import {
   DropdownMenu,
@@ -16,6 +13,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
+
+import { cn } from "@/cn"
+import { locales } from "@/i18n/locales"
+
 
 export const LocaleChanger = ({ nested = false }: { nested?: boolean }) => {
   const t = useTranslations("AppSidebar")

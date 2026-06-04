@@ -8,8 +8,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { type Providers, type PublicProvider } from "@/auth/providers"
-import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
 
 import { Button } from "@v3/_/components/ui/button"
 import { Card, CardContent } from "@v3/_/components/ui/card"
@@ -27,6 +25,9 @@ import {
   InputGroupInput,
 } from "@v3/_/components/ui/input-group"
 import { cn } from "@v3/_/lib/utils"
+
+import { type Providers, type PublicProvider } from "@/auth/providers"
+import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
 
 const loginSchema = z.object({
   usernameOrEmail: z.string().min(1, "Username or email is required"),

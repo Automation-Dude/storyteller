@@ -3,7 +3,6 @@ import { useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useCreateCollectionMutation } from "@/store/api"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -22,6 +21,8 @@ import {
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Textarea } from "@v3/_/components/ui/textarea"
+
+import { useCreateCollectionMutation } from "@/store/api"
 
 const collectionSchema = z.object({
   name: z.string().min(1, "Name is required"),

@@ -6,12 +6,12 @@ import {
   SqliteDialect,
 } from "kysely"
 
+import { env } from "@/env"
 import { logger } from "@/logging"
 
 import { BooleanPlugin } from "./plugins/booleanPlugin"
 import { DatePlugin } from "./plugins/datePlugin"
 import type { DB } from "./schema"
-import { env } from "@/env"
 
 export const BOOLEAN_FIELDS = [
   "bookCreate",
