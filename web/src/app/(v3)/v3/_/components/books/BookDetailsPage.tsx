@@ -12,6 +12,7 @@ import {
   IconTag,
   IconX,
 } from "@tabler/icons-react"
+import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { useCallback, useRef, useState } from "react"
@@ -28,6 +29,7 @@ import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
+import { usePermissions } from "@/hooks/usePermissions"
 import {
   api,
   useCancelScanMutation,
@@ -53,10 +55,6 @@ type BookDetailsContentProps = {
   uuid: UUID
   initialBook?: BookWithRelations
   compact?: boolean
-  canEdit?: boolean
-  canDownload?: boolean
-  canDelete?: boolean
-  canProcess?: boolean
   assetsDir?: string
   isEditing?: boolean
   onEditingChange?: (isEditing: boolean) => void
@@ -79,10 +77,6 @@ export function BookDetailsContent({
   uuid,
   initialBook,
   compact,
-  canEdit,
-  canDownload,
-  canDelete,
-  canProcess,
   assetsDir,
   isEditing,
   onEditingChange,
@@ -137,10 +131,6 @@ export function BookDetailsContent({
     <BookDetailsContentInner
       book={book}
       compact={compact ?? false}
-      canEdit={canEdit}
-      canDownload={canDownload}
-      canDelete={canDelete}
-      canProcess={canProcess}
       assetsDir={assetsDir}
       isEditing={isEditing}
       onEditingChange={onEditingChange}
@@ -152,9 +142,6 @@ export function BookDetailsContent({
 function BookDetailsContentInner({
   book,
   compact,
-  canEdit,
-  canDownload,
-  canDelete,
   assetsDir,
   isEditing: controlledIsEditing,
   onEditingChange,
@@ -162,15 +149,12 @@ function BookDetailsContentInner({
 }: {
   book: BookWithRelations
   compact: boolean
-  canEdit: boolean | undefined
-  canDownload: boolean | undefined
-  canDelete: boolean | undefined
-  canProcess: boolean | undefined
   assetsDir: string | undefined
   isEditing: boolean | undefined
   onEditingChange: ((isEditing: boolean) => void) | undefined
   onClose: (() => void) | undefined
 }) {
+  const permissions = usePermissions()
   const [localIsEditing, setLocalIsEditing] = useState(false)
 
   const isControlled = controlledIsEditing !== undefined
@@ -192,7 +176,6 @@ function BookDetailsContentInner({
   return (
     <BookFormProvider
       book={book}
-      canEdit={canEdit ?? false}
       isEditing={isEditing}
       onEditingChange={handleEditingChange}
     >
@@ -211,7 +194,7 @@ function BookDetailsContentInner({
           } as React.CSSProperties
         }
       >
-        {!compact && <BookDetailsHeader canEdit={canEdit} />}
+        {!compact && <BookDetailsHeader />}
         {compact && <BookPanelHeader onClose={onClose} />}
         {compact && <CompactEditBar />}
         <InlineEditBar />
@@ -239,14 +222,14 @@ function BookDetailsContentInner({
 
               <ContributorsSection />
 
-              {canDownload && <DownloadsSection />}
+              {permissions?.bookDownload && <DownloadsSection />}
 
               <DetailsSection />
 
               <FileSection book={book} assetsDir={assetsDir} />
             </div>
 
-            {canDelete && <DeleteBookModal book={book} />}
+            {permissions?.bookDelete && <DeleteBookModal book={book} />}
           </div>
         </div>
       </article>
@@ -254,7 +237,8 @@ function BookDetailsContentInner({
   )
 }
 
-function BookDetailsHeader({ canEdit }: { canEdit: boolean | undefined }) {
+function BookDetailsHeader() {
+  const canEdit = usePermission("bookUpdate")
   const { book, isEditing, isSaving, setIsEditing, submitForm, discard } =
     useBookForm()
   const t = useTranslations("BookDetailsPage")
@@ -375,28 +359,36 @@ function InlineEditBar() {
   const { isEditing, isSaving, editingField, discard } = useBookForm()
   const t = useTranslations("BookDetailsPage")
 
-  if (isEditing || editingField === null) return null
-
   return (
-    <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 absolute top-12 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur">
-      <span className="text-muted-foreground text-xs">
-        {isSaving ? t("saving") : t("editing")}
-      </span>
+    <AnimatePresence>
+      {!isEditing && editingField !== null && (
+        <motion.div
+          initial={{ y: 20 }}
+          animate={{ y: 0 }}
+          exit={{ y: 20 }}
+          transition={{ duration: 0.2 }}
+          className="bg-background/95 supports-[backdrop-filter]:bg-background/80 absolute bottom-0 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-2"
+        >
+          <span className="text-muted-foreground text-xs">
+            {isSaving ? t("saving") : t("editing")}
+          </span>
 
-      <Button
-        size="sm"
-        variant="ghost"
-        // mousedown fires before the input blur, so we can cancel the edit
-        // without the blur handler committing it first
-        onMouseDown={(e) => {
-          e.preventDefault()
-          discard()
-        }}
-      >
-        <IconX className="mr-1 h-4 w-4" />
-        {t("discard")}
-      </Button>
-    </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            // mousedown fires before the input blur, so we can cancel the edit
+            // without the blur handler committing it first
+            onMouseDown={(e) => {
+              e.preventDefault()
+              discard()
+            }}
+          >
+            <IconX className="mr-1 h-4 w-4" />
+            {t("discard")}
+          </Button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
