@@ -1,12 +1,16 @@
 "use client"
 
-import { IconBook, IconHeadphones, IconUpload, IconX } from "@tabler/icons-react"
+import { IconPencil, IconUpload, IconX } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 import { useWatch } from "react-hook-form"
 
-import { Book3D, type SpineInfo } from "@v3/_/components/books/Book3D"
+import {
+  Book3D,
+  BookFullscreenButton,
+  type SpineInfo,
+} from "@v3/_/components/books/Book3D"
 import { Button } from "@v3/_/components/ui/button"
-import { cn } from "@v3/_/lib/utils"
 
 import { getCoverUrl } from "@/store/api"
 
@@ -36,12 +40,12 @@ function useFilePreview(file: File | null): string | null {
   return url
 }
 
-// a single editable cover: the live image (pending upload or current cover)
-// plus its upload / replace / clear controls. plain <img> on purpose so the
-// edit view never swaps in the animated Book3D / double-cover widget.
+// an editable cover: the live image (pending upload or saved cover) with a
+// click-anywhere upload overlay laid on top. the whole cover is the file
+// <label>, so it stays keyboard- and screenreader-friendly via the sr-only
+// input + text. the overlay is half-transparent so the cover stays visible.
 function CoverSlot({
   label,
-  icon: Icon,
   file,
   currentUrl,
   width,
@@ -49,71 +53,69 @@ function CoverSlot({
   onFileChange,
 }: {
   label: string
-  icon: React.ComponentType<{ className?: string }>
   file: File | null
   currentUrl: string
   width: number
   square: boolean
   onFileChange: (file: File | null) => void
 }) {
+  const t = useTranslations("BookDetailsPage")
   const previewUrl = useFilePreview(file)
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div
-        className="bg-muted relative overflow-hidden rounded-lg shadow-sm"
-        style={{ width, aspectRatio: square ? "1 / 1" : "2 / 3" }}
-      >
-        <img
-          src={previewUrl ?? currentUrl}
-          alt={label}
-          className="h-full w-full object-cover"
-        />
+    <div
+      className="group/slot relative shrink-0"
+      style={{ width, aspectRatio: square ? "1 / 1" : "2 / 3" }}
+    >
+      <img
+        src={previewUrl ?? currentUrl}
+        alt=""
+        aria-hidden
+        className="h-full w-full rounded-xs object-cover shadow-sm"
+      />
 
-        {file && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon-sm"
-            className="absolute top-1.5 right-1.5"
-            aria-label={`Clear new ${label.toLowerCase()}`}
-            onClick={() => {
-              onFileChange(null)
-            }}
-          >
-            <IconX className="h-3 w-3" />
-          </Button>
-        )}
-      </div>
-
-      <label
-        className={cn(
-          "text-muted-foreground hover:text-foreground hover:bg-accent inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-          file && "text-primary",
-        )}
-        style={{ maxWidth: width }}
-      >
+      <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-xs bg-black/20 text-white transition-colors group-hover/slot:bg-black/40">
         <input
           type="file"
           accept="image/*"
-          className="hidden"
+          className="sr-only"
           onChange={(e) => {
             const selected = e.target.files?.[0]
             if (selected) onFileChange(selected)
           }}
         />
-        <Icon className="h-3.5 w-3.5 shrink-0" />
-        <span className="flex items-center gap-1 truncate">
-          <IconUpload className="h-3 w-3 shrink-0" />
-          {file ? "Replace" : "Upload"} {label.toLowerCase()}
+        <span className="sr-only">{label}</span>
+        <span
+          aria-hidden
+          className="flex items-center gap-1.5 rounded-md bg-black/55 px-2.5 py-1.5 text-xs font-medium"
+        >
+          <IconUpload className="h-4 w-4" />
+          {file ? "Replace" : "Upload"}
         </span>
       </label>
+
+      {file && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon-sm"
+          className="absolute top-1.5 right-1.5 z-10 opacity-90"
+          aria-label={t("cover.clear")}
+          onClick={() => {
+            onFileChange(null)
+          }}
+        >
+          <IconX className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   )
 }
 
 export function CoverEditor({ compact }: { compact: boolean }) {
-  const { book, form, isEditing } = useBookForm()
+  const { book, form, canEdit, isEditing, editingCovers, setEditingCovers } =
+    useBookForm()
+  const t = useTranslations("BookDetailsPage")
   const coverWidth = compact ? 150 : 176
 
   const canSetEbookCover = !!book.ebook || !!book.readaloud
@@ -122,8 +124,38 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   const textCover = useWatch({ control: form.control, name: "textCover" })
   const audioCover = useWatch({ control: form.control, name: "audioCover" })
 
-  if (!isEditing) {
-    return <Book3D book={book} width={coverWidth} spine={SPINE_INFO} />
+  if (!isEditing && !editingCovers) {
+    return (
+      <Book3D
+        book={book}
+        width={coverWidth}
+        spine={SPINE_INFO}
+        actions={
+          <>
+            {canEdit && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-sm"
+                onClick={() => {
+                  setEditingCovers(true)
+                }}
+                aria-label={t("cover.edit")}
+                className="bg-background/85 text-foreground/70 hover:text-foreground rounded-md p-1.5"
+              >
+                <IconPencil className="size-4" />
+              </Button>
+            )}
+
+            <BookFullscreenButton
+              book={book}
+              width={coverWidth}
+              spine={SPINE_INFO}
+            />
+          </>
+        }
+      />
+    )
   }
 
   const ebookUrl = getCoverUrl(book.uuid, {
@@ -143,8 +175,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
     <div className="flex shrink-0 flex-wrap items-start justify-center gap-4">
       {canSetEbookCover && (
         <CoverSlot
-          label="Ebook cover"
-          icon={IconBook}
+          label={t("cover.uploadEbook")}
           file={textCover}
           currentUrl={ebookUrl}
           width={coverWidth}
@@ -157,8 +188,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
 
       {canSetAudioCover && (
         <CoverSlot
-          label="Audiobook cover"
-          icon={IconHeadphones}
+          label={t("cover.uploadAudiobook")}
           file={audioCover}
           currentUrl={audioUrl}
           width={coverWidth}

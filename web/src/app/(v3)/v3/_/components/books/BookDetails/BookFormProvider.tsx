@@ -9,15 +9,12 @@ import {
   useMemo,
   useState,
 } from "react"
-import {
-  type FieldPath,
-  type UseFormReturn,
-  useForm,
-} from "react-hook-form"
+import { type FieldPath, type UseFormReturn, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
 import { type Role } from "@/components/books/edit/marcRelators"
 import { type BookWithRelations } from "@/database/books"
+import { usePermission } from "@/hooks/usePermission"
 import { useUpdateBookMutation } from "@/store/api"
 
 import { type BookFormValues, bookFormSchema } from "./schema"
@@ -53,11 +50,16 @@ type BookFormContextValue = {
   setEditingField: (name: FieldPath<BookFormValues> | null) => void
   /** true when a field's editor should be shown (global mode or this field) */
   isFieldActive: (name: FieldPath<BookFormValues>) => boolean
+  /** cover-only edit mode: covers become editable, other fields stay read-only */
+  editingCovers: boolean
+  setEditingCovers: (value: boolean) => void
   submitForm: () => Promise<boolean>
   /** validate + save a single field, then leave inline edit mode for it */
   commitField: (name: FieldPath<BookFormValues>) => Promise<boolean>
   /** revert all unsaved changes and exit any inline edit */
   discard: () => void
+  /** drop pending cover uploads and exit cover edit mode */
+  discardCovers: () => void
 }
 
 const BookFormContext = createContext<BookFormContextValue | null>(null)
@@ -82,14 +84,15 @@ type BookFormProviderProps = {
 
 export function BookFormProvider({
   book,
-  canEdit = false,
   isEditing,
   onEditingChange,
   children,
 }: BookFormProviderProps) {
+  const canEdit = usePermission("bookUpdate") ?? false
   const [updateBook, { isLoading: isSaving }] = useUpdateBookMutation()
   const [editingField, setEditingFieldState] =
     useState<FieldPath<BookFormValues> | null>(null)
+  const [editingCovers, setEditingCoversState] = useState(false)
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
@@ -144,9 +147,15 @@ export function BookFormProvider({
   const setEditingField = useCallback(
     (name: FieldPath<BookFormValues> | null) => {
       setEditingFieldState(name)
+      if (name !== null) setEditingCoversState(false)
     },
     [],
   )
+
+  const setEditingCovers = useCallback((value: boolean) => {
+    setEditingCoversState(value)
+    if (value) setEditingFieldState(null)
+  }, [])
 
   const commitField = useCallback(
     async (name: FieldPath<BookFormValues>): Promise<boolean> => {
@@ -168,6 +177,7 @@ export function BookFormProvider({
         form.reset(bookToFormValues(book))
       }
       setEditingFieldState(null)
+      setEditingCoversState(false)
       onEditingChange(value)
     },
     [form, book, onEditingChange],
@@ -176,8 +186,15 @@ export function BookFormProvider({
   const discard = useCallback(() => {
     form.reset(bookToFormValues(book))
     setEditingFieldState(null)
+    setEditingCoversState(false)
     onEditingChange(false)
   }, [form, book, onEditingChange])
+
+  const discardCovers = useCallback(() => {
+    form.resetField("textCover")
+    form.resetField("audioCover")
+    setEditingCoversState(false)
+  }, [form])
 
   const isFieldActive = useCallback(
     (name: FieldPath<BookFormValues>) =>
@@ -208,9 +225,12 @@ export function BookFormProvider({
       editingField,
       setEditingField,
       isFieldActive,
+      editingCovers,
+      setEditingCovers,
       submitForm,
       commitField,
       discard,
+      discardCovers,
     }),
     [
       book,
@@ -222,9 +242,12 @@ export function BookFormProvider({
       editingField,
       setEditingField,
       isFieldActive,
+      editingCovers,
+      setEditingCovers,
       submitForm,
       commitField,
       discard,
+      discardCovers,
     ],
   )
 

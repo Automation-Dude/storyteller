@@ -379,6 +379,12 @@
     "noDescriptionAvailable": "Geen beschrijving",
     "showMore": "Meer tonen",
     "showLess": "Minder tonen",
+    "cover": {
+      "edit": "Cover bewerken",
+      "uploadEbook": "Ebook-cover uploaden",
+      "uploadAudiobook": "Audioboek-cover uploaden",
+      "clear": "Verwijderen"
+    },
     "narratedBy": "verteld door",
     "writtenBy": "door",
     "addAuthor": "Auteur toevoegen...",

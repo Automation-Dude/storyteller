@@ -4,6 +4,7 @@ import { IconArrowsMaximize } from "@tabler/icons-react"
 import { type PanInfo, motion, useSpring } from "framer-motion"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 
+import { Button } from "@v3/_/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@v3/_/components/ui/dialog"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
@@ -709,8 +710,42 @@ export function Book3D({
   book,
   width,
   spine = "title",
+  actions,
 }: {
   book: BookWithRelations
+  width: number
+  spine?: SpineInfo
+  /**
+   * buttons rendered in a reveal-on-hover stack at the top-right. the caller
+   * decides what shows up (e.g. fullscreen via `BookFullscreenButton`, edit,
+   * ...); with no actions there's no stack at all.
+   */
+  actions?: ReactNode
+}) {
+  return (
+    <div className="group relative w-fit shrink-0 select-none">
+      <BookStage book={book} width={width} spine={spine} />
+
+      {actions && (
+        <div className="absolute top-1 -right-4 z-30 flex flex-col items-center justify-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+          {actions}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Fullscreen toggle for a book, made to be dropped into `Book3D`'s `actions`.
+ * Owns its own dialog so the fullscreen concern stays out of `Book3D` itself.
+ */
+export function BookFullscreenButton({
+  book,
+  width,
+  spine = "title",
+}: {
+  book: BookWithRelations
+  /** the at-rest render width; the dialog scales up from it */
   width: number
   spine?: SpineInfo
 }) {
@@ -720,19 +755,19 @@ export function Book3D({
   const fullscreenWidth = Math.round(width * (isMobile ? 1.2 : 1.7))
 
   return (
-    <div className="group relative w-fit shrink-0 select-none">
-      <BookStage book={book} width={width} spine={spine} />
-
-      <button
+    <>
+      <Button
+        variant="secondary"
+        size="icon-sm"
         type="button"
         onClick={() => {
           setFullscreen(true)
         }}
         aria-label="View full screen"
-        className="bg-background/85 text-foreground/70 hover:text-foreground absolute top-1 right-1 z-30 rounded-md p-1.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
+        className="bg-background/85 text-foreground/70 hover:text-foreground rounded-md p-1.5"
       >
         <IconArrowsMaximize className="h-4 w-4" />
-      </button>
+      </Button>
 
       <Dialog open={fullscreen} onOpenChange={setFullscreen}>
         <DialogContent className="flex max-w-[calc(100%-2rem)] items-center justify-center bg-transparent p-10 ring-0 sm:max-w-2xl">
@@ -740,6 +775,6 @@ export function Book3D({
           <BookStage book={book} width={fullscreenWidth} spine={spine} />
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }

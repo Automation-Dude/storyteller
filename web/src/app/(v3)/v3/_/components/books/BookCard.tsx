@@ -41,7 +41,7 @@ export const BookCard = memo(function BookCard({
   const authors = book.authors
   const progress = getReadingProgress(book)
 
-  const { primary } = useCoverColors(book)
+  const { primary, accent } = useCoverColors(book)
 
   const [coverLoading, setCoverLoading] = useState(true)
 
@@ -50,6 +50,13 @@ export const BookCard = memo(function BookCard({
   const handleCheckboxClick = () => {
     onToggleSelection?.(book.uuid)
   }
+
+  const style = {
+    "--color-primary": primary.solid,
+    "--color-primary-foreground": primary.onColor,
+    "--color-primary-accent": accent.solid,
+    "--color-primary-accent-foreground": accent.onColor,
+  } as React.CSSProperties
 
   const cardContent = (
     <>
@@ -86,7 +93,6 @@ export const BookCard = memo(function BookCard({
                 !isSelecting &&
                 "opacity-0 group-hover:opacity-100",
             )}
-            // onClick={handleCheckboxClick}
           >
             <Checkbox
               checked={isBookSelected}
@@ -127,38 +133,39 @@ export const BookCard = memo(function BookCard({
     </>
   )
 
-  return onClick ? (
+  return (
     <div
-      key={book.uuid}
-      // im sorry a11y gods
-      role="button"
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === " ") {
-          onClick(book)
-        }
-      }}
-      tabIndex={0}
-      onClick={() => {
-        onClick(book)
-      }}
-      className={cn(
-        "group relative flex cursor-pointer flex-col transition-opacity duration-200",
-        muted && "opacity-50",
-        isBookSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
-        "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
-      )}
-    >
-      {cardContent}
-    </div>
-  ) : (
-    <Link
-      href={`/v3/books/${book.uuid}`}
       className={cn(
         "group relative flex flex-col transition-opacity duration-200",
         muted && "opacity-50",
       )}
+      style={style}
     >
-      {cardContent}
-    </Link>
+      {onClick ? (
+        <div
+          key={book.uuid}
+          // im sorry a11y gods
+          role="button"
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onClick(book)
+            }
+          }}
+          tabIndex={0}
+          onClick={() => {
+            onClick(book)
+          }}
+          className={cn(
+            "h-full",
+            isBookSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
+            "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
+          )}
+        >
+          {cardContent}
+        </div>
+      ) : (
+        <Link href={`/v3/books/${book.uuid}`}>{cardContent}</Link>
+      )}
+    </div>
   )
 })

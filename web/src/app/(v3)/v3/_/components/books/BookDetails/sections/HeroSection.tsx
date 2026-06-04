@@ -26,7 +26,7 @@ import {
 import { useCoverColors } from "./useCoverColors"
 
 export function HeroSection({ compact }: { compact: boolean }) {
-  const { book, isEditing, isFieldActive } = useBookForm()
+  const { book, isEditing, editingCovers, isFieldActive } = useBookForm()
   const tLabels = useTranslations("Labels")
   const t = useTranslations("BookDetailsPage")
 
@@ -58,7 +58,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
         `@xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
         // fixed slim height only at rest; editing needs room for the cover
         // upload slots (movement on entering edit mode is acceptable)
-        !isEditing && `@xl/book:h-80`,
+        !isEditing && !editingCovers && `@xl/book:h-80`,
       )}
       style={{ background: primary.alpha(0.2) }}
     >

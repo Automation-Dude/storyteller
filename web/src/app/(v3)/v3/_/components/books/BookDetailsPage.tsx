@@ -198,6 +198,7 @@ function BookDetailsContentInner({
         {compact && <BookPanelHeader onClose={onClose} />}
         {compact && <CompactEditBar />}
         <InlineEditBar />
+        <CoverEditBar />
 
         <div className="@container/book flex-1 overflow-y-auto">
           <div
@@ -386,6 +387,71 @@ function InlineEditBar() {
             <IconX className="mr-1 h-4 w-4" />
             {t("discard")}
           </Button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// shown while editing covers only (the dedicated cover-edit mode). covers have
+// no blur-to-save, so this is the single per-book Save / Discard.
+function CoverEditBar() {
+  const {
+    isEditing,
+    isSaving,
+    editingCovers,
+    submitForm,
+    discardCovers,
+    setEditingCovers,
+  } = useBookForm()
+  const t = useTranslations("BookDetailsPage")
+
+  const handleSave = async () => {
+    const success = await submitForm()
+    if (success) {
+      setEditingCovers(false)
+      return
+    }
+
+    toast.error(t("saveFailed"))
+  }
+
+  return (
+    <AnimatePresence>
+      {!isEditing && editingCovers && (
+        <motion.div
+          initial={{ y: 20 }}
+          animate={{ y: 0 }}
+          exit={{ y: 20 }}
+          transition={{ duration: 0.2 }}
+          className="bg-background/95 supports-[backdrop-filter]:bg-background/80 absolute bottom-0 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-2"
+        >
+          <span className="text-muted-foreground text-xs">
+            {isSaving ? t("saving") : t("editing")}
+          </span>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={discardCovers}
+              disabled={isSaving}
+            >
+              <IconX className="mr-1 h-4 w-4" />
+              {t("discard")}
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => {
+                void handleSave()
+              }}
+              disabled={isSaving}
+            >
+              <IconCheck className="mr-1 h-4 w-4" />
+              {isSaving ? t("saving") : t("save")}
+            </Button>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

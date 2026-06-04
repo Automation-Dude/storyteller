@@ -384,6 +384,12 @@
     "noDescriptionAvailable": "No description available",
     "showMore": "Show more",
     "showLess": "Show less",
+    "cover": {
+      "edit": "Edit cover",
+      "uploadEbook": "Upload ebook cover",
+      "uploadAudiobook": "Upload audiobook cover",
+      "clear": "Remove"
+    },
     "narratedBy": "narrated by",
     "writtenBy": "by",
     "addAuthor": "Add author...",
