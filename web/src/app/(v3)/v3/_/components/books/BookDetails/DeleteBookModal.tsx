@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 
-
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import {
@@ -16,6 +15,7 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
+import { useVersionBasePath } from "@v3/_/components/version-context"
 
 import { getReferencePathsAction } from "@/actions/getReferencePathsAction"
 import { type BookWithRelations } from "@/database/books"
@@ -23,6 +23,7 @@ import { useDeleteBookMutation } from "@/store/api"
 
 export function DeleteBookModal({ book }: { book: BookWithRelations }) {
   const router = useRouter()
+  const basePath = useVersionBasePath()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [preventReImport, setPreventReImport] = useState(false)
   const [referencePaths, setReferencePaths] = useState<string[]>([])
@@ -44,7 +45,7 @@ export function DeleteBookModal({ book }: { book: BookWithRelations }) {
   async function handleDelete() {
     await deleteBook({ uuid: book.uuid, preventReImport })
     setShowDeleteDialog(false)
-    router.push("/v3/books")
+    router.push(`${basePath}/books`)
   }
 
   return (

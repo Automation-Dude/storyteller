@@ -1,51 +1,54 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-import { nextAuth } from "./auth/auth"
-import { getSetting } from "./database/settings"
-import { getUserCount } from "./database/users"
+const V3_ROUTES = [
+  "/",
+  "/books",
+  "/series",
+  "/authors",
+  "/narrators",
+  "/translators",
+  "/tags",
+  "/publication-years",
+  "/ratings",
+  "/statuses",
+  "/collections",
+  "/settings",
+  "/login",
+]
 
-export async function proxy(request: NextRequest) {
-  const isInitPage = request.nextUrl.pathname.startsWith("/init")
+function hasV3Route(pathname: string): boolean {
+  if (V3_ROUTES.includes(pathname)) return true
 
-  const noUsers = (await getUserCount()) === 0
-  const disablePasswordLogin = await getSetting("disablePasswordLogin")
-  const needsInit = noUsers && !disablePasswordLogin
+  // match dynamic segments like /books/[uuid]
+  return V3_ROUTES.some(
+    (route) => route !== "/" && pathname.startsWith(route + "/"),
+  )
+}
 
-  if (needsInit && !isInitPage) {
-    return NextResponse.redirect(new URL("/init", request.url))
-  }
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-  if (!needsInit && isInitPage) {
-    return NextResponse.redirect(new URL("/", request.url))
-  }
+  const isV3Enabled = process.env["ENABLE_V3_FRONTEND"] === "true"
+  if (!isV3Enabled) return NextResponse.next()
 
-  if (needsInit && isInitPage) {
-    return NextResponse.next()
-  }
+  if (pathname.startsWith("/v3")) return NextResponse.next()
 
-  const session = await nextAuth.auth()
-  const isLoginPage = request.nextUrl.pathname.startsWith("/login")
-  if (!session && !isLoginPage) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
+  const versionCookie = request.cookies.get("frontend-version")?.value
+  const wantsV2 = versionCookie === "v2"
 
-  if (session && isLoginPage) {
-    return NextResponse.redirect(new URL("/", request.url))
-  }
+  if (wantsV2 || !hasV3Route(pathname)) return NextResponse.next()
 
-  return NextResponse.next()
+  const url = request.nextUrl.clone()
+  url.pathname = `/v3${pathname}`
+
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-v3-rewritten", "1")
+
+  return NextResponse.rewrite(url, {
+    request: { headers: requestHeaders },
+  })
 }
 
 export const config = {
-  matcher: [
-    "/",
-    "/books",
-    "/books/:uuid",
-    "/collections/:uuid",
-    "/login",
-    "/settings",
-    "/users",
-    "/account",
-    "/init",
-  ]
+  matcher: ["/((?!_next|api|fonts|.*\\..*).*)"],
 }

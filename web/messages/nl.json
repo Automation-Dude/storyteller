@@ -370,7 +370,9 @@
     "localeChanger": {
       "en": "Engels",
       "nl": "Nederlands"
-    }
+    },
+    "switchToClassic": "Terug naar klassieke UI",
+    "switchToNew": "Nieuwe interface proberen"
   },
   "BookDetailsPage": {
     "bookNotFound": "Boek niet gevonden",

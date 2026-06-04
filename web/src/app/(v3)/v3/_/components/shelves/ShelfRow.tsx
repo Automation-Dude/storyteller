@@ -1,12 +1,12 @@
 "use client"
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
-import Link from "next/link"
 import { useMemo, useRef } from "react"
 
 import { BookCard } from "@v3/_/components/books/BookCard"
 import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
+import { V3Link } from "@v3/_/components/v3-link"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
@@ -67,12 +67,12 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
         <div className="flex items-baseline gap-3">
           <h2 className="font-heading text-lg font-medium">{displayName}</h2>
 
-          <Link
+          <V3Link
             href={seeAllHref}
             className="text-muted-foreground hover:text-foreground text-sm opacity-0 transition-colors transition-opacity group-hover/shelf:opacity-100"
           >
             See all
-          </Link>
+          </V3Link>
         </div>
 
         <div className="flex gap-1 opacity-0 transition-opacity group-hover/shelf:opacity-100">
@@ -181,7 +181,7 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
     return {
       books: shelfBooks,
       isLoading: isLoadingShelfBooks,
-      seeAllHref: `/v3/books`,
+      seeAllHref: "/books",
     }
   }
 
@@ -189,7 +189,7 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
     return {
       books: recentlyAddedBooks,
       isLoading: isLoadingAllBooks,
-      seeAllHref: "/v3/books",
+      seeAllHref: "/books",
     }
   }
 
@@ -198,8 +198,8 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
       books: currentlyReadingBooks,
       isLoading: isLoadingAllBooks,
       seeAllHref: readingStatus
-        ? `/v3/statuses?status=${readingStatus.uuid}`
-        : "/v3/books",
+        ? `/statuses?status=${readingStatus.uuid}`
+        : "/books",
     }
   }
 
@@ -207,14 +207,14 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
     return {
       books: nextUpBooks,
       isLoading: isLoadingAllBooks,
-      seeAllHref: "/v3/series",
+      seeAllHref: "/series",
     }
   }
 
   return {
     books: [],
     isLoading: false,
-    seeAllHref: "/v3/books",
+    seeAllHref: "/books",
   }
 }
 

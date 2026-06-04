@@ -12,6 +12,7 @@ import { useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 
 import { LocaleChanger } from "@v3/_/components/locale-changer"
+import { useVersionBasePath } from "@v3/_/components/version-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { setTheme, theme } = useTheme()
+  const basePath = useVersionBasePath()
 
   const displayName = user.name ?? user.username ?? "User"
   const displayEmail = user.email ?? user.username ?? ""
@@ -133,7 +135,7 @@ export function NavUser({
             <DropdownMenuItem
               render={
                 <Link
-                  href={`/logout?redirectTo=${encodeURIComponent("/v3/login")}`}
+                  href={`/logout?redirectTo=${encodeURIComponent(`${basePath}/login`)}`}
                   className="flex items-center gap-2"
                 >
                   <IconLogout />

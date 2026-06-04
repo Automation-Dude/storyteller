@@ -18,6 +18,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@v3/_/components/ui/sidebar"
+import { useVersionBasePath } from "@v3/_/components/version-context"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useSidebarState } from "@v3/_/hooks/use-sidebar-state"
 
@@ -39,7 +40,10 @@ export type NavItem = {
 
 export function NavMain({ items }: { items: NavItem[] }) {
   const location = usePathname()
-  const locationWithoutV3 = location.replace(/v3\/?/, "")
+  const basePath = useVersionBasePath()
+  const normalizedLocation = basePath
+    ? location.replace(basePath, "")
+    : location
   const { isSectionOpen, setSectionOpen } = useSidebarState()
 
   return (
@@ -52,7 +56,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
                 <CollapsibleNavItem
                   key={item.title}
                   item={item}
-                  currentPath={locationWithoutV3}
+                  currentPath={normalizedLocation}
                   isSectionOpen={isSectionOpen}
                   setSectionOpen={setSectionOpen}
                   allTitle={item.allTitle ?? item.title}
@@ -61,8 +65,8 @@ export function NavMain({ items }: { items: NavItem[] }) {
             }
 
             const isActive =
-              locationWithoutV3 === item.url ||
-              (item.url !== "/" && locationWithoutV3.startsWith(item.url))
+              normalizedLocation === item.url ||
+              (item.url !== "/" && normalizedLocation.startsWith(item.url))
 
             return (
               <SidebarMenuItem key={item.title}>

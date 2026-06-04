@@ -82,8 +82,11 @@ export default async function LoginPage() {
       return "failed"
     }
 
+    const reqHeaders = await headers()
+    const basePath = reqHeaders.get("x-v3-rewritten") === "1" ? "" : "/v3"
+
     if (!callbackUrl) {
-      redirect("/v3")
+      redirect(basePath || "/")
     }
 
     const cookieOrigin = (await headers()).get("Origin")
@@ -102,7 +105,7 @@ export default async function LoginPage() {
       redirect(callbackUrl)
     }
 
-    redirect("/v3")
+    redirect(basePath || "/")
   }
 
   async function oauthLogin(providerId: string, callbackUrl?: string) {

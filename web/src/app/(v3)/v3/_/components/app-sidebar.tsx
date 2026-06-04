@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  IconArrowBack,
   IconBook,
   IconCalendar,
   IconCircleCheck,
@@ -40,6 +41,7 @@ import {
   SidebarMenuItem,
   SidebarPinButton,
 } from "@v3/_/components/ui/sidebar"
+import { useVersionBasePath } from "@v3/_/components/version-context"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
 
@@ -72,6 +74,7 @@ export function AppSidebar({
 }) {
   const { data: collections } = useListCollectionsQuery()
   const libraryCounts = useLibraryCounts()
+  const basePath = useVersionBasePath()
 
   const { data: latestVersionData } = useGetLatestVersionQuery(
     {
@@ -114,7 +117,7 @@ export function AppSidebar({
       action: {
         label: "View changelog",
         onClick: () => {
-          window.location.href = "/v3/settings?tab=changelog"
+          window.location.href = `${basePath}/settings?tab=changelog`
           localStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
         },
       },
@@ -260,6 +263,14 @@ export function AppSidebar({
       title: t("documentation"),
       url: "https://storyteller-platform.gitlab.io/storyteller/",
       icon: IconHelpCircle,
+    },
+    {
+      title: t("switchToClassic"),
+      icon: IconArrowBack,
+      onClick: () => {
+        document.cookie = "frontend-version=v2; path=/; max-age=31536000"
+        window.location.href = "/"
+      },
     },
   ]
 

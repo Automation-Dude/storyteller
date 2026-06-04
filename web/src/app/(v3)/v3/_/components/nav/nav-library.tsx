@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@v3/_/components/ui/sidebar"
+import { useVersionBasePath } from "@v3/_/components/version-context"
 import { V3Link } from "@v3/_/components/v3-link"
 import { type CountResult } from "@v3/_/hooks/use-library-counts"
 
@@ -32,7 +33,10 @@ export function NavLibrary({
   counts: Record<string, CountResult>
 }) {
   const location = usePathname()
-  const locationWithoutV3 = location.replace(/v3\/?/, "")
+  const basePath = useVersionBasePath()
+  const normalizedLocation = basePath
+    ? location.replace(basePath, "")
+    : location
 
   return (
     <SidebarGroup>
@@ -43,8 +47,8 @@ export function NavLibrary({
         <SidebarMenu className="gap-1">
           {items.map((item) => {
             const isActive =
-              locationWithoutV3 === item.url ||
-              (item.url !== "/" && locationWithoutV3.startsWith(item.url))
+              normalizedLocation === item.url ||
+              (item.url !== "/" && normalizedLocation.startsWith(item.url))
 
             const countResult = counts[item.countKey]
             const count = countResult?.count

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Fraunces, IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google"
+import { headers } from "next/headers"
 import Script from "next/script"
 import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
@@ -7,6 +8,7 @@ import { NuqsAdapter } from "nuqs/adapters/next"
 
 import { ThemeProvider } from "@v3/_/components/theme-provider"
 import { Toaster } from "@v3/_/components/ui/sonner"
+import { VersionProvider } from "@v3/_/components/version-context"
 
 import StoreProvider from "@/components/StoreProvider"
 import { AudioProviderRedux } from "@/components/reader/AudioProviderRedux"
@@ -55,11 +57,15 @@ export const viewport: Viewport = {
 
 export const dynamic = "force-dynamic"
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const reqHeaders = await headers()
+  const isRewritten = reqHeaders.get("x-v3-rewritten") === "1"
+  const basePath = isRewritten ? "" : "/v3"
+
   return (
     <html
       lang="en"
@@ -76,9 +82,7 @@ export default function RootLayout({
         )}
       </head>
       <body suppressHydrationWarning>
-        {!env.ENABLE_V3_FRONTEND ? (
-          <div>V3 frontend is not enabled</div>
-        ) : (
+        <VersionProvider basePath={basePath}>
           <NextIntlClientProvider>
             <StoreProvider>
               <AudioProviderRedux>
@@ -98,7 +102,7 @@ export default function RootLayout({
               </AudioProviderRedux>
             </StoreProvider>
           </NextIntlClientProvider>
-        )}
+        </VersionProvider>
       </body>
     </html>
   )

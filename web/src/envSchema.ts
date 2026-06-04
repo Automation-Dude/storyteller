@@ -166,5 +166,7 @@ export const internalServerEnvVars = {
   ENABLE_V3_FRONTEND: z.coerce
     .boolean()
     .optional()
-    .describe("Whether to enable the v3 frontend."),
+    .describe(
+      "When true, the v3 frontend becomes the default interface. Users can switch back to v2 via the UI toggle.",
+    ),
 } as const
