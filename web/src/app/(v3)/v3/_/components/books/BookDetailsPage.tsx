@@ -3,24 +3,38 @@
 import { type UUID } from "crypto"
 
 import {
+  IconArrowUpRight,
   IconCheck,
   IconEdit,
   IconFolder,
+  IconLoader2,
+  IconScan,
   IconTag,
   IconX,
 } from "@tabler/icons-react"
+import Link from "next/link"
 import { useTranslations } from "next-intl"
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
+import { Checkbox } from "@v3/_/components/ui/checkbox"
+import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
-import { useGetBookQuery } from "@/store/api"
+import { usePermission } from "@/hooks/usePermission"
+import {
+  api,
+  useCancelScanMutation,
+  useGetBookQuery,
+  useGetScanStateQuery,
+  useTriggerBookScanMutation,
+} from "@/store/api"
+import { useAppDispatch } from "@/store/appState"
 
 import { BookFormProvider, useBookForm } from "./BookDetails/BookFormProvider"
 import { DeleteBookModal } from "./BookDetails/DeleteBookModal"
@@ -31,6 +45,7 @@ import { DetailsSection } from "./BookDetails/sections/DetailsSection"
 import { DownloadsSection } from "./BookDetails/sections/DownloadsSection"
 import { FileSection } from "./BookDetails/sections/FileSection"
 import { HeroSection } from "./BookDetails/sections/HeroSection"
+import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 
 type BookDetailsContentProps = {
   uuid: UUID
@@ -43,6 +58,19 @@ type BookDetailsContentProps = {
   assetsDir?: string
   isEditing?: boolean
   onEditingChange?: (isEditing: boolean) => void
+  onClose?: () => void
+}
+
+// seed the getBook cache from a row we already have (e.g. the list query) so
+// opening the panel resolves from cache instead of firing another request.
+// rtk's equivalent of react-query's initialData.
+function useSeedBook(uuid: UUID, book: BookWithRelations | undefined) {
+  const dispatch = useAppDispatch()
+  const seeded = useRef<string | null>(null)
+  if (book && seeded.current !== uuid) {
+    seeded.current = uuid
+    void dispatch(api.util.upsertQueryData("getBook", { uuid }, book))
+  }
 }
 
 export function BookDetailsContent({
@@ -56,7 +84,10 @@ export function BookDetailsContent({
   assetsDir,
   isEditing,
   onEditingChange,
+  onClose,
 }: BookDetailsContentProps) {
+  useSeedBook(uuid, initialBook)
+
   const { data: queryBook, isLoading: isLoadingBook } = useGetBookQuery({
     uuid,
   })
@@ -111,6 +142,7 @@ export function BookDetailsContent({
       assetsDir={assetsDir}
       isEditing={isEditing}
       onEditingChange={onEditingChange}
+      onClose={onClose}
     />
   )
 }
@@ -124,6 +156,7 @@ function BookDetailsContentInner({
   assetsDir,
   isEditing: controlledIsEditing,
   onEditingChange,
+  onClose,
 }: {
   book: BookWithRelations
   compact: boolean
@@ -134,6 +167,7 @@ function BookDetailsContentInner({
   assetsDir: string | undefined
   isEditing: boolean | undefined
   onEditingChange: ((isEditing: boolean) => void) | undefined
+  onClose: (() => void) | undefined
 }) {
   const [localIsEditing, setLocalIsEditing] = useState(false)
 
@@ -151,14 +185,22 @@ function BookDetailsContentInner({
     [isControlled, onEditingChange],
   )
 
+  const { primary } = useCoverColors(book)
+
   return (
     <BookFormProvider
       book={book}
       isEditing={isEditing}
       onEditingChange={handleEditingChange}
     >
-      <article className="scroll-y bg-background relative flex h-full flex-1 flex-col">
+      <article
+        className="scroll-y bg-background relative flex h-full flex-1 flex-col"
+        style={{
+          "--primary": primary.solid,
+        }}
+      >
         {!compact && <BookDetailsHeader canEdit={canEdit} />}
+        {compact && <BookPanelHeader onClose={onClose} />}
         {compact && <CompactEditBar />}
 
         <div className="flex-1 overflow-y-auto">
@@ -287,6 +329,113 @@ function CompactEditBar() {
         <IconCheck className="mr-1 h-4 w-4" />
         {isSaving ? t("saving") : t("save")}
       </Button>
+    </div>
+  )
+}
+
+// the colored action bar at the top of the panel / drawer. lives with the
+// content (rather than the layout) so it reads the book it already loaded and
+// needs no separate fetch.
+function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
+  const { book, isEditing, setIsEditing } = useBookForm()
+  const { primary, accent } = useCoverColors(book)
+
+  const selection = useOptionalBookSelection()
+  const isSelected = selection?.isSelected(book.uuid) ?? false
+
+  const canProcess = usePermission("bookProcess")
+
+  const [triggerBookScan, { isLoading: isScanning }] =
+    useTriggerBookScanMutation()
+  const [cancelScan, { isLoading: isCancellingScan }] = useCancelScanMutation()
+  useGetScanStateQuery(undefined, {
+    pollingInterval: 5_000,
+    skip: !canProcess,
+  })
+
+  const handleToggleSelection = () => {
+    if (!selection) return
+    if (!selection.isSelecting) selection.startSelecting()
+    selection.toggleSelection(book.uuid)
+  }
+
+  return (
+    <div
+      className="flex items-center justify-between border-b px-4 py-2"
+      style={{
+        backgroundColor: primary.solid,
+        color: primary.onColor,
+        ...(isSelected && { borderColor: accent.solid }),
+      }}
+    >
+      <div className="flex items-center gap-3">
+        {selection && (
+          <Checkbox
+            checked={isSelected}
+            style={
+              isSelected
+                ? {
+                    background: accent.solid,
+                    color: accent.onColor,
+                    borderColor: accent.solid,
+                  }
+                : undefined
+            }
+            onCheckedChange={handleToggleSelection}
+            className="h-5 w-5"
+          />
+        )}
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          render={
+            <Link href={`/v3/books/${book.uuid}`}>
+              <IconArrowUpRight className="size-4" />
+              <span className="sr-only">Open full page</span>
+            </Link>
+          }
+        />
+
+        {canProcess && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              if (isScanning) {
+                void cancelScan()
+              } else {
+                void triggerBookScan({ uuid: book.uuid, force: true })
+              }
+            }}
+            disabled={isScanning || isCancellingScan}
+          >
+            {isScanning ? (
+              <IconLoader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <IconScan className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+
+        <Button
+          variant={isEditing ? "secondary" : "ghost"}
+          size="icon-sm"
+          onClick={() => {
+            setIsEditing(!isEditing)
+          }}
+        >
+          <IconEdit className="h-4 w-4" />
+        </Button>
+
+        {onClose && (
+          <Button variant="ghost" size="icon-sm" onClick={onClose}>
+            <IconX className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

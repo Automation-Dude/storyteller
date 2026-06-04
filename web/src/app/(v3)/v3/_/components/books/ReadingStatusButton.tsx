@@ -49,14 +49,12 @@ export function ReadingStatusButton({
           <Button
             variant="outline"
             style={{
-              color:
-                coverColors.primary._contrast >= 128
-                  ? "black"
-                  : coverColors.primary.accent,
-              borderColor:
-                coverColors.primary._contrast >= 128
-                  ? "black"
-                  : coverColors.primary.accent,
+              color: coverColors.primary.isDark
+                ? coverColors.primary.solid
+                : "black",
+              borderColor: coverColors.primary.isDark
+                ? coverColors.primary.solid
+                : "black",
             }}
             size={size}
             className={cn(

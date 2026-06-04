@@ -4,8 +4,6 @@ import {
   IconAlertTriangle,
   IconCheck,
   IconProgress,
-  IconRefresh,
-  IconSettings,
   IconX,
 } from "@tabler/icons-react"
 import { useState } from "react"
@@ -17,12 +15,10 @@ import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
 import {
   useCancelProcessingMutation,
-  useCancelScanMutation,
-  useGetScanStateQuery,
   useProcessBookMutation,
-  useTriggerBookScanMutation,
 } from "@/store/api"
 
+import { useTranslations } from "next-intl"
 import { ProcessingModal } from "./ProcessingModal"
 
 const PROCESSING_STAGE_LABELS: Record<string, string> = {
@@ -31,25 +27,10 @@ const PROCESSING_STAGE_LABELS: Record<string, string> = {
   SYNC_CHAPTERS: "Synchronizing chapters",
 }
 
-export function TranscriptionStatus({
-  book,
-  // canProcess,
-}: {
-  book: BookWithRelations
-  // canProcess?: boolean
-}) {
+export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
   const [processBook] = useProcessBookMutation()
   const [cancelProcessing] = useCancelProcessingMutation()
-  const [triggerBookScan, { isLoading: isScanning }] =
-    useTriggerBookScanMutation()
   const canProcess = usePermission("bookProcess")
-
-  const [cancelScan, { isLoading: isCancellingScan }] = useCancelScanMutation()
-
-  const { data: scanState } = useGetScanStateQuery(undefined, {
-    pollingInterval: 5_000,
-    skip: !canProcess,
-  })
 
   const [processingModalOpen, setProcessingModalOpen] = useState(false)
 
@@ -62,6 +43,8 @@ export function TranscriptionStatus({
   const isBusy =
     readaloudStatus === "QUEUED" || readaloudStatus === "PROCESSING"
 
+  const t = useTranslations("BookDetailsPage.alignment")
+
   if (!readaloudStatus && !canCreateReadaloud && !canProcess) {
     return null
   }
@@ -71,71 +54,28 @@ export function TranscriptionStatus({
       <div className="mb-3 flex items-center justify-between">
         <h2 className="section-label flex-1">
           <IconProgress className="h-4 w-4" />
-          Transcription
+          {t("title")}
         </h2>
-
-        {canProcess && (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={isScanning}
-              onClick={() => {
-                void triggerBookScan({ uuid: book.uuid, force: true })
-              }}
-            >
-              <IconRefresh className="mr-1 h-3 w-3" />
-              {isScanning ? "Scanning…" : "Scan"}
-            </Button>
-
-            {scanState?.running && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive"
-                disabled={isCancellingScan}
-                onClick={() => {
-                  void cancelScan()
-                }}
-              >
-                Cancel scan
-              </Button>
-            )}
-
-            {!isBusy && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Processing options"
-                onClick={() => {
-                  setProcessingModalOpen(true)
-                }}
-              >
-                <IconSettings className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        )}
       </div>
 
       <div className="bg-muted/50 rounded-lg p-4">
         {readaloudStatus === "ALIGNED" && (
           <div className="flex items-center gap-2 text-sm">
             <IconCheck className="h-4 w-4 text-green-600" />
-            <span>Aligned</span>
+            <span>{t("aligned")}</span>
           </div>
         )}
 
         {readaloudStatus === "QUEUED" && (
           <div className="flex items-center justify-between">
-            <span className="text-sm">Queued for alignment</span>
+            <span className="text-sm">{t("queued")}</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => void cancelProcessing({ uuid: book.uuid })}
             >
               <IconX className="mr-1 h-3 w-3" />
-              Cancel
+              {t("cancel")}
             </Button>
           </div>
         )}
@@ -145,7 +85,7 @@ export function TranscriptionStatus({
             <div className="flex items-center justify-between">
               <span className="text-sm">
                 {PROCESSING_STAGE_LABELS[book.readaloud?.currentStage ?? ""] ??
-                  "Processing"}
+                  t("processing")}
               </span>
               <Button
                 variant="ghost"
@@ -153,7 +93,7 @@ export function TranscriptionStatus({
                 onClick={() => void cancelProcessing({ uuid: book.uuid })}
               >
                 <IconX className="mr-1 h-3 w-3" />
-                Cancel
+                {t("cancel")}
               </Button>
             </div>
 
@@ -173,9 +113,7 @@ export function TranscriptionStatus({
             <div className="flex items-center gap-2 text-sm">
               <IconAlertTriangle className="text-destructive h-4 w-4" />
               <span>
-                {readaloudStatus === "ERROR"
-                  ? "Processing failed"
-                  : "Processing stopped"}
+                {readaloudStatus === "ERROR" ? t("error") : t("stopped")}
               </span>
             </div>
             <Button
@@ -183,7 +121,7 @@ export function TranscriptionStatus({
               size="sm"
               onClick={() => void processBook({ uuid: book.uuid })}
             >
-              Retry
+              {t("retry")}
             </Button>
           </div>
         )}
@@ -195,12 +133,14 @@ export function TranscriptionStatus({
             onClick={() => void processBook({ uuid: book.uuid })}
           >
             <IconReadaloud className="mr-1 h-4 w-4" />
-            Create readaloud
+            {t("createReadaloud")}
           </Button>
         )}
 
         {!readaloudStatus && !canCreateReadaloud && (
-          <span className="text-muted-foreground text-sm">Unprocessed</span>
+          <span className="text-muted-foreground text-sm">
+            {t("unprocessed")}
+          </span>
         )}
       </div>
 

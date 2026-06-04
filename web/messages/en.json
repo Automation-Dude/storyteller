@@ -390,6 +390,14 @@
     "saving": "Saving...",
     "save": "Save",
     "cancel": "Cancel",
+
+    "scan": {
+      "title": "Scan",
+      "scanning": "Scanning...",
+      "cancelScan": "Cancel scan",
+      "scanningComplete": "Scan complete",
+      "scanningFailed": "Scan failed"
+    },
     "downloads": {
       "downloadReadaloud": "Download Readaloud",
       "downloadEbook": "Download Ebook",
@@ -416,6 +424,18 @@
       "lastAligned": "Last aligned",
       "transcriptionEngine": "Transcription engine",
       "storytellerVersion": "Storyteller version"
+    },
+    "alignment": {
+      "title": "Alignment",
+      "queued": "Queued for alignment",
+      "aligned": "Aligned",
+      "processing": "Processing",
+      "error": "Processing failed",
+      "stopped": "Processing stopped",
+      "unprocessed": "Unprocessed",
+      "cancel": "Cancel",
+      "retry": "Retry",
+      "createReadaloud": "Create readaloud"
     }
   },
 

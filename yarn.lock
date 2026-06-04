@@ -4823,6 +4823,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@chenglou/pretext@npm:^0.0.7":
+  version: 0.0.7
+  resolution: "@chenglou/pretext@npm:0.0.7"
+  checksum: 10c0/538711926543040b0248ca7a6346fc383fec3d96d33e409f5acd6e8dbe8ecda4f795e3a757fd32690c13797f834a2538fecef2debca8c892b7a33864bf26823a
+  languageName: node
+  linkType: hard
+
 "@colors/colors@npm:1.5.0":
   version: 1.5.0
   resolution: "@colors/colors@npm:1.5.0"
@@ -16345,6 +16352,7 @@ __metadata:
   resolution: "@storyteller-platform/web@workspace:web"
   dependencies:
     "@base-ui/react": "npm:^1.5.0"
+    "@chenglou/pretext": "npm:^0.0.7"
     "@dnd-kit/core": "npm:^6.3.1"
     "@dotenvx/dotenvx": "npm:^1.44.1"
     "@echogarden/espeak-ng-emscripten": "npm:^0.3.5"

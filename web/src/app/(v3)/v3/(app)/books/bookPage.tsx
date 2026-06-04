@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
-import { useCallback, useMemo } from "react"
+import { useMemo } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
@@ -58,6 +58,11 @@ export default function BookPage({
 
   const bookUuids = useMemo(() => books.map((b) => b.uuid), [books])
 
+  const selectedBook = useMemo(
+    () => books.find((b) => b.uuid === selectedBookUuid),
+    [books, selectedBookUuid],
+  )
+
   const showMuted =
     isSearching || (isFetching && !isFetchingNextPage && books.length > 0)
 
@@ -92,6 +97,7 @@ export default function BookPage({
           },
         ]}
         selectedBookUuid={selectedBookUuid}
+        selectedBook={selectedBook}
         onClosePanel={handleClosePanel}
         allBookUuids={bookUuids}
         headerActions={[<AddBookButton key="add-book" />]}

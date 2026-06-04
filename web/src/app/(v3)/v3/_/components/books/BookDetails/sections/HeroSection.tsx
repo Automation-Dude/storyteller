@@ -1,6 +1,11 @@
 "use client"
 
-import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
+import {
+  IconBook,
+  IconClock,
+  IconHeadphones,
+  IconPlayerPlay,
+} from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 
 import {
@@ -16,8 +21,10 @@ import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
 import { V3Link } from "@v3/_/components/v3-link"
+import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 
 import { cn } from "@/cn"
+import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { useSetBookRatingMutation } from "@/store/api"
 
 import { useCoverColors } from "./useCoverColors"
@@ -32,13 +39,16 @@ export function HeroSection({ compact }: { compact: boolean }) {
   const authors = book.authors
   const narrators = book.narrators
 
+  // unified length, prominent and format-agnostic (user override wins). the
+  // per-format breakdown still lives in the file section below.
+  const pages = bookPageCount(book)
+  const totalDuration = bookDuration(book)
+
   const handleRatingChange = async (rating: number | null) => {
     await setBookRating({ bookUuid: book.uuid, rating })
   }
 
-  const {
-    primary: { background, accent, _contrast, contrastBw },
-  } = useCoverColors(book, { opacity: 0.2 })
+  const { primary } = useCoverColors(book)
 
   // if (compact) {
   return (
@@ -49,7 +59,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
           ? "flex-col gap-5 text-center"
           : "flex-col gap-8 md:h-84 md:flex-row",
       )}
-      style={{ background }}
+      style={{ background: primary.alpha(0.2) }}
     >
       <CoverEditor compact={compact} />
 
@@ -142,6 +152,28 @@ export function HeroSection({ compact }: { compact: boolean }) {
             )
           )}
 
+          {!isEditing && (pages != null || totalDuration != null) && (
+            <div
+              className={cn(
+                "text-primary mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium",
+                compact ? "justify-center" : "justify-center md:justify-start",
+              )}
+            >
+              {pages != null && (
+                <span className="inline-flex items-center gap-1">
+                  <IconBook className="h-3.5 w-3.5" />
+                  {pages} pages
+                </span>
+              )}
+              {totalDuration != null && (
+                <span className="inline-flex items-center gap-1">
+                  <IconClock className="h-3.5 w-3.5" />
+                  {formatTimeHuman(totalDuration)}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="mt-1">
             <RatingInput
               value={book.rating?.rating ?? null}
@@ -173,9 +205,9 @@ export function HeroSection({ compact }: { compact: boolean }) {
               size="sm"
               nativeButton={false}
               style={{
-                background: _contrast >= 128 ? "black" : accent,
-                borderColor: _contrast >= 128 ? "black" : accent,
-                color: _contrast >= 128 ? "white" : contrastBw,
+                background: primary.isDark ? primary.solid : "black",
+                borderColor: primary.isDark ? primary.solid : "black",
+                color: primary.isDark ? primary.onColor : "white",
               }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
@@ -192,9 +224,9 @@ export function HeroSection({ compact }: { compact: boolean }) {
               size="sm"
               nativeButton={false}
               style={{
-                background: _contrast >= 128 ? "black" : accent,
-                borderColor: _contrast >= 128 ? "black" : accent,
-                color: _contrast >= 128 ? "white" : contrastBw,
+                background: primary.isDark ? primary.solid : "black",
+                borderColor: primary.isDark ? primary.solid : "black",
+                color: primary.isDark ? primary.onColor : "white",
               }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
@@ -211,9 +243,9 @@ export function HeroSection({ compact }: { compact: boolean }) {
               size="sm"
               nativeButton={false}
               style={{
-                background: _contrast >= 128 ? "black" : accent,
-                borderColor: _contrast >= 128 ? "black" : accent,
-                color: _contrast >= 128 ? "white" : contrastBw,
+                background: primary.isDark ? primary.solid : "black",
+                borderColor: primary.isDark ? primary.solid : "black",
+                color: primary.isDark ? primary.onColor : "white",
               }}
               render={
                 <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>

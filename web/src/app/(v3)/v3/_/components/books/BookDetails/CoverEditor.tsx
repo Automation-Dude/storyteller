@@ -1,18 +1,24 @@
 "use client"
 
-import { IconBook, IconHeadphones, IconUpload, IconX } from "@tabler/icons-react"
+import {
+  IconBook,
+  IconHeadphones,
+  IconUpload,
+  IconX,
+} from "@tabler/icons-react"
 import { useEffect, useState } from "react"
+import { useWatch } from "react-hook-form"
 
+import { Book3D, type SpineInfo } from "@v3/_/components/books/Book3D"
 import { BookCover } from "@v3/_/components/books/BookCover"
 import { Button } from "@v3/_/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@v3/_/components/ui/dialog"
 import { cn } from "@v3/_/lib/utils"
 
 import { useBookForm } from "./BookFormProvider"
+
+// local toggle: flip to "pages" or "duration" to print length info on the
+// spine instead of the author / title
+const SPINE_INFO: SpineInfo = "title"
 
 function useFilePreview(file: File | null): string | null {
   const [url, setUrl] = useState<string | null>(null)
@@ -26,7 +32,9 @@ function useFilePreview(file: File | null): string | null {
     const objectUrl = URL.createObjectURL(file)
     setUrl(objectUrl)
 
-    return () => URL.revokeObjectURL(objectUrl)
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
   }, [file])
 
   return url
@@ -89,7 +97,9 @@ function CoverUploadRow({
           type="button"
           variant="ghost"
           size="icon-sm"
-          onClick={() => onFileChange(null)}
+          onClick={() => {
+            onFileChange(null)
+          }}
         >
           <IconX className="h-3 w-3" />
         </Button>
@@ -105,29 +115,12 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   const canSetEbookCover = !!book.ebook || !!book.readaloud
   const canSetAudioCover = !!book.audiobook || !!book.readaloud
 
-  const textCover = form.watch("textCover")
-  const audioCover = form.watch("audioCover")
+  const textCover = useWatch({ control: form.control, name: "textCover" })
+  const audioCover = useWatch({ control: form.control, name: "audioCover" })
   const textPreviewUrl = useFilePreview(textCover)
 
   if (!isEditing) {
-    return (
-      <Dialog>
-        <DialogTrigger
-          className={cn(
-            "flex shrink-0 cursor-zoom-in flex-col items-center justify-center rounded-lg",
-            compact
-              ? "mx-auto h-80 w-60"
-              : "flex w-[clamp(140px,25vw,200px)] justify-center md:justify-start",
-          )}
-        >
-          <BookCover book={book} width={coverWidth} key={book.uuid} />
-        </DialogTrigger>
-
-        <DialogContent className="p-0!">
-          <BookCover book={book} width={400} key={book.uuid} />
-        </DialogContent>
-      </Dialog>
-    )
+    return <Book3D book={book} width={coverWidth} spine={SPINE_INFO} />
   }
 
   return (
@@ -151,7 +144,9 @@ export function CoverEditor({ compact }: { compact: boolean }) {
             label="Ebook cover"
             icon={IconBook}
             file={textCover}
-            onFileChange={(file) => form.setValue("textCover", file)}
+            onFileChange={(file) => {
+              form.setValue("textCover", file)
+            }}
           />
         )}
 
@@ -160,7 +155,9 @@ export function CoverEditor({ compact }: { compact: boolean }) {
             label="Audiobook cover"
             icon={IconHeadphones}
             file={audioCover}
-            onFileChange={(file) => form.setValue("audioCover", file)}
+            onFileChange={(file) => {
+              form.setValue("audioCover", file)
+            }}
           />
         )}
       </div>

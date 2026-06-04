@@ -41,9 +41,7 @@ export const BookCard = memo(function BookCard({
   const authors = book.authors
   const progress = getReadingProgress(book)
 
-  const {
-    primary: { background, accent },
-  } = useCoverColors(book)
+  const { primary } = useCoverColors(book)
 
   const [coverLoading, setCoverLoading] = useState(true)
 
@@ -69,7 +67,7 @@ export const BookCard = memo(function BookCard({
             coverLoading && "animate-pulse",
           )}
           style={{
-            background,
+            background: primary.alpha(0.36),
           }}
         >
           <BookCover
@@ -104,7 +102,7 @@ export const BookCard = memo(function BookCard({
             <div
               className="flex size-5 items-center justify-center rounded-full shadow-md"
               style={{
-                background: accent,
+                background: primary.solid,
               }}
             >
               <IconReadaloud className="size-6 text-white" />
