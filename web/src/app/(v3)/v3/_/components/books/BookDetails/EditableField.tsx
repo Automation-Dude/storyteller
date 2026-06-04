@@ -140,7 +140,10 @@ export function EditableText({
           onBlur: () => {
             field.onBlur()
             if (inlineMode) {
-              if (form.getFieldState(name).isDirty) {
+              if (
+                form.getFieldState(name).isDirty &&
+                JSON.stringify(field.value) !== JSON.stringify(value)
+              ) {
                 void commitField(name)
               } else {
                 setEditingField(null)
