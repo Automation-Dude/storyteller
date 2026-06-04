@@ -60,6 +60,5 @@ export const uiSettingsReducer = uiSettingsSlice.reducer
 export const selectDetailPanelWidth = (state: { uiSettings: UISettings }) =>
   state.uiSettings.detailPanelWidth
 
-export const selectLibrarySidebarWidth = (state: {
-  uiSettings: UISettings
-}) => state.uiSettings.librarySidebarWidth
+export const selectLibrarySidebarWidth = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.librarySidebarWidth

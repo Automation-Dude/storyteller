@@ -59,11 +59,7 @@ function parseFilter(filter: string | ShelfFilter | null): ShelfFilter | null {
   }
 }
 
-export async function getShelf(
-  uuid: UUID,
-  userId: UUID,
-  tr?: Transaction<DB>,
-) {
+export async function getShelf(uuid: UUID, userId: UUID, tr?: Transaction<DB>) {
   const shelf = await (tr ?? db)
     .selectFrom("shelf")
     .selectAll("shelf")
@@ -496,12 +492,10 @@ export async function getShelfBooks(
     query = query.offset(opts.offset)
   }
 
-  const shelfOrderBy = (shelf as { orderBy?: string | null }).orderBy as
-    | ShelfOrderBy
-    | null
-  const shelfOrderDirection = (
-    shelf as { orderDirection?: string | null }
-  ).orderDirection as "asc" | "desc" | null
+  const shelfOrderBy = (shelf as { orderBy?: string | null })
+    .orderBy as ShelfOrderBy | null
+  const shelfOrderDirection = (shelf as { orderDirection?: string | null })
+    .orderDirection as "asc" | "desc" | null
 
   const orderBy = opts?.orderBy ?? shelfOrderBy ?? "createdAt"
   const orderDirection = opts?.orderDirection ?? shelfOrderDirection ?? "desc"

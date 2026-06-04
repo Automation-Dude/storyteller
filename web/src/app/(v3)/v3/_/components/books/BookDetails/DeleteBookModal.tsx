@@ -70,8 +70,7 @@ export function DeleteBookModal({ book }: { book: BookWithRelations }) {
 
           <div className="flex flex-col gap-4">
             <p className="text-sm">
-              Are you sure you want to delete{" "}
-              <strong>{book.title}</strong>
+              Are you sure you want to delete <strong>{book.title}</strong>
               {book.authors[0] && <> by {book.authors[0].name}</>}?
             </p>
 

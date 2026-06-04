@@ -492,10 +492,7 @@ void describe("removeDeletedEntityReferences", () => {
 
     assert.ok(result)
     assert.strictEqual(result.type, "condition")
-    assert.deepStrictEqual(
-      (result as { value: string[] }).value,
-      ["tag-2"],
-    )
+    assert.deepStrictEqual((result as { value: string[] }).value, ["tag-2"])
   })
 
   void it("returns null when all values removed from a condition", () => {

@@ -8,7 +8,6 @@ import { getBook } from "@/database/books"
 import { ASSETS_DIR } from "@/directories"
 import { type UUID } from "@/uuid"
 
-
 export type BookDetailsPageProps = {
   params: Promise<{
     uuid: UUID

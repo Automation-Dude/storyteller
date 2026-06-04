@@ -22,13 +22,15 @@ export type LibraryCounts = Record<string, CountResult>
  * from the already-cached books list in a single selector call.
  */
 export function useLibraryCounts(): LibraryCounts {
-  const { count: seriesCount, isLoading: seriesLoading } =
-    useListSeriesQuery(undefined, {
+  const { count: seriesCount, isLoading: seriesLoading } = useListSeriesQuery(
+    undefined,
+    {
       selectFromResult: ({ data, isLoading }) => ({
         count: data?.length,
         isLoading,
       }),
-    })
+    },
+  )
 
   const { count: authorsCount, isLoading: authorsLoading } =
     useListAuthorsQuery(undefined, {
@@ -72,34 +74,37 @@ export function useLibraryCounts(): LibraryCounts {
       }),
     })
 
-  const { publicationYearsCount, ratingsCount, isLoading: booksLoading } =
-    useListBooksQuery(undefined, {
-      selectFromResult: ({ data, isLoading }) => {
-        if (!data) {
-          return {
-            publicationYearsCount: undefined as number | undefined,
-            ratingsCount: undefined as number | undefined,
-            isLoading,
-          }
-        }
-
-        const years = new Set<string>()
-        const ratings = new Set<number>()
-
-        for (const book of data) {
-          const year = book.publicationDate?.slice(0, 4)
-          if (year) years.add(year)
-
-          if (book.rating != null) ratings.add(book.rating)
-        }
-
+  const {
+    publicationYearsCount,
+    ratingsCount,
+    isLoading: booksLoading,
+  } = useListBooksQuery(undefined, {
+    selectFromResult: ({ data, isLoading }) => {
+      if (!data) {
         return {
-          publicationYearsCount: years.size,
-          ratingsCount: ratings.size,
+          publicationYearsCount: undefined as number | undefined,
+          ratingsCount: undefined as number | undefined,
           isLoading,
         }
-      },
-    })
+      }
+
+      const years = new Set<string>()
+      const ratings = new Set<number>()
+
+      for (const book of data) {
+        const year = book.publicationDate?.slice(0, 4)
+        if (year) years.add(year)
+
+        if (book.rating != null) ratings.add(book.rating)
+      }
+
+      return {
+        publicationYearsCount: years.size,
+        ratingsCount: ratings.size,
+        isLoading,
+      }
+    },
+  })
 
   return {
     series: { count: seriesCount, isLoading: seriesLoading },

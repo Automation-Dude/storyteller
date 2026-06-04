@@ -17,7 +17,6 @@ import {
 } from "@/store/api"
 import { STAGE_ORDER } from "@/work/stages"
 
-
 // NOTE: the old menu guarded processing with a GPU build warning
 // (useGpuBuildWarning), but that hook renders a Mantine modal which is not
 // allowed in v3. The guard is deferred until it can be rebuilt as a v3 dialog.
@@ -79,8 +78,8 @@ export function ProcessingModal({
               className="justify-start"
               disabled={!canRestartFromSync}
               onClick={() => {
-                run(() =>
-                  void processBook({ uuid: book.uuid, restart: "sync" }),
+                run(
+                  () => void processBook({ uuid: book.uuid, restart: "sync" }),
                 )
               }}
             >
@@ -92,11 +91,12 @@ export function ProcessingModal({
               className="justify-start"
               disabled={!canRestartFromTranscription}
               onClick={() => {
-                run(() =>
-                  void processBook({
-                    uuid: book.uuid,
-                    restart: "transcription",
-                  }),
+                run(
+                  () =>
+                    void processBook({
+                      uuid: book.uuid,
+                      restart: "transcription",
+                    }),
                 )
               }}
             >
@@ -107,8 +107,8 @@ export function ProcessingModal({
               variant="ghost"
               className="justify-start"
               onClick={() => {
-                run(() =>
-                  void processBook({ uuid: book.uuid, restart: "full" }),
+                run(
+                  () => void processBook({ uuid: book.uuid, restart: "full" }),
                 )
               }}
             >
@@ -139,8 +139,9 @@ export function ProcessingModal({
                 : "You can't delete source files until the book has been synced successfully"
             }
             onClick={() => {
-              run(() =>
-                void deleteBookAssets({ uuid: book.uuid, originals: true }),
+              run(
+                () =>
+                  void deleteBookAssets({ uuid: book.uuid, originals: true }),
               )
             }}
           >

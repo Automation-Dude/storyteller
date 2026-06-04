@@ -2,10 +2,7 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { booksQuery } from "@/database/books"
-import {
-  type ShelfFilter,
-  buildFilterExpression,
-} from "@/database/shelfFilter"
+import { type ShelfFilter, buildFilterExpression } from "@/database/shelfFilter"
 
 export const dynamic = "force-dynamic"
 

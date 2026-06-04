@@ -52,9 +52,7 @@ export const PUT = withHasPermission<Params>("bookList")(async (
       ...(body.orderDirection !== undefined
         ? { orderDirection: body.orderDirection }
         : {}),
-      ...(body.limitCount !== undefined
-        ? { limitCount: body.limitCount }
-        : {}),
+      ...(body.limitCount !== undefined ? { limitCount: body.limitCount } : {}),
     },
     body.books,
   )

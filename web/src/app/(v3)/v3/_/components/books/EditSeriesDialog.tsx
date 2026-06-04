@@ -60,7 +60,8 @@ export function EditSeriesDialog({
     return books.map((book) => {
       const seriesInfo = book.series.find((s) => s.uuid === series.uuid)
       return {
-        bookUuid: book.uuid as `${string}-${string}-${string}-${string}-${string}`,
+        bookUuid:
+          book.uuid as `${string}-${string}-${string}-${string}-${string}`,
         position: seriesInfo?.position ?? null,
         featured: seriesInfo?.featured ?? false,
       }

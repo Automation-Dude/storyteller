@@ -97,13 +97,13 @@ export function BookGrid({
   }, [containerWidth])
 
   const estimatedRowHeight = useMemo(() => {
-    if (columnCount === 0) return MIN_COL_WIDTH * COVER_ASPECT + TEXT_BLOCK_HEIGHT
+    if (columnCount === 0)
+      return MIN_COL_WIDTH * COVER_ASPECT + TEXT_BLOCK_HEIGHT
     const colWidth = (containerWidth - GAP * (columnCount - 1)) / columnCount
     return colWidth * COVER_ASPECT + TEXT_BLOCK_HEIGHT + GAP
   }, [columnCount, containerWidth])
 
-  const rowCount =
-    columnCount > 0 ? Math.ceil(books.length / columnCount) : 0
+  const rowCount = columnCount > 0 ? Math.ceil(books.length / columnCount) : 0
 
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
@@ -112,8 +112,7 @@ export function BookGrid({
     overscan: 4,
     // measure real row heights so variable-length titles never clip or overlap
     measureElement:
-      typeof window !== "undefined" &&
-      !navigator.userAgent.includes("Firefox")
+      typeof window !== "undefined" && !navigator.userAgent.includes("Firefox")
         ? (element) => element.getBoundingClientRect().height
         : undefined,
   })
@@ -129,10 +128,20 @@ export function BookGrid({
   const lastVirtualRowIndex = virtualRows.at(-1)?.index
   useEffect(() => {
     if (lastVirtualRowIndex === undefined) return
-    if (lastVirtualRowIndex >= rowCount - 1 && hasNextPage && !isFetchingNextPage) {
+    if (
+      lastVirtualRowIndex >= rowCount - 1 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
       fetchNextPage()
     }
-  }, [lastVirtualRowIndex, rowCount, hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [
+    lastVirtualRowIndex,
+    rowCount,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ])
 
   if (isLoading) {
     return (

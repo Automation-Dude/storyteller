@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  IconBook,
-  IconDownload,
-  IconHeadphones,
-} from "@tabler/icons-react"
+import { IconBook, IconDownload, IconHeadphones } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"

@@ -13,7 +13,6 @@ import { matchSorter } from "match-sorter"
 import { lookup } from "mime-types"
 import { useEffect, useMemo, useState } from "react"
 
-
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
@@ -133,8 +132,13 @@ export type ServerFileBrowserProps =
   | ServerFileBrowserSingleProps
 
 export function ServerFileBrowser(props: ServerFileBrowserProps) {
-  const { accept, fileFilter, directoriesOnly = false, startPath, className } =
-    props
+  const {
+    accept,
+    fileFilter,
+    directoriesOnly = false,
+    startPath,
+    className,
+  } = props
 
   const [currentSearchDirectory, setCurrentSearchDirectory] = useState<
     string | null
@@ -273,14 +277,11 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
             disabled={actionIsPending}
             onClick={() => {
               if (currentSearchDirectory) {
-                ;(props).onSelect(
-                  currentSearchDirectory,
-                )
+                props.onSelect(currentSearchDirectory)
               }
             }}
           >
-            {(props).selectLabel ||
-              "Select this folder"}
+            {props.selectLabel || "Select this folder"}
           </Button>
         )}
       </div>
@@ -303,7 +304,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
                   type="button"
                   aria-label={`Remove ${entry.name}`}
                   onClick={() => {
-                    ;(props).onChange(
+                    props.onChange(
                       props.value.filter((v) => v.path !== entry.path),
                     )
                   }}
@@ -325,11 +326,9 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
                     ...props.value.filter(
                       (v) => !entries.some((e) => e.path === v.path),
                     ),
-                    ...(entries.filter(
-                      (e) => !e.isDirectory,
-                    )),
+                    ...entries.filter((e) => !e.isDirectory),
                   ]
-                  ;(props).onChange(newValues)
+                  props.onChange(newValues)
                 }}
               >
                 Select all
@@ -339,7 +338,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
                 size="xs"
                 className="text-destructive"
                 onClick={() => {
-                  ;(props).onChange([])
+                  props.onChange([])
                 }}
               >
                 Clear

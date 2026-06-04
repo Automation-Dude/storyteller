@@ -12,7 +12,6 @@ import {
 } from "@tabler/icons-react"
 import { useCallback, useState } from "react"
 
-
 import { Button } from "@v3/_/components/ui/button"
 import {
   DropdownMenu,
@@ -240,7 +239,8 @@ export function SelectionToolbar({
             </>
           )}
 
-          {canDelete && (canUpdate || canProcess ? <DropdownMenuSeparator /> : null)}
+          {canDelete &&
+            (canUpdate || canProcess ? <DropdownMenuSeparator /> : null)}
 
           {canDelete && (
             <DropdownMenuItem

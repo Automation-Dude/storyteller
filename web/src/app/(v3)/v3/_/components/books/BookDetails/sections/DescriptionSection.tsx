@@ -62,10 +62,13 @@ function CollapsibleDescription({
         className={cn(
           "prose prose-sm dark:prose-invert max-w-none overflow-hidden text-xs transition-[max-height] duration-300",
           mustExpandFirst && "cursor-pointer",
-          editableNow && "hover:bg-input/10 -mx-1.5 rounded-md px-1.5 cursor-text",
+          editableNow &&
+            "hover:bg-input/10 -mx-1.5 cursor-text rounded-md px-1.5",
         )}
         style={{
-          maxHeight: expanded ? contentRef.current?.scrollHeight : COLLAPSED_HEIGHT,
+          maxHeight: expanded
+            ? contentRef.current?.scrollHeight
+            : COLLAPSED_HEIGHT,
         }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
@@ -92,8 +95,14 @@ function CollapsibleDescription({
 export function DescriptionSection({ className }: { className?: string }) {
   const t = useTranslations("BookDetailsPage")
   const tLabels = useTranslations("Labels")
-  const { form, canEdit, isEditing, editingField, setEditingField, commitField } =
-    useBookForm()
+  const {
+    form,
+    canEdit,
+    isEditing,
+    editingField,
+    setEditingField,
+    commitField,
+  } = useBookForm()
 
   const value = useWatch({ control: form.control, name: "description" })
   const active = canEdit && (isEditing || editingField === "description")
@@ -164,7 +173,8 @@ export function DescriptionSection({ className }: { className?: string }) {
           }
           className={cn(
             "text-muted-foreground text-xs italic",
-            canEdit && "hover:bg-input/10 -mx-1.5 cursor-text rounded-md px-1.5",
+            canEdit &&
+              "hover:bg-input/10 -mx-1.5 cursor-text rounded-md px-1.5",
           )}
         >
           {t("noDescriptionAvailable")}

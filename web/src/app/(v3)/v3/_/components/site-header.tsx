@@ -43,7 +43,7 @@ export function SiteHeader({
                 key={
                   "render" in breadcrumb
                     ? idx
-                    : (breadcrumb.url ?? breadcrumb.label)
+                    : breadcrumb.url ?? breadcrumb.label
                 }
               >
                 <BreadcrumbItem className="min-w-0">

@@ -62,7 +62,7 @@ export const BookDetailsSkeleton = ({ compact }: { compact?: boolean }) => {
               </div>
             </div>
           </div>
-          <div className="my-8 h-px bg-border" />
+          <div className="bg-border my-8 h-px" />
           <Skeleton className="h-32 w-full" />
         </div>
       </div>

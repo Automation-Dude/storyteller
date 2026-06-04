@@ -316,9 +316,7 @@ export function isLogicalBlock(
 // entity reference extraction (for shelf_filter_reference table)
 // ---------------------------------------------------------------------------
 
-export function extractEntityReferences(
-  filter: ShelfFilter,
-): Array<{
+export function extractEntityReferences(filter: ShelfFilter): Array<{
   entityType: "tag" | "collection" | "series" | "status" | "creator"
   entityUuid: string
 }> {
@@ -668,12 +666,7 @@ function buildComparisonExpression(
   }
 
   if (fieldType === "date") {
-    return buildDateComparison(
-      eb,
-      field as "publicationDate",
-      operator,
-      value,
-    )
+    return buildDateComparison(eb, field as "publicationDate", operator, value)
   }
 
   if (fieldType === "uuid") {
@@ -833,11 +826,7 @@ function buildUserRatingComparison(
 
     case "isNot":
       return eb.or([
-        eb.not(
-          eb.exists(
-            ratingSubquery.select(sql.lit(1).as("one")),
-          ),
-        ),
+        eb.not(eb.exists(ratingSubquery.select(sql.lit(1).as("one")))),
         eb.exists(
           ratingSubquery
             .where("userBookRating.rating", "!=", Number(value))
@@ -978,9 +967,7 @@ function buildUuidComparison(
           .select(sql.lit(1).as("one"))
           .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
           .where("bookToStatus.statusUuid", "=", String(value) as UUID)
-          .$if(!!userId, (qb) =>
-            qb.where("bookToStatus.userId", "=", userId!),
-          ),
+          .$if(!!userId, (qb) => qb.where("bookToStatus.userId", "=", userId!)),
       )
 
     case "isNot":
@@ -1009,9 +996,7 @@ function buildUuidComparison(
             "in",
             value.map((v) => String(v) as UUID),
           )
-          .$if(!!userId, (qb) =>
-            qb.where("bookToStatus.userId", "=", userId!),
-          ),
+          .$if(!!userId, (qb) => qb.where("bookToStatus.userId", "=", userId!)),
       )
 
     case "isNoneOf":

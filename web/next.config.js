@@ -58,7 +58,7 @@ const nextConfig = {
   ],
   output: "standalone",
   outputFileTracingRoot: resolve(new URL(import.meta.url).pathname, "../.."),
-    reactCompiler: true,
+  reactCompiler: true,
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
     authInterrupts: true,
