@@ -437,6 +437,18 @@
     "switchToClassic": "Terug naar klassieke UI",
     "switchToNew": "Nieuwe interface proberen"
   },
+  "SidebarManager": {
+    "customize": "Zijbalk aanpassen",
+    "title": "Zijbalk aanpassen",
+    "description": "Items herordenen, verbergen wat je niet gebruikt, en verzamelingen of planken toevoegen.",
+    "available": "Aan zijbalk toevoegen",
+    "add": "Toevoegen",
+    "hideFromSidebar": "Verbergen uit zijbalk",
+    "collection": "Verzameling",
+    "shelf": "Plank",
+    "save": "Opslaan",
+    "cancel": "Annuleren"
+  },
   "BookDetailsPage": {
     "bookNotFound": "Boek niet gevonden",
     "noDescriptionAvailable": "Geen beschrijving",

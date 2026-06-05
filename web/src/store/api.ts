@@ -39,6 +39,10 @@ import {
   type ShelfOrderBy,
   type ShelfWithBooks,
 } from "@/database/shelves"
+import {
+  type SidebarItemKind,
+  type SidebarItemWithDetails,
+} from "@/database/sidebar"
 import { type Status } from "@/database/statuses"
 import { type Tag } from "@/database/tags"
 import { type UserBookRating } from "@/database/userRatings"
@@ -55,6 +59,15 @@ type HomeSectionBody = {
   kind: HomeSectionKind
   enabled?: boolean
   config?: unknown
+}
+
+// client-side shape of a sidebar item (plain string uuids over the wire)
+type SidebarItemBody = {
+  kind: SidebarItemKind
+  builtinKey?: string | null
+  collectionUuid?: string | null
+  shelfUuid?: string | null
+  hidden?: boolean
 }
 
 export const api = createApi({
@@ -83,6 +96,7 @@ export const api = createApi({
     "HomeStats",
     "UserShelves",
     "UserSettings",
+    "Sidebar",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -944,7 +958,7 @@ export const api = createApi({
         url: `/collections/${uuid}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Collections"],
+      invalidatesTags: ["Collections", "Sidebar"],
     }),
     updateCollection: build.mutation<
       CollectionWithRelations,
@@ -1368,6 +1382,20 @@ export const api = createApi({
       invalidatesTags: ["HomeShelves"],
     }),
 
+    listSidebar: build.query<SidebarItemWithDetails[], void>({
+      query: () => "/sidebar",
+      providesTags: ["Sidebar"],
+    }),
+
+    setSidebar: build.mutation<SidebarItemWithDetails[], SidebarItemBody[]>({
+      query: (body) => ({
+        url: "/sidebar",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Sidebar"],
+    }),
+
     listUserShelves: build.query<ShelfWithBooks[], void>({
       query: () => "/shelves",
       providesTags: ["UserShelves"],
@@ -1419,7 +1447,7 @@ export const api = createApi({
         url: `/shelves/${uuid}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["UserShelves", "HomeShelves"],
+      invalidatesTags: ["UserShelves", "HomeShelves", "Sidebar"],
     }),
 
     listShelfBooks: build.query<
@@ -1539,6 +1567,8 @@ export const {
   useSetHomeShelvesMutation,
   useAddHomeShelfMutation,
   useRemoveHomeShelfMutation,
+  useListSidebarQuery,
+  useSetSidebarMutation,
   useListUserShelvesQuery,
   useCreateUserShelfMutation,
   useUpdateUserShelfMutation,

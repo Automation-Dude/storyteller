@@ -442,6 +442,18 @@
     "switchToClassic": "Switch to classic UI",
     "switchToNew": "Try new interface"
   },
+  "SidebarManager": {
+    "customize": "Customize sidebar",
+    "title": "Customize sidebar",
+    "description": "Reorder items, hide what you don't use, and add collections or shelves.",
+    "available": "Add to sidebar",
+    "add": "Add",
+    "hideFromSidebar": "Hide from sidebar",
+    "collection": "Collection",
+    "shelf": "Shelf",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
   "BookDetailsPage": {
     "bookNotFound": "Book not found",
     "noDescriptionAvailable": "No description available",

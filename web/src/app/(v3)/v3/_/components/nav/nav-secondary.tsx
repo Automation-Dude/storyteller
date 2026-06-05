@@ -72,7 +72,7 @@ export function NavSecondary({
                     size="sm"
                     isActive={isItemActive}
                     render={
-                      <V3Link href={item.url}>
+                      <V3Link prefetch={true} href={item.url}>
                         <item.icon />
                         <span>{item.title}</span>
                       </V3Link>

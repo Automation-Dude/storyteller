@@ -322,6 +322,19 @@ export interface ShelfFilterReference {
   uuid: Generated<string>
 }
 
+export interface SidebarItem {
+  builtinKey: string | null
+  collectionUuid: string | null
+  createdAt: Generated<string>
+  hidden: Generated<number>
+  kind: string
+  position: number
+  shelfUuid: string | null
+  updatedAt: Generated<string>
+  userId: string
+  uuid: Generated<string>
+}
+
 export interface Status {
   createdAt: Generated<string>
   isDefault: Generated<boolean>
@@ -434,6 +447,7 @@ export interface DB {
   shelf: Shelf
   shelfBook: ShelfBook
   shelfFilterReference: ShelfFilterReference
+  sidebarItem: SidebarItem
   status: Status
   tag: Tag
   tokenRevokation: TokenRevokation

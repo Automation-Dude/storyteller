@@ -2,19 +2,9 @@
 
 import {
   IconArrowBack,
-  IconBook,
-  IconCalendar,
-  IconCircleCheck,
   IconHelpCircle,
-  IconHome,
-  IconLanguage,
-  IconList,
-  IconMicrophone2,
   IconSearch,
   IconSettings,
-  IconStar,
-  IconTag,
-  IconUser,
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { useTranslations } from "next-intl"
@@ -46,11 +36,19 @@ import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
 
 import type { User } from "@/apiModels"
-import { useGetLatestVersionQuery, useListCollectionsQuery } from "@/store/api"
+import { type SidebarItemWithDetails } from "@/database/sidebar"
+import { useGetLatestVersionQuery, useListSidebarQuery } from "@/store/api"
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
 import { CommandSearch, useCommandSearch } from "./command-search"
+import { SidebarManager } from "./nav/SidebarManager"
+import {
+  BUILTIN_SIDEBAR_MAP,
+  type BuiltinSidebarItem,
+  COLLECTION_ICON,
+  SHELF_ICON,
+} from "./nav/sidebar-items"
 import { DISMISSED_VERSION_KEY } from "./settings-form/changelog-tab"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
@@ -67,12 +65,16 @@ function UpdateDot() {
 export function AppSidebar({
   user,
   currentVersion,
+  initialSidebarItems,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: User
   currentVersion: string
+  initialSidebarItems: SidebarItemWithDetails[]
 }) {
-  const { data: collections } = useListCollectionsQuery()
+  // seed with the server-resolved config so first paint is correct; the query
+  // refetches in the background and supplies live updates after edits.
+  const { data: sidebarItems = initialSidebarItems } = useListSidebarQuery()
   const libraryCounts = useLibraryCounts()
   const basePath = useVersionBasePath()
 
@@ -130,107 +132,65 @@ export function AppSidebar({
   const t = useTranslations("AppSidebar")
   const tLibrary = useTranslations("LibraryPage")
 
-  const _collectionSubItems =
-    collections?.map((collection) => {
-      const { icon, label } = extractEmojiIcon(collection.name)
-      return {
-        title: label,
-        url: `/collections/${collection.uuid}`,
-        icon,
-      }
-    }) ?? []
+  // the sidebar nav is a per-user ordered config (sidebar_item table). builtins
+  // resolve their icon/href/label from the registry; collection + shelf entries
+  // carry their own uuid + live name. group placement comes from the registry
+  // (entities render in the library group), so reordering is within-group.
+  const builtinTitle = (builtin: BuiltinSidebarItem) =>
+    builtin.labelNs === "AppSidebar"
+      ? t(builtin.labelKey)
+      : tLibrary(builtin.labelKey)
 
-  const navMain: NavItem[] =
-    // const shelfSubItems =
-    //   userShelves?.map((shelf) => {
-    //     const { icon, label } = extractEmojiIcon(shelf.name)
-    //     return {
-    //       title: label,
-    //       url: `/shelves/${shelf.uuid}`,
-    //       icon,
-    //       onRemove: () => deleteShelf({ uuid: shelf.uuid }),
-    //     }
-    //   }) ?? []
+  const visibleItems = sidebarItems.filter((item) => !item.hidden)
 
-    [
-      {
-        title: t("home"),
-        url: "/",
-        icon: IconHome,
-      },
-      {
-        title: t("books"),
-        allTitle: t("allBooks"),
-        url: "/books",
-        icon: IconBook,
-        // isCollapsible: shelfSubItems.length > 0,
-        // subItems: shelfSubItems,
-      },
-      // {
-      //   title: t("collections"),
-      //   allTitle: t("allCollections"),
-      //   url: "/collections",
-      //   icon: IconBook2,
-      //   isCollapsible: collectionSubItems.length > 0,
-      //   subItems: collectionSubItems,
-      // },
-      // {
-      //   title: t("series"),
-      //   url: "/series",
-      //   icon: IconList,
-      // },
+  const navMain: NavItem[] = visibleItems.flatMap((item) => {
+    if (item.kind !== "builtin" || item.builtinKey == null) return []
+    const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
+    if (!builtin || builtin.group !== "main") return []
+    return [
+      { title: builtinTitle(builtin), url: builtin.href, icon: builtin.icon },
     ]
+  })
 
-  const libraryNav: NavLibraryItem[] = [
-    {
-      title: tLibrary("Series.plain"),
-      url: "/series",
-      icon: IconList,
-      countKey: "series",
+  const libraryNav: NavLibraryItem[] = visibleItems.flatMap(
+    (item): NavLibraryItem[] => {
+      if (item.kind === "builtin") {
+        if (item.builtinKey == null) return []
+        const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
+        if (!builtin || builtin.group !== "library") return []
+        return [
+          {
+            title: builtinTitle(builtin),
+            url: builtin.href,
+            icon: builtin.icon,
+            countKey: builtin.countKey ?? builtin.key,
+          },
+        ]
+      }
+
+      if (item.kind === "collection") {
+        return [
+          {
+            title:
+              extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
+            url: `/collections/${item.collectionUuid}`,
+            icon: COLLECTION_ICON,
+            // sentinel key (not in libraryCounts) so no badge renders
+            countKey: `collection:${item.uuid}`,
+          },
+        ]
+      }
+
+      return [
+        {
+          title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
+          url: `/shelves/${item.shelfUuid}`,
+          icon: SHELF_ICON,
+          countKey: `shelf:${item.uuid}`,
+        },
+      ]
     },
-    {
-      title: tLibrary("Authors.plain"),
-      url: "/authors",
-      icon: IconUser,
-      countKey: "authors",
-    },
-    {
-      title: tLibrary("Narrators.plain"),
-      url: "/narrators",
-      icon: IconMicrophone2,
-      countKey: "narrators",
-    },
-    {
-      title: tLibrary("Translators.plain"),
-      url: "/translators",
-      icon: IconLanguage,
-      countKey: "translators",
-    },
-    {
-      title: tLibrary("Tags.plain"),
-      url: "/tags",
-      icon: IconTag,
-      countKey: "tags",
-    },
-    {
-      title: tLibrary("PublicationYear.plain"),
-      url: "/publication-years",
-      icon: IconCalendar,
-      countKey: "publicationYears",
-    },
-    {
-      title: tLibrary("Rating.plain"),
-      url: "/ratings",
-      icon: IconStar,
-      countKey: "ratings",
-    },
-    {
-      title: tLibrary("Status.plain"),
-      url: "/statuses",
-      icon: IconCircleCheck,
-      countKey: "statuses",
-    },
-  ]
+  )
 
   const navSecondary: NavSecondaryItem[] = [
     {
@@ -252,6 +212,10 @@ export function AppSidebar({
         </SidebarMenuItem>
       ),
       key: "search",
+    },
+    {
+      custom: <SidebarManager />,
+      key: "customize-sidebar",
     },
     {
       title: t("settings"),

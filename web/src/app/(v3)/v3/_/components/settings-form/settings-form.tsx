@@ -22,7 +22,6 @@ import { type FieldErrors, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { type z } from "zod"
 
-
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
@@ -356,7 +355,16 @@ export function SettingsForm({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <SiteHeader
-        breadcrumbs={[{ label: title }]}
+        className="mt-4"
+        breadcrumbs={[
+          {
+            render: (
+              <h1 className="font-heading text-foreground truncate text-3xl font-normal">
+                {title}
+              </h1>
+            ),
+          },
+        ]}
         actions={
           <div className="flex items-center gap-3">
             <Button
