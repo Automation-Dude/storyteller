@@ -30,10 +30,8 @@ type EditableTextProps = {
 }
 
 /**
- * A single scalar book field that can be edited in place. Clicking it (when the
- * user can edit) swaps the text for an input occupying the same box, saving on
- * blur / Enter and reverting on Esc. In global edit mode the editor is always
- * shown. Validation errors render inline via FieldError.
+ * Single scalar book field that can be edited in place.
+ * Input is text-ish, like a string, date, number
  */
 export function EditableText({
   name,
@@ -56,8 +54,7 @@ export function EditableText({
 
   const value = useWatch({ control: form.control, name }) as string | null
   const active = canEdit && (isEditing || editingField === name)
-  // only single-field inline edits commit / cancel on blur; global edit mode
-  // is driven by the top Save / Discard bar instead.
+
   const inlineMode = editingField === name && !isEditing
 
   const originalRef = useRef<HTMLDivElement | null>(null)
@@ -77,7 +74,7 @@ export function EditableText({
   }, [inlineMode, type])
 
   if (!active) {
-    const text = value?.trim() ?? ""
+    const text = typeof value === "string" ? value.trim() : ""
     return (
       <As
         className={cn(
