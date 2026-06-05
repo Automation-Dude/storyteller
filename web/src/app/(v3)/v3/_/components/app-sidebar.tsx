@@ -222,19 +222,6 @@ export function AppSidebar({
       icon: IconSettings,
       badge: hasUpdate ? <UpdateDot /> : undefined,
     },
-    {
-      title: t("documentation"),
-      url: "https://storyteller-platform.gitlab.io/storyteller/",
-      icon: IconHelpCircle,
-    },
-    {
-      title: t("switchToClassic"),
-      icon: IconArrowBack,
-      onClick: () => {
-        document.cookie = "frontend-version=v2; path=/; max-age=31536000"
-        window.location.href = "/"
-      },
-    },
   ]
 
   return (

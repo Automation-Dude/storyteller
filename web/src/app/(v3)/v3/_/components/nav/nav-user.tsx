@@ -1,7 +1,9 @@
 "use client"
 
 import {
+  IconArrowBack,
   IconDotsVertical,
+  IconHelpCircle,
   IconLogout,
   IconMoon,
   IconSun,
@@ -72,10 +74,11 @@ export function NavUser({
             }
           />
           <DropdownMenuContent
-            className="z-60 w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="z-0 min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}
+            // sidebar is obscuring it
+            sideOffset={12}
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
@@ -102,6 +105,28 @@ export function NavUser({
                   >
                     <IconUser />
                     {t("account")}
+                  </Link>
+                }
+              />
+
+              <DropdownMenuItem
+                onClick={() => {
+                  document.cookie =
+                    "frontend-version=v2; path=/; max-age=31536000"
+                  window.location.href = "/"
+                }}
+              >
+                <IconArrowBack />
+                {t("switchToClassic")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="https://storyteller-platform.gitlab.io/storyteller/"
+                    className="flex items-center gap-2"
+                  >
+                    <IconHelpCircle />
+                    {t("documentation")}
                   </Link>
                 }
               />
