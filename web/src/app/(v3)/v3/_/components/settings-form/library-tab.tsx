@@ -850,8 +850,8 @@ function ImportRulesSection() {
                 <EmptyState
                   message={
                     watchRules.length === 0
-                      ? "No watch rules yet. Add a folder to scan."
-                      : "No watch rules match your search."
+                      ? t("noWatchRules")
+                      : t("noWatchRulesMatchSearch")
                   }
                 />
               ) : (
@@ -878,11 +878,11 @@ function ImportRulesSection() {
 
             <TabsContent value="ignore" className="space-y-3">
               <TabHeader
-                addLabel="Add ignore rule"
+                addLabel={t("addIgnoreRule")}
                 onAdd={() => {
                   setAddDialogKind("ignore")
                 }}
-                searchPlaceholder="Search ignore rules…"
+                searchPlaceholder={t("searchIgnoreRules")}
                 searchValue={searchByTab.ignore}
                 onSearchChange={(v) => {
                   setTabSearch("ignore", v)
@@ -904,8 +904,8 @@ function ImportRulesSection() {
                 <EmptyState
                   message={
                     userIgnoreRules.length === 0
-                      ? "No ignore rules. Add a path to skip during scans."
-                      : "No ignore rules match your search."
+                      ? t("noIgnoreRules")
+                      : t("noIgnoreRulesMatchSearch")
                   }
                 />
               ) : (
@@ -929,13 +929,11 @@ function ImportRulesSection() {
 
             <TabsContent value="auto" className="space-y-3">
               <p className="text-muted-foreground text-xs">
-                Auto-ignore rules are added by Storyteller when books are
-                relocated, backed up, or removed with re-import prevention. If a
-                book isn&apos;t importing, search here for its path or title.
+                {t("autoIgnoreRulesDescription")}
               </p>
 
               <TabHeader
-                searchPlaceholder="Search by path or book title…"
+                searchPlaceholder={t("searchAutoIgnoreRules")}
                 searchValue={searchByTab.auto}
                 onSearchChange={(v) => {
                   setTabSearch("auto", v)
@@ -957,16 +955,23 @@ function ImportRulesSection() {
                 <EmptyState
                   message={
                     autoIgnoreRules.length === 0
-                      ? "No auto-ignore rules."
-                      : "No auto-ignore rules match your search."
+                      ? t("noAutoIgnoreRules")
+                      : t("noAutoIgnoreRulesMatchSearch")
                   }
                 />
               ) : (
                 <>
                   <p className="text-muted-foreground text-xs">
                     {showAutoPagination
-                      ? `Showing ${autoStart + 1}–${autoStart + visibleAuto.length} of ${filteredAuto.length}.`
-                      : `Showing ${filteredAuto.length} of ${autoIgnoreRules.length}.`}
+                      ? t("showingRules", {
+                          start: autoStart + 1,
+                          end: autoStart + visibleAuto.length,
+                          total: filteredAuto.length,
+                        })
+                      : t("showingRulesTotal", {
+                          total: filteredAuto.length,
+                          totalAuto: autoIgnoreRules.length,
+                        })}
                   </p>
                   <div className="space-y-1.5">
                     {visibleAuto.map((rule) => (
