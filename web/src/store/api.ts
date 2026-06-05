@@ -732,6 +732,68 @@ export const api = createApi({
           : []),
         "UserRatings",
       ],
+
+      onQueryStarted: async (
+        { update },
+        /* eslint-disable-next-line @typescript-eslint/unbound-method */
+        { dispatch, getState, queryFulfilled },
+      ) => {
+        const patchResult = dispatch(
+          api.util.updateQueryData(
+            "getBook",
+            { uuid: update.uuid as UUID },
+            (draft) => {
+              if (update.title !== undefined) draft.title = update.title
+              if (update.subtitle !== undefined) draft.subtitle = update.subtitle
+              if (update.language !== undefined) draft.language = update.language
+              if (update.description !== undefined)
+                draft.description = update.description
+              if (update.publicationDate !== undefined)
+                draft.publicationDate = update.publicationDate
+
+              if (update.status !== undefined) {
+                const statuses =
+                  api.endpoints.listStatuses.select()(getState())
+                const status = statuses.data?.find(
+                  (s) => s.uuid === update.status,
+                )
+
+                if (status) {
+                  draft.status = {
+                    uuid: status.uuid,
+                    name: status.name,
+                    createdAt: status.createdAt,
+                    updatedAt: status.updatedAt,
+                  }
+                }
+              }
+
+              if (update.rating !== undefined) {
+                Object.assign(draft, {
+                  rating: {
+                    rating: update.rating.rating ?? null,
+                    review: update.rating.review ?? null,
+                  },
+                })
+              }
+
+              if (update.pageCount !== undefined && draft.ebook) {
+                draft.ebook.pageCount = update.pageCount
+              }
+
+              if (update.duration !== undefined && draft.audiobook) {
+                draft.audiobook.duration = update.duration
+              }
+            },
+          ),
+        )
+
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
     }),
     updateStatus: build.mutation<void, { bookUuid: UUID; statusUuid: UUID }>({
       query: ({ bookUuid, statusUuid }) => ({
@@ -747,6 +809,37 @@ export const api = createApi({
         { type: "Books", id: bookUuid },
         { type: "Statuses", id: statusUuid },
       ],
+
+      onQueryStarted: async (
+        { bookUuid, statusUuid },
+        /* eslint-disable-next-line @typescript-eslint/unbound-method */
+        { dispatch, getState, queryFulfilled },
+      ) => {
+        const statuses = api.endpoints.listStatuses.select()(getState())
+        const status = statuses.data?.find((s) => s.uuid === statusUuid)
+
+        if (!status) {
+          await queryFulfilled
+          return
+        }
+
+        const patchResult = dispatch(
+          api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
+            draft.status = {
+              uuid: status.uuid,
+              name: status.name,
+              createdAt: status.createdAt,
+              updatedAt: status.updatedAt,
+            }
+          }),
+        )
+
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
     }),
     listStatuses: build.query<Status[], void>({
       query: () => `/statuses`,
@@ -931,6 +1024,59 @@ export const api = createApi({
         "Series",
         ...relations.map((r) => ({ type: "Books" as const, id: r.bookUuid })),
       ],
+
+      onQueryStarted: async (
+        { series, relations },
+        /* eslint-disable-next-line @typescript-eslint/unbound-method */
+        { dispatch, getState, queryFulfilled },
+      ) => {
+        const seriesUuid = series.uuid
+
+        const existingSeries = seriesUuid
+          ? api.endpoints.listSeries
+              .select()(getState())
+              .data?.find((s) => s.uuid === seriesUuid)
+          : undefined
+
+        const now = new Date().toISOString()
+        const seriesEntry = {
+          uuid: (seriesUuid ?? crypto.randomUUID()) as UUID,
+          name: series.name,
+          createdAt: existingSeries?.createdAt ?? now,
+          updatedAt: existingSeries?.updatedAt ?? now,
+        }
+
+        const patches = relations.map((relation) =>
+          dispatch(
+            api.util.updateQueryData(
+              "getBook",
+              { uuid: relation.bookUuid },
+              (draft) => {
+                if (
+                  seriesUuid &&
+                  draft.series.some((s) => s.uuid === seriesUuid)
+                ) {
+                  return
+                }
+
+                draft.series.push({
+                  ...seriesEntry,
+                  position: relation.position ?? null,
+                  featured: relation.featured ?? false,
+                })
+              },
+            ),
+          ),
+        )
+
+        try {
+          await queryFulfilled
+        } catch {
+          patches.forEach((p) => {
+            p.undo()
+          })
+        }
+      },
     }),
     removeBooksFromSeries: build.mutation<
       void,
@@ -945,6 +1091,35 @@ export const api = createApi({
         ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
         ...series.map((uuid) => ({ type: "Series" as const, id: uuid })),
       ],
+
+      onQueryStarted: async (
+        { series, books },
+        { dispatch, queryFulfilled },
+      ) => {
+        const seriesSet = new Set(series)
+
+        const patches = books.map((bookUuid) =>
+          dispatch(
+            api.util.updateQueryData(
+              "getBook",
+              { uuid: bookUuid },
+              (draft) => {
+                draft.series = draft.series.filter(
+                  (s) => !seriesSet.has(s.uuid),
+                )
+              },
+            ),
+          ),
+        )
+
+        try {
+          await queryFulfilled
+        } catch {
+          patches.forEach((p) => {
+            p.undo()
+          })
+        }
+      },
     }),
     listTags: build.query<Tag[], void>({
       query: () => "/tags",
@@ -1003,9 +1178,33 @@ export const api = createApi({
       invalidatesTags: (_result, _error, { bookUuid }) => [
         { type: "UserRatings", id: bookUuid },
         "UserRatings",
-        // getBook embeds the per-user rating, so refresh it too
         { type: "Books", id: bookUuid },
       ],
+
+      onQueryStarted: async (
+        { bookUuid, rating, review },
+        { dispatch, queryFulfilled },
+      ) => {
+        const patchResult = dispatch(
+          api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
+            const existingRating = draft.rating?.rating ?? null
+            const existingReview = draft.rating?.review ?? null
+
+            Object.assign(draft, {
+              rating: {
+                rating: rating !== undefined ? rating : existingRating,
+                review: review !== undefined ? review : existingReview,
+              },
+            })
+          }),
+        )
+
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
     }),
     deleteBookRating: build.mutation<void, { bookUuid: UUID }>({
       query: ({ bookUuid }) => ({
@@ -1017,6 +1216,20 @@ export const api = createApi({
         "UserRatings",
         { type: "Books", id: bookUuid },
       ],
+
+      onQueryStarted: async ({ bookUuid }, { dispatch, queryFulfilled }) => {
+        const patchResult = dispatch(
+          api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
+            draft.rating = null
+          }),
+        )
+
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
     }),
     listUserRatings: build.query<UserBookRating[], void>({
       query: () => "/user/ratings",
