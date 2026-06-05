@@ -294,23 +294,27 @@ export interface Settings {
 export interface Shelf {
   createdAt: Generated<string>
   description: string | null
-  filter: string | null
+  filter: import("kysely").ColumnType<
+    import("@/database/shelfFilter").ShelfFilter | null,
+    string | null,
+    string | null
+  >
   limitCount: number | null
   name: string
-  orderBy: Generated<string>
-  orderDirection: Generated<string>
+  orderBy: Generated<import("@/database/shelves").ShelfOrderBy>
+  orderDirection: Generated<"asc" | "desc">
   updatedAt: Generated<string>
-  userId: string
-  uuid: Generated<string>
+  userId: import("@/uuid").UUID
+  uuid: Generated<import("@/uuid").UUID>
 }
 
 export interface ShelfBook {
-  bookUuid: string
+  bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
   position: number | null
-  shelfUuid: string
+  shelfUuid: import("@/uuid").UUID
   updatedAt: Generated<string>
-  uuid: Generated<string>
+  uuid: Generated<import("@/uuid").UUID>
 }
 
 export interface ShelfFilterReference {

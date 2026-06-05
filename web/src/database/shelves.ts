@@ -48,10 +48,6 @@ export type ShelfOrderBy =
   | "rating"
   | "position"
 
-// ---------------------------------------------------------------------------
-// shelf crud
-// ---------------------------------------------------------------------------
-
 function parseFilter(filter: string | ShelfFilter | null): ShelfFilter | null {
   if (!filter) return null
   if (typeof filter === "object") return filter
@@ -433,6 +429,7 @@ export async function reorderHomeSections(userId: UUID, uuids: UUID[]) {
       await tr
         .updateTable("homeSection")
         .set({ position: i })
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         .where("uuid", "=", uuids[i]!)
         .where("userId", "=", userId)
         .execute()
@@ -476,9 +473,7 @@ export async function getShelfBooks(
   const shelf = await getShelf(shelfUuid, userId)
   const filter = shelf.filter
 
-  const manualBookUuids = shelf.books.map(
-    (b: { bookUuid: string }) => b.bookUuid,
-  )
+  const manualBookUuids = shelf.books.map((b) => b.bookUuid)
 
   const hasManualBooks = manualBookUuids.length > 0
   const hasFilter = filter !== null
