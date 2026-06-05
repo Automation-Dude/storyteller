@@ -3,7 +3,6 @@
     "description": "A simple tool for syncing audiobooks and ebooks",
     "title": "Storyteller"
   },
-
   "LoginPage": {
     "welcomeBack": "Welcome back!",
     "title": "Login",
@@ -81,7 +80,6 @@
       }
     }
   },
-
   "CollectionsPage": {
     "title": "Collections"
   },
@@ -194,10 +192,28 @@
             "defaultImportMode": "Default import mode",
             "defaultImportModeDescription": "How to handle files found in import directories. Individual paths can override this.",
             "addPath": "Add path",
-            "modeReference": "Reference in place",
-            "modeCopy": "Copy to library",
-            "modeMove": "Move to library",
-            "modeHardlink": "Hard link"
+            "importMode": "Import mode",
+            "importModeDescription": "How to handle files found in import directories. Individual paths can override this.",
+            "importCollectionsDescription": "Add new books to collections when they are imported.",
+            "importCollectionsPlaceholder": "No collection",
+            "importCollectionsAdd": "Add collection",
+            "addWatchRule": "Add import rule",
+            "addWatchRuleDescription": "Storyteller will scan this folder for new books.",
+            "addIgnoreRule": "Add ignore rule",
+            "searchWatchRules": "Search watch rules…",
+            "searchIgnoreRules": "Search ignore rules…",
+            "searchAutoIgnoreRules": "Search auto-ignore rules…",
+            "addIgnoreRuleDescription": "Storyteller will skip this path during scans.",
+            "addAutoIgnoreRule": "Add auto-ignore rule",
+            "watch": "Import",
+            "ignore": "Ignore",
+            "autoIgnore": "Auto-ignore",
+            "ignoreSources": {
+              "config": "Config",
+              "importRelocated": "Relocated",
+              "importBackup": "Backup copy",
+              "importPreventReimport": "Re-import prevention"
+            }
           },
           "readaloudLocation": {
             "title": "Readaloud Location",
@@ -221,26 +237,7 @@
             "showSimpleInterval": "Use a simple interval instead",
             "cronExpression": "Cron expression",
             "cronExpressionDescription": "Standard cron syntax (minute hour day month weekday). The expression is evaluated in the server's timezone.",
-            "cronHelper": "Cron expression reference (crontab.guru)",
-            "metadataFieldOverrides": "Metadata read behavior",
-            "metadataFieldOverridesDescription": "Controls how Storyteller handles metadata from book files during scans. The default (fill empty) is suitable for most users. If you also manage your books with other tools (e.g. Calibre, Audiobookshelf) and want those changes reflected in Storyteller, consider using always override.",
-            "fieldTitle": "Title",
-            "fieldSubtitle": "Subtitle",
-            "fieldDescription": "Description",
-            "fieldLanguage": "Language",
-            "fieldPublicationDate": "Publication date",
-            "fieldCover": "Cover",
-            "fieldAuthors": "Authors",
-            "fieldNarrators": "Narrators",
-            "fieldCreators": "Other creators",
-            "fieldSeries": "Series",
-            "fieldTags": "Tags",
-            "modeSkip": "Skip",
-            "modeMerge": "Merge",
-            "modeAlways": "Always override",
-            "modeCustom": "Custom",
-            "showAdvancedOverrides": "Show per-field settings",
-            "showSimpleOverrides": "Use a single setting for all fields"
+            "cronHelper": "Cron expression reference (crontab.guru)"
           },
           "skippedImportPaths": {
             "title": "Skipped import paths",
@@ -333,7 +330,6 @@
           }
         }
       },
-
       "auth": {
         "title": "Authentication",
         "sections": {
@@ -436,33 +432,32 @@
           "userRead": "See other users' info",
           "userDelete": "Delete users",
           "userUpdate": "Update other users' permissions",
-          "settingsUpdate": "Change server settings"
+          "settingsUpdate": "Change server settings",
+          "createCollections": "Create collections"
         },
         "sections": {
           "users-invites": {
             "title": "Invites",
             "description": "Manage pending invitations to your server.",
             "invites": "Invites",
-            "invitesDescription": "Manage pending invitations to your server.",
+            "email": "Email",
             "inviteUser": "Invite user",
             "inviteSent": "Invite sent.",
             "inviteAnother": "Invite another user",
             "inviteFailed": "Invite failed",
             "inviteFailedDescription": "Something went wrong when sending the invite. Check the server logs for more information.",
             "inviteFailedButton": "Try again",
-            "enablePasswordLogin": "Enable password login to invite users by email"
+            "enablePasswordLogin": "Enable password login to invite users by email",
+            "createInvite": "Create invite"
           },
           "users-list": {
             "title": "Users",
-            "description": "Manage your users.",
-            "users": "Users",
-            "usersDescription": "Manage your users."
+            "description": "Manage your users."
           }
         }
       }
     }
   },
-
   "PreferencesPage": {
     "title": "Preferences",
     "save": "Save",
@@ -581,7 +576,6 @@
       "cancel": "Cancel",
       "clear": "Clear"
     },
-
     "scan": {
       "title": "Scan",
       "scanning": "Scanning...",
@@ -594,7 +588,6 @@
       "downloadEbook": "Download Ebook",
       "downloadAudiobook": "Download Audiobook"
     },
-
     "series": {
       "notInAnySeries": "Not in any series",
       "seachOrCreateSeries": "Search or create series..."
@@ -608,13 +601,17 @@
       "seachOrCreateTag": "Search or create tag..."
     },
     "fileInformation": {
+      "addFile": "New file",
+      "importFromServer": "Import from server",
+      "upload": "Upload",
       "readaloud": "Readaloud file",
       "ebook": "Ebook file",
       "audiobook": "Audiobook file",
-      "title": "File Information",
+      "title": "Files",
       "lastAligned": "Last aligned",
       "transcriptionEngine": "Transcription engine",
-      "storytellerVersion": "Storyteller version"
+      "storytellerVersion": "Storyteller version",
+      "assetFolder": "Asset folder"
     },
     "alignment": {
       "title": "Alignment",
@@ -629,7 +626,6 @@
       "createReadaloud": "Create readaloud"
     }
   },
-
   "Labels": {
     "title": "Title",
     "subtitle": "Subtitle",
@@ -648,6 +644,40 @@
     "otherContributors": "Other Contributors",
     "downloads": "Downloads",
     "fileInformation": "File Information",
+    "folder": "Folder",
+    "selected": {
+      "withInput": "Selected {input}",
+      "plain": "Selected"
+    },
+    "importMode": {
+      "modeDefault": "Default",
+      "modeReference": "Reference in place",
+      "modeCopy": "Copy to library",
+      "modeMove": "Move to library",
+      "modeHardlink": "Hard link"
+    },
+    "metadata": {
+      "metadataFieldOverrides": "Metadata read behavior",
+      "metadataFieldOverridesDescription": "Controls how Storyteller handles metadata from book files during scans. The default (fill empty) is suitable for most users. If you also manage your books with other tools (e.g. Calibre, Audiobookshelf) and want those changes reflected in Storyteller, consider using always override.",
+      "fieldTitle": "Title",
+      "fieldSubtitle": "Subtitle",
+      "fieldDescription": "Description",
+      "fieldLanguage": "Language",
+      "fieldPublicationDate": "Publication date",
+      "fieldCover": "Cover",
+      "fieldAuthors": "Authors",
+      "fieldNarrators": "Narrators",
+      "fieldCreators": "Other creators",
+      "fieldSeries": "Series",
+      "fieldTags": "Tags",
+      "modeDefault": "Default",
+      "modeSkip": "Skip",
+      "modeMerge": "Merge",
+      "modeAlways": "Always override",
+      "modeCustom": "Custom",
+      "showAdvancedOverrides": "Show per-field settings",
+      "showSimpleOverrides": "Use a single setting for all fields"
+    },
     "create": {
       "withInput": "Create {input}",
       "plain": "Create"
@@ -667,6 +697,8 @@
     "add": {
       "withInput": "Add {input}",
       "plain": "Add"
-    }
+    },
+    "dateAdded": "Date added",
+    "dateUpdated": "Date updated"
   }
 }

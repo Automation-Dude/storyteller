@@ -1,6 +1,7 @@
 import { IconTag } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useCallback } from "react"
+
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useAddTagsToBooksMutation,
@@ -28,7 +29,7 @@ export function TagEditor({
   const [addTags] = useAddTagsToBooksMutation()
   const [removeTags] = useRemoveTagsFromBooksMutation()
 
-  const t = useTranslations("BookDetailsPage.tags")
+  const t = useTranslation("BookDetailsPage.tags")
 
   const handleAdd = useCallback(
     async (tagName: string) => {

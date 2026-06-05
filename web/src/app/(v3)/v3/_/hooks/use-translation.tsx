@@ -1,0 +1,69 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  type MessageKeys,
+  type Messages,
+  type NamespaceKeys,
+  type NestedKeyOf,
+  type NestedValueOf,
+  type createTranslator,
+  // eslint-disable-next-line no-restricted-syntax
+  useTranslations,
+} from "next-intl"
+import React from "react"
+
+type IntlMessages = Record<string, any>
+// taken from next-intl
+type NamespacedMessageKeys<
+  TranslatorMessages extends IntlMessages,
+  Namespace extends NamespaceKeys<
+    TranslatorMessages,
+    NestedKeyOf<TranslatorMessages>
+  > = never,
+> = MessageKeys<
+  NestedValueOf<
+    {
+      "!": TranslatorMessages
+    },
+    [Namespace] extends [never] ? "!" : `!.${Namespace}`
+  >,
+  NestedKeyOf<
+    NestedValueOf<
+      {
+        "!": TranslatorMessages
+      },
+      [Namespace] extends [never] ? "!" : `!.${Namespace}`
+    >
+  >
+>
+
+export function useTranslation<
+  NestedKey extends NamespaceKeys<Messages, NestedKeyOf<Messages>> = never,
+>(
+  namespace?: NestedKey,
+): ReturnType<typeof createTranslator<Messages, NestedKey>> & {
+  plain: (key: NamespacedMessageKeys<Messages, NestedKey>) => string
+} {
+  type T = ReturnType<typeof createTranslator<Messages, NestedKey>> & {
+    plain: (key: NamespacedMessageKeys<Messages, NestedKey>) => string
+  }
+  // eslint-disable-next-line no-restricted-syntax
+  const t = useTranslations(namespace)
+
+  const fn = (<TargetKey extends NamespacedMessageKeys<Messages, NestedKey>>(
+    ...args: Parameters<typeof t<TargetKey>>
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    return (t as any).rich(...args, {
+      em: (text: string) => <em>{text}</em>,
+    })
+  }) as unknown as T
+
+  fn.rich = t.rich.bind(fn)
+  fn.markup = t.markup.bind(fn)
+  fn.raw = t.raw.bind(fn)
+  fn.has = t.has.bind(fn)
+  fn.plain = (key) => t.apply(fn, [key])
+
+  return fn
+}

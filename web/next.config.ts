@@ -2,6 +2,7 @@
 
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
+import { locales } from "./src/i18n/locales"
 
 import createNextIntlPlugin from "next-intl/plugin"
 
@@ -10,28 +11,28 @@ const pkg = JSON.parse(
 )
 
 const withNextIntl = createNextIntlPlugin({
-  // this is nice, but requires next 16
-  // experimental: {
-  // srcPath: "./src",
-  // messages: {
-  //   path: "./messages",
-  //   format: "json",
-  //   locales: "infer",
-  // },
-  // createMessagesDeclaration: ["./messages/en.json", "./messages/nl.json"],
+  experimental: {
+    // this allows next-intl to generate typescript declarations for the messages
+    // so that stuff like hello: `Hello {name}`  -> t('Hello') throws an error if you try to use it without the {name}
+    createMessagesDeclaration: ["./messages/en.json", "./messages/nl.json"],
+
+    // saves some bundle size by precompiling more complex messages
+    messages: {
+      path: "./messages",
+      format: "json",
+      precompile: true,
+      locales: Object.keys(locales),
+    },
+  },
   // extract: {
   //   sourceLocale: "./messages/en.json",
   // },
   // },
 })
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: import("next").NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,

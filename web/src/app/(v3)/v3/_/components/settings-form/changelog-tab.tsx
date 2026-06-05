@@ -1,9 +1,7 @@
 "use client"
 
 import { IconEye, IconEyeOff, IconLoader } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
-
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -15,6 +13,7 @@ import {
   CardTitle,
 } from "@v3/_/components/ui/card"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type ChangelogEntry } from "@/database/changelog"
 import { api, useGetLatestVersionQuery } from "@/store/api"
@@ -45,7 +44,7 @@ function ChangelogEntryCard({
     ?.replace(/<h2+ .*<\/h2>/gm, "")
     .replaceAll('href="/', 'href="https://gitlab.com/')
 
-  const t = useTranslations("SettingsPage.changelog")
+  const t = useTranslation("SettingsPage.changelog")
 
   return (
     <Card>
@@ -87,7 +86,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
   const { fetchNextPage, data, isFetching, hasNextPage } =
     api.endpoints.getInfiniteChangelog.useInfiniteQuery("web")
 
-  const t = useTranslations("SettingsPage.changelog")
+  const t = useTranslation("SettingsPage.changelog")
 
   const { data: latestVersionData } = useGetLatestVersionQuery({
     component: "web",

@@ -1,13 +1,13 @@
 "use client"
 
 import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useMemo } from "react"
 
 import { Book3D } from "@v3/_/components/books/Book3D"
 import { useCoverColors } from "@v3/_/components/books/BookDetails/sections/useCoverColors"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
@@ -58,7 +58,7 @@ export function HeroSection() {
 }
 
 function Hero({ book }: { book: BookWithRelations }) {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   const { primary } = useCoverColors(book)
 
   const progress = book.position?.locator.locations?.totalProgression ?? 0

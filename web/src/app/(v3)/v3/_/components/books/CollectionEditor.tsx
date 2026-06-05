@@ -1,6 +1,7 @@
 import { IconFolder, IconPlus } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useCallback, useState } from "react"
+
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useAddBooksToCollectionsMutation,
@@ -31,8 +32,8 @@ export function CollectionEditor({
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createDialogInitialName, setCreateDialogInitialName] = useState("")
 
-  const t = useTranslations("BookDetailsPage.collections")
-  const tLabels = useTranslations("Labels")
+  const t = useTranslation("BookDetailsPage.collections")
+  const tLabels = useTranslation("Labels")
 
   const handleAdd = useCallback(
     async (collectionUuid: string) => {

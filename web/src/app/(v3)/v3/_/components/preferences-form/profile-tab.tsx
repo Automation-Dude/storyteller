@@ -1,7 +1,6 @@
 "use client"
 
 import { IconLink, IconLinkOff } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
@@ -18,10 +17,11 @@ import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type User } from "@/apiModels"
 
-import { updateProfileAction, unlinkAccountAction } from "./profile-actions"
+import { unlinkAccountAction, updateProfileAction } from "./profile-actions"
 
 export function ProfileTab({
   user,
@@ -34,7 +34,7 @@ export function ProfileTab({
   providers: Array<{ id: string; name: string }>
   disablePasswordLogin: boolean
 }) {
-  const t = useTranslations("PreferencesPage.profile")
+  const t = useTranslation("PreferencesPage.profile")
   const router = useRouter()
 
   const [isSaving, setIsSaving] = useState(false)

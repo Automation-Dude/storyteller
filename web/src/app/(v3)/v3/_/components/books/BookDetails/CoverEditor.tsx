@@ -1,7 +1,6 @@
 "use client"
 
 import { IconPencil, IconUpload, IconX } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 import { useWatch } from "react-hook-form"
 
@@ -11,6 +10,7 @@ import {
   type SpineInfo,
 } from "@v3/_/components/books/Book3D"
 import { Button } from "@v3/_/components/ui/button"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { getCoverUrl } from "@/store/api"
 
@@ -59,7 +59,7 @@ function CoverSlot({
   square: boolean
   onFileChange: (file: File | null) => void
 }) {
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
   const previewUrl = useFilePreview(file)
 
   return (
@@ -115,7 +115,7 @@ function CoverSlot({
 export function CoverEditor({ compact }: { compact: boolean }) {
   const { book, form, canEdit, isEditing, editingCovers, setEditingCovers } =
     useBookForm()
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
   const coverWidth = compact ? 150 : 176
 
   const canSetEbookCover = !!book.ebook || !!book.readaloud

@@ -1,7 +1,6 @@
 "use client"
 
 import { IconLock } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { createContext, useContext } from "react"
 import {
   Controller,
@@ -23,10 +22,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@v3/_/components/ui/tooltip"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Settings } from "@/apiModels"
 import { type SettingsSchema } from "@/database/settingsTypes"
-
 
 export type SettingsFormForm = UseFormReturn<z.infer<typeof SettingsSchema>>
 
@@ -82,7 +81,7 @@ export type SettingsFormFieldProps<
 }
 
 export const LockTooltip = () => {
-  const t = useTranslations("SettingsPage")
+  const t = useTranslation("SettingsPage")
   return (
     <Tooltip>
       <TooltipTrigger>

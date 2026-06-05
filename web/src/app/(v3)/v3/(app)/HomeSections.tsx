@@ -1,11 +1,12 @@
 "use client"
 
 import { IconLoader2 } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
+
 
 import { HeroSection } from "@v3/_/components/home/HeroSection"
 import { StatsBar } from "@v3/_/components/home/StatsBar"
 import { ShelfManager, ShelfRow } from "@v3/_/components/shelves"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type HomeSectionWithDetails } from "@/database/shelves"
 import { useListHomeShelvesQuery } from "@/store/api"
@@ -38,7 +39,7 @@ function Section({
 }
 
 export function HomeSections() {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   const { data: sections, isLoading } = useListHomeShelvesQuery()
 
   if (isLoading) {
@@ -52,9 +53,7 @@ export function HomeSections() {
   if (!sections || sections.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 py-12">
-        <p className="text-muted-foreground text-sm">
-          {t("sections.empty")}
-        </p>
+        <p className="text-muted-foreground text-sm">{t("sections.empty")}</p>
         <ShelfManager />
       </div>
     )

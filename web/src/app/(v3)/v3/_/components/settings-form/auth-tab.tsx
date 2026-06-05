@@ -1,14 +1,12 @@
 "use client"
 
 import { IconPlus, IconTrash } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import {
   Controller,
   type FieldError as FormFieldError,
   useFieldArray,
   useWatch,
 } from "react-hook-form"
-
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -37,6 +35,7 @@ import {
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { Providers } from "@/auth/providers"
 import { cn } from "@/cn"
@@ -96,7 +95,7 @@ export function AuthTab() {
     control: form.control,
     name: "authProviders",
   })
-  const t = useTranslations("SettingsPage.tabs.auth.sections.sso")
+  const t = useTranslation("SettingsPage.tabs.auth.sections.sso")
 
   const {
     fields: authProviders,
@@ -379,7 +378,7 @@ export function AuthTab() {
 }
 
 type TranslationFn = ReturnType<
-  typeof useTranslations<"SettingsPage.tabs.auth.sections.sso">
+  typeof useTranslation<"SettingsPage.tabs.auth.sections.sso">
 >
 
 type GroupPermissionsValue = Record<string, Permission[]>

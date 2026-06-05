@@ -1,7 +1,8 @@
 import { IconMicrophone, IconUser } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useMemo } from "react"
 import { useWatch } from "react-hook-form"
+
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
@@ -10,8 +11,7 @@ import { RelationChipEditor } from "./RelationChipEditor"
 
 export function AuthorEditor() {
   const { form } = useBookForm()
-  const tLabels = useTranslations("Labels")
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation()
 
   const formAuthors = useWatch({ control: form.control, name: "authors" })
   const { data: allAuthors = [] } = useListAuthorsQuery()
@@ -30,7 +30,7 @@ export function AuthorEditor() {
   return (
     <div className="mt-3">
       <span className="text-muted-foreground mb-1.5 block text-xs font-medium uppercase">
-        {tLabels("authors")}
+        {t("Labels.authors")}
       </span>
 
       <RelationChipEditor
@@ -40,7 +40,7 @@ export function AuthorEditor() {
         badgeVariant="outline"
         groupName="authors"
         editMode
-        searchPlaceholder={t("addAuthor")}
+        searchPlaceholder={t("BookDetailsPage.addAuthor")}
         emptyText=""
         onSelectItem={(item) => {
           form.setValue("authors", [...formAuthors, item.name])
@@ -62,8 +62,7 @@ export function AuthorEditor() {
 
 export function NarratorEditor() {
   const { form } = useBookForm()
-  const tLabels = useTranslations("Labels")
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation()
 
   const formNarrators = useWatch({ control: form.control, name: "narrators" })
   const { data: allNarrators = [] } = useListNarratorsQuery()
@@ -82,7 +81,7 @@ export function NarratorEditor() {
   return (
     <div className="mt-3">
       <span className="text-muted-foreground mb-1.5 block text-xs font-medium uppercase">
-        {tLabels("narrators")}
+        {t("Labels.narrators")}
       </span>
 
       <RelationChipEditor
@@ -92,7 +91,7 @@ export function NarratorEditor() {
         badgeVariant="outline"
         groupName="narrators"
         editMode
-        searchPlaceholder={t("addNarrator")}
+        searchPlaceholder={t("BookDetailsPage.addNarrator")}
         emptyText=""
         onSelectItem={(item) => {
           form.setValue("narrators", [...formNarrators, item.name])

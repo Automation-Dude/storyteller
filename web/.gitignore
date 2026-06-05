@@ -43,3 +43,6 @@ migrate-dist
 autoimport-dist
 
 whisper-builds/
+
+# next-intl typescript augmentations
+messages/*.d.json.ts

@@ -1,8 +1,6 @@
 "use client"
 
-import { useTranslations } from "next-intl"
 import { useWatch } from "react-hook-form"
-
 
 import {
   Card,
@@ -20,6 +18,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 
@@ -28,13 +27,13 @@ import { SettingsSection } from "./shared"
 
 export function TranscriptionTab() {
   const { form } = useSettingsForm()
-  const tt = useTranslations(
+  const tt = useTranslation(
     "SettingsPage.tabs.transcription.sections.transcription",
   )
-  const tp = useTranslations(
+  const tp = useTranslation(
     "SettingsPage.tabs.transcription.sections.parallelization",
   )
-  const ta = useTranslations("SettingsPage.tabs.transcription.sections.audio")
+  const ta = useTranslation("SettingsPage.tabs.transcription.sections.audio")
 
   const transcriptionEngine = useWatch({
     control: form.control,
@@ -338,7 +337,7 @@ export function TranscriptionTab() {
 }
 
 type TranslationFn = ReturnType<
-  typeof useTranslations<"SettingsPage.tabs.transcription.sections.transcription">
+  typeof useTranslation<"SettingsPage.tabs.transcription.sections.transcription">
 >
 
 function WhisperSettings({ t }: { t: TranslationFn }) {

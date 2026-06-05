@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-import { nextAuth } from "@/auth/auth"
-import { hashPassword, createConfig } from "@/auth/auth"
+import { createConfig, hashPassword, nextAuth  } from "@/auth/auth"
 import { updateUser } from "@/database/users"
 
 export async function updateProfileAction(data: {

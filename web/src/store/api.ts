@@ -20,6 +20,7 @@ import {
 import { type ChangelogEntry } from "@/database/changelog"
 import { type CollectionWithRelations } from "@/database/collections"
 import { type Creator } from "@/database/creators"
+import { type HomeStats } from "@/database/homeStats"
 import { type ImportRuleWithCollections } from "@/database/importRules"
 import { type Position } from "@/database/positions"
 import {
@@ -32,7 +33,6 @@ import {
   type MetadataFieldOverrides,
 } from "@/database/settingsTypes"
 import { type ShelfFilter } from "@/database/shelfFilter"
-import { type HomeStats } from "@/database/homeStats"
 import {
   type HomeSectionKind,
   type HomeSectionWithDetails,

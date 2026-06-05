@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { IconEye, IconEyeOff } from "@tabler/icons-react"
 import { useSearchParams } from "next/navigation"
-import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
@@ -23,6 +22,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@v3/_/components/ui/input-group"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type Providers, type PublicProvider } from "@/auth/providers"
@@ -49,7 +49,7 @@ export function LoginForm({
   oauthLoginAction: (providerId: string, callbackUrl?: string) => Promise<void>
   providers: PublicProvider[]
 }) {
-  const t = useTranslations("LoginPage")
+  const t = useTranslation("LoginPage")
 
   const {
     register,

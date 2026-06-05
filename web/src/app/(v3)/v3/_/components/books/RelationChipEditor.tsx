@@ -1,7 +1,6 @@
 "use client"
 
 import { IconPlus, IconX } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { type ReactNode, useMemo, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -13,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@v3/_/components/ui/popover"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
@@ -128,7 +128,7 @@ export function RelationChipEditor<T extends RelationItem>({
   renderBadgeExtra,
 }: RelationChipEditorProps<T>) {
   const isMobile = useIsMobile()
-  const tLabels = useTranslations("Labels")
+  const tLabels = useTranslation("Labels")
 
   const [search, setSearch] = useState("")
   const [isOpen, setIsOpen] = useState(false)

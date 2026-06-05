@@ -7,7 +7,6 @@ import {
   IconHeadphones,
   IconX,
 } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useMemo, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -32,6 +31,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Separator } from "@v3/_/components/ui/separator"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
@@ -80,7 +80,7 @@ export function BookFilters({
   hideSeriesFilter = false,
   className,
 }: BookFiltersProps) {
-  const t = useTranslations("BooksPage")
+  const t = useTranslation("BooksPage")
   const { data: collections } = useListCollectionsQuery()
   const { data: seriesList } = useListSeriesQuery()
   const { data: statuses } = useListStatusesQuery()

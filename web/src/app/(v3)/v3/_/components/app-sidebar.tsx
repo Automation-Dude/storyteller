@@ -7,7 +7,6 @@ import {
   IconSettings,
 } from "@tabler/icons-react"
 import Image from "next/image"
-import { useTranslations } from "next-intl"
 import { useEffect, useMemo, useRef } from "react"
 import { toast } from "sonner"
 
@@ -34,6 +33,7 @@ import {
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import type { User } from "@/apiModels"
 import { type SidebarItemWithDetails } from "@/database/sidebar"
@@ -129,8 +129,8 @@ export function AppSidebar({
 
   const { openSearch } = useCommandSearch()
 
-  const t = useTranslations("AppSidebar")
-  const tLibrary = useTranslations("LibraryPage")
+  const t = useTranslation("AppSidebar")
+  const tLibrary = useTranslation("LibraryPage")
 
   // the sidebar nav is a per-user ordered config (sidebar_item table). builtins
   // resolve their icon/href/label from the registry; collection + shelf entries
@@ -171,8 +171,7 @@ export function AppSidebar({
       if (item.kind === "collection") {
         return [
           {
-            title:
-              extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
+            title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
             url: `/collections/${item.collectionUuid}`,
             icon: COLLECTION_ICON,
             // sentinel key (not in libraryCounts) so no badge renders

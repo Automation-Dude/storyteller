@@ -56,6 +56,11 @@ module.exports = {
             message:
               "Do not use form.watch, it does not work with the React compiler. Use react-hook-form's useWatch instead.",
           },
+          {
+            selector: "Identifier[name='useTranslations']",
+            message:
+              "Do not use next-intl's useTranslations hook, it won't automatically create correct markup. Use useTranslation instead. If you need plain text, use t.plain instead.",
+          },
         ],
       },
     },

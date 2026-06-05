@@ -10,7 +10,7 @@ import {
   IconTrash,
   IconUpload,
 } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
+// import { useTranslation } from "@v3/_/hooks/use-translation"
 import { type ComponentType, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -37,6 +37,7 @@ import { useFormatDate } from "@v3/_/lib/date"
 import { FilePathRow } from "@/app/(v3)/v3/_/components/books/BookDetails/FilePathRow"
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
@@ -106,7 +107,7 @@ function FormatFileRow({
           <span className="text-muted-foreground font-sans text-xs font-semibold uppercase">
             {FORMAT_LABELS[format]}
           </span>
-          {!!fmt.missing && (
+          {fmt.missing && (
             <Badge
               variant="destructive"
               className="h-4 gap-0.5 px-1 text-[10px]"
@@ -193,7 +194,7 @@ export function FileSection({
   className?: string
 }) {
   const canEdit = usePermission("bookUpdate")
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
   const formatDate = useFormatDate()
   const [removeAsset, { isLoading: isRemoving }] = useRemoveBookAssetMutation()
 
@@ -233,7 +234,7 @@ export function FileSection({
               render={
                 <Button variant="ghost" size="sm" aria-label="Add file">
                   <IconPlus className="mr-1 h-3.5 w-3.5" />
-                  Add file
+                  {t("fileInformation.addFile")}
                 </Button>
               }
             />
@@ -253,7 +254,7 @@ export function FileSection({
                       }}
                     >
                       <IconServer className="mr-2 h-4 w-4" />
-                      Import from server
+                      {t("fileInformation.importFromServer")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => {
@@ -261,7 +262,7 @@ export function FileSection({
                       }}
                     >
                       <IconUpload className="mr-2 h-4 w-4" />
-                      Upload
+                      {t("fileInformation.upload")}
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                 )
@@ -314,7 +315,7 @@ export function FileSection({
         {canEdit && assetFolder && (
           <div className="flex flex-col gap-0.5">
             <span className="text-muted-foreground font-sans text-xs font-semibold uppercase">
-              Asset folder
+              {t("fileInformation.assetFolder")}
             </span>
             <code className="font-mono text-sm break-all">{assetFolder}</code>
           </div>

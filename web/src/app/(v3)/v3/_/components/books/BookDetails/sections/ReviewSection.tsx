@@ -1,7 +1,6 @@
 "use client"
 
 import { IconPencil, IconStar } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
@@ -9,6 +8,7 @@ import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { Button } from "@v3/_/components/ui/button"
 import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Textarea } from "@v3/_/components/ui/textarea"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useDeleteBookRatingMutation,
@@ -17,7 +17,7 @@ import {
 
 export function ReviewSection({ className }: { className?: string }) {
   const { book } = useBookForm()
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
 
   const [setBookRating, { isLoading: isSaving }] = useSetBookRatingMutation()
   const [deleteBookRating] = useDeleteBookRatingMutation()
@@ -67,7 +67,9 @@ export function ReviewSection({ className }: { className?: string }) {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="section-label flex-1">
           <IconStar className="h-4 w-4" />
-          {t("review.title")}
+          <span className="sr-only @md/book:not-sr-only">
+            {t("review.title")}
+          </span>
         </h2>
 
         {!editing && (
@@ -80,7 +82,7 @@ export function ReviewSection({ className }: { className?: string }) {
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <span className="text-muted-foreground text-xs uppercase">
+          <span className="text-muted-foreground sr-only text-xs uppercase">
             {t("review.yourRating")}
           </span>
           <RatingInput value={currentRating} onChange={handleRatingChange} />

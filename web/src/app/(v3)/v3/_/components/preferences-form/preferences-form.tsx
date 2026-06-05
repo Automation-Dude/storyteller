@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { IconSettings2, IconUser } from "@tabler/icons-react"
-import { type Locale, useTranslations } from "next-intl"
+import { type Locale } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
 import { useMemo } from "react"
 import { useForm } from "react-hook-form"
@@ -16,6 +16,7 @@ import { Spinner } from "@v3/_/components/ui/spinner"
 import { Tabs, TabsList, TabsTrigger } from "@v3/_/components/ui/tabs"
 
 import { type User } from "@/apiModels"
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   type UserPreferences,
   UserPreferencesSchema,
@@ -40,7 +41,7 @@ export function PreferencesForm({
   providers: Array<{ id: string; name: string }>
   disablePasswordLogin: boolean
 }) {
-  const t = useTranslations("PreferencesPage")
+  const t = useTranslation("PreferencesPage")
 
   const form = useForm({
     resolver: zodResolver(UserPreferencesSchema),
@@ -121,7 +122,11 @@ export function PreferencesForm({
         >
           <TabsList className="shrink-0">
             {tabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5">
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="gap-1.5"
+              >
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
               </TabsTrigger>
@@ -136,10 +141,7 @@ export function PreferencesForm({
               disablePasswordLogin={disablePasswordLogin}
             />
 
-            <form
-              id="preferences-form"
-              onSubmit={form.handleSubmit(onSubmit)}
-            >
+            <form id="preferences-form" onSubmit={form.handleSubmit(onSubmit)}>
               <PreferencesTab form={form} />
             </form>
           </div>

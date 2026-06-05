@@ -6,10 +6,10 @@ import {
   IconProgress,
   IconX,
 } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
@@ -43,7 +43,7 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
   const isBusy =
     readaloudStatus === "QUEUED" || readaloudStatus === "PROCESSING"
 
-  const t = useTranslations("BookDetailsPage.alignment")
+  const t = useTranslation("BookDetailsPage.alignment")
 
   if (!readaloudStatus && !canCreateReadaloud && !canProcess) {
     return null

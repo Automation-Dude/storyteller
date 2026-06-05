@@ -1,13 +1,13 @@
 "use client"
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useMemo, useRef } from "react"
 
 import { BookCard } from "@v3/_/components/books/BookCard"
 import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
@@ -24,7 +24,7 @@ type ShelfRowProps = {
 }
 
 export function ShelfRow({ shelf, className }: ShelfRowProps) {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { books, isLoading, seeAllHref } = useShelfBooks(shelf)

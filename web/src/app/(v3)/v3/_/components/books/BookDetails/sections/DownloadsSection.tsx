@@ -1,21 +1,20 @@
 "use client"
 
 import { IconBook, IconDownload, IconHeadphones } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
+
 
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useBookForm } from "@/app/(v3)/v3/_/components/books/BookDetails/BookFormProvider"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { getDownloadUrl } from "@/store/api"
 
-
-
 export function DownloadsSection({ className }: { className?: string }) {
   const { book } = useBookForm()
-  const t = useTranslations("BookDetailsPage")
-  const tLabels = useTranslations("Labels")
+  const t = useTranslation("BookDetailsPage")
+  const tLabels = useTranslation("Labels")
 
   return (
     <section className={className}>

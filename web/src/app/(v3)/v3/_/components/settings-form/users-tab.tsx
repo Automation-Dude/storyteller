@@ -7,7 +7,6 @@ import {
   IconUsers,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { useTranslations } from "next-intl"
 import { useCallback, useLayoutEffect, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -28,6 +27,7 @@ import {
 import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Invite, type User } from "@/apiModels"
 import { type UserPermissionSet } from "@/database/users"
@@ -92,7 +92,7 @@ export function UsersTab({
   const { data: invites } = useListInvitesQuery()
   const { data: users } = useListUsersQuery()
 
-  const t = useTranslations("SettingsPage.tabs.users")
+  const t = useTranslation("SettingsPage.tabs.users")
 
   return (
     <TabsContent value="users" className="space-y-6">
@@ -236,7 +236,7 @@ function UserRow({ user }: { user: User }) {
     setShowPermissions(false)
   }, [permissions, updateUser, user.id])
 
-  const tPermissions = useTranslations("SettingsPage.tabs.users.permissions")
+  const tPermissions = useTranslation("SettingsPage.tabs.users.permissions")
 
   return (
     <div className="rounded-md border p-3">
@@ -357,8 +357,8 @@ function CreateInviteSection({
 }: {
   disablePasswordLogin: boolean
 }) {
-  const t = useTranslations("SettingsPage.tabs.users.sections.users-invites")
-  const tPermissions = useTranslations("SettingsPage.tabs.users.permissions")
+  const t = useTranslation("SettingsPage.tabs.users.sections.users-invites")
+  const tPermissions = useTranslation("SettingsPage.tabs.users.permissions")
   const [showForm, setShowForm] = useState(false)
   const [email, setEmail] = useState("")
   const [permissions, setPermissions] = useState<Permission[]>([
@@ -459,7 +459,7 @@ function CreateInviteSection({
   return (
     <div className="space-y-3 rounded-md border p-3">
       <Field>
-        <FieldLabel>Email</FieldLabel>
+        <FieldLabel>{t("email")}</FieldLabel>
         <Input
           type="email"
           value={email}
@@ -536,7 +536,7 @@ function CreateInviteSection({
           }}
         >
           {isLoading && <Spinner />}
-          {isLoading ? "Creating..." : "Create invite"}
+          {t("createInvite")}
         </Button>
         <Button
           type="button"

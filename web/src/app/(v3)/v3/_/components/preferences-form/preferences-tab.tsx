@@ -1,6 +1,5 @@
 "use client"
 
-import { useTranslations } from "next-intl"
 import { Controller, type UseFormReturn } from "react-hook-form"
 import { type z } from "zod"
 
@@ -20,6 +19,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type UserPreferencesSchema } from "@/database/userPreferencesTypes"
 import { locales } from "@/i18n/locales"
@@ -38,7 +38,7 @@ const localeOptions = Object.entries(locales).map(([key, locale]) => ({
 }))
 
 export function PreferencesTab({ form }: { form: PreferencesFormType }) {
-  const t = useTranslations("PreferencesPage.preferences")
+  const t = useTranslation("PreferencesPage.preferences")
 
   return (
     <TabsContent value="preferences" className="space-y-6">

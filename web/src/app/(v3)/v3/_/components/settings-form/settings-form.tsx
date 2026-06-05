@@ -16,7 +16,6 @@ import {
   IconX,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { useTranslations } from "next-intl"
 import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { type FieldErrors, useForm } from "react-hook-form"
@@ -33,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@v3/_/components/ui/tooltip"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Invite, type Settings, type User } from "@/apiModels"
 import { SettingsSchema } from "@/database/settingsTypes"
@@ -67,7 +67,7 @@ type ResolvedFieldError = FlattenedFieldError & {
   label: string
 }
 
-type SettingsTranslations = ReturnType<typeof useTranslations<"SettingsPage">>
+type SettingsTranslations = ReturnType<typeof useTranslation<"SettingsPage">>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
@@ -186,7 +186,7 @@ export function SettingsForm({
   initialUsers?: User[]
   initialInvites?: Invite[]
 }) {
-  const t = useTranslations("SettingsPage")
+  const t = useTranslation("SettingsPage")
   const title = t("title")
   const { data: maxUploadChunkSize } = useGetMaxUploadChunkSizeQuery()
   const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation()

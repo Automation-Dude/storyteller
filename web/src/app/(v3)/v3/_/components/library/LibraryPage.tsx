@@ -6,7 +6,6 @@ import {
   IconSortAscending,
   IconSortDescending,
 } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
@@ -28,6 +27,7 @@ import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { useListBooksQuery } from "@/store/api"
@@ -49,7 +49,7 @@ export function LibraryPage({
   section,
   defaultSidebarSort = "name",
 }: LibraryPageProps) {
-  const t = useTranslations("LibraryPage")
+  const t = useTranslation("LibraryPage")
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
 

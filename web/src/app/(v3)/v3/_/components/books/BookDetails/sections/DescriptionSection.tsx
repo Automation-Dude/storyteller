@@ -1,11 +1,11 @@
 "use client"
 
-import { useTranslations } from "next-intl"
 import { useEffect, useRef, useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { Field, FieldError } from "@v3/_/components/ui/field"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
 
@@ -23,7 +23,7 @@ function CollapsibleDescription({
   canEdit: boolean
   onEdit: () => void
 }) {
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
   const contentRef = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState(false)
   const [isOverflowing, setIsOverflowing] = useState(false)
@@ -93,8 +93,8 @@ function CollapsibleDescription({
 }
 
 export function DescriptionSection({ className }: { className?: string }) {
-  const t = useTranslations("BookDetailsPage")
-  const tLabels = useTranslations("Labels")
+  const t = useTranslation("BookDetailsPage")
+  const tLabels = useTranslation("Labels")
   const {
     form,
     canEdit,

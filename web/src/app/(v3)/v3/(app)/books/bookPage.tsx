@@ -1,6 +1,5 @@
 "use client"
 
-import { useTranslations } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
 import { useMemo } from "react"
 
@@ -10,6 +9,7 @@ import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type UserPermissionSet } from "@/database/users"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
@@ -19,7 +19,7 @@ export default function BookPage({
 }: {
   permissions: UserPermissionSet
 }) {
-  const t = useTranslations("BooksPage")
+  const t = useTranslation("BooksPage")
 
   const { isSelecting, toggleSelection } = useBookSelection()
 

@@ -14,7 +14,6 @@ import {
 } from "@tabler/icons-react"
 import { AnimatePresence, motion } from "framer-motion"
 import Link from "next/link"
-import { useTranslations } from "next-intl"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -25,6 +24,7 @@ import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
@@ -87,7 +87,7 @@ export function BookDetailsContent({
   const { data: queryBook, isLoading: isLoadingBook } = useGetBookQuery({
     uuid,
   })
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
 
   const book = queryBook ?? initialBook
 
@@ -242,7 +242,7 @@ function BookDetailsHeader() {
   const canEdit = usePermission("bookUpdate")
   const { book, isEditing, isSaving, setIsEditing, submitForm, discard } =
     useBookForm()
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
 
   const handleCancel = () => {
     discard()
@@ -309,7 +309,7 @@ function BookDetailsHeader() {
 function CompactEditBar() {
   const { isEditing, isSaving, setIsEditing, submitForm, discard } =
     useBookForm()
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
 
   if (!isEditing) return null
 
@@ -358,7 +358,7 @@ function CompactEditBar() {
 // gives a way to bail out of an in-progress edit; saving happens on blur/Enter.
 function InlineEditBar() {
   const { isEditing, isSaving, editingField, discard } = useBookForm()
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
 
   return (
     <AnimatePresence>
@@ -404,7 +404,7 @@ function CoverEditBar() {
     discardCovers,
     setEditingCovers,
   } = useBookForm()
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
 
   const handleSave = async () => {
     const success = await submitForm()
@@ -568,7 +568,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
 
 function TagsSection() {
   const { book, isEditing } = useBookForm()
-  const tLabels = useTranslations("Labels")
+  const tLabels = useTranslation("Labels")
 
   return (
     <section>
@@ -589,7 +589,7 @@ function TagsSection() {
 
 function CollectionsSection() {
   const { book, isEditing } = useBookForm()
-  const tLabels = useTranslations("Labels")
+  const tLabels = useTranslation("Labels")
 
   return (
     <section>

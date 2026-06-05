@@ -1,7 +1,6 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -16,6 +15,7 @@ import {
 import { Label } from "@v3/_/components/ui/label"
 import { Separator } from "@v3/_/components/ui/separator"
 import { useVersionBasePath } from "@v3/_/components/version-context"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { getReferencePathsAction } from "@/actions/getReferencePathsAction"
 import { type BookWithRelations } from "@/database/books"
@@ -27,7 +27,7 @@ export function DeleteBookModal({ book }: { book: BookWithRelations }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [preventReImport, setPreventReImport] = useState(false)
   const [referencePaths, setReferencePaths] = useState<string[]>([])
-  const t = useTranslations("BookDetailsPage")
+  const t = useTranslation("BookDetailsPage")
   const [deleteBook, { isLoading }] = useDeleteBookMutation()
 
   useEffect(() => {

@@ -1,9 +1,7 @@
 "use client"
 
 import { IconPlus, IconUser, IconX } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { Controller, useFieldArray } from "react-hook-form"
-
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { Badge } from "@v3/_/components/ui/badge"
@@ -16,12 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { creatorRelators } from "@/components/books/edit/marcRelators"
 
 export function ContributorsSection({ className }: { className?: string }) {
   const { book, isEditing } = useBookForm()
-  const tLabels = useTranslations("Labels")
+  const tLabels = useTranslation("Labels")
 
   const nonAuthorNarratorCreators = book.creators.filter(
     (c) => c.role !== "aut" && c.role !== "nrt",

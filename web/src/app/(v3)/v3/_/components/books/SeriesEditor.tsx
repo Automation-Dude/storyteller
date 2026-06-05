@@ -1,6 +1,7 @@
 import { IconLibrary } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useCallback } from "react"
+
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useAddBooksToSeriesMutation,
@@ -35,7 +36,7 @@ export function SeriesEditor({
   const [addToSeries] = useAddBooksToSeriesMutation()
   const [removeFromSeries] = useRemoveBooksFromSeriesMutation()
 
-  const t = useTranslations("BookDetailsPage.series")
+  const t = useTranslation("BookDetailsPage.series")
 
   const handleAdd = useCallback(
     async (seriesName: string, seriesUuid?: string) => {

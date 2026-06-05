@@ -1,9 +1,9 @@
 "use client"
 
-import { useTranslations } from "next-intl"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { useFormatDate } from "@v3/_/lib/date"
 import { cn } from "@v3/_/lib/utils"
@@ -68,7 +68,7 @@ function DetailRow({
 
 export function DetailsSection({ className }: { className?: string }) {
   const { book } = useBookForm()
-  const tLabels = useTranslations("Labels")
+  const tLabels = useTranslation("Labels")
   const formatDate = useFormatDate()
 
   const pages = bookPageCount(book)

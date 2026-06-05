@@ -1,7 +1,7 @@
 "use client"
 
 import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
+
 
 import {
   AuthorEditor,
@@ -16,6 +16,7 @@ import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
 import {
@@ -27,8 +28,8 @@ import { useCoverColors } from "./useCoverColors"
 
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, isEditing, editingCovers, isFieldActive } = useBookForm()
-  const tLabels = useTranslations("Labels")
-  const t = useTranslations("BookDetailsPage")
+  const tLabels = useTranslation("Labels")
+  const t = useTranslation("BookDetailsPage")
 
   const [setBookRating] = useSetBookRatingMutation()
   const [deleteBookRating] = useDeleteBookRatingMutation()

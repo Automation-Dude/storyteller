@@ -13,7 +13,6 @@ import {
   IconTrash,
 } from "@tabler/icons-react"
 import { Reorder, motion, useDragControls } from "framer-motion"
-import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -31,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@v3/_/components/ui/dialog"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type HomeSectionKind, type ShelfWithBooks } from "@/database/shelves"
@@ -48,7 +48,7 @@ type ShelfManagerProps = {
 }
 
 export function ShelfManager({ className }: ShelfManagerProps) {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   const [open, setOpen] = useState(false)
 
   return (
@@ -98,7 +98,7 @@ const BUILT_IN_KINDS: HomeSectionKind[] = [
 ]
 
 function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   const { data: homeShelves, isLoading } = useListHomeShelvesQuery()
   const { data: userShelves = [], refetch: refetchUserShelves } =
     useListUserShelvesQuery()
@@ -294,8 +294,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
                 )}
               />
               {t("sections.hidden", {
-                count:
-                  hiddenBuiltInTypes.length + hiddenCustomShelves.length,
+                count: hiddenBuiltInTypes.length + hiddenCustomShelves.length,
               })}
             </button>
           </CollapsibleTrigger>
@@ -369,7 +368,7 @@ function ShelfItem({
   onEdit,
   canHide,
 }: ShelfItemProps) {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   const isBuiltIn = shelf.kind !== "custom"
   const displayName = shelf.name ?? t(`kinds.${shelf.kind}.name`)
   const controls = useDragControls()
@@ -475,7 +474,7 @@ function HiddenShelfItem({
   onShow,
   onDelete,
 }: HiddenShelfItemProps) {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   return (
     <div className="bg-muted/50 flex items-center gap-2 rounded-lg border p-2">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">

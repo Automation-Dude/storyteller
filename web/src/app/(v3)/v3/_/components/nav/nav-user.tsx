@@ -8,7 +8,6 @@ import {
   IconUser,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 
 import { LocaleChanger } from "@v3/_/components/locale-changer"
@@ -31,6 +30,7 @@ import {
   useSidebar,
 } from "@v3/_/components/ui/sidebar"
 import { useVersionBasePath } from "@v3/_/components/version-context"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 export function NavUser({
   user,
@@ -47,7 +47,7 @@ export function NavUser({
 
   const displayName = user.name ?? user.username ?? "User"
 
-  const t = useTranslations("AppSidebar")
+  const t = useTranslation("AppSidebar")
 
   return (
     <SidebarMenu>

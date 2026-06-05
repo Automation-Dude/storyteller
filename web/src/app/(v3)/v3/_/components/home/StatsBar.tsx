@@ -1,17 +1,21 @@
 "use client"
 
-import { useTranslations } from "next-intl"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useGetHomeStatsQuery } from "@/store/api"
 
 export function StatsBar() {
-  const t = useTranslations("HomePage")
+  const t = useTranslation("HomePage")
   const { data: stats } = useGetHomeStatsQuery()
 
   if (!stats) return null
 
   const tiles = [
-    { key: "inProgress", value: stats.inProgress, label: t("stats.inProgress") },
+    {
+      key: "inProgress",
+      value: stats.inProgress,
+      label: t("stats.inProgress"),
+    },
     {
       key: "finishedThisYear",
       value: stats.finishedThisYear,

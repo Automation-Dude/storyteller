@@ -1,10 +1,8 @@
 "use client"
 
 import { IconPlus, IconSearch, IconTrash } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useMemo, useState } from "react"
 import { useWatch } from "react-hook-form"
-
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -53,6 +51,7 @@ import {
   ComboboxList,
   ComboboxValue,
 } from "@/app/(v3)/v3/_/components/ui/combobox"
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   cronExpressionToMinutes,
   minutesToCronExpression,
@@ -100,7 +99,7 @@ export function LibraryTab() {
 }
 
 function LibrarySection() {
-  const t = useTranslations("SettingsPage.tabs.library.sections.library")
+  const t = useTranslation("SettingsPage.tabs.library.sections.library")
 
   return (
     <SettingsSection tab="library" section="library">
@@ -143,20 +142,6 @@ function LibrarySection() {
 const USE_DEFAULT_VALUE = "__default__"
 
 // TODO: internationalize
-const IMPORT_MODE_OPTIONS = [
-  { value: USE_DEFAULT_VALUE, label: "Use default" },
-  { value: "reference", label: "Reference in place" },
-  { value: "copy", label: "Copy to library" },
-  { value: "move", label: "Move to library" },
-  { value: "hardlink", label: "Hard link to library" },
-]
-
-const AUTO_SOURCE_LABELS: Record<Exclude<ImportRuleSource, "user">, string> = {
-  config: "Config",
-  "import-relocate": "Relocated",
-  "import-backup": "Backup copy",
-  "prevent-reimport": "Re-import prevention",
-}
 
 function WatchRuleCard({
   rule,
@@ -165,6 +150,7 @@ function WatchRuleCard({
   selected,
   onToggle,
   onDelete,
+  importModeOptions,
 }: {
   rule: ImportRuleWithCollections
   rules: ImportRuleWithCollections[]
@@ -172,6 +158,7 @@ function WatchRuleCard({
   selected: boolean
   onToggle: () => void
   onDelete: () => void
+  importModeOptions: { value: string; label: string }[]
 }) {
   const [updateRule] = useUpdateImportRuleMutation()
   const [editingPath, setEditingPath] = useState(false)
@@ -179,6 +166,7 @@ function WatchRuleCard({
   const [editError, setEditError] = useState<string | null>(null)
 
   const isConfig = rule.source === "config"
+  const t = useTranslation("SettingsPage.tabs.library.sections.autoImport")
 
   function trySave() {
     const result = validateWatchRulePath({
@@ -289,16 +277,13 @@ function WatchRuleCard({
               const mode = v === USE_DEFAULT_VALUE ? null : v
               void updateRule({ uuid: rule.uuid, importMode: mode })
             }}
+            items={importModeOptions}
           >
             <SelectTrigger className="w-[160px]">
-              <SelectValue>
-                {IMPORT_MODE_OPTIONS.find(
-                  (o) => o.value === (rule.importMode ?? USE_DEFAULT_VALUE),
-                )?.label ?? "Use default"}
-              </SelectValue>
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {IMPORT_MODE_OPTIONS.map((opt) => (
+              {importModeOptions.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -333,7 +318,7 @@ function WatchRuleCard({
                       <ComboboxChip key={name}>{name}</ComboboxChip>
                     ))}
                 </ComboboxValue>
-                <ComboboxChipsInput placeholder="Add collection" />
+                <ComboboxChipsInput placeholder={t("importCollectionsAdd")} />
               </ComboboxChips>
             </Combobox>
           )}
@@ -398,13 +383,15 @@ function AutoIgnoreRuleRow({
   rule,
   selected,
   onToggle,
+  sourceLabels,
 }: {
   rule: ImportRuleWithCollections
   selected: boolean
   onToggle: () => void
+  sourceLabels: Record<Exclude<ImportRuleSource, "user">, string>
 }) {
   const sourceLabel =
-    rule.source !== "user" ? AUTO_SOURCE_LABELS[rule.source] : "Auto"
+    rule.source !== "user" ? sourceLabels[rule.source] : "Auto"
 
   return (
     <div
@@ -444,12 +431,14 @@ function AddRuleDialog({
   kind,
   rules,
   collections,
+  importModeOptions,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   kind: "watch" | "ignore"
   rules: ImportRuleWithCollections[]
   collections: { uuid: UUID; name: string }[]
+  importModeOptions: { value: string; label: string }[]
 }) {
   const [createRule, { isLoading }] = useCreateImportRuleMutation()
   const [path, setPath] = useState("")
@@ -457,6 +446,7 @@ function AddRuleDialog({
   const [collectionUuids, setCollectionUuids] = useState<UUID[]>([])
   const [error, setError] = useState<string | null>(null)
 
+  const t = useTranslation("SettingsPage.tabs.library.sections.autoImport")
   function reset() {
     setPath("")
     setImportMode(USE_DEFAULT_VALUE)
@@ -501,6 +491,8 @@ function AddRuleDialog({
     }
   }
 
+  const tl = useTranslation("Labels")
+
   return (
     <Dialog
       open={open}
@@ -512,18 +504,18 @@ function AddRuleDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
-            {kind === "watch" ? "Add watch rule" : "Add ignore rule"}
+            {kind === "watch" ? t("addWatchRule") : t("addIgnoreRule")}
           </DialogTitle>
           <DialogDescription>
             {kind === "watch"
-              ? "Storyteller will scan this folder for new books."
-              : "Storyteller will skip this path during scans."}
+              ? t("addWatchRuleDescription")
+              : t("addIgnoreRuleDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 px-6 pb-2">
           <div className="space-y-1.5">
-            <Label>Folder</Label>
+            <Label>{tl("folder")}</Label>
             <Input
               defaultValue={path || "/"}
               onChange={(e) => {
@@ -534,7 +526,9 @@ function AddRuleDialog({
             />
             {path && (
               <p className="text-muted-foreground text-xs">
-                Selected: <span className="text-foreground">{path}</span>
+                {tl("selected.withInput", {
+                  input: <span className="text-foreground">{path}</span>,
+                })}
               </p>
             )}
           </div>
@@ -542,21 +536,19 @@ function AddRuleDialog({
           {kind === "watch" && (
             <>
               <div className="space-y-1.5">
-                <Label>Import mode</Label>
+                <Label>{t("importMode")}</Label>
                 <Select
                   value={importMode}
                   onValueChange={(v) => {
                     setImportMode(v ?? USE_DEFAULT_VALUE)
                   }}
+                  items={importModeOptions}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {IMPORT_MODE_OPTIONS.find((o) => o.value === importMode)
-                        ?.label ?? "Use default"}
-                    </SelectValue>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {IMPORT_MODE_OPTIONS.map((opt) => (
+                    {importModeOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>
@@ -567,7 +559,7 @@ function AddRuleDialog({
 
               {collections.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label>Add new books to collections</Label>
+                  <Label>{t("importCollectionsDescription")}</Label>
                   <Combobox
                     items={collections.map((c) => ({
                       value: c.uuid,
@@ -633,7 +625,8 @@ function AddRuleDialog({
 }
 
 function ImportRulesSection() {
-  const t = useTranslations("SettingsPage.tabs.library.sections.autoImport")
+  const t = useTranslation("SettingsPage.tabs.library.sections.autoImport")
+  const tl = useTranslation("Labels.importMode")
 
   const { data: rules = [] } = useGetImportRulesQuery()
   const { data: collections = [] } = useListCollectionsQuery()
@@ -653,6 +646,24 @@ function ImportRulesSection() {
   const [addDialogKind, setAddDialogKind] = useState<"watch" | "ignore" | null>(
     null,
   )
+
+  const IMPORT_MODE_OPTIONS = [
+    { value: USE_DEFAULT_VALUE, label: tl("modeDefault") },
+    { value: "reference", label: tl("modeReference") },
+    { value: "copy", label: tl("modeCopy") },
+    { value: "move", label: tl("modeMove") },
+    { value: "hardlink", label: tl("modeHardlink") },
+  ]
+
+  const AUTO_SOURCE_LABELS: Record<
+    Exclude<ImportRuleSource, "user">,
+    string
+  > = {
+    config: t("ignoreSources.config"),
+    "import-relocate": t("ignoreSources.importRelocated"),
+    "import-backup": t("ignoreSources.importBackup"),
+    "prevent-reimport": t("ignoreSources.importPreventReimport"),
+  }
 
   const { watchRules, userIgnoreRules, autoIgnoreRules } = useMemo(() => {
     const watch: ImportRuleWithCollections[] = []
@@ -759,10 +770,7 @@ function ImportRulesSection() {
       <Card>
         <CardHeader>
           <CardTitle>{t("title")}</CardTitle>
-          <CardDescription>
-            Configure which folders Storyteller watches for new books, and which
-            paths to skip during scans.
-          </CardDescription>
+          <CardDescription>{t("description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <SettingsFormField
@@ -774,12 +782,10 @@ function ImportRulesSection() {
                 disabled={fieldLocked}
                 value={field.value}
                 onValueChange={field.onChange}
+                items={IMPORT_MODE_OPTIONS}
               >
                 <SelectTrigger className="max-w-fit">
-                  <SelectValue>
-                    {IMPORT_MODE_OPTIONS.find((o) => o.value === field.value)
-                      ?.label ?? t("defaultImportMode")}
-                  </SelectValue>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {IMPORT_MODE_OPTIONS.filter(
@@ -803,26 +809,26 @@ function ImportRulesSection() {
           >
             <TabsList>
               <TabsTrigger value="watch">
-                Watch
+                {t("watch")}
                 <Badge variant="secondary">{watchRules.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="ignore">
-                Ignore
+                {t("ignore")}
                 <Badge variant="secondary">{userIgnoreRules.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="auto">
-                Auto-ignore
+                {t("autoIgnore")}
                 <Badge variant="secondary">{autoIgnoreRules.length}</Badge>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="watch" className="space-y-3">
               <TabHeader
-                addLabel="Add watch rule"
+                addLabel={t("addWatchRule")}
                 onAdd={() => {
                   setAddDialogKind("watch")
                 }}
-                searchPlaceholder="Search watch rules…"
+                searchPlaceholder={t("searchWatchRules")}
                 searchValue={searchByTab.watch}
                 onSearchChange={(v) => {
                   setTabSearch("watch", v)
@@ -855,6 +861,7 @@ function ImportRulesSection() {
                       key={rule.uuid}
                       rule={rule}
                       rules={rules}
+                      importModeOptions={IMPORT_MODE_OPTIONS}
                       collections={collections}
                       selected={selectedUuids.has(rule.uuid)}
                       onToggle={() => {
@@ -970,6 +977,7 @@ function ImportRulesSection() {
                         onToggle={() => {
                           toggleSelected(rule.uuid)
                         }}
+                        sourceLabels={AUTO_SOURCE_LABELS}
                       />
                     ))}
                   </div>
@@ -1016,6 +1024,7 @@ function ImportRulesSection() {
           kind={addDialogKind}
           rules={rules}
           collections={collections}
+          importModeOptions={IMPORT_MODE_OPTIONS}
         />
       )}
     </SettingsSection>
@@ -1146,12 +1155,12 @@ function getUniformMode(
 function PerFieldOverridesEditor({
   value,
   onChange,
-  t,
 }: {
   value: MetadataFieldOverrides
   onChange: (overrides: MetadataFieldOverrides) => void
-  t: ReturnType<typeof useTranslations>
 }) {
+  const t = useTranslation("Labels.metadata")
+
   return (
     <div className="divide-border divide-y rounded-md border">
       {METADATA_FIELDS.map((field) => (
@@ -1194,14 +1203,13 @@ function PerFieldOverridesEditor({
 export function MetadataFieldOverridesEditor({
   value,
   onChange,
-  t,
 }: {
   value: MetadataFieldOverrides
   onChange: (overrides: MetadataFieldOverrides) => void
-  t: ReturnType<typeof useTranslations>
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const uniformMode = getUniformMode(value)
+  const t = useTranslation("Labels.metadata")
 
   return (
     <div className="space-y-2">
@@ -1233,7 +1241,7 @@ export function MetadataFieldOverridesEditor({
 
       {showAdvanced ? (
         <>
-          <PerFieldOverridesEditor value={value} onChange={onChange} t={t} />
+          <PerFieldOverridesEditor value={value} onChange={onChange} />
 
           <button
             type="button"
@@ -1269,7 +1277,7 @@ function ScanTriggerButton({
   isTriggeringScan: boolean
   triggerScan: (args: { force?: boolean }) => void
 }) {
-  const t = useTranslations("SettingsPage.tabs.library.sections.scanControls")
+  const t = useTranslation("SettingsPage.tabs.library.sections.scanControls")
   const [cancelScan, { isLoading: isCancelling }] = useCancelScanMutation()
   const isDisabled = scanState?.running || isTriggeringScan
 
@@ -1316,7 +1324,8 @@ function ScanTriggerButton({
 
 function ScanControlsSection() {
   const { form } = useSettingsForm()
-  const t = useTranslations("SettingsPage.tabs.library.sections.scanControls")
+  const t = useTranslation("SettingsPage.tabs.library.sections.scanControls")
+  const tl = useTranslation("Labels.metadata")
   const permissions = usePermissions()
   const [showCronInput, setShowCronInput] = useState(false)
 
@@ -1470,9 +1479,9 @@ function ScanControlsSection() {
           )}
 
           <div className="space-y-2">
-            <Label>{t("metadataFieldOverrides")}</Label>
+            <Label>{tl("metadataFieldOverrides")}</Label>
             <p className="text-muted-foreground text-xs">
-              {t("metadataFieldOverridesDescription")}
+              {tl("metadataFieldOverridesDescription")}
             </p>
 
             <MetadataFieldOverridesEditor
@@ -1480,7 +1489,6 @@ function ScanControlsSection() {
               onChange={(updated) => {
                 form.setValue("metadataFieldOverrides", updated)
               }}
-              t={t}
             />
           </div>
         </CardContent>
@@ -1491,7 +1499,7 @@ function ScanControlsSection() {
 
 function ReadaloudLocationSection() {
   const { form } = useSettingsForm()
-  const t = useTranslations(
+  const t = useTranslation(
     "SettingsPage.tabs.library.sections.readaloudLocation",
   )
   const locationType = useWatch({

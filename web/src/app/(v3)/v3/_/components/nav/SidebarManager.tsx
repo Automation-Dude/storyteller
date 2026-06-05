@@ -11,7 +11,6 @@ import {
   IconPlus,
 } from "@tabler/icons-react"
 import { Reorder, motion, useDragControls } from "framer-motion"
-import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -29,10 +28,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@v3/_/components/ui/dialog"
-import {
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@v3/_/components/ui/sidebar"
+import { SidebarMenuButton, SidebarMenuItem } from "@v3/_/components/ui/sidebar"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type ShelfWithBooks } from "@/database/shelves"
@@ -66,7 +63,7 @@ function cleanName(name: string | null | undefined): string {
 }
 
 export function SidebarManager() {
-  const t = useTranslations("SidebarManager")
+  const t = useTranslation("SidebarManager")
   const [open, setOpen] = useState(false)
 
   return (
@@ -97,9 +94,9 @@ export function SidebarManager() {
 }
 
 function SidebarManagerContent({ onClose }: { onClose: () => void }) {
-  const t = useTranslations("SidebarManager")
-  const tApp = useTranslations("AppSidebar")
-  const tLibrary = useTranslations("LibraryPage")
+  const t = useTranslation("SidebarManager")
+  const tApp = useTranslation("AppSidebar")
+  const tLibrary = useTranslation("LibraryPage")
 
   const { data: sidebarItems, isLoading } = useListSidebarQuery()
   const { data: collections = [] } = useListCollectionsQuery()
@@ -354,7 +351,7 @@ function SidebarManagerItem({
   onHide,
   canHide,
 }: SidebarManagerItemProps) {
-  const t = useTranslations("SidebarManager")
+  const t = useTranslation("SidebarManager")
   const controls = useDragControls()
   const [isDragging, setIsDragging] = useState(false)
 
@@ -444,7 +441,7 @@ type AvailableItemProps = {
 }
 
 function AvailableItem({ name, detail, onAdd }: AvailableItemProps) {
-  const t = useTranslations("SidebarManager")
+  const t = useTranslation("SidebarManager")
   return (
     <div className="bg-muted/50 flex items-center gap-2 rounded-lg border p-2">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">

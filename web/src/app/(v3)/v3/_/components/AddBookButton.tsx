@@ -1,6 +1,7 @@
 import { type ButtonProps } from "@base-ui/react"
 import { IconFileImport, IconFileUpload, IconPlus } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
+
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { Button } from "./ui/button"
 import {
@@ -11,7 +12,7 @@ import {
 } from "./ui/dropdown-menu"
 
 export function AddBookButton(props: ButtonProps) {
-  const t = useTranslations("BooksPage")
+  const t = useTranslation("BooksPage")
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
