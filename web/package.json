@@ -7,6 +7,8 @@
     "db:migrate": "dotenvx run --env-file=.env.local -- tsx -C @storyteller-node src/database/migrate.ts",
     "db:migrate:reset": "cp ${STORYTELLER_DATA_DIR}/storyteller.db ${STORYTELLER_DATA_DIR}/test.db",
     "db:migrate:test": "dotenvx run --env-file=.env.local -- yarn db:migrate:reset && STORYTELLER_DB_FILENAME=test.db yarn db:migrate",
+    "db:migrate:apply": "dotenvx run --env-file=.env.local -- tsx -C @storyteller-node scripts/manip-migrations.ts apply",
+    "db:migrate:unapply": "dotenvx run --env-file=.env.local -- tsx -C @storyteller-node scripts/manip-migrations.ts unapply",
     "db:dump": "yarn build:sqlite-ext && STORYTELLER_TEST_DB=1 tsx -C @storyteller-node scripts/dump-db.ts",
     "dev": "yarn build:sqlite-ext && yarn dev:worker && yarn dev:file-write-worker && STORYTELLER_WORKER=worker.js STORYTELLER_FILE_WRITE_WORKER=fileWriteWorker.js PORT=8001 next dev --turbo",
     "dev:worker": "esbuild src/work/worker.ts --bundle --platform=node --packages=external --sourcemap=inline --format=esm --outdir=work-dist/",

@@ -21,19 +21,23 @@ export type Shelf = Selectable<DB["shelf"]>
 export type NewShelf = Insertable<DB["shelf"]>
 export type ShelfUpdate = Updateable<DB["shelf"]>
 
-export type HomeShelfType =
+// widget kinds render a custom block, shelf kinds render a book row.
+// "communityReading" is reserved for a future social section.
+export type HomeSectionKind =
+  | "hero"
+  | "stats"
   | "currentlyReading"
   | "nextUpInSeries"
   | "recentlyAdded"
   | "custom"
 
-export type HomeShelf = Selectable<DB["homeShelf"]>
-export type NewHomeShelf = Insertable<DB["homeShelf"]>
-export type HomeShelfUpdate = Updateable<DB["homeShelf"]>
+export type HomeSection = Selectable<DB["homeSection"]>
+export type NewHomeSection = Insertable<DB["homeSection"]>
+export type HomeSectionUpdate = Updateable<DB["homeSection"]>
 
 export type ShelfWithBooks = Awaited<ReturnType<typeof getShelf>>
-export type HomeShelfWithDetails = Awaited<
-  ReturnType<typeof getHomeShelves>
+export type HomeSectionWithDetails = Awaited<
+  ReturnType<typeof getHomeSections>
 >[number]
 
 export type ShelfOrderBy =
@@ -247,7 +251,7 @@ export async function deleteShelf(uuid: UUID, userId: UUID) {
       .execute()
 
     await tr
-      .deleteFrom("homeShelf")
+      .deleteFrom("homeSection")
       .where("shelfUuid", "=", uuid)
       .where("userId", "=", userId)
       .execute()
@@ -309,32 +313,52 @@ export async function removeBooksFromShelf(
 }
 
 // ---------------------------------------------------------------------------
-// home shelf management
+// home section management
 // ---------------------------------------------------------------------------
 
-export async function getHomeShelves(userId: UUID) {
-  const homeShelves = await db
-    .selectFrom("homeShelf")
-    .leftJoin("shelf", "shelf.uuid", "homeShelf.shelfUuid")
+export type HomeSectionInput = {
+  shelfUuid?: UUID | null
+  kind: HomeSectionKind
+  enabled?: boolean
+  config?: unknown
+}
+
+function parseConfig(config: string | null): unknown {
+  if (!config) return null
+  try {
+    return JSON.parse(config)
+  } catch {
+    return null
+  }
+}
+
+export async function getHomeSections(userId: UUID) {
+  const sections = await db
+    .selectFrom("homeSection")
+    .leftJoin("shelf", "shelf.uuid", "homeSection.shelfUuid")
     .select([
-      "homeShelf.uuid",
-      "homeShelf.shelfUuid",
-      "homeShelf.shelfType",
-      "homeShelf.position",
-      "homeShelf.createdAt",
-      "homeShelf.updatedAt",
+      "homeSection.uuid",
+      "homeSection.shelfUuid",
+      "homeSection.kind",
+      "homeSection.enabled",
+      "homeSection.config",
+      "homeSection.position",
+      "homeSection.createdAt",
+      "homeSection.updatedAt",
       "shelf.name as shelfName",
       "shelf.description as shelfDescription",
       "shelf.filter as shelfFilter",
     ])
-    .where("homeShelf.userId", "=", userId)
-    .orderBy("homeShelf.position", "asc")
+    .where("homeSection.userId", "=", userId)
+    .orderBy("homeSection.position", "asc")
     .execute()
 
-  return homeShelves.map((hs) => ({
+  return sections.map((hs) => ({
     uuid: hs.uuid,
     shelfUuid: hs.shelfUuid,
-    shelfType: hs.shelfType as HomeShelfType,
+    kind: hs.kind as HomeSectionKind,
+    enabled: hs.enabled !== 0,
+    config: parseConfig(hs.config),
     position: hs.position,
     createdAt: hs.createdAt,
     updatedAt: hs.updatedAt,
@@ -344,25 +368,25 @@ export async function getHomeShelves(userId: UUID) {
   }))
 }
 
-export async function setHomeShelves(
+export async function setHomeSections(
   userId: UUID,
-  shelves: Array<{
-    shelfUuid?: UUID | null
-    shelfType: HomeShelfType
-  }>,
+  sections: HomeSectionInput[],
 ) {
   await db.transaction().execute(async (tr) => {
-    await tr.deleteFrom("homeShelf").where("userId", "=", userId).execute()
+    await tr.deleteFrom("homeSection").where("userId", "=", userId).execute()
 
-    if (shelves.length === 0) return
+    if (sections.length === 0) return
 
     await tr
-      .insertInto("homeShelf")
+      .insertInto("homeSection")
       .values(
-        shelves.map((shelf, index) => ({
+        sections.map((section, index) => ({
           userId,
-          shelfUuid: shelf.shelfUuid ?? null,
-          shelfType: shelf.shelfType,
+          shelfUuid: section.shelfUuid ?? null,
+          kind: section.kind,
+          enabled: section.enabled === false ? 0 : 1,
+          config:
+            section.config != null ? JSON.stringify(section.config) : null,
           position: index,
         })),
       )
@@ -370,15 +394,9 @@ export async function setHomeShelves(
   })
 }
 
-export async function addHomeShelf(
-  userId: UUID,
-  shelf: {
-    shelfUuid?: UUID | null
-    shelfType: HomeShelfType
-  },
-) {
+export async function addHomeSection(userId: UUID, section: HomeSectionInput) {
   const maxPosition = await db
-    .selectFrom("homeShelf")
+    .selectFrom("homeSection")
     .select((eb) => eb.fn.max("position").as("maxPos"))
     .where("userId", "=", userId)
     .executeTakeFirst()
@@ -386,11 +404,13 @@ export async function addHomeShelf(
   const position = (maxPosition?.maxPos ?? -1) + 1
 
   const { uuid } = await db
-    .insertInto("homeShelf")
+    .insertInto("homeSection")
     .values({
       userId,
-      shelfUuid: shelf.shelfUuid ?? null,
-      shelfType: shelf.shelfType,
+      shelfUuid: section.shelfUuid ?? null,
+      kind: section.kind,
+      enabled: section.enabled === false ? 0 : 1,
+      config: section.config != null ? JSON.stringify(section.config) : null,
       position,
     })
     .returning(["uuid"])
@@ -399,19 +419,19 @@ export async function addHomeShelf(
   return uuid
 }
 
-export async function removeHomeShelf(uuid: UUID, userId: UUID) {
+export async function removeHomeSection(uuid: UUID, userId: UUID) {
   await db
-    .deleteFrom("homeShelf")
+    .deleteFrom("homeSection")
     .where("uuid", "=", uuid)
     .where("userId", "=", userId)
     .execute()
 }
 
-export async function reorderHomeShelves(userId: UUID, uuids: UUID[]) {
+export async function reorderHomeSections(userId: UUID, uuids: UUID[]) {
   await db.transaction().execute(async (tr) => {
     for (let i = 0; i < uuids.length; i++) {
       await tr
-        .updateTable("homeShelf")
+        .updateTable("homeSection")
         .set({ position: i })
         .where("uuid", "=", uuids[i]!)
         .where("userId", "=", userId)
@@ -420,19 +440,20 @@ export async function reorderHomeShelves(userId: UUID, uuids: UUID[]) {
   })
 }
 
-export async function initializeDefaultHomeShelves(userId: UUID) {
+export async function initializeDefaultHomeSections(userId: UUID) {
   const existing = await db
-    .selectFrom("homeShelf")
+    .selectFrom("homeSection")
     .select(["uuid"])
     .where("userId", "=", userId)
     .executeTakeFirst()
 
   if (existing) return
 
-  await setHomeShelves(userId, [
-    { shelfType: "currentlyReading" },
-    { shelfType: "nextUpInSeries" },
-    { shelfType: "recentlyAdded" },
+  await setHomeSections(userId, [
+    { kind: "hero" },
+    { kind: "stats" },
+    { kind: "currentlyReading" },
+    { kind: "recentlyAdded" },
   ])
 }
 

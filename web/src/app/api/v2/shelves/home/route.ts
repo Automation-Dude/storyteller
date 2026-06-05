@@ -2,49 +2,42 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import {
-  type HomeShelfType,
-  addHomeShelf,
-  getHomeShelves,
-  initializeDefaultHomeShelves,
-  setHomeShelves,
+  type HomeSectionInput,
+  addHomeSection,
+  getHomeSections,
+  initializeDefaultHomeSections,
+  setHomeSections,
 } from "@/database/shelves"
-import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
 
 export const GET = withHasPermission("bookList")(async (request) => {
   const user = request.auth.user
-  await initializeDefaultHomeShelves(user.id)
-  const homeShelves = await getHomeShelves(user.id)
+  await initializeDefaultHomeSections(user.id)
+  const sections = await getHomeSections(user.id)
 
-  return NextResponse.json(homeShelves)
+  return NextResponse.json(sections)
 })
 
 export const PUT = withHasPermission("bookList")(async (request) => {
   const user = request.auth.user
 
-  const body = (await request.json()) as Array<{
-    shelfUuid?: UUID | null
-    shelfType: HomeShelfType
-  }>
+  const body = (await request.json()) as HomeSectionInput[]
 
-  await setHomeShelves(user.id, body)
-  const homeShelves = await getHomeShelves(user.id)
+  await setHomeSections(user.id, body)
+  const sections = await getHomeSections(user.id)
 
-  return NextResponse.json(homeShelves)
+  return NextResponse.json(sections)
 })
 
 export const POST = withHasPermission("bookList")(async (request) => {
   const user = request.auth.user
 
-  const body = (await request.json()) as {
-    shelfUuid?: UUID | null
-    shelfType: HomeShelfType
-  }
+  const body = (await request.json()) as HomeSectionInput
 
-  const uuid = await addHomeShelf(user.id, body)
-  const homeShelves = await getHomeShelves(user.id)
-  const newShelf = homeShelves.find((hs) => hs.uuid === uuid)
+  const uuid = await addHomeSection(user.id, body)
+  const sections = await getHomeSections(user.id)
+  const newSection = sections.find((hs) => hs.uuid === uuid)
 
-  return NextResponse.json(newShelf)
+  return NextResponse.json(newSection)
 })

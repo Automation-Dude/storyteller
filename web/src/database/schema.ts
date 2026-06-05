@@ -183,10 +183,12 @@ export interface Ebook {
   uuid: Generated<import("@/uuid").UUID>
 }
 
-export interface HomeShelf {
+export interface HomeSection {
+  config: string | null
   createdAt: Generated<string>
+  enabled: Generated<number>
+  kind: string
   position: number
-  shelfType: string
   shelfUuid: string | null
   updatedAt: Generated<string>
   userId: string
@@ -420,7 +422,7 @@ export interface DB {
   creator: Creator
   deviceAuthorization: DeviceAuthorization
   ebook: Ebook
-  homeShelf: HomeShelf
+  homeSection: HomeSection
   importRule: ImportRule
   importRuleToCollection: ImportRuleToCollection
   migration: Migration

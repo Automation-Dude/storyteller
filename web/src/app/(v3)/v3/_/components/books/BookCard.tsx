@@ -52,10 +52,14 @@ export const BookCard = memo(function BookCard({
   }
 
   const style = {
-    "--color-primary": primary.solid,
-    "--color-primary-foreground": primary.onColor,
-    "--color-primary-accent": accent.solid,
-    "--color-primary-accent-foreground": accent.onColor,
+    "--primary": primary.isDark ? primary.solid : `var(--st-orange-500)`,
+    "--primary-foreground": primary.isDark
+      ? primary.onColor
+      : `var(--st-orange-500-foreground)`,
+    "--primary-accent": accent.isDark ? accent.solid : `var(--st-orange-500)`,
+    "--primary-accent-foreground": accent.isDark
+      ? accent.onColor
+      : `var(--st-orange-500-foreground)`,
   } as React.CSSProperties
 
   const cardContent = (

@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server"
 
 import { SiteHeader } from "@v3/_/components/site-header"
 
-import { HomeShelves, HomeShelvesActions } from "./HomeShelves"
+import { HomeSections, HomeSectionsActions } from "./HomeSections"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("HomePage")
@@ -13,15 +13,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Index() {
-  const t = await getTranslations("HomePage")
+  // const t = await getTranslations("HomePage")
 
   return (
-    <div>
+    <div className="scroll-y relative">
       <SiteHeader
-        breadcrumbs={[{ label: t("title") }]}
-        actions={<HomeShelvesActions />}
+        breadcrumbs={[]}
+        actions={<HomeSectionsActions />}
+        className="bg-transparent"
       />
-      <HomeShelves />
+      <HomeSections />
     </div>
   )
 }

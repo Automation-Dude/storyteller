@@ -12,7 +12,8 @@ import {
   IconSettings,
   IconTrash,
 } from "@tabler/icons-react"
-import { Reorder, motion, useDragControls  } from "framer-motion"
+import { Reorder, motion, useDragControls } from "framer-motion"
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -32,7 +33,7 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { cn } from "@v3/_/lib/utils"
 
-import { type HomeShelfType, type ShelfWithBooks } from "@/database/shelves"
+import { type HomeSectionKind, type ShelfWithBooks } from "@/database/shelves"
 import {
   useDeleteUserShelfMutation,
   useListHomeShelvesQuery,
@@ -47,26 +48,29 @@ type ShelfManagerProps = {
 }
 
 export function ShelfManager({ className }: ShelfManagerProps) {
+  const t = useTranslations("HomePage")
   const [open, setOpen] = useState(false)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" size="sm" className={className}>
+          <Button variant="default" size="sm" className={className}>
             <IconSettings className="mr-2 size-4" />
-            Customize
+            {t("sections.customize")}
           </Button>
         }
       />
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Customize Home Shelves</DialogTitle>
-          <DialogDescription>
-            Add, remove, and reorder the shelves shown on your home page.
-          </DialogDescription>
+          <DialogTitle>{t("sections.title")}</DialogTitle>
+          <DialogDescription>{t("sections.description")}</DialogDescription>
         </DialogHeader>
-        <ShelfManagerContent onClose={() => { setOpen(false); }} />
+        <ShelfManagerContent
+          onClose={() => {
+            setOpen(false)
+          }}
+        />
       </DialogContent>
     </Dialog>
   )
@@ -79,18 +83,22 @@ type ShelfManagerContentProps = {
 type LocalHomeShelf = {
   uuid: string
   shelfUuid: string | null
-  shelfType: HomeShelfType
+  kind: HomeSectionKind
   name: string | null
   isNew?: boolean
 }
 
-const BUILT_IN_SHELF_TYPES: HomeShelfType[] = [
+// widgets + built-in shelves, all toggleable/reorderable via the manager.
+const BUILT_IN_KINDS: HomeSectionKind[] = [
+  "hero",
+  "stats",
   "currentlyReading",
   "nextUpInSeries",
   "recentlyAdded",
 ]
 
 function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
+  const t = useTranslations("HomePage")
   const { data: homeShelves, isLoading } = useListHomeShelvesQuery()
   const { data: userShelves = [], refetch: refetchUserShelves } =
     useListUserShelvesQuery()
@@ -106,29 +114,22 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
 
   const shelves: LocalHomeShelf[] =
     localShelves ??
-    (homeShelves ?? []).map(
-      (hs: {
-        uuid: string
-        shelfUuid: string | null
-        shelfType: HomeShelfType
-        name: string | null
-      }) => ({
-        uuid: hs.uuid,
-        shelfUuid: hs.shelfUuid,
-        shelfType: hs.shelfType,
-        name: hs.name ?? getDefaultName(hs.shelfType),
-      }),
-    )
+    (homeShelves ?? []).map((hs) => ({
+      uuid: hs.uuid,
+      shelfUuid: hs.shelfUuid,
+      kind: hs.kind,
+      name: hs.name ?? t(`kinds.${hs.kind}.name`),
+    }))
 
   const shownBuiltInTypes = shelves
-    .filter((s) => s.shelfType !== "custom")
-    .map((s) => s.shelfType)
+    .filter((s) => s.kind !== "custom")
+    .map((s) => s.kind)
 
   const shownCustomShelfUuids = shelves
-    .filter((s) => s.shelfType === "custom" && s.shelfUuid)
+    .filter((s) => s.kind === "custom" && s.shelfUuid)
     .map((s) => s.shelfUuid!)
 
-  const hiddenBuiltInTypes = BUILT_IN_SHELF_TYPES.filter(
+  const hiddenBuiltInTypes = BUILT_IN_KINDS.filter(
     (t) => !shownBuiltInTypes.includes(t),
   )
 
@@ -157,14 +158,14 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     setLocalShelves(shelves.filter((s) => s.uuid !== uuid))
   }
 
-  const showBuiltInShelf = (shelfType: HomeShelfType) => {
+  const showBuiltInShelf = (kind: HomeSectionKind) => {
     setLocalShelves([
       ...shelves,
       {
         uuid: crypto.randomUUID(),
         shelfUuid: null,
-        shelfType,
-        name: getDefaultName(shelfType),
+        kind,
+        name: t(`kinds.${kind}.name`),
       },
     ])
   }
@@ -175,7 +176,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
       {
         uuid: crypto.randomUUID(),
         shelfUuid: userShelf.uuid,
-        shelfType: "custom",
+        kind: "custom",
         name: userShelf.name,
       },
     ])
@@ -187,12 +188,9 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   }
 
   const handleSave = async () => {
-    const shelvesToSave: Array<{
-      shelfUuid?: string | null
-      shelfType: HomeShelfType
-    }> = shelves.map((shelf) => ({
+    const shelvesToSave = shelves.map((shelf) => ({
       shelfUuid: shelf.shelfUuid,
-      shelfType: shelf.shelfType,
+      kind: shelf.kind,
     }))
 
     await setHomeShelves(shelvesToSave).unwrap()
@@ -223,7 +221,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         {
           uuid: crypto.randomUUID(),
           shelfUuid: saved.uuid,
-          shelfType: "custom",
+          kind: "custom",
           name: saved.name,
         },
       ])
@@ -251,11 +249,19 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
             shelf={shelf}
             index={index}
             total={shelves.length}
-            onMove={(dir) => { moveShelf(index, dir); }}
-            onHide={() => { hideShelf(shelf.uuid); }}
+            onMove={(dir) => {
+              moveShelf(index, dir)
+            }}
+            onHide={() => {
+              hideShelf(shelf.uuid)
+            }}
             canHide={shelves.length > 1}
             {...(shelf.shelfUuid
-              ? { onEdit: () => { handleEditShelf(shelf.shelfUuid!); } }
+              ? {
+                  onEdit: () => {
+                    handleEditShelf(shelf.shelfUuid!)
+                  },
+                }
               : {})}
           />
         ))}
@@ -267,7 +273,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         className="mt-2 w-full"
       >
         <IconPlus className="mr-2 size-4" />
-        Create New Shelf
+        {t("sections.createNewShelf")}
       </Button>
 
       {hasHiddenShelves && (
@@ -287,19 +293,23 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
                   hiddenOpen && "rotate-90",
                 )}
               />
-              Hidden Shelves (
-              {hiddenBuiltInTypes.length + hiddenCustomShelves.length})
+              {t("sections.hidden", {
+                count:
+                  hiddenBuiltInTypes.length + hiddenCustomShelves.length,
+              })}
             </button>
           </CollapsibleTrigger>
 
           <CollapsibleContent className="mt-2">
             <div className="flex flex-col gap-2">
-              {hiddenBuiltInTypes.map((shelfType) => (
+              {hiddenBuiltInTypes.map((kind) => (
                 <HiddenShelfItem
-                  key={shelfType}
-                  name={getDefaultName(shelfType)}
-                  description={getShelfDescription(shelfType)}
-                  onShow={() => { showBuiltInShelf(shelfType); }}
+                  key={kind}
+                  name={t(`kinds.${kind}.name`)}
+                  description={t(`kinds.${kind}.description`)}
+                  onShow={() => {
+                    showBuiltInShelf(kind)
+                  }}
                 />
               ))}
 
@@ -307,8 +317,10 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
                 <HiddenShelfItem
                   key={userShelf.uuid}
                   name={userShelf.name}
-                  description="Custom shelf"
-                  onShow={() => { showCustomShelf(userShelf); }}
+                  description={t("sections.customShelf")}
+                  onShow={() => {
+                    showCustomShelf(userShelf)
+                  }}
                   onDelete={() => handleDeleteCustomShelf(userShelf.uuid)}
                 />
               ))}
@@ -326,42 +338,16 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
 
       <DialogFooter className="mt-4">
         <Button variant="outline" onClick={onClose} disabled={isSaving}>
-          Cancel
+          {t("sections.cancel")}
         </Button>
 
         <Button onClick={handleSave} disabled={isSaving}>
           {isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-          Save Changes
+          {t("sections.save")}
         </Button>
       </DialogFooter>
     </>
   )
-}
-
-function getDefaultName(shelfType: HomeShelfType): string {
-  switch (shelfType) {
-    case "currentlyReading":
-      return "Currently Reading"
-    case "nextUpInSeries":
-      return "Next Up in Series"
-    case "recentlyAdded":
-      return "Recently Added"
-    case "custom":
-      return "Custom Shelf"
-  }
-}
-
-function getShelfDescription(shelfType: HomeShelfType): string {
-  switch (shelfType) {
-    case "currentlyReading":
-      return "Shows books with 'Reading' status"
-    case "nextUpInSeries":
-      return "Shows next unread books in series you've started"
-    case "recentlyAdded":
-      return "Shows recently added books"
-    case "custom":
-      return "Custom shelf"
-  }
 }
 
 type ShelfItemProps = {
@@ -383,8 +369,9 @@ function ShelfItem({
   onEdit,
   canHide,
 }: ShelfItemProps) {
-  const isBuiltIn = shelf.shelfType !== "custom"
-  const displayName = shelf.name ?? getDefaultName(shelf.shelfType)
+  const t = useTranslations("HomePage")
+  const isBuiltIn = shelf.kind !== "custom"
+  const displayName = shelf.name ?? t(`kinds.${shelf.kind}.name`)
   const controls = useDragControls()
   const [isDragging, setIsDragging] = useState(false)
 
@@ -420,12 +407,14 @@ function ShelfItem({
 
         {isBuiltIn && (
           <div className="text-muted-foreground text-xs">
-            {getShelfDescription(shelf.shelfType)}
+            {t(`kinds.${shelf.kind}.description`)}
           </div>
         )}
 
         {!isBuiltIn && (
-          <div className="text-muted-foreground text-xs">Custom shelf</div>
+          <div className="text-muted-foreground text-xs">
+            {t("sections.customShelf")}
+          </div>
         )}
       </div>
 
@@ -441,7 +430,7 @@ function ShelfItem({
         onClick={onHide}
         disabled={!canHide}
         className={cn(!canHide && "invisible")}
-        title="Hide from home"
+        title={t("sections.hideFromHome")}
       >
         <IconEyeOff className="size-4" />
       </Button>
@@ -450,7 +439,9 @@ function ShelfItem({
         <Button
           variant="ghost"
           size="icon-xs"
-          onClick={() => { onMove("up"); }}
+          onClick={() => {
+            onMove("up")
+          }}
           disabled={index === 0}
         >
           <IconChevronUp className="size-3" />
@@ -459,7 +450,9 @@ function ShelfItem({
         <Button
           variant="ghost"
           size="icon-xs"
-          onClick={() => { onMove("down"); }}
+          onClick={() => {
+            onMove("down")
+          }}
           disabled={index === total - 1}
         >
           <IconChevronDown className="size-3" />
@@ -482,6 +475,7 @@ function HiddenShelfItem({
   onShow,
   onDelete,
 }: HiddenShelfItemProps) {
+  const t = useTranslations("HomePage")
   return (
     <div className="bg-muted/50 flex items-center gap-2 rounded-lg border p-2">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -491,7 +485,7 @@ function HiddenShelfItem({
 
       <Button variant="outline" size="sm" onClick={onShow} className="h-7">
         <IconPlus className="mr-1 size-3" />
-        Show
+        {t("sections.show")}
       </Button>
 
       {onDelete && (
@@ -500,7 +494,7 @@ function HiddenShelfItem({
           size="icon-sm"
           onClick={onDelete}
           className="text-destructive hover:text-destructive"
-          title="Delete shelf permanently"
+          title={t("sections.deletePermanently")}
         >
           <IconTrash className="size-4" />
         </Button>

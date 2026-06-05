@@ -1,6 +1,7 @@
 "use client"
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
 import { useMemo, useRef } from "react"
 
 import { BookCard } from "@v3/_/components/books/BookCard"
@@ -10,7 +11,7 @@ import { V3Link } from "@v3/_/components/v3-link"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
-import { type HomeShelfWithDetails } from "@/database/shelves"
+import { type HomeSectionWithDetails } from "@/database/shelves"
 import {
   useListBooksQuery,
   useListShelfBooksQuery,
@@ -18,11 +19,12 @@ import {
 } from "@/store/api"
 
 type ShelfRowProps = {
-  shelf: HomeShelfWithDetails
+  shelf: HomeSectionWithDetails
   className?: string | undefined
 }
 
 export function ShelfRow({ shelf, className }: ShelfRowProps) {
+  const t = useTranslations("HomePage")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { books, isLoading, seeAllHref } = useShelfBooks(shelf)
@@ -37,7 +39,7 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
     scrollContainerRef.current.scrollBy({ left: 400, behavior: "smooth" })
   }
 
-  const displayName = shelf.name ?? getDefaultName(shelf.shelfType)
+  const displayName = shelf.name ?? t(`kinds.${shelf.kind}.name`)
 
   if (isLoading) {
     return (
@@ -71,7 +73,7 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
             href={seeAllHref}
             className="text-muted-foreground hover:text-foreground text-sm opacity-0 transition-colors transition-opacity group-hover/shelf:opacity-100"
           >
-            See all
+            {t("shelf.seeAll")}
           </V3Link>
         </div>
 
@@ -103,27 +105,14 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
   )
 }
 
-function getDefaultName(shelfType: string): string {
-  switch (shelfType) {
-    case "currentlyReading":
-      return "Currently Reading"
-    case "nextUpInSeries":
-      return "Next Up in Series"
-    case "recentlyAdded":
-      return "Recently Added"
-    default:
-      return "Shelf"
-  }
-}
-
 type UseShelfBooksResult = {
   books: BookWithRelations[]
   isLoading: boolean
   seeAllHref: string
 }
 
-function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
-  const isCustomShelf = shelf.shelfType === "custom" && shelf.shelfUuid !== null
+function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
+  const isCustomShelf = shelf.kind === "custom" && shelf.shelfUuid !== null
 
   const { data: shelfBooks = [], isLoading: isLoadingShelfBooks } =
     useListShelfBooksQuery(
@@ -139,34 +128,34 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
   const { data: allBooks = [], isLoading: isLoadingAllBooks } =
     useListBooksQuery(undefined, {
       skip:
-        shelf.shelfType !== "currentlyReading" &&
-        shelf.shelfType !== "nextUpInSeries" &&
-        shelf.shelfType !== "recentlyAdded",
+        shelf.kind !== "currentlyReading" &&
+        shelf.kind !== "nextUpInSeries" &&
+        shelf.kind !== "recentlyAdded",
     })
 
   const { data: statuses } = useListStatusesQuery(undefined, {
-    skip: shelf.shelfType !== "currentlyReading",
+    skip: shelf.kind !== "currentlyReading",
   })
 
   const readingStatus = statuses?.find((s) => s.name === "Reading")
 
   const currentlyReadingBooks = useMemo(() => {
-    if (shelf.shelfType !== "currentlyReading") return []
+    if (shelf.kind !== "currentlyReading") return []
 
     return allBooks
       .filter((book) => book.status?.name === "Reading")
       .sort(
         (a, b) => (b.position?.timestamp ?? 0) - (a.position?.timestamp ?? 0),
       )
-  }, [allBooks, shelf.shelfType])
+  }, [allBooks, shelf.kind])
 
   const nextUpBooks = useMemo(() => {
-    if (shelf.shelfType !== "nextUpInSeries") return []
+    if (shelf.kind !== "nextUpInSeries") return []
     return computeNextUpInSeries(allBooks)
-  }, [allBooks, shelf.shelfType])
+  }, [allBooks, shelf.kind])
 
   const recentlyAddedBooks = useMemo(() => {
-    if (shelf.shelfType !== "recentlyAdded") return []
+    if (shelf.kind !== "recentlyAdded") return []
 
     return allBooks
       .slice()
@@ -175,7 +164,7 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
           new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),
       )
       .slice(0, 20)
-  }, [allBooks, shelf.shelfType])
+  }, [allBooks, shelf.kind])
 
   if (isCustomShelf) {
     return {
@@ -185,7 +174,7 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
     }
   }
 
-  if (shelf.shelfType === "recentlyAdded") {
+  if (shelf.kind === "recentlyAdded") {
     return {
       books: recentlyAddedBooks,
       isLoading: isLoadingAllBooks,
@@ -193,7 +182,7 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
     }
   }
 
-  if (shelf.shelfType === "currentlyReading") {
+  if (shelf.kind === "currentlyReading") {
     return {
       books: currentlyReadingBooks,
       isLoading: isLoadingAllBooks,
@@ -203,7 +192,7 @@ function useShelfBooks(shelf: HomeShelfWithDetails): UseShelfBooksResult {
     }
   }
 
-  if (shelf.shelfType === "nextUpInSeries") {
+  if (shelf.kind === "nextUpInSeries") {
     return {
       books: nextUpBooks,
       isLoading: isLoadingAllBooks,

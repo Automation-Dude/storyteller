@@ -1,5 +1,5 @@
 import { withHasPermission } from "@/auth/auth"
-import { removeHomeShelf } from "@/database/shelves"
+import { removeHomeSection } from "@/database/shelves"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
@@ -12,7 +12,7 @@ export const DELETE = withHasPermission<Params>("bookList")(async (
 ) => {
   const user = request.auth.user
   const { uuid } = await context.params
-  await removeHomeShelf(uuid, user.id)
+  await removeHomeSection(uuid, user.id)
 
   return new Response(null, { status: 204 })
 })

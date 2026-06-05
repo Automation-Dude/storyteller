@@ -1,0 +1,161 @@
+"use client"
+
+import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
+import { useMemo } from "react"
+
+import { Book3D } from "@v3/_/components/books/Book3D"
+import { useCoverColors } from "@v3/_/components/books/BookDetails/sections/useCoverColors"
+import { Button } from "@v3/_/components/ui/button"
+import { V3Link } from "@v3/_/components/v3-link"
+
+import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
+import { type BookWithRelations } from "@/database/books"
+import { useListBooksQuery } from "@/store/api"
+
+type ReadLink = {
+  href: string
+  labelKey: "readAlong" | "read" | "listen"
+  icon: typeof IconBook
+}
+
+function getReadLink(book: BookWithRelations): ReadLink {
+  if (book.readaloud?.status === "ALIGNED") {
+    return {
+      href: `/books/${book.uuid}/read?mode=readaloud`,
+      labelKey: "readAlong",
+      icon: IconPlayerPlay,
+    }
+  }
+  if (book.ebook) {
+    return {
+      href: `/books/${book.uuid}/read?mode=epub`,
+      labelKey: "read",
+      icon: IconBook,
+    }
+  }
+  return {
+    href: `/books/${book.uuid}/read?mode=audiobook`,
+    labelKey: "listen",
+    icon: IconHeadphones,
+  }
+}
+
+export function HeroSection() {
+  const { data: books = [] } = useListBooksQuery(undefined)
+
+  const book = useMemo(() => {
+    return books
+      .filter((b) => b.status?.name === "Reading")
+      .sort(
+        (a, b) => (b.position?.timestamp ?? 0) - (a.position?.timestamp ?? 0),
+      )[0]
+  }, [books])
+
+  if (!book) return null
+
+  return <Hero book={book} />
+}
+
+function Hero({ book }: { book: BookWithRelations }) {
+  const t = useTranslations("HomePage")
+  const { primary } = useCoverColors(book)
+
+  const progress = book.position?.locator.locations?.totalProgression ?? 0
+  const duration = book.audiobook?.duration ?? book.readaloud?.duration ?? null
+  const timeLeft =
+    duration != null && progress > 0
+      ? formatTimeHuman(duration * (1 - progress))
+      : null
+
+  const read = getReadLink(book)
+  const ReadIcon = read.icon
+
+  const byline = [
+    book.authors.length > 0
+      ? t("hero.by", { authors: book.authors.map((a) => a.name).join(", ") })
+      : null,
+    book.narrators.length > 0
+      ? t("hero.narratedBy", {
+          narrators: book.narrators.map((n) => n.name).join(", "),
+        })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+
+  return (
+    <section
+      className="relative -mx-4 flex flex-col gap-0"
+      style={
+        {
+          background: primary.alpha(0.06),
+          "--primary": primary.solid,
+          "--primary-foreground": primary.onColor,
+        } as React.CSSProperties
+      }
+    >
+      <p className="text-muted-foreground mx-6 mt-8 text-xs font-medium tracking-[0.18em] uppercase">
+        {t("hero.eyebrow")}
+      </p>
+      <div className="flex flex-col-reverse gap-6 overflow-hidden px-6 py-4 @xl/main:flex-row @xl/main:gap-10">
+        <div className="flex flex-1 flex-col justify-between pb-4">
+          <div slot="main-info">
+            <h2 className="font-heading text-3xl leading-tight @xl/main:text-4xl">
+              {book.title}
+            </h2>
+
+            {byline && (
+              <p className="text-muted-foreground font-heading mt-2 text-sm">
+                {byline}
+              </p>
+            )}
+          </div>
+
+          <div slot="stats-and-actions" className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-foreground/10 h-1.5 w-48 max-w-full overflow-hidden rounded-full">
+                <div
+                  className="h-full transition-all"
+                  style={{
+                    width: `${Math.round(progress * 100)}%`,
+                    background: primary.solid,
+                  }}
+                />
+              </div>
+              <span className="text-muted-foreground text-sm">
+                {t("hero.percent", { percent: Math.round(progress * 100) })}
+                {timeLeft && <> · {t("hero.timeLeft", { time: timeLeft })}</>}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="default"
+                nativeButton={false}
+                render={
+                  <V3Link href={read.href}>
+                    <ReadIcon className="mr-1 h-4 w-4" />
+                    {t(`hero.${read.labelKey}`)}
+                  </V3Link>
+                }
+              />
+              <Button
+                variant="ghost"
+                nativeButton={false}
+                render={
+                  <V3Link href={`/books/${book.uuid}`}>
+                    {t("hero.viewDetails")}
+                  </V3Link>
+                }
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex w-full justify-center @xl/main:w-auto">
+          <Book3D book={book} width={200} />
+        </div>
+      </div>
+    </section>
+  )
+}

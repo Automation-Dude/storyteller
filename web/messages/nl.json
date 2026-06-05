@@ -18,7 +18,68 @@
     "loggingIn": "Aanmelden..."
   },
   "HomePage": {
-    "title": "Start"
+    "title": "Start",
+    "hero": {
+      "eyebrow": "Waar je gebleven was",
+      "by": "door {authors}",
+      "narratedBy": "voorgelezen door {narrators}",
+      "readAlong": "Meelezen",
+      "read": "Lezen",
+      "listen": "Luisteren",
+      "viewDetails": "Details bekijken",
+      "percent": "{percent}%",
+      "timeLeft": "nog ongeveer {time}"
+    },
+    "stats": {
+      "inProgress": "Mee bezig",
+      "finishedThisYear": "Dit jaar voltooid",
+      "inLibrary": "In de bibliotheek",
+      "tags": "Labels",
+      "authors": "{count, plural, one {# auteur} other {# auteurs}}"
+    },
+    "shelf": {
+      "seeAll": "Alles bekijken"
+    },
+    "sections": {
+      "empty": "Nog geen secties ingesteld.",
+      "customize": "Aanpassen",
+      "title": "Startpagina aanpassen",
+      "description": "Voeg secties toe, verwijder ze en verander de volgorde op je startpagina.",
+      "createNewShelf": "Nieuwe plank maken",
+      "hidden": "Verborgen secties ({count})",
+      "show": "Tonen",
+      "save": "Wijzigingen opslaan",
+      "cancel": "Annuleren",
+      "hideFromHome": "Verbergen van startpagina",
+      "deletePermanently": "Plank permanent verwijderen",
+      "customShelf": "Aangepaste plank"
+    },
+    "kinds": {
+      "hero": {
+        "name": "Waar je gebleven was",
+        "description": "Licht het boek uit dat je het laatst hebt gelezen"
+      },
+      "stats": {
+        "name": "Statistieken",
+        "description": "Toont een samenvatting van je bibliotheek"
+      },
+      "currentlyReading": {
+        "name": "Nu aan het lezen",
+        "description": "Toont boeken met de status 'Aan het lezen'"
+      },
+      "nextUpInSeries": {
+        "name": "Volgende in serie",
+        "description": "Toont volgende ongelezen boeken in series die je bent begonnen"
+      },
+      "recentlyAdded": {
+        "name": "Onlangs toegevoegd",
+        "description": "Toont onlangs toegevoegde boeken"
+      },
+      "custom": {
+        "name": "Aangepaste plank",
+        "description": "Aangepaste plank"
+      }
+    }
   },
 
   "CollectionsPage": {

@@ -18,7 +18,68 @@
     "loggingIn": "Logging in..."
   },
   "HomePage": {
-    "title": "Home"
+    "title": "Home",
+    "hero": {
+      "eyebrow": "Where you left off",
+      "by": "by {authors}",
+      "narratedBy": "narrated by {narrators}",
+      "readAlong": "Read along",
+      "read": "Read",
+      "listen": "Listen",
+      "viewDetails": "View details",
+      "percent": "{percent}%",
+      "timeLeft": "about {time} left"
+    },
+    "stats": {
+      "inProgress": "In progress",
+      "finishedThisYear": "Finished this year",
+      "inLibrary": "In the library",
+      "tags": "Tags",
+      "authors": "{count, plural, one {# author} other {# authors}}"
+    },
+    "shelf": {
+      "seeAll": "See all"
+    },
+    "sections": {
+      "empty": "No sections configured yet.",
+      "customize": "Customize",
+      "title": "Customize Home Page",
+      "description": "Add, remove, and reorder the sections shown on your home page.",
+      "createNewShelf": "Create New Shelf",
+      "hidden": "Hidden sections ({count})",
+      "show": "Show",
+      "save": "Save Changes",
+      "cancel": "Cancel",
+      "hideFromHome": "Hide from home",
+      "deletePermanently": "Delete shelf permanently",
+      "customShelf": "Custom shelf"
+    },
+    "kinds": {
+      "hero": {
+        "name": "Where You Left Off",
+        "description": "Highlights the book you most recently read"
+      },
+      "stats": {
+        "name": "Stats",
+        "description": "Shows a summary of your library"
+      },
+      "currentlyReading": {
+        "name": "Currently Reading",
+        "description": "Shows books with 'Reading' status"
+      },
+      "nextUpInSeries": {
+        "name": "Next Up in Series",
+        "description": "Shows next unread books in series you've started"
+      },
+      "recentlyAdded": {
+        "name": "Recently Added",
+        "description": "Shows recently added books"
+      },
+      "custom": {
+        "name": "Custom Shelf",
+        "description": "Custom shelf"
+      }
+    }
   },
 
   "CollectionsPage": {

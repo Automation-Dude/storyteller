@@ -32,9 +32,10 @@ import {
   type MetadataFieldOverrides,
 } from "@/database/settingsTypes"
 import { type ShelfFilter } from "@/database/shelfFilter"
+import { type HomeStats } from "@/database/homeStats"
 import {
-  type HomeShelfType,
-  type HomeShelfWithDetails,
+  type HomeSectionKind,
+  type HomeSectionWithDetails,
   type ShelfOrderBy,
   type ShelfWithBooks,
 } from "@/database/shelves"
@@ -47,6 +48,14 @@ import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import { type UUID } from "@/uuid"
 
 import { subscribeToBookEventStream } from "./bookEventsStream"
+
+// client-side shape of a home section (plain string uuids over the wire)
+type HomeSectionBody = {
+  shelfUuid?: string | null
+  kind: HomeSectionKind
+  enabled?: boolean
+  config?: unknown
+}
 
 export const api = createApi({
   reducerPath: "api",
@@ -71,6 +80,7 @@ export const api = createApi({
     "ImportRules",
     "UserRatings",
     "HomeShelves",
+    "HomeStats",
     "UserShelves",
     "UserSettings",
   ],
@@ -1322,15 +1332,17 @@ export const api = createApi({
     }),
 
     // shelves
-    listHomeShelves: build.query<HomeShelfWithDetails[], void>({
+    getHomeStats: build.query<HomeStats, void>({
+      query: () => "/home/stats",
+      providesTags: ["HomeStats"],
+    }),
+
+    listHomeShelves: build.query<HomeSectionWithDetails[], void>({
       query: () => "/shelves/home",
       providesTags: ["HomeShelves"],
     }),
 
-    setHomeShelves: build.mutation<
-      HomeShelfWithDetails[],
-      Array<{ shelfUuid?: string | null; shelfType: HomeShelfType }>
-    >({
+    setHomeShelves: build.mutation<HomeSectionWithDetails[], HomeSectionBody[]>({
       query: (body) => ({
         url: "/shelves/home",
         method: "PUT",
@@ -1339,10 +1351,7 @@ export const api = createApi({
       invalidatesTags: ["HomeShelves"],
     }),
 
-    addHomeShelf: build.mutation<
-      HomeShelfWithDetails,
-      { shelfUuid?: string | null; shelfType: HomeShelfType }
-    >({
+    addHomeShelf: build.mutation<HomeSectionWithDetails, HomeSectionBody>({
       query: (body) => ({
         url: "/shelves/home",
         method: "POST",
@@ -1525,6 +1534,7 @@ export const {
   useSetBookRatingMutation,
   useDeleteBookRatingMutation,
   useListUserRatingsQuery,
+  useGetHomeStatsQuery,
   useListHomeShelvesQuery,
   useSetHomeShelvesMutation,
   useAddHomeShelfMutation,
