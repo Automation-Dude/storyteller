@@ -275,6 +275,13 @@ export const api = createApi({
         }),
       },
     ),
+    clearBooksCache: build.mutation<void, { bookUuids?: UUID[] }>({
+      query: ({ bookUuids }) => ({
+        url: `/books/cache`,
+        method: "DELETE",
+        body: { bookUuids },
+      }),
+    }),
     deleteBooks: build.mutation<
       void,
       {
@@ -1356,14 +1363,16 @@ export const api = createApi({
       providesTags: ["HomeShelves"],
     }),
 
-    setHomeShelves: build.mutation<HomeSectionWithDetails[], HomeSectionBody[]>({
-      query: (body) => ({
-        url: "/shelves/home",
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["HomeShelves"],
-    }),
+    setHomeShelves: build.mutation<HomeSectionWithDetails[], HomeSectionBody[]>(
+      {
+        query: (body) => ({
+          url: "/shelves/home",
+          method: "PUT",
+          body,
+        }),
+        invalidatesTags: ["HomeShelves"],
+      },
+    ),
 
     addHomeShelf: build.mutation<HomeSectionWithDetails, HomeSectionBody>({
       query: (body) => ({
@@ -1500,6 +1509,7 @@ export const {
   useCreateBookMutation,
   useCreateCollectionMutation,
   useCreateInviteMutation,
+  useClearBooksCacheMutation,
   useDeleteBookAssetsMutation,
   useDeleteBookMutation,
   useDeleteBooksMutation,

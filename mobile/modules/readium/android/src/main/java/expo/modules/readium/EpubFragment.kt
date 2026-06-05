@@ -68,6 +68,7 @@ class EpubFragment(
         ).createFragmentFactory(
             listener.props!!.locator,
             listener = listener,
+            paginationListener = listener,
             configuration = EpubNavigatorFragment.Configuration {
                 servedAssets = listOf(
                     "fonts/OpenDyslexic.otf",
@@ -125,15 +126,7 @@ class EpubFragment(
                     listener.setupUserScript()
                 }
             },
-            initialPreferences = EpubPreferences(
-                backgroundColor = org.readium.r2.navigator.preferences.Color(listener.props!!.background),
-                fontFamily = listener.props!!.fontFamily,
-                fontSize = listener.props!!.fontSize,
-                lineHeight = listener.props!!.lineHeight,
-                paragraphSpacing = listener.props!!.paragraphSpacing,
-                textAlign = listener.props!!.textAlign,
-                textColor = org.readium.r2.navigator.preferences.Color(listener.props!!.foreground),
-            ),
+            initialPreferences = listener.layoutPreferences(),
         )
 
         super.onCreate(savedInstanceState)

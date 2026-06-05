@@ -47,9 +47,9 @@ import { ChangelogTab } from "./changelog-tab"
 import { EmailTab } from "./email-tab"
 import { LibraryTab } from "./library-tab"
 import { OpdsTab } from "./opds-tab"
+import { ProcessingTab } from "./processing-tab"
 import { type IsMatch, SearchContext } from "./shared"
 import { type SectionKeywords, type Tab } from "./tabs"
-import { TranscriptionTab } from "./transcription-tab"
 import { UploadTab } from "./upload-tab"
 import { UsersTab } from "./users-tab"
 
@@ -283,8 +283,8 @@ export function SettingsForm({
           icon: IconSettings2,
         },
         {
-          value: "transcription",
-          label: t("tabs.transcription.title"),
+          value: "processing",
+          label: t("tabs.processing.title"),
           icon: IconMicrophone,
         },
         { value: "auth", label: t("tabs.auth.title"), icon: IconShield },
@@ -489,7 +489,7 @@ export function SettingsForm({
               {/*the p-px is really important, otherwise the ring of the cards gets cut off*/}
               <div className="min-h-0 flex-1 overflow-y-auto p-px pb-4">
                 <LibraryTab />
-                <TranscriptionTab />
+                <ProcessingTab />
                 <AuthTab />
                 <UploadTab maxUploadChunkSize={maxUploadChunkSize} />
                 {initialUsers && initialInvites && (

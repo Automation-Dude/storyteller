@@ -13,31 +13,6 @@ import { BooleanPlugin } from "./plugins/booleanPlugin"
 import { DatePlugin } from "./plugins/datePlugin"
 import type { DB } from "./schema"
 
-export const BOOLEAN_FIELDS = [
-  "bookCreate",
-  "bookDelete",
-  "bookDownload",
-  "bookList",
-  "bookProcess",
-  "bookRead",
-  "bookUpdate",
-  "collectionCreate",
-  "featured",
-  "inviteDelete",
-  "inviteList",
-  "isDefault",
-  "isEpub2",
-  "missing",
-  "public",
-  "settingsUpdate",
-  "userCreate",
-  "userDelete",
-  "userList",
-  "userRead",
-  "userUpdate",
-  "restartPending",
-] as const
-
 export function createKyselyDb(sqlite: Database): Kysely<DB> {
   return new Kysely<DB>({
     dialect: new SqliteDialect({ database: sqlite }),
@@ -45,7 +20,31 @@ export function createKyselyDb(sqlite: Database): Kysely<DB> {
       new CamelCasePlugin(),
       new ParseJSONResultsPlugin(),
       new DatePlugin(),
-      new BooleanPlugin<DB>({ fields: [...BOOLEAN_FIELDS] }),
+      new BooleanPlugin<DB>({
+        fields: {
+          bookCreate: true,
+          bookDelete: true,
+          bookDownload: true,
+          bookList: true,
+          bookProcess: true,
+          bookRead: true,
+          bookUpdate: true,
+          collectionCreate: true,
+          featured: true,
+          inviteDelete: true,
+          inviteList: true,
+          isDefault: true,
+          missing: true,
+          public: true,
+          settingsUpdate: true,
+          userCreate: true,
+          userDelete: true,
+          userList: true,
+          userRead: true,
+          userUpdate: true,
+          isEpub2: true,
+        },
+      }),
     ],
     log(event) {
       if (event.level === "error") {

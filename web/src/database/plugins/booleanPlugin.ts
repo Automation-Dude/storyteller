@@ -1,6 +1,6 @@
 import { isPlainObject } from "@reduxjs/toolkit"
 import {
-  type AnyColumn,
+  type Generated,
   type KyselyPlugin,
   OperationNodeTransformer,
   type PluginTransformQueryArgs,
@@ -33,13 +33,25 @@ class SqliteBooleanTransformer extends OperationNodeTransformer {
   }
 }
 
+type BooleanFields<DB> = DB[keyof DB] extends infer T
+  ? T extends T
+    ? {
+        [K in keyof T]: T[K] extends Generated<boolean> ? K : never
+      }[keyof T]
+    : never
+  : never
+
+type BooleanFieldMap<DB> = {
+  [K in BooleanFields<DB>]: boolean
+}
+
 export interface BooleanPluginOptions<DB> {
-  fields: AnyColumn<DB, keyof DB>[]
+  fields: BooleanFieldMap<DB>
 }
 
 export class BooleanPlugin<DB> implements KyselyPlugin {
   private transformer = new SqliteBooleanTransformer()
-  private fields: AnyColumn<DB, keyof DB>[]
+  private fields: BooleanFieldMap<DB>
 
   public constructor({ fields }: BooleanPluginOptions<DB>) {
     this.fields = fields
@@ -72,9 +84,7 @@ export class BooleanPlugin<DB> implements KyselyPlugin {
         value = this.mapRow(value)
       }
 
-      obj[key] = this.fields.includes(key as AnyColumn<DB, keyof DB>)
-        ? !!value
-        : value
+      obj[key] = this.fields[key as BooleanFields<DB>] ? !!value : value
 
       return obj
     }, {})
