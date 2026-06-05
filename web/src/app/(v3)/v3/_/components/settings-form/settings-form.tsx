@@ -12,6 +12,7 @@ import {
   IconSettings2,
   IconShield,
   IconUpload,
+  IconUsers,
   IconX,
 } from "@tabler/icons-react"
 import Link from "next/link"
@@ -33,7 +34,7 @@ import {
   TooltipTrigger,
 } from "@v3/_/components/ui/tooltip"
 
-import { type Settings } from "@/apiModels"
+import { type Invite, type Settings, type User } from "@/apiModels"
 import { SettingsSchema } from "@/database/settingsTypes"
 import {
   useGetMaxUploadChunkSizeQuery,
@@ -50,6 +51,7 @@ import { type IsMatch, SearchContext } from "./shared"
 import { type SectionKeywords, type Tab } from "./tabs"
 import { TranscriptionTab } from "./transcription-tab"
 import { UploadTab } from "./upload-tab"
+import { UsersTab } from "./users-tab"
 
 type ErrorPathSegment = string | number
 
@@ -174,11 +176,15 @@ export function SettingsForm({
   sectionKeywords,
   configLockedKeys,
   currentVersion,
+  initialUsers,
+  initialInvites,
 }: {
   settings: Settings
   sectionKeywords: SectionKeywords
   configLockedKeys: (keyof Settings)[]
   currentVersion: string
+  initialUsers?: User[]
+  initialInvites?: Invite[]
 }) {
   const t = useTranslations("SettingsPage")
   const title = t("title")
@@ -266,6 +272,8 @@ export function SettingsForm({
     )
   }
 
+  const hasUsers = Boolean(initialUsers)
+
   const tabs = useMemo(
     () =>
       [
@@ -280,12 +288,21 @@ export function SettingsForm({
           icon: IconMicrophone,
         },
         { value: "auth", label: t("tabs.auth.title"), icon: IconShield },
+        ...(hasUsers
+          ? [
+              {
+                value: "users" as const,
+                label: t("tabs.users.title"),
+                icon: IconUsers,
+              },
+            ]
+          : []),
         { value: "upload", label: t("tabs.upload.title"), icon: IconUpload },
         { value: "email", label: t("tabs.email.title"), icon: IconMail },
         { value: "opds", label: t("tabs.opds.title"), icon: IconRss },
         { value: "changelog", label: "Changelog", icon: IconHistory },
       ] as const,
-    [t],
+    [t, hasUsers],
   )
 
   const [activeTab, setActiveTab] = useQueryState(
@@ -366,48 +383,50 @@ export function SettingsForm({
           },
         ]}
         actions={
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              render={
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Link
-                        href="/api/v2/settings"
-                        aria-label="Export settings as JSON"
-                        download="storyteller-config.json"
-                      >
-                        <IconDownload size={16} />{" "}
-                      </Link>
-                    }
-                  />
-                  <TooltipContent>{t("exportSettings")}</TooltipContent>
-                </Tooltip>
-              }
-            />
-            {errorCount > 0 && (
-              <div className="text-destructive flex items-center gap-1.5 text-sm">
-                <IconAlertCircle className="h-4 w-4" />
-                <span>
-                  {t("formHasErrors", {
-                    count: errorCount,
-                    plural: errorCount === 1 ? "one" : "other",
-                  })}
-                </span>
-              </div>
-            )}
-            <Button
-              type="submit"
-              form="settings-form"
-              disabled={isSaving}
-              size="sm"
-            >
-              {isSaving && <Spinner />}
-              {isSaving ? t("saving") : t("saveSettings")}
-            </Button>
-          </div>
+          activeTab !== "users" ? (
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                render={
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Link
+                          href="/api/v2/settings"
+                          aria-label="Export settings as JSON"
+                          download="storyteller-config.json"
+                        >
+                          <IconDownload size={16} />{" "}
+                        </Link>
+                      }
+                    />
+                    <TooltipContent>{t("exportSettings")}</TooltipContent>
+                  </Tooltip>
+                }
+              />
+              {errorCount > 0 && (
+                <div className="text-destructive flex items-center gap-1.5 text-sm">
+                  <IconAlertCircle className="h-4 w-4" />
+                  <span>
+                    {t("formHasErrors", {
+                      count: errorCount,
+                      plural: errorCount === 1 ? "one" : "other",
+                    })}
+                  </span>
+                </div>
+              )}
+              <Button
+                type="submit"
+                form="settings-form"
+                disabled={isSaving}
+                size="sm"
+              >
+                {isSaving && <Spinner />}
+                {isSaving ? t("saving") : t("saveSettings")}
+              </Button>
+            </div>
+          ) : undefined
         }
       />
       <form
@@ -473,6 +492,13 @@ export function SettingsForm({
                 <TranscriptionTab />
                 <AuthTab />
                 <UploadTab maxUploadChunkSize={maxUploadChunkSize} />
+                {initialUsers && initialInvites && (
+                  <UsersTab
+                    initialUsers={initialUsers}
+                    initialInvites={initialInvites}
+                    disablePasswordLogin={settings.disablePasswordLogin}
+                  />
+                )}
                 <EmailTab />
                 <OpdsTab />
                 <ChangelogTab currentVersion={currentVersion} />

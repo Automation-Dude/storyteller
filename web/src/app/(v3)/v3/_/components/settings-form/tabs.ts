@@ -9,7 +9,7 @@ export const settingsFormTabs = [
 
 export type SettingsFormTab = (typeof settingsFormTabs)[number]
 
-export const tabs = [...settingsFormTabs, "changelog"] as const
+export const tabs = [...settingsFormTabs, "changelog", "users"] as const
 
 export type Tab = (typeof tabs)[number]
 

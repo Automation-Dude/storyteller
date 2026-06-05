@@ -14,6 +14,8 @@ const V3_ROUTES = [
   "/collections",
   "/settings",
   "/login",
+  "/preferences",
+  "/collections",
 ]
 
 function hasV3Route(pathname: string): boolean {

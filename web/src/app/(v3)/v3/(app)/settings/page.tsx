@@ -8,6 +8,8 @@ import {
   settingsFormTabs,
 } from "@v3/_/components/settings-form/tabs"
 
+import { type Invite, type User } from "@/apiModels"
+import { fetchApiRoute } from "@/app/fetchApiRoute"
 import { nextAuth } from "@/auth/auth"
 import { getConfigLockedKeys, getSettings } from "@/database/settings"
 import { getCurrentVersion } from "@/versions"
@@ -33,7 +35,7 @@ function extractKeywords(obj: Record<string, unknown>): string[] {
 }
 
 function generateSectionKeywords(
-  tabsMessages: Record<string, { sections: Record<string, unknown> }>,
+  tabsMessages: Record<string, { sections?: Record<string, unknown> }>,
 ): SectionKeywords {
   const result: SectionKeywords = {} as SectionKeywords
 
@@ -41,7 +43,7 @@ function generateSectionKeywords(
     result[tab] = {}
 
     const tabData = tabsMessages[tab]
-    if (!tabData) {
+    if (!tabData?.sections) {
       continue
     }
 
@@ -66,14 +68,24 @@ export default async function SettingsPage() {
     notFound()
   }
 
-  const [settings, messages, configLockedKeys] = await Promise.all([
-    getSettings(),
-    getMessages(),
-    getConfigLockedKeys(),
-  ])
+  const canManageUsers =
+    auth.user.permissions.userList || auth.user.permissions.inviteList
+
+  const [settings, messages, configLockedKeys, users, invites] =
+    await Promise.all([
+      getSettings(),
+      getMessages(),
+      getConfigLockedKeys(),
+      canManageUsers
+        ? fetchApiRoute<User[]>("/users")
+        : Promise.resolve(undefined),
+      canManageUsers
+        ? fetchApiRoute<Invite[]>("/invites")
+        : Promise.resolve(undefined),
+    ])
 
   const settingsMessages = messages.SettingsPage as {
-    tabs: Record<string, { sections: Record<string, unknown> }>
+    tabs: Record<string, { sections?: Record<string, unknown> }>
   }
   const sectionKeywords = generateSectionKeywords(settingsMessages.tabs)
 
@@ -83,10 +95,10 @@ export default async function SettingsPage() {
     <SettingsForm
       settings={settings}
       sectionKeywords={sectionKeywords}
-      // cant pass set through client component
-
       configLockedKeys={Array.from(configLockedKeys)}
       currentVersion={currentVersion}
+      initialUsers={users}
+      initialInvites={invites}
     />
   )
 }

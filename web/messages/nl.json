@@ -409,6 +409,94 @@
             "pageSizeDescription": "Het aantal boeken per pagina in de OPDS feed. Standaard is 25."
           }
         }
+      },
+      "users": {
+        "title": "Gebruikers",
+
+        "permissions": {
+          "admin": "Beheerder",
+          "basic": "Standaard",
+          "save": "Sla machtigingen op",
+          "bookCreate": "Nieuwe boeken uploaden",
+          "bookRead": "Boek informatie bekijken",
+          "bookProcess": "Boek synchronisatie beheren",
+          "bookDownload": "Gesynchroniseerde boeken downloaden",
+          "bookList": "Alle boeken weergeven",
+          "bookDelete": "Boeken verwijderen",
+          "bookUpdate": "Boek informatie wijzigen",
+          "createCollections": "Verzamelingen aanmaken",
+          "inviteList": "Gebruikers uitnodigingen bekijken",
+          "inviteDelete": "Gebruikers uitnodigingen verwijderen",
+          "userCreate": "Nieuwe gebruikers uitnodigen",
+          "userList": "Alle gebruikers weergeven",
+          "userRead": "Andere gebruikers informatie bekijken",
+          "userDelete": "Gebruikers verwijderen",
+          "userUpdate": "Andere gebruikers machtigingen wijzigen",
+          "settingsUpdate": "Server instellingen wijzigen"
+        },
+        "sections": {
+          "users-invites": {
+            "title": "Uitnodigingen",
+            "description": "Beheer openstaande uitnodigingen voor je server.",
+            "inviteUser": "Voeg gebruiker toe",
+            "inviteSent": "Uitnodiging verzonden",
+            "inviteAnother": "Nog een uitnodiging verzenden",
+            "inviteFailed": "Uitnodiging mislukt",
+            "inviteFailedDescription": "Er is iets misgegaan bij het verzenden van de uitnodiging. Controleer de serverlogs voor meer informatie.",
+            "inviteFailedButton": "Opnieuw proberen",
+            "enablePasswordLogin": "Schakel inloggen met wachtwoord in om gebruikers via e-mail uit te nodigen"
+          },
+          "users-list": {
+            "title": "Gebruikers",
+            "description": "Beheer je gebruikers."
+          }
+        }
+      }
+    }
+  },
+  "PreferencesPage": {
+    "title": "Voorkeuren",
+    "save": "Opslaan",
+    "saving": "Opslaan...",
+    "savedSuccessfully": "Voorkeuren opgeslagen",
+    "failedToSave": "Voorkeuren opslaan mislukt",
+    "tabs": {
+      "profile": "Profiel",
+      "preferences": "Voorkeuren"
+    },
+    "profile": {
+      "title": "Profiel",
+      "description": "Beheer je accountgegevens.",
+      "username": "Gebruikersnaam",
+      "email": "E-mail",
+      "name": "Naam",
+      "changePassword": "Wachtwoord wijzigen",
+      "addPassword": "Wachtwoord toevoegen",
+      "saveProfile": "Profiel opslaan",
+      "saving": "Opslaan...",
+      "savedSuccessfully": "Profiel opgeslagen",
+      "failedToSave": "Profiel opslaan mislukt",
+      "linkedAccounts": "Gekoppelde accounts",
+      "linkedAccountsDescription": "Beheer je gekoppelde OAuth accounts.",
+      "unlink": "Ontkoppelen",
+      "linkWith": "Koppelen met {provider}",
+      "accountUnlinked": "Account ontkoppeld",
+      "failedToUnlink": "Ontkoppelen mislukt"
+    },
+    "preferences": {
+      "language": {
+        "title": "Taal",
+        "description": "Kies je gewenste weergavetaal.",
+        "label": "Taal",
+        "hint": "Deze instelling wordt gesynchroniseerd tussen al je apparaten.",
+        "systemDefault": "Systeemstandaard"
+      },
+      "reading": {
+        "title": "Standaard leesmodus",
+        "description": "Kies wat er gebeurt als je een boek opent dat meerdere modi ondersteunt.",
+        "label": "Voorkeursmodus",
+        "hint": "Wanneer een boek je voorkeursmodus ondersteunt, wordt het automatisch in die modus geopend.",
+        "automatic": "Automatisch"
       }
     }
   },

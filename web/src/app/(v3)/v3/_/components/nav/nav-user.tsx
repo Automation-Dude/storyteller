@@ -46,7 +46,6 @@ export function NavUser({
   const basePath = useVersionBasePath()
 
   const displayName = user.name ?? user.username ?? "User"
-  const displayEmail = user.email ?? user.username ?? ""
 
   const t = useTranslations("AppSidebar")
 
@@ -62,16 +61,18 @@ export function NavUser({
               >
                 <div className="grid w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden data-[state=open]:w-auto">
                   <span className="truncate font-medium">{displayName}</span>
-                  <span className="text-sidebar-foreground/60 truncate font-sans text-xs">
-                    {displayEmail}
-                  </span>
+                  {user.name && (
+                    <span className="text-sidebar-foreground/60 truncate font-sans text-xs">
+                      {user.username}
+                    </span>
+                  )}
                 </div>
                 <IconDotsVertical className="size-4 data-[collapsible=icon]:-ml-4!" />
               </SidebarMenuButton>
             }
           />
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="z-60 w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
@@ -81,19 +82,29 @@ export function NavUser({
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{displayName}</span>
-                    <span className="text-muted-foreground truncate text-xs">
-                      {displayEmail}
-                    </span>
+
+                    {user.username && (
+                      <span className="text-muted-foreground truncate text-xs">
+                        {user.username}
+                      </span>
+                    )}
                   </div>
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUser />
-                {t("account")}
-              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href={`${basePath}/preferences`}
+                    className="flex items-center gap-2"
+                  >
+                    <IconUser />
+                    {t("account")}
+                  </Link>
+                }
+              />
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   {theme === "dark" ? (

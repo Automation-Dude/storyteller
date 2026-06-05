@@ -414,6 +414,98 @@
             "pageSizeDescription": "The number of books per page in the OPDS feed. Default is 25."
           }
         }
+      },
+      "users": {
+        "title": "Users",
+        "permissions": {
+          "admin": "Admin",
+          "basic": "Basic",
+          "save": "Save permissions",
+          "bookCreate": "Upload new books",
+          "bookRead": "See book info",
+          "bookProcess": "Manage book syncing",
+          "bookDownload": "Download synced books",
+          "bookList": "List all books",
+          "bookDelete": "Delete books",
+          "bookUpdate": "Change book info",
+          "collectionCreate": "Create collections",
+          "inviteList": "See user invites",
+          "inviteDelete": "Delete user invites",
+          "userCreate": "Invite new users",
+          "userList": "List all users",
+          "userRead": "See other users' info",
+          "userDelete": "Delete users",
+          "userUpdate": "Update other users' permissions",
+          "settingsUpdate": "Change server settings"
+        },
+        "sections": {
+          "users-invites": {
+            "title": "Invites",
+            "description": "Manage pending invitations to your server.",
+            "invites": "Invites",
+            "invitesDescription": "Manage pending invitations to your server.",
+            "inviteUser": "Invite user",
+            "inviteSent": "Invite sent.",
+            "inviteAnother": "Invite another user",
+            "inviteFailed": "Invite failed",
+            "inviteFailedDescription": "Something went wrong when sending the invite. Check the server logs for more information.",
+            "inviteFailedButton": "Try again",
+            "enablePasswordLogin": "Enable password login to invite users by email"
+          },
+          "users-list": {
+            "title": "Users",
+            "description": "Manage your users.",
+            "users": "Users",
+            "usersDescription": "Manage your users."
+          }
+        }
+      }
+    }
+  },
+
+  "PreferencesPage": {
+    "title": "Preferences",
+    "save": "Save",
+    "saving": "Saving...",
+    "savedSuccessfully": "Preferences saved",
+    "failedToSave": "Failed to save preferences",
+    "tabs": {
+      "profile": "Profile",
+      "preferences": "Preferences"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Manage your account details.",
+      "username": "Username",
+      "email": "Email",
+      "name": "Name",
+      "changePassword": "Change password",
+      "addPassword": "Add password",
+      "saveProfile": "Save profile",
+      "saving": "Saving...",
+      "savedSuccessfully": "Profile saved",
+      "failedToSave": "Failed to save profile",
+      "linkedAccounts": "Linked accounts",
+      "linkedAccountsDescription": "Manage your linked OAuth accounts.",
+      "unlink": "Unlink",
+      "linkWith": "Link with {provider}",
+      "accountUnlinked": "Account unlinked",
+      "failedToUnlink": "Failed to unlink account"
+    },
+    "preferences": {
+      "language": {
+        "title": "Language",
+        "description": "Choose your preferred display language.",
+        "label": "Language",
+        "hint": "This setting syncs across all your devices.",
+        "systemDefault": "System default"
+      },
+      "reading": {
+        "title": "Default Reading Mode",
+        "description": "Choose what happens when you open a book that supports multiple modes.",
+        "label": "Preferred mode",
+        "hint": "When a book supports your preferred mode, it will open in that mode automatically.",
+        "automatic": "Automatic"
       }
     }
   },
