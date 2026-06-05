@@ -16,13 +16,13 @@ export function AddBookButton(props: ButtonProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="sm" {...props}>
+          <Button variant="default" size="sm" {...props}>
             <IconPlus className="size-4" />
             {t("addBook")}
           </Button>
         }
       />
-      <DropdownMenuContent>
+      <DropdownMenuContent className="w-fit">
         <DropdownMenuItem>
           <IconFileUpload className="size-4" />
           {t("uploadBook")}

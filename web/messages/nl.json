@@ -88,6 +88,8 @@
   "BooksPage": {
     "title": "Boeken",
     "addBook": "Voeg boek toe",
+    "uploadBook": "Upload een boek",
+    "importBook": "Importeer een boek van de server",
     "seachBooksPlaceholder": "Zoek boeken, auteurs, series, enz.",
     "filters": {
       "filters": "Filters",

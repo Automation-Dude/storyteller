@@ -88,6 +88,8 @@
   "BooksPage": {
     "title": "Books",
     "addBook": "Add Book",
+    "uploadBook": "Upload Book",
+    "importBook": "Import Book from server",
     "seachBooksPlaceholder": "Search books, authors, series...",
     "filters": {
       "filters": "Filters",
