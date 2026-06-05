@@ -41,6 +41,7 @@ import {
 import { type Status } from "@/database/statuses"
 import { type Tag } from "@/database/tags"
 import { type UserBookRating } from "@/database/userRatings"
+import { type UserSettingValue } from "@/database/userSettings"
 import { type UserPermissionSet } from "@/database/users"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import { type UUID } from "@/uuid"
@@ -71,6 +72,7 @@ export const api = createApi({
     "UserRatings",
     "HomeShelves",
     "UserShelves",
+    "UserSettings",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -744,16 +746,17 @@ export const api = createApi({
             { uuid: update.uuid as UUID },
             (draft) => {
               if (update.title !== undefined) draft.title = update.title
-              if (update.subtitle !== undefined) draft.subtitle = update.subtitle
-              if (update.language !== undefined) draft.language = update.language
+              if (update.subtitle !== undefined)
+                draft.subtitle = update.subtitle
+              if (update.language !== undefined)
+                draft.language = update.language
               if (update.description !== undefined)
                 draft.description = update.description
               if (update.publicationDate !== undefined)
                 draft.publicationDate = update.publicationDate
 
               if (update.status !== undefined) {
-                const statuses =
-                  api.endpoints.listStatuses.select()(getState())
+                const statuses = api.endpoints.listStatuses.select()(getState())
                 const status = statuses.data?.find(
                   (s) => s.uuid === update.status,
                 )
@@ -1100,15 +1103,9 @@ export const api = createApi({
 
         const patches = books.map((bookUuid) =>
           dispatch(
-            api.util.updateQueryData(
-              "getBook",
-              { uuid: bookUuid },
-              (draft) => {
-                draft.series = draft.series.filter(
-                  (s) => !seriesSet.has(s.uuid),
-                )
-              },
-            ),
+            api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
+              draft.series = draft.series.filter((s) => !seriesSet.has(s.uuid))
+            }),
           ),
         )
 
@@ -1159,7 +1156,6 @@ export const api = createApi({
         body,
       }),
     }),
-
     getBookRating: build.query<UserBookRating | null, { bookUuid: UUID }>({
       query: ({ bookUuid }) => `/books/${bookUuid}/rating`,
       providesTags: (_result, _error, { bookUuid }) => [
@@ -1238,6 +1234,37 @@ export const api = createApi({
           type: "UserRatings",
           id: `${r.bookUuid}-${r.userId}`,
         })) ?? ["UserRatings"],
+    }),
+
+    getUserSettings: build.query<Record<string, UserSettingValue>, void>({
+      query: () => "/user/settings",
+      providesTags: ["UserSettings"],
+    }),
+    updateUserSettings: build.mutation<void, Record<string, UserSettingValue>>({
+      query: (body) => ({
+        url: "/user/settings",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["UserSettings"],
+    }),
+    setUserSetting: build.mutation<
+      void,
+      { name: string; value: UserSettingValue }
+    >({
+      query: ({ name, value }) => ({
+        url: `/user/settings/${encodeURIComponent(name)}`,
+        method: "PUT",
+        body: { value },
+      }),
+      invalidatesTags: ["UserSettings"],
+    }),
+    deleteUserSetting: build.mutation<void, { name: string }>({
+      query: ({ name }) => ({
+        url: `/user/settings/${encodeURIComponent(name)}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["UserSettings"],
     }),
 
     getInfiniteChangelog: build.infiniteQuery<
@@ -1508,6 +1535,10 @@ export const {
   useDeleteUserShelfMutation,
   useListShelfBooksQuery,
   usePreviewShelfFilterMutation,
+  useGetUserSettingsQuery,
+  useUpdateUserSettingsMutation,
+  useSetUserSettingMutation,
+  useDeleteUserSettingMutation,
 } = api
 
 export function getDownloadUrl(
