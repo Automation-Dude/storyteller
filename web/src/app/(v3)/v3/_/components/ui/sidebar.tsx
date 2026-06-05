@@ -300,7 +300,7 @@ function Sidebar({
             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
           variant === "floating" || variant === "inset"
-            ? "p-2"
+            ? "px-2"
             : "group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className,
         )}
