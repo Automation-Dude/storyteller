@@ -8,7 +8,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-
 import { Button } from "@v3/_/components/ui/button"
 import { Card, CardContent } from "@v3/_/components/ui/card"
 import {
@@ -152,9 +151,11 @@ export function LoginForm({
                   {isLoading ? t("loggingIn") : t("login")}
                 </Button>
               </Field>
-              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-transparent">
-                {t("continueWith")}
-              </FieldSeparator>
+              {providers.length > 0 && (
+                <FieldSeparator className="*:data-[slot=field-separator-content]:bg-transparent">
+                  {t("continueWith")}
+                </FieldSeparator>
+              )}
             </FieldGroup>
           </form>
 
