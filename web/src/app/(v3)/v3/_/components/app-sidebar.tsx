@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  IconArrowBack,
-  IconHelpCircle,
-  IconSearch,
-  IconSettings,
-} from "@tabler/icons-react"
+import { IconSearch, IconSettings } from "@tabler/icons-react"
 import Image from "next/image"
 import { useEffect, useMemo, useRef } from "react"
 import { toast } from "sonner"

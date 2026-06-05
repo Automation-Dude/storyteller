@@ -163,7 +163,7 @@ export const ENUM_FIELDS = [
 
 export const MEDIA_TYPE_VALUES = ["ebook", "audiobook", "synced"] as const
 
-export const OPERATORS_BY_FIELD_TYPE: Record<string, ShelfFilterOperator[]> = {
+export const OPERATORS_BY_FIELD_TYPE = {
   string: [
     "is",
     "isNot",
@@ -191,7 +191,16 @@ export const OPERATORS_BY_FIELD_TYPE: Record<string, ShelfFilterOperator[]> = {
   uuid: ["is", "isNot", "isAnyOf", "isNoneOf", "isEmpty", "isNotEmpty"],
   array: ["includes", "includesAll", "excludes", "isEmpty", "isNotEmpty"],
   enum: ["is", "isNot", "isAnyOf", "isNoneOf"],
-}
+} as const satisfies Record<
+  "string" | "number" | "date" | "uuid" | "array" | "enum",
+  ShelfFilterOperator[]
+>
+
+export type NumberOperators = (typeof OPERATORS_BY_FIELD_TYPE)["number"][number]
+export type DateOperators = (typeof OPERATORS_BY_FIELD_TYPE)["date"][number]
+export type UUIDOperators = (typeof OPERATORS_BY_FIELD_TYPE)["uuid"][number]
+export type ArrayOperators = (typeof OPERATORS_BY_FIELD_TYPE)["array"][number]
+export type EnumOperators = (typeof OPERATORS_BY_FIELD_TYPE)["enum"][number]
 
 export const OPERATOR_LABELS: Record<ShelfFilterOperator, string> = {
   is: "is",
@@ -235,10 +244,6 @@ export const FIELD_LABELS: Record<ShelfFilterField, string> = {
   mediaType: "Media Type",
 }
 
-// ---------------------------------------------------------------------------
-// helper functions
-// ---------------------------------------------------------------------------
-
 export function getFieldType(
   field: ShelfFilterField,
 ): "string" | "number" | "date" | "uuid" | "array" | "enum" {
@@ -254,7 +259,7 @@ export function getOperatorsForField(
   field: ShelfFilterField,
 ): ShelfFilterOperator[] {
   const fieldType = getFieldType(field)
-  return OPERATORS_BY_FIELD_TYPE[fieldType] ?? []
+  return OPERATORS_BY_FIELD_TYPE[fieldType]
 }
 
 export function operatorRequiresValue(operator: ShelfFilterOperator): boolean {
@@ -311,10 +316,6 @@ export function isLogicalBlock(
 ): node is ShelfFilterAnd | ShelfFilterOr | ShelfFilterNot {
   return node.type === "and" || node.type === "or" || node.type === "not"
 }
-
-// ---------------------------------------------------------------------------
-// entity reference extraction (for shelf_filter_reference table)
-// ---------------------------------------------------------------------------
 
 export function extractEntityReferences(filter: ShelfFilter): Array<{
   entityType: "tag" | "collection" | "series" | "status" | "creator"
@@ -513,6 +514,7 @@ function buildIsEmptyExpression(
             .select(sql.lit(1).as("one"))
             .whereRef("userBookRating.bookUuid", "=", "book.uuid")
             .$if(!!userId, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               qb.where("userBookRating.userId", "=", userId!),
             )
             .where("userBookRating.rating", "is not", null),
@@ -555,6 +557,7 @@ function buildIsEmptyExpression(
             .select(sql.lit(1).as("one"))
             .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
             .$if(!!userId, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               qb.where("bookToStatus.userId", "=", userId!),
             ),
         ),
@@ -639,15 +642,6 @@ function buildComparisonExpression(
 ): FilterExpression {
   const fieldType = getFieldType(field)
 
-  if (fieldType === "string") {
-    return buildStringComparison(
-      eb,
-      field as "title" | "subtitle" | "description" | "language",
-      operator,
-      value,
-    )
-  }
-
   if (field === "userRating") {
     return buildUserRatingComparison(eb, operator, value, userId)
   }
@@ -656,37 +650,44 @@ function buildComparisonExpression(
     return buildFileSizeComparison(eb, operator, value)
   }
 
-  if (fieldType === "number") {
-    return buildNumberComparison(
-      eb,
-      field as "rating" | "duration" | "pageCount",
-      operator,
-      value,
-    )
+  switch (fieldType) {
+    case "string":
+      return buildStringComparison(
+        eb,
+        field as "title" | "subtitle" | "description" | "language",
+        operator,
+        value,
+      )
+    case "number":
+      return buildNumberComparison(
+        eb,
+        field as "rating" | "duration" | "pageCount",
+        operator,
+        value,
+      )
+    case "date":
+      return buildDateComparison(
+        eb,
+        field as "publicationDate",
+        operator,
+        value,
+      )
+    case "uuid":
+      return buildUuidComparison(eb, field as "status", operator, value, userId)
+    case "array":
+      return buildArrayComparison(
+        eb,
+        field as "tags" | "collections" | "series" | "creators",
+        operator,
+        value,
+      )
+    case "enum":
+      return buildEnumComparison(eb, field as "mediaType", operator, value)
+    default: {
+      const _exhaustive: never = fieldType
+      return eb.lit(true)
+    }
   }
-
-  if (fieldType === "date") {
-    return buildDateComparison(eb, field as "publicationDate", operator, value)
-  }
-
-  if (fieldType === "uuid") {
-    return buildUuidComparison(eb, field as "status", operator, value, userId)
-  }
-
-  if (fieldType === "array") {
-    return buildArrayComparison(
-      eb,
-      field as "tags" | "collections" | "series" | "creators",
-      operator,
-      value,
-    )
-  }
-
-  if (fieldType === "enum") {
-    return buildEnumComparison(eb, field as "mediaType", operator, value)
-  }
-
-  return eb.lit(true)
 }
 
 function buildStringComparison(
@@ -798,8 +799,13 @@ function buildNumberComparison(
         eb(column, "<=", Number(value[1])),
       ])
 
-    default:
+    default: {
+      const _exhaustive: Exclude<
+        typeof operator,
+        Exclude<NumberOperators, "isEmpty" | "isNotEmpty">
+      > = operator
       return eb.lit(true)
+    }
   }
 }
 
@@ -814,7 +820,10 @@ function buildUserRatingComparison(
     .selectFrom("userBookRating")
     .select("userBookRating.rating")
     .whereRef("userBookRating.bookUuid", "=", "book.uuid")
-    .$if(!!userId, (qb) => qb.where("userBookRating.userId", "=", userId!))
+    .$if(!!userId, (qb) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      qb.where("userBookRating.userId", "=", userId!),
+    )
 
   switch (operator) {
     case "is":
@@ -967,7 +976,10 @@ function buildUuidComparison(
           .select(sql.lit(1).as("one"))
           .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
           .where("bookToStatus.statusUuid", "=", String(value) as UUID)
-          .$if(!!userId, (qb) => qb.where("bookToStatus.userId", "=", userId!)),
+          .$if(!!userId, (qb) =>
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            qb.where("bookToStatus.userId", "=", userId!),
+          ),
       )
 
     case "isNot":
@@ -979,6 +991,7 @@ function buildUuidComparison(
             .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
             .where("bookToStatus.statusUuid", "=", String(value) as UUID)
             .$if(!!userId, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               qb.where("bookToStatus.userId", "=", userId!),
             ),
         ),
@@ -996,7 +1009,10 @@ function buildUuidComparison(
             "in",
             value.map((v) => String(v) as UUID),
           )
-          .$if(!!userId, (qb) => qb.where("bookToStatus.userId", "=", userId!)),
+          .$if(!!userId, (qb) =>
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            qb.where("bookToStatus.userId", "=", userId!),
+          ),
       )
 
     case "isNoneOf":
@@ -1013,6 +1029,7 @@ function buildUuidComparison(
               value.map((v) => String(v) as UUID),
             )
             .$if(!!userId, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               qb.where("bookToStatus.userId", "=", userId!),
             ),
         ),

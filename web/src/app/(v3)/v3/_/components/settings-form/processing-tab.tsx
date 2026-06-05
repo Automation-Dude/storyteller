@@ -4,9 +4,6 @@ import { useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
-import { useTranslation } from "@v3/_/hooks/use-translation"
-import { usePermissions } from "@/hooks/usePermissions"
-import { useClearBooksCacheMutation } from "@/store/api"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -41,8 +38,11 @@ import {
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
 import { TabsContent } from "@v3/_/components/ui/tabs"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
+import { usePermissions } from "@/hooks/usePermissions"
+import { useClearBooksCacheMutation } from "@/store/api"
 
 import {
   LockTooltip,
