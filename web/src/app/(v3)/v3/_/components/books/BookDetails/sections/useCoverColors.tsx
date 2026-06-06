@@ -2,7 +2,10 @@ import { useMemo } from "react"
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
+import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
+
 import { type BookWithRelations } from "@/database/books"
+import { type ColorMode } from "@/database/userPreferencesTypes"
 
 export type CoverColor = {
   rgb: { r: number; g: number; b: number }
@@ -106,4 +109,34 @@ export function useCoverColors(
 
     return { primary, accent, palette: [primary, ...rest] }
   }, [bookOrColors, type])
+}
+
+export type ColorPreferences = {
+  level: ColorMode
+  intensity: number
+  // ambient background tints (card bg, panel header, hero) apply at medium+
+  showTint: boolean
+  // strong ui coloring (--primary overrides, hover tints, colored buttons /
+  // badges) applies at full only
+  showAccent: boolean
+  // a tint alpha scaled by intensity; "transparent" when tints are off
+  tint: (color: CoverColor, base: number) => string
+}
+
+// reads how colorful the app should be (set in preferences) and turns it into
+// flags + a helper the cover-color consumers use to gate / scale their tints
+export function useColorPreferences(): ColorPreferences {
+  const { colorMode, colorIntensity } = useUserPreferences()
+
+  return useMemo(() => {
+    const showTint = colorMode !== "minimal"
+    return {
+      level: colorMode,
+      intensity: colorIntensity,
+      showTint,
+      showAccent: colorMode === "full",
+      tint: (color, base) =>
+        showTint ? color.alpha(base * colorIntensity) : "transparent",
+    }
+  }, [colorMode, colorIntensity])
 }

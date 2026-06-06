@@ -26,15 +26,22 @@ export function BookCover({
   book,
   width,
   disableHover = false,
+  displayMode = "auto",
   onLoadingChange,
 }: {
   book: BookWithRelations
   width: number
   disableHover?: boolean
+  // "auto" keeps the double-cover behavior; "ebook"/"audiobook" force a single
+  // cover (falling back to whatever format exists if the chosen one is missing)
+  displayMode?: "auto" | "ebook" | "audiobook"
   onLoadingChange?: (loading: boolean) => void
 }) {
   const hasAudiobook = book.audiobook !== null
   const hasEbook = book.ebook !== null
+
+  const forceEbook = displayMode === "ebook" && hasEbook
+  const forceAudio = displayMode === "audiobook" && hasAudiobook
 
   const scaledWidth = Math.round(width * DPR)
   const scaledHeight = Math.round(width * 1.5 * DPR)
@@ -54,6 +61,41 @@ export function BookCover({
     updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
   })
 
+  const imgClassName = cn(
+    "object-contain",
+    // !disableHover && "transition-transform duration-300 group-hover:scale-105",
+  )
+
+  if (forceEbook) {
+    return (
+      <CoverImage
+        src={ebookCoverUrl}
+        alt={book.title}
+        blurhash={book.ebook?.coverBlurhash}
+        type="ebook"
+        fallbackColors={book.ebook?.coverColors}
+        className="h-full rounded-xs"
+        imgClassName={imgClassName}
+        onLoadingChange={onLoadingChange}
+      />
+    )
+  }
+
+  if (forceAudio) {
+    return (
+      <CoverImage
+        src={audiobookCoverUrl}
+        alt={book.title}
+        blurhash={book.audiobook?.coverBlurhash}
+        type="audiobook"
+        fallbackColors={book.audiobook?.coverColors}
+        className="aspect-square w-full rounded-sm shadow-lg"
+        imgClassName={imgClassName}
+        onLoadingChange={onLoadingChange}
+      />
+    )
+  }
+
   if (isDualFormat(book)) {
     return (
       <BookDoubleCover
@@ -64,11 +106,6 @@ export function BookCover({
       />
     )
   }
-
-  const imgClassName = cn(
-    "rounded-lg object-contain",
-    // !disableHover && "transition-transform duration-300 group-hover:scale-105",
-  )
 
   if (hasAudiobook && !hasEbook) {
     return (
@@ -115,7 +152,7 @@ export function FallbackCover({
   return (
     <div
       className={cn(
-        "from-primary/10 to-primary/5 relative flex h-full w-full flex-col items-center justify-center gap-2 overflow-clip rounded-lg bg-linear-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']",
+        "from-primary/10 to-primary/5 relative flex h-full w-full flex-col items-center justify-center gap-2 overflow-clip bg-linear-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']",
         className,
       )}
       style={{

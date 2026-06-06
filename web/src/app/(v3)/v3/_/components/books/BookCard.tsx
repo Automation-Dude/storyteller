@@ -2,13 +2,17 @@ import Link from "next/link"
 import { memo, useState } from "react"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
+import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { cn } from "@v3/_/lib/utils"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 
 import { BookCover, isDualFormat } from "./BookCover"
-import { useCoverColors } from "./BookDetails/sections/useCoverColors"
+import {
+  useColorPreferences,
+  useCoverColors,
+} from "./BookDetails/sections/useCoverColors"
 import { ProgressDisplayBar } from "./ProgressDisplayBar"
 
 type BookCardProps = {
@@ -34,14 +38,17 @@ export const BookCard = memo(function BookCard({
   onToggleSelection,
   onClick,
 }: BookCardProps) {
+  const { gridCoverDisplay } = useUserPreferences()
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
-  const hasDualFormat = isDualFormat(book)
+  // forcing a single cover (ebook/audiobook) drops the double-cover layout
+  const hasDualFormat = isDualFormat(book) && gridCoverDisplay === "auto"
 
   const authors = book.authors
   const progress = getReadingProgress(book)
 
   const { primary, accent } = useCoverColors(book)
+  const { showTint, showAccent, tint } = useColorPreferences()
 
   const [coverLoading, setCoverLoading] = useState(true)
 
@@ -51,16 +58,22 @@ export const BookCard = memo(function BookCard({
     onToggleSelection?.(book.uuid)
   }
 
-  const style = {
-    "--primary": primary.isDark ? primary.solid : `var(--st-orange-500)`,
-    "--primary-foreground": primary.isDark
-      ? primary.onColor
-      : `var(--st-orange-500-foreground)`,
-    "--primary-accent": accent.isDark ? accent.solid : `var(--st-orange-500)`,
-    "--primary-accent-foreground": accent.isDark
-      ? accent.onColor
-      : `var(--st-orange-500-foreground)`,
-  } as React.CSSProperties
+  // cover-derived ui coloring (hover title, badge, accent vars) only at "full";
+  // otherwise we leave the theme primary in place
+  const style = showAccent
+    ? ({
+        "--primary": primary.isDark ? primary.solid : `var(--st-orange-500)`,
+        "--primary-foreground": primary.isDark
+          ? primary.onColor
+          : `var(--st-orange-500-foreground)`,
+        "--primary-accent": accent.isDark
+          ? accent.solid
+          : `var(--st-orange-500)`,
+        "--primary-accent-foreground": accent.isDark
+          ? accent.onColor
+          : `var(--st-orange-500-foreground)`,
+      } as React.CSSProperties)
+    : undefined
 
   const cardContent = (
     <>
@@ -74,17 +87,18 @@ export const BookCard = memo(function BookCard({
       >
         <div
           className={cn(
-            "flex h-full w-full items-center justify-center bg-amber-100/50 p-3",
+            "bg-muted flex h-full w-full items-center justify-center",
+            // single forced covers fill the card; auto/double keep breathing room
+            gridCoverDisplay === "auto" ? "p-3" : "p-0",
             coverLoading && "animate-pulse",
           )}
-          style={{
-            background: primary.alpha(0.36),
-          }}
+          style={showTint ? { background: tint(primary, 0.36) } : undefined}
         >
           <BookCover
             book={book}
             width={300}
             disableHover={isSelecting}
+            displayMode={gridCoverDisplay}
             onLoadingChange={setCoverLoading}
           />
         </div>
@@ -112,7 +126,7 @@ export const BookCard = memo(function BookCard({
             <div
               className="flex size-5 items-center justify-center rounded-full shadow-md"
               style={{
-                background: primary.solid,
+                background: showAccent ? primary.solid : "var(--primary)",
               }}
             >
               <IconReadaloud className="size-6 text-white" />

@@ -1284,16 +1284,9 @@ export const api = createApi({
       { name: string; value: UserSettingValue }
     >({
       query: ({ name, value }) => ({
-        url: `/user/settings/${encodeURIComponent(name)}`,
+        url: `/user/settings`,
         method: "PUT",
-        body: { value },
-      }),
-      invalidatesTags: ["UserSettings"],
-    }),
-    deleteUserSetting: build.mutation<void, { name: string }>({
-      query: ({ name }) => ({
-        url: `/user/settings/${encodeURIComponent(name)}`,
-        method: "DELETE",
+        body: { [name]: value },
       }),
       invalidatesTags: ["UserSettings"],
     }),
@@ -1588,7 +1581,6 @@ export const {
   useGetUserSettingsQuery,
   useUpdateUserSettingsMutation,
   useSetUserSettingMutation,
-  useDeleteUserSettingMutation,
 } = api
 
 export function getDownloadUrl(

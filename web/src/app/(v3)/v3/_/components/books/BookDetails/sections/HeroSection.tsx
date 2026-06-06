@@ -24,7 +24,7 @@ import {
   useSetBookRatingMutation,
 } from "@/store/api"
 
-import { useCoverColors } from "./useCoverColors"
+import { useColorPreferences, useCoverColors } from "./useCoverColors"
 
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, isEditing, editingCovers, isFieldActive } = useBookForm()
@@ -49,6 +49,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
   }
 
   const { primary } = useCoverColors(book)
+  const { tint } = useColorPreferences()
 
   return (
     <div
@@ -61,7 +62,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
         // upload slots (movement on entering edit mode is acceptable)
         !isEditing && !editingCovers && `@xl/book:h-80`,
       )}
-      style={{ background: primary.alpha(0.2) }}
+      style={{ background: tint(primary, 0.2) }}
     >
       <CoverEditor compact={compact} />
 

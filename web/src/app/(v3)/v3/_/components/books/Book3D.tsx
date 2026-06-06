@@ -306,6 +306,8 @@ type SlabProps = {
   spine: SpineInfo
   interactive: boolean
   discs?: number
+  initialView?: number
+  onViewChange?: (view: number) => void
   onActivate?: () => void
 }
 
@@ -322,6 +324,8 @@ function Slab({
   spine,
   interactive,
   discs = 0,
+  initialView = 0,
+  onViewChange,
   onActivate,
 }: SlabProps) {
   const half = thickness / 2
@@ -336,9 +340,10 @@ function Slab({
   )
   const authorSize = Math.max(9, Math.round(titleSize * 0.8))
 
-  const rotateY = useSpring(0, SPRING)
-  const rotateX = useSpring(0, SPRING)
-  const [view, setView] = useState(0)
+  const initialAngle = VIEWS[initialView] ?? VIEWS[0]
+  const rotateY = useSpring(initialAngle.y, SPRING)
+  const rotateX = useSpring(initialAngle.x, SPRING)
+  const [view, setView] = useState(initialView)
   const base = useRef({ x: 0, y: 0 })
   const peeking = useRef(false)
 
@@ -378,6 +383,7 @@ function Slab({
     const next = (view + 1) % VIEWS.length
     setView(next)
     setViewAngles(next)
+    onViewChange?.(next)
   }
 
   const handlePanStart = () => {
@@ -570,10 +576,14 @@ function SingleBookStage({
   book,
   width,
   spine,
+  initialView,
+  onViewChange,
 }: {
   book: BookWithRelations
   width: number
   spine: SpineInfo
+  initialView?: number
+  onViewChange?: (view: number) => void
 }) {
   const colors = useCoverColors(book)
   const audiobookOnly = !!book.audiobook && !book.ebook
@@ -596,6 +606,8 @@ function SingleBookStage({
       spine={spine}
       interactive
       discs={discs}
+      initialView={initialView}
+      onViewChange={onViewChange}
       front={
         <CoverFace
           book={book}
@@ -612,10 +624,14 @@ function DualStage({
   book,
   width,
   spine,
+  initialView,
+  onViewChange,
 }: {
   book: BookWithRelations
   width: number
   spine: SpineInfo
+  initialView?: number
+  onViewChange?: (view: number) => void
 }) {
   const ebookColors = useCoverColors(book, { type: "ebook" })
   const audioColors = useCoverColors(book, { type: "audiobook" })
@@ -654,6 +670,8 @@ function DualStage({
           edge="paper"
           spine={spine}
           interactive={active === "ebook"}
+          initialView={initialView}
+          onViewChange={onViewChange}
           onActivate={() => {
             setActive("ebook")
           }}
@@ -681,6 +699,8 @@ function DualStage({
           spine={spine}
           interactive={active === "audiobook"}
           discs={discs}
+          initialView={initialView}
+          onViewChange={onViewChange}
           onActivate={() => {
             setActive("audiobook")
           }}
@@ -695,26 +715,52 @@ function BookStage({
   book,
   width,
   spine,
+  initialView,
+  onViewChange,
 }: {
   book: BookWithRelations
   width: number
   spine: SpineInfo
+  initialView?: number
+  onViewChange?: (view: number) => void
 }) {
   if (isDualFormat(book)) {
-    return <DualStage book={book} width={width} spine={spine} />
+    return (
+      <DualStage
+        book={book}
+        width={width}
+        spine={spine}
+        initialView={initialView}
+        onViewChange={onViewChange}
+      />
+    )
   }
-  return <SingleBookStage book={book} width={width} spine={spine} />
+  return (
+    <SingleBookStage
+      book={book}
+      width={width}
+      spine={spine}
+      initialView={initialView}
+      onViewChange={onViewChange}
+    />
+  )
 }
 
 export function Book3D({
   book,
   width,
   spine = "title",
+  initialView,
+  onViewChange,
   actions,
 }: {
   book: BookWithRelations
   width: number
   spine?: SpineInfo
+  /** preset view index the book starts rotated to (see VIEWS) */
+  initialView?: number
+  /** fires with the new preset index each time the book is tapped to rotate */
+  onViewChange?: (view: number) => void
   /**
    * buttons rendered in a reveal-on-hover stack at the top-right. the caller
    * decides what shows up (e.g. fullscreen via `BookFullscreenButton`, edit,
@@ -724,7 +770,13 @@ export function Book3D({
 }) {
   return (
     <div className="group relative w-fit shrink-0 select-none">
-      <BookStage book={book} width={width} spine={spine} />
+      <BookStage
+        book={book}
+        width={width}
+        spine={spine}
+        initialView={initialView}
+        onViewChange={onViewChange}
+      />
 
       {actions && (
         <div className="absolute top-1 -right-4 z-30 flex flex-col items-center justify-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">

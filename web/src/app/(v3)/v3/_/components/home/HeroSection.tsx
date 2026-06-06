@@ -4,7 +4,10 @@ import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
 import { useMemo } from "react"
 
 import { Book3D } from "@v3/_/components/books/Book3D"
-import { useCoverColors } from "@v3/_/components/books/BookDetails/sections/useCoverColors"
+import {
+  useColorPreferences,
+  useCoverColors,
+} from "@v3/_/components/books/BookDetails/sections/useCoverColors"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
@@ -60,6 +63,7 @@ export function HeroSection() {
 function Hero({ book }: { book: BookWithRelations }) {
   const t = useTranslation("HomePage")
   const { primary } = useCoverColors(book)
+  const { showAccent, tint } = useColorPreferences()
 
   const progress = book.position?.locator.locations?.totalProgression ?? 0
   const duration = book.audiobook?.duration ?? book.readaloud?.duration ?? null
@@ -89,9 +93,11 @@ function Hero({ book }: { book: BookWithRelations }) {
       className="relative -mx-4 flex flex-col gap-0"
       style={
         {
-          background: primary.alpha(0.06),
-          "--primary": primary.solid,
-          "--primary-foreground": primary.onColor,
+          background: tint(primary, 0.06),
+          ...(showAccent && {
+            "--primary": primary.solid,
+            "--primary-foreground": primary.onColor,
+          }),
         } as React.CSSProperties
       }
     >
@@ -119,7 +125,7 @@ function Hero({ book }: { book: BookWithRelations }) {
                   className="h-full transition-all"
                   style={{
                     width: `${Math.round(progress * 100)}%`,
-                    background: primary.solid,
+                    background: showAccent ? primary.solid : "var(--primary)",
                   }}
                 />
               </div>

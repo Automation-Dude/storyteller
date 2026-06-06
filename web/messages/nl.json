@@ -480,10 +480,7 @@
     "saving": "Opslaan...",
     "savedSuccessfully": "Voorkeuren opgeslagen",
     "failedToSave": "Voorkeuren opslaan mislukt",
-    "tabs": {
-      "profile": "Profiel",
-      "preferences": "Voorkeuren"
-    },
+    "searchPreferences": "Voorkeuren zoeken...",
     "profile": {
       "title": "Profiel",
       "description": "Beheer je accountgegevens.",
@@ -503,20 +500,110 @@
       "accountUnlinked": "Account ontkoppeld",
       "failedToUnlink": "Ontkoppelen mislukt"
     },
-    "preferences": {
-      "language": {
-        "title": "Taal",
-        "description": "Kies je gewenste weergavetaal.",
-        "label": "Taal",
-        "hint": "Deze instelling wordt gesynchroniseerd tussen al je apparaten.",
-        "systemDefault": "Systeemstandaard"
+    "tabs": {
+      "profile": {
+        "title": "Profiel"
       },
-      "reading": {
-        "title": "Standaard leesmodus",
-        "description": "Kies wat er gebeurt als je een boek opent dat meerdere modi ondersteunt.",
-        "label": "Voorkeursmodus",
-        "hint": "Wanneer een boek je voorkeursmodus ondersteunt, wordt het automatisch in die modus geopend.",
-        "automatic": "Automatisch"
+      "general": {
+        "title": "Algemeen",
+        "sections": {
+          "language": {
+            "title": "Taal",
+            "description": "Kies je gewenste weergavetaal.",
+            "label": "Taal",
+            "hint": "Deze instelling wordt gesynchroniseerd tussen al je apparaten.",
+            "systemDefault": "Systeemstandaard"
+          },
+          "reading": {
+            "title": "Standaard leesmodus",
+            "description": "Kies wat er gebeurt als je een boek opent dat meerdere modi ondersteunt.",
+            "label": "Voorkeursmodus",
+            "hint": "Wanneer een boek je voorkeursmodus ondersteunt, wordt het automatisch in die modus geopend.",
+            "automatic": "Automatisch",
+            "modes": {
+              "readaloud": "Voorlezen (gesynchroniseerd audio + tekst)",
+              "audiobook": "Audioboek",
+              "epub": "E-book"
+            }
+          },
+          "view": {
+            "title": "Standaardweergave",
+            "description": "Hoe je bibliotheek standaard wordt weergegeven.",
+            "label": "Weergave",
+            "hint": "Lijst- en tabelweergave komen binnenkort.",
+            "kinds": {
+              "grid": "Raster",
+              "list": "Lijst",
+              "table": "Tabel"
+            }
+          }
+        }
+      },
+      "appearance": {
+        "title": "Weergave",
+        "sections": {
+          "accent": {
+            "title": "Accentkleur",
+            "description": "Kies de primaire kleur die in de hele app wordt gebruikt.",
+            "label": "Accentkleur",
+            "hint": "Wordt toegepast op knoppen, accenten en de zijbalk.",
+            "useDefault": "Standaardkleur gebruiken",
+            "custom": "Aangepaste kleur"
+          },
+          "colorfulness": {
+            "title": "Kleurrijkheid",
+            "description": "Hoeveel coverkleuren doorwerken in de interface.",
+            "label": "Kleurniveau",
+            "hint": "Vol gebruikt coverkleuren overal; minimaal houdt een neutraal thema aan.",
+            "levels": {
+              "full": "Vol",
+              "medium": "Gemiddeld",
+              "minimal": "Minimaal"
+            },
+            "intensity": {
+              "label": "Kleurintensiteit",
+              "hint": "Hoe sterk de coverkleur-tinten verschijnen."
+            }
+          }
+        }
+      },
+      "books": {
+        "title": "Boeken",
+        "sections": {
+          "gridCover": {
+            "title": "Rastercovers",
+            "description": "Hoe boekcovers in het raster worden getoond.",
+            "label": "Coverweergave",
+            "hint": "Beide toont de e-book- en audioboekcover wanneer een boek die heeft.",
+            "options": {
+              "auto": "Beide covers",
+              "ebook": "Alleen e-book",
+              "audiobook": "Alleen audioboek"
+            }
+          },
+          "detail": {
+            "title": "Boekweergave",
+            "description": "Hoe een boek op de detailpagina wordt getoond.",
+            "display": {
+              "label": "Weergave",
+              "hint": "De platte cover valt terug op je rastercoverkeuze.",
+              "options": {
+                "3d": "3D-boek",
+                "cover": "Platte cover"
+              }
+            },
+            "view": {
+              "label": "Standaardpositie",
+              "hint": "De hoek waarin het 3D-boek begint.",
+              "options": {
+                "cover": "Cover",
+                "spine": "Rug",
+                "pages": "Pagina's",
+                "back": "Achterkant"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -542,6 +629,7 @@
       "en": "Engels",
       "nl": "Nederlands"
     },
+    "preferences": "Voorkeuren",
     "switchToClassic": "Terug naar klassieke UI",
     "switchToNew": "Nieuwe interface proberen"
   },
@@ -566,7 +654,9 @@
       "edit": "Cover bewerken",
       "uploadEbook": "Ebook-cover uploaden",
       "uploadAudiobook": "Audioboek-cover uploaden",
-      "clear": "Verwijderen"
+      "clear": "Verwijderen",
+      "setDefaultPosition": "Als standaardpositie instellen",
+      "savedDefaultPosition": "Standaardpositie opgeslagen"
     },
     "narratedBy": "verteld door",
     "writtenBy": "door",

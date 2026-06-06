@@ -6,6 +6,7 @@ import {
   IconHelpCircle,
   IconLogout,
   IconMoon,
+  IconSettings2,
   IconSun,
   IconUser,
 } from "@tabler/icons-react"
@@ -105,6 +106,17 @@ export function NavUser({
                   >
                     <IconUser />
                     {t("account")}
+                  </Link>
+                }
+              />
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href={`${basePath}/preferences?tab=general`}
+                    className="flex items-center gap-2"
+                  >
+                    <IconSettings2 />
+                    {t("preferences")}
                   </Link>
                 }
               />

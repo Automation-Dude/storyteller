@@ -479,10 +479,7 @@
     "saving": "Saving...",
     "savedSuccessfully": "Preferences saved",
     "failedToSave": "Failed to save preferences",
-    "tabs": {
-      "profile": "Profile",
-      "preferences": "Preferences"
-    },
+    "searchPreferences": "Search preferences...",
     "profile": {
       "title": "Profile",
       "description": "Manage your account details.",
@@ -502,20 +499,110 @@
       "accountUnlinked": "Account unlinked",
       "failedToUnlink": "Failed to unlink account"
     },
-    "preferences": {
-      "language": {
-        "title": "Language",
-        "description": "Choose your preferred display language.",
-        "label": "Language",
-        "hint": "This setting syncs across all your devices.",
-        "systemDefault": "System default"
+    "tabs": {
+      "profile": {
+        "title": "Profile"
       },
-      "reading": {
-        "title": "Default Reading Mode",
-        "description": "Choose what happens when you open a book that supports multiple modes.",
-        "label": "Preferred mode",
-        "hint": "When a book supports your preferred mode, it will open in that mode automatically.",
-        "automatic": "Automatic"
+      "general": {
+        "title": "General",
+        "sections": {
+          "language": {
+            "title": "Language",
+            "description": "Choose your preferred display language.",
+            "label": "Language",
+            "hint": "This setting syncs across all your devices.",
+            "systemDefault": "System default"
+          },
+          "reading": {
+            "title": "Default reading mode",
+            "description": "Choose what happens when you open a book that supports multiple modes.",
+            "label": "Preferred mode",
+            "hint": "When a book supports your preferred mode, it will open in that mode automatically.",
+            "automatic": "Automatic",
+            "modes": {
+              "readaloud": "Read-aloud (synced audio + text)",
+              "audiobook": "Audiobook",
+              "epub": "E-book"
+            }
+          },
+          "view": {
+            "title": "Default view",
+            "description": "How your library is laid out by default.",
+            "label": "View",
+            "hint": "List and table views are coming soon.",
+            "kinds": {
+              "grid": "Grid",
+              "list": "List",
+              "table": "Table"
+            }
+          }
+        }
+      },
+      "appearance": {
+        "title": "Appearance",
+        "sections": {
+          "accent": {
+            "title": "Accent color",
+            "description": "Pick the primary color used across the app.",
+            "label": "Accent color",
+            "hint": "Applies to buttons, highlights and the sidebar.",
+            "useDefault": "Use default color",
+            "custom": "Custom color"
+          },
+          "colorfulness": {
+            "title": "Colorfulness",
+            "description": "How much cover colors bleed into the interface.",
+            "label": "Color level",
+            "hint": "Full uses cover colors everywhere; minimal keeps a neutral theme.",
+            "levels": {
+              "full": "Full",
+              "medium": "Medium",
+              "minimal": "Minimal"
+            },
+            "intensity": {
+              "label": "Color intensity",
+              "hint": "How strong the cover-color tints appear."
+            }
+          }
+        }
+      },
+      "books": {
+        "title": "Books",
+        "sections": {
+          "gridCover": {
+            "title": "Grid covers",
+            "description": "How book covers are shown in the grid.",
+            "label": "Cover display",
+            "hint": "Both shows the e-book and audiobook covers when a book has them.",
+            "options": {
+              "auto": "Both covers",
+              "ebook": "E-book only",
+              "audiobook": "Audiobook only"
+            }
+          },
+          "detail": {
+            "title": "Book display",
+            "description": "How a book is shown on its details page.",
+            "display": {
+              "label": "Display",
+              "hint": "The flat cover falls back to your grid cover choice.",
+              "options": {
+                "3d": "3D book",
+                "cover": "Flat cover"
+              }
+            },
+            "view": {
+              "label": "Default position",
+              "hint": "The angle the 3D book starts at.",
+              "options": {
+                "cover": "Cover",
+                "spine": "Spine",
+                "pages": "Pages",
+                "back": "Back"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -542,7 +629,8 @@
       "nl": "Dutch"
     },
     "switchToClassic": "Switch to classic UI",
-    "switchToNew": "Try new interface"
+    "switchToNew": "Try new interface",
+    "preferences": "Preferences"
   },
   "SidebarManager": {
     "customize": "Customize sidebar",
@@ -565,7 +653,9 @@
       "edit": "Edit cover",
       "uploadEbook": "Upload ebook cover",
       "uploadAudiobook": "Upload audiobook cover",
-      "clear": "Remove"
+      "clear": "Remove",
+      "setDefaultPosition": "Set as default position",
+      "savedDefaultPosition": "Saved default position"
     },
     "narratedBy": "narrated by",
     "writtenBy": "by",

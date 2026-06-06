@@ -1,18 +1,21 @@
 "use client"
 
-import { IconPencil, IconUpload, IconX } from "@tabler/icons-react"
+import { IconPencil, IconPin, IconUpload, IconX } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useWatch } from "react-hook-form"
+import { toast } from "sonner"
 
 import {
   Book3D,
   BookFullscreenButton,
   type SpineInfo,
 } from "@v3/_/components/books/Book3D"
+import { BookCover } from "@v3/_/components/books/BookCover"
 import { Button } from "@v3/_/components/ui/button"
+import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { getCoverUrl } from "@/store/api"
+import { getCoverUrl, useSetUserSettingMutation } from "@/store/api"
 
 import { useBookForm } from "./BookFormProvider"
 
@@ -118,32 +121,90 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   const t = useTranslation("BookDetailsPage")
   const coverWidth = compact ? 150 : 176
 
+  const { bookDetailDisplay, gridCoverDisplay, bookDetail3dView } =
+    useUserPreferences()
+  const [setUserSetting] = useSetUserSettingMutation()
+  // the position the book is currently rotated to, so it can be saved as the
+  // default; seeded from the saved preference
+  const [currentView, setCurrentView] = useState(bookDetail3dView ?? 0)
+
   const canSetEbookCover = !!book.ebook || !!book.readaloud
   const canSetAudioCover = !!book.audiobook || !!book.readaloud
 
   const textCover = useWatch({ control: form.control, name: "textCover" })
   const audioCover = useWatch({ control: form.control, name: "audioCover" })
 
+  const handleSaveDefaultView = async () => {
+    try {
+      await setUserSetting({
+        name: "bookDetail3dView",
+        value: currentView,
+      }).unwrap()
+      toast.success(t("cover.savedDefaultPosition"))
+    } catch {
+      toast.error(t("saveFailed"))
+    }
+  }
+
   if (!isEditing && !editingCovers) {
+    const editAction = canEdit && (
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon-sm"
+        onClick={() => {
+          setEditingCovers(true)
+        }}
+        aria-label={t("cover.edit")}
+        className="bg-background/85 text-foreground/70 hover:text-foreground rounded-md p-1.5"
+      >
+        <IconPencil className="size-4" />
+      </Button>
+    )
+
+    // a flat cover that falls back to the user's grid cover-display choice
+    if (bookDetailDisplay === "cover") {
+      return (
+        <div className="group relative w-fit shrink-0 select-none">
+          <div style={{ width: coverWidth }}>
+            <BookCover
+              book={book}
+              width={coverWidth}
+              displayMode={gridCoverDisplay}
+            />
+          </div>
+          {editAction && (
+            <div className="absolute top-1 -right-4 z-30 flex flex-col items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+              {editAction}
+            </div>
+          )}
+        </div>
+      )
+    }
+
     return (
       <Book3D
         book={book}
         width={coverWidth}
         spine={SPINE_INFO}
+        initialView={bookDetail3dView ?? 0}
+        onViewChange={setCurrentView}
         actions={
           <>
-            {canEdit && (
+            {editAction}
+
+            {currentView !== (bookDetail3dView ?? 0) && (
               <Button
                 type="button"
                 variant="secondary"
                 size="icon-sm"
                 onClick={() => {
-                  setEditingCovers(true)
+                  void handleSaveDefaultView()
                 }}
-                aria-label={t("cover.edit")}
+                aria-label={t("cover.setDefaultPosition")}
                 className="bg-background/85 text-foreground/70 hover:text-foreground rounded-md p-1.5"
               >
-                <IconPencil className="size-4" />
+                <IconPin className="size-4" />
               </Button>
             )}
 

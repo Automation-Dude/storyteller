@@ -49,7 +49,10 @@ import { DownloadsSection } from "./BookDetails/sections/DownloadsSection"
 import { FileSection } from "./BookDetails/sections/FileSection"
 import { HeroSection } from "./BookDetails/sections/HeroSection"
 import { ReviewSection } from "./BookDetails/sections/ReviewSection"
-import { useCoverColors } from "./BookDetails/sections/useCoverColors"
+import {
+  useColorPreferences,
+  useCoverColors,
+} from "./BookDetails/sections/useCoverColors"
 
 type BookDetailsContentProps = {
   uuid: UUID
@@ -172,6 +175,20 @@ function BookDetailsContentInner({
   )
 
   const { primary, accent } = useCoverColors(book)
+  const { showAccent } = useColorPreferences()
+
+  // cover-derived primary/accent only at "full"; otherwise the theme colors
+  // (incl. a custom accent color) stay in place
+  const colorVars = showAccent
+    ? ({
+        "--primary": primary.isDark ? primary.solid : primary.onColor,
+        "--primary-foreground": primary.isDark
+          ? primary.onColor
+          : primary.solid,
+        "--accent": accent.isDark ? accent.solid : accent.onColor,
+        "--accent-foreground": accent.isDark ? accent.onColor : accent.solid,
+      } as React.CSSProperties)
+    : undefined
 
   return (
     <BookFormProvider
@@ -181,18 +198,7 @@ function BookDetailsContentInner({
     >
       <article
         className="scroll-y bg-background relative flex h-full flex-1 flex-col"
-        style={
-          {
-            "--primary": primary.isDark ? primary.solid : primary.onColor,
-            "--primary-foreground": primary.isDark
-              ? primary.onColor
-              : primary.solid,
-            "--accent": accent.isDark ? accent.solid : accent.onColor,
-            "--accent-foreground": accent.isDark
-              ? accent.onColor
-              : accent.solid,
-          } as React.CSSProperties
-        }
+        style={colorVars}
       >
         {!compact && <BookDetailsHeader />}
         {compact && <BookPanelHeader onClose={onClose} />}
@@ -464,6 +470,7 @@ function CoverEditBar() {
 function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   const { book, isEditing, setIsEditing } = useBookForm()
   const { primary, accent } = useCoverColors(book)
+  const { showTint, showAccent, tint } = useColorPreferences()
 
   const selection = useOptionalBookSelection()
   const isSelected = selection?.isSelected(book.uuid) ?? false
@@ -488,9 +495,11 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
     <div
       className="flex items-center justify-between border-b px-4 py-2"
       style={{
-        backgroundColor: primary.alpha(0.5),
-        color: primary.onColor,
-        ...(isSelected && { borderColor: accent.solid }),
+        backgroundColor: showTint ? tint(primary, 0.5) : undefined,
+        color: showAccent ? primary.onColor : undefined,
+        ...(isSelected && {
+          borderColor: showAccent ? accent.solid : "var(--primary)",
+        }),
       }}
     >
       <div className="flex items-center gap-3">
@@ -498,7 +507,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
           <Checkbox
             checked={isSelected}
             style={
-              isSelected
+              isSelected && showAccent
                 ? {
                     background: accent.solid,
                     color: accent.onColor,
