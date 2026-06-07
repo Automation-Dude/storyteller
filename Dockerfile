@@ -24,6 +24,10 @@ COPY ghost-story/package.json ./ghost-story/package.json
 COPY config/tsup/package.json ./config/tsup/package.json
 COPY config/eslint/package.json ./config/eslint/package.json
 
+# force better-sqlite3 (and any other prebuild-install dep) to compile from
+# source, cdn is too flaky
+ENV npm_config_build_from_source=true
+
 # --inline-builds streams native build-script output so a hang during the
 # link step names the offending package instead of freezing silently
 RUN yarn install --inline-builds
