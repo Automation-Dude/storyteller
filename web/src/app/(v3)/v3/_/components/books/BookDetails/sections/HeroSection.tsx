@@ -2,7 +2,6 @@
 
 import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
 
-
 import {
   AuthorEditor,
   NarratorEditor,
@@ -25,6 +24,7 @@ import {
 } from "@/store/api"
 
 import { useColorPreferences, useCoverColors } from "./useCoverColors"
+import { motion } from "motion/react"
 
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, isEditing, editingCovers, isFieldActive } = useBookForm()
@@ -66,7 +66,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
     >
       <CoverEditor compact={compact} />
 
-      <div
+      <motion.div
         className={cn(
           "flex h-full w-full grow flex-col items-center gap-5",
           `@xl/book:items-start @xl/book:justify-between @xl/book:gap-1.5`,
@@ -219,7 +219,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
             />
           )}
         </div>
-      </div>
+      </motion.div>
 
       {book.position?.locator && (
         <ProgressDisplayBar

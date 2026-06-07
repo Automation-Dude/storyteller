@@ -10,7 +10,7 @@ import {
   IconLoader2,
   IconPlus,
 } from "@tabler/icons-react"
-import { Reorder, motion, useDragControls } from "framer-motion"
+import { Reorder, motion, useDragControls } from "motion/react"
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -69,6 +69,7 @@ export function SidebarManager() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
+        nativeButton={false}
         render={
           <SidebarMenuItem>
             <SidebarMenuButton size="sm">

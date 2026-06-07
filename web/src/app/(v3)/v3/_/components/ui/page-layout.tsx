@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useState } from "react"
 
 import { cn } from "@v3/_/lib/utils"
 
@@ -91,13 +91,14 @@ function PageContent({
   )
 }
 
-const MIN_PANEL_WIDTH = 320
-const MAX_PANEL_WIDTH = 800
+export const MIN_PANEL_WIDTH = 240
+export const MAX_PANEL_WIDTH = 800
 
 function PagePanel({
   open,
   width,
   onWidthChange,
+  snapWidth,
   className,
   children,
   ...props
@@ -105,201 +106,191 @@ function PagePanel({
   open: boolean
   width: number
   onWidthChange?: (width: number) => void
+  // maps a raw dragged width to the nearest "clean" width (one that makes the
+  // book grid fit a whole number of columns). drives the snap preview + commit.
+  snapWidth?: (rawWidth: number) => number
 }) {
-  const [isResizing, setIsResizing] = useState(false)
-  const liveWidth = useRef(width)
-  const panelRef = useRef<HTMLDivElement>(null)
+  // the panel itself never animates -- it just jumps to its new width. while
+  // dragging we don't touch the panel/grid at all; we only show a preview line
+  // at the width it will snap to, and commit once on release. that keeps the
+  // grid from reflowing on every frame and makes the result predictable.
+  const [previewWidth, setPreviewWidth] = useState<number | null>(null)
 
-  // while dragging, the panel is lifted out of the flex flow (position: fixed)
-  // and resizes live; a spacer holds its slot so the middle section keeps its
-  // width and only reflows once on release. this keeps the live preview without
-  // making the virtualized book grid re-layout on every frame.
+  const clampWidth = useCallback(
+    (w: number) => Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, w)),
+    [],
+  )
+
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
-      setIsResizing(true)
-      liveWidth.current = width
 
       const startX = e.clientX
       const startWidth = width
+      let committed = width
 
+      const abortController = new AbortController()
       const handleMouseMove = (e: MouseEvent) => {
-        const newWidth = Math.round(
-          Math.max(
-            MIN_PANEL_WIDTH,
-            Math.min(MAX_PANEL_WIDTH, startWidth + (startX - e.clientX)),
-          ),
-        )
-
-        liveWidth.current = newWidth
-
-        if (panelRef.current) {
-          panelRef.current.style.width = `${newWidth}px`
-        }
+        const raw = clampWidth(startWidth + (startX - e.clientX))
+        const snapped = clampWidth(snapWidth ? snapWidth(raw) : raw)
+        committed = snapped
+        setPreviewWidth(snapped)
       }
 
       const handleMouseUp = () => {
-        setIsResizing(false)
-        onWidthChange?.(liveWidth.current)
-        document.removeEventListener("mousemove", handleMouseMove)
-        document.removeEventListener("mouseup", handleMouseUp)
+        abortController.abort()
         document.body.style.cursor = ""
         document.body.style.userSelect = ""
+        setPreviewWidth(null)
+        // single reflow: grid recomputes once, fades to the new column count.
+        onWidthChange?.(committed)
       }
 
-      document.addEventListener("mousemove", handleMouseMove)
-      document.addEventListener("mouseup", handleMouseUp)
+      document.addEventListener("mousemove", handleMouseMove, {
+        signal: abortController.signal,
+      })
+      document.addEventListener("mouseup", handleMouseUp, {
+        signal: abortController.signal,
+      })
       document.body.style.cursor = "col-resize"
       document.body.style.userSelect = "none"
     },
-    [width, onWidthChange],
+    [width, onWidthChange, snapWidth, clampWidth],
   )
+
+  if (!open) return null
 
   return (
     <>
-      {open && onWidthChange && (
+      {onWidthChange && (
         <div
           data-slot="page-panel-resize-handle"
-          className="group relative z-10 flex w-0 items-stretch"
+          className="group relative z-30 flex w-0 items-stretch"
         >
           <div
             className="absolute top-0 bottom-0 -left-2 w-4 cursor-col-resize"
             onMouseDown={handleResizeStart}
           >
-            <div
-              className={cn("bg-border mx-auto h-full w-px transition-colors")}
-            />
+            <div className="bg-border group-hover:bg-primary/40 mx-auto h-full w-px transition-colors" />
           </div>
         </div>
       )}
 
-      {/* holds the flex slot while the panel is lifted out of flow, so the
-          middle section keeps its width until the drag is committed */}
-      {isResizing && (
+      {/* snap preview: a line at the panel edge it will jump to on release */}
+      {previewWidth !== null && (
         <div
           aria-hidden
-          className="shrink-0"
-          style={{ width: open ? width : 0 }}
+          className="bg-primary pointer-events-none fixed inset-y-0 z-40 w-0.5"
+          style={{ right: previewWidth }}
         />
       )}
 
       <div
-        ref={panelRef}
         data-slot="page-panel"
-        className={cn(
-          "bg-background overflow-hidden",
-          isResizing && "fixed inset-y-0 right-0 z-40 border-l shadow-xl",
-          className,
-        )}
-        style={{
-          width: open ? width : 0,
-          minWidth: isResizing ? 0 : open ? width : 0,
-        }}
+        className={cn("bg-background shrink-0 overflow-hidden", className)}
+        style={{ width }}
         {...props}
       >
-        {open && <div className="flex h-full w-full flex-col">{children}</div>}
+        <div className="flex h-full w-full">{children}</div>
       </div>
     </>
   )
 }
 
-const MIN_SIDEBAR_WIDTH = 220
-const MAX_SIDEBAR_WIDTH = 480
+export const MIN_SIDEBAR_WIDTH = 180
+export const MAX_SIDEBAR_WIDTH = 480
 
 function PageSidebar({
   width,
   onWidthChange,
+  snapWidth,
   className,
   children,
   ...props
 }: React.ComponentProps<"div"> & {
   width: number
   onWidthChange?: (width: number) => void
+  snapWidth?: (rawWidth: number) => number
 }) {
-  const [isResizing, setIsResizing] = useState(false)
-  const liveWidth = useRef(width)
-  const sidebarRef = useRef<HTMLDivElement>(null)
+  const sidebarRef = React.useRef<HTMLDivElement>(null)
+  const [previewLeft, setPreviewLeft] = useState<number | null>(null)
 
-  // while dragging, the sidebar is lifted out of the flex flow (position: fixed)
-  // and resizes live; a spacer holds its slot so the middle section keeps its
-  // width and only reflows once on release.
+  const clampWidth = useCallback(
+    (w: number) => Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, w)),
+    [],
+  )
+
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
-      setIsResizing(true)
-      liveWidth.current = width
+
+      const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0
 
       const startX = e.clientX
       const startWidth = width
+      let committed = width
 
+      const abortController = new AbortController()
       const handleMouseMove = (e: MouseEvent) => {
-        const newWidth = Math.round(
-          Math.max(
-            MIN_SIDEBAR_WIDTH,
-            Math.min(MAX_SIDEBAR_WIDTH, startWidth + (e.clientX - startX)),
-          ),
-        )
-
-        liveWidth.current = newWidth
-
-        if (sidebarRef.current) {
-          sidebarRef.current.style.width = `${newWidth}px`
-        }
+        const raw = clampWidth(startWidth + (e.clientX - startX))
+        const snapped = clampWidth(snapWidth ? snapWidth(raw) : raw)
+        committed = snapped
+        setPreviewLeft(sidebarLeft + snapped)
       }
 
       const handleMouseUp = () => {
-        setIsResizing(false)
-        onWidthChange?.(liveWidth.current)
-        document.removeEventListener("mousemove", handleMouseMove)
-        document.removeEventListener("mouseup", handleMouseUp)
+        abortController.abort()
         document.body.style.cursor = ""
         document.body.style.userSelect = ""
+        setPreviewLeft(null)
+        onWidthChange?.(committed)
       }
 
-      document.addEventListener("mousemove", handleMouseMove)
-      document.addEventListener("mouseup", handleMouseUp)
+      document.addEventListener("mousemove", handleMouseMove, {
+        signal: abortController.signal,
+      })
+      document.addEventListener("mouseup", handleMouseUp, {
+        signal: abortController.signal,
+      })
       document.body.style.cursor = "col-resize"
       document.body.style.userSelect = "none"
     },
-    [width, onWidthChange],
+    [width, onWidthChange, snapWidth, clampWidth],
   )
 
   return (
     <>
-      {/* holds the flex slot while the sidebar is lifted out of flow */}
-      {isResizing && <div aria-hidden className="shrink-0" style={{ width }} />}
-
       <div
         ref={sidebarRef}
         data-slot="page-sidebar"
         className={cn(
-          "bg-background border-border flex h-full flex-col overflow-y-auto border-r",
-          isResizing
-            ? "fixed inset-y-0 z-50 shadow-xl"
-            : "shrink-0 transition-[width,min-width] duration-300 ease-in-out",
+          "bg-background border-border flex h-full shrink-0 flex-col overflow-y-auto border-r",
           className,
         )}
-        style={{
-          width,
-          minWidth: isResizing ? 0 : width,
-        }}
+        style={{ width }}
         {...props}
       >
         <div className="flex h-full w-full flex-col">{children}</div>
       </div>
 
+      {previewLeft !== null && (
+        <div
+          aria-hidden
+          className="bg-primary pointer-events-none fixed inset-y-0 z-40 w-0.5"
+          style={{ left: previewLeft }}
+        />
+      )}
+
       {onWidthChange && (
         <div
           data-slot="page-sidebar-resize-handle"
-          className="group relative z-10 flex w-0 items-stretch"
+          className="group relative z-30 flex w-0 items-stretch"
         >
           <div
             className="absolute top-0 -right-2 bottom-0 w-4 cursor-col-resize"
             onMouseDown={handleResizeStart}
           >
-            <div
-              className={cn("bg-border mx-auto h-full w-px transition-colors")}
-            />
+            <div className="bg-border group-hover:bg-primary/40 mx-auto h-full w-px transition-colors" />
           </div>
         </div>
       )}

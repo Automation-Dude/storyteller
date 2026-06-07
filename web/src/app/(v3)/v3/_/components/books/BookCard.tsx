@@ -33,16 +33,15 @@ function getReadingProgress(book: BookWithRelations): number | null {
 export const BookCard = memo(function BookCard({
   book,
   muted = false,
+  selected = false,
   isSelecting = false,
   isBookSelected = false,
   onToggleSelection,
   onClick,
 }: BookCardProps) {
-  const { gridCoverDisplay } = useUserPreferences()
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
-  // forcing a single cover (ebook/audiobook) drops the double-cover layout
-  const hasDualFormat = isDualFormat(book) && gridCoverDisplay === "auto"
+  const hasDualFormat = isDualFormat(book)
 
   const authors = book.authors
   const progress = getReadingProgress(book)
@@ -87,9 +86,7 @@ export const BookCard = memo(function BookCard({
       >
         <div
           className={cn(
-            "bg-muted flex h-full w-full items-center justify-center",
-            // single forced covers fill the card; auto/double keep breathing room
-            gridCoverDisplay === "auto" ? "p-3" : "p-0",
+            "bg-muted flex h-full w-full items-center justify-center p-3",
             coverLoading && "animate-pulse",
           )}
           style={showTint ? { background: tint(primary, 0.36) } : undefined}
@@ -98,7 +95,6 @@ export const BookCard = memo(function BookCard({
             book={book}
             width={300}
             disableHover={isSelecting}
-            displayMode={gridCoverDisplay}
             onLoadingChange={setCoverLoading}
           />
         </div>
@@ -153,9 +149,15 @@ export const BookCard = memo(function BookCard({
 
   return (
     <div
+      data-book-uuid={book.uuid}
       className={cn(
-        "group relative flex flex-col transition-opacity duration-200",
+        "group relative flex flex-col rounded-lg transition-opacity duration-200",
         muted && "opacity-50",
+        // book currently open in the detail panel: a soft, persistent cue that
+        // reads differently from the bold multi-select ring below.
+        selected &&
+          !isBookSelected &&
+          "ring-primary/40 bg-primary/5 [&_h3]:text-primary ring-2 ring-offset-2",
       )}
       style={style}
     >

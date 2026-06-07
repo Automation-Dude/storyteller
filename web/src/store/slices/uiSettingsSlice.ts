@@ -13,7 +13,7 @@ const defaults: UISettings = {
   librarySidebarWidth: 280,
 }
 
-function parseCookie(cookieString: string): Partial<UISettings> | null {
+export function parseCookie(cookieString: string): Partial<UISettings> | null {
   try {
     const match = cookieString
       .split("; ")

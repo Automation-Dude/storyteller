@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Fraunces, IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import Script from "next/script"
 import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
@@ -14,6 +14,10 @@ import StoreProvider from "@/components/StoreProvider"
 import { AudioProviderRedux } from "@/components/reader/AudioProviderRedux"
 import { PiPProvider } from "@/components/reader/PipProvider"
 import { env } from "@/env"
+import {
+  type UISettings,
+  UI_SETTINGS_COOKIE_NAME,
+} from "@/store/slices/uiSettingsSlice"
 
 import "./globals.css"
 
@@ -62,9 +66,19 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const reqHeaders = await headers()
+  const [reqHeaders, cookieStore] = await Promise.all([headers(), cookies()])
   const isRewritten = reqHeaders.get("x-v3-rewritten") === "1"
   const basePath = isRewritten ? "" : "/v3"
+
+  let initialUISettings: Partial<UISettings> | undefined
+  try {
+    const raw = cookieStore.get(UI_SETTINGS_COOKIE_NAME)?.value
+    if (raw) {
+      initialUISettings = JSON.parse(decodeURIComponent(raw)) as Partial<UISettings>
+    }
+  } catch {
+    // invalid cookie, fall through to defaults
+  }
 
   return (
     <html
@@ -84,7 +98,7 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         <VersionProvider basePath={basePath}>
           <NextIntlClientProvider>
-            <StoreProvider>
+            <StoreProvider initialUISettings={initialUISettings}>
               <AudioProviderRedux>
                 <PiPProvider>
                   <ThemeProvider

@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef } from "react"
+import { useRef } from "react"
 import { Provider } from "react-redux"
 
 import { initializeAudioPlayerBridge } from "@/services/audioPlayerBridge"
@@ -8,19 +8,20 @@ import {
   preferencesSlice,
 } from "@/store/slices/preferencesSlice"
 import {
-  loadUISettingsFromStorage,
+  type UISettings,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type AppStore, makeStore } from "@/store/store"
 
 export default function StoreProvider({
   children,
+  initialUISettings,
 }: {
   children: React.ReactNode
+  initialUISettings?: Partial<UISettings>
 }) {
   const storeRef = useRef<AppStore>(undefined)
   if (!storeRef.current) {
-    // Create the store instance the first time this renders
     storeRef.current = makeStore()
 
     initializeAudioPlayerBridge(storeRef.current)
@@ -31,16 +32,15 @@ export default function StoreProvider({
         preferences: storedPreferences,
       }),
     )
-  }
 
-  // persist ui settings after mount
-  // to avoid hydration mismatch
-  useEffect(() => {
-    const storedUISettings = loadUISettingsFromStorage() ?? {}
-    storeRef.current?.dispatch(
-      uiSettingsSlice.actions.initUISettings(storedUISettings),
-    )
-  }, [])
+    // hydrate ui settings synchronously so the very first render uses the
+    // correct panel/sidebar widths (no flash from default -> stored values)
+    if (initialUISettings) {
+      storeRef.current.dispatch(
+        uiSettingsSlice.actions.initUISettings(initialUISettings),
+      )
+    }
+  }
 
   return <Provider store={storeRef.current}>{children}</Provider>
 }

@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@v3/_/components/ui/sidebar"
+import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { type CountResult } from "@v3/_/hooks/use-library-counts"
@@ -52,6 +53,7 @@ export function NavLibrary({
 
             const countResult = counts[item.countKey]
             const count = countResult?.count
+            const isCountLoading = countResult?.isLoading ?? true
 
             return (
               <SidebarMenuItem key={item.url}>
@@ -65,7 +67,14 @@ export function NavLibrary({
                     </V3Link>
                   }
                 />
+
                 {count != null && <SidebarMenuBadge>{count}</SidebarMenuBadge>}
+
+                {count == null && isCountLoading && (
+                  <SidebarMenuBadge>
+                    <Skeleton className="h-3.5 w-5 rounded" />
+                  </SidebarMenuBadge>
+                )}
               </SidebarMenuItem>
             )
           })}

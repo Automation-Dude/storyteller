@@ -12,7 +12,7 @@ import {
   IconTag,
   IconX,
 } from "@tabler/icons-react"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion } from "motion/react"
 import Link from "next/link"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -97,7 +97,7 @@ export function BookDetailsContent({
   if (isLoadingBook && !initialBook) {
     if (compact) {
       return (
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex-1">
           <BookDetailsSkeleton compact={compact} />
         </div>
       )
@@ -367,7 +367,7 @@ function InlineEditBar() {
   const t = useTranslation("BookDetailsPage")
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {!isEditing && editingField !== null && (
         <motion.div
           initial={{ y: 20 }}
@@ -423,7 +423,7 @@ function CoverEditBar() {
   }
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {!isEditing && editingCovers && (
         <motion.div
           initial={{ y: 20 }}
@@ -493,7 +493,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
 
   return (
     <div
-      className="flex items-center justify-between border-b px-4 py-2"
+      className="flex h-10 items-center justify-between border-b px-4 py-2"
       style={{
         backgroundColor: showTint ? tint(primary, 0.5) : undefined,
         color: showAccent ? primary.onColor : undefined,

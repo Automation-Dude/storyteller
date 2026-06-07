@@ -580,6 +580,19 @@
               "audiobook": "Audiobook only"
             }
           },
+          "gridSize": {
+            "title": "Grid size",
+            "description": "How large book covers appear in the grid.",
+            "label": "Card size",
+            "hint": "Smaller fits more books per row.",
+            "options": {
+              "smallest": "Smallest",
+              "small": "Small",
+              "medium": "Medium",
+              "large": "Large",
+              "largest": "Largest"
+            }
+          },
           "detail": {
             "title": "Book display",
             "description": "How a book is shown on its details page.",

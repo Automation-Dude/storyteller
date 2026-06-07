@@ -6,7 +6,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Reorder, isDragging, useDragControls } from "framer-motion"
+import { Reorder, isDragging, useDragControls } from "motion/react"
 import {
   ArrowDown,
   ArrowUp,
@@ -428,7 +428,9 @@ function SortableHeader({
         <span
           // {...attributes}
           // {...listeners}
-          onPointerDown={(e) => { controls.start(e); }}
+          onPointerDown={(e) => {
+            controls.start(e)
+          }}
           className="text-muted-foreground/50 hover:text-muted-foreground cursor-grab"
         >
           <GripVertical className="h-3 w-3" />

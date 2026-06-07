@@ -12,7 +12,7 @@ import {
   IconSettings,
   IconTrash,
 } from "@tabler/icons-react"
-import { Reorder, motion, useDragControls } from "framer-motion"
+import { Reorder, motion, useDragControls } from "motion/react"
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"

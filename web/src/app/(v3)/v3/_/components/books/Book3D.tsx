@@ -1,7 +1,7 @@
 "use client"
 
 import { IconArrowsMaximize } from "@tabler/icons-react"
-import { type PanInfo, motion, useSpring } from "framer-motion"
+import { type PanInfo, motion, useSpring } from "motion/react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"

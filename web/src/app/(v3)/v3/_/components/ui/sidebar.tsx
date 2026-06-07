@@ -212,6 +212,25 @@ function Sidebar({
     }, 150)
   }, [setHoverExpanded])
 
+  // pin/unpin should snap instantly; hover transitions should stay smooth.
+  // briefly suppress transitions when pinned changes, then re-enable so the
+  // next hover expand/collapse animates normally.
+  const [skipTransition, setSkipTransition] = React.useState(false)
+  const prevPinnedRef = React.useRef(pinned)
+
+  React.useEffect(() => {
+    if (prevPinnedRef.current !== pinned) {
+      setSkipTransition(true)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSkipTransition(false)
+        })
+      })
+    }
+
+    prevPinnedRef.current = pinned
+  }, [pinned])
+
   React.useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
@@ -272,11 +291,12 @@ function Sidebar({
       data-pinned={pinned}
       data-hover-expanded={isHoverExpanded}
     >
-      {/* gap stays at icon width when not pinned */}
+      {/* gap stays at icon width when not pinned -- no transition because
+          the gap only changes on pin/unpin, which should be instant */}
       <div
         data-slot="sidebar-gap"
         className={cn(
-          "relative bg-transparent transition-[width] duration-150 ease-out",
+          "relative bg-transparent",
           "group-data-[collapsible=offcanvas]:w-0",
           "group-data-[side=right]:rotate-180",
           pinned
@@ -289,7 +309,8 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] duration-150 ease-out md:flex",
+          "fixed inset-y-0 z-10 hidden h-svh md:flex",
+          !skipTransition && "transition-[left,right,width] duration-150 ease-out",
           state === "expanded" ? "w-(--sidebar-width)" : "",
           state === "collapsed"
             ? variant === "floating" || variant === "inset"
@@ -300,7 +321,9 @@ function Sidebar({
             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
           variant === "floating" || variant === "inset"
-            ? "px-2"
+            ? isHoverExpanded
+              ? "pl-2 pr-0"
+              : "px-2"
             : "group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className,
         )}

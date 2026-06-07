@@ -581,6 +581,19 @@
               "audiobook": "Alleen audioboek"
             }
           },
+          "gridSize": {
+            "title": "Rastergrootte",
+            "description": "Hoe groot boekcovers in het raster worden getoond.",
+            "label": "Kaartgrootte",
+            "hint": "Kleiner past meer boeken per rij.",
+            "options": {
+              "smallest": "Kleinst",
+              "small": "Klein",
+              "medium": "Middel",
+              "large": "Groot",
+              "largest": "Grootst"
+            }
+          },
           "detail": {
             "title": "Boekweergave",
             "description": "Hoe een boek op de detailpagina wordt getoond.",

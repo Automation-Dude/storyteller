@@ -379,10 +379,21 @@ function SidebarItemList({
   isLoading: boolean
 }) {
   if (isLoading) {
+    const widths = [60, 45, 72, 50, 38, 65, 55, 42, 68, 48, 58, 44]
+
     return (
-      <div className="flex flex-col gap-1 px-2 py-1">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="bg-muted/40 h-9 animate-pulse rounded-md" />
+      <div className="flex flex-col gap-0.5 px-2 py-1">
+        {widths.map((w, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between rounded-md px-2 py-1.5"
+          >
+            <div
+              className="bg-muted/60 h-4 animate-pulse rounded"
+              style={{ width: `${w}%` }}
+            />
+            <div className="bg-muted/40 h-4 w-6 animate-pulse rounded-full" />
+          </div>
         ))}
       </div>
     )

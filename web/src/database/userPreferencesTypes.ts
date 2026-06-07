@@ -13,6 +13,17 @@ export type ColorMode = (typeof ColorModes)[number]
 export const GridCoverDisplays = ["auto", "ebook", "audiobook"] as const
 export type GridCoverDisplay = (typeof GridCoverDisplays)[number]
 
+// preset card widths for the library grid. medium is the default. the pixel
+// values live in the frontend (GRID_CARD_WIDTHS in BookGrid); this is the scale.
+export const GridCardSizes = [
+  "smallest",
+  "small",
+  "medium",
+  "large",
+  "largest",
+] as const
+export type GridCardSize = (typeof GridCardSizes)[number]
+
 export const BookDetailDisplays = ["3d", "cover"] as const
 export type BookDetailDisplay = (typeof BookDetailDisplays)[number]
 
@@ -26,6 +37,7 @@ export const UserPreferencesSchema = z.object({
   // multiplier on cover-tint opacity, 0 (faint) .. 1 (current)
   colorIntensity: z.number().min(0).max(1),
   gridCoverDisplay: z.enum(GridCoverDisplays),
+  gridCardSize: z.enum(GridCardSizes),
   bookDetailDisplay: z.enum(BookDetailDisplays),
   // index into Book3D's VIEWS array, null = front cover
   bookDetail3dView: z.number().int().min(0).nullable(),
@@ -46,6 +58,7 @@ export const defaultUserPreferences: UserPreferences = {
   colorMode: "full",
   colorIntensity: 1,
   gridCoverDisplay: "auto",
+  gridCardSize: "medium",
   bookDetailDisplay: "3d",
   bookDetail3dView: null,
   accentColor: null,
