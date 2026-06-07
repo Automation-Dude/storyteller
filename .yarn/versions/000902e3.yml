@@ -2,4 +2,5 @@ releases:
   "@storyteller-platform/web": patch
 
 declined:
+  - "@storyteller-platform/epub"
   - "@storyteller-platform/mobile"
