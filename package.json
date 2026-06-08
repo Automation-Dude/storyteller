@@ -79,10 +79,5 @@
     "expo-file-system@npm:~19.0.17": "patch:expo-file-system@npm%3A19.0.17#~/.yarn/patches/expo-file-system-npm-19.0.17-cda362f0b1.patch",
     "expo-file-system@npm:~19.0.19": "patch:expo-file-system@npm%3A19.0.19#~/.yarn/patches/expo-file-system-npm-19.0.19-800f9ff305.patch",
     "expo-file-system@npm:~19.0.21": "patch:expo-file-system@npm%3A19.0.21#~/.yarn/patches/expo-file-system-npm-19.0.21-64dc8cb1bc.patch"
-  },
-  "dependenciesMeta": {
-    "epubchecker": {
-      "built": false
-    }
   }
 }
