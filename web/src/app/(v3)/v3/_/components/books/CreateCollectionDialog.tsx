@@ -71,7 +71,6 @@ export function CreateCollectionDialog({
           description: data.description ?? "",
           public: true,
           users: [],
-          importPath: null,
         }).unwrap()
         onCreated?.(result.uuid)
         handleClose()

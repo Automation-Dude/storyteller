@@ -319,11 +319,11 @@ export function isLogicalBlock(
 
 export function extractEntityReferences(filter: ShelfFilter): Array<{
   entityType: "tag" | "collection" | "series" | "status" | "creator"
-  entityUuid: string
+  entityUuid: UUID
 }> {
   const refs: Array<{
     entityType: "tag" | "collection" | "series" | "status" | "creator"
-    entityUuid: string
+    entityUuid: UUID
   }> = []
 
   function walk(node: ShelfFilterNode) {
@@ -349,7 +349,7 @@ export function extractEntityReferences(filter: ShelfFilter): Array<{
       const values = Array.isArray(node.value) ? node.value : [node.value]
       for (const v of values) {
         if (typeof v === "string") {
-          refs.push({ entityType, entityUuid: v })
+          refs.push({ entityType, entityUuid: v as UUID })
         }
       }
 

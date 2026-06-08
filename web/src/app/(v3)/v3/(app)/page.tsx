@@ -12,9 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function Index() {
-  // const t = await getTranslations("HomePage")
-
+export default function Index() {
   return (
     <div className="scroll-y relative">
       <SiteHeader

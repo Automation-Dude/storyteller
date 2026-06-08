@@ -1,5 +1,5 @@
 export { BookGrid } from "./BookGrid"
-export { BookList } from "./BookList"
+// export { BookList } from "./BookList"
 // export { ViewSelector } from "./ViewSelector"
 // export { ColumnSelector } from "./ColumnSelector"
 export {
@@ -8,5 +8,4 @@ export {
   type SortDirection,
   type SortField,
   getActiveFilterCount,
-  sortFieldOptions,
 } from "./BookFilters"

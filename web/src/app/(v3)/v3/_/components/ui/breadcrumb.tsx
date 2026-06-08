@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
-import { IconChevronRight, IconDots } from "@tabler/icons-react"
+import { IconDots } from "@tabler/icons-react"
 import * as React from "react"
 
 import { cn } from "@v3/_/lib/utils"

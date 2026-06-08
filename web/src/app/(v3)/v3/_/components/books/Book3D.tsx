@@ -24,7 +24,6 @@ import {
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
-import { CloseButton } from "@mantine/core"
 
 // cap at 2x: the cover is the heaviest gpu texture here, 3x triples its area
 // for no visible gain on a small slab and chews memory while turning

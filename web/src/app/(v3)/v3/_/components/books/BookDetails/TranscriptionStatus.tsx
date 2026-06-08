@@ -40,8 +40,8 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
 
   const readaloudStatus = book.readaloud?.status
   const aligned = !!book.readaloud?.filepath
-  const isBusy =
-    readaloudStatus === "QUEUED" || readaloudStatus === "PROCESSING"
+  // const isBusy =
+  //   readaloudStatus === "QUEUED" || readaloudStatus === "PROCESSING"
 
   const t = useTranslation("BookDetailsPage.alignment")
 

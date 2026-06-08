@@ -2,7 +2,11 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { booksQuery } from "@/database/books"
-import { type ShelfFilter, buildFilterExpression } from "@/database/shelfFilter"
+import {
+  type ShelfFilter,
+  buildFilterExpression,
+  shelfFilterSchema,
+} from "@/database/shelfFilter"
 
 export const dynamic = "force-dynamic"
 
@@ -11,18 +15,31 @@ export const POST = withHasPermission("bookList")(async (request) => {
 
   const body = (await request.json()) as {
     filter: ShelfFilter | null
-    orderBy?: string
+    orderBy?: "createdAt" | "updatedAt" | "title" | "publicationDate"
     orderDirection?: "asc" | "desc"
     limit?: number
   }
 
-  if (!body.filter) {
+  const filter = body.filter
+
+  if (!filter) {
     return NextResponse.json([])
+  }
+
+  // validate filter
+  const validated = shelfFilterSchema.safeParse(filter)
+  if (!validated.success) {
+    return NextResponse.json(
+      { error: validated.error.message },
+      { status: 400 },
+    )
   }
 
   let query = booksQuery(user.id)
 
-  query = query.where((eb) => buildFilterExpression(eb, body.filter!, user.id))
+  query = query.where((eb) =>
+    buildFilterExpression(eb, validated.data, user.id),
+  )
 
   const limit = body.limit ?? 20
   query = query.limit(limit)

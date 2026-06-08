@@ -667,7 +667,7 @@ export async function assertAuthenticatedUser() {
 export async function assertHasPermission(permission: Permission) {
   const user = await assertAuthenticatedUser()
 
-  if (!user.permissions?.[permission]) {
+  if (!user.permissions[permission]) {
     notFound()
   }
 

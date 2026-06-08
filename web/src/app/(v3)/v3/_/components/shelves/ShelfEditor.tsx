@@ -74,7 +74,7 @@ export function ShelfEditor({
   const initialMode: SelectionMode =
     shelf?.filter !== null
       ? "filter"
-      : (shelf?.books?.length ?? 0) > 0
+      : shelf.books.length > 0
         ? "manual"
         : "filter"
 
@@ -85,7 +85,7 @@ export function ShelfEditor({
   )
 
   const [selectedBookUuids, setSelectedBookUuids] = useState<string[]>(
-    shelf?.books?.map((b) => b.bookUuid) ?? [],
+    shelf?.books.map((b) => b.bookUuid) ?? [],
   )
 
   const form = useForm<ShelfFormValues>({
@@ -93,7 +93,7 @@ export function ShelfEditor({
     defaultValues: {
       name: shelf?.name ?? "",
       description: shelf?.description ?? "",
-      orderBy: (shelf?.orderBy as ShelfFormValues["orderBy"]) ?? "createdAt",
+      orderBy: shelf?.orderBy ?? "createdAt",
       orderDirection: shelf?.orderDirection ?? "desc",
       limitCount: shelf?.limitCount ?? null,
     },
@@ -104,18 +104,18 @@ export function ShelfEditor({
       form.reset({
         name: shelf.name,
         description: shelf.description ?? "",
-        orderBy: (shelf.orderBy as ShelfFormValues["orderBy"]) ?? "createdAt",
+        orderBy: shelf.orderBy ?? "createdAt",
         orderDirection: shelf.orderDirection ?? "desc",
         limitCount: shelf.limitCount ?? null,
       })
 
       setFilter(shelf.filter ?? null)
-      setSelectedBookUuids(shelf.books?.map((b) => b.bookUuid) ?? [])
+      setSelectedBookUuids(shelf.books.map((b) => b.bookUuid))
 
       setSelectionMode(
         shelf.filter !== null
           ? "filter"
-          : (shelf.books?.length ?? 0) > 0
+          : shelf.books.length > 0
             ? "manual"
             : "filter",
       )
@@ -139,19 +139,19 @@ export function ShelfEditor({
 
   const isSaving = isCreating || isUpdating
 
-  const handleSubmit = form.handleSubmit(async (data) => {
+  const handleSubmit = form.handleSubmit(async (data: ShelfFormValues) => {
     try {
       const payload = {
-        name: data.name.trim(),
-        description: data.description?.trim() || null,
+        name: data["name"].trim(),
+        description: data["description"]?.trim() || null,
         filter: selectionMode === "filter" ? filter : null,
-        orderBy: data.orderBy as ShelfOrderBy,
-        orderDirection: data.orderDirection,
-        limitCount: data.limitCount,
+        orderBy: data["orderBy"] as ShelfOrderBy,
+        orderDirection: data["orderDirection"],
+        limitCount: data["limitCount"],
         books: selectionMode === "manual" ? selectedBookUuids : [],
       }
 
-      if (isEditing && shelf) {
+      if (isEditing) {
         const updated = await updateShelf({
           uuid: shelf.uuid,
           ...payload,
@@ -358,7 +358,8 @@ export function ShelfEditor({
                   <Select
                     value={orderBy}
                     onValueChange={(v) => {
-                      form.setValue("orderBy", v as ShelfOrderBy)
+                      if (!v) return
+                      form.setValue("orderBy", v)
                     }}
                   >
                     <SelectTrigger className="h-7 w-[130px] text-xs">

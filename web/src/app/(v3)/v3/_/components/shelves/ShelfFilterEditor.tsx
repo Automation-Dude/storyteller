@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { Input } from "@v3/_/components/ui/input"
-import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -120,7 +119,7 @@ export function ShelfFilterEditor({
     }
 
     debounceRef.current = setTimeout(() => {
-      runPreview()
+      void runPreview()
     }, 400)
 
     return () => {
@@ -153,7 +152,7 @@ export function ShelfFilterEditor({
       <FilterPreview
         books={previewBooks}
         isLoading={isLoadingPreview}
-        isInvalid={!filterValid && filter !== null}
+        isInvalid={!filterValid}
       />
     </div>
   )
@@ -166,12 +165,14 @@ type AddNodeDropdownProps = {
 function AddNodeDropdown({ onAdd }: AddNodeDropdownProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 w-fit gap-1 text-xs">
-          <IconPlus className="size-3" />
-          Add
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="sm" className="h-7 w-fit gap-1 text-xs">
+            <IconPlus className="size-3" />
+            Add
+          </Button>
+        }
+      />
       <DropdownMenuContent align="start">
         <DropdownMenuItem
           onClick={() => {

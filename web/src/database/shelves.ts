@@ -262,7 +262,7 @@ export async function deleteShelf(uuid: UUID, userId: UUID) {
 
 export async function addBooksToShelf(
   shelfUuid: UUID,
-  userId: UUID,
+  _userId: UUID,
   bookUuids: UUID[],
 ) {
   const existing = await db
@@ -298,7 +298,7 @@ export async function addBooksToShelf(
 
 export async function removeBooksFromShelf(
   shelfUuid: UUID,
-  userId: UUID,
+  _userId: UUID,
   bookUuids: UUID[],
 ) {
   await db

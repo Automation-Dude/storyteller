@@ -59,7 +59,6 @@ export function ProcessingTab() {
     "SettingsPage.tabs.processing.sections.parallelization",
   )
   const ta = useTranslation("SettingsPage.tabs.processing.sections.audio")
-  const tr = useTranslation("SettingsPage.tabs.processing.sections.readaloud")
 
   const transcriptionEngine = useWatch({
     control: form.control,
@@ -111,7 +110,7 @@ export function ProcessingTab() {
 
   return (
     <TabsContent value="processing" className="space-y-6">
-      <ReadaloudSection tr={tr} />
+      <ReadaloudSection />
 
       <SettingsSection tab="processing" section="transcription">
         <Card>

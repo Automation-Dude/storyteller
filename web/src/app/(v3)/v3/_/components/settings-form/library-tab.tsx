@@ -526,7 +526,7 @@ function AddRuleDialog({
             {path && (
               <p className="text-muted-foreground text-xs">
                 {tl("selected.withInput", {
-                  input: <span className="text-foreground">{path}</span>,
+                  input: path,
                 })}
               </p>
             )}

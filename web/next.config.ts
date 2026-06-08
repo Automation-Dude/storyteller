@@ -1,14 +1,13 @@
-// @ts-check
-
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
-import { locales } from "./src/i18n/locales"
 
 import createNextIntlPlugin from "next-intl/plugin"
 
+import { locales } from "./src/i18n/locales"
+
 const pkg = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
-)
+) as Record<string, unknown>
 
 const withNextIntl = createNextIntlPlugin({
   experimental: {
@@ -32,7 +31,7 @@ const withNextIntl = createNextIntlPlugin({
 
 const nextConfig: import("next").NextConfig = {
   env: {
-    NEXT_PUBLIC_APP_VERSION: pkg.version,
+    NEXT_PUBLIC_APP_VERSION: pkg["version"] as string,
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -64,9 +63,9 @@ const nextConfig: import("next").NextConfig = {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
     authInterrupts: true,
   },
-  webpack: (config, { isServer, dev }) => {
+  webpack: (config: Record<string, unknown>, { isServer, dev }) => {
     if (isServer && !dev) {
-      config.devtool = "source-map"
+      config["devtool"] = "source-map"
     }
 
     return config

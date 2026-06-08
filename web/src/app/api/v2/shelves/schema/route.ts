@@ -5,7 +5,7 @@ import { generateShelfFilterJsonSchema } from "@/database/shelfFilter.schema"
 
 export const dynamic = "force-dynamic"
 
-export const GET = withHasPermission("bookList")(async () => {
+export const GET = withHasPermission("bookList")(() => {
   const schema = generateShelfFilterJsonSchema()
 
   return NextResponse.json(schema)

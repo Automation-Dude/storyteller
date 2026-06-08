@@ -40,6 +40,7 @@ import {
   useListUserShelvesQuery,
   useSetHomeShelvesMutation,
 } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 import { ShelfEditor } from "./ShelfEditor"
 
@@ -81,8 +82,8 @@ type ShelfManagerContentProps = {
 }
 
 type LocalHomeShelf = {
-  uuid: string
-  shelfUuid: string | null
+  uuid: UUID
+  shelfUuid: UUID | null
   kind: HomeSectionKind
   name: string | null
   isNew?: boolean
@@ -126,8 +127,11 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     .map((s) => s.kind)
 
   const shownCustomShelfUuids = shelves
-    .filter((s) => s.kind === "custom" && s.shelfUuid)
-    .map((s) => s.shelfUuid!)
+    .filter(
+      (s): s is LocalHomeShelf & { shelfUuid: string; kind: "custom" } =>
+        s.kind === "custom" && !!s.shelfUuid,
+    )
+    .map((s) => s.shelfUuid)
 
   const hiddenBuiltInTypes = BUILT_IN_KINDS.filter(
     (t) => !shownBuiltInTypes.includes(t),
@@ -162,7 +166,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     setLocalShelves([
       ...shelves,
       {
-        uuid: crypto.randomUUID(),
+        uuid: crypto.randomUUID() as UUID,
         shelfUuid: null,
         kind,
         name: t(`kinds.${kind}.name`),
@@ -174,7 +178,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     setLocalShelves([
       ...shelves,
       {
-        uuid: crypto.randomUUID(),
+        uuid: crypto.randomUUID() as UUID,
         shelfUuid: userShelf.uuid,
         kind: "custom",
         name: userShelf.name,
@@ -184,7 +188,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
 
   const handleDeleteCustomShelf = async (shelfUuid: string) => {
     await deleteUserShelf({ uuid: shelfUuid })
-    refetchUserShelves()
+    void refetchUserShelves()
   }
 
   const handleSave = async () => {
@@ -203,7 +207,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     setShelfEditorOpen(true)
   }
 
-  const handleEditShelf = (shelfUuid: string) => {
+  const handleEditShelf = (shelfUuid: UUID) => {
     const shelf = userShelves.find((s: ShelfWithBooks) => s.uuid === shelfUuid)
 
     if (shelf) {
@@ -213,13 +217,13 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   }
 
   const handleShelfSaved = (saved: ShelfWithBooks) => {
-    refetchUserShelves()
+    void refetchUserShelves()
 
     if (!editingShelf) {
       setLocalShelves([
         ...shelves,
         {
-          uuid: crypto.randomUUID(),
+          uuid: crypto.randomUUID() as UUID,
           shelfUuid: saved.uuid,
           kind: "custom",
           name: saved.name,
@@ -259,7 +263,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
             {...(shelf.shelfUuid
               ? {
                   onEdit: () => {
-                    handleEditShelf(shelf.shelfUuid!)
+                    handleEditShelf(shelf.shelfUuid as UUID)
                   },
                 }
               : {})}
@@ -282,22 +286,24 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
           onOpenChange={setHiddenOpen}
           className="mt-4"
         >
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1 text-sm"
-            >
-              <IconChevronRight
-                className={cn(
-                  "size-4 transition-transform",
-                  hiddenOpen && "rotate-90",
-                )}
-              />
-              {t("sections.hidden", {
-                count: hiddenBuiltInTypes.length + hiddenCustomShelves.length,
-              })}
-            </button>
-          </CollapsibleTrigger>
+          <CollapsibleTrigger
+            render={
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1 text-sm"
+              >
+                <IconChevronRight
+                  className={cn(
+                    "size-4 transition-transform",
+                    hiddenOpen && "rotate-90",
+                  )}
+                />
+                {t("sections.hidden", {
+                  count: hiddenBuiltInTypes.length + hiddenCustomShelves.length,
+                })}
+              </button>
+            }
+          />
 
           <CollapsibleContent className="mt-2">
             <div className="flex flex-col gap-2">

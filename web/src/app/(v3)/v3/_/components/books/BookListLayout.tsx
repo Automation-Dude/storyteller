@@ -303,7 +303,6 @@ export function BookListLayout({
         >
           {selectedBookUuid && (
             <DynamicBookDetailsContent
-              canEdit
               uuid={selectedBookUuid as UUID}
               initialBook={selectedBook}
               compact

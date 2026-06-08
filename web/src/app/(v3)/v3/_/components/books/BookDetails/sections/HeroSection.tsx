@@ -1,6 +1,7 @@
 "use client"
 
 import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
+import { motion } from "motion/react"
 
 import {
   AuthorEditor,
@@ -24,7 +25,6 @@ import {
 } from "@/store/api"
 
 import { useColorPreferences, useCoverColors } from "./useCoverColors"
-import { motion } from "motion/react"
 
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, isEditing, editingCovers, isFieldActive } = useBookForm()

@@ -117,6 +117,7 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
   const { data: shelfBooks = [], isLoading: isLoadingShelfBooks } =
     useListShelfBooksQuery(
       {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         shelfUuid: shelf.shelfUuid!,
         limit: 20,
         orderBy: "createdAt",
@@ -230,7 +231,7 @@ function computeNextUpInSeries(
       const latestSeriesPos =
         latestRead.series.find((ls) => ls.uuid === s.uuid)?.position ?? 0
 
-      if ((latestSeriesPos ?? 0) < (s.position ?? 0)) {
+      if (latestSeriesPos < (s.position ?? 0)) {
         if (book.status?.name === "Read") {
           latestReadInSeries.set(s.uuid, book)
         } else if (!resultSet.has(book.uuid)) {

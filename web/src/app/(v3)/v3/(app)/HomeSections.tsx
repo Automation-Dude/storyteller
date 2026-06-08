@@ -10,13 +10,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { type HomeSectionWithDetails } from "@/database/shelves"
 import { useListHomeShelvesQuery } from "@/store/api"
 
-function Section({
-  section,
-  index,
-}: {
-  section: HomeSectionWithDetails
-  index: number
-}) {
+function Section({ section }: { section: HomeSectionWithDetails }) {
   // shelves manage their own px-4 gutter (with scroll bleed); widgets don't, so
   // pad them to line up with the shelf headers.
   switch (section.kind) {
@@ -62,8 +56,8 @@ export function HomeSections() {
     <div className="-mt-[calc(var(--header-height)+1rem)] flex flex-col gap-8 py-4">
       {sections
         .filter((section) => section.enabled)
-        .map((section, index) => (
-          <Section key={section.uuid} section={section} index={index} />
+        .map((section) => (
+          <Section key={section.uuid} section={section} />
         ))}
     </div>
   )

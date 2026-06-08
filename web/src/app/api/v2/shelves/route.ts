@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { type ShelfFilter } from "@/database/shelfFilter"
-import { createShelf, getShelves } from "@/database/shelves"
+import { type ShelfOrderBy, createShelf, getShelves } from "@/database/shelves"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
@@ -21,7 +21,7 @@ export const POST = withHasPermission("bookList")(async (request) => {
     name: string
     description?: string | null
     filter?: ShelfFilter | null
-    orderBy?: string | null
+    orderBy?: ShelfOrderBy | null
     orderDirection?: "asc" | "desc" | null
     limitCount?: number | null
     books?: UUID[]

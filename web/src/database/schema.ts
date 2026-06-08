@@ -187,12 +187,19 @@ export interface HomeSection {
   config: string | null
   createdAt: Generated<string>
   enabled: Generated<number>
-  kind: string
+  kind: Generated<
+    | "hero"
+    | "stats"
+    | "currentlyReading"
+    | "nextUpInSeries"
+    | "recentlyAdded"
+    | "custom"
+  >
   position: number
-  shelfUuid: string | null
+  shelfUuid: import("@/uuid").UUID | null
   updatedAt: Generated<string>
-  userId: string
-  uuid: Generated<string>
+  userId: import("@/uuid").UUID
+  uuid: Generated<import("@/uuid").UUID>
 }
 
 export interface ImportRule {
@@ -202,7 +209,7 @@ export interface ImportRule {
   kind: "watch" | "ignore"
   path: string
   source: Generated<
-    "user" | "import-relocate" | "import-backup" | "prevent-reimport"
+    "user" | "import-relocate" | "import-backup" | "prevent-reimport" | "config"
   >
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>
@@ -319,11 +326,11 @@ export interface ShelfBook {
 
 export interface ShelfFilterReference {
   createdAt: Generated<string>
-  entityType: string
-  entityUuid: string
-  shelfUuid: string
+  entityType: "tag" | "collection" | "series" | "status" | "creator"
+  entityUuid: import("@/uuid").UUID
+  shelfUuid: import("@/uuid").UUID
   updatedAt: Generated<string>
-  uuid: Generated<string>
+  uuid: Generated<import("@/uuid").UUID>
 }
 
 export interface SidebarItem {

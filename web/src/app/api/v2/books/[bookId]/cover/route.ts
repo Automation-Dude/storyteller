@@ -82,22 +82,16 @@ export const GET = withHasPermission<Params>("bookRead", {
   const notModified = new Response(null, { status: 304 })
 
   const audio = typeof request.nextUrl.searchParams.get("audio") === "string"
-  console.time(`getCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`)
   const cachedImage = await getCachedCoverImage(
     book.uuid,
     audio ? "audio" : "text",
     height,
     width,
   )
-  console.timeEnd(
-    `getCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`,
-  )
 
-  console.time(`getExtractedCover-${book.uuid}-${audio ? "audio" : "text"}`)
   const coverImage =
     cachedImage ??
     (await getExtractedCover(book, audio ? "audiobook" : "ebook"))
-  console.timeEnd(`getExtractedCover-${book.uuid}-${audio ? "audio" : "text"}`)
 
   if (!coverImage) {
     return new Response(null, {
@@ -112,8 +106,6 @@ export const GET = withHasPermission<Params>("bookRead", {
     return notModified
   }
 
-  console.time(`optimizeImage-${book.uuid}-${audio ? "audio" : "text"}`)
-
   const needsOptimize = height && width && !cachedImage
   const optimized = needsOptimize
     ? await optimizeImage({
@@ -127,13 +119,8 @@ export const GET = withHasPermission<Params>("bookRead", {
   const resultData = cachedImage?.data ?? optimized?.data ?? coverImage.data
   const resultMimeType = optimized?.mimeType ?? coverImage.mimeType
 
-  console.timeEnd(`optimizeImage-${book.uuid}-${audio ? "audio" : "text"}`)
-
   if (optimized) {
     after(async () => {
-      console.time(
-        `writeCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`,
-      )
       await writeCachedCoverImage(
         book.uuid,
         audio ? "audio" : "text",
@@ -145,9 +132,6 @@ export const GET = withHasPermission<Params>("bookRead", {
           stats: coverImage.stats,
           data: optimized.data,
         },
-      )
-      console.timeEnd(
-        `writeCachedCoverImage-${book.uuid}-${audio ? "audio" : "text"}`,
       )
     })
   }

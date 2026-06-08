@@ -3,8 +3,7 @@ import { useCallback, useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { api, useUpdateSeriesMutation } from "@/api/api"
-import { Button } from "@/components/ui/button"
+import { Button } from "@v3/_/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -12,15 +11,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@v3/_/components/ui/dialog"
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+} from "@v3/_/components/ui/field"
+import { Input } from "@v3/_/components/ui/input"
+import { Textarea } from "@v3/_/components/ui/textarea"
+
+import { useUpdateSeriesMutation } from "@/store/api"
 
 const seriesSchema = z.object({
   name: z.string().min(1, "Name is required"),
