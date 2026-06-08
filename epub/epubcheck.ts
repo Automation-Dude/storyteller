@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
 
 const here = dirname(fileURLToPath(import.meta.url))
-const JAR = join(here, "vendors", "epubcheck-5.2.1", "epubcheck.jar")
+const JAR = join(here, "vendors", "epubcheck-5.3.0", "epubcheck.jar")
 
 export interface Location {
   url: { hierachical: boolean; opaque: boolean }
