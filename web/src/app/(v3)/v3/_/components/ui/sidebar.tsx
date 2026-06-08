@@ -310,7 +310,8 @@ function Sidebar({
         data-slot="sidebar-container"
         className={cn(
           "fixed inset-y-0 z-10 hidden h-svh md:flex",
-          !skipTransition && "transition-[left,right,width] duration-150 ease-out",
+          !skipTransition &&
+            "transition-[left,right,width] duration-150 ease-out",
           state === "expanded" ? "w-(--sidebar-width)" : "",
           state === "collapsed"
             ? variant === "floating" || variant === "inset"
@@ -322,7 +323,7 @@ function Sidebar({
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
           variant === "floating" || variant === "inset"
             ? isHoverExpanded
-              ? "pl-2 pr-0"
+              ? "pr-0 pl-2"
               : "px-2"
             : "group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className,

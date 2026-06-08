@@ -37,7 +37,9 @@ export function CoverStylePreview({ display }: { display: GridCoverDisplay }) {
           />
         </div>
       )}
-      {display === "ebook" && <MiniCover variant="ebook" className="h-full w-3/4" />}
+      {display === "ebook" && (
+        <MiniCover variant="ebook" className="h-full w-3/4" />
+      )}
       {display === "audiobook" && (
         <MiniCover variant="audiobook" className="aspect-square w-full" />
       )}

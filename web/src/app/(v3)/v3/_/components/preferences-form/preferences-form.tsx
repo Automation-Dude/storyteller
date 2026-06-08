@@ -93,7 +93,11 @@ export function PreferencesForm({
     () =>
       [
         { value: "profile", label: t("tabs.profile.title"), icon: IconUser },
-        { value: "general", label: t("tabs.general.title"), icon: IconSettings2 },
+        {
+          value: "general",
+          label: t("tabs.general.title"),
+          icon: IconSettings2,
+        },
         {
           value: "appearance",
           label: t("tabs.appearance.title"),

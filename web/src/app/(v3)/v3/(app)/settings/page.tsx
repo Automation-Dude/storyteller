@@ -14,7 +14,6 @@ import { nextAuth } from "@/auth/auth"
 import { getConfigLockedKeys, getSettings } from "@/database/settings"
 import { getCurrentVersion } from "@/versions"
 
-
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("SettingsPage")
   return {

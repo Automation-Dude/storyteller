@@ -74,7 +74,9 @@ export default async function RootLayout({
   try {
     const raw = cookieStore.get(UI_SETTINGS_COOKIE_NAME)?.value
     if (raw) {
-      initialUISettings = JSON.parse(decodeURIComponent(raw)) as Partial<UISettings>
+      initialUISettings = JSON.parse(
+        decodeURIComponent(raw),
+      ) as Partial<UISettings>
     }
   } catch {
     // invalid cookie, fall through to defaults

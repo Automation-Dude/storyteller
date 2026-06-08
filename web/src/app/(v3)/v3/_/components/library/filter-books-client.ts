@@ -3,7 +3,6 @@ import { type SortDirection, type SortField } from "@v3/_/components/books"
 import { type BookWithRelations } from "@/database/books"
 import { type MediaFilter } from "@/store/api"
 
-
 export type ClientFilterOptions = {
   search?: string | undefined
   sortField?: SortField | undefined

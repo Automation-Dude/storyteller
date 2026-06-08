@@ -2,7 +2,7 @@
 -- (route-derived, not an entity). collection/shelf items carry a real FK so
 -- deleting the entity cleanly removes its sidebar entry.
 CREATE TABLE IF NOT EXISTS sidebar_item (
-  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid()),
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
   user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,
   kind TEXT NOT NULL,
   builtin_key TEXT,
@@ -14,11 +14,11 @@ CREATE TABLE IF NOT EXISTS sidebar_item (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER IF NOT EXISTS sidebar_item_update_trigger
-  AFTER UPDATE ON sidebar_item
-  FOR EACH ROW
-BEGIN
-  UPDATE sidebar_item SET updated_at = CURRENT_TIMESTAMP
+CREATE TRIGGER IF NOT EXISTS sidebar_item_update_trigger AFTER
+UPDATE ON sidebar_item FOR EACH ROW BEGIN
+UPDATE sidebar_item
+SET
+  updated_at = CURRENT_TIMESTAMP
 WHERE
   uuid = OLD.uuid;
 

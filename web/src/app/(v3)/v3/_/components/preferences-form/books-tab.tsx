@@ -136,7 +136,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
               render={({ field }) => (
                 <Field>
                   <FieldLabel>{t("detail.display.label")}</FieldLabel>
-                  <FieldDescription>{t("detail.display.hint")}</FieldDescription>
+                  <FieldDescription>
+                    {t("detail.display.hint")}
+                  </FieldDescription>
                   <SegmentedControl
                     value={field.value}
                     onChange={(value) => {

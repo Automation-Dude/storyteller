@@ -1,6 +1,5 @@
 "use client"
 
-
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
 import { useTranslation } from "@v3/_/hooks/use-translation"

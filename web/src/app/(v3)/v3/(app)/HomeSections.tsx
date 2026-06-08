@@ -2,7 +2,6 @@
 
 import { IconLoader2 } from "@tabler/icons-react"
 
-
 import { HeroSection } from "@v3/_/components/home/HeroSection"
 import { StatsBar } from "@v3/_/components/home/StatsBar"
 import { ShelfManager, ShelfRow } from "@v3/_/components/shelves"

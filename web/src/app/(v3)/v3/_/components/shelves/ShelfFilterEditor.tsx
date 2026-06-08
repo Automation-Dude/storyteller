@@ -144,7 +144,9 @@ export function ShelfFilterEditor({
       <FilterNodeEditor
         node={filter}
         onChange={onChange}
-        onRemove={() => { onChange(null); }}
+        onRemove={() => {
+          onChange(null)
+        }}
         isRoot
       />
 
@@ -171,16 +173,32 @@ function AddNodeDropdown({ onAdd }: AddNodeDropdownProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        <DropdownMenuItem onClick={() => { onAdd(createEmptyCondition()); }}>
+        <DropdownMenuItem
+          onClick={() => {
+            onAdd(createEmptyCondition())
+          }}
+        >
           Condition
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { onAdd(createAndBlock()); }}>
+        <DropdownMenuItem
+          onClick={() => {
+            onAdd(createAndBlock())
+          }}
+        >
           AND group
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { onAdd(createOrBlock()); }}>
+        <DropdownMenuItem
+          onClick={() => {
+            onAdd(createOrBlock())
+          }}
+        >
           OR group
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { onAdd(createNotBlock()); }}>
+        <DropdownMenuItem
+          onClick={() => {
+            onAdd(createNotBlock())
+          }}
+        >
           NOT
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -350,7 +368,9 @@ function LogicalBlockEditor({
       <div className="flex items-center gap-2">
         <Select
           value={block.type}
-          onValueChange={(v) => { handleTypeChange(v as "and" | "or"); }}
+          onValueChange={(v) => {
+            handleTypeChange(v as "and" | "or")
+          }}
           items={items}
         >
           <SelectTrigger className="h-6 w-16 text-xs font-medium">
@@ -391,8 +411,12 @@ function LogicalBlockEditor({
           <FilterNodeEditor
             key={index}
             node={child}
-            onChange={(newChild) => { handleChildChange(index, newChild); }}
-            onRemove={() => { handleChildRemove(index); }}
+            onChange={(newChild) => {
+              handleChildChange(index, newChild)
+            }}
+            onRemove={() => {
+              handleChildRemove(index)
+            }}
           />
         ))}
 
@@ -519,7 +543,9 @@ function ConditionEditor({
     >
       <Select
         value={condition.field}
-        onValueChange={(v) => { handleFieldChange(v as ShelfFilterField); }}
+        onValueChange={(v) => {
+          handleFieldChange(v as ShelfFilterField)
+        }}
         items={fieldItems}
       >
         <SelectTrigger className="h-7 w-[130px] text-xs">
@@ -536,7 +562,9 @@ function ConditionEditor({
 
       <Select
         value={condition.operator}
-        onValueChange={(v) => { handleOperatorChange(v as ShelfFilterOperator); }}
+        onValueChange={(v) => {
+          handleOperatorChange(v as ShelfFilterOperator)
+        }}
         items={operatorItems}
       >
         <SelectTrigger className="h-7 w-[120px] text-xs">
@@ -792,12 +820,12 @@ function ConditionValueInput({
             type="number"
             className="h-7 w-20 text-xs"
             value={rangeValue[0] ?? numericConfig.min}
-            onChange={(e) =>
-              { onChange([
+            onChange={(e) => {
+              onChange([
                 Number(e.target.value),
                 rangeValue[1] ?? numericConfig.defaultMax,
-              ]); }
-            }
+              ])
+            }}
             step={numericConfig.step}
             min={numericConfig.min}
           />
@@ -808,12 +836,12 @@ function ConditionValueInput({
             type="number"
             className="h-7 w-20 text-xs"
             value={rangeValue[1] ?? numericConfig.defaultMax}
-            onChange={(e) =>
-              { onChange([
+            onChange={(e) => {
+              onChange([
                 rangeValue[0] ?? numericConfig.min,
                 Number(e.target.value),
-              ]); }
-            }
+              ])
+            }}
             step={numericConfig.step}
             min={numericConfig.min}
           />
@@ -832,7 +860,9 @@ function ConditionValueInput({
           type="number"
           className="h-7 w-20 text-xs"
           value={typeof value === "number" ? value : ""}
-          onChange={(e) => { onChange(Number(e.target.value)); }}
+          onChange={(e) => {
+            onChange(Number(e.target.value))
+          }}
           step={numericConfig.step}
           min={numericConfig.min}
           placeholder={numericConfig.placeholder}
@@ -856,14 +886,18 @@ function ConditionValueInput({
             type="date"
             className="h-7 text-xs"
             value={typeof rangeValue[0] === "string" ? rangeValue[0] : ""}
-            onChange={(e) => { onChange([e.target.value, rangeValue[1] ?? ""]); }}
+            onChange={(e) => {
+              onChange([e.target.value, rangeValue[1] ?? ""])
+            }}
           />
           <span className="text-muted-foreground text-xs">to</span>
           <Input
             type="date"
             className="h-7 text-xs"
             value={typeof rangeValue[1] === "string" ? rangeValue[1] : ""}
-            onChange={(e) => { onChange([rangeValue[0] ?? "", e.target.value]); }}
+            onChange={(e) => {
+              onChange([rangeValue[0] ?? "", e.target.value])
+            }}
           />
         </div>
       )
@@ -874,7 +908,9 @@ function ConditionValueInput({
         type="date"
         className="h-7 text-xs"
         value={typeof value === "string" ? value : ""}
-        onChange={(e) => { onChange(e.target.value); }}
+        onChange={(e) => {
+          onChange(e.target.value)
+        }}
       />
     )
   }
@@ -902,7 +938,9 @@ function ConditionValueInput({
     <Input
       className="h-7 text-xs"
       value={typeof value === "string" ? value : ""}
-      onChange={(e) => { onChange(e.target.value || null); }}
+      onChange={(e) => {
+        onChange(e.target.value || null)
+      }}
       placeholder="Enter value..."
     />
   )
@@ -939,7 +977,9 @@ function MultiSelectValue({
     <div className="relative">
       <button
         type="button"
-        onClick={() => { setOpen(!open); }}
+        onClick={() => {
+          setOpen(!open)
+        }}
         className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-7 w-full items-center justify-between rounded-md border px-2 text-xs focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span
@@ -958,14 +998,21 @@ function MultiSelectValue({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); }} />
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => {
+              setOpen(false)
+            }}
+          />
 
           <div className="bg-popover text-popover-foreground absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border p-1 shadow-md">
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
-                onClick={() => { toggleOption(option.value); }}
+                onClick={() => {
+                  toggleOption(option.value)
+                }}
                 className={cn(
                   "hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs",
                   value.includes(option.value) && "bg-accent/50",

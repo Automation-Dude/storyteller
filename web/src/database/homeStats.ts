@@ -51,9 +51,7 @@ export async function getHomeStats(userId: UUID): Promise<HomeStats> {
   const authorsRow = await db
     .selectFrom("bookToCreator")
     .where("role", "=", "aut")
-    .select((eb) =>
-      eb.fn.count<number>("creatorUuid").distinct().as("count"),
-    )
+    .select((eb) => eb.fn.count<number>("creatorUuid").distinct().as("count"))
     .executeTakeFirst()
 
   return {

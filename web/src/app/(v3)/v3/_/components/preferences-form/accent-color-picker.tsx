@@ -93,7 +93,9 @@ export function AccentColorPicker({
       <label
         className={cn(
           "ring-offset-background relative flex size-7 cursor-pointer items-center justify-center overflow-hidden rounded-full transition-transform hover:scale-110",
-          !isPreset && value !== null && "ring-foreground/40 ring-2 ring-offset-2",
+          !isPreset &&
+            value !== null &&
+            "ring-foreground/40 ring-2 ring-offset-2",
         )}
         style={{
           background:

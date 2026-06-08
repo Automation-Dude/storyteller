@@ -124,7 +124,10 @@ export function BookListLayout({
         }
       }
 
-      return Math.max(minW, Math.min(maxW, available - (idealCols * pitch - BOOK_GRID_GAP)))
+      return Math.max(
+        minW,
+        Math.min(maxW, available - (idealCols * pitch - BOOK_GRID_GAP)),
+      )
     },
     [cardWidth, GRID_PADDING],
   )
@@ -157,10 +160,18 @@ export function BookListLayout({
   // snaps sequentially: panel first, then sidebar using the snapped panel width,
   // so they don't race each other with stale cross-references.
   const snapRef = useRef({
-    panelWidth, sidebarWidth, sidebar, onSidebarWidthChange, dispatch,
+    panelWidth,
+    sidebarWidth,
+    sidebar,
+    onSidebarWidthChange,
+    dispatch,
   })
   snapRef.current = {
-    panelWidth, sidebarWidth, sidebar, onSidebarWidthChange, dispatch,
+    panelWidth,
+    sidebarWidth,
+    sidebar,
+    onSidebarWidthChange,
+    dispatch,
   }
 
   const [layoutWidth, setLayoutWidth] = useState(0)
@@ -185,14 +196,25 @@ export function BookListLayout({
   useEffect(() => {
     if (layoutWidth === 0) return
 
-    const { panelWidth, sidebarWidth, sidebar, onSidebarWidthChange, dispatch } = snapRef.current
+    const {
+      panelWidth,
+      sidebarWidth,
+      sidebar,
+      onSidebarWidthChange,
+      dispatch,
+    } = snapRef.current
     const currentSidebar = sidebar ? sidebarWidth ?? 280 : 0
 
     // snap the panel first so the sidebar snap uses the correct panel width
     let effectivePanelWidth = panelOpen ? panelWidth : 0
 
     if (panelOpen) {
-      const snapped = snapChromeWidth(panelWidth, currentSidebar, MIN_PANEL_WIDTH, MAX_PANEL_WIDTH)
+      const snapped = snapChromeWidth(
+        panelWidth,
+        currentSidebar,
+        MIN_PANEL_WIDTH,
+        MAX_PANEL_WIDTH,
+      )
       effectivePanelWidth = snapped
 
       if (Math.abs(snapped - panelWidth) > 1) {
@@ -201,7 +223,12 @@ export function BookListLayout({
     }
 
     if (sidebar && onSidebarWidthChange) {
-      const snapped = snapChromeWidth(currentSidebar, effectivePanelWidth, MIN_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH)
+      const snapped = snapChromeWidth(
+        currentSidebar,
+        effectivePanelWidth,
+        MIN_SIDEBAR_WIDTH,
+        MAX_SIDEBAR_WIDTH,
+      )
 
       if (Math.abs(snapped - currentSidebar) > 1) {
         onSidebarWidthChange(snapped)
