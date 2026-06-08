@@ -5,20 +5,20 @@ import {
   sql,
 } from "kysely"
 
+import {
+  type NumberOperators,
+  type ShelfFilter,
+  type ShelfFilterCondition,
+  type ShelfFilterField,
+  type ShelfFilterNode,
+  type ShelfFilterOperator,
+  type ShelfFilterValue,
+  getFieldType,
+} from "@/shelves"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
 import { type DB } from "./schema"
-import {
-  ShelfFilter,
-  ShelfFilterNode,
-  ShelfFilterField,
-  ShelfFilterCondition,
-  ShelfFilterOperator,
-  ShelfFilterValue,
-  getFieldType,
-  NumberOperators,
-} from "@/shelves"
 
 export function extractEntityReferences(filter: ShelfFilter): Array<{
   entityType: "tag" | "collection" | "series" | "status" | "creator"

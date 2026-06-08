@@ -119,8 +119,7 @@ export function SidebarEntityActions({
   )
 
   const count = selectedItems.size
-  const singleSelected =
-    count === 1 ? selectedItemObjects[0] : undefined
+  const singleSelected = count === 1 ? selectedItemObjects[0] : undefined
 
   // merge state
   const [mergeTarget, setMergeTarget] = useState<LibraryItem | null>(null)
@@ -144,9 +143,7 @@ export function SidebarEntityActions({
     setIsDeleting(true)
 
     try {
-      await Promise.all(
-        selectedArray.map((uuid) => deleteEntity(uuid as UUID)),
-      )
+      await Promise.all(selectedArray.map((uuid) => deleteEntity(uuid as UUID)))
 
       onStopSelecting()
     } finally {
@@ -172,7 +169,10 @@ export function SidebarEntityActions({
     }
   }, [mergeTarget, selectedArray, mergeEntities, onStopSelecting])
 
-  const entityLabel = t.plain(`entityTypes.${entityType}` as "entityTypes.tag", { count })
+  const entityLabel = t.plain(
+    `entityTypes.${entityType}` as "entityTypes.tag",
+    { count },
+  )
 
   const deleteAction = useConfirmAction({
     onConfirm: handleDelete,
@@ -218,9 +218,7 @@ export function SidebarEntityActions({
 
           <DropdownMenuContent align="end" className="min-w-40">
             {onEdit && singleSelected && (
-              <DropdownMenuItem
-                onClick={() => onEdit(singleSelected)}
-              >
+              <DropdownMenuItem onClick={() => { onEdit(singleSelected); }}>
                 <IconEdit className="mr-2 h-4 w-4" />
                 {t.plain("edit")}
               </DropdownMenuItem>
@@ -237,7 +235,7 @@ export function SidebarEntityActions({
                   {selectedItemObjects.map((item) => (
                     <DropdownMenuItem
                       key={item.key}
-                      onClick={(event) => handleMergeInto(item, event)}
+                      onClick={(event) => { handleMergeInto(item, event); }}
                     >
                       {item.name}
                     </DropdownMenuItem>
@@ -262,7 +260,7 @@ export function SidebarEntityActions({
             ) : null}
 
             <DropdownMenuItem
-              onClick={(event) => deleteAction.confirm(event)}
+              onClick={(event) => { deleteAction.confirm(event); }}
               disabled={isDeleting}
               className="text-destructive focus:text-destructive"
             >

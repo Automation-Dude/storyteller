@@ -268,9 +268,7 @@ export async function mergeCollections(targetUuid: UUID, sourceUuids: UUID[]) {
       .where("collectionUuid", "in", sourceUuids)
       .execute()
 
-    const toInsert = sourceLinks.filter(
-      (r) => !existingSet.has(r.bookUuid),
-    )
+    const toInsert = sourceLinks.filter((r) => !existingSet.has(r.bookUuid))
 
     const uniqueToInsert = [...new Set(toInsert.map((r) => r.bookUuid))]
 
@@ -296,10 +294,7 @@ export async function mergeCollections(targetUuid: UUID, sourceUuids: UUID[]) {
       .where("collectionUuid", "in", sourceUuids)
       .execute()
 
-    await tr
-      .deleteFrom("collection")
-      .where("uuid", "in", sourceUuids)
-      .execute()
+    await tr.deleteFrom("collection").where("uuid", "in", sourceUuids).execute()
 
     return [
       ...new Set([

@@ -32,6 +32,7 @@ import {
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
+import { type ShelfOrderBy } from "@/database/shelves"
 import {
   FIELD_LABELS,
   MEDIA_TYPE_VALUES,
@@ -54,7 +55,6 @@ import {
   operatorRequiresRangeValue,
   operatorRequiresValue,
 } from "@/shelves"
-import { type ShelfOrderBy } from "@/database/shelves"
 import {
   getCoverUrl,
   useListCollectionsQuery,

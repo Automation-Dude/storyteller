@@ -33,7 +33,6 @@ import {
   type ImportMode,
   type MetadataFieldOverrides,
 } from "@/database/settingsTypes"
-import { type ShelfFilter } from "@/shelves"
 import {
   type HomeSectionKind,
   type HomeSectionWithDetails,
@@ -50,6 +49,7 @@ import { type UserBookRating } from "@/database/userRatings"
 import { type UserSettingValue } from "@/database/userSettings"
 import { type UserPermissionSet } from "@/database/users"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
+import { type ShelfFilter } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 import { subscribeToBookEventStream } from "./bookEventsStream"

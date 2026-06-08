@@ -21,10 +21,9 @@ const audioFileTypes = ios
   ? null
   : ["video/mp4", "audio/*", "application/zip", ".m4b", ".m4a", ".zip"]
 
-const allowedFileTypes = [
-  ...epubFileTypes,
-  ...(audioFileTypes ?? []),
-].filter(Boolean) as string[]
+const allowedFileTypes = [...epubFileTypes, ...(audioFileTypes ?? [])].filter(
+  Boolean,
+)
 
 const tusEndpoint =
   typeof window === "undefined"

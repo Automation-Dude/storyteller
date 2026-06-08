@@ -27,8 +27,8 @@ import {
 import { Textarea } from "@v3/_/components/ui/textarea"
 
 import { type BookWithRelations } from "@/database/books"
-import { type ShelfFilterNode } from "@/shelves"
 import { type ShelfOrderBy, type ShelfWithBooks } from "@/database/shelves"
+import { type ShelfFilterNode } from "@/shelves"
 import {
   getCoverUrl,
   useCreateUserShelfMutation,

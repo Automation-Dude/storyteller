@@ -87,8 +87,7 @@ export function ReplaceFileDialog({
   const sourceInsideAssetDir = Boolean(
     selectedPath &&
       assetRoot &&
-      (selectedPath === assetRoot ||
-        selectedPath.startsWith(`${assetRoot}/`)),
+      (selectedPath === assetRoot || selectedPath.startsWith(`${assetRoot}/`)),
   )
 
   async function handleSubmit(
@@ -119,11 +118,7 @@ export function ReplaceFileDialog({
 
       onOpenChange(false)
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : t("errorGeneric"),
-      )
+      setError(e instanceof Error ? e.message : t("errorGeneric"))
     }
   }
 
@@ -157,9 +152,7 @@ export function ReplaceFileDialog({
           : t("replaceFormatTitle", { format })
       }
       description={
-        format === "audiobook"
-          ? t("audioDescription")
-          : t("ebookDescription")
+        format === "audiobook" ? t("audioDescription") : t("ebookDescription")
       }
       startPath={currentPath}
       fileFilter={format === "audiobook" ? isAudioFileFilter : isEbookFilter}

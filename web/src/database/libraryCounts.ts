@@ -1,11 +1,11 @@
 import { sql } from "kysely"
 
 import { type Role } from "@/components/books/edit/marcRelators"
+import { type ShelfFilter } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
 import { buildFilterExpression } from "./shelfFilter"
-import { type ShelfFilter } from "@/shelves"
 
 // counts that back the library sidebar badges. computed entirely in SQL so the
 // client never has to fetch full entity lists (or every book) just to count.

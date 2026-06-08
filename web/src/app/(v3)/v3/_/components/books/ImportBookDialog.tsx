@@ -34,11 +34,7 @@ export function ImportBookDialog({
 
       onOpenChange(false)
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : t("errorGeneric"),
-      )
+      setError(e instanceof Error ? e.message : t("errorGeneric"))
     }
   }
 

@@ -56,7 +56,10 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     })
   }, [books, deferredSearch, filterState])
 
-  const bookUuids = useMemo(() => filteredBooks.map((b) => b.uuid), [filteredBooks])
+  const bookUuids = useMemo(
+    () => filteredBooks.map((b) => b.uuid),
+    [filteredBooks],
+  )
 
   const selectedBook = useMemo(
     () => filteredBooks.find((b) => b.uuid === selectedBookUuid),

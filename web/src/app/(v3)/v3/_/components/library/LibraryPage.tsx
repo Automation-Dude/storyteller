@@ -730,7 +730,6 @@ function SidebarPanel({
         selectedKey={selectedKey}
         onItemClick={onItemClick}
         isLoading={isLoading}
-        onPinItem={onPinItem}
         entityType={entityType}
         itemSelection={itemSelection}
         onOpenItemMenu={handleOpenItemMenu}
@@ -794,7 +793,6 @@ function SidebarItemList({
   selectedKey,
   onItemClick,
   isLoading,
-  onPinItem,
   entityType,
   itemSelection,
   onOpenItemMenu,
@@ -803,12 +801,10 @@ function SidebarItemList({
   selectedKey: string | null
   onItemClick: (key: string) => void
   isLoading: boolean
-  onPinItem?: (item: LibraryItem) => void
   entityType?: LibraryEntityType
   itemSelection?: ReturnType<typeof useItemSelection>
   onOpenItemMenu?: (item: LibraryItem, anchor: HTMLElement) => void
 }) {
-  const t = useTranslation("LibraryPage")
   const isSelecting = itemSelection?.isSelecting ?? false
   const canSelect = !!entityType && !!itemSelection
   const hasRowActions = !!onOpenItemMenu && !!entityType
@@ -817,16 +813,16 @@ function SidebarItemList({
   // new function identities on every parent re-render
   const callbacksRef = useRef({
     onItemClick,
-    onPinItem,
     onOpenItemMenu,
     itemSelection,
   })
   callbacksRef.current = {
     onItemClick,
-    onPinItem,
     onOpenItemMenu,
     itemSelection,
   }
+
+  const t = useTranslation("LibraryPage")
 
   const handleRowClick = useCallback((key: string) => {
     callbacksRef.current.onItemClick(key)
@@ -836,18 +832,12 @@ function SidebarItemList({
     callbacksRef.current.itemSelection?.toggleItem(key)
   }, [])
 
-  const handleRowPin = useCallback((item: LibraryItem) => {
-    callbacksRef.current.onPinItem?.(item)
-  }, [])
-
   const handleRowMenu = useCallback(
     (item: LibraryItem, anchor: HTMLElement) => {
       callbacksRef.current.onOpenItemMenu?.(item, anchor)
     },
     [],
   )
-
-  const pinAsShelfLabel = t.plain("pinAsShelf")
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
@@ -931,11 +921,8 @@ function SidebarItemList({
                 isSelecting={isSelecting}
                 canSelect={canSelect}
                 hasRowActions={hasRowActions}
-                showPin={!!onPinItem}
-                pinLabel={pinAsShelfLabel}
                 onItemClick={handleRowClick}
                 onToggle={handleRowToggle}
-                onPin={handleRowPin}
                 onOpenMenu={handleRowMenu}
               />
             </div>
@@ -953,11 +940,8 @@ function SidebarRow({
   isSelecting,
   canSelect,
   hasRowActions,
-  showPin,
-  pinLabel,
   onItemClick,
   onToggle,
-  onPin,
   onOpenMenu,
 }: {
   item: LibraryItem
@@ -966,11 +950,8 @@ function SidebarRow({
   isSelecting: boolean
   canSelect: boolean
   hasRowActions: boolean
-  showPin: boolean
-  pinLabel: string
   onItemClick: (key: string) => void
   onToggle: (key: string) => void
-  onPin: (item: LibraryItem) => void
   onOpenMenu: (item: LibraryItem, anchor: HTMLElement) => void
 }) {
   return (
@@ -983,22 +964,6 @@ function SidebarRow({
         isChecked && "ring-primary/40 ring-1",
       )}
     >
-      {canSelect && (
-        <div
-          className={cn(
-            "flex shrink-0 items-center pl-2",
-            !isSelecting && "opacity-0 group-hover/item:opacity-100",
-          )}
-        >
-          <Checkbox
-            checked={isChecked}
-            onCheckedChange={() => {
-              onToggle(item.key)
-            }}
-          />
-        </div>
-      )}
-
       <button
         type="button"
         onClick={() => {
@@ -1031,23 +996,27 @@ function SidebarRow({
           </button>
         )}
 
-        {showPin && !isSelecting && (
-          <button
-            type="button"
-            title={pinLabel}
-            onClick={() => {
-              onPin(item)
-            }}
-            className="text-muted-foreground hover:text-foreground rounded p-0.5 opacity-0 transition-opacity group-hover/item:opacity-100 focus-visible:opacity-100"
+        {canSelect && (
+          <div
+            className={cn(
+              "pr-.5 flex shrink-0 items-center",
+              !isSelecting && "opacity-0 group-hover/item:opacity-100",
+            )}
           >
-            <IconBookmarkPlus className="size-3.5" />
-          </button>
+            <Checkbox
+              checked={isChecked}
+              onCheckedChange={() => {
+                onToggle(item.key)
+              }}
+            />
+          </div>
         )}
 
         <span
           className={cn(
             "text-muted-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs tabular-nums",
             isActive && "bg-sidebar-accent-foreground text-foreground",
+            isSelecting && "hidden",
             hasRowActions && !isSelecting && "group-hover/item:hidden",
           )}
         >

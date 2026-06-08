@@ -58,7 +58,7 @@ export function ConfirmDialog({
 
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { onOpenChange(false); }}
             disabled={isLoading}
           >
             {cancelLabel}

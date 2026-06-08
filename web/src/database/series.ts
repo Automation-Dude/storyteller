@@ -260,9 +260,7 @@ export async function mergeSeries(targetUuid: UUID, sourceUuids: UUID[]) {
       .where("seriesUuid", "in", sourceUuids)
       .execute()
 
-    const toInsert = sourceLinks.filter(
-      (r) => !existingSet.has(r.bookUuid),
-    )
+    const toInsert = sourceLinks.filter((r) => !existingSet.has(r.bookUuid))
 
     // deduplicate by bookUuid, keep first occurrence
     const seen = new Set<string>()
@@ -291,10 +289,7 @@ export async function mergeSeries(targetUuid: UUID, sourceUuids: UUID[]) {
       .where("seriesUuid", "in", sourceUuids)
       .execute()
 
-    await tr
-      .deleteFrom("series")
-      .where("uuid", "in", sourceUuids)
-      .execute()
+    await tr.deleteFrom("series").where("uuid", "in", sourceUuids).execute()
 
     return [
       ...new Set([

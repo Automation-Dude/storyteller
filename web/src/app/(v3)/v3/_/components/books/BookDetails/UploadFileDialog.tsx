@@ -78,7 +78,10 @@ export function UploadFileDialog({
           ? isAdd
             ? t("audioDescription")
             : t("audioReplaceDescription")
-          : t("ebookDescription", { action: isAdd ? t("add") : t("replace"), format })
+          : t("ebookDescription", {
+              action: isAdd ? t("add") : t("replace"),
+              format,
+            })
       }
       endpoint={tusEndpointForBook(book.uuid)}
       restrictions={{
@@ -87,16 +90,10 @@ export function UploadFileDialog({
           format === "audiobook" ? audioFileTypes : epubFileTypes,
       }}
       accept={
-        format === "audiobook"
-          ? "audio/*,video/mp4,.m4b,.m4a,.zip"
-          : ".epub"
+        format === "audiobook" ? "audio/*,video/mp4,.m4b,.m4a,.zip" : ".epub"
       }
       multiple={format === "audiobook"}
-      hint={
-        format === "audiobook"
-          ? t("audioHint")
-          : t("ebookHint")
-      }
+      hint={format === "audiobook" ? t("audioHint") : t("ebookHint")}
       buildMeta={buildMeta}
       onFinalize={format === "audiobook" ? handleFinalize : undefined}
       metadataMode={metadataMode}

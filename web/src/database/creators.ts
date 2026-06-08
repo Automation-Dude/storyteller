@@ -63,11 +63,7 @@ export async function getCreators(userId?: UUID, role?: Role) {
 }
 
 export async function updateCreator(uuid: UUID, update: CreatorUpdate) {
-  await db
-    .updateTable("creator")
-    .set(update)
-    .where("uuid", "=", uuid)
-    .execute()
+  await db.updateTable("creator").set(update).where("uuid", "=", uuid).execute()
 
   return await db
     .selectFrom("creator")
@@ -164,10 +160,7 @@ export async function mergeCreators(targetUuid: UUID, sourceUuids: UUID[]) {
       .where("creatorUuid", "in", sourceUuids)
       .execute()
 
-    await tr
-      .deleteFrom("creator")
-      .where("uuid", "in", sourceUuids)
-      .execute()
+    await tr.deleteFrom("creator").where("uuid", "in", sourceUuids).execute()
 
     return [
       ...new Set([

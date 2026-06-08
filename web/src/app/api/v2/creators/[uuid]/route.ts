@@ -1,5 +1,9 @@
 import { withHasPermission } from "@/auth/auth"
-import { type CreatorUpdate, deleteCreator, updateCreator } from "@/database/creators"
+import {
+  type CreatorUpdate,
+  deleteCreator,
+  updateCreator,
+} from "@/database/creators"
 import { type UUID } from "@/uuid"
 
 type Params = Promise<{ uuid: UUID }>

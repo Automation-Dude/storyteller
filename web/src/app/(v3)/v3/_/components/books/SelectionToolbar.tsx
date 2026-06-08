@@ -194,7 +194,9 @@ export function SelectionToolbar({
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                 {collections.length === 0 ? (
-                  <DropdownMenuItem disabled>{t.plain("noCollections")}</DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    {t.plain("noCollections")}
+                  </DropdownMenuItem>
                 ) : (
                   collections.map((collection) => (
                     <DropdownMenuItem
@@ -217,7 +219,9 @@ export function SelectionToolbar({
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                 {series.length === 0 ? (
-                  <DropdownMenuItem disabled>{t.plain("noSeries")}</DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    {t.plain("noSeries")}
+                  </DropdownMenuItem>
                 ) : (
                   series.map((s) => (
                     <DropdownMenuItem
@@ -247,7 +251,7 @@ export function SelectionToolbar({
 
           {canDelete && (
             <DropdownMenuItem
-              onClick={(event) => deleteAction.confirm(event)}
+              onClick={(event) => { deleteAction.confirm(event); }}
               disabled={deleteAction.isLoading}
               className="text-destructive focus:text-destructive"
             >

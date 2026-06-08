@@ -95,7 +95,9 @@ export function EditTagDialog({
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="py-4">
             <Field>
-              <FieldLabel htmlFor="edit-tag-name">{t.plain("tagName")}</FieldLabel>
+              <FieldLabel htmlFor="edit-tag-name">
+                {t.plain("tagName")}
+              </FieldLabel>
               <Input
                 id="edit-tag-name"
                 placeholder={t.plain("tagName")}
