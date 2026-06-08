@@ -33,7 +33,7 @@ import {
   type ImportMode,
   type MetadataFieldOverrides,
 } from "@/database/settingsTypes"
-import { type ShelfFilter } from "@/database/shelfFilter"
+import { type ShelfFilter } from "@/shelves"
 import {
   type HomeSectionKind,
   type HomeSectionWithDetails,
@@ -1196,6 +1196,100 @@ export const api = createApi({
         ...tags.map((uuid) => ({ type: "Tags" as const, id: uuid })),
       ],
     }),
+
+    updateTag: build.mutation<Tag, { uuid: UUID; update: { name: string } }>({
+      query: ({ uuid, update }) => ({
+        url: `/tags/${uuid}`,
+        method: "PUT",
+        body: update,
+      }),
+      invalidatesTags: ["Tags", "Books"],
+    }),
+
+    deleteTag: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({
+        url: `/tags/${uuid}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Tags", "Books", "UserShelves"],
+    }),
+
+    mergeTags: build.mutation<void, { targetUuid: UUID; sourceUuids: UUID[] }>({
+      query: (body) => ({
+        url: "/tags/merge",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Tags", "Books", "UserShelves"],
+    }),
+
+    updateCreator: build.mutation<
+      Creator,
+      { uuid: UUID; update: { name?: string; fileAs?: string } }
+    >({
+      query: ({ uuid, update }) => ({
+        url: `/creators/${uuid}`,
+        method: "PUT",
+        body: update,
+      }),
+      invalidatesTags: ["Authors", "Narrators", "Translators", "Books"],
+    }),
+
+    deleteCreator: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({
+        url: `/creators/${uuid}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Books",
+        "UserShelves",
+      ],
+    }),
+
+    mergeCreators: build.mutation<
+      void,
+      { targetUuid: UUID; sourceUuids: UUID[] }
+    >({
+      query: (body) => ({
+        url: "/creators/merge",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Books",
+        "UserShelves",
+      ],
+    }),
+
+    mergeSeries: build.mutation<
+      void,
+      { targetUuid: UUID; sourceUuids: UUID[] }
+    >({
+      query: (body) => ({
+        url: "/series/merge",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Series", "Books", "UserShelves"],
+    }),
+
+    mergeCollections: build.mutation<
+      void,
+      { targetUuid: UUID; sourceUuids: UUID[] }
+    >({
+      query: (body) => ({
+        url: "/collections/merge",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Collections", "Books", "UserShelves"],
+    }),
     updateReadingStatus: build.mutation<
       BookWithRelations,
       { status: UUID; books: UUID[] }
@@ -1601,6 +1695,14 @@ export const {
   useGetUserSettingsQuery,
   useUpdateUserSettingsMutation,
   useSetUserSettingMutation,
+  useUpdateTagMutation,
+  useDeleteTagMutation,
+  useMergeTagsMutation,
+  useUpdateCreatorMutation,
+  useDeleteCreatorMutation,
+  useMergeCreatorsMutation,
+  useMergeSeriesMutation,
+  useMergeCollectionsMutation,
 } = api
 
 export function getDownloadUrl(

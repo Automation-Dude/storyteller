@@ -158,7 +158,66 @@
     "Status": {
       "plain": "Status",
       "by": "Op Status"
+    },
+    "search": "Zoeken...",
+    "noItemsFound": "Geen items gevonden",
+    "pinAsShelf": "Vastpinnen als plank",
+    "sortByCount": "Sorteren op aantal",
+    "sortByName": "Sorteren op naam"
+  },
+  "EntityActions": {
+    "selected": "{count} geselecteerd",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "deleting": "Verwijderen...",
+    "mergeInto": "Samenvoegen naar...",
+    "createShelfWith": "Plank maken met selectie",
+    "deleteTitle": "{count} {entity} verwijderen?",
+    "deleteDescription": "Dit verwijdert de geselecteerde items en ontkoppelt ze van alle boeken. Dit kan niet ongedaan worden.",
+    "mergeTitle": "{count} items samenvoegen naar \"{target}\"?",
+    "mergeDescription": "Alle boeken van de andere geselecteerde items worden toegewezen aan het doel. De andere items worden verwijderd.",
+    "merge": "Samenvoegen",
+    "confirm": "Bevestigen",
+    "cancel": "Annuleren",
+    "saving": "Opslaan...",
+    "save": "Opslaan",
+    "shiftSkipHint": "houd shift ingedrukt om dit de volgende keer over te slaan",
+    "editTag": "Label bewerken",
+    "editTagDescription": "Werk de labelnaam bij.",
+    "tagName": "Labelnaam",
+    "editCreator": "Maker bewerken",
+    "editCreatorDescription": "Werk de naam en sorteernaam bij.",
+    "creatorName": "Naam",
+    "sortAs": "Sorteren als",
+    "sortAsPlaceholder": "bijv. Rowling, J. K.",
+    "nameRequired": "Naam is verplicht",
+    "entityTypes": {
+      "tag": "{count, plural, one {label} other {labels}}",
+      "creator": "{count, plural, one {maker} other {makers}}",
+      "series": "{count, plural, one {serie} other {series}}",
+      "collection": "{count, plural, one {verzameling} other {verzamelingen}}"
     }
+  },
+  "SelectionToolbar": {
+    "select": "Selecteren",
+    "selectAll": "Alles selecteren",
+    "selectNone": "Niets selecteren",
+    "invertSelection": "Selectie omkeren",
+    "selected": "{count} geselecteerd",
+    "actions": "Acties",
+    "addToCollection": "Toevoegen aan verzameling",
+    "noCollections": "Geen verzamelingen",
+    "addToSeries": "Toevoegen aan serie",
+    "noSeries": "Geen series",
+    "scan": "Scannen",
+    "delete": "Verwijderen",
+    "deleting": "Verwijderen...",
+    "deleteTitle": "{count} boek(en) verwijderen?",
+    "deleteDescription": "Dit kan niet ongedaan worden."
+  },
+  "ShelfPage": {
+    "emptyShelf": "Deze plank is leeg",
+    "adjustFilters": "Probeer je zoekterm of filters aan te passen"
   },
   "SettingsPage": {
     "title": "Instellingen",

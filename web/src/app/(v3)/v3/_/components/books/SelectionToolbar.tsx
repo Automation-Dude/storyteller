@@ -10,9 +10,13 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react"
-import { useCallback, useState } from "react"
+import { useCallback } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
+import {
+  ConfirmDialog,
+  useConfirmAction,
+} from "@v3/_/components/ui/confirm-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { usePermissions } from "@/hooks/usePermissions"
@@ -45,6 +50,7 @@ export function SelectionToolbar({
   allBookUuids,
   className,
 }: SelectionToolbarProps) {
+  const t = useTranslation("SelectionToolbar")
   const permissions = usePermissions()
   const canUpdate = !!permissions?.bookUpdate
   const canDelete = !!permissions?.bookDelete
@@ -66,8 +72,6 @@ export function SelectionToolbar({
   } = useBookSelection()
 
   const isSelecting = selectedBooks.size > 0
-
-  const [isDeleting, setIsDeleting] = useState(false)
 
   const selectedArray = Array.from(
     selectedBooks,
@@ -108,22 +112,21 @@ export function SelectionToolbar({
     await scanBooks({ bookUuids: selectedArray, force: true })
   }, [scanBooks, selectedArray])
 
-  const handleDeleteSelected = useCallback(async () => {
-    if (
-      !confirm(`Delete ${selectedBooks.size} book(s)? This cannot be undone.`)
-    ) {
-      return
-    }
-    setIsDeleting(true)
-    try {
-      await Promise.all(
-        selectedArray.map((uuid) => deleteBook({ uuid }).unwrap()),
-      )
-      selectNone()
-    } finally {
-      setIsDeleting(false)
-    }
-  }, [selectedArray, selectedBooks.size, deleteBook, selectNone])
+  const performDelete = useCallback(async () => {
+    await Promise.all(
+      selectedArray.map((uuid) => deleteBook({ uuid }).unwrap()),
+    )
+
+    selectNone()
+  }, [selectedArray, deleteBook, selectNone])
+
+  const deleteAction = useConfirmAction({
+    onConfirm: performDelete,
+    title: t.plain("deleteTitle", { count: selectedBooks.size }),
+    description: t.plain("deleteDescription"),
+    confirmLabel: t.plain("delete"),
+    variant: "destructive",
+  })
 
   if (!isSelecting) return null
 
@@ -139,7 +142,7 @@ export function SelectionToolbar({
           render={
             <Button variant="ghost" size="sm" className="">
               <IconSquareCheck className="mr-2 h-4 w-4" />
-              Select
+              {t.plain("select")}
               <IconChevronDown className="ml-2 h-4 w-4" />
             </Button>
           }
@@ -151,11 +154,11 @@ export function SelectionToolbar({
             }}
           >
             <IconCheck className="mr-2 h-4 w-4" />
-            Select all
+            {t.plain("selectAll")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={selectNone}>
             <IconSquare className="mr-2 h-4 w-4" />
-            Select none
+            {t.plain("selectNone")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
@@ -163,13 +166,13 @@ export function SelectionToolbar({
             }}
           >
             <IconSquareCheck className="mr-2 h-4 w-4" />
-            Invert selection
+            {t.plain("invertSelection")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <span className="p-2 font-sans text-xs whitespace-nowrap">
-        {selectedBooks.size} selected
+        {t.plain("selected", { count: selectedBooks.size })}
       </span>
 
       <DropdownMenu>
@@ -177,7 +180,7 @@ export function SelectionToolbar({
           render={
             <Button variant="ghost" size="sm" disabled={!hasSelection}>
               <IconPointer className="mr-2 h-4 w-4" />
-              Actions
+              {t.plain("actions")}
               <IconChevronDown className="ml-2 h-4 w-4" />
             </Button>
           }
@@ -187,11 +190,11 @@ export function SelectionToolbar({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <IconFolder className="mr-2 h-4 w-4" />
-                Add to Collection
+                {t.plain("addToCollection")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                 {collections.length === 0 ? (
-                  <DropdownMenuItem disabled>No collections</DropdownMenuItem>
+                  <DropdownMenuItem disabled>{t.plain("noCollections")}</DropdownMenuItem>
                 ) : (
                   collections.map((collection) => (
                     <DropdownMenuItem
@@ -210,11 +213,11 @@ export function SelectionToolbar({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <IconLibrary className="mr-2 h-4 w-4" />
-                Add to Series
+                {t.plain("addToSeries")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                 {series.length === 0 ? (
-                  <DropdownMenuItem disabled>No series</DropdownMenuItem>
+                  <DropdownMenuItem disabled>{t.plain("noSeries")}</DropdownMenuItem>
                 ) : (
                   series.map((s) => (
                     <DropdownMenuItem
@@ -234,7 +237,7 @@ export function SelectionToolbar({
               {canUpdate && <DropdownMenuSeparator />}
               <DropdownMenuItem onClick={handleScanSelected}>
                 <IconRefresh className="mr-2 h-4 w-4" />
-                Scan
+                {t.plain("scan")}
               </DropdownMenuItem>
             </>
           )}
@@ -244,12 +247,12 @@ export function SelectionToolbar({
 
           {canDelete && (
             <DropdownMenuItem
-              onClick={handleDeleteSelected}
-              disabled={isDeleting}
+              onClick={(event) => deleteAction.confirm(event)}
+              disabled={deleteAction.isLoading}
               className="text-destructive focus:text-destructive"
             >
               <IconTrash className="mr-2 h-4 w-4" />
-              {isDeleting ? "Deleting..." : "Delete"}
+              {deleteAction.isLoading ? t.plain("deleting") : t.plain("delete")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -258,6 +261,8 @@ export function SelectionToolbar({
       <Button variant="ghost" size="sm" onClick={stopSelecting}>
         <IconX className="h-4 w-4" />
       </Button>
+
+      <ConfirmDialog {...deleteAction.dialogProps} />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import type { Selectable } from "kysely"
+import type { Selectable, Updateable } from "kysely"
 
 import { BookEvents } from "@/events"
 import type { UUID } from "@/uuid"
@@ -6,6 +6,9 @@ import type { UUID } from "@/uuid"
 import { getBooks } from "./books"
 import { db } from "./connection"
 import type { DB } from "./schema"
+import { cleanShelfFiltersForDeletedEntity } from "./shelfFilter"
+
+export type TagUpdate = Updateable<DB["tag"]>
 
 export type Tag = Selectable<DB["tag"]>
 
@@ -188,4 +191,112 @@ export async function removeTagsFromBooks(bookUuids: UUID[], tagUuids: UUID[]) {
       },
     })
   })
+}
+
+export async function updateTag(uuid: UUID, update: TagUpdate) {
+  await db.updateTable("tag").set(update).where("uuid", "=", uuid).execute()
+
+  return await db
+    .selectFrom("tag")
+    .selectAll()
+    .where("uuid", "=", uuid)
+    .executeTakeFirstOrThrow()
+}
+
+export async function deleteTag(uuid: UUID) {
+  const affectedBookUuids = await db.transaction().execute(async (tr) => {
+    const rows = await tr
+      .selectFrom("bookToTag")
+      .select(["bookUuid"])
+      .where("tagUuid", "=", uuid)
+      .execute()
+
+    await tr.deleteFrom("bookToTag").where("tagUuid", "=", uuid).execute()
+    await tr.deleteFrom("tag").where("uuid", "=", uuid).execute()
+
+    return rows.map((r) => r.bookUuid)
+  })
+
+  await cleanShelfFiltersForDeletedEntity("tag", uuid)
+
+  if (affectedBookUuids.length > 0) {
+    const books = await getBooks(affectedBookUuids)
+
+    books.forEach((book) => {
+      BookEvents.emit("message", {
+        type: "bookUpdated",
+        bookUuid: book.uuid,
+        payload: { tags: book.tags },
+      })
+    })
+  }
+}
+
+export async function mergeTags(targetUuid: UUID, sourceUuids: UUID[]) {
+  const affectedBookUuids = await db.transaction().execute(async (tr) => {
+    // find books already linked to the target so we can skip duplicates
+    const existingLinks = await tr
+      .selectFrom("bookToTag")
+      .select(["bookUuid"])
+      .where("tagUuid", "=", targetUuid)
+      .execute()
+
+    const existingSet = new Set(existingLinks.map((r) => r.bookUuid))
+
+    // find books linked to source tags
+    const sourceLinks = await tr
+      .selectFrom("bookToTag")
+      .select(["bookUuid"])
+      .where("tagUuid", "in", sourceUuids)
+      .execute()
+
+    const toInsert = sourceLinks
+      .filter((r) => !existingSet.has(r.bookUuid))
+      .map((r) => r.bookUuid)
+
+    // deduplicate within the toInsert set
+    const uniqueToInsert = [...new Set(toInsert)]
+
+    if (uniqueToInsert.length > 0) {
+      await tr
+        .insertInto("bookToTag")
+        .values(
+          uniqueToInsert.map((bookUuid) => ({
+            bookUuid,
+            tagUuid: targetUuid,
+          })),
+        )
+        .execute()
+    }
+
+    await tr
+      .deleteFrom("bookToTag")
+      .where("tagUuid", "in", sourceUuids)
+      .execute()
+
+    await tr.deleteFrom("tag").where("uuid", "in", sourceUuids).execute()
+
+    return [
+      ...new Set([
+        ...existingLinks.map((r) => r.bookUuid),
+        ...sourceLinks.map((r) => r.bookUuid),
+      ]),
+    ]
+  })
+
+  for (const sourceUuid of sourceUuids) {
+    await cleanShelfFiltersForDeletedEntity("tag", sourceUuid)
+  }
+
+  if (affectedBookUuids.length > 0) {
+    const books = await getBooks(affectedBookUuids)
+
+    books.forEach((book) => {
+      BookEvents.emit("message", {
+        type: "bookUpdated",
+        bookUuid: book.uuid,
+        payload: { tags: book.tags },
+      })
+    })
+  }
 }

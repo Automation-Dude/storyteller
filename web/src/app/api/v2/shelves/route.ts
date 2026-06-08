@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
-import { type ShelfFilter } from "@/database/shelfFilter"
+import { type ShelfFilter } from "@/shelves"
 import { type ShelfOrderBy, createShelf, getShelves } from "@/database/shelves"
 import { type UUID } from "@/uuid"
 

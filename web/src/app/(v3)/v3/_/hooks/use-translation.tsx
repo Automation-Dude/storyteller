@@ -42,10 +42,16 @@ export function useTranslation<
 >(
   namespace?: NestedKey,
 ): ReturnType<typeof createTranslator<Messages, NestedKey>> & {
-  plain: (key: NamespacedMessageKeys<Messages, NestedKey>) => string
+  plain: (
+    key: NamespacedMessageKeys<Messages, NestedKey>,
+    values?: Record<string, string | number>,
+  ) => string
 } {
   type T = ReturnType<typeof createTranslator<Messages, NestedKey>> & {
-    plain: (key: NamespacedMessageKeys<Messages, NestedKey>) => string
+    plain: (
+      key: NamespacedMessageKeys<Messages, NestedKey>,
+      values?: Record<string, string | number>,
+    ) => string
   }
   // eslint-disable-next-line no-restricted-syntax
   const t = useTranslations(namespace)
@@ -63,7 +69,8 @@ export function useTranslation<
   fn.markup = t.markup.bind(fn)
   fn.raw = t.raw.bind(fn)
   fn.has = t.has.bind(fn)
-  fn.plain = (key) => t.apply(fn, [key])
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return
+  fn.plain = (key, values?) => (t as any)(key, values)
 
   return fn
 }

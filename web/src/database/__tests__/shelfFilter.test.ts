@@ -2,6 +2,10 @@ import assert from "node:assert"
 import { describe, it } from "node:test"
 
 import {
+  extractEntityReferences,
+  removeDeletedEntityReferences,
+} from "@/database/shelfFilter"
+import {
   FIELD_LABELS,
   type ShelfFilterField,
   type ShelfFilterNode,
@@ -9,20 +13,18 @@ import {
   createEmptyCondition,
   createNotBlock,
   createOrBlock,
-  extractEntityReferences,
   getFieldType,
   getOperatorsForField,
   isLogicalBlock,
   operatorRequiresArrayValue,
   operatorRequiresRangeValue,
   operatorRequiresValue,
-  removeDeletedEntityReferences,
   shelfFilterConditionSchema,
   shelfFilterFieldSchema,
   shelfFilterNodeSchema,
   shelfFilterOperatorSchema,
   shelfFilterValueSchema,
-} from "@/database/shelfFilter"
+} from "@/shelves"
 
 // ---------------------------------------------------------------------------
 // zod schema validation

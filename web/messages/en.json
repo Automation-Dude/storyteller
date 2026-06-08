@@ -158,7 +158,66 @@
     "Status": {
       "plain": "Status",
       "by": "By Status"
+    },
+    "search": "Search...",
+    "noItemsFound": "No items found",
+    "pinAsShelf": "Pin as shelf",
+    "sortByCount": "Sort by count",
+    "sortByName": "Sort by name"
+  },
+  "EntityActions": {
+    "selected": "{count} selected",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "mergeInto": "Merge into...",
+    "createShelfWith": "Create shelf with selected",
+    "deleteTitle": "Delete {count} {entity}?",
+    "deleteDescription": "This will remove the selected items and unlink them from all books. This cannot be undone.",
+    "mergeTitle": "Merge {count} items into \"{target}\"?",
+    "mergeDescription": "All books from the other selected items will be reassigned to the target. The other items will be deleted.",
+    "merge": "Merge",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save",
+    "shiftSkipHint": "hold shift to skip this next time",
+    "editTag": "Edit Tag",
+    "editTagDescription": "Update the tag name.",
+    "tagName": "Tag name",
+    "editCreator": "Edit Creator",
+    "editCreatorDescription": "Update the creator name and sort name.",
+    "creatorName": "Creator name",
+    "sortAs": "Sort as (file as)",
+    "sortAsPlaceholder": "e.g. Rowling, J. K.",
+    "nameRequired": "Name is required",
+    "entityTypes": {
+      "tag": "{count, plural, one {tag} other {tags}}",
+      "creator": "{count, plural, one {creator} other {creators}}",
+      "series": "{count, plural, one {series} other {series}}",
+      "collection": "{count, plural, one {collection} other {collections}}"
     }
+  },
+  "SelectionToolbar": {
+    "select": "Select",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "invertSelection": "Invert selection",
+    "selected": "{count} selected",
+    "actions": "Actions",
+    "addToCollection": "Add to Collection",
+    "noCollections": "No collections",
+    "addToSeries": "Add to Series",
+    "noSeries": "No series",
+    "scan": "Scan",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleteTitle": "Delete {count} book(s)?",
+    "deleteDescription": "This cannot be undone."
+  },
+  "ShelfPage": {
+    "emptyShelf": "This shelf is empty",
+    "adjustFilters": "Try adjusting your search or filters"
   },
   "SettingsPage": {
     "title": "Settings",

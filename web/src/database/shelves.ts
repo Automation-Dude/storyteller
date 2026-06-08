@@ -11,11 +11,8 @@ import { type UUID } from "@/uuid"
 import { type BookWithRelations, booksQuery } from "./books"
 import { db } from "./connection"
 import { type DB } from "./schema"
-import {
-  type ShelfFilter,
-  buildFilterExpression,
-  extractEntityReferences,
-} from "./shelfFilter"
+import { buildFilterExpression, extractEntityReferences } from "./shelfFilter"
+import { type ShelfFilter } from "@/shelves"
 
 export type Shelf = Selectable<DB["shelf"]>
 export type NewShelf = Insertable<DB["shelf"]>

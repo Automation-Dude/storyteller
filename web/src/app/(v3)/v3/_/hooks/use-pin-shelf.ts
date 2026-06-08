@@ -3,7 +3,7 @@
 import { useCallback } from "react"
 import { toast } from "sonner"
 
-import { type ShelfFilterNode } from "@/database/shelfFilter"
+import { type ShelfFilterNode } from "@/shelves"
 import {
   useCreateUserShelfMutation,
   useListSidebarQuery,

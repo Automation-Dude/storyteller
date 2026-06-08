@@ -27,7 +27,7 @@ import {
 import { Textarea } from "@v3/_/components/ui/textarea"
 
 import { type BookWithRelations } from "@/database/books"
-import { type ShelfFilterNode } from "@/database/shelfFilter"
+import { type ShelfFilterNode } from "@/shelves"
 import { type ShelfOrderBy, type ShelfWithBooks } from "@/database/shelves"
 import {
   getCoverUrl,
@@ -59,6 +59,8 @@ type ShelfEditorProps = {
   onOpenChange: (open: boolean) => void
   shelf?: ShelfWithBooks | null
   onSaved?: (shelf: ShelfWithBooks) => void
+  initialFilter?: ShelfFilterNode | null
+  initialName?: string
 }
 
 type SelectionMode = "filter" | "manual"
@@ -68,6 +70,8 @@ export function ShelfEditor({
   onOpenChange,
   shelf,
   onSaved,
+  initialFilter,
+  initialName,
 }: ShelfEditorProps) {
   const isEditing = !!shelf
 
@@ -121,18 +125,18 @@ export function ShelfEditor({
       )
     } else if (open && !shelf) {
       form.reset({
-        name: "",
+        name: initialName ?? "",
         description: "",
         orderBy: "createdAt",
         orderDirection: "desc",
         limitCount: null,
       })
 
-      setFilter(null)
+      setFilter(initialFilter ?? null)
       setSelectedBookUuids([])
       setSelectionMode("filter")
     }
-  }, [open, shelf, form])
+  }, [open, shelf, form, initialFilter, initialName])
 
   const [createShelf, { isLoading: isCreating }] = useCreateUserShelfMutation()
   const [updateShelf, { isLoading: isUpdating }] = useUpdateUserShelfMutation()

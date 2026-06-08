@@ -1,11 +1,14 @@
 import { type BookWithRelations } from "@/database/books"
-import { type ShelfFilterNode } from "@/database/shelfFilter"
+import { type ShelfFilterNode } from "@/shelves"
 
 export type LibraryItem = {
   key: string
   name: string
   bookCount: number
 }
+
+// entity types that support edit/delete/merge from the sidebar
+export type LibraryEntityType = "tag" | "creator" | "series" | "collection"
 
 export type LibrarySectionDef = {
   extractItems: (books: BookWithRelations[]) => LibraryItem[]
@@ -16,6 +19,8 @@ export type LibrarySectionDef = {
   // build a shelf filter matching a single facet, for "pin as shelf". absent
   // when the facet can't be expressed as a saved filter (e.g. publication year).
   toShelfFilter?: (itemKey: string) => ShelfFilterNode
+  // when present, the sidebar supports edit/delete/merge for this entity type
+  entityType?: LibraryEntityType
 }
 
 // an entity facet (author/series/tag/...) maps to an array-field "includes" of
@@ -99,28 +104,34 @@ export const librarySections = {
   series: {
     ...buildRelationSection((book) => book.series),
     toShelfFilter: entityFilter("series"),
+    entityType: "series" as const,
   },
   authors: {
     ...buildRelationSection((book) => book.authors),
     toShelfFilter: entityFilter("creators"),
+    entityType: "creator" as const,
   },
   narrators: {
     ...buildRelationSection((book) => book.narrators),
     toShelfFilter: entityFilter("creators"),
+    entityType: "creator" as const,
   },
   translators: {
     ...buildRelationSection((book) =>
       book.creators.filter((c) => c.role === "trl"),
     ),
     toShelfFilter: entityFilter("creators"),
+    entityType: "creator" as const,
   },
   tags: {
     ...buildRelationSection((book) => book.tags),
     toShelfFilter: entityFilter("tags"),
+    entityType: "tag" as const,
   },
   collections: {
     ...buildRelationSection((book) => book.collections),
     toShelfFilter: entityFilter("collections"),
+    entityType: "collection" as const,
   },
   statuses: {
     ...buildRelationSection((book) => (book.status ? [book.status] : [])),

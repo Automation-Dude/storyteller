@@ -12,6 +12,7 @@ import { type UUID } from "@/uuid"
 import { getBooks } from "./books"
 import { db } from "./connection"
 import { type DB } from "./schema"
+import { cleanShelfFiltersForDeletedEntity } from "./shelfFilter"
 
 export type Collection = Selectable<DB["collection"]>
 export type NewCollection = Insertable<DB["collection"]>
@@ -244,6 +245,83 @@ export async function deleteCollection(uuid: UUID, userId: UUID) {
       .deleteFrom("collectionToUser")
       .where("collectionToUser.collectionUuid", "=", uuid)
       .execute()
+
     await tr.deleteFrom("collection").where("uuid", "=", uuid).execute()
   })
+
+  await cleanShelfFiltersForDeletedEntity("collection", uuid)
+}
+
+export async function mergeCollections(targetUuid: UUID, sourceUuids: UUID[]) {
+  const affectedBookUuids = await db.transaction().execute(async (tr) => {
+    const existingLinks = await tr
+      .selectFrom("bookToCollection")
+      .select(["bookUuid"])
+      .where("collectionUuid", "=", targetUuid)
+      .execute()
+
+    const existingSet = new Set(existingLinks.map((r) => r.bookUuid))
+
+    const sourceLinks = await tr
+      .selectFrom("bookToCollection")
+      .select(["bookUuid"])
+      .where("collectionUuid", "in", sourceUuids)
+      .execute()
+
+    const toInsert = sourceLinks.filter(
+      (r) => !existingSet.has(r.bookUuid),
+    )
+
+    const uniqueToInsert = [...new Set(toInsert.map((r) => r.bookUuid))]
+
+    if (uniqueToInsert.length > 0) {
+      await tr
+        .insertInto("bookToCollection")
+        .values(
+          uniqueToInsert.map((bookUuid) => ({
+            bookUuid,
+            collectionUuid: targetUuid,
+          })),
+        )
+        .execute()
+    }
+
+    await tr
+      .deleteFrom("bookToCollection")
+      .where("collectionUuid", "in", sourceUuids)
+      .execute()
+
+    await tr
+      .deleteFrom("collectionToUser")
+      .where("collectionUuid", "in", sourceUuids)
+      .execute()
+
+    await tr
+      .deleteFrom("collection")
+      .where("uuid", "in", sourceUuids)
+      .execute()
+
+    return [
+      ...new Set([
+        ...existingLinks.map((r) => r.bookUuid),
+        ...sourceLinks.map((r) => r.bookUuid),
+      ]),
+    ]
+  })
+
+  for (const sourceUuid of sourceUuids) {
+    await cleanShelfFiltersForDeletedEntity("collection", sourceUuid)
+  }
+
+  if (affectedBookUuids.length > 0) {
+    const books = await getBooks(affectedBookUuids)
+
+    books.forEach((book) => {
+      BookEvents.emit("message", {
+        type: "bookUpdated",
+        bookUuid: book.uuid,
+        payload: { collections: book.collections },
+      })
+    })
+  }
 }

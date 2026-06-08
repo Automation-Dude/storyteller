@@ -1,10 +1,13 @@
 import { type Insertable, type Selectable, type Updateable } from "kysely"
 
 import { type Role } from "@/components/books/edit/marcRelators"
+import { BookEvents } from "@/events"
 import { type UUID } from "@/uuid"
 
+import { getBooks } from "./books"
 import { db } from "./connection"
 import { type DB } from "./schema"
+import { cleanShelfFiltersForDeletedEntity } from "./shelfFilter"
 
 export type Creator = Selectable<DB["creator"]>
 export type NewCreator = Insertable<DB["creator"]>
@@ -57,4 +60,140 @@ export async function getCreators(userId?: UUID, role?: Role) {
     .groupBy("creator.uuid")
     .selectAll("creator")
     .execute()
+}
+
+export async function updateCreator(uuid: UUID, update: CreatorUpdate) {
+  await db
+    .updateTable("creator")
+    .set(update)
+    .where("uuid", "=", uuid)
+    .execute()
+
+  return await db
+    .selectFrom("creator")
+    .selectAll()
+    .where("uuid", "=", uuid)
+    .executeTakeFirstOrThrow()
+}
+
+export async function deleteCreator(uuid: UUID) {
+  const affectedBookUuids = await db.transaction().execute(async (tr) => {
+    const rows = await tr
+      .selectFrom("bookToCreator")
+      .select(["bookUuid"])
+      .where("creatorUuid", "=", uuid)
+      .execute()
+
+    await tr
+      .deleteFrom("bookToCreator")
+      .where("creatorUuid", "=", uuid)
+      .execute()
+
+    await tr.deleteFrom("creator").where("uuid", "=", uuid).execute()
+
+    return rows.map((r) => r.bookUuid)
+  })
+
+  await cleanShelfFiltersForDeletedEntity("creator", uuid)
+
+  if (affectedBookUuids.length > 0) {
+    const books = await getBooks(affectedBookUuids)
+
+    books.forEach((book) => {
+      BookEvents.emit("message", {
+        type: "bookUpdated",
+        bookUuid: book.uuid,
+        payload: {
+          authors: book.authors,
+          narrators: book.narrators,
+          creators: book.creators,
+        },
+      })
+    })
+  }
+}
+
+export async function mergeCreators(targetUuid: UUID, sourceUuids: UUID[]) {
+  const affectedBookUuids = await db.transaction().execute(async (tr) => {
+    // find existing links to the target so we skip duplicates per (book, role)
+    const existingLinks = await tr
+      .selectFrom("bookToCreator")
+      .select(["bookUuid", "role"])
+      .where("creatorUuid", "=", targetUuid)
+      .execute()
+
+    const existingKey = new Set(
+      existingLinks.map((r) => `${r.bookUuid}:${r.role}`),
+    )
+
+    // find all links from source creators
+    const sourceLinks = await tr
+      .selectFrom("bookToCreator")
+      .select(["bookUuid", "role"])
+      .where("creatorUuid", "in", sourceUuids)
+      .execute()
+
+    const toInsert = sourceLinks.filter(
+      (r) => !existingKey.has(`${r.bookUuid}:${r.role}`),
+    )
+
+    // deduplicate
+    const seen = new Set<string>()
+    const uniqueToInsert = toInsert.filter((r) => {
+      const key = `${r.bookUuid}:${r.role}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
+    if (uniqueToInsert.length > 0) {
+      await tr
+        .insertInto("bookToCreator")
+        .values(
+          uniqueToInsert.map((r) => ({
+            bookUuid: r.bookUuid,
+            creatorUuid: targetUuid,
+            role: r.role,
+          })),
+        )
+        .execute()
+    }
+
+    await tr
+      .deleteFrom("bookToCreator")
+      .where("creatorUuid", "in", sourceUuids)
+      .execute()
+
+    await tr
+      .deleteFrom("creator")
+      .where("uuid", "in", sourceUuids)
+      .execute()
+
+    return [
+      ...new Set([
+        ...existingLinks.map((r) => r.bookUuid),
+        ...sourceLinks.map((r) => r.bookUuid),
+      ]),
+    ]
+  })
+
+  for (const sourceUuid of sourceUuids) {
+    await cleanShelfFiltersForDeletedEntity("creator", sourceUuid)
+  }
+
+  if (affectedBookUuids.length > 0) {
+    const books = await getBooks(affectedBookUuids)
+
+    books.forEach((book) => {
+      BookEvents.emit("message", {
+        type: "bookUpdated",
+        bookUuid: book.uuid,
+        payload: {
+          authors: book.authors,
+          narrators: book.narrators,
+          creators: book.creators,
+        },
+      })
+    })
+  }
 }

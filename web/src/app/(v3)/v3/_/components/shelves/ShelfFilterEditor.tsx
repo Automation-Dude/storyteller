@@ -5,6 +5,17 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+} from "@v3/_/components/ui/combobox"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -38,10 +49,11 @@ import {
   createOrBlock,
   getFieldType,
   getOperatorsForField,
+  normalizeRootFilter,
   operatorRequiresArrayValue,
   operatorRequiresRangeValue,
   operatorRequiresValue,
-} from "@/database/shelfFilter"
+} from "@/shelves"
 import { type ShelfOrderBy } from "@/database/shelves"
 import {
   getCoverUrl,
@@ -91,27 +103,39 @@ export function ShelfFilterEditor({
   const [previewFilter, { isLoading: isLoadingPreview }] =
     usePreviewShelfFilterMutation()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const filterValid = isFilterValid(filter)
+
+  // the root is always a logical block. normalize a legacy bare condition or an
+  // empty filter, and lift the result up so the saved value follows the rule.
+  const root = normalizeRootFilter(filter)
+  useEffect(() => {
+    if (root !== filter) {
+      onChange(root)
+    }
+  }, [root, filter, onChange])
+
+  const filterValid = isFilterValid(root)
 
   const runPreview = useCallback(async () => {
-    if (!filter || !filterValid) {
+    if (!filterValid) {
       setPreviewBooks([])
       return
     }
 
     try {
       const books = await previewFilter({
-        filter,
+        filter: root,
         orderBy,
         orderDirection,
-        limit: limitCount ?? 20,
+        // no default cap: with no shelf limit set, preview every match so the
+        // count is honest rather than silently truncated.
+        limit: limitCount ?? undefined,
       }).unwrap()
 
       setPreviewBooks(books)
     } catch (error) {
       console.error("Failed to preview filter:", error)
     }
-  }, [filter, filterValid, orderBy, orderDirection, limitCount, previewFilter])
+  }, [root, filterValid, orderBy, orderDirection, limitCount, previewFilter])
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -129,19 +153,10 @@ export function ShelfFilterEditor({
     }
   }, [runPreview])
 
-  if (!filter) {
-    return (
-      <div className="flex flex-col gap-3">
-        <AddNodeDropdown onAdd={onChange} />
-        <FilterPreview books={[]} isLoading={false} />
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <FilterNodeEditor
-        node={filter}
+        node={root}
         onChange={onChange}
         onRemove={() => {
           onChange(null)
