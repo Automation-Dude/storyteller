@@ -3,24 +3,22 @@
 import { type UUID } from "crypto"
 
 import {
-  IconArrowUpRight,
+  IconArrowLeft,
   IconCheck,
-  IconEdit,
   IconFolder,
-  IconLoader2,
-  IconScan,
   IconTag,
   IconX,
 } from "@tabler/icons-react"
-import { AnimatePresence, motion } from "motion/react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
+import { BookActionsMenu } from "@v3/_/components/books/BookActionsMenu"
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
+import { ActionBar } from "@v3/_/components/ui/action-bar"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
@@ -28,15 +26,8 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
-import { usePermission } from "@/hooks/usePermission"
 import { usePermissions } from "@/hooks/usePermissions"
-import {
-  api,
-  useCancelScanMutation,
-  useGetBookQuery,
-  useGetScanStateQuery,
-  useTriggerBookScanMutation,
-} from "@/store/api"
+import { api, useGetBookQuery } from "@/store/api"
 import { useAppDispatch } from "@/store/appState"
 
 import { BookFormProvider, useBookForm } from "./BookDetails/BookFormProvider"
@@ -204,11 +195,9 @@ function BookDetailsContentInner({
         className="scroll-y bg-background relative flex h-full flex-1 flex-col"
         style={colorVars}
       >
-        {!compact && <BookDetailsHeader />}
+        {!compact && <BookPageHeader />}
         {compact && <BookPanelHeader onClose={onClose} />}
-        {compact && <CompactEditBar />}
-        <InlineEditBar />
-        <CoverEditBar />
+        <BookEditBar />
 
         <div className="@container/book flex-1 overflow-y-auto">
           <div
@@ -248,177 +237,91 @@ function BookDetailsContentInner({
   )
 }
 
-function BookDetailsHeader() {
-  const canEdit = usePermission("bookUpdate")
-  const { book, isEditing, isSaving, setIsEditing, submitForm, discard } =
-    useBookForm()
-  const t = useTranslation("BookDetailsPage")
-
-  const handleCancel = () => {
-    discard()
-  }
-
-  const handleSave = async () => {
-    const success = await submitForm()
-    if (success) {
-      setIsEditing(false)
-      return
-    }
-
-    toast.error(t("saveFailed"))
-  }
+// the colored header for the full book page. mirrors the panel header's tint
+// but, per the page, swaps breadcrumbs for a back button and shows the title.
+function BookPageHeader() {
+  const { book, isEditing, setIsEditing } = useBookForm()
+  const { primary } = useCoverColors(book)
+  const { showTint, showAccent, tint } = useColorPreferences()
+  const router = useRouter()
 
   return (
-    <SiteHeader
-      breadcrumbs={[{ label: "Books", url: "/books" }, { label: book.title }]}
-      actions={
-        canEdit && [
-          isEditing ? (
-            <>
-              <Button
-                key="cancel"
-                size="sm"
-                variant="ghost"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                <IconX className="h-4 w-4" />
-              </Button>
+    <div
+      className="flex h-(--header-height) shrink-0 items-center justify-between gap-2 border-b px-4"
+      style={{
+        backgroundColor: showTint ? tint(primary, 0.5) : undefined,
+        color: showAccent ? primary.onColor : undefined,
+      }}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => {
+            router.back()
+          }}
+        >
+          <IconArrowLeft className="h-4 w-4" />
+          <span className="sr-only">Back</span>
+        </Button>
 
-              <Button
-                key="save"
-                size="sm"
-                type="submit"
-                onClick={() => {
-                  void handleSave()
-                }}
-                disabled={isSaving}
-              >
-                <IconCheck className="mr-1 h-4 w-4" />
-                {isSaving ? t("saving") : t("save")}
-              </Button>
-            </>
-          ) : (
-            <Button
-              key="edit"
-              size="sm"
-              onClick={() => {
-                setIsEditing(true)
-              }}
-            >
-              <IconEdit className="mr-1 h-4 w-4" />
-              {t("edit")}
-            </Button>
-          ),
-        ]
-      }
-    />
-  )
-}
+        <h1 className="font-heading font-tracking-tight truncate text-lg uppercase">
+          {book.title}
+        </h1>
+      </div>
 
-function CompactEditBar() {
-  const { isEditing, isSaving, setIsEditing, submitForm, discard } =
-    useBookForm()
-  const t = useTranslation("BookDetailsPage")
-
-  if (!isEditing) return null
-
-  const handleCancel = () => {
-    discard()
-  }
-
-  const handleSave = async () => {
-    const success = await submitForm()
-    if (success) {
-      setIsEditing(false)
-      return
-    }
-
-    toast.error(t("saveFailed"))
-  }
-
-  return (
-    <div className="bg-background absolute top-0 z-10 flex items-center justify-end gap-2 border-b px-4 py-2">
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={handleCancel}
-        disabled={isSaving}
-      >
-        <IconX className="mr-1 h-4 w-4" />
-        {t("cancel")}
-      </Button>
-
-      <Button
-        size="sm"
-        type="submit"
-        onClick={() => {
-          void handleSave()
+      <BookActionsMenu
+        book={book}
+        onEdit={() => {
+          setIsEditing(!isEditing)
         }}
-        disabled={isSaving}
-      >
-        <IconCheck className="mr-1 h-4 w-4" />
-        {isSaving ? t("saving") : t("save")}
-      </Button>
+        onDeleted={() => {
+          router.back()
+        }}
+      />
     </div>
   )
 }
 
-// shown while a single field is being edited inline (outside global edit mode).
-// gives a way to bail out of an in-progress edit; saving happens on blur/Enter.
-function InlineEditBar() {
-  const { isEditing, isSaving, editingField, discard } = useBookForm()
-  const t = useTranslation("BookDetailsPage")
-
-  return (
-    <AnimatePresence mode="wait">
-      {!isEditing && editingField !== null && (
-        <motion.div
-          initial={{ y: 20 }}
-          animate={{ y: 0 }}
-          exit={{ y: 20 }}
-          transition={{ duration: 0.2 }}
-          className="bg-background/95 supports-[backdrop-filter]:bg-background/80 absolute bottom-0 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-2"
-        >
-          <span className="text-muted-foreground text-xs">
-            {isSaving ? t("saving") : t("editing")}
-          </span>
-
-          <Button
-            size="sm"
-            variant="ghost"
-            // mousedown fires before the input blur, so we can cancel the edit
-            // without the blur handler committing it first
-            onMouseDown={(e) => {
-              e.preventDefault()
-              discard()
-            }}
-          >
-            <IconX className="mr-1 h-4 w-4" />
-            {t("discard")}
-          </Button>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-// shown while editing covers only (the dedicated cover-edit mode). covers have
-// no blur-to-save, so this is the single per-book Save / Discard.
-function CoverEditBar() {
+// the single edit bar, shared by global edit, single-field inline edit, and
+// cover edit. it always offers both Discard and Save (covers used to be the
+// only mode with an explicit Save). uses onMouseDown so a click commits/cancels
+// before an active field's blur handler fires.
+function BookEditBar() {
   const {
     isEditing,
     isSaving,
+    editingField,
     editingCovers,
-    submitForm,
-    discardCovers,
+    setIsEditing,
     setEditingCovers,
+    submitForm,
+    commitField,
+    discard,
+    discardCovers,
   } = useBookForm()
   const t = useTranslation("BookDetailsPage")
 
+  const show = isEditing || editingField !== null || editingCovers
+
+  const handleDiscard = () => {
+    if (editingCovers) {
+      discardCovers()
+    } else {
+      discard()
+    }
+  }
+
   const handleSave = async () => {
-    const success = await submitForm()
-    if (success) {
+    if (editingField !== null) {
+      const ok = await commitField(editingField)
+      if (!ok) toast.error(t("saveFailed"))
+      return
+    }
+
+    const ok = await submitForm()
+    if (ok) {
+      setIsEditing(false)
       setEditingCovers(false)
       return
     }
@@ -427,44 +330,39 @@ function CoverEditBar() {
   }
 
   return (
-    <AnimatePresence mode="wait">
-      {!isEditing && editingCovers && (
-        <motion.div
-          initial={{ y: 20 }}
-          animate={{ y: 0 }}
-          exit={{ y: 20 }}
-          transition={{ duration: 0.2 }}
-          className="bg-background/95 supports-[backdrop-filter]:bg-background/80 absolute bottom-0 z-50 flex w-full items-center justify-between gap-2 border-b px-4 py-2"
-        >
-          <span className="text-muted-foreground text-xs">
-            {isSaving ? t("saving") : t("editing")}
-          </span>
+    <ActionBar
+      show={show}
+      className="absolute bottom-4 left-1/2 -translate-x-1/2"
+    >
+      <span className="text-muted-foreground px-2 text-xs">
+        {isSaving ? t("saving") : t("editing")}
+      </span>
 
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={discardCovers}
-              disabled={isSaving}
-            >
-              <IconX className="mr-1 h-4 w-4" />
-              {t("discard")}
-            </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        onMouseDown={(e) => {
+          e.preventDefault()
+          handleDiscard()
+        }}
+        disabled={isSaving}
+      >
+        <IconX className="mr-1 h-4 w-4" />
+        {t("discard")}
+      </Button>
 
-            <Button
-              size="sm"
-              onClick={() => {
-                void handleSave()
-              }}
-              disabled={isSaving}
-            >
-              <IconCheck className="mr-1 h-4 w-4" />
-              {isSaving ? t("saving") : t("save")}
-            </Button>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      <Button
+        size="sm"
+        onMouseDown={(e) => {
+          e.preventDefault()
+          void handleSave()
+        }}
+        disabled={isSaving}
+      >
+        <IconCheck className="mr-1 h-4 w-4" />
+        {isSaving ? t("saving") : t("save")}
+      </Button>
+    </ActionBar>
   )
 }
 
@@ -480,16 +378,6 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
 
   const selection = useOptionalBookSelection()
   const isSelected = selection?.isSelected(book.uuid) ?? false
-
-  const canProcess = usePermission("bookProcess")
-
-  const [triggerBookScan, { isLoading: isScanning }] =
-    useTriggerBookScanMutation()
-  const [cancelScan, { isLoading: isCancellingScan }] = useCancelScanMutation()
-  useGetScanStateQuery(undefined, {
-    pollingInterval: 5_000,
-    skip: !canProcess,
-  })
 
   const handleToggleSelection = () => {
     if (!selection) return
@@ -528,48 +416,14 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
       </div>
 
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          nativeButton={false}
-          render={
-            <Link href={`/v3/books/${book.uuid}`}>
-              <IconArrowUpRight className="size-4" />
-              <span className="sr-only">Open full page</span>
-            </Link>
-          }
-        />
-
-        {canProcess && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              if (isScanning) {
-                void cancelScan()
-              } else {
-                void triggerBookScan({ uuid: book.uuid, force: true })
-              }
-            }}
-            disabled={isScanning || isCancellingScan}
-          >
-            {isScanning ? (
-              <IconLoader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <IconScan className="h-4 w-4" />
-            )}
-          </Button>
-        )}
-
-        <Button
-          variant={isEditing ? "secondary" : "ghost"}
-          size="icon-sm"
-          onClick={() => {
+        <BookActionsMenu
+          book={book}
+          showOpenFullPage
+          onEdit={() => {
             setIsEditing(!isEditing)
           }}
-        >
-          <IconEdit className="h-4 w-4" />
-        </Button>
+          onDeleted={onClose}
+        />
 
         {onClose && (
           <Button variant="ghost" size="icon-sm" onClick={onClose}>

@@ -15,6 +15,7 @@ import {
   type LibraryItem,
 } from "@v3/_/components/library/library-sections"
 import { ShelfEditor } from "@v3/_/components/shelves/ShelfEditor"
+import { ActionBar } from "@v3/_/components/ui/action-bar"
 import { Button } from "@v3/_/components/ui/button"
 import {
   ConfirmDialog,
@@ -202,8 +203,11 @@ export function SidebarEntityActions({
 
   return (
     <>
-      <div className="bg-muted/80 flex items-center gap-1 rounded-md px-2 py-1">
-        <span className="text-muted-foreground flex-1 text-xs tabular-nums">
+      <ActionBar
+        show={count > 0}
+        className="absolute inset-x-2 bottom-2 gap-1 p-1.5"
+      >
+        <span className="text-muted-foreground flex-1 px-1 text-xs tabular-nums">
           {t.plain("selected", { count })}
         </span>
 
@@ -273,7 +277,7 @@ export function SidebarEntityActions({
         <Button variant="ghost" size="icon-xs" onClick={onStopSelecting}>
           <IconX className="size-3.5" />
         </Button>
-      </div>
+      </ActionBar>
 
       <ConfirmDialog {...deleteAction.dialogProps} />
       <ConfirmDialog {...mergeAction.dialogProps} isLoading={isMerging} />

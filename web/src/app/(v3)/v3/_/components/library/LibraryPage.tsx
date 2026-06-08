@@ -20,6 +20,7 @@ import {
   BookListLayout,
 } from "@v3/_/components/books/BookListLayout"
 import { SearchInput } from "@v3/_/components/books/SearchInput"
+import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { EditCreatorDialog } from "@v3/_/components/library/EditCreatorDialog"
 import { EditTagDialog } from "@v3/_/components/library/EditTagDialog"
 import { SidebarEntityActions } from "@v3/_/components/library/SidebarEntityActions"
@@ -395,6 +396,10 @@ export function LibraryPage({
               selectedBookUuid={selectedBookUuid}
               onBookClick={handleBookClick}
             />
+
+            <SelectionToolbar
+              allBookUuids={filteredBooks.map((book) => book.uuid)}
+            />
           </BookSelectionProvider>
         ) : (
           <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
@@ -636,8 +641,6 @@ function SidebarPanel({
     onSortModeChange(sortMode === "name" ? "count" : "name")
   }, [sortMode, onSortModeChange])
 
-  const isSelecting = itemSelection?.isSelecting ?? false
-
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuTarget, setMenuTarget] = useState<LibraryItem | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
@@ -677,7 +680,8 @@ function SidebarPanel({
   })
 
   return (
-    <ScrollArea className="relative flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
+      <ScrollArea className="flex h-full flex-col">
       <div className="bg-background sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-base">{title}</h2>
@@ -705,17 +709,6 @@ function SidebarPanel({
           value={search}
           onChange={onSearchChange}
         />
-
-        {isSelecting && entityType && itemSelection && (
-          <SidebarEntityActions
-            entityType={entityType}
-            selectedItems={itemSelection.selectedItems}
-            allItems={items}
-            onStopSelecting={itemSelection.stopSelecting}
-            onEdit={onEditItem}
-            toShelfFilter={toShelfFilter}
-          />
-        )}
       </div>
 
       <SidebarItemList
@@ -777,7 +770,19 @@ function SidebarPanel({
       </DropdownMenu>
 
       <ConfirmDialog {...rowDeleteAction.dialogProps} />
-    </ScrollArea>
+      </ScrollArea>
+
+      {entityType && itemSelection && (
+        <SidebarEntityActions
+          entityType={entityType}
+          selectedItems={itemSelection.selectedItems}
+          allItems={items}
+          onStopSelecting={itemSelection.stopSelecting}
+          onEdit={onEditItem}
+          toShelfFilter={toShelfFilter}
+        />
+      )}
+    </div>
   )
 }
 
@@ -983,7 +988,7 @@ function SidebarRow({
             onClick={(e) => {
               onOpenMenu(item, e.currentTarget)
             }}
-            className="text-muted-foreground hover:text-foreground hidden rounded p-0.5 opacity-0 transition-opacity group-hover/item:block group-hover/item:opacity-100 focus-visible:opacity-100"
+            className="text-muted-foreground hover:text-foreground hidden rounded p-0.5 opacity-0 transition-opacity group-hover/item:block group-hover/item:opacity-100 peer-focus/item:block peer-focus/item:opacity-100 focus-visible:opacity-100"
           >
             <IconDotsVertical className="size-3.5" />
           </button>
@@ -995,7 +1000,7 @@ function SidebarRow({
               "pr-.5 flex shrink-0 items-center",
 
               !isSelecting &&
-                "hidden opacity-0 group-hover/item:block group-hover/item:opacity-100",
+                "hidden opacity-0 group-hover/item:block group-hover/item:opacity-100 peer-focus/item:block peer-focus/item:opacity-100",
             )}
           >
             <Checkbox
