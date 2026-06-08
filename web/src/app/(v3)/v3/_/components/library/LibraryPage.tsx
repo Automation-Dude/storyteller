@@ -12,13 +12,7 @@ import {
 } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { parseAsString, useQueryState } from "nuqs"
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import {
@@ -989,7 +983,7 @@ function SidebarRow({
             onClick={(e) => {
               onOpenMenu(item, e.currentTarget)
             }}
-            className="text-muted-foreground hover:text-foreground rounded p-0.5 opacity-0 transition-opacity group-hover/item:opacity-100 focus-visible:opacity-100"
+            className="text-muted-foreground hover:text-foreground hidden rounded p-0.5 opacity-0 transition-opacity group-hover/item:block group-hover/item:opacity-100 focus-visible:opacity-100"
           >
             <IconDotsVertical className="size-3.5" />
           </button>
@@ -999,7 +993,9 @@ function SidebarRow({
           <div
             className={cn(
               "pr-.5 flex shrink-0 items-center",
-              !isSelecting && "opacity-0 group-hover/item:opacity-100",
+
+              !isSelecting &&
+                "hidden opacity-0 group-hover/item:block group-hover/item:opacity-100",
             )}
           >
             <Checkbox
