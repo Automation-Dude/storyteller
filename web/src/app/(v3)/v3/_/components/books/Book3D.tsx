@@ -1,11 +1,16 @@
 "use client"
 
-import { IconArrowsMaximize } from "@tabler/icons-react"
+import { IconArrowsMaximize, IconX } from "@tabler/icons-react"
 import { type PanInfo, motion, useSpring } from "motion/react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
-import { Dialog, DialogContent, DialogTitle } from "@v3/_/components/ui/dialog"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@v3/_/components/ui/dialog"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { type SpineFit, fitSpine } from "@v3/_/lib/spineFit"
@@ -19,6 +24,7 @@ import {
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
+import { CloseButton } from "@mantine/core"
 
 // cap at 2x: the cover is the heaviest gpu texture here, 3x triples its area
 // for no visible gain on a small slab and chews memory while turning
@@ -822,9 +828,25 @@ export function BookFullscreenButton({
       </Button>
 
       <Dialog open={fullscreen} onOpenChange={setFullscreen}>
-        <DialogContent className="flex max-w-[calc(100%-2rem)] items-center justify-center bg-transparent p-10 ring-0 sm:max-w-2xl">
+        <DialogContent
+          className="flex h-full max-w-[calc(100%-0rem)] items-center justify-center bg-transparent p-10 ring-0 sm:max-w-5xl"
+          showCloseButton={false}
+        >
           <DialogTitle className="sr-only">{book.title}</DialogTitle>
           <BookStage book={book} width={fullscreenWidth} spine={spine} />
+          <DialogClose
+            data-slot="dialog-close"
+            render={
+              <Button
+                variant="ghost"
+                className="hover:text-foreground text-muted absolute top-2 right-2"
+                size="icon-lg"
+              />
+            }
+          >
+            <IconX />
+            <span className="sr-only">Close</span>
+          </DialogClose>
         </DialogContent>
       </Dialog>
     </>

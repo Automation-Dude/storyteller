@@ -2,7 +2,6 @@ import Link from "next/link"
 import { memo, useState } from "react"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
-import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { cn } from "@v3/_/lib/utils"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
