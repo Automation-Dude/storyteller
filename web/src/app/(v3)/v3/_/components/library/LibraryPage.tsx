@@ -15,7 +15,6 @@ import { parseAsString, useQueryState } from "nuqs"
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -839,12 +838,12 @@ function SidebarItemList({
     [],
   )
 
-  const containerRef = useRef<HTMLDivElement>(null)
   const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
 
-  useLayoutEffect(() => {
-    const node = containerRef.current
+  // callback ref so the scroll parent is found when the list actually mounts
+  // (not during the loading skeleton phase when the container isn't in the DOM)
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return
 
     const parent = findScrollParent(node)
