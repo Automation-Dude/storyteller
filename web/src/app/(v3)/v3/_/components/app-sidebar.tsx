@@ -1,7 +1,6 @@
 "use client"
 
 import { IconSearch, IconSettings } from "@tabler/icons-react"
-import Image from "next/image"
 import { useEffect, useMemo, useRef } from "react"
 import { toast } from "sonner"
 
@@ -227,7 +226,7 @@ export function AppSidebar({
             href="/"
             className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0"
           >
-            <Image
+            <img
               loading="eager"
               src="/Storyteller_Logo.png"
               width={28}
