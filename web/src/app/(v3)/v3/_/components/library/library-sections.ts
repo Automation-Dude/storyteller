@@ -1,4 +1,5 @@
 import { type BookWithRelations } from "@/database/books"
+import { type ShelfFilterNode } from "@/database/shelfFilter"
 
 export type LibraryItem = {
   key: string
@@ -12,6 +13,22 @@ export type LibrarySectionDef = {
     books: BookWithRelations[],
     itemKey: string,
   ) => BookWithRelations[]
+  // build a shelf filter matching a single facet, for "pin as shelf". absent
+  // when the facet can't be expressed as a saved filter (e.g. publication year).
+  toShelfFilter?: (itemKey: string) => ShelfFilterNode
+}
+
+// an entity facet (author/series/tag/...) maps to an array-field "includes" of
+// that entity's uuid.
+function entityFilter(
+  field: "tags" | "collections" | "series" | "creators",
+): (itemKey: string) => ShelfFilterNode {
+  return (itemKey) => ({
+    type: "condition",
+    field,
+    operator: "includes",
+    value: [itemKey],
+  })
 }
 
 function buildRelationSection<
@@ -79,20 +96,55 @@ function buildScalarSection(
 }
 
 export const librarySections = {
-  series: buildRelationSection((book) => book.series),
-  authors: buildRelationSection((book) => book.authors),
-  narrators: buildRelationSection((book) => book.narrators),
-  translators: buildRelationSection((book) =>
-    book.creators.filter((c) => c.role === "trl"),
-  ),
-  tags: buildRelationSection((book) => book.tags),
-  statuses: buildRelationSection((book) => (book.status ? [book.status] : [])),
+  series: {
+    ...buildRelationSection((book) => book.series),
+    toShelfFilter: entityFilter("series"),
+  },
+  authors: {
+    ...buildRelationSection((book) => book.authors),
+    toShelfFilter: entityFilter("creators"),
+  },
+  narrators: {
+    ...buildRelationSection((book) => book.narrators),
+    toShelfFilter: entityFilter("creators"),
+  },
+  translators: {
+    ...buildRelationSection((book) =>
+      book.creators.filter((c) => c.role === "trl"),
+    ),
+    toShelfFilter: entityFilter("creators"),
+  },
+  tags: {
+    ...buildRelationSection((book) => book.tags),
+    toShelfFilter: entityFilter("tags"),
+  },
+  collections: {
+    ...buildRelationSection((book) => book.collections),
+    toShelfFilter: entityFilter("collections"),
+  },
+  statuses: {
+    ...buildRelationSection((book) => (book.status ? [book.status] : [])),
+    toShelfFilter: (itemKey: string): ShelfFilterNode => ({
+      type: "condition",
+      field: "status",
+      operator: "is",
+      value: itemKey,
+    }),
+  },
   publicationYears: buildScalarSection((book) =>
     book.publicationDate?.slice(0, 4),
   ),
-  ratings: buildScalarSection((book) =>
-    book.rating != null ? String(book.rating.rating) : null,
-  ),
+  ratings: {
+    ...buildScalarSection((book) =>
+      book.rating != null ? String(book.rating.rating) : null,
+    ),
+    toShelfFilter: (itemKey: string): ShelfFilterNode => ({
+      type: "condition",
+      field: "rating",
+      operator: "is",
+      value: Number(itemKey),
+    }),
+  },
 } as const satisfies Record<string, LibrarySectionDef>
 
 export type LibrarySectionKey = keyof typeof librarySections

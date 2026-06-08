@@ -2,6 +2,7 @@
 
 import {
   IconArrowLeft,
+  IconBookmarkPlus,
   IconSearch,
   IconSortAscending,
   IconSortDescending,
@@ -27,6 +28,7 @@ import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
@@ -42,12 +44,16 @@ type LibraryPageProps = {
   title: string
   section: LibrarySectionDef
   defaultSidebarSort?: SidebarSortMode
+  // preselect a facet on first load (e.g. a specific collection from its route)
+  // when there's no `item` query param yet.
+  initialSelectedItem?: string
 }
 
 export function LibraryPage({
   title,
   section,
   defaultSidebarSort = "name",
+  initialSelectedItem,
 }: LibraryPageProps) {
   const t = useTranslation("LibraryPage")
   const isMobile = useIsMobile()
@@ -105,12 +111,23 @@ export function LibraryPage({
   }, [allItems, sidebarSearch, sidebarSort])
 
   useEffect(() => {
-    const firstItem = visibleItems[0]
+    if (selectedItem) return
 
-    if (!selectedItem && firstItem) {
-      void setSelectedItem(firstItem.key)
-    }
-  }, [selectedItem, visibleItems, setSelectedItem])
+    // prefer an explicit initial item (its facet must exist in the list),
+    // otherwise fall back to the first visible item.
+    const initial =
+      initialSelectedItem && allItems.some((i) => i.key === initialSelectedItem)
+        ? initialSelectedItem
+        : visibleItems[0]?.key
+
+    if (initial) void setSelectedItem(initial)
+  }, [
+    selectedItem,
+    visibleItems,
+    allItems,
+    initialSelectedItem,
+    setSelectedItem,
+  ])
 
   const sectionBooks = useMemo(() => {
     if (!books || !selectedItem) return []
@@ -147,9 +164,37 @@ export function LibraryPage({
     (key: string) => {
       const next = key === selectedItem ? null : key
       void setSelectedItem(next)
+
+      // if the detail panel is open, keep it open on the first book of the newly
+      // selected facet (matching the grid's filtered/sorted order) instead of
+      // closing -- so you can tab author-to-author with the drawer staying open.
+      if (next && selectedBookUuid && books) {
+        const nextBooks = filterBooksClientSide(
+          section.filterBooks(books, next),
+          {
+            search: deferredSearch || undefined,
+            sortField: filterState.sortField,
+            sortDirection: filterState.sortDirection,
+            mediaFilter: filterState.mediaFilter,
+            statusFilter: filterState.statusFilter,
+          },
+        )
+        void setSelectedBookUuid(nextBooks[0]?.uuid ?? null)
+        return
+      }
+
       void setSelectedBookUuid(null)
     },
-    [selectedItem, setSelectedItem, setSelectedBookUuid],
+    [
+      selectedItem,
+      selectedBookUuid,
+      books,
+      section,
+      deferredSearch,
+      filterState,
+      setSelectedItem,
+      setSelectedBookUuid,
+    ],
   )
 
   const handleBookClick = useCallback(
@@ -168,6 +213,17 @@ export function LibraryPage({
     void setSelectedBookUuid(null)
   }, [setSelectedItem, setSelectedBookUuid])
 
+  const { pinShelf, isPinning } = usePinShelf()
+  const canPin = !!section.toShelfFilter
+
+  const handlePinFacet = useCallback(
+    (item: LibraryItem) => {
+      if (!section.toShelfFilter) return
+      void pinShelf(item.name, section.toShelfFilter(item.key))
+    },
+    [section, pinShelf],
+  )
+
   const showMuted = isSearching
 
   const sidebarContent = (
@@ -181,6 +237,7 @@ export function LibraryPage({
       sortMode={sidebarSort}
       onSortModeChange={setSidebarSort}
       onItemClick={handleItemClick}
+      {...(canPin && { onPinItem: handlePinFacet })}
     />
   )
 
@@ -267,6 +324,28 @@ export function LibraryPage({
         { label: title, url: "" },
         ...(selectedItemName ? [{ label: selectedItemName }] : []),
       ]}
+      headerActions={
+        canPin && selectedItem && selectedItemName
+          ? [
+              <Button
+                key="pin"
+                variant="outline"
+                size="sm"
+                disabled={isPinning}
+                onClick={() => {
+                  handlePinFacet({
+                    key: selectedItem,
+                    name: selectedItemName,
+                    bookCount: 0,
+                  })
+                }}
+              >
+                <IconBookmarkPlus className="mr-1 h-4 w-4" />
+                Pin as shelf
+              </Button>,
+            ]
+          : undefined
+      }
       selectedBookUuid={selectedBookUuid}
       selectedBook={selectedBook}
       onClosePanel={handleClosePanel}
@@ -315,6 +394,7 @@ function SidebarPanel({
   sortMode,
   onSortModeChange,
   onItemClick,
+  onPinItem,
 }: {
   title: string
   items: LibraryItem[]
@@ -325,6 +405,7 @@ function SidebarPanel({
   sortMode: SidebarSortMode
   onSortModeChange: (mode: SidebarSortMode) => void
   onItemClick: (key: string) => void
+  onPinItem?: (item: LibraryItem) => void
 }) {
   const toggleSort = useCallback(() => {
     onSortModeChange(sortMode === "name" ? "count" : "name")
@@ -362,6 +443,7 @@ function SidebarPanel({
         selectedKey={selectedKey}
         onItemClick={onItemClick}
         isLoading={isLoading}
+        {...(onPinItem && { onPinItem })}
       />
     </ScrollArea>
   )
@@ -372,11 +454,13 @@ function SidebarItemList({
   selectedKey,
   onItemClick,
   isLoading,
+  onPinItem,
 }: {
   items: LibraryItem[]
   selectedKey: string | null
   onItemClick: (key: string) => void
   isLoading: boolean
+  onPinItem?: (item: LibraryItem) => void
 }) {
   if (isLoading) {
     const widths = [60, 45, 72, 50, 38, 65, 55, 42, 68, 48, 58, 44]
@@ -413,30 +497,52 @@ function SidebarItemList({
         const isSelected = item.key === selectedKey
 
         return (
-          <button
+          <div
             key={item.key}
-            type="button"
-            onClick={() => {
-              onItemClick(item.key)
-            }}
             className={cn(
-              "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left font-serif text-sm transition-colors",
+              "group/item relative flex items-center rounded-md transition-colors",
               isSelected
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
                 : "hover:bg-sidebar-accent/50",
             )}
           >
-            <span className="min-w-0 truncate">{item.name}</span>
-
-            <span
+            <button
+              type="button"
+              onClick={() => {
+                onItemClick(item.key)
+              }}
               className={cn(
-                "text-muted-foreground flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs tabular-nums",
-                isSelected && "bg-sidebar-accent-foreground text-foreground",
+                "flex min-w-0 flex-1 items-center px-2 py-1.5 text-left font-serif text-sm",
+                isSelected && "font-medium",
               )}
             >
-              {item.bookCount}
-            </span>
-          </button>
+              <span className="min-w-0 truncate">{item.name}</span>
+            </button>
+
+            <div className="flex shrink-0 items-center gap-1 pr-2">
+              {onPinItem && (
+                <button
+                  type="button"
+                  title="Pin as shelf"
+                  onClick={() => {
+                    onPinItem(item)
+                  }}
+                  className="text-muted-foreground hover:text-foreground rounded p-0.5 opacity-0 transition-opacity group-hover/item:opacity-100 focus-visible:opacity-100"
+                >
+                  <IconBookmarkPlus className="size-3.5" />
+                </button>
+              )}
+
+              <span
+                className={cn(
+                  "text-muted-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs tabular-nums",
+                  isSelected && "bg-sidebar-accent-foreground text-foreground",
+                )}
+              >
+                {item.bookCount}
+              </span>
+            </div>
+          </div>
         )
       })}
     </div>

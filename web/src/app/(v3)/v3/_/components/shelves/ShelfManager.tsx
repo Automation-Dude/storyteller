@@ -13,7 +13,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react"
 import { Reorder, motion, useDragControls } from "motion/react"
-import { useState } from "react"
+import { type ReactElement, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -46,20 +46,26 @@ import { ShelfEditor } from "./ShelfEditor"
 
 type ShelfManagerProps = {
   className?: string
+  // override the default trigger button (e.g. when opening the home customizer
+  // from another menu). nativeButton must stay false for non-button triggers.
+  trigger?: ReactElement
 }
 
-export function ShelfManager({ className }: ShelfManagerProps) {
+export function ShelfManager({ className, trigger }: ShelfManagerProps) {
   const t = useTranslation("HomePage")
   const [open, setOpen] = useState(false)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
+        {...(trigger ? { nativeButton: false } : {})}
         render={
-          <Button variant="default" size="sm" className={className}>
-            <IconSettings className="mr-2 size-4" />
-            {t("sections.customize")}
-          </Button>
+          trigger ?? (
+            <Button variant="default" size="sm" className={className}>
+              <IconSettings className="mr-2 size-4" />
+              {t("sections.customize")}
+            </Button>
+          )
         }
       />
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">

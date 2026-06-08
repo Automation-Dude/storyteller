@@ -83,6 +83,12 @@
   "CollectionsPage": {
     "title": "Verzamelingen"
   },
+  "NotFoundPage": {
+    "title": "Pagina niet gevonden",
+    "description": "We konden de pagina die je zocht niet vinden. Mogelijk is deze verplaatst of bestaat deze niet meer.",
+    "goBack": "Ga terug",
+    "home": "Home"
+  },
   "BooksPage": {
     "title": "Boeken",
     "addBook": "Voeg boek toe",
@@ -136,6 +142,10 @@
     "Tags": {
       "plain": "Label",
       "by": "Op Label"
+    },
+    "Collections": {
+      "plain": "Verzamelingen",
+      "by": "Op Verzameling"
     },
     "PublicationYear": {
       "plain": "Jaar",
@@ -655,6 +665,8 @@
     "hideFromSidebar": "Verbergen uit zijbalk",
     "collection": "Verzameling",
     "shelf": "Plank",
+    "createShelf": "Nieuwe plank maken",
+    "customizeHome": "Homepagina aanpassen",
     "save": "Opslaan",
     "cancel": "Annuleren"
   },

@@ -50,8 +50,10 @@ import { FileSection } from "./BookDetails/sections/FileSection"
 import { HeroSection } from "./BookDetails/sections/HeroSection"
 import { ReviewSection } from "./BookDetails/sections/ReviewSection"
 import {
+  ensureContrast,
   useColorPreferences,
   useCoverColors,
+  useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
 
 type BookDetailsContentProps = {
@@ -176,17 +178,19 @@ function BookDetailsContentInner({
 
   const { primary, accent } = useCoverColors(book)
   const { showAccent } = useColorPreferences()
+  const isDark = useIsDarkMode()
 
   // cover-derived primary/accent only at "full"; otherwise the theme colors
-  // (incl. a custom accent color) stay in place
+  // (incl. a custom accent color) stay in place. nudged for contrast against the
+  // active surface so buttons/accents stay legible in both light and dark mode.
+  const cPrimary = ensureContrast(primary, isDark)
+  const cAccent = ensureContrast(accent, isDark)
   const colorVars = showAccent
     ? ({
-        "--primary": primary.isDark ? primary.solid : primary.onColor,
-        "--primary-foreground": primary.isDark
-          ? primary.onColor
-          : primary.solid,
-        "--accent": accent.isDark ? accent.solid : accent.onColor,
-        "--accent-foreground": accent.isDark ? accent.onColor : accent.solid,
+        "--primary": cPrimary.solid,
+        "--primary-foreground": cPrimary.onColor,
+        "--accent": cAccent.solid,
+        "--accent-foreground": cAccent.onColor,
       } as React.CSSProperties)
     : undefined
 
@@ -471,6 +475,8 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   const { book, isEditing, setIsEditing } = useBookForm()
   const { primary, accent } = useCoverColors(book)
   const { showTint, showAccent, tint } = useColorPreferences()
+  const isDark = useIsDarkMode()
+  const cAccent = ensureContrast(accent, isDark)
 
   const selection = useOptionalBookSelection()
   const isSelected = selection?.isSelected(book.uuid) ?? false
@@ -498,7 +504,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
         backgroundColor: showTint ? tint(primary, 0.5) : undefined,
         color: showAccent ? primary.onColor : undefined,
         ...(isSelected && {
-          borderColor: showAccent ? accent.solid : "var(--primary)",
+          borderColor: showAccent ? cAccent.solid : "var(--primary)",
         }),
       }}
     >
@@ -509,9 +515,9 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
             style={
               isSelected && showAccent
                 ? {
-                    background: accent.solid,
-                    color: accent.onColor,
-                    borderColor: accent.solid,
+                    background: cAccent.solid,
+                    color: cAccent.onColor,
+                    borderColor: cAccent.solid,
                   }
                 : undefined
             }

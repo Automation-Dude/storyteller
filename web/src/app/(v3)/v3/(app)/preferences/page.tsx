@@ -64,23 +64,13 @@ export default async function PreferencesPage() {
     redirect("/login")
   }
 
-  const [
-    currentUser,
-    settings,
-    rawPreferences,
-    linkedAccounts,
-    providers,
-    messages,
-  ] = await Promise.all([
-    fetchApiRoute<User>("/user"),
-    getSettings(),
-    getUserSettings(auth.user.id),
-    getAccounts(auth.user.id),
-    fetchApiRoute<Record<string, { id: string; name: string }>>(
-      "/auth/providers",
-    ),
-    getMessages(),
-  ])
+  const [settings, rawPreferences, linkedAccounts, messages] =
+    await Promise.all([
+      getSettings(),
+      getUserSettings(auth.user.id),
+      getAccounts(auth.user.id),
+      getMessages(),
+    ])
 
   const preferences = resolveUserPreferences(rawPreferences)
 
@@ -89,15 +79,19 @@ export default async function PreferencesPage() {
   }
   const sectionKeywords = generateSectionKeywords(preferencesMessages.tabs)
 
-  const { credentials: _, ...oauthProviders } = providers
+  const oauthProviders = settings.authProviders
 
   return (
     <PreferencesForm
-      user={currentUser}
+      user={auth.user}
       preferences={preferences}
       sectionKeywords={sectionKeywords}
       linkedAccounts={linkedAccounts}
-      providers={Object.values(oauthProviders)}
+      providers={oauthProviders.map((provider) =>
+        provider.kind === "built-in"
+          ? { id: provider.id, name: provider.id }
+          : { id: provider.name, name: provider.name },
+      )}
       disablePasswordLogin={settings.disablePasswordLogin}
     />
   )

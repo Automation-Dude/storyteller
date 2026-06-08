@@ -7,12 +7,15 @@ import {
   IconChevronUp,
   IconEyeOff,
   IconGripVertical,
+  IconHome,
   IconLoader2,
   IconPlus,
 } from "@tabler/icons-react"
 import { Reorder, motion, useDragControls } from "motion/react"
 import { useState } from "react"
 
+import { ShelfEditor } from "@v3/_/components/shelves/ShelfEditor"
+import { ShelfManager } from "@v3/_/components/shelves/ShelfManager"
 import { Button } from "@v3/_/components/ui/button"
 import {
   Collapsible,
@@ -106,6 +109,7 @@ function SidebarManagerContent({ onClose }: { onClose: () => void }) {
 
   const [local, setLocal] = useState<LocalItem[] | null>(null)
   const [availableOpen, setAvailableOpen] = useState(false)
+  const [shelfEditorOpen, setShelfEditorOpen] = useState(false)
 
   const builtinTitle = (builtin: BuiltinSidebarItem) =>
     builtin.labelNs === "AppSidebar"
@@ -193,6 +197,19 @@ function SidebarManagerContent({ onClose }: { onClose: () => void }) {
     setLocal([...items, item])
   }
 
+  // a newly created shelf is added straight to the (unsaved) sidebar list, so it
+  // shows up the moment the manager is saved.
+  const handleShelfSaved = (saved: ShelfWithBooks) => {
+    add({
+      id: `shelf:${saved.uuid}`,
+      kind: "shelf",
+      builtinKey: null,
+      collectionUuid: null,
+      shelfUuid: saved.uuid,
+      name: cleanName(saved.name),
+    })
+  }
+
   const handleSave = async () => {
     await setSidebar(
       items.map((i) => ({
@@ -237,6 +254,28 @@ function SidebarManagerContent({ onClose }: { onClose: () => void }) {
           />
         ))}
       </Reorder.Group>
+
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={() => {
+            setShelfEditorOpen(true)
+          }}
+        >
+          <IconPlus className="mr-2 size-4" />
+          {t("createShelf")}
+        </Button>
+
+        <ShelfManager
+          trigger={
+            <Button variant="outline" className="flex-1">
+              <IconHome className="mr-2 size-4" />
+              {t("customizeHome")}
+            </Button>
+          }
+        />
+      </div>
 
       {hasAvailable && (
         <Collapsible
@@ -321,6 +360,12 @@ function SidebarManagerContent({ onClose }: { onClose: () => void }) {
         </Collapsible>
       )}
 
+      <ShelfEditor
+        open={shelfEditorOpen}
+        onOpenChange={setShelfEditorOpen}
+        onSaved={handleShelfSaved}
+      />
+
       <DialogFooter className="mt-4">
         <Button variant="outline" onClick={onClose} disabled={isSaving}>
           {t("cancel")}
@@ -367,7 +412,7 @@ function SidebarManagerItem({
     <Reorder.Item
       value={item}
       className={cn(
-        "bg-muted flex items-center gap-2 rounded-lg border p-1.5",
+        "bg-muted flex items-center gap-2 rounded-lg border p-1.5 py-0",
         isDragging && "cursor-grabbing!",
       )}
       dragControls={controls}

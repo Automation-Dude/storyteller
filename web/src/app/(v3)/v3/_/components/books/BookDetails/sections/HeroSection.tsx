@@ -10,7 +10,10 @@ import {
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { CoverEditor } from "@v3/_/components/books/BookDetails/CoverEditor"
 import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
-import { ProgressDisplayBar } from "@v3/_/components/books/ProgressDisplayBar"
+import {
+  ProgressDisplayBar,
+  getReadingProgress,
+} from "@v3/_/components/books/ProgressDisplayBar"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
@@ -221,9 +224,9 @@ export function HeroSection({ compact }: { compact: boolean }) {
         </div>
       </motion.div>
 
-      {book.position?.locator && (
+      {getReadingProgress(book) !== null && (
         <ProgressDisplayBar
-          progress={book.position.locator.locations?.totalProgression ?? 0}
+          progress={getReadingProgress(book) ?? 0}
           book={book}
         />
       )}

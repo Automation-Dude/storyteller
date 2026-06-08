@@ -75,7 +75,7 @@ const RelationChip = ({
           onClick={() => {
             onRemoveItem(item)
           }}
-          className="bg-background absolute top-1/2 right-0 -translate-y-1/2 rounded-full"
+          className="absolute top-1/2 -right-1 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
         >
           <IconX className="h-3 w-3" />
         </Button>
@@ -88,7 +88,7 @@ const RelationChip = ({
       <Badge
         variant={badgeVariant}
         className={cn(
-          "group/badge relative gap-0.5 font-normal transition-all",
+          "group/badge relative gap-0.5 px-3 font-normal transition-all",
         )}
         render={
           <V3Link
@@ -104,7 +104,9 @@ const RelationChip = ({
   return (
     <Badge
       variant={badgeVariant}
-      className={cn("group/badge relative gap-0.5 font-normal transition-all")}
+      className={cn(
+        "group/badge relative gap-0.5 px-4 font-normal transition-all",
+      )}
     >
       {base}
     </Badge>

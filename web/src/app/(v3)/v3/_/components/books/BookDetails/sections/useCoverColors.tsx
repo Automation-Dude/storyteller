@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes"
 import { useMemo } from "react"
 
 import { type JsColor } from "@storyteller-platform/okmain"
@@ -109,6 +110,67 @@ export function useCoverColors(
 
     return { primary, accent, palette: [primary, ...rest] }
   }, [bookOrColors, type])
+}
+
+// the surface a cover-derived accent has to read against, as a luminance on the
+// same 0-255 scale used above. light mode is near-white, dark mode near-black.
+const LIGHT_SURFACE = 250
+const DARK_SURFACE = 28
+// modest target: enough for a ui accent / large text without forcing every
+// color to near-black or near-white.
+const MIN_CONTRAST = 3.2
+
+function clamp8(n: number): number {
+  return Math.max(0, Math.min(255, Math.round(n)))
+}
+
+export type ContrastColor = {
+  // the (possibly adjusted) color, "rgb(r,g,b)"
+  solid: string
+  // readable text/icon color to sit on top of solid
+  onColor: string
+}
+
+// take a cover color and nudge its lightness until it reads with enough contrast
+// against the active surface: darken in light mode, lighten in dark mode. this
+// replaces the old "fall back to the theme orange when the color is too light"
+// behavior -- we keep the cover's hue and just move it far enough to be legible.
+export function ensureContrast(
+  color: CoverColor,
+  isDarkMode: boolean,
+): ContrastColor {
+  const surface = isDarkMode ? DARK_SURFACE : LIGHT_SURFACE
+  let { r, g, b } = color.rgb
+
+  const lum = () => r * 0.2126 + g * 0.7152 + b * 0.0722
+
+  for (let i = 0; i < 16; i++) {
+    if (contrastRatio(lum(), surface) >= MIN_CONTRAST) break
+
+    if (isDarkMode) {
+      // step toward white
+      r = clamp8(r + (255 - r) * 0.12)
+      g = clamp8(g + (255 - g) * 0.12)
+      b = clamp8(b + (255 - b) * 0.12)
+    } else {
+      // step toward black
+      r = clamp8(r * 0.85)
+      g = clamp8(g * 0.85)
+      b = clamp8(b * 0.85)
+    }
+  }
+
+  return {
+    solid: `rgb(${r}, ${g}, ${b})`,
+    onColor: lum() < 140 ? "#fff" : "#000",
+  }
+}
+
+// resolved light/dark mode for cover-color contrast decisions. undefined during
+// the first client render (before next-themes resolves) reads as light.
+export function useIsDarkMode(): boolean {
+  const { resolvedTheme } = useTheme()
+  return resolvedTheme === "dark"
 }
 
 export type ColorPreferences = {

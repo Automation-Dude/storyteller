@@ -16,6 +16,7 @@ const V3_ROUTES = [
   "/login",
   "/preferences",
   "/collections",
+  "/shelves",
 ]
 
 function hasV3Route(pathname: string): boolean {
@@ -45,6 +46,17 @@ export function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-v3-rewritten", "1")
+
+  // instrumentation for the spurious-logout investigation: log whether the auth
+  // cookie is present on a rewritten request, so we can tell if the rewrite
+  // coincides with the cookie going missing (runs in the edge runtime, so plain
+  // console rather than the pino logger).
+  // eslint-disable-next-line no-console
+  console.info(
+    `[auth-debug] proxy rewrite ${pathname} -> ${url.pathname} hasToken=${request.cookies.has(
+      "st_token",
+    )}`,
+  )
 
   return NextResponse.rewrite(url, {
     request: { headers: requestHeaders },

@@ -2,7 +2,14 @@
 
 import { IconLoader, IconSearch } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 
 import { BookCard } from "@v3/_/components/books/BookCard"
 import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
@@ -133,11 +140,6 @@ export function BookGrid({
     directDomUpdates: true,
   })
 
-  // // column count or card size changing invalidates cached row heights
-  // useEffect(() => {
-  //   rowVirtualizer.measure()
-  // }, [columnCount, rowHeight, rowVirtualizer])
-
   const virtualRows = rowVirtualizer.getVirtualItems()
 
   // drive infinite loading from the virtualizer instead of a sentinel element
@@ -159,43 +161,55 @@ export function BookGrid({
     fetchNextPage,
   ])
 
-  // keep the selected book in view when the grid reflows. opening/resizing the
+  // keep the selected book anchored when the grid reflows. opening/resizing the
   // detail panel changes the column count, which moves every book to a new row;
-  // without this you lose the book you just clicked far up or down the list.
-  // but only scroll when the book is *fully* off-screen -- moving the viewport
-  // when the book is already (even partially) visible is jarring.
-  // const prevColumnCount = useRef(columnCount)
-  // const prevSelected = useRef(selectedBookUuid)
-  // useEffect(() => {
-  //   const columnChanged = prevColumnCount.current !== columnCount
-  //   const selectionChanged = prevSelected.current !== selectedBookUuid
-  //   prevColumnCount.current = columnCount
-  //   prevSelected.current = selectedBookUuid
+  // without this you lose the book you just clicked. instead of animating to it
+  // (slow, janky), we restore the book to the exact viewport offset it had
+  // before the reflow, synchronously, so it snaps in a single frame.
+  const anchorRef = useRef<{ uuid: string; viewportTop: number } | null>(null)
+  const prevColumnCountRef = useRef(columnCount)
 
-  //   if (!selectedBookUuid || columnCount === 0 || !scrollElement) return
-  //   if (!columnChanged && !selectionChanged) return
+  // correction runs first: when the column count changes, move the scroll
+  // position so the selected book keeps the viewport offset captured below.
+  useLayoutEffect(() => {
+    const prevCols = prevColumnCountRef.current
+    prevColumnCountRef.current = columnCount
 
-  //   const index = books.findIndex((b) => b.uuid === selectedBookUuid)
-  //   if (index < 0) return
+    if (prevCols === columnCount || columnCount === 0) return
+    if (!scrollElement || !selectedBookUuid) return
 
-  //   // if the card is rendered and any part of it is within the viewport, leave
-  //   // the scroll position alone.
-  //   const card = scrollElement.querySelector(
-  //     `[data-book-uuid="${selectedBookUuid}"]`,
-  //   )
-  //   if (card) {
-  //     const view = scrollElement.getBoundingClientRect()
-  //     const rect = card.getBoundingClientRect()
-  //     const partiallyVisible = rect.bottom > view.top && rect.top < view.bottom
-  //     if (partiallyVisible) return
-  //   }
+    const anchor = anchorRef.current
+    if (!anchor || anchor.uuid !== selectedBookUuid) return
 
-  //   Math.floor(index / columnCount),
-  //     {
-  //       align: "center",
-  //       behavior: "instant",
-  //     }
-  // }, [columnCount, selectedBookUuid, books, rowVirtualizer, scrollElement])
+    const index = books.findIndex((b) => b.uuid === selectedBookUuid)
+    if (index < 0) return
+
+    const newRow = Math.floor(index / columnCount)
+    // rows are a near-constant height, so estimate the new row offset directly
+    // rather than waiting for the virtualizer to measure.
+    // eslint-disable-next-line react-compiler/react-compiler -- setting scrollTop on the real scroll node is intentional, not state mutation
+    scrollElement.scrollTop = newRow * rowHeight - anchor.viewportTop
+  }, [columnCount, scrollElement, selectedBookUuid, books, rowHeight])
+
+  // capture runs after: remember where the selected book currently sits in the
+  // viewport so the correction above can restore it on the next reflow.
+  useLayoutEffect(() => {
+    if (!scrollElement || !selectedBookUuid) {
+      anchorRef.current = null
+      return
+    }
+    const card = scrollElement.querySelector(
+      `[data-book-uuid="${selectedBookUuid}"]`,
+    )
+    if (!card) return
+
+    const viewTop = scrollElement.getBoundingClientRect().top
+    const cardTop = card.getBoundingClientRect().top
+    anchorRef.current = {
+      uuid: selectedBookUuid,
+      viewportTop: cardTop - viewTop,
+    }
+  })
 
   if (isLoading) {
     return (

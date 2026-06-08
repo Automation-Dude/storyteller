@@ -83,6 +83,12 @@
   "CollectionsPage": {
     "title": "Collections"
   },
+  "NotFoundPage": {
+    "title": "Page not found",
+    "description": "We couldn't find the page you were looking for. It may have moved or no longer exists.",
+    "goBack": "Go back",
+    "home": "Home"
+  },
   "BooksPage": {
     "title": "Books",
     "addBook": "Add Book",
@@ -136,6 +142,10 @@
     "Tags": {
       "plain": "Tags",
       "by": "By Tag"
+    },
+    "Collections": {
+      "plain": "Collections",
+      "by": "By Collection"
     },
     "PublicationYear": {
       "plain": "Year",
@@ -658,6 +668,8 @@
     "hideFromSidebar": "Hide from sidebar",
     "collection": "Collection",
     "shelf": "Shelf",
+    "createShelf": "Create new shelf",
+    "customizeHome": "Customize homepage",
     "save": "Save",
     "cancel": "Cancel"
   },

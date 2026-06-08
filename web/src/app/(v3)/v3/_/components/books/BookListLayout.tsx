@@ -13,9 +13,7 @@ import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { SiteHeader } from "@v3/_/components/site-header"
 import {
   MAX_PANEL_WIDTH,
-  MAX_SIDEBAR_WIDTH,
   MIN_PANEL_WIDTH,
-  MIN_SIDEBAR_WIDTH,
   PageHeader,
   PageLayout,
   PageMain,
@@ -143,34 +141,22 @@ export function BookListLayout({
     [snapChromeWidth, sidebar, sidebarWidth],
   )
 
-  const snapSidebarWidth = useCallback(
-    (raw: number) =>
-      snapChromeWidth(
-        raw,
-        panelOpen ? panelWidth : 0,
-        MIN_SIDEBAR_WIDTH,
-        MAX_SIDEBAR_WIDTH,
-      ),
-    [snapChromeWidth, panelOpen, panelWidth],
-  )
+  // the page sidebar is freely resizable between its min/max -- only the detail
+  // panel snaps so the grid keeps whole columns.
 
-  // re-snap stored widths so the grid starts with whole columns. runs on mount,
-  // when the panel opens/closes, when the card size changes, or when the layout
-  // resizes (window resize, app sidebar toggle).
-  // snaps sequentially: panel first, then sidebar using the snapped panel width,
-  // so they don't race each other with stale cross-references.
+  // re-snap the stored panel width so the grid starts with whole columns. runs
+  // on mount, when the panel opens/closes, when the card size changes, or when
+  // the layout resizes (window resize, app sidebar toggle).
   const snapRef = useRef({
     panelWidth,
     sidebarWidth,
     sidebar,
-    onSidebarWidthChange,
     dispatch,
   })
   snapRef.current = {
     panelWidth,
     sidebarWidth,
     sidebar,
-    onSidebarWidthChange,
     dispatch,
   }
 
@@ -196,17 +182,8 @@ export function BookListLayout({
   useEffect(() => {
     if (layoutWidth === 0) return
 
-    const {
-      panelWidth,
-      sidebarWidth,
-      sidebar,
-      onSidebarWidthChange,
-      dispatch,
-    } = snapRef.current
+    const { panelWidth, sidebarWidth, sidebar, dispatch } = snapRef.current
     const currentSidebar = sidebar ? sidebarWidth ?? 280 : 0
-
-    // snap the panel first so the sidebar snap uses the correct panel width
-    let effectivePanelWidth = panelOpen ? panelWidth : 0
 
     if (panelOpen) {
       const snapped = snapChromeWidth(
@@ -215,23 +192,9 @@ export function BookListLayout({
         MIN_PANEL_WIDTH,
         MAX_PANEL_WIDTH,
       )
-      effectivePanelWidth = snapped
 
       if (Math.abs(snapped - panelWidth) > 1) {
         dispatch(uiSettingsSlice.actions.setDetailPanelWidth(snapped))
-      }
-    }
-
-    if (sidebar && onSidebarWidthChange) {
-      const snapped = snapChromeWidth(
-        currentSidebar,
-        effectivePanelWidth,
-        MIN_SIDEBAR_WIDTH,
-        MAX_SIDEBAR_WIDTH,
-      )
-
-      if (Math.abs(snapped - currentSidebar) > 1) {
-        onSidebarWidthChange(snapped)
       }
     }
   }, [panelOpen, cardWidth, layoutWidth, snapChromeWidth])
@@ -276,7 +239,6 @@ export function BookListLayout({
             {...(onSidebarWidthChange && {
               onWidthChange: onSidebarWidthChange,
             })}
-            snapWidth={snapSidebarWidth}
             className="border-r"
           >
             {sidebar}

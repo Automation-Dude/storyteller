@@ -1,4 +1,4 @@
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { AppSidebar } from "@v3/_/components/app-sidebar"
@@ -9,6 +9,7 @@ import { nextAuth } from "@/auth/auth"
 import { getSidebarItems, initializeDefaultSidebar } from "@/database/sidebar"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
+import { logger } from "@/logging"
 import { getCurrentVersion } from "@/versions"
 
 export default async function AppLayout({
@@ -24,6 +25,17 @@ export default async function AppLayout({
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
 
   if (!session) {
+    // instrumentation for the spurious-logout investigation: record whether the
+    // auth cookie was actually present when the session came back empty, to tell
+    // "cookie missing" apart from "cookie present but session not resolved".
+    logger.warn(
+      {
+        ctx: "auth-debug",
+        hasToken: cookieStore.get("st_token")?.value != null,
+        rewritten: (await headers()).get("x-v3-rewritten") === "1",
+      },
+      "v3 app layout: no session, redirecting to /login",
+    )
     return redirect("/login")
   }
 

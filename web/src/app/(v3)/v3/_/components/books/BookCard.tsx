@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { memo, useState } from "react"
+import { Fragment, memo, useState } from "react"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
@@ -9,10 +9,12 @@ import { type BookWithRelations } from "@/database/books"
 
 import { BookCover, isDualFormat } from "./BookCover"
 import {
+  ensureContrast,
   useColorPreferences,
   useCoverColors,
+  useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
-import { ProgressDisplayBar } from "./ProgressDisplayBar"
+import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -22,11 +24,6 @@ type BookCardProps = {
   isBookSelected?: boolean
   onToggleSelection?: (uuid: string) => void
   onClick?: (book: BookWithRelations) => void
-}
-
-function getReadingProgress(book: BookWithRelations): number | null {
-  if (!book.position?.locator.locations?.totalProgression) return null
-  return book.position.locator.locations.totalProgression
 }
 
 export const BookCard = memo(function BookCard({
@@ -47,6 +44,7 @@ export const BookCard = memo(function BookCard({
 
   const { primary, accent } = useCoverColors(book)
   const { showTint, showAccent, tint } = useColorPreferences()
+  const isDark = useIsDarkMode()
 
   const [coverLoading, setCoverLoading] = useState(true)
 
@@ -57,38 +55,40 @@ export const BookCard = memo(function BookCard({
   }
 
   // cover-derived ui coloring (hover title, badge, accent vars) only at "full";
-  // otherwise we leave the theme primary in place
+  // otherwise we leave the theme primary in place. the cover colors are nudged
+  // for contrast against the active surface rather than falling back to orange.
+  const cPrimary = ensureContrast(primary, isDark)
+  const cAccent = ensureContrast(accent, isDark)
   const style = showAccent
     ? ({
-        "--primary": primary.isDark ? primary.solid : `var(--st-orange-500)`,
-        "--primary-foreground": primary.isDark
-          ? primary.onColor
-          : `var(--st-orange-500-foreground)`,
-        "--primary-accent": accent.isDark
-          ? accent.solid
-          : `var(--st-orange-500)`,
-        "--primary-accent-foreground": accent.isDark
-          ? accent.onColor
-          : `var(--st-orange-500-foreground)`,
+        "--primary": cPrimary.solid,
+        "--primary-foreground": cPrimary.onColor,
+        "--primary-accent": cAccent.solid,
+        "--primary-accent-foreground": cAccent.onColor,
       } as React.CSSProperties)
     : undefined
 
   const cardContent = (
     <>
-      <div
-        className={cn(
-          "relative flex aspect-13/16 flex-col items-center justify-center transition-shadow",
-          hasDualFormat
-            ? "overflow-x-visible overflow-y-clip rounded-lg"
-            : "overflow-hidden rounded-lg",
-        )}
-      >
+      <div className="relative flex aspect-13/16 flex-col items-center justify-center transition-shadow">
+        {/* rounded background sits behind the cover and always keeps its
+            corners; it never clips the cover, so a dual cover can animate out
+            of the frame on hover without the card rounding appearing to break */}
         <div
           className={cn(
-            "bg-muted flex h-full w-full items-center justify-center p-3",
+            "bg-muted absolute inset-0 overflow-hidden rounded-lg",
             coverLoading && "animate-pulse",
           )}
           style={showTint ? { background: tint(primary, 0.36) } : undefined}
+        />
+
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center p-3",
+            // single covers stay clipped to the card; a dual cover is allowed
+            // to spill past the edges during its hover animation
+            hasDualFormat ? "overflow-visible" : "overflow-hidden rounded-lg",
+          )}
         >
           <BookCover
             book={book}
@@ -101,17 +101,23 @@ export const BookCard = memo(function BookCard({
         {showCheckbox && (
           <div
             className={cn(
-              "absolute top-2 left-2 z-20 transition-opacity",
+              "absolute top-2 left-2 z-30 transition-opacity",
               !isBookSelected &&
                 !isSelecting &&
                 "opacity-0 group-hover:opacity-100",
             )}
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
           >
             <Checkbox
               checked={isBookSelected}
               onCheckedChange={handleCheckboxClick}
-              className="hover:border-primary h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors"
+              className="hover:border-primary relative h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors"
               tabIndex={-1}
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
             />
           </div>
         )}
@@ -121,7 +127,7 @@ export const BookCard = memo(function BookCard({
             <div
               className="flex size-5 items-center justify-center rounded-full shadow-md"
               style={{
-                background: showAccent ? primary.solid : "var(--primary)",
+                background: showAccent ? cPrimary.solid : "var(--primary)",
               }}
             >
               <IconReadaloud className="size-6 text-white" />
@@ -136,7 +142,25 @@ export const BookCard = memo(function BookCard({
       <div className="mt-2 flex flex-col gap-0.5 px-1">
         {authors.length > 0 && (
           <p className="text-muted-foreground/80 line-clamp-1 text-xs">
-            {authors.map((a) => a.name).join(", ")}
+            {authors.map((a, index) => {
+              return (
+                <Fragment key={a.uuid}>
+                  <Link
+                    key={a.uuid}
+                    className="hover:text-primary relative z-50 hover:underline"
+                    prefetch={false}
+                    href={`/v3/authors?item=${a.uuid}`}
+                    onClick={(e) => {
+                      // otherwise clicking the link would toggle selection
+                      e.stopPropagation()
+                    }}
+                  >
+                    {a.name}
+                  </Link>
+                  {index < authors.length - 1 && ", "}
+                </Fragment>
+              )
+            })}
           </p>
         )}
         <h3 className="group-hover:text-primary font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
@@ -176,7 +200,7 @@ export const BookCard = memo(function BookCard({
           }}
           className={cn(
             "h-full",
-            isBookSelected && "ring-primary rounded-lg ring-2 ring-offset-2",
+            isBookSelected && "ring-primary rounded-lg ring-2",
             "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
           )}
         >

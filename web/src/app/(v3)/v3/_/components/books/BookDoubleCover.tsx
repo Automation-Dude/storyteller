@@ -27,7 +27,7 @@ const STATES: Record<CoverState, { audiobook: Pos; ebook: Pos }> = {
   },
   "audiobook-front": {
     audiobook: { x: "5%", scale: 1.05, z: 20 },
-    ebook: { x: "-25%", scale: 0.9, z: 10 },
+    ebook: { x: "-15%", scale: 0.9, z: 10 },
   },
 }
 
