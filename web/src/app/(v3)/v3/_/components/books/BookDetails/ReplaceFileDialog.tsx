@@ -3,24 +3,8 @@
 import { IconAlertTriangle } from "@tabler/icons-react"
 import { useState } from "react"
 
-import { ServerFileBrowser } from "@v3/_/components/files/ServerFileBrowser"
-import { Button } from "@v3/_/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@v3/_/components/ui/dialog"
-import { Label } from "@v3/_/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@v3/_/components/ui/select"
+import { ImportFromServerDialog } from "@v3/_/components/files/ImportFromServerDialog"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -68,25 +52,13 @@ function siblingDir(book: BookWithRelations, format: Format): string {
   for (const f of others) {
     const filepath = book[f]?.filepath
     if (!filepath) continue
+
     const i = filepath.lastIndexOf("/")
     return i === -1 ? "" : filepath.slice(0, i + 1)
   }
 
   return ""
 }
-
-const IMPORT_MODE_OPTIONS: { value: ImportMode; label: string }[] = [
-  { value: "reference", label: "Reference in place" },
-  { value: "copy", label: "Copy to library" },
-  { value: "move", label: "Move to library" },
-  { value: "hardlink", label: "Hard link to library" },
-]
-
-const METADATA_MODE_OPTIONS: { value: MetadataFieldMode; label: string }[] = [
-  { value: "merge", label: "Merge with existing" },
-  { value: "skip", label: "Keep existing" },
-  { value: "always", label: "Overwrite from new file" },
-]
 
 export function ReplaceFileDialog({
   book,
@@ -101,36 +73,39 @@ export function ReplaceFileDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const t = useTranslation("ImportFromServerDialog")
   const [replaceAsset, { isLoading }] = useReplaceBookAssetMutation()
+  const [error, setError] = useState<string | null>(null)
+  const [selectedPath, setSelectedPath] = useState<string>("")
 
   const currentPath = book[format]?.filepath ?? siblingDir(book, format)
   const isAdd = !book[format]?.filepath
 
-  const [path, setPath] = useState(currentPath)
-  const [importMode, setImportMode] = useState<ImportMode>("reference")
-  const [metadataMode, setMetadataMode] = useState<MetadataFieldMode>("merge")
-  const [error, setError] = useState<string | null>(null)
-
-  // anchored against the real assets root, not a loose substring match
   const assetRoot =
     assetsDir && book.assetDir ? `${assetsDir}/${book.assetDir}` : null
+
   const sourceInsideAssetDir = Boolean(
-    path &&
+    selectedPath &&
       assetRoot &&
-      (path === assetRoot || path.startsWith(`${assetRoot}/`)),
+      (selectedPath === assetRoot ||
+        selectedPath.startsWith(`${assetRoot}/`)),
   )
 
-  async function handleSubmit() {
+  async function handleSubmit(
+    path: string,
+    importMode: ImportMode,
+    metadataMode: MetadataFieldMode,
+  ) {
     setError(null)
+
     if (!path) {
-      setError("Pick a file or directory")
+      setError(t("errorPickFile"))
       return
     }
 
     try {
       let finalPath = path
       if (format === "audiobook") {
-        // audiobooks import as a directory; collapse a selected file to its parent
         finalPath = path.replace(/(\/|\\)[^/\\]*?$/, "$1")
       }
 
@@ -147,127 +122,69 @@ export function ReplaceFileDialog({
       setError(
         e instanceof Error
           ? e.message
-          : "Failed to replace file. Check server logs.",
+          : t("errorGeneric"),
       )
     }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-10 flex max-h-[85vh] translate-y-0 flex-col sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {isAdd
-              ? `Import ${format} from server`
-              : `Replace ${format} from server`}
-          </DialogTitle>
-          <DialogDescription>
-            {format === "audiobook"
-              ? "Pick a directory of audio files, or a file to use its parent directory."
-              : "Pick a .epub file on the server."}
-          </DialogDescription>
-        </DialogHeader>
+  const warnings = (
+    <>
+      {!isAdd && (
+        <p className="text-muted-foreground text-xs">
+          {t("replaceWarning", { format })}
+        </p>
+      )}
 
-        <ServerFileBrowser
-          startPath={currentPath}
-          fileFilter={
-            format === "audiobook" ? isAudioFileFilter : isEbookFilter
-          }
-          onSelect={setPath}
-          selectLabel={
-            format === "audiobook" ? "Use this directory" : undefined
-          }
-          className="min-h-0 flex-1"
-        />
-
-        {path && (
-          <p className="text-muted-foreground text-xs break-all">
-            Selected: <code className="font-mono">{path}</code>
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-4">
-          <div className="flex flex-col gap-1">
-            <Label>Import mode</Label>
-            <Select
-              value={importMode}
-              onValueChange={(v) => {
-                setImportMode(v as ImportMode)
-              }}
-            >
-              <SelectTrigger className="w-56">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {IMPORT_MODE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <Label>Metadata behavior</Label>
-            <Select
-              value={metadataMode}
-              onValueChange={(v) => {
-                setMetadataMode(v as MetadataFieldMode)
-              }}
-            >
-              <SelectTrigger className="w-56">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {METADATA_MODE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {sourceInsideAssetDir && (
+        <div className="text-destructive flex items-start gap-2 text-xs">
+          <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{t("insideAssetDirWarning")}</span>
         </div>
+      )}
+    </>
+  )
 
-        {!isAdd && (
-          <p className="text-muted-foreground text-xs">
-            Replace will delete the current {format} files in this book&apos;s
-            asset folder before importing the new source.
-          </p>
-        )}
-
-        {sourceInsideAssetDir && (
-          <div className="text-destructive flex items-start gap-2 text-xs">
-            <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              The selected path is inside this book&apos;s asset folder. The
-              replace would delete the source before reading it. Pick a path
-              outside the library.
-            </span>
-          </div>
-        )}
-
-        {error && <p className="text-destructive text-xs">{error}</p>}
-
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onOpenChange(false)
-            }}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={() => void handleSubmit()}
-            disabled={isLoading || sourceInsideAssetDir}
-          >
-            {isAdd ? "Import" : "Replace"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+  return (
+    <ImportFromServerDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setError(null)
+        onOpenChange(next)
+      }}
+      title={
+        isAdd
+          ? t("importFormatTitle", { format })
+          : t("replaceFormatTitle", { format })
+      }
+      description={
+        format === "audiobook"
+          ? t("audioDescription")
+          : t("ebookDescription")
+      }
+      startPath={currentPath}
+      fileFilter={format === "audiobook" ? isAudioFileFilter : isEbookFilter}
+      selectLabel={format === "audiobook" ? t("useThisDirectory") : undefined}
+      onSelectionChange={setSelectedPath}
+      onSubmit={(path, importMode, metadataMode) => {
+        void handleSubmit(path, importMode, metadataMode)
+      }}
+      isSubmitting={isLoading}
+      submitLabel={isAdd ? t("import") : t("replace")}
+      warnings={warnings}
+      error={error}
+      labels={{
+        importMode: t("importMode"),
+        importModeReference: t("importModeReference"),
+        importModeCopy: t("importModeCopy"),
+        importModeMove: t("importModeMove"),
+        importModeHardlink: t("importModeHardlink"),
+        metadataBehavior: t("metadataBehavior"),
+        metadataMerge: t("metadataMerge"),
+        metadataSkip: t("metadataSkip"),
+        metadataOverwrite: t("metadataOverwrite"),
+        selected: t("selected"),
+        cancel: t("cancel"),
+      }}
+    />
   )
 }

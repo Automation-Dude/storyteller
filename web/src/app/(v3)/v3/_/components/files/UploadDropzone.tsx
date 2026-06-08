@@ -94,7 +94,7 @@ export function UploadDropzone({
       </button>
 
       {files.length > 0 && (
-        <ul className="flex flex-col gap-1">
+        <ul className="flex max-h-[200px] flex-col gap-1 overflow-y-auto">
           {files.map((file) => {
             const percentage = file.progress.percentage ?? 0
             const isDone = file.progress.uploadComplete

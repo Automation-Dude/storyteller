@@ -1,27 +1,10 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { v4 as uuidv4 } from "uuid"
+import { useState } from "react"
 
-import { UploadDropzone } from "@v3/_/components/files/UploadDropzone"
-import { useTusUpload } from "@v3/_/components/files/useTusUpload"
-import { Button } from "@v3/_/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@v3/_/components/ui/dialog"
-import { Label } from "@v3/_/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@v3/_/components/ui/select"
+import { UploadDialog } from "@v3/_/components/files/UploadDialog"
+import { type UppyFileType } from "@v3/_/components/files/useTusUpload"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -43,12 +26,6 @@ const audioFileTypes = ios
   ? null
   : ["video/mp4", "audio/*", "application/zip", ".m4b", ".m4a", ".zip"]
 
-const METADATA_MODE_OPTIONS: { value: MetadataFieldMode; label: string }[] = [
-  { value: "merge", label: "Merge with existing" },
-  { value: "skip", label: "Keep existing" },
-  { value: "always", label: "Overwrite from new file" },
-]
-
 function tusEndpointForBook(bookUuid: string) {
   const path = `/api/v2/books/${bookUuid}/replace-asset/upload`
   if (typeof window === "undefined") return path
@@ -66,145 +43,75 @@ export function UploadFileDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const t = useTranslation("UploadDialog")
   const isAdd = !book[format]?.filepath
   const [metadataMode, setMetadataMode] = useState<MetadataFieldMode>("merge")
-  const [isFinalizing, setIsFinalizing] = useState(false)
 
-  // each upload run gets a fresh batch id so the server can group tracks
-  const batchIdRef = useRef(uuidv4())
+  function buildMeta(file: UppyFileType) {
+    const overrides = defaultMetadataFieldOverrides(metadataMode)
+    file.meta["bookUuid"] = book.uuid
+    file.meta["format"] = format
+    file.meta["metadataFieldOverrides"] = JSON.stringify(overrides)
+  }
 
-  const { uppy, files, isComplete, failedCount, reset, startUpload } =
-    useTusUpload({
-      endpoint: tusEndpointForBook(book.uuid),
-      restrictions: {
-        maxNumberOfFiles: format === "audiobook" ? null : 1,
-        allowedFileTypes:
-          format === "audiobook" ? audioFileTypes : epubFileTypes,
-      },
-      buildMeta: (file) => {
-        const overrides = defaultMetadataFieldOverrides(metadataMode)
-        file.meta["bookUuid"] = book.uuid
-        file.meta["format"] = format
-        file.meta["metadataFieldOverrides"] = JSON.stringify(overrides)
-        file.meta["batchId"] = batchIdRef.current
-        if (format === "audiobook") {
-          file.meta["totalAudioFiles"] = String(uppy.getFiles().length)
-        }
-      },
+  async function handleFinalize() {
+    await fetch(`/api/v2/books/${book.uuid}/replace-asset/upload/finalize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        metadataFieldOverrides: defaultMetadataFieldOverrides(metadataMode),
+      }),
     })
-
-  function handleClose() {
-    reset()
-    onOpenChange(false)
-  }
-
-  function handleUpload() {
-    if (isComplete) {
-      reset()
-      batchIdRef.current = uuidv4()
-      return
-    }
-    batchIdRef.current = uuidv4()
-    startUpload()
-  }
-
-  async function finalize() {
-    setIsFinalizing(true)
-    try {
-      await fetch(`/api/v2/books/${book.uuid}/replace-asset/upload/finalize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          metadataFieldOverrides: defaultMetadataFieldOverrides(metadataMode),
-        }),
-      })
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsFinalizing(false)
-    }
   }
 
   return (
-    <Dialog
+    <UploadDialog
       open={open}
-      onOpenChange={(next) => {
-        if (!next) reset()
-        onOpenChange(next)
+      onOpenChange={onOpenChange}
+      title={
+        isAdd
+          ? t("uploadFormat", { format })
+          : t("uploadReplacementFormat", { format })
+      }
+      description={
+        format === "audiobook"
+          ? isAdd
+            ? t("audioDescription")
+            : t("audioReplaceDescription")
+          : t("ebookDescription", { action: isAdd ? t("add") : t("replace"), format })
+      }
+      endpoint={tusEndpointForBook(book.uuid)}
+      restrictions={{
+        maxNumberOfFiles: format === "audiobook" ? null : 1,
+        allowedFileTypes:
+          format === "audiobook" ? audioFileTypes : epubFileTypes,
       }}
-    >
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {isAdd ? `Upload ${format}` : `Upload replacement ${format}`}
-          </DialogTitle>
-          <DialogDescription>
-            {format === "audiobook"
-              ? `Upload audio files from your device.${!isAdd ? " Existing tracks will be replaced." : ""}`
-              : `Upload a .epub file to ${isAdd ? "add" : "replace"} the ${format}.`}
-          </DialogDescription>
-        </DialogHeader>
-
-        <UploadDropzone
-          uppy={uppy}
-          accept={
-            format === "audiobook"
-              ? "audio/*,video/mp4,.m4b,.m4a,.zip"
-              : ".epub"
-          }
-          multiple={format === "audiobook"}
-          hint={
-            format === "audiobook"
-              ? "Audio files (mp3, m4a, m4b…)"
-              : ".epub file"
-          }
-        />
-
-        <div className="flex flex-col gap-1">
-          <Label>Metadata behavior</Label>
-          <Select
-            value={metadataMode}
-            onValueChange={(v) => {
-              setMetadataMode(v as MetadataFieldMode)
-            }}
-            items={METADATA_MODE_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: opt.label,
-            }))}
-          >
-            <SelectTrigger className="w-56">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {METADATA_MODE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {isComplete && format === "audiobook" && failedCount > 0 && (
-          <Button
-            variant="outline"
-            disabled={isFinalizing}
-            onClick={() => void finalize()}
-          >
-            {failedCount} audio file{failedCount === 1 ? "" : "s"} failed to
-            upload — process the rest anyway
-          </Button>
-        )}
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button disabled={!files.length} onClick={handleUpload}>
-            {isComplete ? "Done! Upload another?" : "Upload"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      accept={
+        format === "audiobook"
+          ? "audio/*,video/mp4,.m4b,.m4a,.zip"
+          : ".epub"
+      }
+      multiple={format === "audiobook"}
+      hint={
+        format === "audiobook"
+          ? t("audioHint")
+          : t("ebookHint")
+      }
+      buildMeta={buildMeta}
+      onFinalize={format === "audiobook" ? handleFinalize : undefined}
+      metadataMode={metadataMode}
+      onMetadataModeChange={setMetadataMode}
+      labels={{
+        metadataBehavior: t("metadataBehavior"),
+        metadataMerge: t("metadataMerge"),
+        metadataSkip: t("metadataSkip"),
+        metadataOverwrite: t("metadataOverwrite"),
+        failedFiles: (count) => t("failedFiles", { count: String(count) }),
+        cancel: t("cancel"),
+        upload: t("upload"),
+        done: t("done"),
+        uploadAnother: t("uploadAnother"),
+      }}
+    />
   )
 }
