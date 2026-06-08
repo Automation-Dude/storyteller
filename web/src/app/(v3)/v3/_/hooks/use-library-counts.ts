@@ -1,12 +1,4 @@
-import {
-  useListAuthorsQuery,
-  useListBooksQuery,
-  useListNarratorsQuery,
-  useListSeriesQuery,
-  useListStatusesQuery,
-  useListTagsQuery,
-  useListTranslatorsQuery,
-} from "@/store/api"
+import { useGetLibraryCountsQuery } from "@/store/api"
 
 export type CountResult = {
   count: number | undefined
@@ -16,107 +8,40 @@ export type CountResult = {
 export type LibraryCounts = Record<string, CountResult>
 
 /**
- * subscribes to each list query with `selectFromResult` so the consumer
- * only re-renders when the actual count value changes, not when list
- * contents are modified. publication year and rating counts are derived
- * from the already-cached books list in a single selector call.
+ * library facet + entity counts, computed on the server in a single request.
+ * the facet counts (series, authors, tags, ...) badge the builtin sidebar
+ * entries; the per-entity counts are exposed under `collection:<uuid>` and
+ * `shelf:<uuid>` keys so collection and shelf sidebar rows can badge too.
  */
 export function useLibraryCounts(): LibraryCounts {
-  const { count: seriesCount, isLoading: seriesLoading } = useListSeriesQuery(
-    undefined,
-    {
-      selectFromResult: ({ data, isLoading }) => ({
-        count: data?.length,
-        isLoading,
-      }),
-    },
-  )
+  const { data, isLoading } = useGetLibraryCountsQuery()
 
-  const { count: authorsCount, isLoading: authorsLoading } =
-    useListAuthorsQuery(undefined, {
-      selectFromResult: ({ data, isLoading }) => ({
-        count: data?.length,
-        isLoading,
-      }),
-    })
+  const facetKeys = [
+    "series",
+    "authors",
+    "narrators",
+    "translators",
+    "tags",
+    "statuses",
+    "publicationYears",
+    "ratings",
+  ] as const
 
-  const { count: narratorsCount, isLoading: narratorsLoading } =
-    useListNarratorsQuery(undefined, {
-      selectFromResult: ({ data, isLoading }) => ({
-        count: data?.length,
-        isLoading,
-      }),
-    })
+  const result: LibraryCounts = {}
 
-  const { count: translatorsCount, isLoading: translatorsLoading } =
-    useListTranslatorsQuery(undefined, {
-      selectFromResult: ({ data, isLoading }) => ({
-        count: data?.length,
-        isLoading,
-      }),
-    })
-
-  const { count: tagsCount, isLoading: tagsLoading } = useListTagsQuery(
-    undefined,
-    {
-      selectFromResult: ({ data, isLoading }) => ({
-        count: data?.length,
-        isLoading,
-      }),
-    },
-  )
-
-  const { count: statusesCount, isLoading: statusesLoading } =
-    useListStatusesQuery(undefined, {
-      selectFromResult: ({ data, isLoading }) => ({
-        count: data?.length,
-        isLoading,
-      }),
-    })
-
-  const {
-    publicationYearsCount,
-    ratingsCount,
-    isLoading: booksLoading,
-  } = useListBooksQuery(undefined, {
-    selectFromResult: ({ data, isLoading }) => {
-      if (!data) {
-        return {
-          publicationYearsCount: undefined as number | undefined,
-          ratingsCount: undefined as number | undefined,
-          isLoading,
-        }
-      }
-
-      const years = new Set<string>()
-      const ratings = new Set<number>()
-
-      for (const book of data) {
-        const year = book.publicationDate?.slice(0, 4)
-        if (year) years.add(year)
-
-        if (book.rating != null) ratings.add(book.rating)
-      }
-
-      return {
-        publicationYearsCount: years.size,
-        ratingsCount: ratings.size,
-        isLoading,
-      }
-    },
-  })
-
-  return {
-    series: { count: seriesCount, isLoading: seriesLoading },
-    authors: { count: authorsCount, isLoading: authorsLoading },
-    narrators: { count: narratorsCount, isLoading: narratorsLoading },
-    translators: { count: translatorsCount, isLoading: translatorsLoading },
-    tags: { count: tagsCount, isLoading: tagsLoading },
-    statuses: { count: statusesCount, isLoading: statusesLoading },
-    publicationYears: {
-      count: publicationYearsCount,
-      isLoading: booksLoading,
-    },
-    ratings: { count: ratingsCount, isLoading: booksLoading },
+  for (const key of facetKeys) {
+    result[key] = { count: data?.[key], isLoading }
   }
+
+  for (const [uuid, count] of Object.entries(data?.collections ?? {})) {
+    result[`collection:${uuid}`] = { count, isLoading }
+  }
+
+  console.log("data?.shelves", data?.shelves)
+
+  for (const [uuid, count] of Object.entries(data?.shelves ?? {})) {
+    result[`shelf:${uuid}`] = { count, isLoading }
+  }
+
+  return result
 }

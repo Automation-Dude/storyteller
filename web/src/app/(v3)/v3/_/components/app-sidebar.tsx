@@ -168,8 +168,8 @@ export function AppSidebar({
             title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
             url: `/collections/${item.collectionUuid}`,
             icon: COLLECTION_ICON,
-            // sentinel key (not in libraryCounts) so no badge renders
-            countKey: `collection:${item.uuid}`,
+            // server resolves per-collection book counts under this key
+            countKey: `collection:${item.collectionUuid}`,
           },
         ]
       }
@@ -179,7 +179,7 @@ export function AppSidebar({
           title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
           url: `/shelves/${item.shelfUuid}`,
           icon: SHELF_ICON,
-          countKey: `shelf:${item.uuid}`,
+          countKey: `shelf:${item.shelfUuid}`,
         },
       ]
     },

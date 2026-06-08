@@ -22,6 +22,7 @@ import { type CollectionWithRelations } from "@/database/collections"
 import { type Creator } from "@/database/creators"
 import { type HomeStats } from "@/database/homeStats"
 import { type ImportRuleWithCollections } from "@/database/importRules"
+import { type LibraryCounts } from "@/database/libraryCounts"
 import { type Position } from "@/database/positions"
 import {
   type NewSeries,
@@ -875,6 +876,24 @@ export const api = createApi({
         }
       },
     }),
+    getLibraryCounts: build.query<LibraryCounts, void>({
+      query: () => `/library/counts`,
+      // recompute whenever anything a count depends on changes. the query is
+      // cheap and shared, so a broad invalidation set keeps the badges honest.
+      providesTags: [
+        "Books",
+        "Series",
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Tags",
+        "Statuses",
+        "Collections",
+        "UserRatings",
+        "UserShelves",
+        "Sidebar",
+      ],
+    }),
     listStatuses: build.query<Status[], void>({
       query: () => `/statuses`,
       providesTags: (statuses) =>
@@ -1532,6 +1551,7 @@ export const {
   useListCollectionsQuery,
   useListInvitesQuery,
   useListSeriesQuery,
+  useGetLibraryCountsQuery,
   useListStatusesQuery,
   useListTagsQuery,
   useListUsersQuery,
