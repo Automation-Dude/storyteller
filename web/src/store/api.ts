@@ -40,8 +40,10 @@ import {
   type ShelfWithBooks,
 } from "@/database/shelves"
 import {
+  type SidebarGroupInput,
+  type SidebarGroupWithItems,
   type SidebarItemKind,
-  type SidebarItemWithDetails,
+  type SidebarItemWithGroupDetails,
 } from "@/database/sidebar"
 import { type Status } from "@/database/statuses"
 import { type Tag } from "@/database/tags"
@@ -70,6 +72,8 @@ type SidebarItemBody = {
   shelfUuid?: string | null
   hidden?: boolean
 }
+
+type SidebarGroupBody = SidebarGroupInput
 
 export const api = createApi({
   reducerPath: "api",
@@ -996,6 +1000,8 @@ export const api = createApi({
           public?: boolean
           users?: UUID[]
           books?: UUID[]
+          icon?: string | null
+          color?: string | null
         }
       }
     >({
@@ -1497,15 +1503,41 @@ export const api = createApi({
       invalidatesTags: ["HomeShelves"],
     }),
 
-    listSidebar: build.query<SidebarItemWithDetails[], void>({
+    listSidebar: build.query<SidebarItemWithGroupDetails[], void>({
       query: () => "/sidebar",
       providesTags: ["Sidebar"],
     }),
 
-    setSidebar: build.mutation<SidebarItemWithDetails[], SidebarItemBody[]>({
+    setSidebar: build.mutation<SidebarItemWithGroupDetails[], SidebarItemBody[]>({
       query: (body) => ({
         url: "/sidebar",
         method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Sidebar"],
+    }),
+
+    listSidebarGroups: build.query<SidebarGroupWithItems[], void>({
+      query: () => "/sidebar-groups",
+      providesTags: ["Sidebar"],
+    }),
+
+    setSidebarGroups: build.mutation<SidebarGroupWithItems[], SidebarGroupBody[]>({
+      query: (body) => ({
+        url: "/sidebar-groups",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Sidebar"],
+    }),
+
+    toggleSidebarGroupCollapsed: build.mutation<
+      void,
+      { groupUuid: string; collapsed: boolean }
+    >({
+      query: (body) => ({
+        url: "/sidebar-groups",
+        method: "PATCH",
         body,
       }),
       invalidatesTags: ["Sidebar"],
@@ -1526,6 +1558,8 @@ export const api = createApi({
         orderDirection?: "asc" | "desc"
         limitCount?: number | null
         books?: string[]
+        icon?: string | null
+        color?: string | null
       }
     >({
       query: (body) => ({
@@ -1533,7 +1567,7 @@ export const api = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["UserShelves"],
+      invalidatesTags: ["UserShelves", "Sidebar"],
     }),
 
     updateUserShelf: build.mutation<
@@ -1547,6 +1581,8 @@ export const api = createApi({
         orderDirection?: "asc" | "desc"
         limitCount?: number | null
         books?: string[]
+        icon?: string | null
+        color?: string | null
       }
     >({
       query: ({ uuid, ...body }) => ({
@@ -1554,7 +1590,7 @@ export const api = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["UserShelves"],
+      invalidatesTags: ["UserShelves", "Sidebar"],
     }),
 
     deleteUserShelf: build.mutation<void, { uuid: string }>({
@@ -1686,6 +1722,9 @@ export const {
   useRemoveHomeShelfMutation,
   useListSidebarQuery,
   useSetSidebarMutation,
+  useListSidebarGroupsQuery,
+  useSetSidebarGroupsMutation,
+  useToggleSidebarGroupCollapsedMutation,
   useListUserShelvesQuery,
   useCreateUserShelfMutation,
   useUpdateUserShelfMutation,

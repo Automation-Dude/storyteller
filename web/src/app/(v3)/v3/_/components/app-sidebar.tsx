@@ -1,14 +1,18 @@
 "use client"
 
-import { IconSearch, IconSettings } from "@tabler/icons-react"
-import { useEffect, useMemo, useRef } from "react"
+import {
+  IconAdjustmentsHorizontal,
+  IconChevronRight,
+  IconDotsVertical,
+  IconEdit,
+  IconEyeOff,
+  IconSearch,
+  IconSettings,
+} from "@tabler/icons-react"
+import { usePathname } from "next/navigation"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
-import {
-  NavLibrary,
-  type NavLibraryItem,
-} from "@v3/_/components/nav/nav-library"
-import { type NavItem, NavMain } from "@v3/_/components/nav/nav-main"
 import {
   NavSecondary,
   type NavSecondaryItem,
@@ -19,19 +23,35 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarPinButton,
 } from "@v3/_/components/ui/sidebar"
+import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import type { User } from "@/apiModels"
-import { type SidebarItemWithDetails } from "@/database/sidebar"
-import { useGetLatestVersionQuery, useListSidebarQuery } from "@/store/api"
+import { type ShelfWithBooks } from "@/database/shelves"
+import {
+  type SidebarGroupWithItems,
+  type SidebarItemDetail,
+} from "@/database/sidebar"
+import {
+  useGetLatestVersionQuery,
+  useListSidebarGroupsQuery,
+  useListUserShelvesQuery,
+  useSetSidebarGroupsMutation,
+  useToggleSidebarGroupCollapsedMutation,
+} from "@/store/api"
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
@@ -44,6 +64,19 @@ import {
   SHELF_ICON,
 } from "./nav/sidebar-items"
 import { DISMISSED_VERSION_KEY } from "./settings-form/changelog-tab"
+import { ShelfEditor } from "./shelves/ShelfEditor"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu"
+import { DynamicIcon } from "./ui/dynamic-icon"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -59,18 +92,21 @@ function UpdateDot() {
 export function AppSidebar({
   user,
   currentVersion,
-  initialSidebarItems,
+  initialSidebarGroups,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   user: User
   currentVersion: string
-  initialSidebarItems: SidebarItemWithDetails[]
+  initialSidebarGroups: SidebarGroupWithItems[]
 }) {
-  // seed with the server-resolved config so first paint is correct; the query
-  // refetches in the background and supplies live updates after edits.
-  const { data: sidebarItems = initialSidebarItems } = useListSidebarQuery()
+  const { data: sidebarGroups = initialSidebarGroups } =
+    useListSidebarGroupsQuery()
+
   const libraryCounts = useLibraryCounts()
   const basePath = useVersionBasePath()
+  const [editMode, setEditMode] = useState(false)
+  const [editingShelfUuid, setEditingShelfUuid] = useState<string | null>(null)
+  const [setSidebarGroupsMut] = useSetSidebarGroupsMutation()
 
   const { data: latestVersionData } = useGetLatestVersionQuery(
     {
@@ -122,68 +158,7 @@ export function AppSidebar({
   }, [hasUpdate, latestVersion])
 
   const { openSearch } = useCommandSearch()
-
   const t = useTranslation("AppSidebar")
-  const tLibrary = useTranslation("LibraryPage")
-
-  // the sidebar nav is a per-user ordered config (sidebar_item table). builtins
-  // resolve their icon/href/label from the registry; collection + shelf entries
-  // carry their own uuid + live name. group placement comes from the registry
-  // (entities render in the library group), so reordering is within-group.
-  const builtinTitle = (builtin: BuiltinSidebarItem) =>
-    builtin.labelNs === "AppSidebar"
-      ? t(builtin.labelKey)
-      : tLibrary(builtin.labelKey)
-
-  const visibleItems = sidebarItems.filter((item) => !item.hidden)
-
-  const navMain: NavItem[] = visibleItems.flatMap((item) => {
-    if (item.kind !== "builtin" || item.builtinKey == null) return []
-    const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
-    if (!builtin || builtin.group !== "main") return []
-    return [
-      { title: builtinTitle(builtin), url: builtin.href, icon: builtin.icon },
-    ]
-  })
-
-  const libraryNav: NavLibraryItem[] = visibleItems.flatMap(
-    (item): NavLibraryItem[] => {
-      if (item.kind === "builtin") {
-        if (item.builtinKey == null) return []
-        const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
-        if (!builtin || builtin.group !== "library") return []
-        return [
-          {
-            title: builtinTitle(builtin),
-            url: builtin.href,
-            icon: builtin.icon,
-            countKey: builtin.countKey ?? builtin.key,
-          },
-        ]
-      }
-
-      if (item.kind === "collection") {
-        return [
-          {
-            title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
-            url: `/collections/${item.collectionUuid}`,
-            icon: COLLECTION_ICON,
-            // server resolves per-collection book counts under this key
-            countKey: `collection:${item.collectionUuid}`,
-          },
-        ]
-      }
-
-      return [
-        {
-          title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
-          url: `/shelves/${item.shelfUuid}`,
-          icon: SHELF_ICON,
-          countKey: `shelf:${item.shelfUuid}`,
-        },
-      ]
-    },
-  )
 
   const navSecondary: NavSecondaryItem[] = [
     {
@@ -205,10 +180,6 @@ export function AppSidebar({
         </SidebarMenuItem>
       ),
       key: "search",
-    },
-    {
-      custom: <SidebarManager />,
-      key: "customize-sidebar",
     },
     {
       title: t("settings"),
@@ -238,18 +209,62 @@ export function AppSidebar({
               Storyteller
             </span>
           </V3Link>
-          <SidebarPinButton className="group-data-[collapsible=icon]:hidden" />
-        </SidebarHeader>
-        <SidebarContent>
-          <NavMain items={navMain} />
-          <NavLibrary
-            label={t("library")}
-            items={libraryNav}
-            counts={libraryCounts}
-          />
 
-          <NavSecondary items={navSecondary} className="mt-auto" />
+          <div className="flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
+            <SidebarMenuButton
+              size="sm"
+              className="size-7 shrink-0"
+              onClick={() => { setEditMode(true) }}
+              tooltip={t("customize")}
+            >
+              <IconAdjustmentsHorizontal className="size-4" />
+            </SidebarMenuButton>
+            <SidebarPinButton />
+          </div>
+        </SidebarHeader>
+
+        <SidebarContent>
+          {editMode ? (
+            <SidebarManager
+              onClose={() => { setEditMode(false) }}
+              groups={sidebarGroups}
+            />
+          ) : (
+            <>
+              {sidebarGroups.map((group) => (
+                <SidebarNavGroup
+                  key={group.uuid}
+                  group={group}
+                  libraryCounts={libraryCounts}
+                  onEditShelf={(uuid) => {
+                    setEditingShelfUuid(uuid)
+                  }}
+                  onRemoveItem={(itemUuid) => {
+                    const updated = sidebarGroups.map((g) => ({
+                      uuid: g.uuid,
+                      name: g.name,
+                      collapsed: g.collapsed,
+                      items: g.items
+                        .filter((i) => i.uuid !== itemUuid)
+                        .map((i) => ({
+                          kind: i.kind,
+                          builtinKey: i.builtinKey,
+                          collectionUuid: i.collectionUuid as
+                            | string
+                            | undefined,
+                          shelfUuid: i.shelfUuid as string | undefined,
+                          hidden: i.hidden,
+                        })),
+                    }))
+                    void setSidebarGroupsMut(updated)
+                  }}
+                />
+              ))}
+              <NavSecondary items={navSecondary} className="mt-auto" />
+            </>
+          )}
         </SidebarContent>
+
         <SidebarFooter>
           <NavUser
             user={{
@@ -260,7 +275,297 @@ export function AppSidebar({
           />
         </SidebarFooter>
       </Sidebar>
+
+      <ShelfEditorFromSidebar
+        shelfUuid={editingShelfUuid}
+        onClose={() => { setEditingShelfUuid(null) }}
+      />
       <CommandSearch />
     </>
   )
+}
+
+function SidebarNavGroup({
+  group,
+  libraryCounts,
+  onEditShelf,
+  onRemoveItem,
+}: {
+  group: SidebarGroupWithItems
+  libraryCounts: Record<
+    string,
+    { count: number | undefined; isLoading: boolean }
+  >
+  onEditShelf: (shelfUuid: string) => void
+  onRemoveItem: (itemUuid: string) => void
+}) {
+  const t = useTranslation("AppSidebar")
+  const tLibrary = useTranslation("LibraryPage")
+  const [toggleCollapsed] = useToggleSidebarGroupCollapsedMutation()
+  const [localCollapsed, setLocalCollapsed] = useState(group.collapsed)
+
+  const visibleItems = group.items.filter((item) => !item.hidden)
+
+  if (visibleItems.length === 0) return null
+
+  const builtinTitle = (builtin: BuiltinSidebarItem) =>
+    builtin.labelNs === "AppSidebar"
+      ? t(builtin.labelKey)
+      : tLibrary(builtin.labelKey)
+
+  const renderItem = (item: SidebarItemDetail) => (
+    <SidebarNavItem
+      key={item.uuid}
+      item={item}
+      builtinTitle={builtinTitle}
+      libraryCounts={libraryCounts}
+      onEdit={
+        item.kind === "shelf" && item.shelfUuid
+          ? () => {
+              onEditShelf(item.shelfUuid as string)
+            }
+          : undefined
+      }
+      onRemove={() => {
+        onRemoveItem(item.uuid)
+      }}
+    />
+  )
+
+  // "Main" group renders without a collapsible header
+  const isMainGroup = group.name === "Main"
+
+  if (isMainGroup) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-1">
+            {visibleItems.map(renderItem)}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    )
+  }
+
+  return (
+    <Collapsible
+      open={!localCollapsed}
+      onOpenChange={(open) => {
+        setLocalCollapsed(!open)
+        void toggleCollapsed({ groupUuid: group.uuid, collapsed: !open })
+      }}
+    >
+      <SidebarGroup>
+        <CollapsibleTrigger
+          render={
+            <SidebarGroupLabel className="cursor-pointer font-sans text-[10px] font-medium tracking-[0.14em] uppercase opacity-60">
+              <IconChevronRight className="mr-1 size-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              {group.name}
+            </SidebarGroupLabel>
+          }
+        />
+
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {visibleItems.map(renderItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  )
+}
+
+function SidebarNavItem({
+  item,
+  builtinTitle,
+  libraryCounts,
+  onEdit,
+  onRemove,
+}: {
+  item: SidebarItemDetail
+  builtinTitle: (builtin: BuiltinSidebarItem) => string
+  libraryCounts: Record<
+    string,
+    { count: number | undefined; isLoading: boolean }
+  >
+  onEdit?: () => void
+  onRemove?: () => void
+}) {
+  const location = usePathname()
+  const basePath = useVersionBasePath()
+  const normalizedLocation = basePath
+    ? location.replace(basePath, "")
+    : location
+
+  const resolved = resolveItem(item, builtinTitle)
+  if (!resolved) return null
+
+  const isActive =
+    normalizedLocation === resolved.url ||
+    (resolved.url !== "/" && normalizedLocation.startsWith(resolved.url))
+
+  const countResult = resolved.countKey
+    ? libraryCounts[resolved.countKey]
+    : null
+  const count = countResult?.count
+  const isCountLoading = countResult?.isLoading ?? false
+
+  const isEntity = item.kind === "shelf" || item.kind === "collection"
+
+  return (
+    <SidebarMenuItem className="group/navitem">
+      <SidebarMenuButton
+        size="sm"
+        isActive={isActive}
+        render={
+          <V3Link href={resolved.url}>
+            {resolved.customIcon ? (
+              <DynamicIcon
+                iconId={resolved.customIcon}
+                color={resolved.color}
+                className="size-4"
+              />
+            ) : resolved.icon ? (
+              <resolved.icon />
+            ) : null}
+            <span>{resolved.title}</span>
+          </V3Link>
+        }
+      />
+
+      {isEntity ? (
+        <>
+          <SidebarMenuBadge className="group-hover/navitem:hidden">
+            {count != null ? (
+              count
+            ) : isCountLoading ? (
+              <Skeleton className="h-3.5 w-5 rounded" />
+            ) : null}
+          </SidebarMenuBadge>
+
+          <SidebarMenuBadge className="pointer-events-auto hidden group-hover/navitem:flex">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground flex size-5 items-center justify-center rounded"
+                  >
+                    <IconDotsVertical className="size-3.5" />
+                  </button>
+                }
+              />
+              <DropdownMenuContent side="right" align="start">
+                {onEdit && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <IconEdit className="mr-2 size-4" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                {onRemove && (
+                  <DropdownMenuItem onClick={onRemove}>
+                    <IconEyeOff className="mr-2 size-4" />
+                    Remove from sidebar
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuBadge>
+        </>
+      ) : (
+        <>
+          {count != null && <SidebarMenuBadge>{count}</SidebarMenuBadge>}
+
+          {count == null && isCountLoading && resolved.countKey && (
+            <SidebarMenuBadge>
+              <Skeleton className="h-3.5 w-5 rounded" />
+            </SidebarMenuBadge>
+          )}
+        </>
+      )}
+    </SidebarMenuItem>
+  )
+}
+
+function ShelfEditorFromSidebar({
+  shelfUuid,
+  onClose,
+}: {
+  shelfUuid: string | null
+  onClose: () => void
+}) {
+  const { data: rawShelves = [] } = useListUserShelvesQuery()
+
+  // kysely inference loses selectAll fields; runtime data has all shelf columns
+  const shelves = rawShelves as unknown as Array<
+    ShelfWithBooks & { uuid: string }
+  >
+
+  const shelf = shelfUuid
+    ? shelves.find((s) => s.uuid === shelfUuid) ?? null
+    : null
+
+  return (
+    <ShelfEditor
+      open={!!shelfUuid}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      shelf={shelf}
+    />
+  )
+}
+
+type ResolvedItem = {
+  title: string
+  url: string
+  icon: React.ComponentType | null
+  customIcon: string | null
+  color: string | null
+  countKey: string | null
+}
+
+function resolveItem(
+  item: SidebarItemDetail,
+  builtinTitle: (builtin: BuiltinSidebarItem) => string,
+): ResolvedItem | null {
+  if (item.kind === "builtin" && item.builtinKey) {
+    const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
+    if (!builtin) return null
+
+    return {
+      title: builtinTitle(builtin),
+      url: builtin.href,
+      icon: builtin.icon,
+      customIcon: null,
+      color: null,
+      countKey: builtin.countKey ?? null,
+    }
+  }
+
+  if (item.kind === "collection") {
+    return {
+      title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
+      url: `/collections/${item.collectionUuid}`,
+      icon: item.icon ? null : COLLECTION_ICON,
+      customIcon: item.icon,
+      color: item.color,
+      countKey: `collection:${item.collectionUuid}`,
+    }
+  }
+
+  if (item.kind === "shelf") {
+    return {
+      title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
+      url: `/shelves/${item.shelfUuid}`,
+      icon: item.icon ? null : SHELF_ICON,
+      customIcon: item.icon,
+      color: item.color,
+      countKey: `shelf:${item.shelfUuid}`,
+    }
+  }
+
+  return null
 }

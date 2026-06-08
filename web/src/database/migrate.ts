@@ -53,6 +53,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
     await import("./migrations/73_add_cover_colors_blurhash.sql")
   ).default,
   "85_shelves.sql": (await import("./migrations/85_shelves.sql")).default,
+  "89_sidebar_groups_icons.sql": (
+    await import("./migrations/89_sidebar_groups_icons.sql")
+  ).default,
 }
 
 async function isFirstStartup() {

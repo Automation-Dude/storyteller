@@ -1,21 +1,20 @@
 "use client"
 
 import {
-  IconAdjustmentsHorizontal,
+  IconCheck,
   IconChevronDown,
-  IconChevronRight,
-  IconChevronUp,
   IconEyeOff,
   IconGripVertical,
-  IconHome,
   IconLoader2,
+  IconPencil,
   IconPlus,
+  IconTrash,
+  IconX,
 } from "@tabler/icons-react"
-import { Reorder, motion, useDragControls } from "motion/react"
+import { Reorder, useDragControls } from "motion/react"
 import { useState } from "react"
 
 import { ShelfEditor } from "@v3/_/components/shelves/ShelfEditor"
-import { ShelfManager } from "@v3/_/components/shelves/ShelfManager"
 import { Button } from "@v3/_/components/ui/button"
 import {
   Collapsible,
@@ -23,25 +22,30 @@ import {
   CollapsibleTrigger,
 } from "@v3/_/components/ui/collapsible"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@v3/_/components/ui/dialog"
-import { SidebarMenuButton, SidebarMenuItem } from "@v3/_/components/ui/sidebar"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@v3/_/components/ui/dropdown-menu"
+import { Input } from "@v3/_/components/ui/input"
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+} from "@v3/_/components/ui/sidebar"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type ShelfWithBooks } from "@/database/shelves"
-import { type SidebarItemKind } from "@/database/sidebar"
+import {
+  type SidebarGroupWithItems,
+  type SidebarItemKind,
+} from "@/database/sidebar"
 import {
   useListCollectionsQuery,
-  useListSidebarQuery,
   useListUserShelvesQuery,
-  useSetSidebarMutation,
+  useSetSidebarGroupsMutation,
 } from "@/store/api"
 import { extractEmojiIcon } from "@/strings"
 
@@ -51,7 +55,13 @@ import {
   type BuiltinSidebarItem,
 } from "./sidebar-items"
 
-// local representation of a shown sidebar entry. `id` is a stable reorder key.
+type ShelfListItem = {
+  uuid: string
+  name: string
+  icon?: string | null
+  color?: string | null
+}
+
 type LocalItem = {
   id: string
   kind: SidebarItemKind
@@ -59,106 +69,104 @@ type LocalItem = {
   collectionUuid: string | null
   shelfUuid: string | null
   name: string
+  icon: string | null
+  color: string | null
+}
+
+type LocalGroup = {
+  id: string
+  name: string
+  collapsed: boolean
+  items: LocalItem[]
 }
 
 function cleanName(name: string | null | undefined): string {
   return extractEmojiIcon(name ?? "").label || (name ?? "")
 }
 
-export function SidebarManager() {
-  const t = useTranslation("SidebarManager")
-  const [open, setOpen] = useState(false)
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        nativeButton={false}
-        render={
-          <SidebarMenuItem>
-            <SidebarMenuButton size="sm">
-              <IconAdjustmentsHorizontal />
-              <span>{t("customize")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        }
-      />
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
-        </DialogHeader>
-        <SidebarManagerContent
-          onClose={() => {
-            setOpen(false)
-          }}
-        />
-      </DialogContent>
-    </Dialog>
-  )
+type SidebarManagerProps = {
+  groups: SidebarGroupWithItems[]
+  onClose: () => void
 }
 
-function SidebarManagerContent({ onClose }: { onClose: () => void }) {
+export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
   const t = useTranslation("SidebarManager")
   const tApp = useTranslation("AppSidebar")
   const tLibrary = useTranslation("LibraryPage")
 
-  const { data: sidebarItems, isLoading } = useListSidebarQuery()
   const { data: collections = [] } = useListCollectionsQuery()
-  const { data: userShelves = [] } = useListUserShelvesQuery()
-  const [setSidebar, { isLoading: isSaving }] = useSetSidebarMutation()
 
-  const [local, setLocal] = useState<LocalItem[] | null>(null)
-  const [availableOpen, setAvailableOpen] = useState(false)
-  const [shelfEditorOpen, setShelfEditorOpen] = useState(false)
+  // kysely inference loses selectAll fields; the API response has all shelf columns
+  const { data: rawShelves = [] } = useListUserShelvesQuery()
+  const userShelves = rawShelves as unknown as Array<
+    ShelfListItem & ShelfWithBooks
+  >
+  const [setSidebarGroups, { isLoading: isSaving }] =
+    useSetSidebarGroupsMutation()
+
+  // "create" means open the editor in create mode; a uuid string means edit that shelf
+  const [shelfEditorState, setShelfEditorState] = useState<string | null>(null)
 
   const builtinTitle = (builtin: BuiltinSidebarItem) =>
     builtin.labelNs === "AppSidebar"
       ? tApp(builtin.labelKey)
       : tLibrary(builtin.labelKey)
 
-  const items: LocalItem[] =
-    local ??
-    (sidebarItems ?? []).map((item) => {
-      if (item.kind === "builtin" && item.builtinKey) {
-        const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
-        return {
-          id: `builtin:${item.builtinKey}`,
-          kind: "builtin" as const,
-          builtinKey: item.builtinKey,
-          collectionUuid: null,
-          shelfUuid: null,
-          name: builtin ? builtinTitle(builtin) : item.builtinKey,
+  const [localGroups, setLocalGroups] = useState<LocalGroup[]>(() =>
+    groups.map((g) => ({
+      id: g.uuid,
+      name: g.name,
+      collapsed: g.collapsed,
+      items: g.items.map((item) => {
+        if (item.kind === "builtin" && item.builtinKey) {
+          const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
+          return {
+            id: `builtin:${item.builtinKey}`,
+            kind: "builtin" as const,
+            builtinKey: item.builtinKey,
+            collectionUuid: null,
+            shelfUuid: null,
+            name: builtin ? builtinTitle(builtin) : item.builtinKey,
+            icon: null,
+            color: null,
+          }
         }
-      }
 
-      if (item.kind === "collection") {
+        if (item.kind === "collection") {
+          return {
+            id: `collection:${item.collectionUuid}`,
+            kind: "collection" as const,
+            builtinKey: null,
+            collectionUuid: item.collectionUuid,
+            shelfUuid: null,
+            name: cleanName(item.name),
+            icon: item.icon ?? null,
+            color: item.color ?? null,
+          }
+        }
+
         return {
-          id: `collection:${item.collectionUuid}`,
-          kind: "collection" as const,
+          id: `shelf:${item.shelfUuid}`,
+          kind: "shelf" as const,
           builtinKey: null,
-          collectionUuid: item.collectionUuid,
-          shelfUuid: null,
+          collectionUuid: null,
+          shelfUuid: item.shelfUuid,
           name: cleanName(item.name),
+          icon: item.icon ?? null,
+          color: item.color ?? null,
         }
-      }
+      }),
+    })),
+  )
 
-      return {
-        id: `shelf:${item.shelfUuid}`,
-        kind: "shelf" as const,
-        builtinKey: null,
-        collectionUuid: null,
-        shelfUuid: item.shelfUuid,
-        name: cleanName(item.name),
-      }
-    })
-
-  const shownBuiltinKeys = items
+  const allShownItems = localGroups.flatMap((g) => g.items)
+  const shownBuiltinKeys = allShownItems
     .filter((i) => i.kind === "builtin")
     .map((i) => i.builtinKey)
-  const shownCollectionUuids = items
+  const shownCollectionUuids = allShownItems
     .filter((i) => i.kind === "collection")
     .map((i) => i.collectionUuid)
-  const shownShelfUuids = items
+  const shownShelfUuids = allShownItems
     .filter((i) => i.kind === "shelf")
     .map((i) => i.shelfUuid)
 
@@ -169,7 +177,7 @@ function SidebarManagerContent({ onClose }: { onClose: () => void }) {
     (c) => !shownCollectionUuids.includes(c.uuid),
   )
   const availableShelves = userShelves.filter(
-    (s: ShelfWithBooks) => !shownShelfUuids.includes(s.uuid),
+    (s) => !shownShelfUuids.includes(s.uuid),
   )
 
   const hasAvailable =
@@ -177,250 +185,442 @@ function SidebarManagerContent({ onClose }: { onClose: () => void }) {
     availableCollections.length > 0 ||
     availableShelves.length > 0
 
-  const move = (index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1
-    if (newIndex < 0 || newIndex >= items.length) return
-
-    const next = [...items]
-    const [moved] = next.splice(index, 1)
-    if (!moved) return
-    next.splice(newIndex, 0, moved)
-    setLocal(next)
+  const updateGroup = (
+    groupId: string,
+    updater: (g: LocalGroup) => LocalGroup,
+  ) => {
+    setLocalGroups((prev) =>
+      prev.map((g) => (g.id === groupId ? updater(g) : g)),
+    )
   }
 
-  const hide = (id: string) => {
-    if (items.length <= 1) return
-    setLocal(items.filter((i) => i.id !== id))
+  const removeItem = (groupId: string, itemId: string) => {
+    updateGroup(groupId, (g) => ({
+      ...g,
+      items: g.items.filter((i) => i.id !== itemId),
+    }))
   }
 
-  const add = (item: LocalItem) => {
-    setLocal([...items, item])
+  const addItem = (groupId: string, item: LocalItem) => {
+    updateGroup(groupId, (g) => ({
+      ...g,
+      items: [...g.items, item],
+    }))
   }
 
-  // a newly created shelf is added straight to the (unsaved) sidebar list, so it
-  // shows up the moment the manager is saved.
-  const handleShelfSaved = (saved: ShelfWithBooks) => {
-    add({
+  const updateItem = (groupId: string, item: LocalItem) => {
+    updateGroup(groupId, (g) => ({
+      ...g,
+      items: g.items.map((i) => (i.id === item.id ? item : i)),
+    }))
+  }
+
+  const addGroup = () => {
+    setLocalGroups((prev) => [
+      ...prev,
+      {
+        id: `new:${crypto.randomUUID()}`,
+        name: "New Section",
+        collapsed: false,
+        items: [],
+      },
+    ])
+  }
+
+  const removeGroup = (groupId: string) => {
+    setLocalGroups((prev) => prev.filter((g) => g.id !== groupId))
+  }
+
+  const handleShelfSaved = (rawSaved: ShelfWithBooks) => {
+    // kysely inference loses fields; cast to access runtime properties
+    const saved = rawSaved as unknown as ShelfListItem
+
+    const isCreating = shelfEditorState === "create"
+    const itemPayload: LocalItem = {
       id: `shelf:${saved.uuid}`,
       kind: "shelf",
       builtinKey: null,
       collectionUuid: null,
       shelfUuid: saved.uuid,
       name: cleanName(saved.name),
-    })
+      icon: saved.icon ?? null,
+      color: saved.color ?? null,
+    }
+
+    if (isCreating) {
+      const lastGroup = localGroups[localGroups.length - 1]
+      if (!lastGroup) return
+      addItem(lastGroup.id, itemPayload)
+    } else {
+      for (const g of localGroups) {
+        const existing = g.items.find((i) => i.shelfUuid === saved.uuid)
+        if (existing) {
+          updateItem(g.id, itemPayload)
+          break
+        }
+      }
+    }
   }
 
   const handleSave = async () => {
-    await setSidebar(
-      items.map((i) => ({
-        kind: i.kind,
-        builtinKey: i.kind === "builtin" ? i.builtinKey : undefined,
-        collectionUuid: i.kind === "collection" ? i.collectionUuid : undefined,
-        shelfUuid: i.kind === "shelf" ? i.shelfUuid : undefined,
+    await setSidebarGroups(
+      localGroups.map((g) => ({
+        uuid: g.id.startsWith("new:") ? undefined : g.id,
+        name: g.name,
+        collapsed: g.collapsed,
+        items: g.items.map((i) => ({
+          kind: i.kind,
+          builtinKey: i.kind === "builtin" ? i.builtinKey : undefined,
+          collectionUuid:
+            i.kind === "collection" ? i.collectionUuid : undefined,
+          shelfUuid: i.kind === "shelf" ? i.shelfUuid : undefined,
+        })),
       })),
     ).unwrap()
-    setLocal(null)
-    onClose()
-  }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <IconLoader2 className="size-6 animate-spin" />
-      </div>
-    )
+    onClose()
   }
 
   return (
     <>
-      <Reorder.Group
-        values={items}
-        onReorder={setLocal}
-        className="flex flex-col gap-2"
-      >
-        {items.map((item, index) => (
-          <SidebarManagerItem
-            key={item.id}
-            item={item}
-            index={index}
-            total={items.length}
-            onMove={(dir) => {
-              move(index, dir)
-            }}
-            onHide={() => {
-              hide(item.id)
-            }}
-            canHide={items.length > 1}
-          />
-        ))}
-      </Reorder.Group>
+      <SidebarGroup className="flex-1 overflow-y-auto">
+        <SidebarGroupLabel className="flex items-center justify-between">
+          <span className="font-sans text-[10px] font-medium tracking-[0.14em] uppercase opacity-60">
+            {t("title")}
+          </span>
 
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-        <Button
-          variant="outline"
-          className="flex-1"
-          onClick={() => {
-            setShelfEditorOpen(true)
-          }}
-        >
-          <IconPlus className="mr-2 size-4" />
-          {t("createShelf")}
-        </Button>
-
-        <ShelfManager
-          trigger={
-            <Button variant="outline" className="flex-1">
-              <IconHome className="mr-2 size-4" />
-              {t("customizeHome")}
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={onClose}
+              disabled={isSaving}
+              title={t("cancel")}
+              className="text-muted-foreground hover:text-foreground size-5"
+            >
+              <IconX className="size-3.5" />
             </Button>
-          }
-        />
-      </div>
 
-      {hasAvailable && (
-        <Collapsible
-          open={availableOpen}
-          onOpenChange={setAvailableOpen}
-          className="mt-4"
-        >
-          <CollapsibleTrigger
-            render={
-              <button
-                type="button"
-                className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1 text-sm"
-              >
-                <IconChevronRight
-                  className={cn(
-                    "size-4 transition-transform",
-                    availableOpen && "rotate-90",
-                  )}
-                />
-                {t("available")}
-              </button>
-            }
-          />
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={handleSave}
+              disabled={isSaving}
+              title={t("save")}
+              className="text-muted-foreground hover:text-foreground size-5"
+            >
+              {isSaving ? (
+                <IconLoader2 className="size-3.5 animate-spin" />
+              ) : (
+                <IconCheck className="size-3.5" />
+              )}
+            </Button>
+          </div>
+        </SidebarGroupLabel>
 
-          <CollapsibleContent className="mt-2">
+        <SidebarGroupContent>
+          <div className="flex flex-col gap-3 px-1">
+            {localGroups.map((group) => (
+              <EditableGroup
+                key={group.id}
+                group={group}
+                onRename={(name) => {
+                  updateGroup(group.id, (g) => ({ ...g, name }))
+                }}
+                onRemoveGroup={() => {
+                  removeGroup(group.id)
+                }}
+                onRemoveItem={(itemId) => {
+                  removeItem(group.id, itemId)
+                }}
+                onReorderItems={(items) => {
+                  updateGroup(group.id, (g) => ({ ...g, items }))
+                }}
+                showAdd={hasAvailable}
+                availableBuiltins={availableBuiltins}
+                availableCollections={availableCollections}
+                availableShelves={availableShelves}
+                onAddItem={(item) => {
+                  addItem(group.id, item)
+                }}
+                builtinTitle={builtinTitle}
+                t={t as unknown as (key: string) => string}
+                canEditItem={(item) => {
+                  return item.kind === "shelf" && item.shelfUuid !== null
+                }}
+                onEditItem={(item) => {
+                  if (item.kind === "shelf" && item.shelfUuid) {
+                    setShelfEditorState(item.shelfUuid)
+                  }
+                }}
+              />
+            ))}
+
             <div className="flex flex-col gap-2">
-              {availableBuiltins.map((b) => (
-                <AvailableItem
-                  key={`builtin:${b.key}`}
-                  name={builtinTitle(b)}
-                  detail={null}
-                  onAdd={() => {
-                    add({
-                      id: `builtin:${b.key}`,
-                      kind: "builtin",
-                      builtinKey: b.key,
-                      collectionUuid: null,
-                      shelfUuid: null,
-                      name: builtinTitle(b),
-                    })
-                  }}
-                />
-              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-muted-foreground text-muted-foreground hover:text-foreground flex-1 text-xs"
+                onClick={addGroup}
+              >
+                <IconPlus className="mr-1 size-3" />
+                {t("addGroup")}
+              </Button>
 
-              {availableCollections.map((c) => (
-                <AvailableItem
-                  key={`collection:${c.uuid}`}
-                  name={cleanName(c.name)}
-                  detail={t("collection")}
-                  onAdd={() => {
-                    add({
-                      id: `collection:${c.uuid}`,
-                      kind: "collection",
-                      builtinKey: null,
-                      collectionUuid: c.uuid,
-                      shelfUuid: null,
-                      name: cleanName(c.name),
-                    })
-                  }}
-                />
-              ))}
-
-              {availableShelves.map((s: ShelfWithBooks) => (
-                <AvailableItem
-                  key={`shelf:${s.uuid}`}
-                  name={cleanName(s.name)}
-                  detail={t("shelf")}
-                  onAdd={() => {
-                    add({
-                      id: `shelf:${s.uuid}`,
-                      kind: "shelf",
-                      builtinKey: null,
-                      collectionUuid: null,
-                      shelfUuid: s.uuid,
-                      name: cleanName(s.name),
-                    })
-                  }}
-                />
-              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-muted-foreground text-muted-foreground hover:text-foreground flex-1 text-xs"
+                onClick={() => {
+                  setShelfEditorState("create")
+                }}
+              >
+                <IconPlus className="mr-1 size-3" />
+                {t("createShelf")}
+              </Button>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+          </div>
+        </SidebarGroupContent>
+      </SidebarGroup>
 
       <ShelfEditor
-        open={shelfEditorOpen}
-        onOpenChange={setShelfEditorOpen}
+        open={!!shelfEditorState}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShelfEditorState(null)
+          }
+        }}
+        shelf={
+          shelfEditorState && shelfEditorState !== "create"
+            ? userShelves.find((s) => s.uuid === shelfEditorState) ?? null
+            : null
+        }
         onSaved={handleShelfSaved}
       />
-
-      <DialogFooter className="mt-4">
-        <Button variant="outline" onClick={onClose} disabled={isSaving}>
-          {t("cancel")}
-        </Button>
-
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-          {t("save")}
-        </Button>
-      </DialogFooter>
     </>
   )
 }
 
-type SidebarManagerItemProps = {
-  item: LocalItem
-  index: number
-  total: number
-  onMove: (direction: "up" | "down") => void
-  onHide: () => void
-  canHide: boolean
+type EditableGroupProps = {
+  group: LocalGroup
+  onRename: (name: string) => void
+  onRemoveGroup: () => void
+  onRemoveItem: (itemId: string) => void
+  onEditItem: (item: LocalItem) => void
+  onReorderItems: (items: LocalItem[]) => void
+  showAdd: boolean
+  availableBuiltins: BuiltinSidebarItem[]
+  availableCollections: Array<{ uuid: string; name: string }>
+  availableShelves: ShelfListItem[]
+  onAddItem: (item: LocalItem) => void
+  builtinTitle: (b: BuiltinSidebarItem) => string
+  t: (key: string) => string
+  canEditItem: (item: LocalItem) => boolean
 }
 
-function SidebarManagerItem({
-  item,
-  index,
-  total,
-  onMove,
-  onHide,
-  canHide,
-}: SidebarManagerItemProps) {
-  const t = useTranslation("SidebarManager")
+function EditableGroup({
+  group,
+  onRename,
+  onRemoveGroup,
+  onRemoveItem,
+  onEditItem,
+  onReorderItems,
+  showAdd,
+  availableBuiltins,
+  availableCollections,
+  availableShelves,
+  onAddItem,
+  builtinTitle,
+  t,
+  canEditItem,
+}: EditableGroupProps) {
+  const [isOpen, setIsOpen] = useState(true)
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1">
+          <CollapsibleTrigger
+            render={
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground flex size-5 items-center justify-center"
+              >
+                <IconChevronDown
+                  className={cn(
+                    "size-3 transition-transform",
+                    !isOpen && "-rotate-90",
+                  )}
+                />
+              </button>
+            }
+          />
+
+          <Input
+            value={group.name}
+            onChange={(e) => {
+              onRename(e.target.value)
+            }}
+            className="h-6 flex-1 border-none bg-transparent px-1 text-xs font-medium shadow-none focus-visible:ring-1"
+          />
+
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={onRemoveGroup}
+            className="text-muted-foreground hover:text-destructive hover:bg-muted-foreground size-5"
+            title="Remove group"
+          >
+            <IconTrash className="size-3" />
+          </Button>
+        </div>
+
+        <CollapsibleContent>
+          <Reorder.Group
+            values={group.items}
+            onReorder={onReorderItems}
+            className="flex flex-col gap-0.5"
+          >
+            {group.items.map((item) => (
+              <EditableItem
+                key={item.id}
+                item={item}
+                onRemove={() => {
+                  onRemoveItem(item.id)
+                }}
+                onEdit={
+                  canEditItem(item)
+                    ? () => {
+                        onEditItem(item)
+                      }
+                    : undefined
+                }
+              />
+            ))}
+          </Reorder.Group>
+
+          {showAdd && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground mt-1 ml-5 flex items-center gap-1 text-xs"
+                  >
+                    <IconPlus className="size-3" />
+                    {t("add")}
+                  </button>
+                }
+              />
+
+              <DropdownMenuContent side="bottom" align="start">
+                {availableBuiltins.length > 0 && (
+                  <>
+                    <DropdownMenuLabel>Pages</DropdownMenuLabel>
+                    {availableBuiltins.map((b) => (
+                      <DropdownMenuItem
+                        key={b.key}
+                        onClick={() => {
+                          onAddItem({
+                            id: `builtin:${b.key}`,
+                            kind: "builtin",
+                            builtinKey: b.key,
+                            collectionUuid: null,
+                            shelfUuid: null,
+                            name: builtinTitle(b),
+                            icon: null,
+                            color: null,
+                          })
+                        }}
+                      >
+                        {builtinTitle(b)}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+
+                {availableCollections.length > 0 && (
+                  <>
+                    <DropdownMenuLabel>{t("collection")}</DropdownMenuLabel>
+                    {availableCollections.map((c) => (
+                      <DropdownMenuItem
+                        key={c.uuid}
+                        onClick={() => {
+                          onAddItem({
+                            id: `collection:${c.uuid}`,
+                            kind: "collection",
+                            builtinKey: null,
+                            collectionUuid: c.uuid,
+                            shelfUuid: null,
+                            name: cleanName(c.name),
+                            icon: null,
+                            color: null,
+                          })
+                        }}
+                      >
+                        {cleanName(c.name)}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+
+                {availableShelves.length > 0 && (
+                  <>
+                    <DropdownMenuLabel>{t("shelf")}</DropdownMenuLabel>
+                    {availableShelves.map((s) => (
+                      <DropdownMenuItem
+                        key={s.uuid}
+                        onClick={() => {
+                          onAddItem({
+                            id: `shelf:${s.uuid}`,
+                            kind: "shelf",
+                            builtinKey: null,
+                            collectionUuid: null,
+                            shelfUuid: s.uuid,
+                            name: cleanName(s.name),
+                            icon: s.icon ?? null,
+                            color: s.color ?? null,
+                          })
+                        }}
+                      >
+                        {cleanName(s.name)}
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  )
+}
+
+type EditableItemProps = {
+  item: LocalItem
+  onRemove: () => void
+  onEdit?: () => void
+}
+
+function EditableItem({ item, onRemove, onEdit }: EditableItemProps) {
   const controls = useDragControls()
   const [isDragging, setIsDragging] = useState(false)
-
-  const detail =
-    item.kind === "collection"
-      ? t("collection")
-      : item.kind === "shelf"
-        ? t("shelf")
-        : null
 
   return (
     <Reorder.Item
       value={item}
       className={cn(
-        "bg-muted flex items-center gap-2 rounded-lg border p-1.5 py-0",
-        isDragging && "cursor-grabbing!",
+        "flex items-center gap-1 rounded px-0.5 py-0.5",
+        isDragging && "bg-muted-foreground cursor-grabbing!",
       )}
       dragControls={controls}
       dragListener={false}
     >
-      <motion.button
+      <button
+        type="button"
         className={cn(
-          "size-8 hover:cursor-grab",
+          "text-muted-foreground flex size-4 shrink-0 items-center justify-center hover:cursor-grab",
           isDragging && "cursor-grabbing!",
         )}
         onPointerDown={(e) => {
@@ -432,75 +632,33 @@ function SidebarManagerItem({
           setIsDragging(false)
         }}
       >
-        <IconGripVertical className="text-muted-foreground size-4 shrink-0" />
-      </motion.button>
+        <IconGripVertical className="size-3" />
+      </button>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="text-sm font-medium">{item.name}</div>
-        {detail && (
-          <div className="text-muted-foreground text-xs">{detail}</div>
-        )}
-      </div>
+      <span className="flex-1 truncate text-xs">{item.name}</span>
 
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={onHide}
-        disabled={!canHide}
-        className={cn(!canHide && "invisible")}
-        title={t("hideFromSidebar")}
+      {onEdit && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={onEdit}
+          className="text-muted-foreground hover:text-foreground hover:bg-muted-foreground size-4"
+          title="Edit"
+        >
+          <IconPencil className="size-3" />
+        </Button>
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        className="text-muted-foreground hover:text-destructive flex size-4 shrink-0 items-center justify-center"
+        title="Hide"
       >
-        <IconEyeOff className="size-4" />
-      </Button>
-
-      <div className="flex flex-col gap-1">
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => {
-            onMove("up")
-          }}
-          disabled={index === 0}
-        >
-          <IconChevronUp className="size-3" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => {
-            onMove("down")
-          }}
-          disabled={index === total - 1}
-        >
-          <IconChevronDown className="size-3" />
-        </Button>
-      </div>
+        <IconEyeOff className="size-3" />
+      </button>
     </Reorder.Item>
   )
 }
 
-type AvailableItemProps = {
-  name: string
-  detail: string | null
-  onAdd: () => void
-}
-
-function AvailableItem({ name, detail, onAdd }: AvailableItemProps) {
-  const t = useTranslation("SidebarManager")
-  return (
-    <div className="bg-muted/50 flex items-center gap-2 rounded-lg border p-2">
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="text-sm font-medium">{name}</div>
-        {detail && (
-          <div className="text-muted-foreground text-xs">{detail}</div>
-        )}
-      </div>
-
-      <Button variant="outline" size="sm" onClick={onAdd} className="h-7">
-        <IconPlus className="mr-1 size-3" />
-        {t("add")}
-      </Button>
-    </div>
-  )
-}

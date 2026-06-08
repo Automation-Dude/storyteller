@@ -35,6 +35,8 @@ export const PUT = withHasPermission<Params>("bookList")(async (
     orderDirection?: "asc" | "desc" | null
     limitCount?: number | null
     books?: UUID[]
+    icon?: string | null
+    color?: string | null
   }
 
   const shelf = await updateShelf(
@@ -53,6 +55,8 @@ export const PUT = withHasPermission<Params>("bookList")(async (
         ? { orderDirection: body.orderDirection }
         : {}),
       ...(body.limitCount !== undefined ? { limitCount: body.limitCount } : {}),
+      ...(body.icon !== undefined ? { icon: body.icon } : {}),
+      ...(body.color !== undefined ? { color: body.color } : {}),
     },
     body.books,
   )

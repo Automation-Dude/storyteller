@@ -40,6 +40,8 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
     description?: string
     public?: boolean
     users?: UUID[]
+    icon?: string | null
+    color?: string | null
   }
 
   const updated = await updateCollection(uuid, values, {

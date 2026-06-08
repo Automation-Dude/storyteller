@@ -1,9 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useCallback } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
 import { Button } from "@v3/_/components/ui/button"
+import { ColorPicker } from "@v3/_/components/ui/color-picker"
 import {
   Dialog,
   DialogContent,
@@ -18,10 +19,15 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@v3/_/components/ui/field"
+import { IconPicker } from "@v3/_/components/ui/icon-picker"
 import { Input } from "@v3/_/components/ui/input"
 import { Textarea } from "@v3/_/components/ui/textarea"
 
-import { useCreateCollectionMutation } from "@/store/api"
+import {
+  useCreateCollectionMutation,
+  useUpdateCollectionMutation,
+} from "@/store/api"
+import { type UUID } from "@/uuid"
 
 const collectionSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -35,6 +41,13 @@ type CreateCollectionDialogProps = {
   onOpenChange: (open: boolean) => void
   onCreated?: (uuid: string) => void
   initialName?: string
+  collection?: {
+    uuid: string
+    name: string
+    description: string | null
+    icon: string | null
+    color: string | null
+  } | null
 }
 
 export function CreateCollectionDialog({
@@ -42,8 +55,15 @@ export function CreateCollectionDialog({
   onOpenChange,
   onCreated,
   initialName = "",
+  collection,
 }: CreateCollectionDialogProps) {
-  const [createCollection, { isLoading }] = useCreateCollectionMutation()
+  const isEditing = !!collection
+  const [createCollection, { isLoading: isCreating }] = useCreateCollectionMutation()
+  const [updateCollection, { isLoading: isUpdating }] = useUpdateCollectionMutation()
+  const isLoading = isCreating || isUpdating
+
+  const [icon, setIcon] = useState<string | null>(collection?.icon ?? null)
+  const [color, setColor] = useState<string | null>(collection?.color ?? null)
 
   const {
     register,
@@ -53,10 +73,25 @@ export function CreateCollectionDialog({
   } = useForm<CollectionFormData>({
     resolver: zodResolver(collectionSchema),
     defaultValues: {
-      name: initialName,
-      description: "",
+      name: collection?.name ?? initialName,
+      description: collection?.description ?? "",
     },
   })
+
+  useEffect(() => {
+    if (open && collection) {
+      reset({
+        name: collection.name,
+        description: collection.description ?? "",
+      })
+      setIcon(collection.icon ?? null)
+      setColor(collection.color ?? null)
+    } else if (open && !collection) {
+      reset({ name: initialName, description: "" })
+      setIcon(null)
+      setColor(null)
+    }
+  }, [open, collection, initialName, reset])
 
   const handleClose = useCallback(() => {
     reset()
@@ -66,28 +101,56 @@ export function CreateCollectionDialog({
   const onSubmit = useCallback(
     async (data: CollectionFormData) => {
       try {
-        const result = await createCollection({
-          name: data.name,
-          description: data.description ?? "",
-          public: true,
-          users: [],
-        }).unwrap()
-        onCreated?.(result.uuid)
+        if (isEditing) {
+          await updateCollection({
+            uuid: collection.uuid as UUID,
+            update: {
+              name: data.name,
+              description: data.description ?? null,
+              icon,
+              color,
+            },
+          }).unwrap()
+
+          onCreated?.(collection.uuid)
+        } else {
+          const result = await createCollection({
+            name: data.name,
+            description: data.description ?? "",
+            public: true,
+            users: [],
+          }).unwrap()
+
+          // update icon/color after creation if set
+          if (icon || color) {
+            await updateCollection({
+              uuid: result.uuid,
+              update: { icon, color },
+            }).unwrap()
+          }
+
+          onCreated?.(result.uuid)
+        }
+
         handleClose()
       } catch {
         // error handling is done via the mutation error state
       }
     },
-    [createCollection, onCreated, handleClose],
+    [createCollection, updateCollection, collection, isEditing, icon, color, onCreated, handleClose],
   )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Collection</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit Collection" : "Create Collection"}
+          </DialogTitle>
           <DialogDescription>
-            Create a new collection to organize your books.
+            {isEditing
+              ? "Update the collection settings."
+              : "Create a new collection to organize your books."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -101,6 +164,7 @@ export function CreateCollectionDialog({
               />
               {errors.name && <FieldError>{errors.name.message}</FieldError>}
             </Field>
+
             <Field>
               <FieldLabel htmlFor="collection-description">
                 Description
@@ -112,7 +176,16 @@ export function CreateCollectionDialog({
                 {...register("description")}
               />
             </Field>
+
+            <Field>
+              <FieldLabel>Icon & Color</FieldLabel>
+              <div className="flex items-center gap-2">
+                <IconPicker value={icon} onChange={setIcon} color={color} />
+                <ColorPicker value={color} onChange={setColor} />
+              </div>
+            </Field>
           </FieldGroup>
+
           <DialogFooter>
             <Button
               type="button"
@@ -123,7 +196,13 @@ export function CreateCollectionDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create"}
+              {isLoading
+                ? isEditing
+                  ? "Saving..."
+                  : "Creating..."
+                : isEditing
+                  ? "Save"
+                  : "Create"}
             </Button>
           </DialogFooter>
         </form>

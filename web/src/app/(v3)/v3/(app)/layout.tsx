@@ -6,7 +6,7 @@ import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
 import { UserPreferencesProvider } from "@v3/_/components/user-preferences-provider"
 
 import { nextAuth } from "@/auth/auth"
-import { getSidebarItems, initializeDefaultSidebar } from "@/database/sidebar"
+import { getSidebarGroups, initializeDefaultSidebar } from "@/database/sidebar"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
 import { logger } from "@/logging"
@@ -42,7 +42,7 @@ export default async function AppLayout({
   // resolve the sidebar config on the server so the nav is fully rendered on
   // first paint (no placeholder flash); the client query takes over for edits.
   await initializeDefaultSidebar(session.user.id)
-  const sidebarItems = await getSidebarItems(session.user.id)
+  const sidebarGroups = await getSidebarGroups(session.user.id)
 
   // same server-resolve for preferences, so accent color + colorfulness apply
   // on first paint without a flash
@@ -78,7 +78,7 @@ export default async function AppLayout({
           user={session.user}
           className="absolute z-100"
           currentVersion={currentVersion}
-          initialSidebarItems={sidebarItems}
+          initialSidebarGroups={sidebarGroups}
         />
         <SidebarInset className="overflow-x-hidden">{children}</SidebarInset>
       </SidebarProvider>

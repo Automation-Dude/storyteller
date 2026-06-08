@@ -57,6 +57,11 @@ function useSidebar() {
   return context
 }
 
+function useSidebarMaybe() {
+  const context = React.useContext(SidebarContext)
+  return context
+}
+
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -874,4 +879,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  useSidebarMaybe,
 }

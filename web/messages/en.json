@@ -189,7 +189,7 @@
     "editCreatorDescription": "Update the creator name and sort name.",
     "creatorName": "Creator name",
     "sortAs": "Sort as (file as)",
-    "sortAsPlaceholder": "e.g. Rowling, J. K.",
+    "sortAsPlaceholder": "e.g. Martin, G. R. R.",
     "nameRequired": "Name is required",
     "entityTypes": {
       "tag": "{count, plural, one {tag} other {tags}}",
@@ -702,6 +702,7 @@
     "library": "Library",
     "search": "Search",
     "settings": "Settings",
+    "customize": "Customize sidebar",
     "documentation": "Documentation",
     "account": "Account",
     "logout": "Logout",
@@ -720,16 +721,17 @@
   },
   "SidebarManager": {
     "customize": "Customize sidebar",
-    "title": "Customize sidebar",
+    "title": "Edit sidebar",
     "description": "Reorder items, hide what you don't use, and add collections or shelves.",
     "available": "Add to sidebar",
     "add": "Add",
+    "addGroup": "Add section",
     "hideFromSidebar": "Hide from sidebar",
     "collection": "Collection",
     "shelf": "Shelf",
-    "createShelf": "Create new shelf",
+    "createShelf": "New shelf",
     "customizeHome": "Customize homepage",
-    "save": "Save",
+    "save": "Done",
     "cancel": "Cancel"
   },
   "BookDetailsPage": {

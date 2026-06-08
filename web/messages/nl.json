@@ -189,7 +189,7 @@
     "editCreatorDescription": "Werk de naam en sorteernaam bij.",
     "creatorName": "Naam",
     "sortAs": "Sorteren als",
-    "sortAsPlaceholder": "bijv. Rowling, J. K.",
+    "sortAsPlaceholder": "bijv. Schmidt, Annie M. G.",
     "nameRequired": "Naam is verplicht",
     "entityTypes": {
       "tag": "{count, plural, one {label} other {labels}}",
@@ -699,6 +699,7 @@
     "library": "Bibliotheek",
     "search": "Zoeken",
     "settings": "Instellingen",
+    "customize": "Zijbalk aanpassen",
     "documentation": "Documentatie",
     "account": "Account",
     "logout": "Uitloggen",
@@ -717,16 +718,17 @@
   },
   "SidebarManager": {
     "customize": "Zijbalk aanpassen",
-    "title": "Zijbalk aanpassen",
+    "title": "Zijbalk bewerken",
     "description": "Items herordenen, verbergen wat je niet gebruikt, en verzamelingen of planken toevoegen.",
     "available": "Aan zijbalk toevoegen",
     "add": "Toevoegen",
+    "addGroup": "Sectie toevoegen",
     "hideFromSidebar": "Verbergen uit zijbalk",
     "collection": "Verzameling",
     "shelf": "Plank",
-    "createShelf": "Nieuwe plank maken",
+    "createShelf": "Nieuwe plank",
     "customizeHome": "Homepagina aanpassen",
-    "save": "Opslaan",
+    "save": "Klaar",
     "cancel": "Annuleren"
   },
   "BookDetailsPage": {

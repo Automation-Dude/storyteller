@@ -7,6 +7,7 @@ import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 
 import { Button } from "@v3/_/components/ui/button"
+import { ColorPicker } from "@v3/_/components/ui/color-picker"
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
+import { IconPicker } from "@v3/_/components/ui/icon-picker"
 import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
 import {
@@ -92,6 +94,9 @@ export function ShelfEditor({
     shelf?.books.map((b) => b.bookUuid) ?? [],
   )
 
+  const [icon, setIcon] = useState<string | null>(shelf?.icon ?? null)
+  const [color, setColor] = useState<string | null>(shelf?.color ?? null)
+
   const form = useForm<ShelfFormValues>({
     resolver: zodResolver(shelfFormSchema),
     defaultValues: {
@@ -115,6 +120,8 @@ export function ShelfEditor({
 
       setFilter(shelf.filter ?? null)
       setSelectedBookUuids(shelf.books.map((b) => b.bookUuid))
+      setIcon(shelf.icon ?? null)
+      setColor(shelf.color ?? null)
 
       setSelectionMode(
         shelf.filter !== null
@@ -134,6 +141,8 @@ export function ShelfEditor({
 
       setFilter(initialFilter ?? null)
       setSelectedBookUuids([])
+      setIcon(null)
+      setColor(null)
       setSelectionMode("filter")
     }
   }, [open, shelf, form, initialFilter, initialName])
@@ -153,6 +162,8 @@ export function ShelfEditor({
         orderDirection: data["orderDirection"],
         limitCount: data["limitCount"],
         books: selectionMode === "manual" ? selectedBookUuids : [],
+        icon,
+        color,
       }
 
       if (isEditing) {
@@ -241,6 +252,14 @@ export function ShelfEditor({
                 placeholder="Optional description..."
                 rows={2}
               />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Icon & Color</Label>
+              <div className="flex items-center gap-2">
+                <IconPicker value={icon} onChange={setIcon} color={color} />
+                <ColorPicker value={color} onChange={setColor} />
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">

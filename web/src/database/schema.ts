@@ -123,8 +123,10 @@ export interface Changelog {
 }
 
 export interface Collection {
+  color: string | null
   createdAt: Generated<string>
   description: string | null
+  icon: string | null
   name: string
   public: Generated<boolean>
   updatedAt: Generated<string>
@@ -299,6 +301,7 @@ export interface Settings {
 }
 
 export interface Shelf {
+  color: string | null
   createdAt: Generated<string>
   description: string | null
   filter: import("kysely").ColumnType<
@@ -306,6 +309,7 @@ export interface Shelf {
     string | null,
     string | null
   >
+  icon: string | null
   limitCount: number | null
   name: string
   orderBy: Generated<import("@/database/shelves").ShelfOrderBy>
@@ -333,10 +337,21 @@ export interface ShelfFilterReference {
   uuid: Generated<import("@/uuid").UUID>
 }
 
+export interface SidebarGroup {
+  collapsed: Generated<number>
+  createdAt: Generated<string>
+  name: string
+  position: number
+  updatedAt: Generated<string>
+  userId: string
+  uuid: Generated<string>
+}
+
 export interface SidebarItem {
   builtinKey: string | null
   collectionUuid: string | null
   createdAt: Generated<string>
+  groupUuid: string | null
   hidden: Generated<number>
   kind: string
   position: number
@@ -458,6 +473,7 @@ export interface DB {
   shelf: Shelf
   shelfBook: ShelfBook
   shelfFilterReference: ShelfFilterReference
+  sidebarGroup: SidebarGroup
   sidebarItem: SidebarItem
   status: Status
   tag: Tag

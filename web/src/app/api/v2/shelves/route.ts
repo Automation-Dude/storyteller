@@ -25,6 +25,8 @@ export const POST = withHasPermission("bookList")(async (request) => {
     orderDirection?: "asc" | "desc" | null
     limitCount?: number | null
     books?: UUID[]
+    icon?: string | null
+    color?: string | null
   }
 
   const shelf = await createShelf(
@@ -36,6 +38,8 @@ export const POST = withHasPermission("bookList")(async (request) => {
       orderBy: body.orderBy ?? "createdAt",
       orderDirection: body.orderDirection ?? "desc",
       limitCount: body.limitCount ?? null,
+      icon: body.icon ?? null,
+      color: body.color ?? null,
     },
     body.books,
   )
