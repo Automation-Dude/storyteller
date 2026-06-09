@@ -1,8 +1,6 @@
 import { cookies } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 
-import { logger } from "@/logging"
-
 import { apiHost } from "./apiHost"
 
 export async function fetchApiRoute<Result>(endpoint: string) {
@@ -21,16 +19,6 @@ export async function fetchApiRoute<Result>(endpoint: string) {
     }
 
     if (response.status === 401) {
-      // instrumentation for the spurious-logout investigation: a 401 here forces
-      // a redirect to /login. record whether we even sent an auth token.
-      logger.warn(
-        {
-          ctx: "auth-debug",
-          endpoint,
-          hadToken: authTokenCookie != null,
-        },
-        "fetchApiRoute: 401 from api, redirecting to /login",
-      )
       redirect("/login")
     }
 

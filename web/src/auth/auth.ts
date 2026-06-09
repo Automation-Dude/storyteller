@@ -39,7 +39,6 @@ import {
   updateUserByEmail,
 } from "@/database/users"
 import { env } from "@/env"
-import { logger } from "@/logging"
 import type { UUID } from "@/uuid"
 
 import { Providers } from "./providers"
@@ -480,51 +479,6 @@ export function extractToken(request: NextAuthRequest) {
   return request.auth?.user
 }
 
-// instrumentation for the spurious-logout investigation: inspect the response a
-// guard is about to return and log when nextAuth.auth() has attached a Set-Cookie
-// that touches (and especially clears) st_token. this is how the cookie goes
-// missing mid-session, after which the next navigation lands on /login. remove
-// once the guards stop routing through nextAuth.auth().
-function logStTokenCookieMutation(
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  response: Response | void,
-  request: NextRequest,
-  site: string,
-) {
-  try {
-    if (!response) return
-    const stTokenCookies = response.headers
-      .getSetCookie()
-      .filter((c) => c.startsWith("st_token="))
-    if (stTokenCookies.length === 0) return
-
-    const clears = stTokenCookies.some((c) => {
-      const value = c.slice("st_token=".length).split(";")[0]
-      const lower = c.toLowerCase()
-      return (
-        value === "" ||
-        /max-age=0\b/.test(lower) ||
-        lower.includes("expires=thu, 01 jan 1970")
-      )
-    })
-
-    logger.warn(
-      {
-        ctx: "auth-debug",
-        site,
-        path: request.nextUrl.pathname,
-        method: request.method,
-        status: response.status,
-        clears,
-        setCookie: stTokenCookies,
-      },
-      `[auth-debug] ${site} emitted st_token Set-Cookie (clears=${clears}) on ${request.method} ${request.nextUrl.pathname}`,
-    )
-  } catch {
-    // never let instrumentation break a request
-  }
-}
-
 type VerifiedAuthRequest = NextRequest & { auth: Session }
 
 export function withUser<
@@ -557,9 +511,7 @@ export function withUser<
       // when passed a lazy init function
     }) as unknown as Promise<ReturnType<typeof nextAuth.auth>>
 
-    const response = await (await h)(request, context)
-    logStTokenCookieMutation(response, request, "withUser")
-    return response
+    return (await h)(request, context)
   }
 }
 
@@ -680,9 +632,7 @@ export function withHasPermission<
         // when passed a lazy init function
       }) as unknown as Promise<ReturnType<typeof nextAuth.auth>>
 
-      const response = await (await h)(request, context)
-      logStTokenCookieMutation(response, request, "withHasPermission")
-      return response
+      return (await h)(request, context)
     }
 }
 
@@ -700,33 +650,13 @@ export function hasPermission(
 // from a server component, which logs the user straight back out.
 export async function getCurrentUser(): Promise<UserWithPermissions | null> {
   const cookieStore = await cookies()
-  const cookieToken = cookieStore.get("st_token")?.value
-  const authToken = cookieToken ?? extractTokenFromHeader(await headers())
+  const authToken =
+    cookieStore.get("st_token")?.value ?? extractTokenFromHeader(await headers())
 
-  if (!authToken) {
-    // instrumentation for the spurious-logout investigation
-    logger.warn(
-      { ctx: "auth-debug", hadCookie: false },
-      "[auth-debug] getCurrentUser: no token (cookie + bearer both absent)",
-    )
-    return null
-  }
+  if (!authToken) return null
 
   const sessionAndUser = await adapter.getSessionAndUser?.(authToken)
-  if (!sessionAndUser) {
-    // instrumentation for the spurious-logout investigation: token present but
-    // no matching session row in the db. this is the case that makes a page with
-    // a valid-looking cookie still redirect to /login.
-    logger.warn(
-      {
-        ctx: "auth-debug",
-        fromCookie: cookieToken != null,
-        tokenPrefix: authToken.slice(0, 8),
-      },
-      "[auth-debug] getCurrentUser: token present but no session row found",
-    )
-    return null
-  }
+  if (!sessionAndUser) return null
 
   return sessionAndUser.user as UserWithPermissions
 }
