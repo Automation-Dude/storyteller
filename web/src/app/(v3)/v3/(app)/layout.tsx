@@ -57,7 +57,7 @@ export default async function AppLayout({
         <AppSidebar
           variant="inset"
           user={user}
-          className="absolute z-100"
+          className="absolute z-40"
           currentVersion={currentVersion}
           initialSidebarGroups={sidebarGroups}
         />

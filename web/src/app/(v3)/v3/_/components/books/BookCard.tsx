@@ -147,7 +147,7 @@ export const BookCard = memo(function BookCard({
                 <Fragment key={a.uuid}>
                   <Link
                     key={a.uuid}
-                    className="hover:text-primary relative z-50 hover:underline"
+                    className="hover:text-primary relative hover:underline"
                     prefetch={false}
                     href={`/v3/authors?item=${a.uuid}`}
                     onClick={(e) => {
