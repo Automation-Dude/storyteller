@@ -2,51 +2,83 @@
 
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { useGetHomeStatsQuery } from "@/store/api"
+import { useGetHomeStatsQuery, useListStatusesQuery } from "@/store/api"
+import { V3Link } from "../v3-link"
+
+type Tile = {
+  key: string
+  value: number
+  label: string
+  href?: string
+  detail?: string
+}
 
 export function StatsBar() {
   const t = useTranslation("HomePage")
   const { data: stats } = useGetHomeStatsQuery()
+  const { data: statuses } = useListStatusesQuery()
 
-  if (!stats) return null
+  if (!stats || !statuses) return null
+  const readingStatus = statuses.find((s) => s.name === "Reading")
 
   const tiles = [
     {
       key: "inProgress",
       value: stats.inProgress,
       label: t("stats.inProgress"),
+      href: readingStatus ? `/statuses?item=${readingStatus.uuid}` : "/books",
     },
     {
       key: "finishedThisYear",
       value: stats.finishedThisYear,
       label: t("stats.finishedThisYear"),
     },
-    { key: "inLibrary", value: stats.inLibrary, label: t("stats.inLibrary") },
+    {
+      key: "inLibrary",
+      value: stats.inLibrary,
+      label: t("stats.inLibrary"),
+      href: "/books",
+    },
     {
       key: "tags",
       value: stats.tags,
       label: t("stats.tags"),
       detail: t("stats.authors", { count: stats.authors }),
+      href: "/tags",
     },
-  ]
+  ] satisfies Tile[]
 
   return (
     <section className="grid grid-cols-2 gap-px overflow-hidden rounded-xl @2xl/main:grid-cols-4">
-      {tiles.map((tile) => (
-        <div key={tile.key} className="bg-muted/40 px-5 py-5">
-          <p className="font-heading text-primary text-3xl leading-none font-medium @xl/main:text-4xl">
-            {tile.value}
-          </p>
-          <p className="text-muted-foreground mt-2 text-xs font-medium tracking-[0.12em] uppercase">
-            {tile.label}
-          </p>
-          {tile.detail && (
-            <p className="text-muted-foreground/70 mt-1 text-xs">
-              {tile.detail}
-            </p>
-          )}
-        </div>
-      ))}
+      {tiles.map((tile) => {
+        return <Tile key={tile.key} tile={tile} />
+      })}
     </section>
   )
+}
+
+const Tile = ({ tile }: { tile: Tile }) => {
+  const content = (
+    <>
+      <p className="font-heading text-primary text-3xl leading-none font-medium @xl/main:text-4xl">
+        {tile.value}
+      </p>
+      <p className="text-muted-foreground mt-2 text-xs font-medium tracking-[0.12em] uppercase">
+        {tile.label}
+      </p>
+      {tile.detail && (
+        <p className="text-muted-foreground/70 mt-1 text-xs">{tile.detail}</p>
+      )}
+    </>
+  )
+
+  if (tile.href) {
+    return (
+      <V3Link href={tile.href} className="bg-muted/40 px-5 py-5">
+        {content}
+      </V3Link>
+    )
+  }
+
+  return <div className="bg-muted/40 px-5 py-5">{content}</div>
 }

@@ -40,6 +40,7 @@ import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import type { User } from "@/apiModels"
+import { cn } from "@/cn"
 import { type ShelfWithBooks } from "@/database/shelves"
 import {
   type SidebarGroupWithItems,
@@ -214,7 +215,9 @@ export function AppSidebar({
             <SidebarMenuButton
               size="sm"
               className="size-7 shrink-0"
-              onClick={() => { setEditMode(true) }}
+              onClick={() => {
+                setEditMode(true)
+              }}
               tooltip={t("customize")}
             >
               <IconAdjustmentsHorizontal className="size-4" />
@@ -226,7 +229,9 @@ export function AppSidebar({
         <SidebarContent>
           {editMode ? (
             <SidebarManager
-              onClose={() => { setEditMode(false) }}
+              onClose={() => {
+                setEditMode(false)
+              }}
               groups={sidebarGroups}
             />
           ) : (
@@ -278,7 +283,9 @@ export function AppSidebar({
 
       <ShelfEditorFromSidebar
         shelfUuid={editingShelfUuid}
-        onClose={() => { setEditingShelfUuid(null) }}
+        onClose={() => {
+          setEditingShelfUuid(null)
+        }}
       />
       <CommandSearch />
     </>
@@ -359,7 +366,12 @@ function SidebarNavGroup({
         <CollapsibleTrigger
           render={
             <SidebarGroupLabel className="cursor-pointer font-sans text-[10px] font-medium tracking-[0.14em] uppercase opacity-60">
-              <IconChevronRight className="mr-1 size-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              <IconChevronRight
+                className={cn(
+                  "mr-1 size-3 transition-transform duration-200",
+                  !localCollapsed && "rotate-90",
+                )}
+              />
               {group.name}
             </SidebarGroupLabel>
           }
@@ -437,21 +449,13 @@ function SidebarNavItem({
 
       {isEntity ? (
         <>
-          <SidebarMenuBadge className="group-hover/navitem:hidden">
-            {count != null ? (
-              count
-            ) : isCountLoading ? (
-              <Skeleton className="h-3.5 w-5 rounded" />
-            ) : null}
-          </SidebarMenuBadge>
-
-          <SidebarMenuBadge className="pointer-events-auto hidden group-hover/navitem:flex">
+          <SidebarMenuBadge className="peer/ellipsis pointer-events-auto hidden group-hover/navitem:flex has-data-popup-open:flex">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
                   <button
                     type="button"
-                    className="text-muted-foreground hover:text-foreground flex size-5 items-center justify-center rounded"
+                    className="text-muted-foreground/50 hover:text-muted-foreground flex size-5 items-center justify-center rounded"
                   >
                     <IconDotsVertical className="size-3.5" />
                   </button>
@@ -472,6 +476,14 @@ function SidebarNavItem({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+          </SidebarMenuBadge>
+
+          <SidebarMenuBadge className="group-hover/navitem:hidden peer-has-data-popup-open/ellipsis:hidden">
+            {count != null ? (
+              count
+            ) : isCountLoading ? (
+              <Skeleton className="h-3.5 w-5 rounded" />
+            ) : null}
           </SidebarMenuBadge>
         </>
       ) : (

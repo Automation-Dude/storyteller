@@ -152,9 +152,10 @@ export function LoginForm({
                 </Button>
               </Field>
               {providers.length > 0 && (
-                <FieldSeparator className="*:data-[slot=field-separator-content]:bg-transparent">
+                <>
+                  <FieldSeparator className="*:data-[slot=field-separator-content]:bg-transparent" />
                   {t("continueWith")}
-                </FieldSeparator>
+                </>
               )}
             </FieldGroup>
           </form>

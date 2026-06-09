@@ -171,7 +171,7 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
     return {
       books: shelfBooks,
       isLoading: isLoadingShelfBooks,
-      seeAllHref: "/books",
+      seeAllHref: `/shelves/${shelf.shelfUuid}`,
     }
   }
 
@@ -179,7 +179,7 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
     return {
       books: recentlyAddedBooks,
       isLoading: isLoadingAllBooks,
-      seeAllHref: "/books",
+      seeAllHref: "/books?sort=createdAt,desc",
     }
   }
 
@@ -188,7 +188,7 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
       books: currentlyReadingBooks,
       isLoading: isLoadingAllBooks,
       seeAllHref: readingStatus
-        ? `/statuses?status=${readingStatus.uuid}`
+        ? `/statuses?item=${readingStatus.uuid}`
         : "/books",
     }
   }
