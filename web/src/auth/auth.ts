@@ -39,6 +39,7 @@ import {
   updateUserByEmail,
 } from "@/database/users"
 import { env } from "@/env"
+import { logger } from "@/logging"
 import type { UUID } from "@/uuid"
 
 import { Providers } from "./providers"
@@ -479,6 +480,51 @@ export function extractToken(request: NextAuthRequest) {
   return request.auth?.user
 }
 
+// instrumentation for the spurious-logout investigation: inspect the response a
+// guard is about to return and log when nextAuth.auth() has attached a Set-Cookie
+// that touches (and especially clears) st_token. this is how the cookie goes
+// missing mid-session, after which the next navigation lands on /login. remove
+// once the guards stop routing through nextAuth.auth().
+function logStTokenCookieMutation(
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  response: Response | void,
+  request: NextRequest,
+  site: string,
+) {
+  try {
+    if (!response) return
+    const stTokenCookies = response.headers
+      .getSetCookie()
+      .filter((c) => c.startsWith("st_token="))
+    if (stTokenCookies.length === 0) return
+
+    const clears = stTokenCookies.some((c) => {
+      const value = c.slice("st_token=".length).split(";")[0]
+      const lower = c.toLowerCase()
+      return (
+        value === "" ||
+        /max-age=0\b/.test(lower) ||
+        lower.includes("expires=thu, 01 jan 1970")
+      )
+    })
+
+    logger.warn(
+      {
+        ctx: "auth-debug",
+        site,
+        path: request.nextUrl.pathname,
+        method: request.method,
+        status: response.status,
+        clears,
+        setCookie: stTokenCookies,
+      },
+      `[auth-debug] ${site} emitted st_token Set-Cookie (clears=${clears}) on ${request.method} ${request.nextUrl.pathname}`,
+    )
+  } catch {
+    // never let instrumentation break a request
+  }
+}
+
 type VerifiedAuthRequest = NextRequest & { auth: Session }
 
 export function withUser<
@@ -511,7 +557,9 @@ export function withUser<
       // when passed a lazy init function
     }) as unknown as Promise<ReturnType<typeof nextAuth.auth>>
 
-    return (await h)(request, context)
+    const response = await (await h)(request, context)
+    logStTokenCookieMutation(response, request, "withUser")
+    return response
   }
 }
 
@@ -632,7 +680,9 @@ export function withHasPermission<
         // when passed a lazy init function
       }) as unknown as Promise<ReturnType<typeof nextAuth.auth>>
 
-      return (await h)(request, context)
+      const response = await (await h)(request, context)
+      logStTokenCookieMutation(response, request, "withHasPermission")
+      return response
     }
 }
 
