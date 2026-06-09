@@ -46,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Layout")
   return {
     title: {
-      template: `%s | ${t("title")}`,
+      template: `%s • ${t("title")}`,
       default: t("title"),
     },
     description: t("description"),

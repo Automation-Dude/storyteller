@@ -1,9 +1,9 @@
+import { type Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { BookDetailsContent } from "@v3/_/components/books/BookDetailsPage"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
-import { hasPermission } from "@/auth/auth"
 import { getBook } from "@/database/books"
 import { ASSETS_DIR } from "@/directories"
 import { type UUID } from "@/uuid"
@@ -12,6 +12,16 @@ export type BookDetailsPageProps = {
   params: Promise<{
     uuid: UUID
   }>
+}
+
+export async function generateMetadata({
+  params,
+}: BookDetailsPageProps): Promise<Metadata> {
+  const { uuid } = await params
+  const book = await getBook(uuid)
+  return {
+    title: book?.title ?? "Book not found",
+  }
 }
 
 export default withPageAuth<BookDetailsPageProps>(["bookRead"])(
@@ -54,10 +64,6 @@ export default withPageAuth<BookDetailsPageProps>(["bookRead"])(
     return (
       <BookDetailsContent
         uuid={uuid}
-        canEdit={hasPermission("bookUpdate", user)}
-        canDownload={hasPermission("bookDownload", user)}
-        canDelete={hasPermission("bookDelete", user)}
-        canProcess={hasPermission("bookProcess", user)}
         assetsDir={ASSETS_DIR}
         initialBook={book}
       />

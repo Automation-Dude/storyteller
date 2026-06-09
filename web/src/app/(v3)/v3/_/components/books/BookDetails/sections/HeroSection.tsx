@@ -64,6 +64,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
         // fixed slim height only at rest; editing needs room for the cover
         // upload slots (movement on entering edit mode is acceptable)
         !isEditing && !editingCovers && `@xl/book:h-80`,
+        !compact && `calc(100vw_-_60px)`,
       )}
       style={{ background: tint(primary, 0.2) }}
     >

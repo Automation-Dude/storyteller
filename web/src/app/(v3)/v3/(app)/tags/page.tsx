@@ -3,12 +3,24 @@ import { getTranslations } from "next-intl/server"
 
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
+import { getTagByUuid } from "@/database/tags"
+import { type UUID } from "@/uuid"
+
 import { TagsPageClient } from "./tagsPageClient"
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("LibraryPage")
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ item?: UUID }>
+}): Promise<Metadata> {
+  const { item } = await searchParams
+  const [t, tag] = await Promise.all([
+    getTranslations("LibraryPage"),
+    item ? getTagByUuid(item) : null,
+  ])
+
   return {
-    title: t("Tags.by"),
+    title: tag ? tag.name : t("Tags.by"),
   }
 }
 

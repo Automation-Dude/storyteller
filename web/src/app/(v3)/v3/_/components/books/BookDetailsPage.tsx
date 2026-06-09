@@ -264,10 +264,6 @@ function BookPageHeader() {
           <IconArrowLeft className="h-4 w-4" />
           <span className="sr-only">Back</span>
         </Button>
-
-        <h1 className="font-heading font-tracking-tight truncate text-lg uppercase">
-          {book.title}
-        </h1>
       </div>
 
       <BookActionsMenu

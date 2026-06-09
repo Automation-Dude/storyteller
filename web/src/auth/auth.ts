@@ -700,13 +700,33 @@ export function hasPermission(
 // from a server component, which logs the user straight back out.
 export async function getCurrentUser(): Promise<UserWithPermissions | null> {
   const cookieStore = await cookies()
-  const authToken =
-    cookieStore.get("st_token")?.value ?? extractTokenFromHeader(await headers())
+  const cookieToken = cookieStore.get("st_token")?.value
+  const authToken = cookieToken ?? extractTokenFromHeader(await headers())
 
-  if (!authToken) return null
+  if (!authToken) {
+    // instrumentation for the spurious-logout investigation
+    logger.warn(
+      { ctx: "auth-debug", hadCookie: false },
+      "[auth-debug] getCurrentUser: no token (cookie + bearer both absent)",
+    )
+    return null
+  }
 
   const sessionAndUser = await adapter.getSessionAndUser?.(authToken)
-  if (!sessionAndUser) return null
+  if (!sessionAndUser) {
+    // instrumentation for the spurious-logout investigation: token present but
+    // no matching session row in the db. this is the case that makes a page with
+    // a valid-looking cookie still redirect to /login.
+    logger.warn(
+      {
+        ctx: "auth-debug",
+        fromCookie: cookieToken != null,
+        tokenPrefix: authToken.slice(0, 8),
+      },
+      "[auth-debug] getCurrentUser: token present but no session row found",
+    )
+    return null
+  }
 
   return sessionAndUser.user as UserWithPermissions
 }
