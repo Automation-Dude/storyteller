@@ -1,5 +1,4 @@
 import { type Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
 import { getMessages, getTranslations } from "next-intl/server"
 
 import { SettingsForm } from "@v3/_/components/settings-form/settings-form"
@@ -7,10 +6,10 @@ import {
   type SectionKeywords,
   settingsFormTabs,
 } from "@v3/_/components/settings-form/tabs"
+import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
 import { type Invite, type User } from "@/apiModels"
 import { fetchApiRoute } from "@/app/fetchApiRoute"
-import { nextAuth } from "@/auth/auth"
 import { getConfigLockedKeys, getSettings } from "@/database/settings"
 import { getCurrentVersion } from "@/versions"
 
@@ -56,19 +55,11 @@ function generateSectionKeywords(
   return result
 }
 
-// in a follow up PR i will do this in a more consolidated way
-export default async function SettingsPage() {
-  const auth = await nextAuth.auth()
-  if (!auth) {
-    redirect("/login")
-  }
-
-  if (!auth.user.permissions?.settingsUpdate) {
-    notFound()
-  }
-
+export default withPageAuth<{ params: Promise<Record<string, unknown>> }>([
+  "settingsUpdate",
+])(async (_props, user) => {
   const canManageUsers =
-    auth.user.permissions.userList || auth.user.permissions.inviteList
+    user.permissions.userList || user.permissions.inviteList
 
   const [settings, messages, configLockedKeys, users, invites] =
     await Promise.all([
@@ -100,4 +91,4 @@ export default async function SettingsPage() {
       initialInvites={invites}
     />
   )
-}
+})

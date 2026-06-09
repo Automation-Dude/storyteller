@@ -1,7 +1,7 @@
-import { forbidden, redirect } from "next/navigation"
+import { forbidden } from "next/navigation"
 import type React from "react"
 
-import { nextAuth } from "@/auth/auth"
+import { assertAuthenticatedUser } from "@/auth/auth"
 import { type Permission, type UserWithPermissions } from "@/database/users"
 
 export function withPageAuth<
@@ -17,20 +17,17 @@ export function withPageAuth<
       ) => Promise<React.ReactNode> | React.ReactNode,
     ) =>
     async (props: T) => {
-      const session = await nextAuth.auth()
-
-      if (!session) {
-        redirect("/login")
-      }
+      // redirects to /login when there is no valid session
+      const user = await assertAuthenticatedUser()
 
       const hasPermission = permissions.every(
-        (permission) => session.user.permissions?.[permission],
+        (permission) => user.permissions[permission],
       )
 
       if (!hasPermission) {
         return forbidden()
       }
 
-      return page(props, session.user as UserWithPermissions)
+      return page(props, user)
     }
 }

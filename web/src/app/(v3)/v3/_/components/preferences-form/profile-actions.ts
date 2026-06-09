@@ -1,9 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
-import { createConfig, hashPassword, nextAuth } from "@/auth/auth"
+import { assertAuthenticatedUser, createConfig, hashPassword } from "@/auth/auth"
 import { updateUser } from "@/database/users"
 
 export async function updateProfileAction(data: {
@@ -12,16 +11,13 @@ export async function updateProfileAction(data: {
   name: string
   password?: string
 }) {
-  const auth = await nextAuth.auth()
-  if (!auth) {
-    redirect("/login")
-  }
+  const user = await assertAuthenticatedUser()
 
   const hashedPassword = data.password
     ? await hashPassword(data.password)
     : undefined
 
-  await updateUser(auth.user.id, {
+  await updateUser(user.id, {
     username: data.username,
     email: data.email,
     name: data.name,
@@ -35,10 +31,7 @@ export async function unlinkAccountAction(data: {
   provider: string
   providerAccountId: string
 }) {
-  const auth = await nextAuth.auth()
-  if (!auth) {
-    redirect("/login")
-  }
+  await assertAuthenticatedUser()
 
   const config = await createConfig(undefined)
   await config.adapter?.unlinkAccount?.({

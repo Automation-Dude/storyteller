@@ -1,5 +1,5 @@
 import { type Metadata } from "next"
-import { redirect } from "next/navigation"
+import { forbidden } from "next/navigation"
 import { getMessages, getTranslations } from "next-intl/server"
 
 import { PreferencesForm } from "@v3/_/components/preferences-form/preferences-form"
@@ -7,14 +7,13 @@ import {
   type SectionKeywords,
   preferenceTabs,
 } from "@v3/_/components/preferences-form/tabs"
+import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
-import { type User } from "@/apiModels"
-import { fetchApiRoute } from "@/app/fetchApiRoute"
-import { nextAuth } from "@/auth/auth"
 import { getSettings } from "@/database/settings"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
 import { getAccounts } from "@/database/users"
+import { env } from "@/env"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PreferencesPage")
@@ -58,41 +57,44 @@ function generateSectionKeywords(
   return result
 }
 
-export default async function PreferencesPage() {
-  const auth = await nextAuth.auth()
-  if (!auth) {
-    redirect("/login")
-  }
+export default withPageAuth<{ params: Promise<Record<string, unknown>> }>([])(
+  async (_props, user) => {
+    // mirror the v2 account page: in demo mode only privileged users may edit
+    // their profile/preferences
+    if (env.STORYTELLER_DEMO_MODE && !user.permissions.userCreate) {
+      forbidden()
+    }
 
-  const [settings, rawPreferences, linkedAccounts, messages] =
-    await Promise.all([
-      getSettings(),
-      getUserSettings(auth.user.id),
-      getAccounts(auth.user.id),
-      getMessages(),
-    ])
+    const [settings, rawPreferences, linkedAccounts, messages] =
+      await Promise.all([
+        getSettings(),
+        getUserSettings(user.id),
+        getAccounts(user.id),
+        getMessages(),
+      ])
 
-  const preferences = resolveUserPreferences(rawPreferences)
+    const preferences = resolveUserPreferences(rawPreferences)
 
-  const preferencesMessages = messages.PreferencesPage as {
-    tabs: Record<string, { sections?: Record<string, unknown> }>
-  }
-  const sectionKeywords = generateSectionKeywords(preferencesMessages.tabs)
+    const preferencesMessages = messages.PreferencesPage as {
+      tabs: Record<string, { sections?: Record<string, unknown> }>
+    }
+    const sectionKeywords = generateSectionKeywords(preferencesMessages.tabs)
 
-  const oauthProviders = settings.authProviders
+    const oauthProviders = settings.authProviders
 
-  return (
-    <PreferencesForm
-      user={auth.user}
-      preferences={preferences}
-      sectionKeywords={sectionKeywords}
-      linkedAccounts={linkedAccounts}
-      providers={oauthProviders.map((provider) =>
-        provider.kind === "built-in"
-          ? { id: provider.id, name: provider.id }
-          : { id: provider.name, name: provider.name },
-      )}
-      disablePasswordLogin={settings.disablePasswordLogin}
-    />
-  )
-}
+    return (
+      <PreferencesForm
+        user={user}
+        preferences={preferences}
+        sectionKeywords={sectionKeywords}
+        linkedAccounts={linkedAccounts}
+        providers={oauthProviders.map((provider) =>
+          provider.kind === "built-in"
+            ? { id: provider.id, name: provider.id }
+            : { id: provider.name, name: provider.name },
+        )}
+        disablePasswordLogin={settings.disablePasswordLogin}
+      />
+    )
+  },
+)

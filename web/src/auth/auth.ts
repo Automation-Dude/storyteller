@@ -643,25 +643,32 @@ export function hasPermission(
   return !!user?.permissions?.[permission]
 }
 
-export async function assertAuthenticatedUser() {
+// the app authenticates by reading the st_token cookie (or bearer header) and
+// looking the session up in the db directly. we deliberately do not use
+// nextAuth.auth() here: with the credentials provider + hand-rolled session
+// cookie, auth() has session-cookie side effects that clear st_token when run
+// from a server component, which logs the user straight back out.
+export async function getCurrentUser(): Promise<UserWithPermissions | null> {
   const cookieStore = await cookies()
-  const authTokenCookie = cookieStore.get("st_token")
+  const authToken =
+    cookieStore.get("st_token")?.value ?? extractTokenFromHeader(await headers())
 
-  const authTokenHeader = extractTokenFromHeader(await headers())
-
-  const authToken = authTokenCookie?.value ?? authTokenHeader
-
-  if (!authToken) {
-    redirect("/login")
-  }
+  if (!authToken) return null
 
   const sessionAndUser = await adapter.getSessionAndUser?.(authToken)
+  if (!sessionAndUser) return null
 
-  if (!sessionAndUser) {
+  return sessionAndUser.user as UserWithPermissions
+}
+
+export async function assertAuthenticatedUser() {
+  const user = await getCurrentUser()
+
+  if (!user) {
     redirect("/login")
   }
 
-  return sessionAndUser.user as UserWithPermissions
+  return user
 }
 
 export async function assertHasPermission(permission: Permission) {
