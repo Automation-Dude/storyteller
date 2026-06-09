@@ -31,10 +31,7 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import {
-  type BookWithRelations,
-  type CreatorRelation,
-} from "@/database/books"
+import { type BookWithRelations, type CreatorRelation } from "@/database/books"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
   useAddBooksToCollectionsMutation,
@@ -166,7 +163,7 @@ export function useBookActionItems({
     await Promise.all(
       epubBooks.map((b) => upgradeEpub({ uuid: b.uuid }).unwrap()),
     )
-    toast.success(t.plain("upgradeStarted"))
+    toast.success(t("upgradeStarted"))
   }, [upgradeEpub, epubBooks, t])
 
   const handleMerge = useCallback(async () => {
@@ -207,41 +204,41 @@ export function useBookActionItems({
 
   const deleteAction = useConfirmAction({
     onConfirm: handleDelete,
-    title: t.plain("deleteTitle", { count }),
-    description: t.plain("deleteDescription"),
-    confirmLabel: t.plain("delete"),
+    title: t("deleteTitle", { count }),
+    description: t("deleteDescription"),
+    confirmLabel: t("delete"),
     variant: "destructive",
   })
 
   const clearCacheAction = useConfirmAction({
     onConfirm: handleClearCache,
-    title: t.plain("clearCacheTitle", { count }),
-    description: t.plain("clearCacheDescription"),
-    confirmLabel: t.plain("clearCache"),
+    title: t("clearCacheTitle", { count }),
+    description: t("clearCacheDescription"),
+    confirmLabel: t("clearCache"),
     variant: "destructive",
   })
 
   const processAction = useConfirmAction({
     onConfirm: handleProcess,
-    title: t.plain("processTitle", { count }),
-    description: t.plain("processDescription"),
-    confirmLabel: t.plain("process"),
+    title: t("processTitle", { count }),
+    description: t("processDescription"),
+    confirmLabel: t("process"),
   })
 
   const upgradeAction = useConfirmAction({
     onConfirm: handleUpgrade,
-    title: t.plain("upgradeTitle", { count: epubBooks.length }),
-    description: t.plain("upgradeDescription"),
-    confirmLabel: t.plain("upgradeEpub"),
+    title: t("upgradeTitle", { count: epubBooks.length }),
+    description: t("upgradeDescription"),
+    confirmLabel: t("upgradeEpub"),
   })
 
   const mergeAction = useConfirmAction({
     onConfirm: handleMerge,
     title: mergeTarget
-      ? t.plain("mergeTitle", { target: mergeTarget.title })
-      : t.plain("merge"),
-    description: t.plain("mergeDescription"),
-    confirmLabel: t.plain("merge"),
+      ? t("mergeTitle", { target: mergeTarget.title })
+      : t("merge"),
+    description: t("mergeDescription"),
+    confirmLabel: t("merge"),
     variant: "destructive",
   })
 
@@ -259,7 +256,7 @@ export function useBookActionItems({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <IconArrowMerge className="mr-2 h-4 w-4" />
-            {t.plain("mergeInto")}
+            {t("mergeInto")}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
             {books.map((book) => (
@@ -281,12 +278,12 @@ export function useBookActionItems({
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <IconFolder className="mr-2 h-4 w-4" />
-              {t.plain("addToCollection")}
+              {t("addToCollection")}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
               {collections.length === 0 ? (
                 <DropdownMenuItem disabled>
-                  {t.plain("noCollections")}
+                  {t("noCollections")}
                 </DropdownMenuItem>
               ) : (
                 collections.map((collection) => (
@@ -310,7 +307,7 @@ export function useBookActionItems({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <IconFolderMinus className="mr-2 h-4 w-4" />
-                {t.plain("removeFromCollection")}
+                {t("removeFromCollection")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                 {usedCollections.map((collection) => (
@@ -333,13 +330,11 @@ export function useBookActionItems({
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <IconLibrary className="mr-2 h-4 w-4" />
-              {t.plain("addToSeries")}
+              {t("addToSeries")}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
               {series.length === 0 ? (
-                <DropdownMenuItem disabled>
-                  {t.plain("noSeries")}
-                </DropdownMenuItem>
+                <DropdownMenuItem disabled>{t("noSeries")}</DropdownMenuItem>
               ) : (
                 series.map((s) => (
                   <DropdownMenuItem
@@ -366,7 +361,7 @@ export function useBookActionItems({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <IconLibraryMinus className="mr-2 h-4 w-4" />
-                {t.plain("removeFromSeries")}
+                {t("removeFromSeries")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                 {usedSeries.map((s) => (
@@ -389,11 +384,11 @@ export function useBookActionItems({
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <IconTag className="mr-2 h-4 w-4" />
-              {t.plain("addTag")}
+              {t("addTag")}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
               {tags.length === 0 ? (
-                <DropdownMenuItem disabled>{t.plain("noTags")}</DropdownMenuItem>
+                <DropdownMenuItem disabled>{t("noTags")}</DropdownMenuItem>
               ) : (
                 tags.map((tag) => (
                   <DropdownMenuItem
@@ -413,7 +408,7 @@ export function useBookActionItems({
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <IconTagOff className="mr-2 h-4 w-4" />
-                {t.plain("removeTag")}
+                {t("removeTag")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                 {usedTags.map((tag) => (
@@ -435,7 +430,7 @@ export function useBookActionItems({
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>
           <IconBook className="mr-2 h-4 w-4" />
-          {t.plain("setStatus")}
+          {t("setStatus")}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
           {statuses.map((status) => (
@@ -461,7 +456,7 @@ export function useBookActionItems({
           }}
         >
           <IconReplace className="mr-2 h-4 w-4" />
-          {t.plain("upgradeEpub")}
+          {t("upgradeEpub")}
         </DropdownMenuItem>
       )}
 
@@ -470,7 +465,7 @@ export function useBookActionItems({
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleScan}>
             <IconScan className="mr-2 h-4 w-4" />
-            {t.plain("scan")}
+            {t("scan")}
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -483,7 +478,7 @@ export function useBookActionItems({
             }}
           >
             <IconProgress className="mr-2 h-4 w-4" />
-            {t.plain("process")}
+            {t("process")}
           </DropdownMenuItem>
 
           {mode === "bulk" && (
@@ -493,7 +488,7 @@ export function useBookActionItems({
               }}
             >
               <IconRefresh className="mr-2 h-4 w-4" />
-              {t.plain("clearCache")}
+              {t("clearCache")}
             </DropdownMenuItem>
           )}
         </>
@@ -510,7 +505,7 @@ export function useBookActionItems({
             className="text-destructive focus:text-destructive"
           >
             <IconTrash className="mr-2 h-4 w-4" />
-            {deleteAction.isLoading ? t.plain("deleting") : t.plain("delete")}
+            {deleteAction.isLoading ? t("deleting") : t("delete")}
           </DropdownMenuItem>
         </>
       )}

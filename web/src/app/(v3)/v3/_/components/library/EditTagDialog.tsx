@@ -88,24 +88,20 @@ export function EditTagDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t.plain("editTag")}</DialogTitle>
-          <DialogDescription>{t.plain("editTagDescription")}</DialogDescription>
+          <DialogTitle>{t("editTag")}</DialogTitle>
+          <DialogDescription>{t("editTagDescription")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="py-4">
             <Field>
-              <FieldLabel htmlFor="edit-tag-name">
-                {t.plain("tagName")}
-              </FieldLabel>
+              <FieldLabel htmlFor="edit-tag-name">{t("tagName")}</FieldLabel>
               <Input
                 id="edit-tag-name"
-                placeholder={t.plain("tagName")}
+                placeholder={t("tagName")}
                 {...register("name")}
               />
-              {errors.name && (
-                <FieldError>{t.plain("nameRequired")}</FieldError>
-              )}
+              {errors.name && <FieldError>{t("nameRequired")}</FieldError>}
             </Field>
           </FieldGroup>
 
@@ -116,11 +112,11 @@ export function EditTagDialog({
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t.plain("cancel")}
+              {t("cancel")}
             </Button>
 
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t.plain("saving") : t.plain("save")}
+              {isLoading ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
         </form>

@@ -1,6 +1,10 @@
 "use client"
 
-import { IconArrowUpRight, IconDotsVertical, IconEdit } from "@tabler/icons-react"
+import {
+  IconArrowUpRight,
+  IconDotsVertical,
+  IconEdit,
+} from "@tabler/icons-react"
 import Link from "next/link"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -60,7 +64,7 @@ export function BookActionsMenu({
               render={
                 <Link href={fullPageHref ?? `/v3/books/${book.uuid}`}>
                   <IconArrowUpRight className="mr-2 h-4 w-4" />
-                  {t.plain("openFullPage")}
+                  {t("openFullPage")}
                 </Link>
               }
             />
@@ -69,7 +73,7 @@ export function BookActionsMenu({
           {onEdit && (
             <DropdownMenuItem onClick={onEdit}>
               <IconEdit className="mr-2 h-4 w-4" />
-              {t.plain("edit")}
+              {t("edit")}
             </DropdownMenuItem>
           )}
 

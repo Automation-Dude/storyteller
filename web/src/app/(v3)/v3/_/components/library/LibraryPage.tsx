@@ -330,16 +330,16 @@ export function LibraryPage({
 
   const headerDeleteAction = useConfirmAction({
     onConfirm: handleHeaderDelete,
-    title: tEntity.plain("deleteTitle", {
+    title: tEntity("deleteTitle", {
       count: 1,
       entity: entityType
-        ? tEntity.plain(`entityTypes.${entityType}` as "entityTypes.tag", {
+        ? tEntity(`entityTypes.${entityType}` as "entityTypes.tag", {
             count: 1,
           })
         : "",
     }),
-    description: tEntity.plain("deleteDescription"),
-    confirmLabel: tEntity.plain("delete"),
+    description: tEntity("deleteDescription"),
+    confirmLabel: tEntity("delete"),
     variant: "destructive",
   })
 
@@ -484,7 +484,7 @@ export function LibraryPage({
                     }}
                   >
                     <IconEdit className="mr-2 h-4 w-4" />
-                    {tEntity.plain("edit")}
+                    {tEntity("edit")}
                   </DropdownMenuItem>
                 )}
 
@@ -500,7 +500,7 @@ export function LibraryPage({
                     }}
                   >
                     <IconBookmarkPlus className="mr-2 h-4 w-4" />
-                    {t.plain("pinAsShelf")}
+                    {t("pinAsShelf")}
                   </DropdownMenuItem>
                 )}
 
@@ -514,7 +514,7 @@ export function LibraryPage({
                       className="text-destructive focus:text-destructive"
                     >
                       <IconTrash className="mr-2 h-4 w-4" />
-                      {tEntity.plain("delete")}
+                      {tEntity("delete")}
                     </DropdownMenuItem>
                   </>
                 )}
@@ -665,111 +665,107 @@ function SidebarPanel({
   const rowDeleteAction = useConfirmAction({
     onConfirm: handleRowDelete,
     title: menuTarget
-      ? tEntity.plain("deleteTitle", {
+      ? tEntity("deleteTitle", {
           count: 1,
           entity: entityType
-            ? tEntity.plain(`entityTypes.${entityType}` as "entityTypes.tag", {
+            ? tEntity(`entityTypes.${entityType}` as "entityTypes.tag", {
                 count: 1,
               })
             : "",
         })
       : "",
-    description: tEntity.plain("deleteDescription"),
-    confirmLabel: tEntity.plain("delete"),
+    description: tEntity("deleteDescription"),
+    confirmLabel: tEntity("delete"),
     variant: "destructive",
   })
 
   return (
     <div className="relative flex h-full flex-col">
       <ScrollArea className="flex h-full flex-col">
-      <div className="bg-background sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-base">{title}</h2>
+        <div className="bg-background sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-base">{title}</h2>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={toggleSort}
-            title={
-              sortMode === "name"
-                ? t.plain("sortByCount")
-                : t.plain("sortByName")
-            }
-          >
-            {sortMode === "name" ? (
-              <IconSortAscending className="h-4 w-4" />
-            ) : (
-              <IconSortDescending className="h-4 w-4" />
-            )}
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleSort}
+              title={sortMode === "name" ? t("sortByCount") : t("sortByName")}
+            >
+              {sortMode === "name" ? (
+                <IconSortAscending className="h-4 w-4" />
+              ) : (
+                <IconSortDescending className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
+          <SearchInput
+            placeholder={t("search")}
+            value={search}
+            onChange={onSearchChange}
+          />
         </div>
 
-        <SearchInput
-          placeholder={t.plain("search")}
-          value={search}
-          onChange={onSearchChange}
+        <SidebarItemList
+          items={items}
+          selectedKey={selectedKey}
+          onItemClick={onItemClick}
+          isLoading={isLoading}
+          entityType={entityType}
+          itemSelection={itemSelection}
+          onOpenItemMenu={handleOpenItemMenu}
         />
-      </div>
 
-      <SidebarItemList
-        items={items}
-        selectedKey={selectedKey}
-        onItemClick={onItemClick}
-        isLoading={isLoading}
-        entityType={entityType}
-        itemSelection={itemSelection}
-        onOpenItemMenu={handleOpenItemMenu}
-      />
-
-      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-        <DropdownMenuContent
-          align="end"
-          className="min-w-40"
-          anchor={menuAnchor}
-        >
-          {onEditItem && menuTarget && (
-            <DropdownMenuItem
-              onClick={() => {
-                onEditItem(menuTarget)
-                setMenuOpen(false)
-              }}
-            >
-              <IconEdit className="mr-2 h-4 w-4" />
-              {tEntity.plain("edit")}
-            </DropdownMenuItem>
-          )}
-
-          {onPinItem && menuTarget && (
-            <DropdownMenuItem
-              onClick={() => {
-                onPinItem(menuTarget)
-                setMenuOpen(false)
-              }}
-            >
-              <IconBookmarkPlus className="mr-2 h-4 w-4" />
-              {t.plain("pinAsShelf")}
-            </DropdownMenuItem>
-          )}
-
-          {entityType && menuTarget && (
-            <>
-              {(onEditItem || onPinItem) && <DropdownMenuSeparator />}
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenuContent
+            align="end"
+            className="min-w-40"
+            anchor={menuAnchor}
+          >
+            {onEditItem && menuTarget && (
               <DropdownMenuItem
-                onClick={(event) => {
-                  rowDeleteAction.confirm(event)
+                onClick={() => {
+                  onEditItem(menuTarget)
                   setMenuOpen(false)
                 }}
-                className="text-destructive focus:text-destructive"
               >
-                <IconTrash className="mr-2 h-4 w-4" />
-                {tEntity.plain("delete")}
+                <IconEdit className="mr-2 h-4 w-4" />
+                {tEntity("edit")}
               </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            )}
 
-      <ConfirmDialog {...rowDeleteAction.dialogProps} />
+            {onPinItem && menuTarget && (
+              <DropdownMenuItem
+                onClick={() => {
+                  onPinItem(menuTarget)
+                  setMenuOpen(false)
+                }}
+              >
+                <IconBookmarkPlus className="mr-2 h-4 w-4" />
+                {t("pinAsShelf")}
+              </DropdownMenuItem>
+            )}
+
+            {entityType && menuTarget && (
+              <>
+                {(onEditItem || onPinItem) && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    rowDeleteAction.confirm(event)
+                    setMenuOpen(false)
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <IconTrash className="mr-2 h-4 w-4" />
+                  {tEntity("delete")}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <ConfirmDialog {...rowDeleteAction.dialogProps} />
       </ScrollArea>
 
       {entityType && itemSelection && (
@@ -885,7 +881,7 @@ function SidebarItemList({
   if (items.length === 0) {
     return (
       <div className="text-muted-foreground px-4 py-8 text-center text-sm">
-        {t.plain("noItemsFound")}
+        {t("noItemsFound")}
       </div>
     )
   }

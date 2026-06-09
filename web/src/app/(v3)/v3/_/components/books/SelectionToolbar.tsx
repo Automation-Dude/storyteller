@@ -68,7 +68,7 @@ export function SelectionToolbar({
             render={
               <Button variant="ghost" size="sm">
                 <IconSquareCheck className="mr-2 h-4 w-4" />
-                {t.plain("select")}
+                {t("select")}
                 <IconChevronDown className="ml-2 h-4 w-4" />
               </Button>
             }
@@ -80,11 +80,11 @@ export function SelectionToolbar({
               }}
             >
               <IconCheck className="mr-2 h-4 w-4" />
-              {t.plain("selectAll")}
+              {t("selectAll")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={selectNone}>
               <IconSquare className="mr-2 h-4 w-4" />
-              {t.plain("selectNone")}
+              {t("selectNone")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
@@ -92,13 +92,13 @@ export function SelectionToolbar({
               }}
             >
               <IconSquareCheck className="mr-2 h-4 w-4" />
-              {t.plain("invertSelection")}
+              {t("invertSelection")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <span className="px-2 font-sans text-xs whitespace-nowrap">
-          {t.plain("selected", { count: selectedBooks.size })}
+          {t("selected", { count: selectedBooks.size })}
         </span>
 
         <DropdownMenu>
@@ -110,7 +110,7 @@ export function SelectionToolbar({
                 disabled={selectedBooks.size === 0}
               >
                 <IconPointer className="mr-2 h-4 w-4" />
-                {t.plain("actions")}
+                {t("actions")}
                 <IconChevronDown className="ml-2 h-4 w-4" />
               </Button>
             }

@@ -53,12 +53,14 @@ export function ConfirmDialog({
 
         <DialogFooter>
           <p className="text-muted-foreground mr-auto self-center text-[0.625rem]">
-            {t.plain("shiftSkipHint")}
+            {t("shiftSkipHint")}
           </p>
 
           <Button
             variant="outline"
-            onClick={() => { onOpenChange(false); }}
+            onClick={() => {
+              onOpenChange(false)
+            }}
             disabled={isLoading}
           >
             {cancelLabel}

@@ -65,12 +65,15 @@ export function useTranslation<
     })
   }) as unknown as T
 
-  fn.rich = t.rich.bind(fn)
-  fn.markup = t.markup.bind(fn)
-  fn.raw = t.raw.bind(fn)
-  fn.has = t.has.bind(fn)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return
-  fn.plain = (key, values?) => (t as any)(key, values)
-
-  return fn
+  return Object.assign(fn, {
+    rich: t.rich.bind(fn),
+    markup: t.markup.bind(fn),
+    raw: t.raw.bind(fn),
+    has: t.has.bind(fn),
+    plain: (
+      key: NamespacedMessageKeys<Messages, NestedKey>,
+      values?: Record<string, string | number>,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+    ) => (t as any)(key, values),
+  })
 }

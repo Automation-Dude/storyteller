@@ -105,10 +105,10 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
           hasNextPage={false}
           fetchNextPage={() => {}}
           showMuted={showMuted}
-          emptyMessage={t.plain("emptyShelf")}
+          emptyMessage={t("emptyShelf")}
           emptySubMessage={
             deferredSearch || activeFilterCount > 0
-              ? t.plain("adjustFilters")
+              ? t("adjustFilters")
               : undefined
           }
           onClearFilters={clearFilters}

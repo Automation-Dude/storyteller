@@ -98,35 +98,31 @@ export function EditCreatorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t.plain("editCreator")}</DialogTitle>
-          <DialogDescription>
-            {t.plain("editCreatorDescription")}
-          </DialogDescription>
+          <DialogTitle>{t("editCreator")}</DialogTitle>
+          <DialogDescription>{t("editCreatorDescription")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="py-4">
             <Field>
               <FieldLabel htmlFor="edit-creator-name">
-                {t.plain("creatorName")}
+                {t("creatorName")}
               </FieldLabel>
               <Input
                 id="edit-creator-name"
-                placeholder={t.plain("creatorName")}
+                placeholder={t("creatorName")}
                 {...register("name")}
               />
-              {errors.name && (
-                <FieldError>{t.plain("nameRequired")}</FieldError>
-              )}
+              {errors.name && <FieldError>{t("nameRequired")}</FieldError>}
             </Field>
 
             <Field>
               <FieldLabel htmlFor="edit-creator-file-as">
-                {t.plain("sortAs")}
+                {t("sortAs")}
               </FieldLabel>
               <Input
                 id="edit-creator-file-as"
-                placeholder={t.plain("sortAsPlaceholder")}
+                placeholder={t("sortAsPlaceholder")}
                 {...register("fileAs")}
               />
             </Field>
@@ -139,11 +135,11 @@ export function EditCreatorDialog({
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t.plain("cancel")}
+              {t("cancel")}
             </Button>
 
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t.plain("saving") : t.plain("save")}
+              {isLoading ? t("saving") : t("save")}
             </Button>
           </DialogFooter>
         </form>

@@ -170,26 +170,25 @@ export function SidebarEntityActions({
     }
   }, [mergeTarget, selectedArray, mergeEntities, onStopSelecting])
 
-  const entityLabel = t.plain(
-    `entityTypes.${entityType}` as "entityTypes.tag",
-    { count },
-  )
+  const entityLabel = t(`entityTypes.${entityType}` as "entityTypes.tag", {
+    count,
+  })
 
   const deleteAction = useConfirmAction({
     onConfirm: handleDelete,
-    title: t.plain("deleteTitle", { count, entity: entityLabel }),
-    description: t.plain("deleteDescription"),
-    confirmLabel: t.plain("delete"),
+    title: t("deleteTitle", { count, entity: entityLabel }),
+    description: t("deleteDescription"),
+    confirmLabel: t("delete"),
     variant: "destructive",
   })
 
   const mergeAction = useConfirmAction({
     onConfirm: handleMerge,
     title: mergeTarget
-      ? t.plain("mergeTitle", { count, target: mergeTarget.name })
-      : t.plain("merge"),
-    description: t.plain("mergeDescription"),
-    confirmLabel: t.plain("merge"),
+      ? t("mergeTitle", { count, target: mergeTarget.name })
+      : t("merge"),
+    description: t("mergeDescription"),
+    confirmLabel: t("merge"),
     variant: "default",
   })
 
@@ -208,7 +207,7 @@ export function SidebarEntityActions({
         className="absolute inset-x-2 bottom-2 gap-1 p-1.5"
       >
         <span className="text-muted-foreground flex-1 px-1 text-xs tabular-nums">
-          {t.plain("selected", { count })}
+          {t("selected", { count })}
         </span>
 
         <DropdownMenu>
@@ -222,9 +221,13 @@ export function SidebarEntityActions({
 
           <DropdownMenuContent align="end" className="min-w-40">
             {onEdit && singleSelected && (
-              <DropdownMenuItem onClick={() => { onEdit(singleSelected); }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  onEdit(singleSelected)
+                }}
+              >
                 <IconEdit className="mr-2 h-4 w-4" />
-                {t.plain("edit")}
+                {t("edit")}
               </DropdownMenuItem>
             )}
 
@@ -232,14 +235,16 @@ export function SidebarEntityActions({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <IconGitMerge className="mr-2 h-4 w-4" />
-                  {t.plain("mergeInto")}
+                  {t("mergeInto")}
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                   {selectedItemObjects.map((item) => (
                     <DropdownMenuItem
                       key={item.key}
-                      onClick={(event) => { handleMergeInto(item, event); }}
+                      onClick={(event) => {
+                        handleMergeInto(item, event)
+                      }}
                     >
                       {item.name}
                     </DropdownMenuItem>
@@ -255,7 +260,7 @@ export function SidebarEntityActions({
                 }}
               >
                 <IconBookmarkPlus className="mr-2 h-4 w-4" />
-                {t.plain("createShelfWith")}
+                {t("createShelfWith")}
               </DropdownMenuItem>
             )}
 
@@ -264,12 +269,14 @@ export function SidebarEntityActions({
             ) : null}
 
             <DropdownMenuItem
-              onClick={(event) => { deleteAction.confirm(event); }}
+              onClick={(event) => {
+                deleteAction.confirm(event)
+              }}
               disabled={isDeleting}
               className="text-destructive focus:text-destructive"
             >
               <IconTrash className="mr-2 h-4 w-4" />
-              {isDeleting ? t.plain("deleting") : t.plain("delete")}
+              {isDeleting ? t("deleting") : t("delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
