@@ -21,7 +21,10 @@ import {
 import { Input } from "@v3/_/components/ui/input"
 import { Textarea } from "@v3/_/components/ui/textarea"
 
-import { useUpdateSeriesMutation } from "@/store/api"
+import {
+  useListInfiniteBooksInfiniteQuery,
+  useUpdateSeriesMutation,
+} from "@/store/api"
 
 const seriesSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -50,7 +53,7 @@ export function EditSeriesDialog({
   const [updateSeries, { isLoading }] = useUpdateSeriesMutation()
 
   // fetch books in this series to preserve relations on update
-  const { data: booksData } = api.endpoints.listInfiniteBooks.useInfiniteQuery(
+  const { data: booksData } = useListInfiniteBooksInfiniteQuery(
     { series: series?.uuid, limit: 100 },
     { skip: !series?.uuid || !open },
   )
@@ -61,8 +64,7 @@ export function EditSeriesDialog({
     return books.map((book) => {
       const seriesInfo = book.series.find((s) => s.uuid === series.uuid)
       return {
-        bookUuid:
-          book.uuid as `${string}-${string}-${string}-${string}-${string}`,
+        bookUuid: book.uuid,
         position: seriesInfo?.position ?? null,
         featured: seriesInfo?.featured ?? false,
       }
@@ -100,7 +102,7 @@ export function EditSeriesDialog({
       if (!series) return
       try {
         await updateSeries({
-          uuid: series.uuid as `${string}-${string}-${string}-${string}-${string}`,
+          uuid: series.uuid,
           update: {
             name: data.name,
             description: data.description ?? "",
@@ -148,6 +150,14 @@ export function EditSeriesDialog({
               />
             </Field>
           </FieldGroup>
+          <div className="py-4">
+            <h2 className="text-sm font-medium">Books in this series</h2>
+            <div className="grid grid-cols-1 gap-2">
+              {booksData?.pages
+                .flat()
+                .map((book) => <div key={book.uuid}>{book.title}</div>)}
+            </div>
+          </div>
           <DialogFooter>
             <Button
               type="button"

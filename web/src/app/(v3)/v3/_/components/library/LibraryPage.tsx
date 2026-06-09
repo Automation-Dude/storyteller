@@ -65,6 +65,9 @@ import {
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
+import { CreateCollectionDialog } from "../books/CreateCollectionDialog"
+import { CreateSeriesDialog } from "../books/_CreateSeriesDialog"
+import { EditSeriesDialog } from "../books/_EditSeriesDialog"
 
 const noop = () => {}
 const SIDEBAR_ROW_HEIGHT = 30
@@ -593,6 +596,28 @@ function EntityEditDialog({
         creator={
           item ? { uuid: item.key, name: item.name, fileAs: null } : null
         }
+      />
+    )
+  }
+
+  if (entityType === "series") {
+    return (
+      <EditSeriesDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        series={
+          item ? { uuid: item.key, name: item.name, description: null } : null
+        }
+      />
+    )
+  }
+
+  if (entityType === "collection") {
+    return (
+      <CreateCollectionDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        collection={item ? { uuid: item.key, name: item.name } : null}
       />
     )
   }
