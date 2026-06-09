@@ -184,6 +184,8 @@ export function NavUser({
               render={
                 <Link
                   href={`/logout?redirectTo=${encodeURIComponent(`${basePath}/login`)}`}
+                  // lmao this would log you out otherwise
+                  prefetch={false}
                   className="flex items-center gap-2"
                 >
                   <IconLogout />
