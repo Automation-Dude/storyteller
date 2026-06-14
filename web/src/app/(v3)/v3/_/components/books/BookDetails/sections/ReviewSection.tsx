@@ -1,42 +1,144 @@
 "use client"
 
-import { IconPencil, IconStar } from "@tabler/icons-react"
-import { useState } from "react"
+import { IconChartRadar, IconPencil, IconStar } from "@tabler/icons-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
+import { SEAMLESS_BOX } from "@v3/_/components/books/BookDetails/EditableField"
+import { MultidimensionalRating } from "@v3/_/components/books/BookDetails/sections/MultidimensionalRating"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { Button } from "@v3/_/components/ui/button"
+import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Textarea } from "@v3/_/components/ui/textarea"
+import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+import { cn } from "@v3/_/lib/utils"
 
+import {
+  type RatingDimensionScores,
+  formatRating,
+} from "@/database/ratingDimensions"
 import {
   useDeleteBookRatingMutation,
   useSetBookRatingMutation,
 } from "@/store/api"
 
+// inline number editor styled like EditableField (SEAMLESS_BOX), but committing
+// through setBookRating since the rating is per-user and not part of the form
+function InlineRatingNumber({
+  value,
+  placeholder,
+  onCommit,
+}: {
+  value: number | null
+  placeholder: string
+  onCommit: (value: number | null) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState("")
+  const ref = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing) {
+      ref.current?.focus()
+      ref.current?.select()
+    }
+  }, [editing])
+
+  const commit = () => {
+    setEditing(false)
+    const trimmed = text.trim()
+    if (trimmed === "") {
+      onCommit(null)
+      return
+    }
+    const num = Number(trimmed)
+    if (Number.isNaN(num)) return
+    const clamped = Math.min(5, Math.max(0, num))
+    onCommit(Math.round(clamped * 100) / 100)
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setText(value != null ? formatRating(value) : "")
+          setEditing(true)
+        }}
+        className={cn(
+          SEAMLESS_BOX,
+          "hover:border-input hover:bg-input/10 w-12 cursor-text border-transparent text-sm tabular-nums",
+          value == null && "text-muted-foreground italic",
+        )}
+      >
+        {value != null ? formatRating(value) : placeholder}
+      </button>
+    )
+  }
+
+  return (
+    <input
+      ref={ref}
+      type="number"
+      inputMode="decimal"
+      min={0}
+      max={5}
+      step={0.01}
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value)
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault()
+          commit()
+        }
+        if (e.key === "Escape") {
+          e.preventDefault()
+          setEditing(false)
+        }
+      }}
+      className={cn(
+        SEAMLESS_BOX,
+        "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-14 text-sm tabular-nums outline-none focus-visible:ring-[2px]",
+      )}
+    />
+  )
+}
+
 export function ReviewSection({ className }: { className?: string }) {
   const { book } = useBookForm()
   const t = useTranslation("BookDetailsPage")
+  const { ratingDimensions } = useUserPreferences()
 
   const [setBookRating, { isLoading: isSaving }] = useSetBookRatingMutation()
   const [deleteBookRating] = useDeleteBookRatingMutation()
 
   const currentRating = book.rating?.rating ?? null
   const currentReview = book.rating?.review ?? ""
+  const currentDimensions = useMemo(
+    () => book.rating?.dimensions ?? null,
+    [JSON.stringify(book.rating?.dimensions)],
+  )
+  const hasDimensions =
+    !!currentDimensions && Object.keys(currentDimensions).length > 0
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
+  // a pending manual rating that needs to override an existing advanced rating
+  const [pending, setPending] = useState<{ value: number | null } | null>(null)
 
   const startEdit = () => {
     setDraft(currentReview)
     setEditing(true)
   }
 
-  const handleRatingChange = async (value: number | null) => {
-    // clearing the rating with no review removes the row entirely; otherwise
-    // keep the review so it isn't dropped (and so the server doesn't 405 on a
-    // request with neither field set)
+  const applyManualRating = async (value: number | null) => {
+    // a manual rating always clears the multidimensional rating; drop the whole
+    // row when there's nothing left to keep
     if (value == null && !currentReview) {
       await deleteBookRating({ bookUuid: book.uuid })
       return
@@ -45,22 +147,63 @@ export function ReviewSection({ className }: { className?: string }) {
       bookUuid: book.uuid,
       rating: value,
       review: currentReview || null,
+      dimensions: null,
     })
   }
 
+  // route every manual change through the override confirm when an advanced
+  // rating is present
+  const requestManualRating = (value: number | null) => {
+    if (hasDimensions) {
+      setPending({ value })
+    } else {
+      void applyManualRating(value)
+    }
+  }
+
+  const addAdvancedRating = () => {
+    // seed every axis with the current (snapped) star rating so converting
+    // keeps the score, then let the user adjust
+    const base =
+      Math.round(Math.min(5, Math.max(0, currentRating ?? 0)) * 2) / 2
+    const scores: RatingDimensionScores = Object.fromEntries(
+      ratingDimensions.map((d) => [d.id, base]),
+    )
+    void setBookRating({ bookUuid: book.uuid, dimensions: scores })
+  }
+
+  const removeAdvancedRating = useCallback(() => {
+    if (currentReview) {
+      void setBookRating({
+        bookUuid: book.uuid,
+        rating: null,
+        review: currentReview,
+        dimensions: null,
+      })
+    } else {
+      void deleteBookRating({ bookUuid: book.uuid })
+    }
+  }, [book.uuid, currentReview, deleteBookRating, setBookRating])
+
   const handleSaveReview = async () => {
     const text = draft.trim()
-    if (!text && currentRating == null) {
+    if (!text && currentRating == null && !hasDimensions) {
       await deleteBookRating({ bookUuid: book.uuid })
     } else {
       await setBookRating({
         bookUuid: book.uuid,
-        rating: currentRating,
         review: text || null,
       })
     }
     setEditing(false)
   }
+
+  const handleChangeDimensions = useCallback(
+    (dimensions: RatingDimensionScores) => {
+      void setBookRating({ bookUuid: book.uuid, dimensions })
+    },
+    [book.uuid, setBookRating],
+  )
 
   return (
     <section className={className}>
@@ -81,12 +224,36 @@ export function ReviewSection({ className }: { className?: string }) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="text-muted-foreground sr-only text-xs uppercase">
             {t("review.yourRating")}
           </span>
-          <RatingInput value={currentRating} onChange={handleRatingChange} />
+          <RatingInput value={currentRating} onChange={requestManualRating} />
+          <InlineRatingNumber
+            value={currentRating}
+            placeholder={t("review.ratePlaceholder")}
+            onCommit={requestManualRating}
+          />
         </div>
+
+        {hasDimensions ? (
+          <MultidimensionalRating
+            dimensions={ratingDimensions}
+            scores={currentDimensions}
+            onChange={handleChangeDimensions}
+            onRemove={removeAdvancedRating}
+          />
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground self-start"
+            onClick={addAdvancedRating}
+          >
+            <IconChartRadar className="mr-1 h-3.5 w-3.5" />
+            {t("review.addAdvanced")}
+          </Button>
+        )}
 
         {editing ? (
           <Field orientation="vertical">
@@ -129,6 +296,21 @@ export function ReviewSection({ className }: { className?: string }) {
           )
         )}
       </div>
+
+      <ConfirmDialog
+        open={pending !== null}
+        onOpenChange={(open) => {
+          if (!open) setPending(null)
+        }}
+        title={t("review.overrideTitle")}
+        description={t("review.overrideDescription")}
+        confirmLabel={t("review.overrideConfirm")}
+        variant="destructive"
+        onConfirm={async () => {
+          if (pending) await applyManualRating(pending.value)
+          setPending(null)
+        }}
+      />
     </section>
   )
 }

@@ -1,18 +1,14 @@
 "use client"
 
 import { IconSearch, IconX } from "@tabler/icons-react"
-import { lazy, memo, Suspense, useMemo, useState } from "react"
+import { Suspense, lazy, memo, useMemo, useState } from "react"
 
 import { ICON_REGISTRY, type IconEntry } from "@/icons/icon-registry"
 
 import { Button } from "./button"
 import { DynamicIcon } from "./dynamic-icon"
 import { Input } from "./input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./popover"
+import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 
 const LazyIconGrid = lazy(() => import("./icon-picker-grid"))
 
@@ -41,9 +37,7 @@ export const IconPicker = memo(function IconPicker({
     )
   }, [search])
 
-  const currentEntry = value
-    ? ICON_REGISTRY.find((e) => e.id === value)
-    : null
+  const currentEntry = value ? ICON_REGISTRY.find((e) => e.id === value) : null
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -54,6 +48,7 @@ export const IconPicker = memo(function IconPicker({
             variant="outline"
             size="sm"
             className="h-8 gap-2"
+            aria-label="Choose icon"
           >
             {currentEntry ? (
               <PreviewIcon entry={currentEntry} color={color} />
@@ -71,7 +66,9 @@ export const IconPicker = memo(function IconPicker({
               <IconSearch className="text-muted-foreground absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                }}
                 placeholder="Search icons..."
                 className="h-7 pl-7 text-xs"
               />
@@ -88,6 +85,7 @@ export const IconPicker = memo(function IconPicker({
                 }}
               >
                 <IconX className="size-3" />
+                <span className="sr-only">Clear icon</span>
               </Button>
             )}
           </div>
@@ -95,7 +93,9 @@ export const IconPicker = memo(function IconPicker({
           <Suspense
             fallback={
               <div className="flex h-48 items-center justify-center">
-                <span className="text-muted-foreground text-xs">Loading...</span>
+                <span className="text-muted-foreground text-xs">
+                  Loading...
+                </span>
               </div>
             }
           >

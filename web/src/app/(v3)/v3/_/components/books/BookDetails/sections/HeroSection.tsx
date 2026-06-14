@@ -14,7 +14,7 @@ import {
   ProgressDisplayBar,
   getReadingProgress,
 } from "@v3/_/components/books/ProgressDisplayBar"
-import { RatingInput } from "@v3/_/components/books/RatingInput"
+import { RatingDisplay, RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
@@ -40,6 +40,11 @@ export function HeroSection({ compact }: { compact: boolean }) {
   const authors = book.authors
   const narrators = book.narrators
 
+  // a multidimensional rating is edited in the review section; the hero just
+  // shows its computed average read-only so it can't be overridden by accident
+  const hasDimensions =
+    !!book.rating?.dimensions && Object.keys(book.rating.dimensions).length > 0
+
   const handleRatingChange = async (rating: number | null) => {
     // preserve any existing review when changing / clearing the rating; only
     // drop the whole row when there's nothing left to keep
@@ -47,7 +52,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
     if (rating == null && !review) {
       await deleteBookRating({ bookUuid: book.uuid })
     } else {
-      await setBookRating({ bookUuid: book.uuid, rating, review })
+      await setBookRating({ bookUuid: book.uuid, rating, review, dimensions: null })
     }
   }
 
@@ -152,10 +157,14 @@ export function HeroSection({ compact }: { compact: boolean }) {
           )}
 
           <div className="mt-1">
-            <RatingInput
-              value={book.rating?.rating ?? null}
-              onChange={handleRatingChange}
-            />
+            {hasDimensions ? (
+              <RatingDisplay rating={book.rating?.rating ?? null} />
+            ) : (
+              <RatingInput
+                value={book.rating?.rating ?? null}
+                onChange={handleRatingChange}
+              />
+            )}
           </div>
 
           <div className="mt-1">

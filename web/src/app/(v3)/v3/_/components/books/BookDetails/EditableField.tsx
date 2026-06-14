@@ -11,7 +11,7 @@ import { type BookFormValues } from "./schema"
 
 // display and editor share this box so swapping between them never shifts
 // layout: identical padding + a 1px border (transparent when displaying).
-const SEAMLESS_BOX =
+export const SEAMLESS_BOX =
   "-mx-1.5 w-full rounded-md border px-1.5 py-0.5 transition-colors"
 
 type EditableTextProps = {

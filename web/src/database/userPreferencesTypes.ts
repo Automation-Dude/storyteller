@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { DEFAULT_RATING_DIMENSIONS } from "./ratingDimensions"
+
 export const ViewKinds = ["grid", "list", "table"] as const
 export type ViewKind = (typeof ViewKinds)[number]
 
@@ -47,6 +49,11 @@ export const UserPreferencesSchema = z.object({
     .string()
     .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
     .nullable(),
+  // customizable axes for the multidimensional book rating. id is stable so
+  // renaming a label keeps recorded per-book scores (see ratingDimensions.ts)
+  ratingDimensions: z.array(
+    z.object({ id: z.string().min(1), label: z.string() }),
+  ),
 })
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>
@@ -62,6 +69,7 @@ export const defaultUserPreferences: UserPreferences = {
   bookDetailDisplay: "3d",
   bookDetail3dView: null,
   accentColor: null,
+  ratingDimensions: DEFAULT_RATING_DIMENSIONS,
 }
 
 // the old colorMode values, mapped onto the new three-level scale

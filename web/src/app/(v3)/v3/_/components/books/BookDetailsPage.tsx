@@ -199,7 +199,7 @@ function BookDetailsContentInner({
         {compact && <BookPanelHeader onClose={onClose} />}
         <BookEditBar />
 
-        <div className="@container/book flex-1 overflow-y-auto">
+        <div className="@container-size @container/book flex-1 overflow-y-auto">
           <div
             className={cn(
               "flex flex-col gap-4",
@@ -395,6 +395,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
       <div className="flex items-center gap-3">
         {selection && (
           <Checkbox
+            aria-label="Toggle selection"
             checked={isSelected}
             style={
               isSelected && showAccent

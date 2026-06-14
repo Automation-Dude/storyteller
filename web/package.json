@@ -107,6 +107,7 @@
     "react-hook-form": "^7.70.0",
     "react-redux": "^9.2.0",
     "react-window": "^2.1.0",
+    "recharts": "canary",
     "sharp": "^0.34.3",
     "simple-git": "^3.25.0",
     "sonner": "^2.0.7",

@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   IconAlertCircle,
+  IconBook2,
   IconDownload,
   IconHistory,
   IconMail,
@@ -35,6 +36,7 @@ import {
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Invite, type Settings, type User } from "@/apiModels"
+import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { SettingsSchema } from "@/database/settingsTypes"
 import {
   useGetMaxUploadChunkSizeQuery,
@@ -280,7 +282,7 @@ export function SettingsForm({
         {
           value: "library",
           label: t("tabs.library.title"),
-          icon: IconSettings2,
+          icon: IconBook2,
         },
         {
           value: "processing",
@@ -383,50 +385,63 @@ export function SettingsForm({
           },
         ]}
         actions={
-          activeTab !== "users" ? (
-            <div className="flex items-center gap-3">
-              <Button
-                size="sm"
-                variant="outline"
-                render={
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Link
-                          href="/api/v2/settings"
-                          aria-label="Export settings as JSON"
-                          download="storyteller-config.json"
-                        >
-                          <IconDownload size={16} />{" "}
-                        </Link>
-                      }
-                    />
-                    <TooltipContent>{t("exportSettings")}</TooltipContent>
-                  </Tooltip>
-                }
-              />
-              {errorCount > 0 && (
-                <div className="text-destructive flex items-center gap-1.5 text-sm">
-                  <IconAlertCircle className="h-4 w-4" />
-                  <span>
-                    {t("formHasErrors", {
-                      count: errorCount,
-                      plural: errorCount === 1 ? "one" : "other",
-                    })}
-                  </span>
-                </div>
-              )}
-              <Button
-                type="submit"
-                form="settings-form"
-                disabled={isSaving}
-                size="sm"
-              >
-                {isSaving && <Spinner />}
-                {isSaving ? t("saving") : t("saveSettings")}
-              </Button>
-            </div>
-          ) : undefined
+          <div className="flex items-center gap-3">
+            <Button
+              variant="link"
+              size="sm"
+              nativeButton={false}
+              render={
+                <V3Link href="/preferences?tab=general">
+                  <IconSettings2 className="h-4 w-4" />
+                  {t("preferences")}
+                </V3Link>
+              }
+            />
+            {activeTab !== "users" && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  render={
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Link
+                            href="/api/v2/settings"
+                            aria-label="Export settings as JSON"
+                            download="storyteller-config.json"
+                          >
+                            <IconDownload size={16} />{" "}
+                          </Link>
+                        }
+                      />
+                      <TooltipContent>{t("exportSettings")}</TooltipContent>
+                    </Tooltip>
+                  }
+                />
+                {errorCount > 0 && (
+                  <div className="text-destructive flex items-center gap-1.5 text-sm">
+                    <IconAlertCircle className="h-4 w-4" />
+                    <span>
+                      {t("formHasErrors", {
+                        count: errorCount,
+                        plural: errorCount === 1 ? "one" : "other",
+                      })}
+                    </span>
+                  </div>
+                )}
+                <Button
+                  type="submit"
+                  form="settings-form"
+                  disabled={isSaving}
+                  size="sm"
+                >
+                  {isSaving && <Spinner />}
+                  {isSaving ? t("saving") : t("saveSettings")}
+                </Button>
+              </>
+            )}
+          </div>
         }
       />
       <form

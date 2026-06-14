@@ -2,9 +2,9 @@
 
 import { memo, useEffect, useState } from "react"
 
-import { type IconEntry } from "@/icons/icon-registry"
-
 import { cn } from "@v3/_/lib/utils"
+
+import { type IconEntry } from "@/icons/icon-registry"
 
 type TablerIconComponent = React.ComponentType<{ className?: string }>
 
@@ -15,20 +15,29 @@ type IconPickerGridProps = {
   onSelect: (id: string) => void
 }
 
-function IconPickerGrid({ icons, selectedId, color, onSelect }: IconPickerGridProps) {
-  const [tablerIcons, setTablerIcons] = useState<Record<string, TablerIconComponent>>({})
+function IconPickerGrid({
+  icons,
+  selectedId,
+  color,
+  onSelect,
+}: IconPickerGridProps) {
+  const [tablerIcons, setTablerIcons] = useState<
+    Record<string, TablerIconComponent>
+  >({})
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let cancelled = false
 
-    import("@tabler/icons-react").then((mod) => {
+    void import("@tabler/icons-react").then((mod) => {
       if (cancelled) return
 
       const resolved: Record<string, TablerIconComponent> = {}
 
       for (const entry of icons) {
-        const Icon = (mod as Record<string, TablerIconComponent>)[entry.tabler]
+        const Icon = (mod as unknown as Record<string, TablerIconComponent>)[
+          entry.tabler
+        ]
         if (Icon) {
           resolved[entry.id] = Icon
         }
@@ -71,8 +80,11 @@ function IconPickerGrid({ icons, selectedId, color, onSelect }: IconPickerGridPr
           <button
             key={entry.id}
             type="button"
+            aria-label={entry.id}
             title={entry.id}
-            onClick={() => onSelect(entry.id)}
+            onClick={() => {
+              onSelect(entry.id)
+            }}
             className={cn(
               "flex size-8 items-center justify-center rounded-md transition-colors",
               isSelected
@@ -80,7 +92,10 @@ function IconPickerGrid({ icons, selectedId, color, onSelect }: IconPickerGridPr
                 : "hover:bg-muted",
             )}
           >
-            <Icon className="size-4" style={color && !isSelected ? { color } : undefined} />
+            <Icon
+              className="size-4"
+              style={color && !isSelected ? { color } : undefined}
+            />
           </button>
         )
       })}

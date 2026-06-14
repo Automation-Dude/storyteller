@@ -54,6 +54,7 @@ export function BookActionsMenu({
           render={
             <Button variant="ghost" size="icon-sm">
               <IconDotsVertical className="h-4 w-4" />
+              <span className="sr-only">Open book actions menu</span>
             </Button>
           }
         />

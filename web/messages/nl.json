@@ -255,6 +255,7 @@
   "SettingsPage": {
     "title": "Instellingen",
     "breadcrumb": "Instellingen",
+    "preferences": "Voorkeuren",
     "saveSettings": "Opslaan",
     "exportSettings": "Exporteer instellingen als JSON",
     "lockedSettings": "Sommige instellingen worden via een configuratiebestand beheerd en kunnen hier niet gewijzigd worden.",
@@ -579,6 +580,7 @@
   "PreferencesPage": {
     "title": "Voorkeuren",
     "save": "Opslaan",
+    "settingsPage": "Algemene instellingen",
     "saving": "Opslaan...",
     "savedSuccessfully": "Voorkeuren opgeslagen",
     "failedToSave": "Voorkeuren opslaan mislukt",
@@ -717,6 +719,15 @@
                 "back": "Achterkant"
               }
             }
+          },
+          "ratingDimensions": {
+            "title": "Beoordelingsdimensies",
+            "description": "Pas de assen van de meerdimensionale boekbeoordeling aan.",
+            "label": "Dimensies",
+            "hint": "Elk boek kan per as 0-5 scoren; het gemiddelde wordt de beoordeling.",
+            "add": "Dimensie toevoegen",
+            "placeholder": "Naam van dimensie",
+            "remove": "Dimensie verwijderen"
           }
         }
       }
@@ -799,7 +810,14 @@
       "edit": "Bewerken",
       "save": "Opslaan",
       "cancel": "Annuleren",
-      "clear": "Wissen"
+      "clear": "Wissen",
+      "ratePlaceholder": "Beoordeel",
+      "addAdvanced": "Voeg meerdimensionale beoordeling toe",
+      "removeAdvanced": "Verwijder meerdimensionale beoordeling",
+      "avg": "Gem.",
+      "overrideTitle": "Meerdimensionale beoordeling overschrijven?",
+      "overrideDescription": "Handmatig beoordelen vervangt je meerdimensionale beoordeling door één waarde.",
+      "overrideConfirm": "Overschrijven"
     },
     "downloads": {
       "download<em>Readaloud</em>": "Download <em>Readaloud</em>",

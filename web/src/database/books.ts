@@ -573,7 +573,11 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
             jsonObjectFrom(
               eb
                 .selectFrom("userBookRating")
-                .select(["userBookRating.rating", "userBookRating.review"])
+                .select([
+                  "userBookRating.rating",
+                  "userBookRating.review",
+                  "userBookRating.dimensions",
+                ])
                 .whereRef("userBookRating.bookUuid", "=", "book.uuid")
                 .where("userBookRating.userId", "=", userId),
             ).as("rating"),

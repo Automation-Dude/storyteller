@@ -46,3 +46,4 @@ whisper-builds/
 
 # next-intl typescript augmentations
 messages/*.d.json.ts
+src/icons/editor/

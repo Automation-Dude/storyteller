@@ -25,6 +25,10 @@ import { type ImportRuleWithCollections } from "@/database/importRules"
 import { type LibraryCounts } from "@/database/libraryCounts"
 import { type Position } from "@/database/positions"
 import {
+  type RatingDimensionScores,
+  computeRatingAverage,
+} from "@/database/ratingDimensions"
+import {
   type NewSeries,
   type NewSeriesRelation,
   type Series,
@@ -1313,8 +1317,13 @@ export const api = createApi({
       ],
     }),
     setBookRating: build.mutation<
-      UserBookRating,
-      { bookUuid: UUID; rating?: number | null; review?: string | null }
+      UserBookRating | null,
+      {
+        bookUuid: UUID
+        rating?: number | null
+        review?: string | null
+        dimensions?: RatingDimensionScores | null
+      }
     >({
       query: ({ bookUuid, ...body }) => ({
         url: `/books/${bookUuid}/rating`,
@@ -1328,19 +1337,42 @@ export const api = createApi({
       ],
 
       onQueryStarted: async (
-        { bookUuid, rating, review },
+        { bookUuid, rating, review, dimensions },
         { dispatch, queryFulfilled },
       ) => {
         const patchResult = dispatch(
           api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
-            const existingRating = draft.rating?.rating ?? null
-            const existingReview = draft.rating?.review ?? null
+            const existing = draft.rating
+            const nextReview =
+              review !== undefined ? review : (existing?.review ?? null)
 
+            // mirror the server: dimensions, when provided, drive the rating
+            let nextRating: number | null
+            let nextDimensions: RatingDimensionScores | null
+            if (dimensions !== undefined) {
+              const scores =
+                dimensions && Object.values(dimensions).length
+                  ? dimensions
+                  : null
+              nextDimensions = scores
+              nextRating = computeRatingAverage(scores)
+            } else {
+              nextRating =
+                rating !== undefined ? rating : (existing?.rating ?? null)
+              nextDimensions = existing?.dimensions ?? null
+            }
+
+            // Object.assign (not a direct `draft.rating =`) sidesteps the
+            // intersection type kysely infers for the rating column
             Object.assign(draft, {
-              rating: {
-                rating: rating !== undefined ? rating : existingRating,
-                review: review !== undefined ? review : existingReview,
-              },
+              rating:
+                nextRating == null && nextReview == null
+                  ? null
+                  : {
+                      rating: nextRating,
+                      review: nextReview,
+                      dimensions: nextDimensions,
+                    },
             })
           }),
         )

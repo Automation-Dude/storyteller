@@ -71,7 +71,8 @@ export function RatingInput({
       {Array.from({ length: 5 }).map((_, i) => {
         const starValue = i + 1
         const filled = displayValue >= starValue
-        const halfFilled = !filled && displayValue >= starValue - 0.5
+        const residual = displayValue - i
+        const percentFilled = !filled && residual > 0 && residual * 100
 
         return (
           <div
@@ -91,14 +92,20 @@ export function RatingInput({
                 "text-muted-foreground/30 transition-colors",
               )}
             />
-            {/* filled star (full or half) */}
-            {(filled || halfFilled) && (
+            {/* filled star (full or somewhat filled) */}
+            {(filled || percentFilled) && (
               <IconStar
                 className={cn(
                   sizeClasses[size],
                   "absolute inset-0 fill-yellow-400 text-yellow-400 transition-colors",
-                  halfFilled && "[clip-path:inset(0_50%_0_0)]",
                 )}
+                style={
+                  percentFilled
+                    ? {
+                        clipPath: `inset(0 ${Math.max(10, Math.min(100 - percentFilled, 90))}% 0 0)`,
+                      }
+                    : undefined
+                }
               />
             )}
           </div>

@@ -555,7 +555,9 @@ CREATE TABLE "collection" (
   public BOOLEAN NOT NULL DEFAULT 0,
   description TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  icon TEXT,
+  color TEXT
 );
 
 CREATE TRIGGER collection_update_trigger AFTER
@@ -580,6 +582,7 @@ CREATE TABLE user_book_rating (
   review TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  dimensions TEXT,
   FOREIGN KEY (user_id) REFERENCES user (id),
   FOREIGN KEY (book_uuid) REFERENCES book (uuid),
   UNIQUE (user_id, book_uuid),
@@ -630,7 +633,9 @@ CREATE TABLE shelf (
   order_direction TEXT NOT NULL DEFAULT 'desc',
   limit_count INTEGER,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  icon TEXT,
+  color TEXT
 );
 
 CREATE TRIGGER shelf_update_trigger AFTER
@@ -727,7 +732,8 @@ CREATE TABLE sidebar_item (
   position integer NOT NULL,
   hidden integer NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  group_uuid TEXT REFERENCES sidebar_group (uuid) ON DELETE CASCADE
 );
 
 CREATE TRIGGER sidebar_item_update_trigger AFTER
@@ -741,3 +747,25 @@ WHERE
 END;
 
 CREATE INDEX idx_sidebar_item_user ON sidebar_item (user_id);
+
+CREATE TABLE sidebar_group (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  position integer NOT NULL,
+  collapsed integer NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER sidebar_group_update_trigger AFTER
+UPDATE ON sidebar_group FOR EACH ROW BEGIN
+UPDATE sidebar_group
+SET
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  uuid = OLD.uuid;
+
+END;
+
+CREATE INDEX idx_sidebar_group_user ON sidebar_group (user_id);

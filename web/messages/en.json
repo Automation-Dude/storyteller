@@ -255,6 +255,7 @@
   "SettingsPage": {
     "title": "Settings",
     "breadcrumb": "Settings",
+    "preferences": "Preferences",
     "saveSettings": "Save settings",
     "exportSettings": "Export settings as JSON",
     "lockedSettings": "Some settings are managed via the configuration file and cannot be changed here.",
@@ -582,6 +583,7 @@
   "PreferencesPage": {
     "title": "Preferences",
     "save": "Save",
+    "settingsPage": "Global settings",
     "saving": "Saving...",
     "savedSuccessfully": "Preferences saved",
     "failedToSave": "Failed to save preferences",
@@ -720,6 +722,15 @@
                 "back": "Back"
               }
             }
+          },
+          "ratingDimensions": {
+            "title": "Rating dimensions",
+            "description": "Customize the axes of the multidimensional book rating.",
+            "label": "Dimensions",
+            "hint": "Each book can be scored 0-5 on every axis; the average becomes its rating.",
+            "add": "Add dimension",
+            "placeholder": "Dimension name",
+            "remove": "Remove dimension"
           }
         }
       }
@@ -802,7 +813,14 @@
       "edit": "Edit",
       "save": "Save",
       "cancel": "Cancel",
-      "clear": "Clear"
+      "clear": "Clear",
+      "ratePlaceholder": "Rate",
+      "addAdvanced": "Add multidimensional rating",
+      "removeAdvanced": "Remove multidimensional rating",
+      "avg": "Avg",
+      "overrideTitle": "Override multidimensional rating?",
+      "overrideDescription": "Rating manually replaces your multidimensional rating with a single value.",
+      "overrideConfirm": "Override"
     },
     "scan": {
       "title": "Scan",

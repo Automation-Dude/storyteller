@@ -6,6 +6,7 @@ import {
   IconPalette,
   IconSearch,
   IconSettings2,
+  IconSettings,
   IconUser,
   IconX,
 } from "@tabler/icons-react"
@@ -24,11 +25,13 @@ import { Spinner } from "@v3/_/components/ui/spinner"
 import { Tabs, TabsList, TabsTrigger } from "@v3/_/components/ui/tabs"
 
 import { type User } from "@/apiModels"
+import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   type UserPreferences,
   UserPreferencesSchema,
 } from "@/database/userPreferencesTypes"
+import { usePermission } from "@/hooks/usePermission"
 import { useUpdateUserSettingsMutation } from "@/store/api"
 
 import { AppearanceTab } from "./appearance-tab"
@@ -54,6 +57,7 @@ export function PreferencesForm({
   disablePasswordLogin: boolean
 }) {
   const t = useTranslation("PreferencesPage")
+  const canUpdateSettings = usePermission("settingsUpdate")
 
   const form = useForm({
     resolver: zodResolver(UserPreferencesSchema),
@@ -82,6 +86,7 @@ export function PreferencesForm({
     toast.error(t("failedToSave"))
   }
 
+  // const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useQueryState(
     "tab",
     parseAsString.withDefault("profile"),
@@ -173,17 +178,32 @@ export function PreferencesForm({
           },
         ]}
         actions={
-          showSaveButton ? (
-            <Button
-              type="submit"
-              form="preferences-form"
-              disabled={isSaving}
-              size="sm"
-            >
-              {isSaving && <Spinner />}
-              {isSaving ? t("saving") : t("save")}
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-3">
+            {canUpdateSettings && (
+              <Button
+                size="sm"
+                variant="link"
+                nativeButton={false}
+                render={
+                  <V3Link href="/settings?tab=library">
+                    <IconSettings className="h-4 w-4" />
+                    {t("settingsPage")}
+                  </V3Link>
+                }
+              />
+            )}
+            {showSaveButton && (
+              <Button
+                type="submit"
+                form="preferences-form"
+                disabled={isSaving}
+                size="sm"
+              >
+                {isSaving && <Spinner />}
+                {isSaving ? t("saving") : t("save")}
+              </Button>
+            )}
+          </div>
         }
       />
 
