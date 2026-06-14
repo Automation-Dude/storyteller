@@ -27,7 +27,12 @@ import {
   useSetBookRatingMutation,
 } from "@/store/api"
 
-import { useColorPreferences, useCoverColors } from "./useCoverColors"
+import {
+  ensureContrast,
+  useColorPreferences,
+  useCoverColors,
+  useIsDarkMode,
+} from "./useCoverColors"
 
 export function HeroSection({ compact }: { compact: boolean }) {
   const { book, isEditing, editingCovers, isFieldActive } = useBookForm()
@@ -56,8 +61,10 @@ export function HeroSection({ compact }: { compact: boolean }) {
     }
   }
 
-  const { primary } = useCoverColors(book)
+  const { primary, accent } = useCoverColors(book)
   const { tint } = useColorPreferences()
+  const isDark = useIsDarkMode()
+  const ratingColor = ensureContrast(accent, isDark).solid
 
   return (
     <div
@@ -158,11 +165,15 @@ export function HeroSection({ compact }: { compact: boolean }) {
 
           <div className="mt-1">
             {hasDimensions ? (
-              <RatingDisplay rating={book.rating?.rating ?? null} />
+              <RatingDisplay
+                rating={book.rating?.rating ?? null}
+                color={ratingColor}
+              />
             ) : (
               <RatingInput
                 value={book.rating?.rating ?? null}
                 onChange={handleRatingChange}
+                color={ratingColor}
               />
             )}
           </div>

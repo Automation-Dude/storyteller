@@ -720,6 +720,16 @@
               }
             }
           },
+          "ratingIcon": {
+            "title": "Beoordelingspictogram",
+            "description": "Kies het symbool voor beoordelingen.",
+            "label": "Pictogram",
+            "hint": "Wissel tussen sterren en hartjes. De waarde blijft hetzelfde.",
+            "options": {
+              "star": "Sterren",
+              "heart": "Hartjes"
+            }
+          },
           "ratingDimensions": {
             "title": "Beoordelingsdimensies",
             "description": "Pas de assen van de meerdimensionale boekbeoordeling aan.",
@@ -817,7 +827,10 @@
       "avg": "Gem.",
       "overrideTitle": "Meerdimensionale beoordeling overschrijven?",
       "overrideDescription": "Handmatig beoordelen vervangt je meerdimensionale beoordeling door één waarde.",
-      "overrideConfirm": "Overschrijven"
+      "overrideConfirm": "Overschrijven",
+      "adjustScores": "Scores aanpassen",
+      "addDimension": "{label} toevoegen",
+      "removeDimension": "{label} verwijderen"
     },
     "downloads": {
       "download<em>Readaloud</em>": "Download <em>Readaloud</em>",

@@ -105,6 +105,7 @@
       "user_book_rating.uuid": "Generated<import(\"@/uuid\").UUID>",
       "user_book_rating.book_uuid": "import(\"@/uuid\").UUID",
       "user_book_rating.user_id": "import(\"@/uuid\").UUID",
+      "user_book_rating.dimensions": "import(\"kysely\").ColumnType<import(\"@/database/ratingDimensions\").RatingDimensionScores, string, string> | null",
       "user_settings.uuid": "Generated<import(\"@/uuid\").UUID>",
       "user_settings.user_id": "import(\"@/uuid\").UUID",
       "user.email_verified": "Date | null",

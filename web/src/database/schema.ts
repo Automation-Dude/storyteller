@@ -399,7 +399,13 @@ export interface User {
 export interface UserBookRating {
   bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
-  dimensions: string | null
+  dimensions:
+    | import("kysely").ColumnType<
+        import("@/database/ratingDimensions").RatingDimensionScores,
+        string,
+        string
+      >
+    | null
   rating: number | null
   review: string | null
   updatedAt: Generated<string>

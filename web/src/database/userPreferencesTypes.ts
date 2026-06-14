@@ -29,6 +29,11 @@ export type GridCardSize = (typeof GridCardSizes)[number]
 export const BookDetailDisplays = ["3d", "cover"] as const
 export type BookDetailDisplay = (typeof BookDetailDisplays)[number]
 
+// the glyph used to draw star ratings. purely cosmetic; the stored rating value
+// is unchanged.
+export const RatingIcons = ["star", "heart"] as const
+export type RatingIcon = (typeof RatingIcons)[number]
+
 // fields are required (no zod defaults) so the form's input and output types
 // match; missing/invalid stored values are filled in by resolveUserPreferences
 export const UserPreferencesSchema = z.object({
@@ -43,6 +48,8 @@ export const UserPreferencesSchema = z.object({
   bookDetailDisplay: z.enum(BookDetailDisplays),
   // index into Book3D's VIEWS array, null = front cover
   bookDetail3dView: z.number().int().min(0).nullable(),
+  // glyph for star ratings (cosmetic only)
+  ratingIcon: z.enum(RatingIcons),
   // "#rgb" or "#rrggbb"; null means use the default accent color. stored with
   // the leading # so it can be dropped straight into a css color var
   accentColor: z
@@ -68,6 +75,7 @@ export const defaultUserPreferences: UserPreferences = {
   gridCardSize: "medium",
   bookDetailDisplay: "3d",
   bookDetail3dView: null,
+  ratingIcon: "star",
   accentColor: null,
   ratingDimensions: DEFAULT_RATING_DIMENSIONS,
 }

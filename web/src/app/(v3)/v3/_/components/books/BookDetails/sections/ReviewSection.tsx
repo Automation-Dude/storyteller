@@ -1,14 +1,13 @@
 "use client"
 
 import { IconChartRadar, IconPencil, IconStar } from "@tabler/icons-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { SEAMLESS_BOX } from "@v3/_/components/books/BookDetails/EditableField"
 import { MultidimensionalRating } from "@v3/_/components/books/BookDetails/sections/MultidimensionalRating"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { Button } from "@v3/_/components/ui/button"
-import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Textarea } from "@v3/_/components/ui/textarea"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
@@ -23,6 +22,12 @@ import {
   useDeleteBookRatingMutation,
   useSetBookRatingMutation,
 } from "@/store/api"
+
+import {
+  ensureContrast,
+  useCoverColors,
+  useIsDarkMode,
+} from "./useCoverColors"
 
 // inline number editor styled like EditableField (SEAMLESS_BOX), but committing
 // through setBookRating since the rating is per-user and not part of the form
@@ -103,7 +108,7 @@ function InlineRatingNumber({
       }}
       className={cn(
         SEAMLESS_BOX,
-        "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-14 text-sm tabular-nums outline-none focus-visible:ring-[2px]",
+        "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-14 text-sm tabular-nums outline-none focus-visible:ring-2",
       )}
     />
   )
@@ -119,46 +124,36 @@ export function ReviewSection({ className }: { className?: string }) {
 
   const currentRating = book.rating?.rating ?? null
   const currentReview = book.rating?.review ?? ""
-  const currentDimensions = useMemo(
-    () => book.rating?.dimensions ?? null,
-    [JSON.stringify(book.rating?.dimensions)],
-  )
+  const currentDimensions = book.rating?.dimensions ?? null
   const hasDimensions =
     !!currentDimensions && Object.keys(currentDimensions).length > 0
 
+  // tint the stars / average with the cover's accent, nudged for legibility
+  const { accent } = useCoverColors(book)
+  const isDark = useIsDarkMode()
+  const ratingColor = ensureContrast(accent, isDark).solid
+
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
-  // a pending manual rating that needs to override an existing advanced rating
-  const [pending, setPending] = useState<{ value: number | null } | null>(null)
 
   const startEdit = () => {
     setDraft(currentReview)
     setEditing(true)
   }
 
-  const applyManualRating = async (value: number | null) => {
-    // a manual rating always clears the multidimensional rating; drop the whole
-    // row when there's nothing left to keep
+  // a manual rating always replaces the multidimensional rating; drop the whole
+  // row when there's nothing left to keep
+  const applyManualRating = (value: number | null) => {
     if (value == null && !currentReview) {
-      await deleteBookRating({ bookUuid: book.uuid })
+      void deleteBookRating({ bookUuid: book.uuid })
       return
     }
-    await setBookRating({
+    void setBookRating({
       bookUuid: book.uuid,
       rating: value,
       review: currentReview || null,
       dimensions: null,
     })
-  }
-
-  // route every manual change through the override confirm when an advanced
-  // rating is present
-  const requestManualRating = (value: number | null) => {
-    if (hasDimensions) {
-      setPending({ value })
-    } else {
-      void applyManualRating(value)
-    }
   }
 
   const addAdvancedRating = () => {
@@ -223,36 +218,40 @@ export function ReviewSection({ className }: { className?: string }) {
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground sr-only text-xs uppercase">
-            {t("review.yourRating")}
-          </span>
-          <RatingInput value={currentRating} onChange={requestManualRating} />
-          <InlineRatingNumber
-            value={currentRating}
-            placeholder={t("review.ratePlaceholder")}
-            onCommit={requestManualRating}
-          />
-        </div>
-
+      <div className="flex flex-col gap-4">
         {hasDimensions ? (
           <MultidimensionalRating
             dimensions={ratingDimensions}
             scores={currentDimensions}
             onChange={handleChangeDimensions}
             onRemove={removeAdvancedRating}
+            color={ratingColor}
           />
         ) : (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-muted-foreground self-start"
-            onClick={addAdvancedRating}
-          >
-            <IconChartRadar className="mr-1 h-3.5 w-3.5" />
-            {t("review.addAdvanced")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground sr-only text-xs uppercase">
+              {t("review.yourRating")}
+            </span>
+            <RatingInput
+              value={currentRating}
+              onChange={applyManualRating}
+              color={ratingColor}
+            />
+            <InlineRatingNumber
+              value={currentRating}
+              placeholder={t("review.ratePlaceholder")}
+              onCommit={applyManualRating}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground ml-auto"
+              onClick={addAdvancedRating}
+            >
+              <IconChartRadar className="mr-1 h-3.5 w-3.5" />
+              {t("review.addAdvanced")}
+            </Button>
+          </div>
         )}
 
         {editing ? (
@@ -296,21 +295,6 @@ export function ReviewSection({ className }: { className?: string }) {
           )
         )}
       </div>
-
-      <ConfirmDialog
-        open={pending !== null}
-        onOpenChange={(open) => {
-          if (!open) setPending(null)
-        }}
-        title={t("review.overrideTitle")}
-        description={t("review.overrideDescription")}
-        confirmLabel={t("review.overrideConfirm")}
-        variant="destructive"
-        onConfirm={async () => {
-          if (pending) await applyManualRating(pending.value)
-          setPending(null)
-        }}
-      />
     </section>
   )
 }

@@ -1,17 +1,18 @@
 "use client"
 
-import { IconChevronDown, IconX } from "@tabler/icons-react"
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react"
+import { IconChevronDown, IconPlus, IconTrash, IconX } from "@tabler/icons-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
+import { RatingDisplay } from "@v3/_/components/books/RatingInput"
+import { Button } from "@v3/_/components/ui/button"
 import { type ChartConfig, ChartContainer } from "@v3/_/components/ui/chart"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@v3/_/components/ui/collapsible"
 import { Slider } from "@v3/_/components/ui/slider"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
@@ -22,16 +23,13 @@ import {
   RATING_DIMENSION_STEP,
   type RatingDimension,
   type RatingDimensionScores,
+  computeRatingAverage,
   formatRating,
 } from "@/database/ratingDimensions"
-import { Button } from "../../../ui/button"
-import { getClientXY } from "@/components/reader/hooks/mouseHelpers"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../../../ui/collapsible"
 
+// the chart geometry is hand-tuned around this fixed size so the drag overlay,
+// the polygon, and the labels all line up; resizing it throws that off.
+const SIZE = 280
 const LABEL_PADDING = 42
 const COMMIT_DELAY = 350
 
@@ -65,30 +63,40 @@ function normalizeAngle(rad: number): number {
   return Math.abs(a)
 }
 
+// value-compare so an unstable scores reference doesn't clobber the local draft
+function sameScores(a: RatingDimensionScores, b: RatingDimensionScores): boolean {
+  const keys = Object.keys(a)
+  if (keys.length !== Object.keys(b).length) return false
+  return keys.every((k) => a[k] === b[k])
+}
+
 type Props = {
   dimensions: RatingDimension[]
   scores: RatingDimensionScores | null
   onChange: (scores: RatingDimensionScores) => void
   onRemove: () => void
+  // cover-derived accent for the average stars
+  color?: string
   className?: string
 }
 
 /**
  * Directly-editable radar for the multidimensional ("JoJo") rating. The recharts
  * chart renders the polygon; a transparent svg overlay (sharing the same polar
- * geometry) handles drag/click, with per-axis sliders below for touch + a11y.
+ * geometry) handles drag/click. The chart is hidden from screen readers, who get
+ * the labelled sliders under "Adjust scores" instead.
  */
 export function MultidimensionalRating({
   dimensions,
   scores,
   onChange,
   onRemove,
+  color,
   className,
 }: Props) {
   const t = useTranslation("BookDetailsPage")
-  const containerRef = useRef<HTMLDivElement | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
-  const [size, setSize] = useState(280)
+  const scoresContentRef = useRef<HTMLDivElement | null>(null)
 
   // keep a ref mirror so pointer handlers always read the latest draft
   const [draft, setDraft] = useState<RatingDimensionScores>(scores ?? {})
@@ -100,23 +108,12 @@ export function MultidimensionalRating({
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    // adopt server/optimistic state unless the user is mid-drag (scores is a
-    // stable reference from the rtk cache, so this only runs when it changes)
-    if (!draggingRef.current) setDraft(scores ? { ...scores } : {})
+    // adopt server/optimistic state unless the user is mid-drag; the value
+    // compare keeps an unstable scores reference from looping or wiping edits
+    if (draggingRef.current) return
+    const incoming = scores ?? {}
+    if (!sameScores(incoming, draftRef.current)) setDraft({ ...incoming })
   }, [scores])
-
-  useLayoutEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const observer = new ResizeObserver(() => {
-      const width = el.clientWidth
-      if (width > 0) setSize(width)
-    })
-    observer.observe(el)
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
 
   useEffect(
     () => () => {
@@ -164,25 +161,25 @@ export function MultidimensionalRating({
     [commit],
   )
 
-  const cx = size / 2
-  const cy = size / 2
-  const outerRadius = Math.max(size / 2 - LABEL_PADDING, 10)
+  const cx = SIZE / 2
+  const cy = SIZE / 2
+  const outerRadius = Math.max(SIZE / 2 - LABEL_PADDING, 10)
   const inUseDimensions = dimensions.filter((d) => d.id in draft)
+  const deselectedDimensions = dimensions.filter((d) => !(d.id in draft))
   const count = inUseDimensions.length
+  const average = computeRatingAverage(draft)
 
   const data = inUseDimensions.map((d) => ({
     label: d.label,
     value: draft[d.id] ?? 0,
   }))
 
-  // // map a pointer event to svg-space coordinates (accounting for css scaling)
+  // map a pointer event to svg-space coordinates (accounting for css scaling)
   const toLocal = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return null
-    const [clientX, clientY] = getClientXY(e.nativeEvent)
-    if (!clientX || !clientY) return null
-    const x = ((clientX - rect.left) / rect.width) * size
-    const y = ((clientY - rect.top) / rect.height) * size
+    const x = ((e.clientX - rect.left) / rect.width) * SIZE
+    const y = ((e.clientY - rect.top) / rect.height) * SIZE
     return { dx: x - cx, dy: cy - y }
   }
 
@@ -191,7 +188,7 @@ export function MultidimensionalRating({
     if (!id) return
     const local = toLocal(e)
     if (!local) return
-    const index = inUseDimensions.findIndex((d: RatingDimension) => d.id === id)
+    const index = inUseDimensions.findIndex((d) => d.id === id)
     if (index < 0) return
     const a = axisAngleRad(index, count)
     // project the pointer onto the axis spoke to get the radius
@@ -233,186 +230,203 @@ export function MultidimensionalRating({
     commit(draftRef.current, true)
   }
 
+  // when the sliders open, move focus into them so keyboard/screen-reader users
+  // land on the first control instead of having to hunt for it
+  const handleScoresOpen = (open: boolean) => {
+    if (!open) return
+    requestAnimationFrame(() => {
+      scoresContentRef.current
+        ?.querySelector<HTMLElement>('[role="slider"], input, button')
+        ?.focus()
+    })
+  }
+
   return (
-    <div>
-      {/* <div className="h-[70cqw] w-[70cqw] bg-red-500"></div> */}
+    <div className={cn("relative flex flex-col items-center gap-4", className)}>
       <div
-        className={cn(
-          "flex flex-col gap-12 @xl/book:flex-row @xl/book:items-center @xl/book:justify-between @xl/book:gap-3",
-          className,
-        )}
+        className="relative mx-auto aspect-square h-[260px] w-[280px]"
+        // hidden from screen readers; they use the sliders under "Adjust scores"
+        aria-hidden
       >
-        <div
-          className="relative mx-auto aspect-square h-[260px] w-[280px] flex-1"
-          // dont show this to screen readers,
-          // they should use the sliders below instead
-          aria-hidden
+        <ChartContainer
+          config={chartConfig}
+          className="relative flex h-full w-full items-center"
         >
-          <ChartContainer
-            config={chartConfig}
-            className="relative flex h-full w-full items-center"
+          <RadarChart
+            data={data}
+            cx={cx}
+            cy={cy}
+            outerRadius={outerRadius}
+            startAngle={90}
+            endAngle={-270}
           >
-            <RadarChart
-              data={data}
-              cx={cx}
-              cy={cy}
-              outerRadius={outerRadius}
-              startAngle={90}
-              endAngle={-270}
-            >
-              <PolarGrid width={size} height={size} />
-              <PolarRadiusAxis
-                domain={[RATING_DIMENSION_MIN, RATING_DIMENSION_MAX]}
-                tickCount={RATING_DIMENSION_MAX + 1}
-                tick={false}
-                axisLine={false}
-              />
-              <Radar
-                dataKey="value"
-                stroke="var(--color-value)"
-                fill="var(--color-value)"
-                fillOpacity={0.45}
-                dot={{ r: 3, fillOpacity: 1 }}
-                isAnimationActive={false}
-              />
-            </RadarChart>
-            {/* manually add labels, changing config causes flash of labels in recharts otherwise */}
-            {inUseDimensions.map((d, i) => {
-              const radAngle = axisAngleRad(i, count)
-              return (
-                <div
-                  key={d.id}
-                  className="group/label relative z-30 flex flex-col items-center justify-center"
-                  style={{
-                    position: "absolute",
-                    left: cx + outerRadius * Math.cos(radAngle),
-                    top: cy - outerRadius * Math.sin(radAngle),
-                    transform: `translate(calc(${i === 0 ? 0 : Math.sign(Math.cos(radAngle)) * 30}px - 50%), calc(${-Math.sin(radAngle) * 20}px - 50%))`,
+            <PolarGrid width={SIZE} height={SIZE} />
+            <PolarRadiusAxis
+              domain={[RATING_DIMENSION_MIN, RATING_DIMENSION_MAX]}
+              tickCount={RATING_DIMENSION_MAX + 1}
+              tick={false}
+              axisLine={false}
+            />
+            <Radar
+              dataKey="value"
+              stroke="var(--color-value)"
+              fill="var(--color-value)"
+              fillOpacity={0.45}
+              dot={{ r: 3, fillOpacity: 1 }}
+              isAnimationActive={false}
+            />
+          </RadarChart>
+
+          {/* manual labels; driving them through the chart config makes recharts
+              flash the labels on every edit */}
+          {inUseDimensions.map((d, i) => {
+            const radAngle = axisAngleRad(i, count)
+            return (
+              <div
+                key={d.id}
+                className="group/label absolute z-30 flex flex-col items-center justify-center text-center text-sm"
+                style={{
+                  left: cx + outerRadius * Math.cos(radAngle),
+                  top: cy - outerRadius * Math.sin(radAngle),
+                  transform: `translate(calc(${i === 0 ? 0 : Math.sign(Math.cos(radAngle)) * 30}px - 50%), calc(${-Math.sin(radAngle) * 20}px - 50%))`,
+                }}
+              >
+                <span>{d.label}</span>
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {formatRating(draft[d.id] ?? 0)}
+                </span>
+                <Button
+                  className="absolute top-2 -right-6 hidden -translate-y-1/2 rounded-full group-hover/label:flex hover:bg-transparent"
+                  size="icon-xs"
+                  variant="ghost"
+                  aria-label={t("review.removeDimension", { label: d.label })}
+                  onClick={() => {
+                    toggle(d.id)
                   }}
                 >
-                  <span>{d.label}</span>
-                  <span className="text-muted-foreground text-xs">
-                    {draft[d.id] ?? 0}
-                  </span>
-                  <Button
-                    className="absolute top-2 -right-6 hidden -translate-y-1/2 items-center rounded-full group-hover/label:block hover:bg-transparent"
-                    size="xs"
-                    variant="ghost"
-                    onClick={() => {
+                  <IconX />
+                </Button>
+              </div>
+            )
+          })}
+        </ChartContainer>
+
+        {/* interactive overlay: shares cx/cy/outerRadius with the chart above */}
+        <svg
+          ref={svgRef}
+          width={SIZE}
+          height={SIZE}
+          className="absolute inset-0 h-full w-full touch-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        >
+          {inUseDimensions.map((d, i) => {
+            const r = ((draft[d.id] ?? 0) / RATING_DIMENSION_MAX) * outerRadius
+            const a = axisAngleRad(i, count)
+            const x = cx + r * Math.cos(a)
+            const y = cy - r * Math.sin(a)
+            return (
+              <circle
+                key={d.id}
+                cx={x}
+                cy={y}
+                r={7}
+                className="fill-primary stroke-background cursor-grab stroke-2"
+              />
+            )
+          })}
+        </svg>
+      </div>
+
+      {/* live average, centered under the radar so edits are easy to read off */}
+      <div className="flex flex-col items-center gap-0.5">
+        <RatingDisplay rating={average} color={color} size="lg" />
+        <span className="text-muted-foreground text-xs tabular-nums">
+          {t("review.avg")} {average == null ? "–" : formatRating(average)}
+        </span>
+      </div>
+
+      {/* re-add axes the user deselected without digging into the sliders */}
+      {deselectedDimensions.length > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          {deselectedDimensions.map((d) => (
+            <Button
+              key={d.id}
+              type="button"
+              size="xs"
+              variant="outline"
+              className="text-muted-foreground rounded-full"
+              onClick={() => {
+                toggle(d.id)
+              }}
+            >
+              <IconPlus />
+              {d.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      <Collapsible className="group w-full max-w-xs" onOpenChange={handleScoresOpen}>
+        <CollapsibleTrigger className="text-muted-foreground hover:text-foreground mx-auto flex items-center gap-1 text-xs">
+          <IconChevronDown className="h-3.5 w-3.5 transition-transform group-data-open:rotate-180" />
+          {t("review.adjustScores")}
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div ref={scoresContentRef} className="mt-3 flex flex-col gap-2.5">
+            {dimensions.map((d) => {
+              const selected = d.id in draft
+              const value = draft[d.id] ?? 0
+              return (
+                <div key={d.id} className="flex items-center gap-3">
+                  <Checkbox
+                    checked={selected}
+                    onCheckedChange={() => {
                       toggle(d.id)
                     }}
-                  >
-                    <IconX />
-                  </Button>
+                    aria-label={d.label}
+                  />
+                  <span className="w-20 shrink-0 truncate text-sm">
+                    {d.label}
+                  </span>
+                  <Slider
+                    aria-label={d.label}
+                    className="flex-1"
+                    min={RATING_DIMENSION_MIN}
+                    max={RATING_DIMENSION_MAX}
+                    step={RATING_DIMENSION_STEP}
+                    value={value}
+                    disabled={!selected}
+                    onValueChange={(next) => {
+                      setValue(d.id, toNumber(next), false)
+                    }}
+                    onValueCommitted={(next) => {
+                      setValue(d.id, toNumber(next), true)
+                    }}
+                  />
+                  <span className="text-muted-foreground w-7 shrink-0 text-right text-sm tabular-nums">
+                    {selected ? formatRating(value) : "–"}
+                  </span>
                 </div>
               )
             })}
-          </ChartContainer>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
-          {/* interactive overlay: shares cx/cy/outerRadius with the chart above */}
-          <svg
-            ref={svgRef}
-            width={size}
-            height={size}
-            className="absolute inset-0 h-full w-full touch-none"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-          >
-            {inUseDimensions.map((d, i) => {
-              if (!(d.id in draft)) return null
-              const r =
-                ((draft[d.id] ?? 0) / RATING_DIMENSION_MAX) * outerRadius
-              const a = axisAngleRad(i, count)
-              const x = cx + r * Math.cos(a)
-              const y = cy - r * Math.sin(a)
-              return (
-                <circle
-                  key={d.id}
-                  cx={x}
-                  cy={y}
-                  r={7}
-                  className="fill-primary stroke-background cursor-grab stroke-2"
-                />
-              )
-            })}
-          </svg>
-
-          {/* <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-semibold tabular-nums">
-            {average == null ? "–" : formatRating(average)}
-          </span>
-          <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
-            {t("review.avg")}
-          </span>
-        </div> */}
-        </div>
-
-        <Collapsible className="group">
-          <CollapsibleTrigger className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 self-start text-xs">
-            <IconChevronDown className="h-3.5 w-3.5 group-data-open:rotate-180" />
-            Advanced
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="flex flex-col gap-1.5 @xl/book:mx-10 @xl/book:my-0">
-              {dimensions.map((d) => {
-                const selected = d.id in draft
-                const value = draft[d.id] ?? 0
-                return (
-                  <div key={d.id} className="flex flex-col gap-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className="shrink-0 truncate text-xs font-medium">
-                        {d.label}
-                      </span>
-                      <Checkbox
-                        checked={selected}
-                        onCheckedChange={() => {
-                          toggle(d.id)
-                        }}
-                        aria-label={`Toggle ${d.label}`}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Slider
-                        aria-label={`${d.label} score`}
-                        className="h-2 w-40 flex-1"
-                        min={RATING_DIMENSION_MIN}
-                        max={RATING_DIMENSION_MAX}
-                        step={RATING_DIMENSION_STEP}
-                        value={value}
-                        disabled={!selected}
-                        onValueChange={(next) => {
-                          setValue(d.id, toNumber(next), false)
-                        }}
-                        onValueCommitted={(next) => {
-                          setValue(d.id, toNumber(next), true)
-                        }}
-                        id={`${d.label}-slider`}
-                      />
-                      <span
-                        // htmlFor={`${d.label}-slider`}
-                        className="text-muted-foreground w-7 shrink-0 text-right text-sm tabular-nums"
-                      >
-                        {selected ? formatRating(value) : "–"}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
-
-      <button
+      {/* visually top-right, but last in the dom so it comes last in tab order */}
+      <Button
         type="button"
+        size="icon-xs"
+        variant="ghost"
         onClick={onRemove}
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 self-start text-xs"
+        aria-label={t("review.removeAdvanced")}
+        className="text-muted-foreground hover:text-foreground absolute top-0 right-0"
       >
-        <IconX className="h-3.5 w-3.5" />
-        {t("review.removeAdvanced")}
-      </button>
+        <IconTrash />
+      </Button>
     </div>
   )
 }

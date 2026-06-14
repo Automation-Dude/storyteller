@@ -723,6 +723,16 @@
               }
             }
           },
+          "ratingIcon": {
+            "title": "Rating icon",
+            "description": "Choose the glyph used to show ratings.",
+            "label": "Icon",
+            "hint": "Switch between stars and hearts. The rating value stays the same.",
+            "options": {
+              "star": "Stars",
+              "heart": "Hearts"
+            }
+          },
           "ratingDimensions": {
             "title": "Rating dimensions",
             "description": "Customize the axes of the multidimensional book rating.",
@@ -820,7 +830,10 @@
       "avg": "Avg",
       "overrideTitle": "Override multidimensional rating?",
       "overrideDescription": "Rating manually replaces your multidimensional rating with a single value.",
-      "overrideConfirm": "Override"
+      "overrideConfirm": "Override",
+      "adjustScores": "Adjust scores",
+      "addDimension": "Add {label}",
+      "removeDimension": "Remove {label}"
     },
     "scan": {
       "title": "Scan",

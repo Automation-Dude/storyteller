@@ -1,4 +1,4 @@
-import { IconStar } from "@tabler/icons-react"
+import { IconHeart, IconStar } from "@tabler/icons-react"
 import { useCallback, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -7,6 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@v3/_/components/ui/popover"
+import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
@@ -15,6 +16,8 @@ type RatingInputProps = {
   onChange: (rating: number | null) => void
   readOnly?: boolean
   size?: "sm" | "md" | "lg"
+  // overrides the default fill color (e.g. a cover-derived accent)
+  color?: string
 }
 
 const sizeClasses = {
@@ -28,12 +31,20 @@ export function RatingInput({
   onChange,
   readOnly = false,
   size = "md",
+  color,
 }: RatingInputProps) {
   const isMobile = useIsMobile()
+  const { ratingIcon } = useUserPreferences()
   const [hoverValue, setHoverValue] = useState<number | null>(null)
   const [isOpen, setIsOpen] = useState(false)
 
+  const Icon = ratingIcon === "heart" ? IconHeart : IconStar
   const displayValue = hoverValue ?? value ?? 0
+
+  // a cover color tints both the fill and the outline; without one we keep the
+  // default amber treatment via utility classes
+  const fillStyle = color ? { color, fill: color } : undefined
+  const defaultFillClass = color ? "" : "fill-yellow-400 text-yellow-400"
 
   const handleClick = useCallback(
     (rating: number) => {
@@ -85,37 +96,34 @@ export function RatingInput({
               if (interactive) handleClick(hoverValue ?? starValue)
             }}
           >
-            {/* background star (empty) */}
-            <IconStar
+            {/* background icon (empty) */}
+            <Icon
               className={cn(
                 sizeClasses[size],
                 "text-muted-foreground/30 transition-colors",
               )}
             />
-            {/* filled star (full or somewhat filled) */}
+            {/* filled icon (full or somewhat filled) */}
             {(filled || percentFilled) && (
-              <IconStar
+              <Icon
                 className={cn(
                   sizeClasses[size],
-                  "absolute inset-0 fill-yellow-400 text-yellow-400 transition-colors",
+                  "absolute inset-0 transition-colors",
+                  defaultFillClass,
                 )}
                 style={
                   percentFilled
                     ? {
+                        ...fillStyle,
                         clipPath: `inset(0 ${Math.max(10, Math.min(100 - percentFilled, 90))}% 0 0)`,
                       }
-                    : undefined
+                    : fillStyle
                 }
               />
             )}
           </div>
         )
       })}
-      {/* {value !== null && (
-        <span className="text-muted-foreground ml-1.5 text-sm tabular-nums">
-          {value}
-        </span>
-      )} */}
     </div>
   )
 
@@ -140,31 +148,30 @@ export function RatingInput({
               Tap to rate
             </span>
             <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <button
-                  key={rating}
-                  type="button"
-                  onClick={() => {
-                    handleClick(rating)
-                    setIsOpen(false)
-                  }}
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
-                    value === rating
-                      ? "bg-yellow-400/20"
-                      : "hover:bg-accent active:bg-accent",
-                  )}
-                >
-                  <IconStar
+              {[1, 2, 3, 4, 5].map((rating) => {
+                const active = (value ?? 0) >= rating
+                return (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => {
+                      handleClick(rating)
+                      setIsOpen(false)
+                    }}
                     className={cn(
-                      "h-6 w-6",
-                      (value ?? 0) >= rating
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-muted-foreground",
+                      "hover:bg-accent active:bg-accent flex h-10 w-10 items-center justify-center rounded-md transition-colors",
                     )}
-                  />
-                </button>
-              ))}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-6 w-6",
+                        active ? defaultFillClass : "text-muted-foreground",
+                      )}
+                      style={active ? fillStyle : undefined}
+                    />
+                  </button>
+                )
+              })}
             </div>
             {value !== null && (
               <Button
@@ -192,8 +199,17 @@ export function RatingInput({
 type RatingDisplayProps = {
   rating: number | null
   size?: "sm" | "md" | "lg"
+  color?: string
 }
 
-export function RatingDisplay({ rating, size = "md" }: RatingDisplayProps) {
-  return <RatingInput value={rating} onChange={() => {}} readOnly size={size} />
+export function RatingDisplay({ rating, size = "md", color }: RatingDisplayProps) {
+  return (
+    <RatingInput
+      value={rating}
+      onChange={() => {}}
+      readOnly
+      size={size}
+      color={color}
+    />
+  )
 }

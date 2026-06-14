@@ -28,6 +28,7 @@ import {
   BookDetailDisplays,
   GridCardSizes,
   GridCoverDisplays,
+  RatingIcons,
 } from "@/database/userPreferencesTypes"
 
 import { CoverStylePreview } from "./cover-style-preview"
@@ -56,6 +57,11 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
   const detailDisplayOptions = BookDetailDisplays.map((key) => ({
     value: key,
     label: t(`detail.display.options.${key}`),
+  }))
+
+  const ratingIconOptions = RatingIcons.map((key) => ({
+    value: key,
+    label: t(`ratingIcon.options.${key}`),
   }))
 
   const gridCoverDisplay = useWatch({
@@ -195,6 +201,34 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                 )}
               />
             )}
+          </CardContent>
+        </Card>
+      </PreferencesSection>
+
+      <PreferencesSection tab="books" section="ratingIcon">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("ratingIcon.title")}</CardTitle>
+            <CardDescription>{t("ratingIcon.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Controller
+              name="ratingIcon"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>{t("ratingIcon.label")}</FieldLabel>
+                  <FieldDescription>{t("ratingIcon.hint")}</FieldDescription>
+                  <SegmentedControl
+                    value={field.value}
+                    onChange={(value) => {
+                      field.onChange(value)
+                    }}
+                    options={ratingIconOptions}
+                  />
+                </Field>
+              )}
+            />
           </CardContent>
         </Card>
       </PreferencesSection>
