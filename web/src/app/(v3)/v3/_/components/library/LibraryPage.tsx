@@ -57,6 +57,10 @@ import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateCollectionDialog"
+import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
+import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/_CreateSeriesDialog"
+import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/_EditSeriesDialog"
 import { usePermissions } from "@/hooks/usePermissions"
 import { type ShelfFilterNode } from "@/shelves"
 import {
@@ -69,10 +73,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
-import { CreateCollectionDialog } from "../books/CreateCollectionDialog"
-import { CreateTagDialog } from "../books/CreateTagDialog"
-import { CreateSeriesDialog } from "../books/_CreateSeriesDialog"
-import { EditSeriesDialog } from "../books/_EditSeriesDialog"
+
 
 const noop = () => {}
 const SIDEBAR_ROW_HEIGHT = 30
@@ -474,6 +475,7 @@ export function LibraryPage({
     </>
   )
 
+  // canCreate already narrows entityType to collection | tag | series
   const createDialog = !canCreate ? null : entityType === "collection" ? (
     <CreateCollectionDialog
       open={createDialogOpen}
@@ -484,12 +486,12 @@ export function LibraryPage({
       open={createDialogOpen}
       onOpenChange={setCreateDialogOpen}
     />
-  ) : entityType === "series" ? (
+  ) : (
     <CreateSeriesDialog
       open={createDialogOpen}
       onOpenChange={setCreateDialogOpen}
     />
-  ) : null
+  )
 
   if (isMobile) {
     if (selectedItem && selectedItemName) {

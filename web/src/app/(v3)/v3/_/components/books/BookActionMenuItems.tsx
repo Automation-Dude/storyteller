@@ -58,6 +58,8 @@ import { type UUID } from "@/uuid"
 
 import { ProcessingModal } from "./BookDetails/ProcessingModal"
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
+import { CreateTagDialog } from "./CreateTagDialog"
+import { CreateSeriesDialog } from "./_CreateSeriesDialog"
 
 type Mode = "single" | "bulk"
 
@@ -120,6 +122,8 @@ export function useBookActionItems({
   const [processingModalOpen, setProcessingModalOpen] = useState(false)
   const [mergeTarget, setMergeTarget] = useState<BookWithRelations | null>(null)
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false)
+  const [createSeriesOpen, setCreateSeriesOpen] = useState(false)
+  const [createTagOpen, setCreateTagOpen] = useState(false)
 
   // relations present on the selection, for the "remove from..." submenus
   const usedCollections = dedupeRelations(books.flatMap((b) => b.collections))
@@ -357,6 +361,15 @@ export function useBookActionItems({
               {t("addToSeries")}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+              <DropdownMenuItem
+                onClick={() => {
+                  setCreateSeriesOpen(true)
+                }}
+              >
+                <IconPlus className="mr-2 h-4 w-4" />
+                {t("newSeries")}
+              </DropdownMenuItem>
+              {series.length > 0 && <DropdownMenuSeparator />}
               {series.length === 0 ? (
                 <DropdownMenuItem disabled>{t("noSeries")}</DropdownMenuItem>
               ) : (
@@ -411,6 +424,15 @@ export function useBookActionItems({
               {t("addTag")}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+              <DropdownMenuItem
+                onClick={() => {
+                  setCreateTagOpen(true)
+                }}
+              >
+                <IconPlus className="mr-2 h-4 w-4" />
+                {t("newTag")}
+              </DropdownMenuItem>
+              {tags.length > 0 && <DropdownMenuSeparator />}
               {tags.length === 0 ? (
                 <DropdownMenuItem disabled>{t("noTags")}</DropdownMenuItem>
               ) : (
@@ -550,6 +572,21 @@ export function useBookActionItems({
           onOpenChange={setCreateCollectionOpen}
           onCreated={handleCollectionCreated}
         />
+      )}
+
+      {canUpdate && (
+        <>
+          <CreateSeriesDialog
+            open={createSeriesOpen}
+            onOpenChange={setCreateSeriesOpen}
+            books={bookUuids}
+          />
+          <CreateTagDialog
+            open={createTagOpen}
+            onOpenChange={setCreateTagOpen}
+            books={bookUuids}
+          />
+        </>
       )}
 
       {mode === "single" && books[0] && (

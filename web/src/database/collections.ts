@@ -3,6 +3,7 @@ import {
   type Selectable,
   type Transaction,
   type Updateable,
+  sql,
 } from "kysely"
 import { jsonArrayFrom } from "kysely/helpers/sqlite"
 
@@ -58,8 +59,14 @@ export async function getCollection(
   return collection
 }
 
-export async function getCollections(userId?: UUID) {
-  return await db
+// standard list query knobs, exposed over REST as ?order=&limit=
+export type ListOptions = { order?: "asc" | "desc"; limit?: number }
+
+export async function getCollections(
+  userId?: UUID,
+  { order = "asc", limit }: ListOptions = {},
+) {
+  const query = db
     .selectFrom("collection")
     .selectAll("collection")
     .select((eb) => [
@@ -87,7 +94,9 @@ export async function getCollections(userId?: UUID) {
         ),
     )
     .groupBy("collection.uuid")
-    .execute()
+    .orderBy(sql`collection.name collate nocase`, order)
+
+  return await (limit !== undefined ? query.limit(limit) : query).execute()
 }
 
 export async function createCollection(

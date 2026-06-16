@@ -1,9 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
 import { Button } from "@v3/_/components/ui/button"
+import { ColorPicker } from "@v3/_/components/ui/color-picker"
 import {
   Dialog,
   DialogContent,
@@ -18,54 +19,56 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@v3/_/components/ui/field"
+import { IconPicker } from "@v3/_/components/ui/icon-picker"
 import { Input } from "@v3/_/components/ui/input"
-import { Textarea } from "@v3/_/components/ui/textarea"
 
-import { useAddBooksToSeriesMutation } from "@/store/api"
+import { useAddTagsToBooksMutation, useCreateTagMutation } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-const seriesSchema = z.object({
+const tagSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
 })
 
-type SeriesFormData = z.infer<typeof seriesSchema>
+type TagFormData = z.infer<typeof tagSchema>
 
-type CreateSeriesDialogProps = {
+type CreateTagDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onCreated?: (name: string) => void
+  onCreated?: (tag: { uuid: string; name: string }) => void
   initialName?: string
-  // when set, the new series is created with these books already attached
+  // when set, the new tag is attached to these books after creation
   books?: string[]
 }
 
-export function CreateSeriesDialog({
+export function CreateTagDialog({
   open,
   onOpenChange,
   onCreated,
   initialName = "",
   books,
-}: CreateSeriesDialogProps) {
-  // series are created (and books attached) in one call via addBooksToSeries,
-  // which inserts the series when it doesn't exist yet.
-  const [addBooksToSeries, { isLoading }] = useAddBooksToSeriesMutation()
+}: CreateTagDialogProps) {
+  const [createTag, { isLoading: isCreating }] = useCreateTagMutation()
+  const [addTags, { isLoading: isAttaching }] = useAddTagsToBooksMutation()
+  const isLoading = isCreating || isAttaching
+
+  const [icon, setIcon] = useState<string | null>(null)
+  const [color, setColor] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<SeriesFormData>({
-    resolver: zodResolver(seriesSchema),
-    defaultValues: {
-      name: initialName,
-      description: "",
-    },
+  } = useForm<TagFormData>({
+    resolver: zodResolver(tagSchema),
+    defaultValues: { name: initialName },
   })
 
   useEffect(() => {
-    if (open) reset({ name: initialName, description: "" })
+    if (!open) return
+    reset({ name: initialName })
+    setIcon(null)
+    setColor(null)
   }, [open, initialName, reset])
 
   const handleClose = useCallback(() => {
@@ -74,53 +77,49 @@ export function CreateSeriesDialog({
   }, [reset, onOpenChange])
 
   const onSubmit = useCallback(
-    async (data: SeriesFormData) => {
+    async (data: TagFormData) => {
       try {
-        await addBooksToSeries({
-          series: { name: data.name, description: data.description ?? "" },
-          relations: (books ?? []).map((bookUuid, index) => ({
-            bookUuid: bookUuid as UUID,
-            position: index + 1,
-            featured: false,
-          })),
-        }).unwrap()
-        onCreated?.(data.name)
+        const tag = await createTag({ name: data.name, icon, color }).unwrap()
+
+        if (books?.length) {
+          await addTags({
+            tags: [tag.name],
+            books: books as UUID[],
+          }).unwrap()
+        }
+
+        onCreated?.(tag)
         handleClose()
       } catch {
         // error handling is done via the mutation error state
       }
     },
-    [addBooksToSeries, books, onCreated, handleClose],
+    [createTag, addTags, icon, color, books, onCreated, handleClose],
   )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Series</DialogTitle>
+          <DialogTitle>Create Tag</DialogTitle>
           <DialogDescription>
-            Create a new series to group related books together.
+            Create a new tag to label your books.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="py-4">
             <Field>
-              <FieldLabel htmlFor="series-name">Name</FieldLabel>
-              <Input
-                id="series-name"
-                placeholder="My Series"
-                {...register("name")}
-              />
+              <FieldLabel htmlFor="tag-name">Name</FieldLabel>
+              <Input id="tag-name" placeholder="My Tag" {...register("name")} />
               {errors.name && <FieldError>{errors.name.message}</FieldError>}
             </Field>
+
             <Field>
-              <FieldLabel htmlFor="series-description">Description</FieldLabel>
-              <Textarea
-                id="series-description"
-                placeholder="Optional description..."
-                rows={3}
-                {...register("description")}
-              />
+              <FieldLabel>Icon & Color</FieldLabel>
+              <div className="flex items-center gap-2">
+                <IconPicker value={icon} onChange={setIcon} color={color} />
+                <ColorPicker value={color} onChange={setColor} />
+              </div>
             </Field>
           </FieldGroup>
           <DialogFooter>

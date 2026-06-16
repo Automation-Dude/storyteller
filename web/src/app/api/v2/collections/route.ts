@@ -10,7 +10,13 @@ import { type UUID } from "@/uuid"
  */
 export const GET = withHasPermission("bookList")(async (request) => {
   const user = request.auth.user
-  const collections = await getCollections(user.id)
+  const { searchParams } = new URL(request.url)
+  const order = searchParams.get("order") === "desc" ? "desc" : "asc"
+  const limit = searchParams.get("limit")
+  const collections = await getCollections(user.id, {
+    order,
+    ...(limit && { limit: Number(limit) }),
+  })
 
   return NextResponse.json(collections)
 })

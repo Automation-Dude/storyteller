@@ -1,9 +1,10 @@
-import type { Insertable, Selectable, Updateable } from "kysely"
+import { type Insertable, type Selectable, type Updateable, sql } from "kysely"
 
 import { BookEvents } from "@/events"
 import type { UUID } from "@/uuid"
 
 import { type NewBookToSeries, getBooks } from "./books"
+import { type ListOptions } from "./collections"
 import { db } from "./connection"
 import type { BookToSeries, DB } from "./schema"
 import { cleanShelfFiltersForDeletedEntity } from "./shelfFilter"
@@ -56,8 +57,16 @@ export function getSeriesByUuid(seriesUuid: UUID, userId?: UUID) {
     .executeTakeFirst()
 }
 
-export async function getSeries(userId?: UUID) {
-  return await seriesQuery(userId).execute()
+export async function getSeries(
+  userId?: UUID,
+  { order = "asc", limit }: ListOptions = {},
+) {
+  const query = seriesQuery(userId).orderBy(
+    sql`series.name collate nocase`,
+    order,
+  )
+
+  return await (limit !== undefined ? query.limit(limit) : query).execute()
 }
 
 export async function addBooksToSeries(
@@ -97,18 +106,24 @@ export async function addBooksToSeries(
         .execute()
     }
 
-    await tr
-      .insertInto("bookToSeries")
-      .values(
-        relations.map((relation) => ({
-          bookUuid: relation.bookUuid,
-          seriesUuid: existing.uuid,
-          position: relation.position,
-          featured: relation.featured,
-        })),
-      )
-      .execute()
+    // relations can be empty when creating a standalone series
+    if (relations.length) {
+      await tr
+        .insertInto("bookToSeries")
+        .values(
+          relations.map((relation) => ({
+            bookUuid: relation.bookUuid,
+            seriesUuid: existing.uuid,
+            position: relation.position,
+            featured: relation.featured,
+          })),
+        )
+        .execute()
+    }
   })
+
+  // nothing to notify when creating a standalone series with no books
+  if (!relations.length) return
 
   const books = await getBooks(relations.map((relation) => relation.bookUuid))
 

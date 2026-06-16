@@ -1183,6 +1183,17 @@ export const api = createApi({
       providesTags: (tags) =>
         tags?.map((tag) => ({ type: "Tags", id: tag.uuid })) ?? ["Tags"],
     }),
+    createTag: build.mutation<
+      Tag,
+      { name: string; icon?: string | null; color?: string | null }
+    >({
+      query: (body) => ({
+        url: "/tags",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Tags"],
+    }),
     addTagsToBooks: build.mutation<void, { tags: string[]; books: UUID[] }>({
       query: (body) => ({
         url: `/books/tags`,
@@ -1783,6 +1794,7 @@ export const {
   useGetUserSettingsQuery,
   useUpdateUserSettingsMutation,
   useSetUserSettingMutation,
+  useCreateTagMutation,
   useUpdateTagMutation,
   useDeleteTagMutation,
   useMergeTagsMutation,

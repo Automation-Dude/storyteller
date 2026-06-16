@@ -1,9 +1,10 @@
-import type { Selectable, Updateable } from "kysely"
+import { type Selectable, type Updateable, sql } from "kysely"
 
 import { BookEvents } from "@/events"
 import type { UUID } from "@/uuid"
 
 import { getBooks } from "./books"
+import { type ListOptions } from "./collections"
 import { db } from "./connection"
 import type { DB } from "./schema"
 import { cleanShelfFiltersForDeletedEntity } from "./shelfFilter"
@@ -12,8 +13,11 @@ export type TagUpdate = Updateable<DB["tag"]>
 
 export type Tag = Selectable<DB["tag"]>
 
-export async function getTags(userId?: UUID) {
-  return db
+export async function getTags(
+  userId?: UUID,
+  { order = "asc", limit }: ListOptions = {},
+) {
+  const query = db
     .selectFrom("tag")
     .$if(!!userId, (qb) =>
       qb
@@ -46,7 +50,9 @@ export async function getTags(userId?: UUID) {
     )
     .groupBy("tag.uuid")
     .selectAll("tag")
-    .execute()
+    .orderBy(sql`tag.name collate nocase`, order)
+
+  return await (limit !== undefined ? query.limit(limit) : query).execute()
 }
 
 export async function getTagByUuid(tagUuid: UUID, userId?: UUID) {
@@ -83,6 +89,28 @@ export async function getTagByUuid(tagUuid: UUID, userId?: UUID) {
     .groupBy("tag.uuid")
     .selectAll("tag")
     .executeTakeFirst()
+}
+
+// find-or-create by name so a standalone create can't produce duplicate tags.
+// books are attached separately via addTagsToBooks.
+export async function createTag(values: {
+  name: string
+  icon?: string | null
+  color?: string | null
+}) {
+  const existing = await db
+    .selectFrom("tag")
+    .selectAll()
+    .where("name", "=", values.name)
+    .executeTakeFirst()
+
+  if (existing) return existing
+
+  return await db
+    .insertInto("tag")
+    .values(values)
+    .returningAll()
+    .executeTakeFirstOrThrow()
 }
 
 export async function addTagsToBooks(bookUuids: UUID[], tagNames: string[]) {
