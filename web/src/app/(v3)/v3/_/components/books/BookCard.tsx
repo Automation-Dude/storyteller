@@ -114,7 +114,7 @@ export const BookCard = memo(function BookCard({
               tabIndex={0}
               checked={isBookSelected}
               onCheckedChange={handleCheckboxClick}
-              className="hover:border-primary relative h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors focus-within:border-blue-500"
+              className="hover:border-primary relative h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors focus-within:border-blue-500 data-checked:border-2 data-checked:border-white"
               onClick={(e) => {
                 e.stopPropagation()
               }}

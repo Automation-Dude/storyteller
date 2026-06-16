@@ -9,9 +9,13 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
   context,
 ) => {
   const { uuid } = await context.params
-  const { name } = (await request.json()) as { name: string }
+  const { name, icon, color } = (await request.json()) as {
+    name?: string
+    icon?: string | null
+    color?: string | null
+  }
 
-  const updated = await updateTag(uuid, { name })
+  const updated = await updateTag(uuid, { name, icon, color })
   return Response.json(updated)
 })
 

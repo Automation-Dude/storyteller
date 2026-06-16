@@ -7,6 +7,7 @@ import {
   IconFolderMinus,
   IconLibrary,
   IconLibraryMinus,
+  IconPlus,
   IconProgress,
   IconRefresh,
   IconReplace,
@@ -56,6 +57,7 @@ import {
 import { type UUID } from "@/uuid"
 
 import { ProcessingModal } from "./BookDetails/ProcessingModal"
+import { CreateCollectionDialog } from "./CreateCollectionDialog"
 
 type Mode = "single" | "bulk"
 
@@ -90,6 +92,7 @@ export function useBookActionItems({
   const canUpdate = !!permissions?.bookUpdate
   const canDelete = !!permissions?.bookDelete
   const canProcess = !!permissions?.bookProcess
+  const canCreateCollection = !!permissions?.collectionCreate
 
   const bookUuids = books.map((b) => b.uuid)
   const count = books.length
@@ -116,6 +119,7 @@ export function useBookActionItems({
 
   const [processingModalOpen, setProcessingModalOpen] = useState(false)
   const [mergeTarget, setMergeTarget] = useState<BookWithRelations | null>(null)
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false)
 
   // relations present on the selection, for the "remove from..." submenus
   const usedCollections = dedupeRelations(books.flatMap((b) => b.collections))
@@ -143,6 +147,13 @@ export function useBookActionItems({
   const handleScan = useCallback(() => {
     void scanBooks({ bookUuids, force: true })
   }, [scanBooks, bookUuids])
+
+  const handleCollectionCreated = useCallback(
+    (uuid: string) => {
+      void addToCollections({ collections: [uuid as UUID], books: bookUuids })
+    },
+    [addToCollections, bookUuids],
+  )
 
   const handleDelete = useCallback(async () => {
     await deleteBooks({ books: bookUuids }).unwrap()
@@ -281,6 +292,19 @@ export function useBookActionItems({
               {t("addToCollection")}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+              {canCreateCollection && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCreateCollectionOpen(true)
+                    }}
+                  >
+                    <IconPlus className="mr-2 h-4 w-4" />
+                    {t("newCollection")}
+                  </DropdownMenuItem>
+                  {collections.length > 0 && <DropdownMenuSeparator />}
+                </>
+              )}
               {collections.length === 0 ? (
                 <DropdownMenuItem disabled>
                   {t("noCollections")}
@@ -519,6 +543,14 @@ export function useBookActionItems({
       <ConfirmDialog {...processAction.dialogProps} />
       <ConfirmDialog {...upgradeAction.dialogProps} />
       <ConfirmDialog {...mergeAction.dialogProps} />
+
+      {canCreateCollection && (
+        <CreateCollectionDialog
+          open={createCollectionOpen}
+          onOpenChange={setCreateCollectionOpen}
+          onCreated={handleCollectionCreated}
+        />
+      )}
 
       {mode === "single" && books[0] && (
         <ProcessingModal

@@ -370,7 +370,9 @@ export interface Status {
 }
 
 export interface Tag {
+  color: string | null
   createdAt: Generated<string>
+  icon: string | null
   name: string
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>

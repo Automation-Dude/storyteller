@@ -53,11 +53,16 @@ export function TagEditor({
     [removeTags, bookUuid, onUpdate],
   )
 
-  const tagItems = tags.map((t) => ({
-    uuid: t.uuid,
-    name: t.name,
-    url: `/tags?item=${t.uuid}`,
-  }))
+  const tagItems = tags.map((tag) => {
+    const full = allTags.find((candidate) => candidate.uuid === tag.uuid)
+    return {
+      uuid: tag.uuid,
+      name: tag.name,
+      url: `/tags?item=${tag.uuid}`,
+      icon: full?.icon ?? null,
+      color: full?.color ?? null,
+    }
+  })
 
   return (
     <RelationChipEditor

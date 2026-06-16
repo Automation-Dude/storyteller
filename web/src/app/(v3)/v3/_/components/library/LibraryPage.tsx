@@ -5,6 +5,7 @@ import {
   IconBookmarkPlus,
   IconDotsVertical,
   IconEdit,
+  IconPlus,
   IconSearch,
   IconSortAscending,
   IconSortDescending,
@@ -44,6 +45,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
+import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
@@ -54,6 +56,7 @@ import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { usePermissions } from "@/hooks/usePermissions"
 import { type ShelfFilterNode } from "@/shelves"
 import {
   useDeleteCollectionMutation,
@@ -313,6 +316,15 @@ export function LibraryPage({
     setEditDialogOpen(true)
   }, [])
 
+  const permissions = usePermissions()
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const canCreateCollection =
+    entityType === "collection" && !!permissions?.collectionCreate
+
+  const handleCreateItem = useCallback(() => {
+    setCreateDialogOpen(true)
+  }, [])
+
   const pinDepsRef = useRef({ section, pinShelf })
   pinDepsRef.current = { section, pinShelf }
 
@@ -364,6 +376,10 @@ export function LibraryPage({
       onEditItem={entityType ? handleEditItem : undefined}
       toShelfFilter={section.toShelfFilter}
       {...(canPin && { onPinItem: handlePinFacet })}
+      {...(canCreateCollection && {
+        onCreate: handleCreateItem,
+        createLabel: tEntity("createCollection"),
+      })}
     />
   )
 
@@ -414,6 +430,13 @@ export function LibraryPage({
     </>
   )
 
+  const createDialog = canCreateCollection ? (
+    <CreateCollectionDialog
+      open={createDialogOpen}
+      onOpenChange={setCreateDialogOpen}
+    />
+  ) : null
+
   if (isMobile) {
     if (selectedItem && selectedItemName) {
       return (
@@ -441,6 +464,7 @@ export function LibraryPage({
           <SiteHeader breadcrumbs={[{ label: title }]} />
         </div>
         <div className="flex-1">{sidebarContent}</div>
+        {createDialog}
       </div>
     )
   }
@@ -533,6 +557,7 @@ export function LibraryPage({
       </BookListLayout>
 
       {editDialog}
+      {createDialog}
       <ConfirmDialog {...headerDeleteAction.dialogProps} />
     </>
   )
@@ -617,7 +642,7 @@ function EntityEditDialog({
       <CreateCollectionDialog
         open={open}
         onOpenChange={onOpenChange}
-        collection={item ? { uuid: item.key, name: item.name } : null}
+        collectionUuid={item ? item.key : null}
       />
     )
   }
@@ -642,6 +667,8 @@ function SidebarPanel({
   entityType,
   itemSelection,
   onEditItem,
+  onCreate,
+  createLabel,
   toShelfFilter,
 }: {
   title: string
@@ -657,6 +684,8 @@ function SidebarPanel({
   entityType?: LibraryEntityType
   itemSelection?: ReturnType<typeof useItemSelection>
   onEditItem?: (item: LibraryItem) => void
+  onCreate?: () => void
+  createLabel?: string
   toShelfFilter?: (itemKey: string) => ShelfFilterNode
 }) {
   const t = useTranslation("LibraryPage")
@@ -711,18 +740,31 @@ function SidebarPanel({
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-base">{title}</h2>
 
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={toggleSort}
-              title={sortMode === "name" ? t("sortByCount") : t("sortByName")}
-            >
-              {sortMode === "name" ? (
-                <IconSortAscending className="h-4 w-4" />
-              ) : (
-                <IconSortDescending className="h-4 w-4" />
+            <div className="flex items-center gap-0.5">
+              {onCreate && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onCreate}
+                  title={createLabel}
+                >
+                  <IconPlus className="h-4 w-4" />
+                </Button>
               )}
-            </Button>
+
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={toggleSort}
+                title={sortMode === "name" ? t("sortByCount") : t("sortByName")}
+              >
+                {sortMode === "name" ? (
+                  <IconSortAscending className="h-4 w-4" />
+                ) : (
+                  <IconSortDescending className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
 
           <SearchInput
@@ -994,11 +1036,23 @@ function SidebarRow({
           onItemClick(item.key)
         }}
         className={cn(
-          "flex min-w-0 flex-1 items-center py-1.5 text-left font-serif text-sm",
+          "flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left font-serif text-sm",
           canSelect ? "pr-2 pl-1.5" : "px-2",
           isActive && "font-medium",
         )}
       >
+        {item.icon ? (
+          <DynamicIcon
+            iconId={item.icon}
+            color={item.color}
+            className="size-4 shrink-0"
+          />
+        ) : item.color ? (
+          <span
+            className="size-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: item.color }}
+          />
+        ) : null}
         <span className="min-w-0 truncate">{item.name}</span>
       </button>
 

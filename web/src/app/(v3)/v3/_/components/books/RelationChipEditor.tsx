@@ -5,6 +5,7 @@ import { type ReactNode, useMemo, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
+import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
 import { Input } from "@v3/_/components/ui/input"
 import {
   Popover,
@@ -21,6 +22,25 @@ type RelationItem = {
   uuid: string
   name: string
   url?: string
+  // optional icon id (resolved via DynamicIcon) and color, e.g. for tags/collections
+  icon?: string | null
+  color?: string | null
+}
+
+// the icon (or a color dot fallback) shown at the start of an item, when set
+const RelationGlyph = ({ item }: { item: RelationItem }) => {
+  if (item.icon) {
+    return <DynamicIcon iconId={item.icon} color={item.color} className="h-3 w-3" />
+  }
+  if (item.color) {
+    return (
+      <span
+        className="size-2 shrink-0 rounded-full"
+        style={{ backgroundColor: item.color }}
+      />
+    )
+  }
+  return null
 }
 
 type RelationChipEditorProps<T extends RelationItem> = {
@@ -63,7 +83,7 @@ const RelationChip = ({
 }) => {
   const base = (
     <>
-      {/* <Icon className="h-3 w-3" /> */}
+      <RelationGlyph item={item} />
       {item.name}
       {renderBadgeExtra?.(item)}
 
@@ -246,6 +266,7 @@ export function RelationChipEditor<T extends RelationItem>({
                 }}
                 className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
               >
+                <RelationGlyph item={item} />
                 {item.name}
               </button>
             ))}

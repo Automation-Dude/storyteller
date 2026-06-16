@@ -521,7 +521,14 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
         eb
           .selectFrom("bookToTag")
           .innerJoin("tag", "tag.uuid", "bookToTag.tagUuid")
-          .select(["tag.uuid", "tag.name", "tag.createdAt", "tag.updatedAt"])
+          .select([
+            "tag.uuid",
+            "tag.name",
+            "tag.icon",
+            "tag.color",
+            "tag.createdAt",
+            "tag.updatedAt",
+          ])
           .whereRef("bookToTag.bookUuid", "=", "book.uuid"),
       ).as("tags"),
       jsonArrayFrom(
@@ -537,6 +544,8 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
             "collection.name",
             "collection.description",
             "collection.public",
+            "collection.icon",
+            "collection.color",
             "collection.createdAt",
             "collection.updatedAt",
           ])

@@ -6,6 +6,17 @@ import { z } from "zod/v4"
 import { Button } from "@v3/_/components/ui/button"
 import { ColorPicker } from "@v3/_/components/ui/color-picker"
 import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+} from "@v3/_/components/ui/combobox"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -15,16 +26,21 @@ import {
 } from "@v3/_/components/ui/dialog"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@v3/_/components/ui/field"
 import { IconPicker } from "@v3/_/components/ui/icon-picker"
 import { Input } from "@v3/_/components/ui/input"
+import { Switch } from "@v3/_/components/ui/switch"
 import { Textarea } from "@v3/_/components/ui/textarea"
 
 import {
   useCreateCollectionMutation,
+  useGetCurrentUserQuery,
+  useListCollectionsQuery,
+  useListUsersQuery,
   useUpdateCollectionMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
@@ -41,13 +57,9 @@ type CreateCollectionDialogProps = {
   onOpenChange: (open: boolean) => void
   onCreated?: (uuid: string) => void
   initialName?: string
-  collection?: {
-    uuid: string
-    name: string
-    description: string | null
-    icon: string | null
-    color: string | null
-  } | null
+  // when set, the dialog edits the matching collection; full values are
+  // resolved from the collections list query.
+  collectionUuid?: string | null
 }
 
 export function CreateCollectionDialog({
@@ -55,15 +67,31 @@ export function CreateCollectionDialog({
   onOpenChange,
   onCreated,
   initialName = "",
-  collection,
+  collectionUuid,
 }: CreateCollectionDialogProps) {
-  const isEditing = !!collection
-  const [createCollection, { isLoading: isCreating }] = useCreateCollectionMutation()
-  const [updateCollection, { isLoading: isUpdating }] = useUpdateCollectionMutation()
+  const isEditing = !!collectionUuid
+  const [createCollection, { isLoading: isCreating }] =
+    useCreateCollectionMutation()
+  const [updateCollection, { isLoading: isUpdating }] =
+    useUpdateCollectionMutation()
   const isLoading = isCreating || isUpdating
 
-  const [icon, setIcon] = useState<string | null>(collection?.icon ?? null)
-  const [color, setColor] = useState<string | null>(collection?.color ?? null)
+  const { data: collections = [] } = useListCollectionsQuery()
+  const { data: allUsers = [] } = useListUsersQuery()
+  const { data: currentUser } = useGetCurrentUserQuery()
+
+  const editingCollection = collectionUuid
+    ? collections.find((c) => c.uuid === collectionUuid)
+    : undefined
+
+  // you're always a member of your own collections, so the invite list only
+  // offers (and shows) other users.
+  const invitableUsers = allUsers.filter((user) => user.id !== currentUser?.id)
+
+  const [icon, setIcon] = useState<string | null>(null)
+  const [color, setColor] = useState<string | null>(null)
+  const [isPublic, setIsPublic] = useState(true)
+  const [memberIds, setMemberIds] = useState<UUID[]>([])
 
   const {
     register,
@@ -73,25 +101,35 @@ export function CreateCollectionDialog({
   } = useForm<CollectionFormData>({
     resolver: zodResolver(collectionSchema),
     defaultValues: {
-      name: collection?.name ?? initialName,
-      description: collection?.description ?? "",
+      name: initialName,
+      description: "",
     },
   })
 
   useEffect(() => {
-    if (open && collection) {
+    if (!open) return
+
+    if (editingCollection) {
       reset({
-        name: collection.name,
-        description: collection.description ?? "",
+        name: editingCollection.name,
+        description: editingCollection.description ?? "",
       })
-      setIcon(collection.icon ?? null)
-      setColor(collection.color ?? null)
-    } else if (open && !collection) {
+      setIcon(editingCollection.icon ?? null)
+      setColor(editingCollection.color ?? null)
+      setIsPublic(editingCollection.public)
+      setMemberIds(
+        editingCollection.users
+          .filter((user) => user.id !== currentUser?.id)
+          .map((user) => user.id),
+      )
+    } else if (!collectionUuid) {
       reset({ name: initialName, description: "" })
       setIcon(null)
       setColor(null)
+      setIsPublic(true)
+      setMemberIds([])
     }
-  }, [open, collection, initialName, reset])
+  }, [open, editingCollection, collectionUuid, initialName, currentUser?.id, reset])
 
   const handleClose = useCallback(() => {
     reset()
@@ -101,27 +139,29 @@ export function CreateCollectionDialog({
   const onSubmit = useCallback(
     async (data: CollectionFormData) => {
       try {
-        if (isEditing) {
+        if (isEditing && collectionUuid) {
           await updateCollection({
-            uuid: collection.uuid as UUID,
+            uuid: collectionUuid as UUID,
             update: {
               name: data.name,
               description: data.description ?? null,
               icon,
               color,
+              public: isPublic,
+              users: memberIds,
             },
           }).unwrap()
 
-          onCreated?.(collection.uuid)
+          onCreated?.(collectionUuid)
         } else {
           const result = await createCollection({
             name: data.name,
             description: data.description ?? "",
-            public: true,
-            users: [],
+            public: isPublic,
+            users: memberIds,
           }).unwrap()
 
-          // update icon/color after creation if set
+          // create doesn't accept icon/color, so set them in a follow-up update
           if (icon || color) {
             await updateCollection({
               uuid: result.uuid,
@@ -137,7 +177,18 @@ export function CreateCollectionDialog({
         // error handling is done via the mutation error state
       }
     },
-    [createCollection, updateCollection, collection, isEditing, icon, color, onCreated, handleClose],
+    [
+      createCollection,
+      updateCollection,
+      collectionUuid,
+      isEditing,
+      icon,
+      color,
+      isPublic,
+      memberIds,
+      onCreated,
+      handleClose,
+    ],
   )
 
   return (
@@ -183,6 +234,56 @@ export function CreateCollectionDialog({
                 <IconPicker value={icon} onChange={setIcon} color={color} />
                 <ColorPicker value={color} onChange={setColor} />
               </div>
+            </Field>
+
+            <Field orientation="horizontal">
+              <Switch
+                id="collection-public"
+                checked={isPublic}
+                onCheckedChange={setIsPublic}
+              />
+              <FieldLabel htmlFor="collection-public">Public</FieldLabel>
+            </Field>
+
+            <Field>
+              <FieldLabel>Invite users</FieldLabel>
+              <Combobox
+                items={invitableUsers.map((user) => ({
+                  value: user.id,
+                  label: user.username ?? user.email,
+                }))}
+                multiple
+                value={memberIds}
+                onValueChange={(ids) => {
+                  setMemberIds(ids)
+                }}
+              >
+                <ComboboxChips>
+                  <ComboboxValue>
+                    {invitableUsers
+                      .filter((user) => memberIds.includes(user.id))
+                      .map((user) => (
+                        <ComboboxChip key={user.id}>
+                          {user.username ?? user.email}
+                        </ComboboxChip>
+                      ))}
+                  </ComboboxValue>
+                  <ComboboxChipsInput placeholder="Add people..." />
+                </ComboboxChips>
+                <ComboboxContent>
+                  <ComboboxEmpty>No users found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {invitableUsers.map((user) => (
+                      <ComboboxItem key={user.id} value={user.id}>
+                        {user.username ?? user.email}
+                      </ComboboxItem>
+                    ))}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+              <FieldDescription>
+                Only applies to private collections.
+              </FieldDescription>
             </Field>
           </FieldGroup>
 

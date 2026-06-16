@@ -68,11 +68,16 @@ export function CollectionEditor({
     [addToCollections, bookUuid, onUpdate],
   )
 
-  const collectionItems = collections.map((c) => ({
-    uuid: c.uuid,
-    name: c.name,
-    url: `/collections?item=${c.uuid}`,
-  }))
+  const collectionItems = collections.map((c) => {
+    const full = allCollections.find((candidate) => candidate.uuid === c.uuid)
+    return {
+      uuid: c.uuid,
+      name: c.name,
+      url: `/collections?item=${c.uuid}`,
+      icon: full?.icon ?? null,
+      color: full?.color ?? null,
+    }
+  })
 
   return (
     <>

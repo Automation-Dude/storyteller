@@ -1,9 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
 import { Button } from "@v3/_/components/ui/button"
+import { ColorPicker } from "@v3/_/components/ui/color-picker"
 import {
   Dialog,
   DialogContent,
@@ -18,10 +19,12 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@v3/_/components/ui/field"
+import { IconPicker } from "@v3/_/components/ui/icon-picker"
 import { Input } from "@v3/_/components/ui/input"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { useUpdateTagMutation } from "@/store/api"
+import { useListTagsQuery, useUpdateTagMutation } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 const tagSchema = z.object({
   name: z.string().min(1),
@@ -45,6 +48,13 @@ export function EditTagDialog({
   const t = useTranslation("EntityActions")
   const [updateTag, { isLoading }] = useUpdateTagMutation()
 
+  // the sidebar only passes uuid+name, so seed icon/color from the full tag
+  const { data: allTags = [] } = useListTagsQuery()
+  const fullTag = tag ? allTags.find((candidate) => candidate.uuid === tag.uuid) : null
+
+  const [icon, setIcon] = useState<string | null>(null)
+  const [color, setColor] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
@@ -56,10 +66,12 @@ export function EditTagDialog({
   })
 
   useEffect(() => {
-    if (tag) {
+    if (open && tag) {
       reset({ name: tag.name })
+      setIcon(fullTag?.icon ?? null)
+      setColor(fullTag?.color ?? null)
     }
-  }, [tag, reset])
+  }, [open, tag, fullTag?.icon, fullTag?.color, reset])
 
   const handleClose = useCallback(() => {
     onOpenChange(false)
@@ -71,8 +83,8 @@ export function EditTagDialog({
 
       try {
         await updateTag({
-          uuid: tag.uuid as `${string}-${string}-${string}-${string}-${string}`,
-          update: { name: data.name },
+          uuid: tag.uuid as UUID,
+          update: { name: data.name, icon, color },
         }).unwrap()
 
         onUpdated?.()
@@ -81,7 +93,7 @@ export function EditTagDialog({
         // error handling via mutation state
       }
     },
-    [updateTag, tag, onUpdated, handleClose],
+    [updateTag, tag, icon, color, onUpdated, handleClose],
   )
 
   return (
@@ -102,6 +114,14 @@ export function EditTagDialog({
                 {...register("name")}
               />
               {errors.name && <FieldError>{t("nameRequired")}</FieldError>}
+            </Field>
+
+            <Field>
+              <FieldLabel>{t("iconAndColor")}</FieldLabel>
+              <div className="flex items-center gap-2">
+                <IconPicker value={icon} onChange={setIcon} color={color} />
+                <ColorPicker value={color} onChange={setColor} />
+              </div>
             </Field>
           </FieldGroup>
 

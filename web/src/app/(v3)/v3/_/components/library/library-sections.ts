@@ -5,6 +5,9 @@ export type LibraryItem = {
   key: string
   name: string
   bookCount: number
+  // present for entities that carry an icon/color (tags, collections)
+  icon?: string | null
+  color?: string | null
 }
 
 // entity types that support edit/delete/merge from the sidebar
@@ -37,11 +40,20 @@ function entityFilter(
 }
 
 function buildRelationSection<
-  T extends { uuid: string; name: string; fileAs?: string },
+  T extends {
+    uuid: string
+    name: string
+    fileAs?: string
+    icon?: string | null
+    color?: string | null
+  },
 >(getRelations: (book: BookWithRelations) => T[]): LibrarySectionDef {
   return {
     extractItems(books) {
-      const map = new Map<string, { name: string; count: number }>()
+      const map = new Map<
+        string,
+        { name: string; count: number; icon: string | null; color: string | null }
+      >()
 
       for (const book of books) {
         for (const rel of getRelations(book)) {
@@ -53,15 +65,19 @@ function buildRelationSection<
             map.set(rel.uuid, {
               name: rel.fileAs ?? rel.name,
               count: 1,
+              icon: rel.icon ?? null,
+              color: rel.color ?? null,
             })
           }
         }
       }
 
-      return Array.from(map, ([key, { name, count }]) => ({
+      return Array.from(map, ([key, { name, count, icon, color }]) => ({
         key,
         name,
         bookCount: count,
+        icon,
+        color,
       }))
     },
 
