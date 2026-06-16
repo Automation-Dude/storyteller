@@ -976,7 +976,7 @@ function SidebarRow({
   return (
     <div
       className={cn(
-        "group/item relative flex items-center rounded-md transition-colors",
+        "group/item relative flex items-center rounded-md",
         isActive
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "hover:bg-sidebar-accent/50",

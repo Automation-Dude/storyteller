@@ -6,28 +6,29 @@ import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
 import { CoverImage } from "./CoverImage"
+import { Variant } from "motion/react"
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
 
 const TILE_CLASS =
-  "absolute inset-0 m-auto overflow-hidden rounded-xs shadow-md ring-primary group-hover/covers:ring-3"
+  "absolute inset-0 m-auto  rounded-sm shadow-md group-hover/covers:overflow-hidden ring-primary/50 group-hover/covers:ring-3  group-hover/covers:before:-inset-3 before:bg-white before:block before:absolute before:-z-10"
 
-type Pos = { x: string; scale: number; z: number }
+type Pos = { x: string; scale: number; z: number } & Variant
 type CoverState = "idle" | "separated" | "audiobook-front"
 
 const STATES: Record<CoverState, { audiobook: Pos; ebook: Pos }> = {
   idle: {
-    audiobook: { x: "15%", scale: 1, z: 10 },
-    ebook: { x: "-15%", scale: 1, z: 20 },
+    audiobook: { x: "15%", scale: 1, z: 10, rotateX: 5 },
+    ebook: { x: "-10%", scale: 1, z: 20, rotateX: -3 },
   },
   separated: {
-    audiobook: { x: "18%", scale: 0.8, z: 10 },
-    ebook: { x: "-18%", scale: 0.8, z: 20 },
+    audiobook: { x: "18%", scale: 0.8, z: 10, rotateX: 5 },
+    ebook: { x: "-18%", scale: 0.8, z: 20, rotateX: -5 },
   },
   "audiobook-front": {
-    audiobook: { x: "5%", scale: 1.05, z: 20 },
-    ebook: { x: "-15%", scale: 0.9, z: 10 },
+    audiobook: { x: "5%", scale: 1.05, z: 20, rotateX: 0 },
+    ebook: { x: "-15%", scale: 0.9, z: 10, rotateX: -5 },
   },
 }
 
@@ -40,8 +41,8 @@ const SHUFFLE_MS = 450
 const SIMPLE_MS = 220
 const PEAK_FRACTION = 0.4
 
-function tx(p: { x: string; scale: number }) {
-  return `translateX(${p.x}) scale(${p.scale})`
+function tx(p: { x: string; scale: number; rotateX?: string }) {
+  return `translateX(${p.x}) scale(${p.scale})${p.rotateX ? ` rotate(${p.rotateX}deg)` : ""}`
 }
 
 function transformKeyframes(
@@ -96,6 +97,7 @@ export function BookDoubleCover({
     const eb = ebookRef.current
     if (!ab || !eb) return
     ab.style.transform = tx(STATES.idle.audiobook)
+    console.log(tx(STATES.idle.audiobook))
     ab.style.zIndex = String(STATES.idle.audiobook.z)
     eb.style.transform = tx(STATES.idle.ebook)
     eb.style.zIndex = String(STATES.idle.ebook.z)
@@ -218,7 +220,7 @@ export function BookDoubleCover({
           blurhash={book.audiobook?.coverBlurhash}
           type="audiobook"
           fallbackColors={fallbackColors}
-          className="h-full w-full"
+          className="h-full w-full rounded-sm"
           onLoadingChange={setAudioLoading}
         />
       </div>
@@ -233,7 +235,7 @@ export function BookDoubleCover({
           blurhash={book.ebook?.coverBlurhash}
           type="ebook"
           fallbackColors={fallbackColors}
-          className="h-full w-full"
+          className="h-full w-full rounded-sm"
           onLoadingChange={setEbookLoading}
         />
       </div>

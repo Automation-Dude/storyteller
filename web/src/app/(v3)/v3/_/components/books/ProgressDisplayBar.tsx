@@ -32,7 +32,7 @@ export function ProgressDisplayBar({
   const { showAccent } = useColorPreferences()
 
   return (
-    <div className="absolute right-0 bottom-0 left-0 h-1 overflow-hidden rounded-b-lg bg-black/30">
+    <div className="absolute right-0.5 bottom-0 left-0.5 h-1 overflow-hidden rounded-b-lg bg-black/30">
       <div
         className="h-full transition-all"
         style={{
