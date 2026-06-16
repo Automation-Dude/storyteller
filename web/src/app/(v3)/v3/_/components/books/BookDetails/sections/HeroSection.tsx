@@ -57,7 +57,12 @@ export function HeroSection({ compact }: { compact: boolean }) {
     if (rating == null && !review) {
       await deleteBookRating({ bookUuid: book.uuid })
     } else {
-      await setBookRating({ bookUuid: book.uuid, rating, review, dimensions: null })
+      await setBookRating({
+        bookUuid: book.uuid,
+        rating,
+        review,
+        dimensions: null,
+      })
     }
   }
 
@@ -249,6 +254,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
         <ProgressDisplayBar
           progress={getReadingProgress(book) ?? 0}
           book={book}
+          className="right-0 left-0 rounded-none"
         />
       )}
     </div>

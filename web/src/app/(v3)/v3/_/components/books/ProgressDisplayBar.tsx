@@ -5,6 +5,7 @@ import {
   useColorPreferences,
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
+import { cn } from "@/cn"
 
 // the seeded "finished" reading status. a book marked read counts as fully
 // read regardless of any saved position (it may have none).
@@ -24,15 +25,22 @@ export function getReadingProgress(book: BookWithRelations): number | null {
 export function ProgressDisplayBar({
   progress,
   book,
+  className,
 }: {
   progress: number
   book: BookWithRelations
+  className?: string
 }) {
   const { primary } = useCoverColors(book)
   const { showAccent } = useColorPreferences()
 
   return (
-    <div className="absolute right-0.5 bottom-0 left-0.5 h-1 overflow-hidden rounded-b-lg bg-black/30">
+    <div
+      className={cn(
+        "absolute right-0.5 bottom-0 left-0.5 h-1 overflow-hidden rounded-b-lg bg-black/30",
+        className,
+      )}
+    >
       <div
         className="h-full transition-all"
         style={{
