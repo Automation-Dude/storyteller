@@ -6,6 +6,7 @@ import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 import { FormatsPageClient } from "./formatsPageClient"
 
 export async function generateMetadata(): Promise<Metadata> {
+  console.log("generateMetadata")
   const t = await getTranslations("LibraryPage")
   return {
     title: t("Formats.by"),
@@ -13,5 +14,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default withPageAuth(["bookList"])(() => {
+  console.log("FormatsPage")
   return <FormatsPageClient />
 })

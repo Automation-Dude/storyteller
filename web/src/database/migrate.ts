@@ -59,6 +59,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   "91_dedupe_book_collections.sql": (
     await import("./migrations/91_dedupe_book_collections.sql")
   ).default,
+  "93_add_formats_sidebar.sql": (
+    await import("./migrations/93_add_formats_sidebar.sql")
+  ).default,
 }
 
 async function isFirstStartup() {

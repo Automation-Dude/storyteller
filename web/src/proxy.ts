@@ -17,6 +17,7 @@ const V3_ROUTES = [
   "/preferences",
   "/collections",
   "/shelves",
+  "/formats",
   "/not-found",
 ]
 

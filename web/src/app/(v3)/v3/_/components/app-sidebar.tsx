@@ -560,7 +560,7 @@ function resolveItem(
   if (item.kind === "collection") {
     return {
       title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
-      url: `/collections/${item.collectionUuid}`,
+      url: `/collections?item=${item.collectionUuid}`,
       icon: item.icon ? null : COLLECTION_ICON,
       customIcon: item.icon,
       color: item.color,

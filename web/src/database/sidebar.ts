@@ -18,6 +18,7 @@ export const DEFAULT_SIDEBAR_BUILTINS = [
   "publication-years",
   "ratings",
   "statuses",
+  "formats",
 ] as const
 
 const MAIN_BUILTINS = new Set<string>(["home", "books"])

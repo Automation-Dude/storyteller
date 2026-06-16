@@ -9,6 +9,7 @@ import {
   IconList,
   IconMicrophone2,
   IconStar,
+  IconStack2,
   IconTag,
   IconUser,
   type TablerIcon,
@@ -26,6 +27,7 @@ type LibraryLabelKey =
   | "PublicationYear.plain"
   | "Rating.plain"
   | "Status.plain"
+  | "Formats.plain"
 
 type BuiltinBase = {
   key: string
@@ -132,6 +134,14 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
     countKey: "statuses",
     labelNs: "LibraryPage",
     labelKey: "Status.plain",
+  },
+  {
+    key: "formats",
+    group: "library",
+    icon: IconStack2,
+    href: "/formats",
+    labelNs: "LibraryPage",
+    labelKey: "Formats.plain",
   },
 ]
 
