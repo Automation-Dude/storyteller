@@ -1207,7 +1207,17 @@ export const api = createApi({
       ],
     }),
 
-    updateTag: build.mutation<Tag, { uuid: UUID; update: { name: string } }>({
+    updateTag: build.mutation<
+      Tag,
+      {
+        uuid: UUID
+        update: {
+          name?: string
+          icon?: string | null
+          color?: string | null
+        }
+      }
+    >({
       query: ({ uuid, update }) => ({
         url: `/tags/${uuid}`,
         method: "PUT",
@@ -1349,13 +1359,20 @@ export const api = createApi({
             // mirror the server: dimensions, when provided, drive the rating
             let nextRating: number | null
             let nextDimensions: RatingDimensionScores | null
+
             if (dimensions !== undefined) {
               const scores =
                 dimensions && Object.values(dimensions).length
                   ? dimensions
                   : null
               nextDimensions = scores
-              nextRating = computeRatingAverage(scores)
+
+              if (scores) {
+                nextRating = computeRatingAverage(scores)
+              } else {
+                nextRating =
+                  rating !== undefined ? rating : (existing?.rating ?? null)
+              }
             } else {
               nextRating =
                 rating !== undefined ? rating : (existing?.rating ?? null)

@@ -128,10 +128,9 @@ export function ReviewSection({ className }: { className?: string }) {
   const hasDimensions =
     !!currentDimensions && Object.keys(currentDimensions).length > 0
 
-  // tint the stars / average with the cover's accent, nudged for legibility
-  const { accent } = useCoverColors(book)
+  const { primary } = useCoverColors(book)
   const isDark = useIsDarkMode()
-  const ratingColor = ensureContrast(accent, isDark).solid
+  const ratingColor = ensureContrast(primary, isDark).solid
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")

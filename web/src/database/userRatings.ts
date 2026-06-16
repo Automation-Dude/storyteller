@@ -58,7 +58,14 @@ export async function setUserBookRating(
         ? values.dimensions
         : null
     patch.dimensions = scores ? JSON.stringify(scores) : null
-    patch.rating = computeRatingAverage(scores)
+
+    if (scores) {
+      patch.rating = computeRatingAverage(scores)
+    } else if (values.rating !== undefined) {
+      // dimensions cleared but an explicit rating was provided (e.g. the hero
+      // star input overriding a previous multidimensional rating)
+      patch.rating = values.rating
+    }
   } else if (values.rating !== undefined) {
     patch.rating = values.rating
   }

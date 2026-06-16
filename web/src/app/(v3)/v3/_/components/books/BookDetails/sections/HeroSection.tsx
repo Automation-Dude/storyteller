@@ -61,10 +61,10 @@ export function HeroSection({ compact }: { compact: boolean }) {
     }
   }
 
-  const { primary, accent } = useCoverColors(book)
+  const { primary } = useCoverColors(book)
   const { tint } = useColorPreferences()
   const isDark = useIsDarkMode()
-  const ratingColor = ensureContrast(accent, isDark).solid
+  const ratingColor = ensureContrast(primary, isDark).solid
 
   return (
     <div
