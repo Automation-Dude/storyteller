@@ -24,6 +24,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -515,7 +516,7 @@ function EditableGroup({
 
               <DropdownMenuContent side="bottom" align="start">
                 {availableBuiltins.length > 0 && (
-                  <>
+                  <DropdownMenuGroup>
                     <DropdownMenuLabel>Pages</DropdownMenuLabel>
                     {availableBuiltins.map((b) => (
                       <DropdownMenuItem
@@ -536,11 +537,11 @@ function EditableGroup({
                         {builtinTitle(b)}
                       </DropdownMenuItem>
                     ))}
-                  </>
+                  </DropdownMenuGroup>
                 )}
 
                 {availableCollections.length > 0 && (
-                  <>
+                  <DropdownMenuGroup>
                     <DropdownMenuLabel>{t("collection")}</DropdownMenuLabel>
                     {availableCollections.map((c) => (
                       <DropdownMenuItem
@@ -561,11 +562,11 @@ function EditableGroup({
                         {cleanName(c.name)}
                       </DropdownMenuItem>
                     ))}
-                  </>
+                  </DropdownMenuGroup>
                 )}
 
                 {availableShelves.length > 0 && (
-                  <>
+                  <DropdownMenuGroup>
                     <DropdownMenuLabel>{t("shelf")}</DropdownMenuLabel>
                     {availableShelves.map((s) => (
                       <DropdownMenuItem
@@ -586,7 +587,7 @@ function EditableGroup({
                         {cleanName(s.name)}
                       </DropdownMenuItem>
                     ))}
-                  </>
+                  </DropdownMenuGroup>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -661,4 +662,3 @@ function EditableItem({ item, onRemove, onEdit }: EditableItemProps) {
     </Reorder.Item>
   )
 }
-
