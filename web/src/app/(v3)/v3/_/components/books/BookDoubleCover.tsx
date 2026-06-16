@@ -19,16 +19,16 @@ type CoverState = "idle" | "separated" | "audiobook-front"
 
 const STATES: Record<CoverState, { audiobook: Pos; ebook: Pos }> = {
   idle: {
-    audiobook: { x: "15%", scale: 1, z: 10, rotateX: 5 },
-    ebook: { x: "-10%", scale: 1, z: 20, rotateX: -3 },
+    audiobook: { x: "15%", scale: 1, z: 10, rotateX: 0 },
+    ebook: { x: "-10%", scale: 1, z: 20, rotateX: -0 },
   },
   separated: {
-    audiobook: { x: "18%", scale: 0.8, z: 10, rotateX: 5 },
-    ebook: { x: "-18%", scale: 0.8, z: 20, rotateX: -5 },
+    audiobook: { x: "18%", scale: 0.8, z: 10, rotateX: 0 },
+    ebook: { x: "-18%", scale: 0.8, z: 20, rotateX: -0 },
   },
   "audiobook-front": {
     audiobook: { x: "5%", scale: 1.05, z: 20, rotateX: 0 },
-    ebook: { x: "-15%", scale: 0.9, z: 10, rotateX: -5 },
+    ebook: { x: "-15%", scale: 0.9, z: 10, rotateX: -0 },
   },
 }
 
