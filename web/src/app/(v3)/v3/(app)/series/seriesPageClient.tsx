@@ -7,5 +7,11 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 export function SeriesPageClient() {
   const t = useTranslation("LibraryPage")
 
-  return <LibraryPage title={t("Series.by")} section={librarySections.series} />
+  return (
+    <LibraryPage
+      title={t("Series.by")}
+      section={librarySections.series}
+      noneLabel={t("Series.none")}
+    />
+  )
 }

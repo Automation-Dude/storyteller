@@ -8,6 +8,10 @@ export function RatingsPageClient() {
   const t = useTranslation("LibraryPage")
 
   return (
-    <LibraryPage title={t("Rating.by")} section={librarySections.ratings} />
+    <LibraryPage
+      title={t("Rating.by")}
+      section={librarySections.ratings}
+      noneLabel={t("Rating.none")}
+    />
   )
 }

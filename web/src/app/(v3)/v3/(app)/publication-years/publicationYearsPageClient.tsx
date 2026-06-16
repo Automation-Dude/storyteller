@@ -11,6 +11,7 @@ export function PublicationYearsPageClient() {
     <LibraryPage
       title={t("PublicationYear.by")}
       section={librarySections.publicationYears}
+      noneLabel={t("PublicationYear.none")}
     />
   )
 }

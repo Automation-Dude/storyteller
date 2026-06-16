@@ -8,6 +8,10 @@ export function StatusesPageClient() {
   const t = useTranslation("LibraryPage")
 
   return (
-    <LibraryPage title={t("Status.by")} section={librarySections.statuses} />
+    <LibraryPage
+      title={t("Status.by")}
+      section={librarySections.statuses}
+      noneLabel={t("Status.none")}
+    />
   )
 }

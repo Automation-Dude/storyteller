@@ -125,39 +125,57 @@
     "emptyState": "Selecteer een item om de bijbehorende boeken te zien",
     "Series": {
       "plain": "Serie",
-      "by": "Op Serie"
+      "by": "Op Serie",
+      "none": "(geen serie)"
     },
     "Authors": {
       "plain": "Auteur",
-      "by": "Op Auteur"
+      "by": "Op Auteur",
+      "none": "(geen auteur)"
     },
     "Narrators": {
       "plain": "Verteller",
-      "by": "Op Verteller"
+      "by": "Op Verteller",
+      "none": "(geen verteller)"
     },
     "Translators": {
       "plain": "Vertaler",
-      "by": "Op Vertaler"
+      "by": "Op Vertaler",
+      "none": "(geen vertaler)"
     },
     "Tags": {
       "plain": "Label",
-      "by": "Op Label"
+      "by": "Op Label",
+      "none": "(geen labels)"
     },
     "Collections": {
       "plain": "Verzamelingen",
-      "by": "Op Verzameling"
+      "by": "Op Verzameling",
+      "none": "(geen verzameling)"
     },
     "PublicationYear": {
       "plain": "Jaar",
-      "by": "Op Jaar"
+      "by": "Op Jaar",
+      "none": "(geen jaar)"
     },
     "Rating": {
       "plain": "Beoordeling",
-      "by": "Op Beoordeling"
+      "by": "Op Beoordeling",
+      "none": "(niet beoordeeld)"
     },
     "Status": {
       "plain": "Status",
-      "by": "Op Status"
+      "by": "Op Status",
+      "none": "(geen status)"
+    },
+    "Formats": {
+      "plain": "Formaat",
+      "by": "Op Formaat",
+      "readaloud": "Readaloud",
+      "audiobook-ebook": "Luisterboek + E-book",
+      "audiobook-only": "Alleen luisterboek",
+      "ebook-only": "Alleen e-book",
+      "no-media": "Geen media"
     },
     "search": "Zoeken...",
     "noItemsFound": "Geen items gevonden",
@@ -187,6 +205,8 @@
     "tagName": "Labelnaam",
     "iconAndColor": "Pictogram & kleur",
     "createCollection": "Collectie aanmaken",
+    "createTag": "Label aanmaken",
+    "createSeries": "Serie aanmaken",
     "editCreator": "Maker bewerken",
     "editCreatorDescription": "Werk de naam en sorteernaam bij.",
     "creatorName": "Naam",
@@ -225,8 +245,10 @@
     "newCollection": "Nieuwe verzameling...",
     "removeFromCollection": "Verwijderen uit verzameling",
     "addToSeries": "Toevoegen aan serie",
+    "newSeries": "Nieuwe serie...",
     "removeFromSeries": "Verwijderen uit serie",
     "addTag": "Label toevoegen",
+    "newTag": "Nieuw label...",
     "removeTag": "Label verwijderen",
     "setStatus": "Leesstatus instellen",
     "upgradeEpub": "EPUB upgraden",
@@ -842,7 +864,14 @@
     },
     "series": {
       "notInAnySeries": "Geen deel van een serie",
-      "seachOrCreateSeries": "Zoek of maak een nieuwe serie ..."
+      "seachOrCreateSeries": "Zoek of maak een nieuwe serie ...",
+      "addToSeriesTitle": "Toevoegen aan serie",
+      "addToSeriesDescription": "Stel de positie van dit boek in {series} in.",
+      "position": "Positie",
+      "positionPlaceholder": "bijv. 1",
+      "positionHint": "Laat leeg om zonder positie toe te voegen.",
+      "cancel": "Annuleren",
+      "add": "Toevoegen"
     },
     "collections": {
       "notInAnyCollections": "Geen deel van een verzameling",

@@ -125,39 +125,57 @@
     "emptyState": "Select an item to see its books",
     "Series": {
       "plain": "Series",
-      "by": "By Series"
+      "by": "By Series",
+      "none": "(no series)"
     },
     "Authors": {
       "plain": "Authors",
-      "by": "By Author"
+      "by": "By Author",
+      "none": "(no author)"
     },
     "Narrators": {
       "plain": "Narrators",
-      "by": "By Narrator"
+      "by": "By Narrator",
+      "none": "(no narrator)"
     },
     "Translators": {
       "plain": "Translators",
-      "by": "By Translator"
+      "by": "By Translator",
+      "none": "(no translator)"
     },
     "Tags": {
       "plain": "Tags",
-      "by": "By Tag"
+      "by": "By Tag",
+      "none": "(no tags)"
     },
     "Collections": {
       "plain": "Collections",
-      "by": "By Collection"
+      "by": "By Collection",
+      "none": "(no collection)"
     },
     "PublicationYear": {
       "plain": "Year",
-      "by": "By Year"
+      "by": "By Year",
+      "none": "(no year)"
     },
     "Rating": {
       "plain": "Rating",
-      "by": "By Rating"
+      "by": "By Rating",
+      "none": "(unrated)"
     },
     "Status": {
       "plain": "Status",
-      "by": "By Status"
+      "by": "By Status",
+      "none": "(no status)"
+    },
+    "Formats": {
+      "plain": "Format",
+      "by": "By Format",
+      "readaloud": "Readaloud",
+      "audiobook-ebook": "Audiobook + Ebook",
+      "audiobook-only": "Audiobook only",
+      "ebook-only": "Ebook only",
+      "no-media": "No media"
     },
     "search": "Search...",
     "noItemsFound": "No items found",
@@ -187,6 +205,8 @@
     "tagName": "Tag name",
     "iconAndColor": "Icon & Color",
     "createCollection": "Create collection",
+    "createTag": "Create tag",
+    "createSeries": "Create series",
     "editCreator": "Edit Creator",
     "editCreatorDescription": "Update the creator name and sort name.",
     "creatorName": "Creator name",
@@ -225,8 +245,10 @@
     "newCollection": "New collection...",
     "removeFromCollection": "Remove from collection",
     "addToSeries": "Add to series",
+    "newSeries": "New series...",
     "removeFromSeries": "Remove from series",
     "addTag": "Add tag",
+    "newTag": "New tag...",
     "removeTag": "Remove tag",
     "setStatus": "Set reading status",
     "upgradeEpub": "Upgrade EPUB",
@@ -852,7 +874,14 @@
     },
     "series": {
       "notInAnySeries": "Not in any series",
-      "seachOrCreateSeries": "Search or create series..."
+      "seachOrCreateSeries": "Search or create series...",
+      "addToSeriesTitle": "Add to series",
+      "addToSeriesDescription": "Set this book's position in {series}.",
+      "position": "Position",
+      "positionPlaceholder": "e.g. 1",
+      "positionHint": "Leave blank to add without a position.",
+      "cancel": "Cancel",
+      "add": "Add"
     },
     "collections": {
       "notInAnyCollections": "Not in any collections",

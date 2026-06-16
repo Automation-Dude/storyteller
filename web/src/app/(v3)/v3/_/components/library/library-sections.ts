@@ -1,6 +1,8 @@
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfFilterNode } from "@/shelves"
 
+export const NONE_KEY = "__none__"
+
 export type LibraryItem = {
   key: string
   name: string
@@ -24,6 +26,8 @@ export type LibrarySectionDef = {
   toShelfFilter?: (itemKey: string) => ShelfFilterNode
   // when present, the sidebar supports edit/delete/merge for this entity type
   entityType?: LibraryEntityType
+  // returns books that have none of this entity (no author, no tag, etc.)
+  filterNone?: (books: BookWithRelations[]) => BookWithRelations[]
 }
 
 // an entity facet (author/series/tag/...) maps to an array-field "includes" of
@@ -82,9 +86,17 @@ function buildRelationSection<
     },
 
     filterBooks(books, itemKey) {
+      if (itemKey === NONE_KEY) {
+        return books.filter((book) => getRelations(book).length === 0)
+      }
+
       return books.filter((book) =>
         getRelations(book).some((rel) => rel.uuid === itemKey),
       )
+    },
+
+    filterNone(books) {
+      return books.filter((book) => getRelations(book).length === 0)
     },
   }
 }
@@ -111,7 +123,15 @@ function buildScalarSection(
     },
 
     filterBooks(books, itemKey) {
+      if (itemKey === NONE_KEY) {
+        return books.filter((book) => !getValue(book))
+      }
+
       return books.filter((book) => getValue(book) === itemKey)
+    },
+
+    filterNone(books) {
+      return books.filter((book) => !getValue(book))
     },
   }
 }
@@ -172,6 +192,52 @@ export const librarySections = {
       value: Number(itemKey),
     }),
   },
+  formats: {
+    extractItems(books) {
+      const counts = new Map<string, number>()
+
+      for (const book of books) {
+        const key = getFormatKey(book)
+        counts.set(key, (counts.get(key) ?? 0) + 1)
+      }
+
+      return FORMAT_ORDER.filter((key) => (counts.get(key) ?? 0) > 0).map(
+        (key) => ({
+          key,
+          name: key,
+          bookCount: counts.get(key) ?? 0,
+        }),
+      )
+    },
+
+    filterBooks(books, itemKey) {
+      return books.filter((book) => getFormatKey(book) === itemKey)
+    },
+  },
 } as const satisfies Record<string, LibrarySectionDef>
 
 export type LibrarySectionKey = keyof typeof librarySections
+
+type FormatKey =
+  | "readaloud"
+  | "audiobook-ebook"
+  | "audiobook-only"
+  | "ebook-only"
+  | "no-media"
+
+const FORMAT_ORDER: FormatKey[] = [
+  "readaloud",
+  "audiobook-ebook",
+  "audiobook-only",
+  "ebook-only",
+  "no-media",
+]
+
+function getFormatKey(book: BookWithRelations): FormatKey {
+  if (book.readaloud) return "readaloud"
+  if (book.audiobook && book.ebook) return "audiobook-ebook"
+  if (book.audiobook) return "audiobook-only"
+  if (book.ebook) return "ebook-only"
+
+  return "no-media"
+}

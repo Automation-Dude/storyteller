@@ -30,6 +30,7 @@ import {
   type LibraryEntityType,
   type LibraryItem,
   type LibrarySectionDef,
+  NONE_KEY,
 } from "@v3/_/components/library/library-sections"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
@@ -69,6 +70,7 @@ import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 import { CreateCollectionDialog } from "../books/CreateCollectionDialog"
+import { CreateTagDialog } from "../books/CreateTagDialog"
 import { CreateSeriesDialog } from "../books/_CreateSeriesDialog"
 import { EditSeriesDialog } from "../books/_EditSeriesDialog"
 
@@ -119,6 +121,10 @@ type LibraryPageProps = {
   // preselect a facet on first load (e.g. a specific collection from its route)
   // when there's no `item` query param yet.
   initialSelectedItem?: string
+  // label for the "(no X)" entry shown when the section has filterNone
+  noneLabel?: string
+  // map format keys (or other synthetic keys) to display labels
+  itemLabels?: Record<string, string>
 }
 
 export function LibraryPage({
@@ -126,6 +132,8 @@ export function LibraryPage({
   section,
   defaultSidebarSort = "name",
   initialSelectedItem,
+  noneLabel,
+  itemLabels,
 }: LibraryPageProps) {
   const t = useTranslation("LibraryPage")
   const isMobile = useIsMobile()
@@ -160,8 +168,26 @@ export function LibraryPage({
 
   const allItems = useMemo(() => {
     if (!books) return []
-    return section.extractItems(books)
-  }, [books, section])
+
+    let items = section.extractItems(books)
+
+    if (itemLabels) {
+      items = items.map((item) => {
+        const label = itemLabels[item.key]
+        return label ? { ...item, name: label } : item
+      })
+    }
+
+    if (noneLabel && section.filterNone) {
+      const noneCount = section.filterNone(books).length
+
+      if (noneCount > 0) {
+        items = [...items, { key: NONE_KEY, name: noneLabel, bookCount: noneCount }]
+      }
+    }
+
+    return items
+  }, [books, section, noneLabel, itemLabels])
 
   const visibleItems = useMemo(() => {
     let items = allItems
@@ -203,6 +229,11 @@ export function LibraryPage({
 
   const sectionBooks = useMemo(() => {
     if (!books || !selectedItem) return []
+
+    if (selectedItem === NONE_KEY && section.filterNone) {
+      return section.filterNone(books)
+    }
+
     return section.filterBooks(books, selectedItem)
   }, [books, selectedItem, section])
 
@@ -318,8 +349,21 @@ export function LibraryPage({
 
   const permissions = usePermissions()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const canCreateCollection =
-    entityType === "collection" && !!permissions?.collectionCreate
+  // tags/series creation reuses the bookUpdate permission (same as their
+  // add-to-book routes); collections have a dedicated one.
+  const canCreate =
+    (entityType === "collection" && !!permissions?.collectionCreate) ||
+    ((entityType === "tag" || entityType === "series") &&
+      !!permissions?.bookUpdate)
+
+  const createLabel =
+    entityType === "collection"
+      ? tEntity("createCollection")
+      : entityType === "tag"
+        ? tEntity("createTag")
+        : entityType === "series"
+          ? tEntity("createSeries")
+          : undefined
 
   const handleCreateItem = useCallback(() => {
     setCreateDialogOpen(true)
@@ -376,9 +420,9 @@ export function LibraryPage({
       onEditItem={entityType ? handleEditItem : undefined}
       toShelfFilter={section.toShelfFilter}
       {...(canPin && { onPinItem: handlePinFacet })}
-      {...(canCreateCollection && {
+      {...(canCreate && {
         onCreate: handleCreateItem,
-        createLabel: tEntity("createCollection"),
+        createLabel,
       })}
     />
   )
@@ -430,8 +474,18 @@ export function LibraryPage({
     </>
   )
 
-  const createDialog = canCreateCollection ? (
+  const createDialog = !canCreate ? null : entityType === "collection" ? (
     <CreateCollectionDialog
+      open={createDialogOpen}
+      onOpenChange={setCreateDialogOpen}
+    />
+  ) : entityType === "tag" ? (
+    <CreateTagDialog
+      open={createDialogOpen}
+      onOpenChange={setCreateDialogOpen}
+    />
+  ) : entityType === "series" ? (
+    <CreateSeriesDialog
       open={createDialogOpen}
       onOpenChange={setCreateDialogOpen}
     />
@@ -489,7 +543,9 @@ export function LibraryPage({
           ...(selectedItemName ? [{ label: selectedItemName }] : []),
         ]}
         headerActions={
-          selectedItem && selectedItemName ? (
+          selectedItem &&
+          selectedItemName &&
+          selectedItem !== NONE_KEY ? (
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -980,8 +1036,8 @@ function SidebarItemList({
                 isActive={item.key === selectedKey}
                 isChecked={itemSelection?.isSelected(item.key) ?? false}
                 isSelecting={isSelecting}
-                canSelect={canSelect}
-                hasRowActions={hasRowActions}
+                canSelect={canSelect && item.key !== NONE_KEY}
+                hasRowActions={hasRowActions && item.key !== NONE_KEY}
                 onItemClick={handleRowClick}
                 onToggle={handleRowToggle}
                 onOpenMenu={handleRowMenu}

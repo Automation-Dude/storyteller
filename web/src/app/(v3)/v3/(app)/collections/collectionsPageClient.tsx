@@ -15,6 +15,7 @@ export function CollectionsPageClient({
     <LibraryPage
       title={t("Collections.by")}
       section={librarySections.collections}
+      noneLabel={t("Collections.none")}
       {...(initialCollectionUuid && {
         initialSelectedItem: initialCollectionUuid,
       })}

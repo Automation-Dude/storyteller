@@ -11,6 +11,7 @@ export function NarratorsPageClient() {
     <LibraryPage
       title={t("Narrators.by")}
       section={librarySections.narrators}
+      noneLabel={t("Narrators.none")}
     />
   )
 }

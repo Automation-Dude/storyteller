@@ -8,6 +8,10 @@ export function AuthorsPageClient() {
   const t = useTranslation("LibraryPage")
 
   return (
-    <LibraryPage title={t("Authors.by")} section={librarySections.authors} />
+    <LibraryPage
+      title={t("Authors.by")}
+      section={librarySections.authors}
+      noneLabel={t("Authors.none")}
+    />
   )
 }

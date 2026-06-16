@@ -11,6 +11,7 @@ export function TranslatorsPageClient() {
     <LibraryPage
       title={t("Translators.by")}
       section={librarySections.translators}
+      noneLabel={t("Translators.none")}
     />
   )
 }
