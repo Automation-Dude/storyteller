@@ -6,7 +6,7 @@ import {
 } from "kysely"
 import { jsonArrayFrom } from "kysely/helpers/sqlite"
 
-import { type ShelfFilter } from "@/shelves"
+import { HomeSectionKind, ShelfOrderBy, type ShelfFilter } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 import { type BookWithRelations, booksQuery } from "./books"
@@ -18,16 +18,6 @@ export type Shelf = Selectable<DB["shelf"]>
 export type NewShelf = Insertable<DB["shelf"]>
 export type ShelfUpdate = Updateable<DB["shelf"]>
 
-// widget kinds render a custom block, shelf kinds render a book row.
-// "communityReading" is reserved for a future social section.
-export type HomeSectionKind =
-  | "hero"
-  | "stats"
-  | "currentlyReading"
-  | "nextUpInSeries"
-  | "recentlyAdded"
-  | "custom"
-
 export type HomeSection = Selectable<DB["homeSection"]>
 export type NewHomeSection = Insertable<DB["homeSection"]>
 export type HomeSectionUpdate = Updateable<DB["homeSection"]>
@@ -36,14 +26,6 @@ export type ShelfWithBooks = Awaited<ReturnType<typeof getShelf>>
 export type HomeSectionWithDetails = Awaited<
   ReturnType<typeof getHomeSections>
 >[number]
-
-export type ShelfOrderBy =
-  | "createdAt"
-  | "updatedAt"
-  | "title"
-  | "publicationDate"
-  | "rating"
-  | "position"
 
 function parseFilter(filter: string | ShelfFilter | null): ShelfFilter | null {
   if (!filter) return null

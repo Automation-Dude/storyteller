@@ -305,14 +305,14 @@ export interface Shelf {
   createdAt: Generated<string>
   description: string | null
   filter: import("kysely").ColumnType<
-    import("@/database/shelfFilter").ShelfFilter | null,
+    import("@/shelves").ShelfFilter | null,
     string | null,
     string | null
   >
   icon: string | null
   limitCount: number | null
   name: string
-  orderBy: Generated<import("@/database/shelves").ShelfOrderBy>
+  orderBy: Generated<import("@/shelves").ShelfOrderBy>
   orderDirection: Generated<"asc" | "desc">
   updatedAt: Generated<string>
   userId: import("@/uuid").UUID

@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { IconLoader2, IconPlus, IconSearch, IconX } from "@tabler/icons-react"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
 
@@ -14,6 +14,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
 import { IconPicker } from "@v3/_/components/ui/icon-picker"
@@ -27,29 +28,31 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Textarea } from "@v3/_/components/ui/textarea"
+import { useTranslation } from "@v3/_/hooks/use-translation"
+import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
-import { type ShelfOrderBy, type ShelfWithBooks } from "@/database/shelves"
+import { type ShelfWithBooks } from "@/database/shelves"
+import { ShelfOrderBy } from "@/shelves"
 import { type ShelfFilterNode } from "@/shelves"
 import {
   getCoverUrl,
   useCreateUserShelfMutation,
   useListBooksQuery,
+  usePreviewShelfFilterMutation,
   useUpdateUserShelfMutation,
 } from "@/store/api"
 
-import { ShelfFilterEditor } from "./ShelfFilterEditor"
+import {
+  FilterPreview,
+  ShelfFilterEditor,
+  isFilterValid,
+} from "./ShelfFilterEditor"
 
 const shelfFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  orderBy: z.enum([
-    "createdAt",
-    "updatedAt",
-    "title",
-    "publicationDate",
-    "rating",
-  ]),
+  orderBy: z.enum(ShelfOrderBy),
   orderDirection: z.enum(["asc", "desc"]),
   limitCount: z.number().nullable(),
 })
@@ -75,6 +78,7 @@ export function ShelfEditor({
   initialFilter,
   initialName,
 }: ShelfEditorProps) {
+  const t = useTranslation("ShelfEditor")
   const isEditing = !!shelf
 
   const initialMode: SelectionMode =
@@ -211,229 +215,316 @@ export function ShelfEditor({
   })
   const limitCount = useWatch({ control: form.control, name: "limitCount" })
 
+  const [previewBooks, setPreviewBooks] = useState<BookWithRelations[]>([])
+  const [previewFilter, { isLoading: isLoadingPreview }] =
+    usePreviewShelfFilterMutation()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const filterValid = selectionMode === "filter" && isFilterValid(filter)
+
+  const runPreview = useCallback(async () => {
+    if (!filterValid) {
+      setPreviewBooks([])
+      return
+    }
+
+    try {
+      const books = await previewFilter({
+        filter: filter!,
+        orderBy,
+        orderDirection,
+        limit: limitCount ? Math.min(limitCount, 20) : undefined,
+      }).unwrap()
+
+      setPreviewBooks(books)
+    } catch (error) {
+      console.error("Failed to preview filter:", error)
+    }
+  }, [filter, filterValid, orderBy, orderDirection, limitCount, previewFilter])
+
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+
+    debounceRef.current = setTimeout(() => {
+      void runPreview()
+    }, 400)
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [runPreview])
+
   const hasNonDefaultSort =
     orderBy !== "createdAt" || orderDirection !== "desc" || limitCount !== null
 
+  const orderByOptions = useMemo(() => {
+    return (
+      ["createdAt", "updatedAt", "title", "publicationDate", "rating"] as const
+    ).map((key) => ({
+      value: key,
+      label: t.plain(`orderBy.${key}` as "orderBy.createdAt"),
+    })) satisfies { value: ShelfOrderBy; label: string }[]
+  }, [t])
+
+  const orderDirectionOptions = useMemo(() => {
+    return (["desc", "asc"] as const).map((key) => ({
+      value: key,
+      label: t.plain(`orderDirection.${key}` as "orderDirection.desc"),
+    })) satisfies { value: "asc" | "desc"; label: string }[]
+  }, [t])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent
+        forceRender={true}
+        className="top-10 max-h-[90vh] translate-y-0 overflow-x-hidden overflow-y-auto sm:max-w-xl lg:max-w-4xl"
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {isEditing ? "Edit Shelf" : "Create Shelf"}
+              {isEditing ? t.plain("editTitle") : t.plain("createTitle")}
             </DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Update your shelf settings."
-                : "Create a shelf with dynamic filters or manual selection."}
+                ? t.plain("editDescription")
+                : t.plain("createDescription")}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4 py-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="shelf-name">Name</Label>
-              <Input
-                id="shelf-name"
-                {...form.register("name")}
-                placeholder="My Shelf"
-              />
-              {form.formState.errors.name && (
-                <span className="text-destructive text-xs">
-                  {form.formState.errors.name.message}
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="shelf-description">Description</Label>
-              <Textarea
-                id="shelf-description"
-                {...form.register("description")}
-                placeholder="Optional description..."
-                rows={2}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label>Icon & Color</Label>
-              <div className="flex items-center gap-2">
-                <IconPicker value={icon} onChange={setIcon} color={color} />
-                <ColorPicker value={color} onChange={setColor} />
+          <div
+            className={cn(
+              "flex flex-col gap-4 py-4",
+              selectionMode === "filter" &&
+                "lg:grid lg:grid-cols-[1fr_14rem] lg:gap-6",
+            )}
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="shelf-name">{t.plain("name")}</Label>
+                <Input
+                  id="shelf-name"
+                  {...form.register("name")}
+                  placeholder={t.plain("namePlaceholder")}
+                />
+                {form.formState.errors.name && (
+                  <span className="text-destructive text-xs">
+                    {t.plain("nameRequired")}
+                  </span>
+                )}
               </div>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Label>Book Selection</Label>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="shelf-description">
+                  {t.plain("description")}
+                </Label>
+                <Textarea
+                  id="shelf-description"
+                  {...form.register("description")}
+                  placeholder={t.plain("descriptionPlaceholder")}
+                  rows={2}
+                />
+              </div>
 
+              <div className="flex flex-col gap-1.5">
+                <Label>{t.plain("iconAndColor")}</Label>
                 <div className="flex items-center gap-2">
-                  {filter !== null && selectionMode === "filter" && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setFilter(null)
-                      }}
-                      className="h-6 gap-1 text-xs"
-                    >
-                      <IconX className="size-3" />
-                      Clear filter
-                    </Button>
-                  )}
-
-                  <div className="bg-muted flex rounded-md p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleModeChange("filter")
-                      }}
-                      className={`rounded px-2 py-1 text-xs transition-colors ${
-                        selectionMode === "filter"
-                          ? "bg-background shadow-sm"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      Dynamic Filter
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleModeChange("manual")
-                      }}
-                      className={`rounded px-2 py-1 text-xs transition-colors ${
-                        selectionMode === "manual"
-                          ? "bg-background shadow-sm"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      Manual
-                    </button>
-                  </div>
+                  <IconPicker value={icon} onChange={setIcon} color={color} />
+                  <ColorPicker value={color} onChange={setColor} />
                 </div>
               </div>
 
-              {selectionMode === "filter" && (
-                <ShelfFilterEditor
-                  filter={filter}
-                  onChange={setFilter}
-                  orderBy={orderBy}
-                  orderDirection={orderDirection}
-                  limitCount={limitCount}
-                />
-              )}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label>{t.plain("bookSelection")}</Label>
 
-              {selectionMode === "manual" && (
-                <div className="flex flex-col gap-2">
-                  {selectedBookUuids.length > 0 && (
-                    <div className="flex justify-end">
+                  <div className="flex items-center gap-2">
+                    {filter !== null && selectionMode === "filter" && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setSelectedBookUuids([])
+                          setFilter(null)
                         }}
                         className="h-6 gap-1 text-xs"
                       >
                         <IconX className="size-3" />
-                        Clear selection
+                        {t.plain("clearFilter")}
                       </Button>
+                    )}
+
+                    <div className="bg-muted flex rounded-md p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleModeChange("filter")
+                        }}
+                        className={`rounded px-2 py-1 text-xs transition-colors ${
+                          selectionMode === "filter"
+                            ? "bg-background shadow-sm"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {t.plain("dynamicFilter")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleModeChange("manual")
+                        }}
+                        className={`rounded px-2 py-1 text-xs transition-colors ${
+                          selectionMode === "manual"
+                            ? "bg-background shadow-sm"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {t.plain("manual")}
+                      </button>
                     </div>
-                  )}
-
-                  <BookSelector
-                    selectedBookUuids={selectedBookUuids}
-                    onAdd={addBook}
-                    onRemove={removeBook}
-                  />
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Label>Sort & Limit</Label>
+                {selectionMode === "filter" && (
+                  <ShelfFilterEditor filter={filter} onChange={setFilter} />
+                )}
 
-                {hasNonDefaultSort && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      form.setValue("orderBy", "createdAt")
-                      form.setValue("orderDirection", "desc")
-                      form.setValue("limitCount", null)
-                    }}
-                    className="h-6 gap-1 text-xs"
-                  >
-                    <IconX className="size-3" />
-                    Reset
-                  </Button>
+                {selectionMode === "manual" && (
+                  <div className="flex flex-col gap-2">
+                    {selectedBookUuids.length > 0 && (
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedBookUuids([])
+                          }}
+                          className="h-6 gap-1 text-xs"
+                        >
+                          <IconX className="size-3" />
+                          {t.plain("clearSelection")}
+                        </Button>
+                      </div>
+                    )}
+
+                    <BookSelector
+                      selectedBookUuids={selectedBookUuids}
+                      onAdd={addBook}
+                      onRemove={removeBook}
+                    />
+                  </div>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-muted-foreground text-xs">
-                    Sort by
-                  </Label>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label>{t.plain("sortAndLimit")}</Label>
+
+                  {hasNonDefaultSort && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        form.setValue("orderBy", "createdAt")
+                        form.setValue("orderDirection", "desc")
+                        form.setValue("limitCount", null)
+                      }}
+                      className="h-6 gap-1 text-xs"
+                    >
+                      <IconX className="size-3" />
+                      {t.plain("reset")}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Label className="text-muted-foreground text-xs">
+                      {t.plain("sortBy")}
+                    </Label>
+                    <Select
+                      value={orderBy}
+                      onValueChange={(v) => {
+                        if (!v) return
+                        form.setValue("orderBy", v)
+                      }}
+                      items={orderByOptions}
+                    >
+                      <SelectTrigger className="h-7 w-[130px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {orderByOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <Select
-                    value={orderBy}
+                    value={orderDirection}
                     onValueChange={(v) => {
-                      if (!v) return
-                      form.setValue("orderBy", v)
+                      form.setValue("orderDirection", v as "asc" | "desc")
                     }}
+                    items={orderDirectionOptions}
                   >
-                    <SelectTrigger className="h-7 w-[130px] text-xs">
+                    <SelectTrigger className="h-7 w-[100px] text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="createdAt">Date Added</SelectItem>
-                      <SelectItem value="updatedAt">Date Updated</SelectItem>
-                      <SelectItem value="title">Title</SelectItem>
-                      <SelectItem value="publicationDate">
-                        Publication Date
-                      </SelectItem>
-                      <SelectItem value="rating">Rating</SelectItem>
+                      {orderDirectionOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                </div>
 
-                <Select
-                  value={orderDirection}
-                  onValueChange={(v) => {
-                    form.setValue("orderDirection", v as "asc" | "desc")
-                  }}
-                >
-                  <SelectTrigger className="h-7 w-[100px] text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="desc">Descending</SelectItem>
-                    <SelectItem value="asc">Ascending</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <div className="flex items-center gap-1.5">
+                    <Label className="text-muted-foreground text-xs">
+                      {t.plain("limit")}
+                    </Label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      className="h-7 w-16 text-xs"
+                      value={limitCount ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value
 
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-muted-foreground text-xs">Limit</Label>
-                  <Input
-                    type="number"
-                    className="h-7 w-16 text-xs"
-                    value={limitCount ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      form.setValue(
-                        "limitCount",
-                        val === "" ? null : parseInt(val, 10),
-                      )
-                    }}
-                    placeholder="All"
-                    min={1}
-                  />
+                        if (raw === "") {
+                          form.setValue("limitCount", null)
+                          return
+                        }
+
+                        const parsed = parseInt(raw, 10)
+                        if (!isNaN(parsed)) {
+                          form.setValue("limitCount", parsed)
+                        }
+                      }}
+                      placeholder={t.plain("limitAll")}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
+
+            {selectionMode === "filter" && (
+              <aside className="border-border lg:border-l lg:pl-4">
+                <FilterPreview
+                  books={previewBooks}
+                  isLoading={isLoadingPreview}
+                  isInvalid={!filterValid}
+                />
+              </aside>
+            )}
           </div>
 
           <DialogFooter>
@@ -445,11 +536,11 @@ export function ShelfEditor({
               }}
               disabled={isSaving}
             >
-              Cancel
+              {t.plain("cancel")}
             </Button>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-              {isEditing ? "Save" : "Create"}
+              {isEditing ? t.plain("save") : t.plain("create")}
             </Button>
           </DialogFooter>
         </form>
@@ -469,6 +560,7 @@ function BookSelector({
   onAdd,
   onRemove,
 }: BookSelectorProps) {
+  const t = useTranslation("ShelfEditor")
   const [searchQuery, setSearchQuery] = useState("")
   const { data: allBooks = [], isLoading } = useListBooksQuery()
 
@@ -502,7 +594,7 @@ function BookSelector({
           onChange={(e) => {
             setSearchQuery(e.target.value)
           }}
-          placeholder="Search by title or author..."
+          placeholder={t.plain("searchBooks")}
           className="pl-8"
         />
       </div>
@@ -515,7 +607,7 @@ function BookSelector({
 
       {searchQuery.trim() && searchResults.length === 0 && !isLoading && (
         <div className="text-muted-foreground py-2 text-center text-sm">
-          No books found
+          {t.plain("noBooksFound")}
         </div>
       )}
 
@@ -545,7 +637,7 @@ function BookSelector({
       {selectedBooks.length > 0 && (
         <div className="flex flex-col gap-1">
           <Label className="text-muted-foreground text-xs">
-            {selectedBooks.length} selected
+            {t.plain("selectedCount", { count: selectedBooks.length })}
           </Label>
 
           <div className="scroll-y flex max-h-[140px] flex-col gap-0.5">
@@ -573,7 +665,7 @@ function BookSelector({
 
       {selectedBooks.length === 0 && !searchQuery.trim() && (
         <div className="text-muted-foreground py-2 text-center text-xs">
-          Search to add books to this shelf
+          {t.plain("searchToAdd")}
         </div>
       )}
     </div>

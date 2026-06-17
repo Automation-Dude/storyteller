@@ -1,7 +1,11 @@
 import assert from "node:assert"
 import { describe, it } from "node:test"
 
+import Database from "better-sqlite3"
+
+import { createKyselyDb } from "@/database/factory"
 import {
+  buildFilterExpression,
   extractEntityReferences,
   removeDeletedEntityReferences,
 } from "@/database/shelfFilter"
@@ -25,6 +29,7 @@ import {
   shelfFilterOperatorSchema,
   shelfFilterValueSchema,
 } from "@/shelves"
+import { type UUID } from "@/uuid"
 
 // ---------------------------------------------------------------------------
 // zod schema validation
@@ -583,5 +588,170 @@ void describe("FIELD_LABELS", () => {
         `FIELD_LABELS has extra entry "${key}" not in schema`,
       )
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// strict condition schema (field -> operator -> value coupling)
+// ---------------------------------------------------------------------------
+
+void describe("strict condition schema", () => {
+  void it("rejects an operator the field type does not support", () => {
+    const result = shelfFilterConditionSchema.safeParse({
+      type: "condition",
+      field: "pageCount",
+      operator: "endsWith",
+      value: "x",
+    })
+    assert.ok(!result.success)
+  })
+
+  void it("rejects a between range with the wrong arity", () => {
+    const result = shelfFilterConditionSchema.safeParse({
+      type: "condition",
+      field: "duration",
+      operator: "between",
+      value: [1],
+    })
+    assert.ok(!result.success)
+  })
+
+  void it("rejects an invalid media type value", () => {
+    const result = shelfFilterConditionSchema.safeParse({
+      type: "condition",
+      field: "mediaType",
+      operator: "is",
+      value: "paper",
+    })
+    assert.ok(!result.success)
+  })
+
+  void it("rejects a numeric field with a string value", () => {
+    const result = shelfFilterConditionSchema.safeParse({
+      type: "condition",
+      field: "pageCount",
+      operator: "is",
+      value: "ten",
+    })
+    assert.ok(!result.success)
+  })
+
+  void it("accepts review presence and content", () => {
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "review",
+        operator: "isNotEmpty",
+      }).success,
+    )
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "review",
+        operator: "contains",
+        value: "great",
+      }).success,
+    )
+  })
+
+  void it("accepts a rating dimension condition carrying a dimension", () => {
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "ratingDimension",
+        dimension: "plot",
+        operator: "greaterOrEqual",
+        value: 4,
+      }).success,
+    )
+  })
+
+  void it("rejects a rating dimension condition without a dimension", () => {
+    assert.ok(
+      !shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "ratingDimension",
+        operator: "greaterOrEqual",
+        value: 4,
+      }).success,
+    )
+  })
+
+  void it("accepts a generic search condition", () => {
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "search",
+        operator: "contains",
+        value: "tolkien",
+      }).success,
+    )
+  })
+
+  void it("tolerates a legacy unary condition that still carries an empty value", () => {
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "title",
+        operator: "isEmpty",
+        value: "",
+      }).success,
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// sql compilation of the new fields
+// ---------------------------------------------------------------------------
+
+void describe("buildFilterExpression sql", () => {
+  const userId = "11111111-1111-1111-1111-111111111111" as UUID
+  // a compile-only kysely instance: .compile() builds sql without executing, so
+  // an in-memory db with no schema is enough.
+  const testDb = createKyselyDb(new Database(":memory:"))
+
+  const compile = (node: ShelfFilterNode): string =>
+    testDb
+      .selectFrom("book")
+      .selectAll()
+      .where((eb) => buildFilterExpression(eb, node, userId))
+      .compile().sql
+
+  void it("queries the review column for a review filter", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        { type: "condition", field: "review", operator: "contains", value: "x" },
+      ],
+    })
+    assert.match(sql, /user_book_rating/)
+    assert.match(sql, /review/)
+  })
+
+  void it("uses json_extract for a rating dimension filter", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "ratingDimension",
+          dimension: "plot",
+          operator: "greaterOrEqual",
+          value: 4,
+        },
+      ],
+    })
+    assert.match(sql, /json_extract/)
+  })
+
+  void it("searches title, author and series for a search filter", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        { type: "condition", field: "search", operator: "contains", value: "x" },
+      ],
+    })
+    assert.match(sql, /creator/)
+    assert.match(sql, /series/)
   })
 })

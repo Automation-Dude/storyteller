@@ -29,6 +29,7 @@ import { db } from "./connection"
 import type { NewCreator } from "./creators"
 import type { DB } from "./schema"
 import type { NewSeries } from "./series"
+import { buildBookSearchExpression } from "./shelfFilter"
 import { getDefaultStatus } from "./statuses"
 import { type NewUserBookRating } from "./userRatings"
 
@@ -746,39 +747,12 @@ export async function getBooks(
   const books = await booksQuery(userId, opts)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .$if(!!bookUuids, (qb) => qb.where("book.uuid", "in", bookUuids!))
-    .$if(!!opts?.search, (qb) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const searchTerm = `%${opts!.search!.toLowerCase()}%`
-      return qb.where((eb) =>
-        eb.or([
-          eb(sql`lower(book.title)`, "like", searchTerm),
-          eb.exists(
-            eb
-              .selectFrom("creator")
-              .select(sql.lit(1).as("one"))
-              .innerJoin(
-                "bookToCreator",
-                "bookToCreator.creatorUuid",
-                "creator.uuid",
-              )
-              .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-              .where(sql`lower(creator.name)`, "like", searchTerm),
-          ),
-          eb.exists(
-            eb
-              .selectFrom("series")
-              .select(sql.lit(1).as("one"))
-              .innerJoin(
-                "bookToSeries",
-                "bookToSeries.seriesUuid",
-                "series.uuid",
-              )
-              .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
-              .where(sql`lower(series.name)`, "like", searchTerm),
-          ),
-        ]),
-      )
-    })
+    .$if(!!opts?.search, (qb) =>
+      qb.where((eb) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        buildBookSearchExpression(eb, opts!.search!),
+      ),
+    )
     .$if(!!opts?.collection, (qb) =>
       qb.where((eb) =>
         eb.exists(

@@ -44,15 +44,17 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  forceRender = false,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  forceRender?: React.ComponentProps<typeof DialogOverlay>["forceRender"]
 }) {
   const { state } = useSidebarMaybe() ?? {}
 
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay forceRender={forceRender} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(

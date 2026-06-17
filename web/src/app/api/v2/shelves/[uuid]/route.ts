@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { deleteShelf, getShelf, updateShelf } from "@/database/shelves"
-import { type ShelfFilter } from "@/shelves"
+import { type ShelfFilter, shelfFilterSchema } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
@@ -37,6 +37,16 @@ export const PUT = withHasPermission<Params>("bookList")(async (
     books?: UUID[]
     icon?: string | null
     color?: string | null
+  }
+
+  if (body.filter) {
+    const validated = shelfFilterSchema.safeParse(body.filter)
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.message },
+        { status: 400 },
+      )
+    }
   }
 
   const shelf = await updateShelf(

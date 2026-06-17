@@ -216,12 +216,39 @@ export function buildFilterExpression(
   }
 }
 
+// fields whose comparison/emptiness lives on the book row or its direct
+// relations. review, ratingDimension and search are handled up front because
+// they query userBookRating (and ratingDimension carries an extra `dimension`).
+type ScalarField = Exclude<
+  ShelfFilterField,
+  "review" | "ratingDimension" | "search"
+>
+
 function buildConditionExpression(
   eb: EB,
   condition: ShelfFilterCondition,
   userId?: UUID,
 ): FilterExpression {
   const { field, operator, value } = condition
+
+  if (field === "review") {
+    return buildReviewComparison(eb, operator, value, userId)
+  }
+
+  if (field === "ratingDimension") {
+    return buildRatingDimensionComparison(
+      eb,
+      condition.dimension,
+      operator,
+      value,
+      userId,
+    )
+  }
+
+  if (field === "search") {
+    if (value === undefined || value === null) return eb.lit(true)
+    return buildBookSearchExpression(eb, String(value))
+  }
 
   if (operator === "isEmpty") {
     return buildIsEmptyExpression(eb, field, userId)
@@ -240,7 +267,7 @@ function buildConditionExpression(
 
 function buildIsEmptyExpression(
   eb: EB,
-  field: ShelfFilterField,
+  field: ScalarField,
   userId?: UUID,
 ): FilterExpression {
   switch (field) {
@@ -268,6 +295,12 @@ function buildIsEmptyExpression(
     case "publicationDate":
       return eb("book.publicationDate", "is", null)
 
+    case "createdAt":
+      return eb("book.createdAt", "is", null)
+
+    case "updatedAt":
+      return eb("book.updatedAt", "is", null)
+
     case "rating":
       return eb("book.rating", "is", null)
 
@@ -287,10 +320,50 @@ function buildIsEmptyExpression(
       )
 
     case "duration":
-      return eb("book.duration", "is", null)
+      return eb.and([
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("audiobook")
+              .select(sql.lit(1).as("one"))
+              .whereRef("audiobook.bookUuid", "=", "book.uuid")
+              .where("audiobook.duration", "is not", null),
+          ),
+        ),
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("readaloud")
+              .select(sql.lit(1).as("one"))
+              .whereRef("readaloud.bookUuid", "=", "book.uuid")
+              .where("readaloud.duration", "is not", null),
+          ),
+        ),
+        eb("book.duration", "is", null),
+      ])
 
     case "pageCount":
-      return eb("book.pageCount", "is", null)
+      return eb.and([
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("ebook")
+              .select(sql.lit(1).as("one"))
+              .whereRef("ebook.bookUuid", "=", "book.uuid")
+              .where("ebook.pageCount", "is not", null),
+          ),
+        ),
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("readaloud")
+              .select(sql.lit(1).as("one"))
+              .whereRef("readaloud.bookUuid", "=", "book.uuid")
+              .where("readaloud.pageCount", "is not", null),
+          ),
+        ),
+        eb("book.pageCount", "is", null),
+      ])
 
     case "fileSize":
       return eb.and([
@@ -310,6 +383,15 @@ function buildIsEmptyExpression(
               .select(sql.lit(1).as("one"))
               .whereRef("audiobook.bookUuid", "=", "book.uuid")
               .where("audiobook.fileSize", "is not", null),
+          ),
+        ),
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("readaloud")
+              .select(sql.lit(1).as("one"))
+              .whereRef("readaloud.bookUuid", "=", "book.uuid")
+              .where("readaloud.fileSize", "is not", null),
           ),
         ),
       ])
@@ -400,7 +482,7 @@ function buildIsEmptyExpression(
 
 function buildComparisonExpression(
   eb: EB,
-  field: ShelfFilterField,
+  field: ScalarField,
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
   userId?: UUID,
@@ -411,8 +493,11 @@ function buildComparisonExpression(
     return buildUserRatingComparison(eb, operator, value, userId)
   }
 
-  if (field === "fileSize") {
-    return buildFileSizeComparison(eb, operator, value)
+  const isAssetNumeric =
+    field === "fileSize" || field === "duration" || field === "pageCount"
+
+  if (isAssetNumeric) {
+    return buildAssetNumericComparison(eb, field, operator, value)
   }
 
   switch (fieldType) {
@@ -426,14 +511,14 @@ function buildComparisonExpression(
     case "number":
       return buildNumberComparison(
         eb,
-        field as "rating" | "duration" | "pageCount",
+        field as "rating",
         operator,
         value,
       )
     case "date":
       return buildDateComparison(
         eb,
-        field as "publicationDate",
+        field as "publicationDate" | "createdAt" | "updatedAt",
         operator,
         value,
       )
@@ -532,7 +617,7 @@ function buildStringComparison(
 
 function buildNumberComparison(
   eb: EB,
-  field: "rating" | "duration" | "pageCount",
+  field: "rating",
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
 ): FilterExpression {
@@ -650,42 +735,218 @@ function buildUserRatingComparison(
   }
 }
 
-function buildFileSizeComparison(
+function buildReviewComparison(
   eb: EB,
   operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
+  value: ShelfFilterValue | undefined,
+  userId?: UUID,
 ): FilterExpression {
-  // file size is the max across ebook and audiobook assets
-  const fileSizeExpr = sql<number>`coalesce(
-    (select max(e.file_size) from ebook e where e.book_uuid = book.uuid),
-    (select max(a.file_size) from audiobook a where a.book_uuid = book.uuid),
-    0
-  )`
+  // the review text lives in userBookRating, per user. each operator becomes an
+  // exists / not-exists against the user's row.
+  const base = eb
+    .selectFrom("userBookRating")
+    .select(sql.lit(1).as("one"))
+    .whereRef("userBookRating.bookUuid", "=", "book.uuid")
+    .$if(!!userId, (qb) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      qb.where("userBookRating.userId", "=", userId!),
+    )
+
+  if (operator === "isEmpty") {
+    return eb.not(
+      eb.exists(base.where("userBookRating.review", "is not", null)),
+    )
+  }
+
+  if (operator === "isNotEmpty") {
+    return eb.exists(base.where("userBookRating.review", "is not", null))
+  }
+
+  if (value === undefined || value === null) return eb.lit(true)
+
+  const lower = sql`lower(${sql.ref("userBookRating.review")})`
+  const str = String(value).toLowerCase()
 
   switch (operator) {
     case "is":
-      return eb(fileSizeExpr, "=", Number(value))
+      return eb.exists(base.where(lower, "=", str))
+    case "isNot":
+      return eb.not(eb.exists(base.where(lower, "=", str)))
+    case "contains":
+      return eb.exists(base.where(lower, "like", `%${str}%`))
+    case "notContains":
+      return eb.not(eb.exists(base.where(lower, "like", `%${str}%`)))
+    case "startsWith":
+      return eb.exists(base.where(lower, "like", `${str}%`))
+    case "endsWith":
+      return eb.exists(base.where(lower, "like", `%${str}`))
+    default:
+      return eb.lit(true)
+  }
+}
+
+function buildRatingDimensionComparison(
+  eb: EB,
+  dimension: string | undefined,
+  operator: ShelfFilterOperator,
+  value: ShelfFilterValue | undefined,
+  userId?: UUID,
+): FilterExpression {
+  if (!dimension) return eb.lit(true)
+
+  // the per-axis scores are a json object on userBookRating.dimensions; pull out
+  // the requested axis with json_extract (the path is a bound value, not
+  // interpolated sql).
+  const path = `$.${dimension}`
+  const score = sql<number>`json_extract(${sql.ref("userBookRating.dimensions")}, ${path})`
+  const base = eb
+    .selectFrom("userBookRating")
+    .select(sql.lit(1).as("one"))
+    .whereRef("userBookRating.bookUuid", "=", "book.uuid")
+    .$if(!!userId, (qb) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      qb.where("userBookRating.userId", "=", userId!),
+    )
+
+  if (operator === "isEmpty") {
+    return eb.not(eb.exists(base.where(score, "is not", null)))
+  }
+
+  if (operator === "isNotEmpty") {
+    return eb.exists(base.where(score, "is not", null))
+  }
+
+  if (value === undefined || value === null) return eb.lit(true)
+
+  switch (operator) {
+    case "is":
+      return eb.exists(base.where(score, "=", Number(value)))
+    case "isNot":
+      return eb.not(eb.exists(base.where(score, "=", Number(value))))
+    case "greaterThan":
+      return eb.exists(base.where(score, ">", Number(value)))
+    case "lessThan":
+      return eb.exists(base.where(score, "<", Number(value)))
+    case "greaterOrEqual":
+      return eb.exists(base.where(score, ">=", Number(value)))
+    case "lessOrEqual":
+      return eb.exists(base.where(score, "<=", Number(value)))
+    case "between":
+      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
+      return eb.exists(
+        base
+          .where(score, ">=", Number(value[0]))
+          .where(score, "<=", Number(value[1])),
+      )
+    default:
+      return eb.lit(true)
+  }
+}
+
+/**
+ * generic free-text search across a book's title, authors and series. shared
+ * with getBooks (database/books.ts) so the `search` shelf field and the books
+ * list query stay in sync; swap this out when full-text search lands.
+ */
+export function buildBookSearchExpression(
+  eb: EB,
+  term: string,
+): FilterExpression {
+  const searchTerm = `%${term.toLowerCase()}%`
+
+  return eb.or([
+    eb(sql`lower(book.title)`, "like", searchTerm),
+    eb.exists(
+      eb
+        .selectFrom("creator")
+        .select(sql.lit(1).as("one"))
+        .innerJoin("bookToCreator", "bookToCreator.creatorUuid", "creator.uuid")
+        .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
+        .where(sql`lower(creator.name)`, "like", searchTerm),
+    ),
+    eb.exists(
+      eb
+        .selectFrom("series")
+        .select(sql.lit(1).as("one"))
+        .innerJoin("bookToSeries", "bookToSeries.seriesUuid", "series.uuid")
+        .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
+        .where(sql`lower(series.name)`, "like", searchTerm),
+    ),
+  ])
+}
+
+// resolves the effective value for pageCount, duration, and fileSize by looking
+// at the asset tables with appropriate fallback logic:
+//
+// - pageCount: ebook page count, fallback to readaloud, fallback to book
+// - duration: audiobook duration, fallback to readaloud, fallback to book
+// - fileSize: max across ebook, audiobook, and readaloud (not ideal since
+//   ideally you'd filter by a specific format, but good enough until we add
+//   per-format filtering)
+function assetNumericExpr(
+  field: "fileSize" | "duration" | "pageCount",
+): ReturnType<typeof sql<number>> {
+  switch (field) {
+    case "pageCount":
+      return sql<number>`coalesce(
+        (select e.page_count from ebook e where e.book_uuid = book.uuid),
+        (select r.page_count from readaloud r where r.book_uuid = book.uuid),
+        book.page_count
+      )`
+
+    case "duration":
+      return sql<number>`coalesce(
+        (select a.duration from audiobook a where a.book_uuid = book.uuid),
+        (select r.duration from readaloud r where r.book_uuid = book.uuid),
+        book.duration
+      )`
+
+    case "fileSize":
+      return sql<number>`coalesce(
+        (select max(s.file_size) from (
+          select e.file_size from ebook e where e.book_uuid = book.uuid
+          union all
+          select a.file_size from audiobook a where a.book_uuid = book.uuid
+          union all
+          select r.file_size from readaloud r where r.book_uuid = book.uuid
+        ) s),
+        0
+      )`
+  }
+}
+
+function buildAssetNumericComparison(
+  eb: EB,
+  field: "fileSize" | "duration" | "pageCount",
+  operator: ShelfFilterOperator,
+  value: ShelfFilterValue,
+): FilterExpression {
+  const expr = assetNumericExpr(field)
+
+  switch (operator) {
+    case "is":
+      return eb(expr, "=", Number(value))
 
     case "isNot":
-      return eb(fileSizeExpr, "!=", Number(value))
+      return eb(expr, "!=", Number(value))
 
     case "greaterThan":
-      return eb(fileSizeExpr, ">", Number(value))
+      return eb(expr, ">", Number(value))
 
     case "lessThan":
-      return eb(fileSizeExpr, "<", Number(value))
+      return eb(expr, "<", Number(value))
 
     case "greaterOrEqual":
-      return eb(fileSizeExpr, ">=", Number(value))
+      return eb(expr, ">=", Number(value))
 
     case "lessOrEqual":
-      return eb(fileSizeExpr, "<=", Number(value))
+      return eb(expr, "<=", Number(value))
 
     case "between":
       if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
       return eb.and([
-        eb(fileSizeExpr, ">=", Number(value[0])),
-        eb(fileSizeExpr, "<=", Number(value[1])),
+        eb(expr, ">=", Number(value[0])),
+        eb(expr, "<=", Number(value[1])),
       ])
 
     default:
@@ -693,9 +954,11 @@ function buildFileSizeComparison(
   }
 }
 
+
+
 function buildDateComparison(
   eb: EB,
-  field: "publicationDate",
+  field: "publicationDate" | "createdAt" | "updatedAt",
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
 ): FilterExpression {
