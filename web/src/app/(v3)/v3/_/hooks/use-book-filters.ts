@@ -9,22 +9,22 @@ import {
   type SortField,
 } from "@v3/_/components/books"
 
+import { DISPLAY_FIELDS, type DisplayField, SORTABLE_FIELDS } from "@/sort"
 import { type ListBooksQueryArg, type MediaFilter } from "@/store/api"
 
 import { useDebounce } from "./use-debounce"
 
 const mediaFilterValues = ["all", "ebook", "audiobook", "synced"] as const
-const sortFieldValues = [
-  "createdAt",
-  "updatedAt",
-  "title",
-  "publicationDate",
-] as const
+const sortFieldValues = SORTABLE_FIELDS
 const sortDirectionValues = ["asc", "desc"] as const
+const displayFieldValues = DISPLAY_FIELDS
 
 type UseBookFiltersOptions = {
   fixedCollection?: string
   fixedSeries?: string
+  // the sort field used when no `sortBy` is present in the url (e.g. series
+  // pages default to position)
+  defaultSortField?: SortField
 }
 
 export function useBookFilters(options: UseBookFiltersOptions = {}) {
@@ -34,7 +34,9 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   )
   const [sortField, setSortField] = useQueryState(
     "sortBy",
-    parseAsStringLiteral(sortFieldValues).withDefault("createdAt"),
+    parseAsStringLiteral(sortFieldValues).withDefault(
+      options.defaultSortField ?? "createdAt",
+    ),
   )
   const [sortDirection, setSortDirection] = useQueryState(
     "sortDir",
@@ -50,6 +52,12 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   )
   const [seriesFilter, setSeriesFilter] = useQueryState("series", parseAsString)
   const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString)
+  // manual override for the card's secondary line; null = automatic (derived
+  // from the active sort / page context).
+  const [displayOverride, setDisplayOverride] = useQueryState(
+    "show",
+    parseAsStringLiteral(displayFieldValues),
+  )
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false)
 
   const debouncedSearch = useDebounce(searchInput, 100)
@@ -151,6 +159,13 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     [setSortField, setSortDirection],
   )
 
+  const onDisplayOverrideChange = useCallback(
+    (value: DisplayField | null) => {
+      void setDisplayOverride(value)
+    },
+    [setDisplayOverride],
+  )
+
   return {
     state,
     onChange,
@@ -162,5 +177,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     filterPopoverOpen,
     setFilterPopoverOpen,
     handleSortChange,
+    displayOverride,
+    onDisplayOverrideChange,
   }
 }

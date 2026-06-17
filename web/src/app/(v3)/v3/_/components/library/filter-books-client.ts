@@ -1,6 +1,10 @@
-import { type SortDirection, type SortField } from "@v3/_/components/books"
-
 import { type BookWithRelations } from "@/database/books"
+import {
+  type SortContext,
+  type SortDirection,
+  type SortField,
+  makeBookComparator,
+} from "@/sort"
 import { type MediaFilter } from "@/store/api"
 
 export type ClientFilterOptions = {
@@ -9,6 +13,8 @@ export type ClientFilterOptions = {
   sortDirection?: SortDirection | undefined
   mediaFilter?: MediaFilter | undefined
   statusFilter?: string | null | undefined
+  // resolves seriesPosition when sorting inside a series context
+  sortContext?: SortContext | undefined
 }
 
 export function filterBooksClientSide(
@@ -56,24 +62,12 @@ export function filterBooksClientSide(
     result = result.filter((book) => book.status?.uuid === statusUuid)
   }
 
-  const dir = options.sortDirection === "asc" ? 1 : -1
   const field = options.sortField ?? "createdAt"
+  const direction = options.sortDirection ?? "desc"
 
-  result = [...result].sort((a, b) => {
-    switch (field) {
-      case "title":
-        return a.title.localeCompare(b.title) * dir
-      case "publicationDate":
-        return (
-          (a.publicationDate ?? "").localeCompare(b.publicationDate ?? "") * dir
-        )
-      case "updatedAt":
-        return a.updatedAt.localeCompare(b.updatedAt) * dir
-      case "createdAt":
-      default:
-        return a.createdAt.localeCompare(b.createdAt) * dir
-    }
-  })
+  result = [...result].sort(
+    makeBookComparator(field, direction, options.sortContext),
+  )
 
   return result
 }

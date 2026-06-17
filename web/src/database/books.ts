@@ -23,13 +23,19 @@ import {
 import { getDefaultSuffix, getSafeFilepathSegment } from "@/assets/paths"
 import { ASSETS_DIR } from "@/directories"
 import { BookEvents, type BookUpdatePayload } from "@/events"
+import { type ShelfFilter } from "@/shelves"
+import { type BookSort, type SortField } from "@/sort"
 import type { UUID } from "@/uuid"
 
 import { db } from "./connection"
 import type { NewCreator } from "./creators"
 import type { DB } from "./schema"
 import type { NewSeries } from "./series"
-import { buildBookSearchExpression } from "./shelfFilter"
+import {
+  buildBookSearchExpression,
+  buildFilterExpression,
+  buildSortExpression,
+} from "./shelfFilter"
 import { getDefaultStatus } from "./statuses"
 import { type NewUserBookRating } from "./userRatings"
 
@@ -730,8 +736,15 @@ export async function getNextQueuePosition() {
 export type GetBooksOptions = {
   limit?: number
   offset?: number
-  orderBy?: "createdAt" | "updatedAt" | "title" | "publicationDate"
+  orderBy?: SortField
   orderDirection?: "asc" | "desc"
+  // multi-key sort spec; takes precedence over orderBy/orderDirection. the ui
+  // currently emits a single key, but the db layer carries a spec so it can add
+  // a context default (series page -> position) and a stable tiebreaker.
+  sort?: BookSort
+  // ad-hoc filter tree (the same shape shelves use), compiled by
+  // buildFilterExpression. orthogonal to the convenience filters below.
+  filter?: ShelfFilter
   search?: string
   collection?: UUID
   series?: UUID
@@ -744,7 +757,7 @@ export async function getBooks(
   userId?: UUID,
   opts?: GetBooksOptions,
 ) {
-  const books = await booksQuery(userId, opts)
+  let query = booksQuery(userId, opts)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .$if(!!bookUuids, (qb) => qb.where("book.uuid", "in", bookUuids!))
     .$if(!!opts?.search, (qb) =>
@@ -844,17 +857,38 @@ export async function getBooks(
         ),
       ),
     )
-    .$if(!!opts?.limit, (qb) => qb.limit(opts?.limit ?? 10))
-    .$if(!!opts?.offset, (qb) => qb.offset(opts?.offset ?? 0))
-    .$if(!!opts?.orderBy, (qb) =>
-      qb.orderBy(
-        opts?.orderBy ?? "book.createdAt",
-        opts?.orderDirection ?? "desc",
+    .$if(!!opts?.filter, (qb) =>
+      qb.where((eb) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        buildFilterExpression(eb, opts!.filter!, userId),
       ),
     )
-    .execute()
+    .$if(!!opts?.limit, (qb) => qb.limit(opts?.limit ?? 10))
+    .$if(!!opts?.offset, (qb) => qb.offset(opts?.offset ?? 0))
 
-  return books
+  // resolve the sort spec: explicit sort wins, else fall back to the single
+  // orderBy/orderDirection pair. absent both, we leave the query unordered (as
+  // before) so callers relying on natural order are unaffected.
+  const sort: BookSort =
+    opts?.sort ??
+    (opts?.orderBy
+      ? [{ field: opts.orderBy, direction: opts.orderDirection ?? "desc" }]
+      : [])
+
+  for (const { field, direction } of sort) {
+    query = query.orderBy(
+      buildSortExpression(field, { userId, seriesContext: opts?.series }),
+      direction,
+    )
+  }
+
+  // stable tiebreaker so equal sort keys (and unsupported context fields that
+  // collapse to null) keep a deterministic order
+  if (sort.length > 0 && sort[sort.length - 1]?.field !== "createdAt") {
+    query = query.orderBy(sql`book.created_at`, "desc")
+  }
+
+  return await query.execute()
 }
 
 export type BookWithRelations = NonNullable<Awaited<ReturnType<typeof getBook>>>

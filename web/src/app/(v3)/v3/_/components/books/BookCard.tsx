@@ -6,6 +6,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
+import { type DisplayField, type SortContext } from "@/sort"
 
 import { BookCover, isDualFormat } from "./BookCover"
 import {
@@ -24,6 +25,75 @@ type BookCardProps = {
   isBookSelected?: boolean
   onToggleSelection?: (uuid: string) => void
   onClick?: (book: BookWithRelations) => void
+  // what the secondary line under the title shows; defaults to authors
+  displayField?: DisplayField
+  displayContext?: SortContext
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.round((seconds % 3600) / 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  const units = ["KB", "MB", "GB"]
+  let size = bytes / 1024
+  let i = 0
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024
+    i++
+  }
+  return `${size.toFixed(1)} ${units[i]}`
+}
+
+// the formatted secondary text for a non-authors display field, or null when
+// the book has no value for it (the card then falls back to authors).
+function secondaryText(
+  book: BookWithRelations,
+  field: DisplayField,
+  ctx: SortContext | undefined,
+): string | null {
+  switch (field) {
+    case "rating":
+      return book.globalBookRating != null
+        ? `★ ${book.globalBookRating.toFixed(1)}`
+        : null
+    case "userRating":
+      return book.rating?.rating != null
+        ? `★ ${book.rating.rating.toFixed(1)}`
+        : null
+    case "seriesPosition": {
+      if (!ctx?.seriesUuid) return null
+      const s = book.series.find((x) => x.uuid === ctx.seriesUuid)
+      if (!s || s.position == null) return null
+      return `#${s.position} in ${s.name}`
+    }
+    case "publicationDate":
+      return book.publicationDate ? book.publicationDate.slice(0, 4) : null
+    case "createdAt":
+      return `Added ${new Date(book.createdAt).toLocaleDateString()}`
+    case "updatedAt":
+      return `Updated ${new Date(book.updatedAt).toLocaleDateString()}`
+    case "pageCount": {
+      const p = book.ebook?.pageCount ?? book.pageCount
+      return p != null ? `${p} pages` : null
+    }
+    case "duration": {
+      const d = book.audiobook?.duration ?? book.duration
+      return d != null ? formatDuration(d) : null
+    }
+    case "fileSize": {
+      const f = book.ebook?.fileSize ?? book.audiobook?.fileSize ?? null
+      return f != null ? formatFileSize(f) : null
+    }
+    case "language":
+      return book.language ?? null
+    case "title":
+    case "authors":
+      return null
+  }
 }
 
 export const BookCard = memo(function BookCard({
@@ -34,6 +104,8 @@ export const BookCard = memo(function BookCard({
   isBookSelected = false,
   onToggleSelection,
   onClick,
+  displayField = "authors",
+  displayContext,
 }: BookCardProps) {
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
@@ -41,6 +113,12 @@ export const BookCard = memo(function BookCard({
 
   const authors = book.authors
   const progress = getReadingProgress(book)
+
+  // non-authors fields render a plain muted line; a null value (or an explicit
+  // authors/title pick) falls back to the author links below.
+  const secondary =
+    displayField === "authors" ? null : secondaryText(book, displayField, displayContext)
+  const showAuthors = secondary === null
 
   const { primary, accent } = useCoverColors(book)
   const { showTint, showAccent, tint } = useColorPreferences()
@@ -140,7 +218,12 @@ export const BookCard = memo(function BookCard({
       </div>
 
       <div className="mt-2 flex flex-col gap-0.5 px-1">
-        {authors.length > 0 && (
+        {!showAuthors && (
+          <p className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums">
+            {secondary}
+          </p>
+        )}
+        {showAuthors && authors.length > 0 && (
           <p className="text-muted-foreground/80 line-clamp-1 text-xs">
             {authors.map((a, index) => {
               return (

@@ -36,6 +36,14 @@ import { cn } from "@v3/_/lib/utils"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import {
+  DISPLAY_FIELD_LABELS,
+  type DisplayField,
+  GENERAL_SORT_FIELDS,
+  SORT_FIELD_LABELS,
+  type SortDirection,
+  type SortField,
+} from "@/sort"
+import {
   type MediaFilter,
   useListCollectionsQuery,
   useListSeriesQuery,
@@ -44,8 +52,7 @@ import {
 
 import { SearchInput } from "./SearchInput"
 
-export type SortField = "createdAt" | "updatedAt" | "title" | "publicationDate"
-export type SortDirection = "asc" | "desc"
+export type { SortDirection, SortField }
 
 export type BookFiltersState = {
   searchInput: string
@@ -69,7 +76,26 @@ type BookFiltersProps = {
   hideSeriesFilter?: boolean
   showSaveSearch?: boolean
   className?: string
+  // when provided, renders a "Show" control that overrides the card secondary
+  // line. null override = automatic (derived from the active sort / context).
+  displayOverride?: DisplayField | null
+  onDisplayOverrideChange?: (value: DisplayField | null) => void
+  // whether a series context is active (enables the "Series position" option)
+  hasSeriesContext?: boolean
 }
+
+// the sentinel for "automatic" in the Show select (Select values are strings)
+const DISPLAY_AUTO = "__auto__"
+
+// a compact, curated subset for the Show override (not every sortable field)
+const DISPLAY_OVERRIDE_FIELDS: DisplayField[] = [
+  "authors",
+  "rating",
+  "userRating",
+  "pageCount",
+  "duration",
+  "publicationDate",
+]
 
 export function BookFilters({
   state,
@@ -79,21 +105,22 @@ export function BookFilters({
   hideCollectionFilter = false,
   hideSeriesFilter = false,
   className,
+  displayOverride,
+  onDisplayOverrideChange,
+  hasSeriesContext = false,
 }: BookFiltersProps) {
   const t = useTranslation("BooksPage")
   const { data: collections } = useListCollectionsQuery()
   const { data: seriesList } = useListSeriesQuery()
   const { data: statuses } = useListStatusesQuery()
 
-  const sortFieldOptions: { value: SortField; label: string }[] = useMemo(
-    () => [
-      { value: "createdAt", label: t("sortBy.createdAt") },
-      { value: "updatedAt", label: t("sortBy.updatedAt") },
-      { value: "title", label: t("sortBy.title") },
-      { value: "publicationDate", label: t("sortBy.publicationDate") },
-    ],
-    [t],
-  )
+  const sortFieldOptions: { value: SortField; label: string }[] = useMemo(() => {
+    // series position is only offered (and defaulted to) inside a series context
+    const fields: SortField[] = hasSeriesContext
+      ? ["seriesPosition", ...GENERAL_SORT_FIELDS]
+      : GENERAL_SORT_FIELDS
+    return fields.map((value) => ({ value, label: SORT_FIELD_LABELS[value] }))
+  }, [hasSeriesContext])
 
   const mediaFilterOptions: {
     value: MediaFilter
@@ -337,6 +364,35 @@ export function BookFilters({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {onDisplayOverrideChange && (
+          <Select
+            value={displayOverride ?? DISPLAY_AUTO}
+            onValueChange={(value) => {
+              onDisplayOverrideChange(
+                value === DISPLAY_AUTO ? null : (value as DisplayField),
+              )
+            }}
+          >
+            <SelectTrigger className="h-8 min-w-[110px] text-xs font-normal">
+              <span className="text-muted-foreground mr-1">Show</span>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={DISPLAY_AUTO}>Auto</SelectItem>
+              {DISPLAY_OVERRIDE_FIELDS.map((field) => (
+                <SelectItem key={field} value={field}>
+                  {DISPLAY_FIELD_LABELS[field]}
+                </SelectItem>
+              ))}
+              {hasSeriesContext && (
+                <SelectItem value="seriesPosition">
+                  {DISPLAY_FIELD_LABELS.seriesPosition}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div className="scroll-x flex items-center gap-1.5">

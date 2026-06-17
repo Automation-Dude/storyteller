@@ -21,6 +21,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
+import { type DisplayField, type SortContext } from "@/sort"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -35,6 +36,8 @@ type BookGridProps = {
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
   onBookClick?: (book: BookWithRelations) => void
+  displayField?: DisplayField
+  displayContext?: SortContext
 }
 
 // preset card widths (px) for the gridCardSize preference. exported so the
@@ -77,6 +80,8 @@ export function BookGrid({
   hasActiveFilters,
   selectedBookUuid,
   onBookClick,
+  displayField,
+  displayContext,
 }: BookGridProps) {
   const selection = useOptionalBookSelection()
   const isSelecting = (selection?.selectedBooks.size ?? 0) > 0
@@ -292,6 +297,8 @@ export function BookGrid({
                       isBookSelected={selection?.isSelected(book.uuid) ?? false}
                       onToggleSelection={toggleSelection}
                       onClick={onBookClick}
+                      displayField={displayField}
+                      displayContext={displayContext}
                     />
                   ))}
                 </div>

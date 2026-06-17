@@ -63,6 +63,7 @@ import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/_CreateSeri
 import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/_EditSeriesDialog"
 import { usePermissions } from "@/hooks/usePermissions"
 import { type ShelfFilterNode } from "@/shelves"
+import { type SortContext, deriveDisplayField } from "@/sort"
 import {
   useDeleteCollectionMutation,
   useDeleteCreatorMutation,
@@ -156,6 +157,8 @@ export function LibraryPage({
   const [sidebarSort, setSidebarSort] =
     useState<SidebarSortMode>(defaultSidebarSort)
 
+  const isSeriesSection = section.entityType === "series"
+
   const {
     state: filterState,
     onChange: onFilterChange,
@@ -165,7 +168,28 @@ export function LibraryPage({
     clearFilters,
     filterPopoverOpen,
     setFilterPopoverOpen,
-  } = useBookFilters()
+    displayOverride,
+    onDisplayOverrideChange,
+    // series pages default to ordering by position (overridable in the sort menu)
+  } = useBookFilters(
+    isSeriesSection ? { defaultSortField: "seriesPosition" } : {},
+  )
+
+  // on a series page the books carry a position within the selected series;
+  // used both to sort by position and to show it on the cards.
+  const seriesContextUuid = isSeriesSection
+    ? (selectedItem as UUID | null)
+    : null
+  // memoized so it doesn't churn the filteredBooks memo every render
+  const displayContext = useMemo<SortContext>(
+    () => ({ seriesUuid: seriesContextUuid }),
+    [seriesContextUuid],
+  )
+  const displayField = deriveDisplayField(
+    filterState.sortField,
+    displayContext,
+    displayOverride,
+  )
 
   const allItems = useMemo(() => {
     if (!books) return []
@@ -247,8 +271,9 @@ export function LibraryPage({
       sortDirection: filterState.sortDirection,
       mediaFilter: filterState.mediaFilter,
       statusFilter: filterState.statusFilter,
+      sortContext: displayContext,
     })
-  }, [sectionBooks, deferredSearch, filterState])
+  }, [sectionBooks, deferredSearch, filterState, displayContext])
 
   const selectedItemName = allItems.find((i) => i.key === selectedItem)?.name
 
@@ -298,6 +323,7 @@ export function LibraryPage({
       void setSelectedItem(next)
 
       if (next && bookUuid && allBooks) {
+        const isSeries = sec.entityType === "series"
         const nextBooks = filterBooksClientSide(
           sec.filterBooks(allBooks, next),
           {
@@ -306,6 +332,7 @@ export function LibraryPage({
             sortDirection: filters.sortDirection,
             mediaFilter: filters.mediaFilter,
             statusFilter: filters.statusFilter,
+            sortContext: isSeries ? { seriesUuid: next as UUID } : undefined,
           },
         )
         void setSelectedBookUuid(nextBooks[0]?.uuid ?? null)
@@ -438,6 +465,9 @@ export function LibraryPage({
         setFilterPopoverOpen={setFilterPopoverOpen}
         hideCollectionFilter
         hideSeriesFilter
+        displayOverride={displayOverride}
+        onDisplayOverrideChange={onDisplayOverrideChange}
+        hasSeriesContext={!!seriesContextUuid}
       />
 
       <PageContent className="p-4">
@@ -459,6 +489,8 @@ export function LibraryPage({
               hasActiveFilters={activeFilterCount > 0}
               selectedBookUuid={selectedBookUuid}
               onBookClick={handleBookClick}
+              displayField={displayField}
+              displayContext={displayContext}
             />
 
             <SelectionToolbar

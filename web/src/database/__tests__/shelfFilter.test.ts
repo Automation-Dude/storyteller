@@ -3,9 +3,11 @@ import { describe, it } from "node:test"
 
 import Database from "better-sqlite3"
 
+import { type BookWithRelations } from "@/database/books"
 import { createKyselyDb } from "@/database/factory"
 import {
   buildFilterExpression,
+  buildSortExpression,
   extractEntityReferences,
   removeDeletedEntityReferences,
 } from "@/database/shelfFilter"
@@ -29,6 +31,7 @@ import {
   shelfFilterOperatorSchema,
   shelfFilterValueSchema,
 } from "@/shelves"
+import { type SortField, makeBookComparator } from "@/sort"
 import { type UUID } from "@/uuid"
 
 // ---------------------------------------------------------------------------
@@ -753,5 +756,81 @@ void describe("buildFilterExpression sql", () => {
     })
     assert.match(sql, /creator/)
     assert.match(sql, /series/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// sort expression sql + client comparator
+// ---------------------------------------------------------------------------
+
+void describe("buildSortExpression sql", () => {
+  const userId = "11111111-1111-1111-1111-111111111111" as UUID
+  const seriesUuid = "22222222-2222-2222-2222-222222222222" as UUID
+  const testDb = createKyselyDb(new Database(":memory:"))
+
+  const orderSql = (
+    field: SortField,
+    ctx?: { userId?: UUID; seriesContext?: UUID },
+  ): string =>
+    testDb
+      .selectFrom("book")
+      .select("book.uuid")
+      .orderBy(buildSortExpression(field, ctx), "desc")
+      .compile().sql
+
+  void it("orders by a scalar book column directly", () => {
+    const sql = orderSql("title")
+    assert.match(sql, /order by/i)
+    assert.match(sql, /book\.title/)
+  })
+
+  void it("orders user rating via a user-scoped subquery", () => {
+    const sql = orderSql("userRating", { userId })
+    assert.match(sql, /user_book_rating/)
+    assert.match(sql, /user_id/)
+  })
+
+  void it("orders series position via a series-scoped subquery", () => {
+    const sql = orderSql("seriesPosition", { seriesContext: seriesUuid })
+    assert.match(sql, /book_to_series/)
+    assert.match(sql, /position/)
+  })
+
+  void it("coalesces asset tables for an asset-numeric sort", () => {
+    const sql = orderSql("pageCount")
+    assert.match(sql, /coalesce/i)
+  })
+})
+
+void describe("makeBookComparator", () => {
+  const seriesUuid = "22222222-2222-2222-2222-222222222222" as UUID
+
+  const bookWithPosition = (
+    uuid: string,
+    position: number | null,
+  ): BookWithRelations =>
+    ({
+      uuid,
+      series: [{ uuid: seriesUuid, position }],
+    }) as unknown as BookWithRelations
+
+  void it("orders by series position within a series context", () => {
+    const first = bookWithPosition("a", 1)
+    const second = bookWithPosition("b", 2)
+    const cmp = makeBookComparator("seriesPosition", "asc", {
+      seriesUuid,
+    })
+    assert.ok(cmp(first, second) < 0)
+    assert.ok(cmp(second, first) > 0)
+  })
+
+  void it("sorts books with no position last regardless of direction", () => {
+    const withPos = bookWithPosition("a", 3)
+    const without = bookWithPosition("b", null)
+    const asc = makeBookComparator("seriesPosition", "asc", { seriesUuid })
+    const desc = makeBookComparator("seriesPosition", "desc", { seriesUuid })
+    // null always sorts after a real value, in both directions
+    assert.ok(asc(withPos, without) < 0)
+    assert.ok(desc(withPos, without) < 0)
   })
 })

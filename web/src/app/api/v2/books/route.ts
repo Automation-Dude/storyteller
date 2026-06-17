@@ -15,6 +15,7 @@ import {
   getBooks,
 } from "@/database/books"
 import { type ImportMode } from "@/database/settingsTypes"
+import { SORTABLE_FIELDS, type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
@@ -45,12 +46,8 @@ export const GET = withHasPermission("bookList")(async (request) => {
     opts.offset = parseInt(offsetParam)
   }
 
-  if (orderByParam) {
-    opts.orderBy = orderByParam as
-      | "createdAt"
-      | "updatedAt"
-      | "title"
-      | "publicationDate"
+  if (orderByParam && (SORTABLE_FIELDS as readonly string[]).includes(orderByParam)) {
+    opts.orderBy = orderByParam as SortField
   }
 
   if (orderDirectionParam) {

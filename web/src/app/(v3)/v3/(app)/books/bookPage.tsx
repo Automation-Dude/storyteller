@@ -12,7 +12,9 @@ import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type UserPermissionSet } from "@/database/users"
+import { type SortContext, deriveDisplayField } from "@/sort"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 export default function BookPage({
   permissions: _permissions,
@@ -38,7 +40,19 @@ export default function BookPage({
     clearFilters,
     filterPopoverOpen,
     setFilterPopoverOpen,
+    displayOverride,
+    onDisplayOverrideChange,
   } = useBookFilters()
+
+  // a series filter makes series position a meaningful secondary line
+  const displayContext: SortContext = {
+    seriesUuid: (state.seriesFilter as UUID | null) ?? null,
+  }
+  const displayField = deriveDisplayField(
+    state.sortField,
+    displayContext,
+    displayOverride,
+  )
 
   const {
     data,
@@ -108,6 +122,9 @@ export default function BookPage({
           filterPopoverOpen={filterPopoverOpen}
           setFilterPopoverOpen={setFilterPopoverOpen}
           showSaveSearch
+          displayOverride={displayOverride}
+          onDisplayOverrideChange={onDisplayOverrideChange}
+          hasSeriesContext={!!state.seriesFilter}
         />
 
         <PageContent className="p-4">
@@ -127,6 +144,8 @@ export default function BookPage({
             hasActiveFilters={activeFilterCount > 0}
             selectedBookUuid={selectedBookUuid}
             onBookClick={handleBookClick}
+            displayField={displayField}
+            displayContext={displayContext}
           />
         </PageContent>
       </BookListLayout>

@@ -56,6 +56,7 @@ import { type UserSettingValue } from "@/database/userSettings"
 import { type UserPermissionSet } from "@/database/users"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import { type ShelfFilter } from "@/shelves"
+import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
 
 import { subscribeToBookEventStream } from "./bookEventsStream"
@@ -1844,7 +1845,7 @@ export type MediaFilter = "all" | "ebook" | "audiobook" | "synced"
 
 export type ListBooksQueryArg = {
   limit?: number | undefined
-  orderBy?: "createdAt" | "updatedAt" | "title" | "publicationDate" | undefined
+  orderBy?: SortField | undefined
   orderDirection?: "asc" | "desc" | undefined
   search?: string | undefined
   collection?: string | undefined

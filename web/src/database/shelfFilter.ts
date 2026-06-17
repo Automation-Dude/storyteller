@@ -15,6 +15,7 @@ import {
   type ShelfFilterValue,
   getFieldType,
 } from "@/shelves"
+import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
@@ -873,6 +874,42 @@ export function buildBookSearchExpression(
         .where(sql`lower(series.name)`, "like", searchTerm),
     ),
   ])
+}
+
+// the order-by expression for a sortable field. raw sql so it bypasses the
+// camelCase plugin (hence snake_case columns); userRating and seriesPosition are
+// correlated scalar subqueries scoped to the user / context series. interpolated
+// values (${...}) are bound parameters, not string-concatenated sql.
+export function buildSortExpression(
+  field: SortField,
+  ctx?: { userId?: UUID; seriesContext?: UUID | null },
+) {
+  switch (field) {
+    case "title":
+      return sql`book.title`
+    case "createdAt":
+      return sql`book.created_at`
+    case "updatedAt":
+      return sql`book.updated_at`
+    case "publicationDate":
+      return sql`book.publication_date`
+    case "language":
+      return sql`book.language`
+    case "rating":
+      return sql`book.rating`
+    case "pageCount":
+    case "duration":
+    case "fileSize":
+      return assetNumericExpr(field)
+    case "userRating":
+      return ctx?.userId
+        ? sql`(select rating from user_book_rating where book_uuid = book.uuid and user_id = ${ctx.userId} limit 1)`
+        : sql`(select rating from user_book_rating where book_uuid = book.uuid limit 1)`
+    case "seriesPosition":
+      return ctx?.seriesContext
+        ? sql`(select position from book_to_series where book_uuid = book.uuid and series_uuid = ${ctx.seriesContext} limit 1)`
+        : sql`null`
+  }
 }
 
 // resolves the effective value for pageCount, duration, and fileSize by looking
