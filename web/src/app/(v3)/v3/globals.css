@@ -447,3 +447,11 @@
     }
   }
 }
+
+/**
+* this is useful in card: make the card relative, apply this to link, and whole link will be clickable
+* allows you to circumvent the inability to nest <a>s
+*/
+.big-link {
+  @apply after:absolute after:top-0 after:right-0 after:bottom-0 after:left-0 after:z-0 after:block after:content-[''];
+}

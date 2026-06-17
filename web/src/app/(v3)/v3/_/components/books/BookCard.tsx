@@ -147,7 +147,7 @@ export const BookCard = memo(function BookCard({
                 <Fragment key={a.uuid}>
                   <Link
                     key={a.uuid}
-                    className="hover:text-primary relative hover:underline"
+                    className="hover:text-primary relative z-20 hover:underline"
                     prefetch={false}
                     href={`/v3/authors?item=${a.uuid}`}
                     onClick={(e) => {
@@ -163,9 +163,14 @@ export const BookCard = memo(function BookCard({
             })}
           </p>
         )}
-        <h3 className="group-hover:text-primary font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
-          {book.title}
-        </h3>
+        <Link
+          href={`/v3/books/${book.uuid}`}
+          className={cn(!onClick && "big-link")}
+        >
+          <h3 className="group-hover:text-primary font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
+            {book.title}
+          </h3>
+        </Link>
       </div>
     </>
   )
@@ -184,31 +189,35 @@ export const BookCard = memo(function BookCard({
       )}
       style={style}
     >
-      {onClick ? (
-        <div
-          key={book.uuid}
-          // im sorry a11y gods
-          role="button"
-          onKeyDown={(e: React.KeyboardEvent) => {
-            if (e.key === "Enter" || e.key === " ") {
-              onClick(book)
-            }
-          }}
-          tabIndex={0}
-          onClick={() => {
-            onClick(book)
-          }}
-          className={cn(
-            "h-full",
-            isBookSelected && "ring-primary rounded-lg ring-2",
-            "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
-          )}
-        >
-          {cardContent}
-        </div>
-      ) : (
-        <Link href={`/v3/books/${book.uuid}`}>{cardContent}</Link>
-      )}
+      <div
+        key={book.uuid}
+        // im sorry a11y gods
+        role="button"
+        onKeyDown={
+          onClick
+            ? (e: React.KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  onClick(book)
+                }
+              }
+            : undefined
+        }
+        tabIndex={0}
+        onClick={
+          onClick
+            ? () => {
+                onClick(book)
+              }
+            : undefined
+        }
+        className={cn(
+          "relative h-full",
+          isBookSelected && "ring-primary rounded-lg ring-2",
+          "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
+        )}
+      >
+        {cardContent}
+      </div>
     </div>
   )
 })
