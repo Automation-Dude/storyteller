@@ -14,40 +14,20 @@ const DPR =
 const TILE_CLASS =
   "absolute inset-0 m-auto  rounded-sm shadow-md group-hover/covers:overflow-hidden ring-primary/50 group-hover/covers:ring-3  group-hover/covers:before:-inset-3 before:bg-white before:block before:absolute before:-z-10"
 
-type Pos = { x: string; scale: number; z: number } & Variant
+type Pos = { x: string; scale: number; z: number; rotateX?: number } & Variant
 type CoverState = "idle" | "separated" | "audiobook-front"
-
-const STATES: Record<CoverState, { audiobook: Pos; ebook: Pos }> = {
-  idle: {
-    audiobook: { x: "15%", scale: 1, z: 10, rotateX: 0 },
-    ebook: { x: "-10%", scale: 1, z: 20, rotateX: -0 },
-  },
-  separated: {
-    audiobook: { x: "18%", scale: 0.8, z: 10, rotateX: 0 },
-    ebook: { x: "-18%", scale: 0.8, z: 20, rotateX: -0 },
-  },
-  "audiobook-front": {
-    audiobook: { x: "5%", scale: 1.05, z: 20, rotateX: 0 },
-    ebook: { x: "-15%", scale: 0.9, z: 10, rotateX: -0 },
-  },
-}
-
-const PEAK = {
-  audiobook: { x: "48%", scale: 0.85 },
-  ebook: { x: "-48%", scale: 0.85 },
-}
 
 const SHUFFLE_MS = 450
 const SIMPLE_MS = 220
 const PEAK_FRACTION = 0.4
 
-function tx(p: { x: string; scale: number; rotateX?: string }) {
+function tx(p: { x: string; scale: number; rotateX?: number }) {
   return `translateX(${p.x}) scale(${p.scale})${p.rotateX ? ` rotate(${p.rotateX}deg)` : ""}`
 }
 
 function transformKeyframes(
   target: Pos,
-  peak: typeof PEAK.audiobook,
+  peak: { x: string; scale: number; rotateX?: string },
   shuffle: boolean,
 ): Keyframe[] {
   if (!shuffle) return [{ transform: tx(target) }]
@@ -68,6 +48,28 @@ export function BookDoubleCover({
   disableHover?: boolean
   onLoadingChange?: (loading: boolean) => void
 }) {
+  const isAligned = book.readaloud?.status === "ALIGNED"
+
+  const STATES: Record<CoverState, { audiobook: Pos; ebook: Pos }> = {
+    idle: {
+      audiobook: { x: "15%", scale: 1, z: 10, rotateX: isAligned ? 0 : 2.5 },
+      ebook: { x: "-10%", scale: 1, z: 20, rotateX: isAligned ? 0 : -2.5 },
+    },
+    separated: {
+      audiobook: { x: "18%", scale: 0.8, z: 10, rotateX: isAligned ? 0 : 2.5 },
+      ebook: { x: "-18%", scale: 0.8, z: 20, rotateX: isAligned ? 0 : -2.5 },
+    },
+    "audiobook-front": {
+      audiobook: { x: "5%", scale: 1.05, z: 20, rotateX: isAligned ? 0 : 2.5 },
+      ebook: { x: "-15%", scale: 0.9, z: 10, rotateX: isAligned ? 0 : -2.5 },
+    },
+  }
+
+  const PEAK = {
+    audiobook: { x: "48%", scale: 0.85 },
+    ebook: { x: "-48%", scale: 0.85 },
+  }
+
   const audiobookRef = useRef<HTMLDivElement>(null)
   const ebookRef = useRef<HTMLDivElement>(null)
 
@@ -97,7 +99,6 @@ export function BookDoubleCover({
     const eb = ebookRef.current
     if (!ab || !eb) return
     ab.style.transform = tx(STATES.idle.audiobook)
-    console.log(tx(STATES.idle.audiobook))
     ab.style.zIndex = String(STATES.idle.audiobook.z)
     eb.style.transform = tx(STATES.idle.ebook)
     eb.style.zIndex = String(STATES.idle.ebook.z)
