@@ -37,7 +37,7 @@ export function ProgressDisplayBar({
   return (
     <div
       className={cn(
-        "absolute right-0.5 bottom-0 left-0.5 h-1 overflow-hidden rounded-b-lg bg-black/30",
+        "absolute right-0.5 bottom-0 left-0.5 h-1 overflow-hidden rounded-b-lg bg-black/10",
         className,
       )}
     >
