@@ -7,20 +7,42 @@ import * as React from "react"
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
 import { useSidebarMaybe } from "./sidebar"
+import { useIsMobile } from "../../hooks/use-mobile"
+import { Drawer } from "vaul-base"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
+function Dialog({
+  ...props
+}: Omit<DialogPrimitive.Root.Props, "children"> & {
+  children?: React.ReactNode
+}) {
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return <Drawer.Root data-slot="dialog" {...props} />
+  }
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return <Drawer.Trigger data-slot="dialog-trigger" {...props} />
+  }
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return <Drawer.Portal data-slot="dialog-portal" {...props} />
+  }
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return <Drawer.Close data-slot="dialog-close" {...props} />
+  }
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
@@ -28,6 +50,16 @@ function DialogOverlay({
   className,
   ...props
 }: DialogPrimitive.Backdrop.Props) {
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return (
+      <Drawer.Overlay
+        className="fixed inset-0 z-50 bg-black/80 duration-100 supports-backdrop-filter:backdrop-blur-xs"
+        {...props}
+      />
+    )
+  }
+
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
@@ -44,13 +76,31 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  forceRender = false,
+  forceRender = true,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
   forceRender?: React.ComponentProps<typeof DialogOverlay>["forceRender"]
 }) {
   const { state } = useSidebarMaybe() ?? {}
+
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return (
+      <Drawer.Portal>
+        <DialogOverlay forceRender={forceRender} />
+        <Drawer.Content
+          className={cn(
+            "bg-background fixed right-0 bottom-0 left-0 z-50 grid gap-4 overflow-hidden rounded-t-2xl p-4",
+            className,
+          )}
+          {...props}
+        >
+          {children}
+        </Drawer.Content>
+      </Drawer.Portal>
+    )
+  }
 
   return (
     <DialogPortal>
@@ -60,8 +110,8 @@ function DialogContent({
         className={cn(
           "bg-background ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg p-4 text-xs/relaxed ring-1 duration-100 outline-none sm:max-w-sm",
           state === "expanded"
-            ? `left-[calc(50%_+_8rem)]`
-            : "left-[calc(50%_+_1rem)]",
+            ? `left-1/2 md:left-[calc(50%_+_8rem)]`
+            : "left-1/2 md:left-[calc(50%_+_1rem)]",
           className,
         )}
         {...props}
@@ -125,6 +175,15 @@ function DialogFooter({
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return (
+      <Drawer.Title
+        className={cn("font-heading text-base font-medium", className)}
+        {...props}
+      />
+    )
+  }
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -138,6 +197,18 @@ function DialogDescription({
   className,
   ...props
 }: DialogPrimitive.Description.Props) {
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return (
+      <Drawer.Description
+        className={cn(
+          "text-muted-foreground *:[a]:hover:text-foreground text-xs/relaxed *:[a]:underline *:[a]:underline-offset-3",
+          className,
+        )}
+        {...props}
+      />
+    )
+  }
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

@@ -16779,6 +16779,7 @@ __metadata:
     typescript-plugin-css-modules: "npm:^5.0.1"
     uuid: "npm:^11.1.0"
     vaul: "npm:^1.1.2"
+    vaul-base: "npm:^1.0.0"
     wink-eng-lite-web-model: "npm:^1.8.0"
     wink-nlp: "npm:^2.3.0"
     yauzl: "npm:^3.2.0"
@@ -45147,6 +45148,17 @@ __metadata:
   version: 1.1.2
   resolution: "vary@npm:1.1.2"
   checksum: 10c0/f15d588d79f3675135ba783c91a4083dcd290a2a5be9fcb6514220a1634e23df116847b1cc51f66bfb0644cf9353b2abb7815ae499bab06e46dd33c1a6bf1f4f
+  languageName: node
+  linkType: hard
+
+"vaul-base@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "vaul-base@npm:1.0.0"
+  peerDependencies:
+    "@base-ui/react": ^1.0.0
+    react: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
+    react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
+  checksum: 10c0/c429bca5ddd89212fba3712d2d2e28ac860c9426094d5b3eeb86d7e156e9b48798566004d78b85e9b5a0e271e9a4c5b8db1a905f18888b6c8f061200e72dc3c2
   languageName: node
   linkType: hard
 

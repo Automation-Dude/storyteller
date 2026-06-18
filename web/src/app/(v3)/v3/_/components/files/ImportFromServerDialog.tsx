@@ -141,7 +141,7 @@ export function ImportFromServerDialog(props: ImportFromServerDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-10 flex max-h-[85vh] translate-y-0 flex-col sm:max-w-2xl">
+      <DialogContent className="flex h-[85svh] max-h-[85vh] translate-y-0 flex-col sm:top-10 sm:h-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

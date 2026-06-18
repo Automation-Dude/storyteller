@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useIsMobile } from "../../hooks/use-mobile"
 
 type ConfirmDialogProps = {
   open: boolean
@@ -37,6 +38,7 @@ export function ConfirmDialog({
   isLoading = false,
 }: ConfirmDialogProps) {
   const t = useTranslation("EntityActions")
+  const isMobile = useIsMobile()
 
   const handleConfirm = useCallback(async () => {
     await onConfirm()
@@ -52,7 +54,7 @@ export function ConfirmDialog({
         </DialogHeader>
 
         <DialogFooter>
-          <p className="text-muted-foreground mr-auto self-center text-[0.625rem]">
+          <p className="text-muted-foreground mr-auto hidden self-center text-[0.625rem] md:block">
             {t("shiftSkipHint")}
           </p>
 

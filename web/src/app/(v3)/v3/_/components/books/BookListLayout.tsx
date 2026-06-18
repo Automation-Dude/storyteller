@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
-import { Drawer } from "vaul"
+import { Drawer } from "vaul-base"
 
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import {
@@ -290,7 +290,6 @@ export function BookDetailDrawer({
 }) {
   return (
     <Drawer.Root
-      modal={false}
       open={!!selectedBookUuid}
       onOpenChange={(open) => {
         if (!open) onClose()

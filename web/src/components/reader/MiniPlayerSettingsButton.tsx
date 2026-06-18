@@ -16,7 +16,7 @@ import {
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { useState } from "react"
-import { Drawer } from "vaul"
+import { Drawer } from "vaul-base"
 
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
