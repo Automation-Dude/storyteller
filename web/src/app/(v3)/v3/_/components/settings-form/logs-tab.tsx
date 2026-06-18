@@ -8,10 +8,16 @@ import {
   IconLoader,
   IconSearch,
   IconTextWrap,
+  IconTrash,
   IconX,
 } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
+import {
+  ConfirmDialog,
+  useConfirmAction,
+} from "@v3/_/components/ui/confirm-dialog"
 import { Input } from "@v3/_/components/ui/input"
 import {
   Select,
@@ -26,6 +32,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
+  useClearLogsMutation,
   useGetLogLevelQuery,
   useGetLogsQuery,
   useSetLogLevelMutation,
@@ -133,9 +140,24 @@ export function LogsTab() {
 
   const { data: logLevelData } = useGetLogLevelQuery()
   const [setLogLevel] = useSetLogLevelMutation()
+  const [clearLogs] = useClearLogsMutation()
 
   const currentLevel = logLevelData?.level ?? "info"
   const isDebug = currentLevel === "debug" || currentLevel === "trace"
+
+  const handleClearLogs = useCallback(async () => {
+    await clearLogs()
+    toast.success(t("logsCleared"))
+    void refetch()
+  }, [clearLogs, refetch, t])
+
+  const clearConfirm = useConfirmAction({
+    onConfirm: handleClearLogs,
+    title: t("clearLogs"),
+    description: t("clearLogsConfirm"),
+    confirmLabel: t("clearLogs"),
+    variant: "destructive",
+  })
 
   const handleToggleDebug = useCallback(async () => {
     const newLevel = isDebug ? "info" : "debug"
@@ -204,6 +226,7 @@ export function LogsTab() {
         onToggleDebug={handleToggleDebug}
         followMode={prefs.followMode}
         onScrollToBottom={handleScrollToBottom}
+        onClearLogs={clearConfirm.confirm}
         t={t}
       />
 
@@ -253,6 +276,8 @@ export function LogsTab() {
           </button>
         )}
       </div>
+
+      <ConfirmDialog {...clearConfirm.dialogProps} />
     </div>
   )
 }
@@ -312,6 +337,7 @@ function LogsToolbar({
   onToggleDebug,
   followMode,
   onScrollToBottom,
+  onClearLogs,
   t,
 }: {
   search: string
@@ -330,6 +356,7 @@ function LogsToolbar({
   onToggleDebug: () => void
   followMode: boolean
   onScrollToBottom: () => void
+  onClearLogs: () => void
   t: ReturnType<typeof useTranslation<"SettingsPage.tabs.logs">>
 }) {
   const levelItems = [
@@ -449,6 +476,15 @@ function LogsToolbar({
           tooltip={t("follow")}
         >
           <IconArrowDown className="h-4 w-4" />
+        </TooltipButton>
+
+        <TooltipButton
+          variant="ghost"
+          size="icon-sm"
+          onClick={onClearLogs}
+          tooltip={t("clearLogs")}
+        >
+          <IconTrash className="h-4 w-4" />
         </TooltipButton>
       </div>
     </div>

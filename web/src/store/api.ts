@@ -1729,6 +1729,13 @@ export const api = createApi({
         body,
       }),
     }),
+
+    clearLogs: build.mutation<{ ok: boolean }, void>({
+      query: () => ({
+        url: "/logs/clear",
+        method: "POST",
+      }),
+    }),
   }),
 })
 
@@ -1836,6 +1843,7 @@ export const {
   useGetLogsQuery,
   useGetLogLevelQuery,
   useSetLogLevelMutation,
+  useClearLogsMutation,
 } = api
 
 export function getDownloadUrl(

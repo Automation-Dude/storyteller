@@ -8,6 +8,7 @@ import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
+import { useUserPreferences } from "../user-preferences-provider"
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 import { BookDoubleCover } from "./BookDoubleCover"
 import { CoverImage } from "./CoverImage"
@@ -27,6 +28,7 @@ export function BookCover({
   width,
   disableHover = false,
   displayMode = "auto",
+  forceAligned,
   onLoadingChange,
 }: {
   book: BookWithRelations
@@ -35,13 +37,19 @@ export function BookCover({
   // "auto" keeps the double-cover behavior; "ebook"/"audiobook" force a single
   // cover (falling back to whatever format exists if the chosen one is missing)
   displayMode?: "auto" | "ebook" | "audiobook"
+  forceAligned?: boolean
   onLoadingChange?: (loading: boolean) => void
 }) {
+  const { doubleCoverAlignment } = useUserPreferences()
+
   const hasAudiobook = book.audiobook !== null
   const hasEbook = book.ebook !== null
 
   const forceEbook = displayMode === "ebook" && hasEbook
   const forceAudio = displayMode === "audiobook" && hasAudiobook
+
+  const resolvedForceAligned =
+    forceAligned ?? (doubleCoverAlignment === "straight" ? true : undefined)
 
   const scaledWidth = Math.round(width * DPR)
   const scaledHeight = Math.round(width * 1.5 * DPR)
@@ -102,6 +110,7 @@ export function BookCover({
         book={book}
         width={width}
         disableHover={disableHover}
+        forceAligned={resolvedForceAligned}
         onLoadingChange={onLoadingChange}
       />
     )

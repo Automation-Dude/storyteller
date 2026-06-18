@@ -38,7 +38,6 @@ export function ConfirmDialog({
   isLoading = false,
 }: ConfirmDialogProps) {
   const t = useTranslation("EntityActions")
-  const isMobile = useIsMobile()
 
   const handleConfirm = useCallback(async () => {
     await onConfirm()

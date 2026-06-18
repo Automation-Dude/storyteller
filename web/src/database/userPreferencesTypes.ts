@@ -29,6 +29,12 @@ export type GridCardSize = (typeof GridCardSizes)[number]
 export const BookDetailDisplays = ["3d", "cover"] as const
 export type BookDetailDisplay = (typeof BookDetailDisplays)[number]
 
+// controls whether both-covers display tilts when the book is unaligned
+// "auto": tilted when unsynced, straight when synced (default)
+// "straight": always straight regardless of sync status
+export const DoubleCoverAlignments = ["auto", "straight"] as const
+export type DoubleCoverAlignment = (typeof DoubleCoverAlignments)[number]
+
 // the glyph used to draw star ratings. purely cosmetic; the stored rating value
 // is unchanged.
 export const RatingIcons = ["star", "heart"] as const
@@ -45,6 +51,7 @@ export const UserPreferencesSchema = z.object({
   colorIntensity: z.number().min(0).max(1),
   gridCoverDisplay: z.enum(GridCoverDisplays),
   gridCardSize: z.enum(GridCardSizes),
+  doubleCoverAlignment: z.enum(DoubleCoverAlignments),
   bookDetailDisplay: z.enum(BookDetailDisplays),
   // index into Book3D's VIEWS array, null = front cover
   bookDetail3dView: z.number().int().min(0).nullable(),
@@ -73,6 +80,7 @@ export const defaultUserPreferences: UserPreferences = {
   colorIntensity: 1,
   gridCoverDisplay: "auto",
   gridCardSize: "medium",
+  doubleCoverAlignment: "auto",
   bookDetailDisplay: "3d",
   bookDetail3dView: null,
   ratingIcon: "star",

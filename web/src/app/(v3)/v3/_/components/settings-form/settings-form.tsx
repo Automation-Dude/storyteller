@@ -397,7 +397,6 @@ export function SettingsForm({
 
   const isFormTab = formTabs.includes(activeTab)
   const activeTabDef = allTabs.find((t) => t.value === activeTab)
-  const headerTitle = activeTabDef?.label ?? title
 
   const tabContent = (
     <>
@@ -469,36 +468,13 @@ export function SettingsForm({
     </div>
   )
 
-  const searchBar = isFormTab ? (
-    <div className="shrink-0 px-4 pb-2">
-      <div className="relative">
-        <IconSearch className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <Input
-          type="text"
-          placeholder={t("searchSettings")}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-9 pl-9"
-        />
-
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery("")}
-            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-          >
-            <IconX className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    </div>
-  ) : null
-
   const sidebarContent = (
     <SettingsSidebar
       tabs={filteredTabs}
       activeTab={activeTab}
       onTabChange={setActiveTabEvent}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
     />
   )
 
@@ -511,7 +487,6 @@ export function SettingsForm({
             onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}
             className="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
-            {/* p-px prevents card ring clipping */}
             <PageContent className="p-4">{tabContent}</PageContent>
           </form>
         ) : (
@@ -558,8 +533,6 @@ export function SettingsForm({
             />
           </PageHeader>
 
-          {searchBar}
-
           {contentArea}
 
           {lockedKeys.size > 0 && <LockedSettingsBanner t={t} />}
@@ -588,8 +561,8 @@ export function SettingsForm({
             breadcrumbs={[
               {
                 render: (
-                  <h1 className="font-heading text-foreground truncate text-2xl font-normal">
-                    {headerTitle}
+                  <h1 className="font-heading text-foreground truncate text-lg font-medium">
+                    {activeTabDef?.label ?? title}
                   </h1>
                 ),
               },
@@ -597,8 +570,6 @@ export function SettingsForm({
             actions={headerActions}
           />
         </PageHeader>
-
-        {searchBar}
 
         {contentArea}
 
@@ -625,10 +596,14 @@ function SettingsSidebar({
   tabs,
   activeTab,
   onTabChange,
+  searchQuery,
+  onSearchChange,
 }: {
   tabs: SidebarTabDef[]
   activeTab: Tab
   onTabChange: (tab: Tab) => void
+  searchQuery: string
+  onSearchChange: (query: string) => void
 }) {
   const t = useTranslation("SettingsPage")
 
@@ -638,16 +613,41 @@ function SettingsSidebar({
   return (
     <ScrollArea className="flex h-full flex-col">
       <div className="flex flex-col gap-4 px-2 pt-3 pb-3">
-        <h2 className="font-heading text-foreground truncate text-2xl font-normal">
-          {t("title")}
-        </h2>
         {settingsTabs.length > 0 && (
-          <SidebarGroup
-            label={t("sidebar.settings")}
-            tabs={settingsTabs}
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-          />
+          <div>
+            <p className="text-muted-foreground mb-1.5 px-2 text-xs font-medium tracking-wider uppercase">
+              {t("sidebar.settings")}
+            </p>
+
+            <div className="mb-2 px-1">
+              <div className="relative">
+                <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                <Input
+                  type="text"
+                  placeholder={t("searchSettings")}
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="h-7 pr-7 pl-8 text-xs"
+                />
+
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => onSearchChange("")}
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
+                  >
+                    <IconX className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <SidebarTabList
+              tabs={settingsTabs}
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+            />
+          </div>
         )}
 
         {administrationTabs.length > 0 && (
@@ -695,24 +695,42 @@ function SidebarGroup({
         {label}
       </p>
 
-      <div className="flex flex-col gap-0.5">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => onTabChange(tab.value)}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-              activeTab === tab.value
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
-            )}
-          >
-            <tab.icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{tab.label}</span>
-          </button>
-        ))}
-      </div>
+      <SidebarTabList
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+      />
+    </div>
+  )
+}
+
+function SidebarTabList({
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  tabs: SidebarTabDef[]
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      {tabs.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onTabChange(tab.value)}
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+            activeTab === tab.value
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+          )}
+        >
+          <tab.icon className="h-4 w-4 shrink-0" />
+          <span className="truncate">{tab.label}</span>
+        </button>
+      ))}
     </div>
   )
 }

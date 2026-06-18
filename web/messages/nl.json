@@ -727,7 +727,10 @@
         "enableDebug": "Debug-logging inschakelen",
         "disableDebug": "Debug-logging uitschakelen",
         "follow": "Nieuwe logs volgen",
-        "scrollToBottom": "Scroll naar beneden"
+        "scrollToBottom": "Scroll naar beneden",
+        "clearLogs": "Logs wissen",
+        "clearLogsConfirm": "Dit verwijdert het huidige logbestand permanent. Nieuwe logs worden gewoon opnieuw geschreven.",
+        "logsCleared": "Logs gewist"
       },
       "users": {
         "title": "Gebruikers",
@@ -785,6 +788,10 @@
     "savedSuccessfully": "Voorkeuren opgeslagen",
     "failedToSave": "Voorkeuren opslaan mislukt",
     "searchPreferences": "Voorkeuren zoeken...",
+    "sidebar": {
+      "user": "Gebruiker",
+      "preferences": "Voorkeuren"
+    },
     "profile": {
       "title": "Profiel",
       "description": "Beheer je accountgegevens.",
@@ -874,23 +881,25 @@
       "books": {
         "title": "Boeken",
         "sections": {
-          "gridCover": {
-            "title": "Rastercovers",
-            "description": "Hoe boekcovers in het raster worden getoond.",
-            "label": "Coverweergave",
-            "hint": "Beide toont de e-book- en audioboekcover wanneer een boek die heeft.",
-            "options": {
+          "gridDisplay": {
+            "title": "Rasterweergave",
+            "description": "Hoe boeken in het bibliotheekraster worden getoond.",
+            "coverLabel": "Coverweergave",
+            "coverHint": "Beide toont de e-book- en audioboekcover wanneer een boek die heeft.",
+            "coverOptions": {
               "auto": "Beide covers",
               "ebook": "Alleen e-book",
               "audiobook": "Alleen audioboek"
-            }
-          },
-          "gridSize": {
-            "title": "Rastergrootte",
-            "description": "Hoe groot boekcovers in het raster worden getoond.",
-            "label": "Kaartgrootte",
-            "hint": "Kleiner past meer boeken per rij.",
-            "options": {
+            },
+            "alignmentLabel": "Dubbelcoverstijl",
+            "alignmentHint": "Bepaalt of de twee covers scheef of recht worden getoond.",
+            "alignmentOptions": {
+              "auto": "Scheef als niet gesynchroniseerd",
+              "straight": "Altijd recht"
+            },
+            "sizeLabel": "Kaartgrootte",
+            "sizeHint": "Kleiner past meer boeken per rij.",
+            "sizeOptions": {
               "smallest": "Kleinst",
               "small": "Klein",
               "medium": "Middel",
@@ -899,7 +908,7 @@
             }
           },
           "detail": {
-            "title": "Boekweergave",
+            "title": "Detailsweergave",
             "description": "Hoe een boek op de detailpagina wordt getoond.",
             "display": {
               "label": "Weergave",

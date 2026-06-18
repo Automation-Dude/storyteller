@@ -730,7 +730,10 @@
         "enableDebug": "Enable debug logging",
         "disableDebug": "Disable debug logging",
         "follow": "Follow new logs",
-        "scrollToBottom": "Scroll to bottom"
+        "scrollToBottom": "Scroll to bottom",
+        "clearLogs": "Clear logs",
+        "clearLogsConfirm": "This will permanently delete the current log file. New logs will continue to be written.",
+        "logsCleared": "Logs cleared"
       },
       "users": {
         "title": "Users",
@@ -788,6 +791,10 @@
     "savedSuccessfully": "Preferences saved",
     "failedToSave": "Failed to save preferences",
     "searchPreferences": "Search preferences...",
+    "sidebar": {
+      "user": "User",
+      "preferences": "Preferences"
+    },
     "profile": {
       "title": "Profile",
       "description": "Manage your account details.",
@@ -877,23 +884,25 @@
       "books": {
         "title": "Books",
         "sections": {
-          "gridCover": {
-            "title": "Grid covers",
-            "description": "How book covers are shown in the grid.",
-            "label": "Cover display",
-            "hint": "Both shows the e-book and audiobook covers when a book has them.",
-            "options": {
+          "gridDisplay": {
+            "title": "Grid display",
+            "description": "How books are shown in the library grid.",
+            "coverLabel": "Cover display",
+            "coverHint": "Both shows the e-book and audiobook covers when a book has them.",
+            "coverOptions": {
               "auto": "Both covers",
               "ebook": "E-book only",
               "audiobook": "Audiobook only"
-            }
-          },
-          "gridSize": {
-            "title": "Grid size",
-            "description": "How large book covers appear in the grid.",
-            "label": "Card size",
-            "hint": "Smaller fits more books per row.",
-            "options": {
+            },
+            "alignmentLabel": "Double cover style",
+            "alignmentHint": "Controls whether the two covers appear tilted or straight.",
+            "alignmentOptions": {
+              "auto": "Tilted when unsynced",
+              "straight": "Always straight"
+            },
+            "sizeLabel": "Card size",
+            "sizeHint": "Smaller fits more books per row.",
+            "sizeOptions": {
               "smallest": "Smallest",
               "small": "Small",
               "medium": "Medium",
@@ -902,7 +911,7 @@
             }
           },
           "detail": {
-            "title": "Book display",
+            "title": "Details display",
             "description": "How a book is shown on its details page.",
             "display": {
               "label": "Display",

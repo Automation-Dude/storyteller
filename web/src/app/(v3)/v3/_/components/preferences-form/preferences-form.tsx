@@ -32,6 +32,7 @@ import {
 import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { cn } from "@v3/_/lib/utils"
 
 import { type User } from "@/apiModels"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
@@ -49,11 +50,11 @@ import { GeneralTab } from "./general-tab"
 import { ProfileTab } from "./profile-tab"
 import { type IsMatch, SearchContext } from "./shared"
 import { type PreferenceTab, type SectionKeywords, type Tab } from "./tabs"
-import { cn } from "@v3/_/lib/utils"
 
 const SIDEBAR_WIDTH = 200
 
 const formTabs: Tab[] = ["general", "appearance", "books"]
+const userTabs: Tab[] = ["profile"]
 
 type SidebarTabDef = {
   value: Tab
@@ -188,14 +189,13 @@ export function PreferencesForm({
   const filteredTabs = matchingTabs
     ? allTabs.filter(
         (tab) =>
-          tab.value === "profile" ||
+          userTabs.includes(tab.value) ||
           matchingTabs.has(tab.value as PreferenceTab),
       )
     : allTabs
 
-  const isFormTab = formTabs.includes(activeTab)
   const activeTabDef = allTabs.find((t) => t.value === activeTab)
-  const headerTitle = t("title")
+  const showSaveButton = activeTab !== "profile"
 
   const tabContent = (
     <>
@@ -213,24 +213,8 @@ export function PreferencesForm({
     </>
   )
 
-  const showSaveButton = activeTab !== "profile"
-
   const headerActions = (
     <div className="flex items-center gap-3">
-      {canUpdateSettings && (
-        <Button
-          size="sm"
-          variant="link"
-          nativeButton={false}
-          render={
-            <V3Link href="/settings?tab=library">
-              <IconSettings className="h-4 w-4" />
-              {t("settingsPage")}
-            </V3Link>
-          }
-        />
-      )}
-
       {showSaveButton && (
         <Button
           type="submit"
@@ -245,42 +229,20 @@ export function PreferencesForm({
     </div>
   )
 
-  const searchBar = isFormTab ? (
-    <div className="shrink-0 px-4 pb-2">
-      <div className="relative">
-        <IconSearch className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <Input
-          type="text"
-          placeholder={t("searchPreferences")}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-9 pl-9"
-        />
-
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery("")}
-            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-          >
-            <IconX className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    </div>
-  ) : null
-
   const sidebarContent = (
     <PreferencesSidebar
       tabs={filteredTabs}
       activeTab={activeTab}
       onTabChange={setActiveTabEvent}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      canUpdateSettings={canUpdateSettings ?? false}
     />
   )
 
   const contentArea = (
     <SearchContext.Provider value={{ query: searchQuery, isMatch }}>
-      {isFormTab ? (
+      {formTabs.includes(activeTab) ? (
         <form
           id="preferences-form"
           onSubmit={form.handleSubmit(onSubmit, onInvalid)}
@@ -301,7 +263,7 @@ export function PreferencesForm({
           <PageHeader>
             <SiteHeader
               breadcrumbs={[
-                { label: headerTitle },
+                { label: t("title") },
                 ...(activeTabDef ? [{ label: activeTabDef.label }] : []),
               ]}
               actions={
@@ -331,9 +293,7 @@ export function PreferencesForm({
             />
           </PageHeader>
 
-          {searchBar}
-
-          {contentArea}
+          <div className="min-h-0 flex-1 overflow-hidden">{contentArea}</div>
         </div>
       )
     }
@@ -341,7 +301,7 @@ export function PreferencesForm({
     return (
       <div className="flex h-screen flex-col">
         <PageHeader>
-          <SiteHeader breadcrumbs={[{ label: headerTitle }]} />
+          <SiteHeader breadcrumbs={[{ label: t("title") }]} />
         </PageHeader>
 
         <div className="flex-1 overflow-y-auto">{sidebarContent}</div>
@@ -359,8 +319,8 @@ export function PreferencesForm({
             breadcrumbs={[
               {
                 render: (
-                  <h1 className="font-heading text-foreground truncate text-2xl font-normal">
-                    {headerTitle}
+                  <h1 className="font-heading text-foreground truncate text-lg font-medium">
+                    {activeTabDef?.label ?? t("title")}
                   </h1>
                 ),
               },
@@ -369,9 +329,7 @@ export function PreferencesForm({
           />
         </PageHeader>
 
-        {searchBar}
-
-        {contentArea}
+        <div className="min-h-0 flex-1 overflow-hidden">{contentArea}</div>
       </PageMain>
     </PageLayout>
   )
@@ -381,31 +339,145 @@ function PreferencesSidebar({
   tabs,
   activeTab,
   onTabChange,
+  searchQuery,
+  onSearchChange,
+  canUpdateSettings,
+}: {
+  tabs: SidebarTabDef[]
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  canUpdateSettings: boolean
+}) {
+  const t = useTranslation("PreferencesPage")
+
+  const userSidebarTabs = tabs.filter((tab) => userTabs.includes(tab.value))
+  const prefSidebarTabs = tabs.filter((tab) => formTabs.includes(tab.value))
+
+  return (
+    <ScrollArea className="flex h-full flex-col">
+      <div className="flex flex-col gap-4 px-2 pt-3 pb-3">
+        {userSidebarTabs.length > 0 && (
+          <SidebarGroup
+            label={t("sidebar.user")}
+            tabs={userSidebarTabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
+        )}
+
+        {prefSidebarTabs.length > 0 && (
+          <div>
+            <p className="text-muted-foreground mb-1.5 px-2 text-xs font-medium tracking-wider uppercase">
+              {t("sidebar.preferences")}
+            </p>
+
+            <div className="mb-2 px-1">
+              <div className="relative">
+                <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                <Input
+                  type="text"
+                  placeholder={t("searchPreferences")}
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="h-7 pr-7 pl-8 text-xs"
+                />
+
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => onSearchChange("")}
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
+                  >
+                    <IconX className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <SidebarTabList
+              tabs={prefSidebarTabs}
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+            />
+          </div>
+        )}
+      </div>
+
+      {canUpdateSettings && (
+        <div className="border-border mt-auto border-t px-3 py-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            className="text-muted-foreground hover:text-foreground w-full justify-start gap-2"
+            render={
+              <V3Link href="/settings?tab=library">
+                <IconSettings className="h-4 w-4" />
+                {t("settingsPage")}
+              </V3Link>
+            }
+          />
+        </div>
+      )}
+    </ScrollArea>
+  )
+}
+
+function SidebarGroup({
+  label,
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  label: string
+  tabs: SidebarTabDef[]
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+}) {
+  return (
+    <div>
+      <p className="text-muted-foreground mb-1 px-2 text-xs font-medium tracking-wider uppercase">
+        {label}
+      </p>
+
+      <SidebarTabList
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+      />
+    </div>
+  )
+}
+
+function SidebarTabList({
+  tabs,
+  activeTab,
+  onTabChange,
 }: {
   tabs: SidebarTabDef[]
   activeTab: Tab
   onTabChange: (tab: Tab) => void
 }) {
   return (
-    <ScrollArea className="flex h-full flex-col">
-      <div className="flex flex-col gap-0.5 px-2 pt-3 pb-3">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => onTabChange(tab.value)}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-              activeTab === tab.value
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
-            )}
-          >
-            <tab.icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-    </ScrollArea>
+    <div className="flex flex-col gap-0.5">
+      {tabs.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onTabChange(tab.value)}
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+            activeTab === tab.value
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+              : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+          )}
+        >
+          <tab.icon className="h-4 w-4 shrink-0" />
+          <span className="truncate">{tab.label}</span>
+        </button>
+      ))}
+    </div>
   )
 }

@@ -27,7 +27,7 @@ function tx(p: { x: string; scale: number; rotateX?: number }) {
 
 function transformKeyframes(
   target: Pos,
-  peak: { x: string; scale: number; rotateX?: string },
+  peak: { x: string; scale: number; rotateX?: number },
   shuffle: boolean,
 ): Keyframe[] {
   if (!shuffle) return [{ transform: tx(target) }]
@@ -41,14 +41,17 @@ export function BookDoubleCover({
   book,
   width = 300,
   disableHover = false,
+  forceAligned,
   onLoadingChange,
 }: {
   book: BookWithRelations
   width?: number
   disableHover?: boolean
+  forceAligned?: boolean
   onLoadingChange?: (loading: boolean) => void
 }) {
-  const isAligned = book.readaloud?.status === "ALIGNED"
+  const bookIsAligned = book.readaloud?.status === "ALIGNED"
+  const isAligned = forceAligned ?? bookIsAligned
 
   const STATES: Record<CoverState, { audiobook: Pos; ebook: Pos }> = {
     idle: {

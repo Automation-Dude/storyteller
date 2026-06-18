@@ -21,17 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   BookDetailDisplays,
+  DoubleCoverAlignments,
   GridCardSizes,
   GridCoverDisplays,
   RatingIcons,
 } from "@/database/userPreferencesTypes"
 
-import { CoverStylePreview } from "./cover-style-preview"
+import { DetailDisplayPreview, GridCoverPreview } from "./cover-style-preview"
 import {
   type PreferencesFormType,
   PreferencesSection,
@@ -40,7 +40,6 @@ import {
 import { RatingInput } from "../books/RatingInput"
 import { MultidimensionalRating } from "../books/BookDetails/sections/MultidimensionalRating"
 
-// matches the preset angles in Book3D's VIEWS array
 const VIEW_KEYS = ["cover", "spine", "pages", "back"] as const
 
 export function BooksTab({ form }: { form: PreferencesFormType }) {
@@ -48,12 +47,17 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
 
   const gridCoverOptions = GridCoverDisplays.map((key) => ({
     value: key,
-    label: t(`gridCover.options.${key}`),
+    label: t(`gridDisplay.coverOptions.${key}`),
+  }))
+
+  const alignmentOptions = DoubleCoverAlignments.map((key) => ({
+    value: key,
+    label: t(`gridDisplay.alignmentOptions.${key}`),
   }))
 
   const gridSizeOptions = GridCardSizes.map((key) => ({
     value: key,
-    label: t(`gridSize.options.${key}`),
+    label: t(`gridDisplay.sizeOptions.${key}`),
   }))
 
   const detailDisplayOptions = BookDetailDisplays.map((key) => ({
@@ -70,13 +74,17 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
     control: form.control,
     name: "gridCoverDisplay",
   })
+
+  const doubleCoverAlignment = useWatch({
+    control: form.control,
+    name: "doubleCoverAlignment",
+  })
+
   const bookDetailDisplay = useWatch({
     control: form.control,
     name: "bookDetailDisplay",
   })
 
-  // keyName "_key" so react-hook-form's react key doesn't clobber our stable
-  // dimension id (which links recorded per-book scores)
   const {
     fields: dimensions,
     append: appendDimension,
@@ -94,55 +102,72 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
 
   return (
     <div className="space-y-6">
-      <PreferencesSection tab="books" section="gridCover">
+      <PreferencesSection tab="books" section="gridDisplay">
         <Card>
           <CardHeader>
-            <CardTitle>{t("gridCover.title")}</CardTitle>
-            <CardDescription>{t("gridCover.description")}</CardDescription>
+            <CardTitle>{t("gridDisplay.title")}</CardTitle>
+            <CardDescription>{t("gridDisplay.description")}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Controller
-              name="gridCoverDisplay"
-              control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <FieldLabel>{t("gridCover.label")}</FieldLabel>
-                  <FieldDescription>{t("gridCover.hint")}</FieldDescription>
-                  <SegmentedControl
-                    value={field.value}
-                    onChange={(value) => {
-                      field.onChange(value)
-                    }}
-                    options={gridCoverOptions}
+          <CardContent className="space-y-6">
+            <div className="flex gap-6">
+              <div className="flex-1 space-y-6">
+                <Controller
+                  name="gridCoverDisplay"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel>{t("gridDisplay.coverLabel")}</FieldLabel>
+                      <FieldDescription>
+                        {t("gridDisplay.coverHint")}
+                      </FieldDescription>
+                      <SegmentedControl
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                        options={gridCoverOptions}
+                      />
+                    </Field>
+                  )}
+                />
+
+                {gridCoverDisplay === "auto" && (
+                  <Controller
+                    name="doubleCoverAlignment"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel>
+                          {t("gridDisplay.alignmentLabel")}
+                        </FieldLabel>
+                        <FieldDescription>
+                          {t("gridDisplay.alignmentHint")}
+                        </FieldDescription>
+                        <SegmentedControl
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
+                          options={alignmentOptions}
+                        />
+                      </Field>
+                    )}
                   />
-                </Field>
-              )}
-            />
+                )}
+              </div>
 
-            <CoverStylePreview display={gridCoverDisplay} />
-          </CardContent>
-        </Card>
-      </PreferencesSection>
+              <GridCoverPreview
+                display={gridCoverDisplay}
+                alignment={doubleCoverAlignment}
+              />
+            </div>
 
-      <PreferencesSection tab="books" section="gridSize">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("gridSize.title")}</CardTitle>
-            <CardDescription>{t("gridSize.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
             <Controller
               name="gridCardSize"
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel>{t("gridSize.label")}</FieldLabel>
-                  <FieldDescription>{t("gridSize.hint")}</FieldDescription>
+                  <FieldLabel>{t("gridDisplay.sizeLabel")}</FieldLabel>
+                  <FieldDescription>{t("gridDisplay.sizeHint")}</FieldDescription>
                   <SegmentedControl
                     value={field.value}
-                    onChange={(value) => {
-                      field.onChange(value)
-                    }}
+                    onChange={(value) => field.onChange(value)}
                     options={gridSizeOptions}
                   />
                 </Field>
@@ -159,55 +184,63 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
             <CardDescription>{t("detail.description")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <Controller
-              name="bookDetailDisplay"
-              control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <FieldLabel>{t("detail.display.label")}</FieldLabel>
-                  <FieldDescription>
-                    {t("detail.display.hint")}
-                  </FieldDescription>
-                  <SegmentedControl
-                    value={field.value}
-                    onChange={(value) => {
-                      field.onChange(value)
-                    }}
-                    options={detailDisplayOptions}
-                  />
-                </Field>
-              )}
-            />
+            <div className="flex gap-6">
+              <div className="flex-1 space-y-6">
+                <Controller
+                  name="bookDetailDisplay"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel>{t("detail.display.label")}</FieldLabel>
+                      <FieldDescription>
+                        {t("detail.display.hint")}
+                      </FieldDescription>
+                      <SegmentedControl
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                        options={detailDisplayOptions}
+                      />
+                    </Field>
+                  )}
+                />
 
-            {bookDetailDisplay === "3d" && (
-              <Controller
-                name="bookDetail3dView"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>{t("detail.view.label")}</FieldLabel>
-                    <FieldDescription>{t("detail.view.hint")}</FieldDescription>
-                    <Select
-                      value={field.value === null ? "0" : String(field.value)}
-                      onValueChange={(value) => {
-                        field.onChange(Number(value))
-                      }}
-                    >
-                      <SelectTrigger className="w-60">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {VIEW_KEYS.map((key, index) => (
-                          <SelectItem key={key} value={String(index)}>
-                            {t(`detail.view.options.${key}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
+                {bookDetailDisplay === "3d" && (
+                  <Controller
+                    name="bookDetail3dView"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel>{t("detail.view.label")}</FieldLabel>
+                        <FieldDescription>
+                          {t("detail.view.hint")}
+                        </FieldDescription>
+                        <Select
+                          value={
+                            field.value === null ? "0" : String(field.value)
+                          }
+                          onValueChange={(value) => {
+                            field.onChange(Number(value))
+                          }}
+                        >
+                          <SelectTrigger className="w-60">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {VIEW_KEYS.map((key, index) => (
+                              <SelectItem key={key} value={String(index)}>
+                                {t(`detail.view.options.${key}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    )}
+                  />
                 )}
-              />
-            )}
+              </div>
+
+              <DetailDisplayPreview display={bookDetailDisplay} />
+            </div>
           </CardContent>
         </Card>
       </PreferencesSection>
@@ -228,9 +261,7 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                   <FieldDescription>{t("ratingIcon.hint")}</FieldDescription>
                   <SegmentedControl
                     value={field.value}
-                    onChange={(value) => {
-                      field.onChange(value)
-                    }}
+                    onChange={(value) => field.onChange(value)}
                     options={ratingIconOptions}
                   />
                   <div className="mt-4 flex flex-col gap-2">
@@ -247,6 +278,7 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                 </Field>
               )}
             />
+
             <Field>
               <FieldLabel>{t("ratingDimensions.label")}</FieldLabel>
               <FieldDescription>{t("ratingDimensions.hint")}</FieldDescription>
@@ -269,27 +301,25 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                       variant="ghost"
                       size="icon"
                       aria-label={t("ratingDimensions.remove")}
-                      onClick={() => {
-                        removeDimension(index)
-                      }}
+                      onClick={() => removeDimension(index)}
                     >
                       <IconTrash className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
+
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   className="self-start"
-                  onClick={() => {
-                    appendDimension({ id: uuidv4(), label: "" })
-                  }}
+                  onClick={() => appendDimension({ id: uuidv4(), label: "" })}
                 >
                   <IconPlus className="mr-1 h-4 w-4" />
                   {t("ratingDimensions.add")}
                 </Button>
               </div>
+
               <div className="mt-4">
                 <span className="text-muted-foreground text-xs font-medium">
                   Preview

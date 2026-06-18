@@ -51,6 +51,7 @@ import {
   useSettingsForm,
 } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"
+import { ConfirmDialog, useConfirmAction } from "../ui/confirm-dialog"
 
 export function ProcessingTab() {
   const { form } = useSettingsForm()
@@ -770,7 +771,26 @@ function ReadaloudSection() {
   const permissions = usePermissions()
   const [clearBooksCache, { isLoading: isClearingCache }] =
     useClearBooksCacheMutation()
-  const [clearCacheConfirmOpen, setClearCacheConfirmOpen] = useState(false)
+  const {
+    isLoading,
+    confirm: clearCacheConfirm,
+    dialogProps: clearCacheDialogProps,
+  } = useConfirmAction({
+    title: tr("clearCacheConfirmTitle"),
+    description: tr("clearCacheConfirmDescription"),
+    confirmLabel: tr("clearCacheConfirm"),
+    variant: "destructive",
+    onConfirm: () => {
+      void clearBooksCache({})
+        .unwrap()
+        .then(() => {
+          toast.success(tr("clearCacheSuccess"))
+        })
+        .catch(() => {
+          toast.error(tr("clearCacheError"))
+        })
+    },
+  })
 
   const locationType = useWatch({
     control: form.control,
@@ -894,12 +914,10 @@ function ReadaloudSection() {
                 type="button"
                 variant="destructive"
                 size="sm"
-                disabled={isClearingCache}
-                onClick={() => {
-                  setClearCacheConfirmOpen(true)
-                }}
+                disabled={isLoading}
+                onClick={clearCacheConfirm}
               >
-                {tr("clearCacheNow")}
+                {isLoading ? "..." : tr("clearCacheNow")}
               </Button>
               <FieldDescription>
                 {tr("clearCacheNowDescription")}
@@ -907,48 +925,7 @@ function ReadaloudSection() {
             </div>
           )}
 
-          <Dialog
-            open={clearCacheConfirmOpen}
-            onOpenChange={setClearCacheConfirmOpen}
-          >
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{tr("clearCacheConfirmTitle")}</DialogTitle>
-                <DialogDescription>
-                  {tr("clearCacheConfirmDescription")}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <DialogClose
-                  render={
-                    <Button variant="ghost" size="sm">
-                      {tr("clearCacheCancel")}
-                    </Button>
-                  }
-                />
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={isClearingCache}
-                  onClick={() => {
-                    void clearBooksCache({})
-                      .unwrap()
-                      .then(() => {
-                        toast.success(tr("clearCacheSuccess"))
-                      })
-                      .catch(() => {
-                        toast.error(tr("clearCacheError"))
-                      })
-                      .finally(() => {
-                        setClearCacheConfirmOpen(false)
-                      })
-                  }}
-                >
-                  {tr("clearCacheConfirm")}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <ConfirmDialog {...clearCacheDialogProps} />
         </CardContent>
       </Card>
     </SettingsSection>
