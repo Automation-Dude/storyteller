@@ -7,16 +7,13 @@ import {
 } from "./BookDetails/sections/useCoverColors"
 import { cn } from "@/cn"
 
-// the seeded "finished" reading status. a book marked read counts as fully
-// read regardless of any saved position (it may have none).
+// TODO: change this when we allow users to change the status names
 const READ_STATUS_NAME = "Read"
 
 export function isBookFinished(book: BookWithRelations): boolean {
   return book.status?.name === READ_STATUS_NAME
 }
 
-// reading progress as a 0-1 fraction, or null when there's nothing to show.
-// a finished book always reads as 100%.
 export function getReadingProgress(book: BookWithRelations): number | null {
   if (isBookFinished(book)) return 1
   return book.position?.locator.locations?.totalProgression ?? null
@@ -35,12 +32,7 @@ export function ProgressDisplayBar({
   const { showAccent } = useColorPreferences()
 
   return (
-    <div
-      className={cn(
-        "absolute right-0.5 bottom-0 left-0.5 h-1 overflow-hidden rounded-b-lg bg-black/10",
-        className,
-      )}
-    >
+    <div className={cn("h-1 w-full bg-black/5", className)}>
       <div
         className="h-full transition-all"
         style={{

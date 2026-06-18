@@ -156,11 +156,15 @@ export const BookCard = memo(function BookCard({
             of the frame on hover without the card rounding appearing to break */}
         <div
           className={cn(
-            "bg-muted absolute inset-0 overflow-hidden rounded-lg",
+            "bg-muted absolute inset-0 flex flex-col-reverse overflow-hidden rounded-lg",
             coverLoading && "animate-pulse",
           )}
           style={showTint ? { background: tint(primary, 0.36) } : undefined}
-        />
+        >
+          {progress !== null && progress > 0 && (
+            <ProgressDisplayBar progress={progress} book={book} />
+          )}
+        </div>
 
         <div
           className={cn(
@@ -181,7 +185,7 @@ export const BookCard = memo(function BookCard({
         {showCheckbox && (
           <div
             className={cn(
-              "absolute top-2 left-2 z-30 transition-opacity",
+              "absolute top-4.5 left-3 z-30 transition-opacity",
               !isBookSelected &&
                 !isSelecting &&
                 "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
@@ -203,7 +207,7 @@ export const BookCard = memo(function BookCard({
         )}
 
         {isSynced && (
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-4.5 right-3">
             <div
               className="flex size-5 items-center justify-center rounded-full shadow-md"
               style={{
@@ -213,9 +217,6 @@ export const BookCard = memo(function BookCard({
               <IconReadaloud className="size-6 text-white" />
             </div>
           </div>
-        )}
-        {progress !== null && progress > 0 && (
-          <ProgressDisplayBar progress={progress} book={book} />
         )}
       </div>
 

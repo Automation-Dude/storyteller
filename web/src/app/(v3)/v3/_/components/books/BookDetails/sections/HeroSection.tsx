@@ -254,7 +254,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
         <ProgressDisplayBar
           progress={getReadingProgress(book) ?? 0}
           book={book}
-          className="right-0 left-0 rounded-none"
+          className="absolute right-0 bottom-0 left-0 rounded-none"
         />
       )}
     </div>
