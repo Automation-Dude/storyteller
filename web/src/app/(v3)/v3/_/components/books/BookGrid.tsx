@@ -119,13 +119,13 @@ export function BookGrid({
   // mobile shows one book per row regardless of width (and has no side panel).
   const columnCount = useMemo(() => {
     if (containerWidth === 0) return 0
-    if (isMobile) return 1
+    if (isMobile) return 2
     return Math.max(1, Math.floor((containerWidth + GAP) / (cardWidth + GAP)))
   }, [containerWidth, isMobile, cardWidth])
 
   // cards are a fixed width, so row height is constant per column count.
   const rowHeight = useMemo(() => {
-    const colWidth = isMobile ? containerWidth || cardWidth : cardWidth
+    const colWidth = isMobile ? containerWidth / 2 || cardWidth : cardWidth
     return colWidth * COVER_ASPECT + TEXT_BLOCK_HEIGHT + GAP
   }, [isMobile, containerWidth, cardWidth])
 
@@ -283,7 +283,7 @@ export function BookGrid({
                   className="grid gap-4 pb-4"
                   style={{
                     gridTemplateColumns: isMobile
-                      ? "minmax(0, 1fr)"
+                      ? `repeat(${columnCount}, minmax(0, 1fr))`
                       : `repeat(${columnCount}, ${cardWidth}px)`,
                   }}
                 >

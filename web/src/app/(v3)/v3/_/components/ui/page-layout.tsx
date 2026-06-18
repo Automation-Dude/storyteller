@@ -200,6 +200,9 @@ function PagePanel({
 export const MIN_SIDEBAR_WIDTH = 180
 export const MAX_SIDEBAR_WIDTH = 480
 
+/**
+ * the sidebar for libraries showing all available tags/collections/shelves etc
+ */
 function PageSidebar({
   width,
   onWidthChange,

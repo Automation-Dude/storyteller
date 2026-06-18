@@ -290,29 +290,31 @@ export function BookDetailDrawer({
 }) {
   return (
     <Drawer.Root
+      modal={false}
       open={!!selectedBookUuid}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
 
-        <Drawer.Content className="bg-background fixed right-0 bottom-0 left-0 z-50 flex max-h-[85svh] flex-col overflow-clip rounded-t-2xl">
-          <div className="bg-muted-foreground/20 mx-auto mt-4 h-1.5 w-12 shrink-0 rounded-full" />
+        <Drawer.Content className="bg-background fixed right-0 bottom-0 left-0 z-40 flex h-[85svh] flex-col overflow-hidden rounded-t-2xl">
+          <div
+            id="book-detail-drawer-handle"
+            className="bg-muted-foreground/20 relative z-10 mx-auto mt-4 -mb-6 h-1.5 w-12 shrink-0 rounded-full"
+          />
 
           <Drawer.Title className="sr-only">Book Details</Drawer.Title>
 
-          <div className="scroll-y flex-1 px-0 pb-8">
-            {selectedBookUuid && (
-              <DynamicBookDetailsContent
-                uuid={selectedBookUuid as UUID}
-                initialBook={selectedBook}
-                compact
-                onClose={onClose}
-              />
-            )}
-          </div>
+          {selectedBookUuid && (
+            <DynamicBookDetailsContent
+              uuid={selectedBookUuid as UUID}
+              initialBook={selectedBook}
+              compact
+              onClose={onClose}
+            />
+          )}
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>

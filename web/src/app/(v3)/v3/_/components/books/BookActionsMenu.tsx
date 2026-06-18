@@ -49,7 +49,7 @@ export function BookActionsMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger
           render={
             <Button variant="ghost" size="icon-sm">
@@ -59,7 +59,7 @@ export function BookActionsMenu({
           }
         />
 
-        <DropdownMenuContent align="end" className="min-w-48">
+        <DropdownMenuContent align="end" className="z-100 min-w-48">
           {showOpenFullPage && (
             <DropdownMenuItem
               render={

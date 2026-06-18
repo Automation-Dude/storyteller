@@ -192,14 +192,14 @@ function BookDetailsContentInner({
       onEditingChange={handleEditingChange}
     >
       <article
-        className="scroll-y bg-background relative flex h-full flex-1 flex-col"
+        className="bg-background relative h-full w-full"
         style={colorVars}
       >
         {!compact && <BookPageHeader />}
         {compact && <BookPanelHeader onClose={onClose} />}
         <BookEditBar />
 
-        <div className="@container-size @container/book flex-1 overflow-y-auto">
+        <div className="@container-size scroll-y @container/book h-full flex-1">
           <div
             className={cn(
               "flex flex-col gap-4",
@@ -328,7 +328,7 @@ function BookEditBar() {
   return (
     <ActionBar
       show={show}
-      className="absolute bottom-4 left-1/2 -translate-x-1/2"
+      className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2"
     >
       <span className="text-muted-foreground px-2 text-xs">
         {isSaving ? t("saving") : t("editing")}
@@ -383,9 +383,10 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
 
   return (
     <div
-      className="flex h-10 items-center justify-between border-b px-4 py-2"
+      className="sticky top-0 z-50 flex h-10 items-center justify-between border-b px-4 py-2"
       style={{
-        backgroundColor: showTint ? tint(primary, 0.5) : undefined,
+        backgroundColor: `color-mix(in oklab, ${primary.solid} 50%, var(--background))`,
+        // : undefined,
         color: showAccent ? primary.onColor : undefined,
         ...(isSelected && {
           borderColor: showAccent ? cAccent.solid : "var(--primary)",
