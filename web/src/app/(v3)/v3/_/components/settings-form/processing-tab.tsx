@@ -31,7 +31,9 @@ import { Input } from "@v3/_/components/ui/input"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
@@ -359,25 +361,37 @@ function WhisperSettings() {
   )
 
   const whisperModelOptions = [
-    { value: "tiny", label: "tiny" },
-    { value: "tiny.en", label: "tiny.en" },
-    { value: "tiny-q5_1", label: "tiny-q5_1" },
-    { value: "base", label: "base" },
-    { value: "base.en", label: "base.en" },
-    { value: "base-q5_1", label: "base-q5_1" },
-    { value: "small", label: "small" },
-    { value: "small.en", label: "small.en" },
-    { value: "small-q5_1", label: "small-q5_1" },
-    { value: "medium", label: "medium" },
-    { value: "medium.en", label: "medium.en" },
-    { value: "medium-q5_0", label: "medium-q5_0" },
-    { value: "large-v1", label: "large-v1" },
-    { value: "large-v2", label: "large-v2" },
-    { value: "large-v2-q5_0", label: "large-v2-q5_0" },
-    { value: "large-v3", label: "large-v3" },
-    { value: "large-v3-q5_0", label: "large-v3-q5_0" },
-    { value: "large-v3-turbo", label: "large-v3-turbo" },
-    { value: "large-v3-turbo-q5_0", label: "large-v3-turbo-q5_0" },
+    {
+      group: "Recommended for non-English",
+      options: [{ value: "large-v3-turbo", label: "large-v3-turbo" }],
+    },
+    {
+      group: "Recommended for English",
+      options: [{ value: "tiny.en", label: "tiny.en" }],
+    },
+
+    {
+      group: "Others",
+      options: [
+        { value: "tiny", label: "tiny" },
+        { value: "tiny-q5_1", label: "tiny-q5_1" },
+        { value: "base", label: "base" },
+        { value: "base.en", label: "base.en" },
+        { value: "base-q5_1", label: "base-q5_1" },
+        { value: "small", label: "small" },
+        { value: "small.en", label: "small.en" },
+        { value: "small-q5_1", label: "small-q5_1" },
+        { value: "medium", label: "medium" },
+        { value: "medium.en", label: "medium.en" },
+        { value: "medium-q5_0", label: "medium-q5_0" },
+        { value: "large-v1", label: "large-v1" },
+        { value: "large-v2", label: "large-v2" },
+        { value: "large-v2-q5_0", label: "large-v2-q5_0" },
+        { value: "large-v3", label: "large-v3" },
+        { value: "large-v3-q5_0", label: "large-v3-q5_0" },
+        { value: "large-v3-turbo-q5_0", label: "large-v3-turbo-q5_0" },
+      ],
+    },
   ]
 
   const whisperCpuFallbackOptions = [
@@ -394,7 +408,9 @@ function WhisperSettings() {
         description={t("whisperModelDescription")}
         render={(field, fieldState, isLocked) => (
           <Select
-            items={whisperModelOptions}
+            items={whisperModelOptions.flatMap((option) =>
+              option.options.map(({ value, label }) => ({ value, label })),
+            )}
             value={field.value}
             onValueChange={field.onChange}
             disabled={isLocked}
@@ -404,10 +420,15 @@ function WhisperSettings() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {whisperModelOptions.map(({ value, label }) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
+              {whisperModelOptions.map(({ group, options }) => (
+                <SelectGroup key={group}>
+                  <SelectLabel>{group}</SelectLabel>
+                  {options.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
