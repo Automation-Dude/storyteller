@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { ViewKinds } from "@/database/userPreferencesTypes"
@@ -45,7 +45,7 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
   }))
 
   return (
-    <TabsContent value="general" className="space-y-6">
+    <div className="space-y-6">
       <PreferencesSection tab="general" section="language">
         <Card>
           <CardHeader>
@@ -162,6 +162,6 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
           </CardContent>
         </Card>
       </PreferencesSection>
-    </TabsContent>
+    </div>
   )
 }

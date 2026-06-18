@@ -18,6 +18,7 @@ type RatingInputProps = {
   size?: "sm" | "md" | "lg"
   // overrides the default fill color (e.g. a cover-derived accent)
   color?: string
+  iconOverride?: React.ReactNode
 }
 
 const sizeClasses = {
@@ -32,13 +33,16 @@ export function RatingInput({
   readOnly = false,
   size = "md",
   color,
+  iconOverride,
 }: RatingInputProps) {
   const isMobile = useIsMobile()
   const { ratingIcon } = useUserPreferences()
   const [hoverValue, setHoverValue] = useState<number | null>(null)
   const [isOpen, setIsOpen] = useState(false)
 
-  const Icon = ratingIcon === "heart" ? IconHeart : IconStar
+  const icon = iconOverride ?? ratingIcon
+
+  const Icon = icon === "heart" ? IconHeart : IconStar
   const displayValue = hoverValue ?? value ?? 0
 
   // a cover color tints both the fill and the outline; without one we keep the
@@ -202,7 +206,11 @@ type RatingDisplayProps = {
   color?: string
 }
 
-export function RatingDisplay({ rating, size = "md", color }: RatingDisplayProps) {
+export function RatingDisplay({
+  rating,
+  size = "md",
+  color,
+}: RatingDisplayProps) {
   return (
     <RatingInput
       value={rating}

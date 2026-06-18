@@ -499,6 +499,8 @@ export const api = createApi({
         if (queryArg.mediaFilter && queryArg.mediaFilter !== "all")
           params.set("mediaFilter", queryArg.mediaFilter)
         if (queryArg.statusFilter) params.set("status", queryArg.statusFilter)
+        if (queryArg.filter)
+          params.set("filter", JSON.stringify(queryArg.filter))
         return `/books?${params.toString()}`
       },
       providesTags: ["Books"],
@@ -1700,6 +1702,33 @@ export const api = createApi({
         body,
       }),
     }),
+
+    // logs
+    getLogs: build.query<
+      { lines: unknown[]; availableDates: string[] },
+      { lines?: number; search?: string; level?: string; date?: string }
+    >({
+      query: ({ lines, search, level, date }) => {
+        const params = new URLSearchParams()
+        if (lines) params.set("lines", String(lines))
+        if (search) params.set("search", search)
+        if (level) params.set("level", level)
+        if (date) params.set("date", date)
+        return `/logs?${params.toString()}`
+      },
+    }),
+
+    getLogLevel: build.query<{ level: string }, void>({
+      query: () => "/logs/level",
+    }),
+
+    setLogLevel: build.mutation<{ level: string }, { level: string }>({
+      query: (body) => ({
+        url: "/logs/level",
+        method: "PUT",
+        body,
+      }),
+    }),
   }),
 })
 
@@ -1804,6 +1833,9 @@ export const {
   useMergeCreatorsMutation,
   useMergeSeriesMutation,
   useMergeCollectionsMutation,
+  useGetLogsQuery,
+  useGetLogLevelQuery,
+  useSetLogLevelMutation,
 } = api
 
 export function getDownloadUrl(
@@ -1852,4 +1884,6 @@ export type ListBooksQueryArg = {
   series?: string | undefined
   mediaFilter?: MediaFilter | undefined
   statusFilter?: string | undefined
+  // ad-hoc filter tree (same shape as shelves), serialized as json in the query
+  filter?: ShelfFilter | undefined
 }

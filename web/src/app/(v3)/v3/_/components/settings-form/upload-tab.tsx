@@ -12,7 +12,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Switch } from "@v3/_/components/ui/switch"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
@@ -37,7 +37,7 @@ export function UploadTab({
   const isMaxUploadChunkSizeLocked = lockedSettings.has("maxUploadChunkSize")
 
   return (
-    <TabsContent value="upload" className="space-y-6">
+    <div className="space-y-6">
       <SettingsSection tab="upload" section="upload">
         <Card>
           <CardHeader>
@@ -105,6 +105,6 @@ export function UploadTab({
           </CardContent>
         </Card>
       </SettingsSection>
-    </TabsContent>
+    </div>
   )
 }

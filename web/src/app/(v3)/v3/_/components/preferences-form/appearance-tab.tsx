@@ -11,7 +11,7 @@ import {
 } from "@v3/_/components/ui/card"
 import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
 import { Slider } from "@v3/_/components/ui/slider"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { ColorModes } from "@/database/userPreferencesTypes"
@@ -39,7 +39,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
   })
 
   return (
-    <TabsContent value="appearance" className="space-y-6">
+    <div className="space-y-6">
       <PreferencesSection tab="appearance" section="accent">
         <Card>
           <CardHeader>
@@ -122,6 +122,6 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
           </CardContent>
         </Card>
       </PreferencesSection>
-    </TabsContent>
+    </div>
   )
 }

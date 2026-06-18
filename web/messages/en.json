@@ -441,6 +441,11 @@
     "failedToSaveSettings": "Failed to save settings",
     "searchSettings": "Search settings...",
     "formHasErrors": "{count, plural, one {# error} other {# errors}}",
+    "back": "Back",
+    "sidebar": {
+      "settings": "Settings",
+      "administration": "Administration"
+    },
     "changelog": {
       "title": "Changelog",
       "noChangelogEntriesFound": "No changelog entries found.",
@@ -709,6 +714,24 @@
           }
         }
       },
+      "changelog": {
+        "title": "Changelog"
+      },
+      "logs": {
+        "title": "Logs",
+        "noLogs": "No log entries found.",
+        "searchLogs": "Search logs...",
+        "allLevels": "All levels",
+        "wrapLines": "Toggle line wrapping",
+        "highlighting": "Toggle highlighting",
+        "hideTime": "Hide timestamps",
+        "showTime": "Show timestamps",
+        "lineCount": "{count} lines",
+        "enableDebug": "Enable debug logging",
+        "disableDebug": "Disable debug logging",
+        "follow": "Follow new logs",
+        "scrollToBottom": "Scroll to bottom"
+      },
       "users": {
         "title": "Users",
         "permissions": {
@@ -758,6 +781,7 @@
   },
   "PreferencesPage": {
     "title": "Preferences",
+    "back": "Back",
     "save": "Save",
     "settingsPage": "Global settings",
     "saving": "Saving...",
@@ -917,6 +941,10 @@
             "add": "Add dimension",
             "placeholder": "Dimension name",
             "remove": "Remove dimension"
+          },
+          "ratings": {
+            "title": "Ratings and Reviews",
+            "description": "Change how ratings and reviews display and work"
           }
         }
       }

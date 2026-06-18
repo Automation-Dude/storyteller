@@ -65,7 +65,7 @@ export function SegmentedControl<T extends string>({
   options: ReadonlyArray<{ value: T; label: string }>
 }) {
   return (
-    <div className="bg-muted inline-flex w-fit rounded-md p-0.5">
+    <div className="bg-muted flex max-w-fit flex-0 rounded-md p-0.5">
       {options.map((option) => (
         <Button
           key={option.value}
@@ -73,7 +73,7 @@ export function SegmentedControl<T extends string>({
           size="sm"
           variant={value === option.value ? "default" : "ghost"}
           className={cn(
-            "h-7 rounded-[min(var(--radius-md),8px)]",
+            "h-7 shrink rounded-[min(var(--radius-md),8px)]",
             value !== option.value && "text-muted-foreground",
           )}
           onClick={() => {

@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@v3/_/components/ui/card"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type ChangelogEntry } from "@/database/changelog"
@@ -110,7 +110,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
   }, [latestVersionData])
 
   return (
-    <TabsContent value="changelog" className="relative flex flex-col gap-4">
+    <div className="relative flex flex-col gap-4">
       <div className="bg-background sticky -top-2 z-10 flex flex-col gap-2 py-2 md:flex-row md:items-center md:justify-between">
         <p>
           {t("currentlyOn", {
@@ -157,6 +157,6 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
           </Button>
         </div>
       )}
-    </TabsContent>
+    </div>
   )
 }

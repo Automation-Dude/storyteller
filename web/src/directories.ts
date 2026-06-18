@@ -22,4 +22,6 @@ export const IMAGE_CACHE_DIR = join(DATA_DIR, "image-cache")
 
 export const CACHE_DIR = join(DATA_DIR, "cache")
 
+export const LOG_DIR = join(DATA_DIR, "logs")
+
 export const WHISPER_BUILD_DIR = join(process.cwd(), "whisper-builds")

@@ -17,7 +17,7 @@ import {
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Switch } from "@v3/_/components/ui/switch"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
@@ -36,7 +36,7 @@ export function OpdsTab() {
   const opdsUrl = safeUrl(webUrl, "/opds")
 
   return (
-    <TabsContent value="opds" className="space-y-6">
+    <div className="space-y-6">
       <SettingsSection tab="opds" section="opds">
         <Card>
           <CardHeader>
@@ -98,6 +98,6 @@ export function OpdsTab() {
           </CardContent>
         </Card>
       </SettingsSection>
-    </TabsContent>
+    </div>
   )
 }

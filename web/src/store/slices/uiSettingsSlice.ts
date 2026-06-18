@@ -1,16 +1,36 @@
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit"
 
+export type LogDisplayPrefs = {
+  wrapLines: boolean
+  highlighting: boolean
+  followMode: boolean
+  hideTime: boolean
+  lineCount: number
+  levelFilter: string
+}
+
 export type UISettings = {
   detailPanelWidth: number
   librarySidebarWidth: number
+  logDisplay: LogDisplayPrefs
 }
 
 const COOKIE_NAME = "st-ui"
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
+const defaultLogDisplay: LogDisplayPrefs = {
+  wrapLines: false,
+  highlighting: true,
+  followMode: true,
+  hideTime: false,
+  lineCount: 500,
+  levelFilter: "all",
+}
+
 const defaults: UISettings = {
   detailPanelWidth: 420,
   librarySidebarWidth: 280,
+  logDisplay: defaultLogDisplay,
 }
 
 export function parseCookie(cookieString: string): Partial<UISettings> | null {
@@ -75,7 +95,15 @@ export const uiSettingsSlice = createSlice({
 
   reducers: {
     initUISettings: (state, action: PayloadAction<Partial<UISettings>>) => {
-      return { ...defaults, ...state, ...action.payload }
+      const merged = { ...defaults, ...state, ...action.payload }
+
+      // ensure logDisplay is fully populated even if the cookie predates it
+      merged.logDisplay = {
+        ...defaultLogDisplay,
+        ...merged.logDisplay,
+      }
+
+      return merged
     },
 
     setDetailPanelWidth: (state, action: PayloadAction<number>) => {
@@ -85,6 +113,14 @@ export const uiSettingsSlice = createSlice({
 
     setLibrarySidebarWidth: (state, action: PayloadAction<number>) => {
       state.librarySidebarWidth = action.payload
+      saveToCookie(state)
+    },
+
+    setLogDisplayPrefs: (
+      state,
+      action: PayloadAction<Partial<LogDisplayPrefs>>,
+    ) => {
+      state.logDisplay = { ...state.logDisplay, ...action.payload }
       saveToCookie(state)
     },
   },
@@ -97,3 +133,6 @@ export const selectDetailPanelWidth = (state: { uiSettings: UISettings }) =>
 
 export const selectLibrarySidebarWidth = (state: { uiSettings: UISettings }) =>
   state.uiSettings.librarySidebarWidth
+
+export const selectLogDisplayPrefs = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.logDisplay

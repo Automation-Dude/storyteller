@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
@@ -37,6 +37,8 @@ import {
   PreferencesSection,
   SegmentedControl,
 } from "./shared"
+import { RatingInput } from "../books/RatingInput"
+import { MultidimensionalRating } from "../books/BookDetails/sections/MultidimensionalRating"
 
 // matches the preset angles in Book3D's VIEWS array
 const VIEW_KEYS = ["cover", "spine", "pages", "back"] as const
@@ -85,8 +87,13 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
     keyName: "_key",
   })
 
+  const primaryColor = useWatch({
+    control: form.control,
+    name: "accentColor",
+  })
+
   return (
-    <TabsContent value="books" className="space-y-6">
+    <div className="space-y-6">
       <PreferencesSection tab="books" section="gridCover">
         <Card>
           <CardHeader>
@@ -205,13 +212,13 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
         </Card>
       </PreferencesSection>
 
-      <PreferencesSection tab="books" section="ratingIcon">
+      <PreferencesSection tab="books" section="ratings">
         <Card>
           <CardHeader>
-            <CardTitle>{t("ratingIcon.title")}</CardTitle>
-            <CardDescription>{t("ratingIcon.description")}</CardDescription>
+            <CardTitle>{t("ratings.title")}</CardTitle>
+            <CardDescription>{t("ratings.description")}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <Controller
               name="ratingIcon"
               control={form.control}
@@ -226,22 +233,20 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                     }}
                     options={ratingIconOptions}
                   />
+                  <div className="mt-4 flex flex-col gap-2">
+                    <span className="text-muted-foreground text-xs font-medium">
+                      Example
+                    </span>
+                    <RatingInput
+                      value={3.5}
+                      color={primaryColor ?? undefined}
+                      iconOverride={field.value}
+                      onChange={() => {}}
+                    />
+                  </div>
                 </Field>
               )}
             />
-          </CardContent>
-        </Card>
-      </PreferencesSection>
-
-      <PreferencesSection tab="books" section="ratingDimensions">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("ratingDimensions.title")}</CardTitle>
-            <CardDescription>
-              {t("ratingDimensions.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
             <Field>
               <FieldLabel>{t("ratingDimensions.label")}</FieldLabel>
               <FieldDescription>{t("ratingDimensions.hint")}</FieldDescription>
@@ -285,10 +290,24 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                   {t("ratingDimensions.add")}
                 </Button>
               </div>
+              <div className="mt-4">
+                <span className="text-muted-foreground text-xs font-medium">
+                  Preview
+                </span>
+                <MultidimensionalRating
+                  dimensions={dimensions}
+                  scores={Object.fromEntries(
+                    dimensions.map((d, i) => [d.id, 3.5 - (i % 2)]),
+                  )}
+                  onChange={() => {}}
+                  onRemove={() => {}}
+                  color={primaryColor ?? undefined}
+                />
+              </div>
             </Field>
           </CardContent>
         </Card>
       </PreferencesSection>
-    </TabsContent>
+    </div>
   )
 }

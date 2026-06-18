@@ -441,6 +441,11 @@
     "failedToSaveSettings": "Instellingen opslaan mislukt",
     "searchSettings": "Instellingen zoeken...",
     "formHasErrors": "{count, plural, =1 {# fout} other {# fouten}}",
+    "back": "Terug",
+    "sidebar": {
+      "settings": "Instellingen",
+      "administration": "Beheer"
+    },
     "changelog": {
       "title": "Changelog",
       "loadMore": "Meer laden",
@@ -706,6 +711,24 @@
           }
         }
       },
+      "changelog": {
+        "title": "Changelog"
+      },
+      "logs": {
+        "title": "Logs",
+        "noLogs": "Geen logregels gevonden.",
+        "searchLogs": "Logs doorzoeken...",
+        "allLevels": "Alle niveaus",
+        "wrapLines": "Regelafbreking aan/uit",
+        "highlighting": "Markering aan/uit",
+        "hideTime": "Tijdstempels verbergen",
+        "showTime": "Tijdstempels tonen",
+        "lineCount": "{count} regels",
+        "enableDebug": "Debug-logging inschakelen",
+        "disableDebug": "Debug-logging uitschakelen",
+        "follow": "Nieuwe logs volgen",
+        "scrollToBottom": "Scroll naar beneden"
+      },
       "users": {
         "title": "Gebruikers",
         "permissions": {
@@ -755,6 +778,7 @@
   },
   "PreferencesPage": {
     "title": "Voorkeuren",
+    "back": "Terug",
     "save": "Opslaan",
     "settingsPage": "Algemene instellingen",
     "saving": "Opslaan...",

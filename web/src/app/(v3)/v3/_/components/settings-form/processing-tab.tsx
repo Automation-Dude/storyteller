@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
@@ -109,7 +109,7 @@ export function ProcessingTab() {
   ]
 
   return (
-    <TabsContent value="processing" className="space-y-6">
+    <div className="space-y-6">
       <ReadaloudSection />
 
       <SettingsSection tab="processing" section="transcription">
@@ -349,7 +349,7 @@ export function ProcessingTab() {
           </CardContent>
         </Card>
       </SettingsSection>
-    </TabsContent>
+    </div>
   )
 }
 

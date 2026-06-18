@@ -16,7 +16,7 @@ import {
 import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type User } from "@/apiModels"
@@ -91,7 +91,7 @@ export function ProfileTab({
   )
 
   return (
-    <TabsContent value="profile" className="space-y-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{t("title")}</CardTitle>
@@ -221,6 +221,6 @@ export function ProfileTab({
           </CardContent>
         </Card>
       )}
-    </TabsContent>
+    </div>
   )
 }

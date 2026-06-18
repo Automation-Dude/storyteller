@@ -2,17 +2,18 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
+  IconArrowLeft,
   IconBook,
   IconPalette,
   IconSearch,
-  IconSettings2,
   IconSettings,
+  IconSettings2,
   IconUser,
   IconX,
 } from "@tabler/icons-react"
 import { type Locale } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { type z } from "zod"
@@ -21,8 +22,16 @@ import { changeLocaleAction } from "@v3/_/actions/changeLocaleAction"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
+import {
+  PageContent,
+  PageHeader,
+  PageLayout,
+  PageMain,
+  PageSidebar,
+} from "@v3/_/components/ui/page-layout"
+import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { Spinner } from "@v3/_/components/ui/spinner"
-import { Tabs, TabsList, TabsTrigger } from "@v3/_/components/ui/tabs"
+import { useIsMobile } from "@v3/_/hooks/use-mobile"
 
 import { type User } from "@/apiModels"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
@@ -39,7 +48,18 @@ import { BooksTab } from "./books-tab"
 import { GeneralTab } from "./general-tab"
 import { ProfileTab } from "./profile-tab"
 import { type IsMatch, SearchContext } from "./shared"
-import { type PreferenceTab, type SectionKeywords } from "./tabs"
+import { type PreferenceTab, type SectionKeywords, type Tab } from "./tabs"
+import { cn } from "@v3/_/lib/utils"
+
+const SIDEBAR_WIDTH = 200
+
+const formTabs: Tab[] = ["general", "appearance", "books"]
+
+type SidebarTabDef = {
+  value: Tab
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+}
 
 export function PreferencesForm({
   user,
@@ -58,6 +78,7 @@ export function PreferencesForm({
 }) {
   const t = useTranslation("PreferencesPage")
   const canUpdateSettings = usePermission("settingsUpdate")
+  const isMobile = useIsMobile()
 
   const form = useForm({
     resolver: zodResolver(UserPreferencesSchema),
@@ -81,39 +102,43 @@ export function PreferencesForm({
     }
   }
 
-  // surface validation errors instead of silently swallowing the submit
   const onInvalid = () => {
     toast.error(t("failedToSave"))
   }
 
-  // const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useQueryState(
+  const allTabs = useMemo<SidebarTabDef[]>(
+    () => [
+      { value: "profile", label: t("tabs.profile.title"), icon: IconUser },
+      {
+        value: "general",
+        label: t("tabs.general.title"),
+        icon: IconSettings2,
+      },
+      {
+        value: "appearance",
+        label: t("tabs.appearance.title"),
+        icon: IconPalette,
+      },
+      { value: "books", label: t("tabs.books.title"), icon: IconBook },
+    ],
+    [t],
+  )
+
+  const [activeTabRaw, setActiveTab] = useQueryState(
     "tab",
     parseAsString.withDefault("profile"),
+  )
+  const activeTab = (activeTabRaw ?? "profile") as Tab
+
+  const setActiveTabEvent = useCallback(
+    (tab: Tab) => {
+      void setActiveTab(tab)
+    },
+    [setActiveTab],
   )
 
   const [searchQuery, setSearchQuery] = useState("")
 
-  const tabs = useMemo(
-    () =>
-      [
-        { value: "profile", label: t("tabs.profile.title"), icon: IconUser },
-        {
-          value: "general",
-          label: t("tabs.general.title"),
-          icon: IconSettings2,
-        },
-        {
-          value: "appearance",
-          label: t("tabs.appearance.title"),
-          icon: IconPalette,
-        },
-        { value: "books", label: t("tabs.books.title"), icon: IconBook },
-      ] as const,
-    [t],
-  )
-
-  // a section matches when one of its keywords contains the query
   const matchingSections = useMemo(() => {
     if (!searchQuery) return null
 
@@ -127,11 +152,13 @@ export function PreferencesForm({
         }
       }
     }
+
     return matching
   }, [searchQuery, sectionKeywords])
 
   const matchingTabs = useMemo(() => {
     if (!matchingSections) return null
+
     return new Set<PreferenceTab>(
       Array.from(matchingSections).map(
         (key) => key.split(".")[0] as PreferenceTab,
@@ -142,12 +169,14 @@ export function PreferencesForm({
   const isMatch: IsMatch = (tab, section) =>
     !matchingSections || matchingSections.has(`${tab}.${section}`)
 
-  // when searching, jump to the first tab that has a match
   const prefActiveTab = useRef<string>(activeTab)
   prefActiveTab.current = activeTab
+
   useEffect(() => {
     if (!matchingTabs) return
+
     const firstMatch = Array.from(matchingTabs)[0]
+
     if (
       firstMatch &&
       !matchingTabs.has(prefActiveTab.current as PreferenceTab)
@@ -156,127 +185,227 @@ export function PreferencesForm({
     }
   }, [matchingTabs, setActiveTab])
 
-  const visibleTabs = matchingTabs
-    ? tabs.filter((tab) =>
-        tab.value === "profile" ? false : matchingTabs.has(tab.value),
+  const filteredTabs = matchingTabs
+    ? allTabs.filter(
+        (tab) =>
+          tab.value === "profile" ||
+          matchingTabs.has(tab.value as PreferenceTab),
       )
-    : tabs
+    : allTabs
+
+  const isFormTab = formTabs.includes(activeTab)
+  const activeTabDef = allTabs.find((t) => t.value === activeTab)
+  const headerTitle = t("title")
+
+  const tabContent = (
+    <>
+      {activeTab === "profile" && (
+        <ProfileTab
+          user={user}
+          linkedAccounts={linkedAccounts}
+          providers={providers}
+          disablePasswordLogin={disablePasswordLogin}
+        />
+      )}
+      {activeTab === "general" && <GeneralTab form={form} />}
+      {activeTab === "appearance" && <AppearanceTab form={form} />}
+      {activeTab === "books" && <BooksTab form={form} />}
+    </>
+  )
 
   const showSaveButton = activeTab !== "profile"
 
-  return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <SiteHeader
-        className="mt-4"
-        breadcrumbs={[
-          {
-            render: (
-              <h1 className="font-heading text-foreground truncate text-3xl font-normal">
-                {t("title")}
-              </h1>
-            ),
-          },
-        ]}
-        actions={
-          <div className="flex items-center gap-3">
-            {canUpdateSettings && (
-              <Button
-                size="sm"
-                variant="link"
-                nativeButton={false}
-                render={
-                  <V3Link href="/settings?tab=library">
-                    <IconSettings className="h-4 w-4" />
-                    {t("settingsPage")}
-                  </V3Link>
-                }
-              />
-            )}
-            {showSaveButton && (
-              <Button
-                type="submit"
-                form="preferences-form"
-                disabled={isSaving}
-                size="sm"
-              >
-                {isSaving && <Spinner />}
-                {isSaving ? t("saving") : t("save")}
-              </Button>
-            )}
-          </div>
-        }
-      />
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      {canUpdateSettings && (
+        <Button
+          size="sm"
+          variant="link"
+          nativeButton={false}
+          render={
+            <V3Link href="/settings?tab=library">
+              <IconSettings className="h-4 w-4" />
+              {t("settingsPage")}
+            </V3Link>
+          }
+        />
+      )}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0 px-4 pt-2">
-          <div className="relative mb-2">
-            <IconSearch className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              type="text"
-              placeholder={t("searchPreferences")}
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-              }}
-              className="pr-9 pl-9"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("")
-                }}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-              >
-                <IconX className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
+      {showSaveButton && (
+        <Button
+          type="submit"
+          form="preferences-form"
+          disabled={isSaving}
+          size="sm"
+        >
+          {isSaving && <Spinner />}
+          {isSaving ? t("saving") : t("save")}
+        </Button>
+      )}
+    </div>
+  )
 
-        <SearchContext.Provider value={{ query: searchQuery, isMatch }}>
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => {
-              void setActiveTab(value as string)
-            }}
-            className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4"
+  const searchBar = isFormTab ? (
+    <div className="shrink-0 px-4 pb-2">
+      <div className="relative">
+        <IconSearch className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+        <Input
+          type="text"
+          placeholder={t("searchPreferences")}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pr-9 pl-9"
+        />
+
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery("")}
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
           >
-            <TabsList className="shrink-0">
-              {visibleTabs.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="gap-1.5"
-                >
-                  <tab.icon className="h-4 w-4" />
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <div className="min-h-0 flex-1 overflow-y-auto p-px pb-4">
-              {!searchQuery && (
-                <ProfileTab
-                  user={user}
-                  linkedAccounts={linkedAccounts}
-                  providers={providers}
-                  disablePasswordLogin={disablePasswordLogin}
-                />
-              )}
-
-              <form
-                id="preferences-form"
-                onSubmit={form.handleSubmit(onSubmit, onInvalid)}
-              >
-                <GeneralTab form={form} />
-                <AppearanceTab form={form} />
-                <BooksTab form={form} />
-              </form>
-            </div>
-          </Tabs>
-        </SearchContext.Provider>
+            <IconX className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
+  ) : null
+
+  const sidebarContent = (
+    <PreferencesSidebar
+      tabs={filteredTabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTabEvent}
+    />
+  )
+
+  const contentArea = (
+    <SearchContext.Provider value={{ query: searchQuery, isMatch }}>
+      {isFormTab ? (
+        <form
+          id="preferences-form"
+          onSubmit={form.handleSubmit(onSubmit, onInvalid)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
+          <PageContent className="p-4">{tabContent}</PageContent>
+        </form>
+      ) : (
+        <PageContent className="p-4">{tabContent}</PageContent>
+      )}
+    </SearchContext.Provider>
+  )
+
+  if (isMobile) {
+    if (activeTab) {
+      return (
+        <div className="flex h-screen flex-col overflow-hidden">
+          <PageHeader>
+            <SiteHeader
+              breadcrumbs={[
+                { label: headerTitle },
+                ...(activeTabDef ? [{ label: activeTabDef.label }] : []),
+              ]}
+              actions={
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void setActiveTab(null)}
+                  >
+                    <IconArrowLeft className="mr-1 h-4 w-4" />
+                    {t("back")}
+                  </Button>
+
+                  {showSaveButton && (
+                    <Button
+                      type="submit"
+                      form="preferences-form"
+                      disabled={isSaving}
+                      size="sm"
+                    >
+                      {isSaving && <Spinner />}
+                      {isSaving ? t("saving") : t("save")}
+                    </Button>
+                  )}
+                </div>
+              }
+            />
+          </PageHeader>
+
+          {searchBar}
+
+          {contentArea}
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex h-screen flex-col">
+        <PageHeader>
+          <SiteHeader breadcrumbs={[{ label: headerTitle }]} />
+        </PageHeader>
+
+        <div className="flex-1 overflow-y-auto">{sidebarContent}</div>
+      </div>
+    )
+  }
+
+  return (
+    <PageLayout>
+      <PageSidebar width={SIDEBAR_WIDTH}>{sidebarContent}</PageSidebar>
+
+      <PageMain>
+        <PageHeader>
+          <SiteHeader
+            breadcrumbs={[
+              {
+                render: (
+                  <h1 className="font-heading text-foreground truncate text-2xl font-normal">
+                    {headerTitle}
+                  </h1>
+                ),
+              },
+            ]}
+            actions={headerActions}
+          />
+        </PageHeader>
+
+        {searchBar}
+
+        {contentArea}
+      </PageMain>
+    </PageLayout>
+  )
+}
+
+function PreferencesSidebar({
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  tabs: SidebarTabDef[]
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+}) {
+  return (
+    <ScrollArea className="flex h-full flex-col">
+      <div className="flex flex-col gap-0.5 px-2 pt-3 pb-3">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => onTabChange(tab.value)}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+              activeTab === tab.value
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+            )}
+          >
+            <tab.icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    </ScrollArea>
   )
 }

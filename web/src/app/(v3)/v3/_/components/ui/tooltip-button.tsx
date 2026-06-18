@@ -1,0 +1,32 @@
+"use client"
+
+import { type Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
+import { type VariantProps } from "class-variance-authority"
+
+import { Button, type buttonVariants } from "./button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip"
+
+type TooltipButtonProps = React.ComponentProps<typeof Button> &
+  VariantProps<typeof buttonVariants> & {
+    tooltip: React.ReactNode
+    tooltipSide?: TooltipPrimitive.Positioner.Props["side"]
+    tooltipAlign?: TooltipPrimitive.Positioner.Props["align"]
+    delay?: number
+  }
+
+export function TooltipButton({
+  tooltip,
+  tooltipSide,
+  tooltipAlign,
+  delay,
+  ...buttonProps
+}: TooltipButtonProps) {
+  return (
+    <Tooltip delay={delay}>
+      <TooltipTrigger render={<Button {...buttonProps} />} />
+      <TooltipContent side={tooltipSide} align={tooltipAlign}>
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  )
+}

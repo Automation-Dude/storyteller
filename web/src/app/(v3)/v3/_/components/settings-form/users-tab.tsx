@@ -26,7 +26,7 @@ import {
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Invite, type User } from "@/apiModels"
@@ -95,7 +95,7 @@ export function UsersTab({
   const t = useTranslation("SettingsPage.tabs.users")
 
   return (
-    <TabsContent value="users" className="space-y-6">
+    <div className="space-y-6">
       <SettingsSection tab="users" section="users-invites">
         {permissions?.inviteList && (
           <Card>
@@ -135,7 +135,7 @@ export function UsersTab({
           </Card>
         )}
       </SettingsSection>
-    </TabsContent>
+    </div>
   )
 }
 

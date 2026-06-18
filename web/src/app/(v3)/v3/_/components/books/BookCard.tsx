@@ -117,7 +117,9 @@ export const BookCard = memo(function BookCard({
   // non-authors fields render a plain muted line; a null value (or an explicit
   // authors/title pick) falls back to the author links below.
   const secondary =
-    displayField === "authors" ? null : secondaryText(book, displayField, displayContext)
+    displayField === "authors"
+      ? null
+      : secondaryText(book, displayField, displayContext)
   const showAuthors = secondary === null
 
   const { primary, accent } = useCoverColors(book)
@@ -248,6 +250,7 @@ export const BookCard = memo(function BookCard({
         )}
         <Link
           href={`/v3/books/${book.uuid}`}
+          prefetch={false}
           className={cn(!onClick && "big-link")}
         >
           <h3 className="group-hover:text-primary font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">

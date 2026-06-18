@@ -89,11 +89,11 @@ import { SettingsSection } from "./shared"
 
 export function LibraryTab() {
   return (
-    <TabsContent value="library" className="space-y-6">
+    <div className="space-y-6">
       <LibrarySection />
       <ImportRulesSection />
       <ScanControlsSection />
-    </TabsContent>
+    </div>
   )
 }
 

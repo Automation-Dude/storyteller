@@ -88,7 +88,9 @@
   --font-serif: var(--font-try-serif), Georgia, serif;
   --font-literata: Literata;
   --font-open-dyslexic: OpenDyslexic;
-  --font-mono: var(--font-geist-mono);
+  /* --font-mono: var(--font-geist-mono); */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-sidebar-ring: var(--sidebar-ring);

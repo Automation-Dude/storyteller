@@ -15,6 +15,7 @@ import {
   getBooks,
 } from "@/database/books"
 import { type ImportMode } from "@/database/settingsTypes"
+import { shelfFilterSchema } from "@/shelves"
 import { SORTABLE_FIELDS, type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
 
@@ -35,8 +36,26 @@ export const GET = withHasPermission("bookList")(async (request) => {
   const seriesParam = request.nextUrl.searchParams.get("series")
   const mediaFilterParam = request.nextUrl.searchParams.get("mediaFilter")
   const statusParam = request.nextUrl.searchParams.get("status")
+  const filterParam = request.nextUrl.searchParams.get("filter")
 
   const opts: GetBooksOptions = {}
+
+  if (filterParam) {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(filterParam)
+    } catch {
+      return NextResponse.json({ error: "Invalid filter" }, { status: 400 })
+    }
+    const validated = shelfFilterSchema.safeParse(parsed)
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.message },
+        { status: 400 },
+      )
+    }
+    opts.filter = validated.data
+  }
 
   if (limitParam) {
     opts.limit = parseInt(limitParam)

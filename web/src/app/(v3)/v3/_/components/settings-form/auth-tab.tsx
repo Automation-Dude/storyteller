@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
-import { TabsContent } from "@v3/_/components/ui/tabs"
+
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { Providers } from "@/auth/providers"
@@ -127,7 +127,7 @@ export function AuthTab() {
   const isAuthProvidersLocked = lockedSettings.has(`authProviders`)
 
   return (
-    <TabsContent value="auth" className="space-y-6">
+    <div className="space-y-6">
       <SettingsSection tab="auth" section="sso">
         <Card>
           <CardHeader>
@@ -373,7 +373,7 @@ export function AuthTab() {
           </CardContent>
         </Card>
       </SettingsSection>
-    </TabsContent>
+    </div>
   )
 }
 

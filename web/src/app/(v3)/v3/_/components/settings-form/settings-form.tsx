@@ -3,8 +3,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   IconAlertCircle,
+  IconArrowLeft,
   IconBook2,
   IconDownload,
+  IconFileText,
   IconHistory,
   IconMail,
   IconMicrophone,
@@ -26,14 +28,19 @@ import { type z } from "zod"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
-import { Spinner } from "@v3/_/components/ui/spinner"
-import { Tabs, TabsList, TabsTrigger } from "@v3/_/components/ui/tabs"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@v3/_/components/ui/tooltip"
+  PageContent,
+  PageHeader,
+  PageLayout,
+  PageMain,
+  PageSidebar,
+} from "@v3/_/components/ui/page-layout"
+import { ScrollArea } from "@v3/_/components/ui/scroll-area"
+import { Spinner } from "@v3/_/components/ui/spinner"
+import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
+import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+import { cn } from "@v3/_/lib/utils"
 
 import { type Invite, type Settings, type User } from "@/apiModels"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
@@ -48,6 +55,7 @@ import { AuthTab } from "./auth-tab"
 import { ChangelogTab } from "./changelog-tab"
 import { EmailTab } from "./email-tab"
 import { LibraryTab } from "./library-tab"
+import { LogsTab } from "./logs-tab"
 import { OpdsTab } from "./opds-tab"
 import { ProcessingTab } from "./processing-tab"
 import { type IsMatch, SearchContext } from "./shared"
@@ -173,6 +181,17 @@ function resolveFieldErrors(
   })
 }
 
+const SETTINGS_SIDEBAR_WIDTH = 220
+
+const formTabs = ["library", "processing", "auth", "upload", "email", "opds"]
+const adminTabs = ["users", "changelog", "logs"]
+
+type SidebarTabDef = {
+  value: Tab
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
 export function SettingsForm({
   settings,
   sectionKeywords,
@@ -190,6 +209,7 @@ export function SettingsForm({
 }) {
   const t = useTranslation("SettingsPage")
   const title = t("title")
+  const isMobile = useIsMobile()
   const { data: maxUploadChunkSize } = useGetMaxUploadChunkSizeQuery()
   const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation()
   const [searchQuery, setSearchQuery] = useState("")
@@ -276,41 +296,42 @@ export function SettingsForm({
 
   const hasUsers = Boolean(initialUsers)
 
-  const tabs = useMemo(
-    () =>
-      [
-        {
-          value: "library",
-          label: t("tabs.library.title"),
-          icon: IconBook2,
-        },
-        {
-          value: "processing",
-          label: t("tabs.processing.title"),
-          icon: IconMicrophone,
-        },
-        { value: "auth", label: t("tabs.auth.title"), icon: IconShield },
-        ...(hasUsers
-          ? [
-              {
-                value: "users" as const,
-                label: t("tabs.users.title"),
-                icon: IconUsers,
-              },
-            ]
-          : []),
-        { value: "upload", label: t("tabs.upload.title"), icon: IconUpload },
-        { value: "email", label: t("tabs.email.title"), icon: IconMail },
-        { value: "opds", label: t("tabs.opds.title"), icon: IconRss },
-        { value: "changelog", label: "Changelog", icon: IconHistory },
-      ] as const,
+  const allTabs = useMemo<SidebarTabDef[]>(
+    () => [
+      { value: "library", label: t("tabs.library.title"), icon: IconBook2 },
+      {
+        value: "processing",
+        label: t("tabs.processing.title"),
+        icon: IconMicrophone,
+      },
+      { value: "auth", label: t("tabs.auth.title"), icon: IconShield },
+      { value: "upload", label: t("tabs.upload.title"), icon: IconUpload },
+      { value: "email", label: t("tabs.email.title"), icon: IconMail },
+      { value: "opds", label: t("tabs.opds.title"), icon: IconRss },
+      ...(hasUsers
+        ? [
+            {
+              value: "users" as Tab,
+              label: t("tabs.users.title"),
+              icon: IconUsers,
+            },
+          ]
+        : []),
+      {
+        value: "changelog",
+        label: t("tabs.changelog.title"),
+        icon: IconHistory,
+      },
+      { value: "logs", label: t("tabs.logs.title"), icon: IconFileText },
+    ],
     [t, hasUsers],
   )
 
-  const [activeTab, setActiveTab] = useQueryState(
+  const [activeTabRaw, setActiveTab] = useQueryState(
     "tab",
     parseAsString.withDefault("library") as SingleParser<Tab>,
   )
+  const activeTab: Tab = activeTabRaw ?? "library"
 
   const setActiveTabEvent = useCallback(
     (tab: Tab) => {
@@ -320,7 +341,7 @@ export function SettingsForm({
   )
 
   const matchingSections = useMemo(() => {
-    if (!searchQuery) return new Set(tabs.map((t) => t.value))
+    if (!searchQuery) return new Set(allTabs.map((t) => t.value))
 
     const query = searchQuery.toLowerCase()
     const matching = new Set<string>()
@@ -330,13 +351,15 @@ export function SettingsForm({
         const matchesKeywords = keywords.some((kw) =>
           kw.toLowerCase().includes(query),
         )
+
         if (matchesKeywords) {
           matching.add(`${tab}.${section}`)
         }
       }
     }
+
     return matching
-  }, [searchQuery, tabs, sectionKeywords])
+  }, [searchQuery, allTabs, sectionKeywords])
 
   const matchingTabs = useMemo(() => {
     return new Set<Tab>(
@@ -352,6 +375,7 @@ export function SettingsForm({
 
   const prefActiveTab = useRef<Tab | null>(null)
   prefActiveTab.current = activeTab
+
   useEffect(() => {
     if (!searchQuery) return
 
@@ -366,168 +390,329 @@ export function SettingsForm({
   }, [matchingTabs, searchQuery, setActiveTabEvent])
 
   const filteredTabs = searchQuery
-    ? tabs.filter(
-        (tab) => matchingTabs.has(tab.value) || tab.value === "changelog",
+    ? allTabs.filter(
+        (tab) => matchingTabs.has(tab.value) || adminTabs.includes(tab.value),
       )
-    : tabs
+    : allTabs
 
-  return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <SiteHeader
-        className="mt-4"
-        breadcrumbs={[
-          {
-            render: (
-              <h1 className="font-heading text-foreground truncate text-3xl font-normal">
-                {title}
-              </h1>
-            ),
-          },
-        ]}
-        actions={
-          <div className="flex items-center gap-3">
-            <Button
-              variant="link"
-              size="sm"
-              nativeButton={false}
-              render={
-                <V3Link href="/preferences?tab=general">
-                  <IconSettings2 className="h-4 w-4" />
-                  {t("preferences")}
-                </V3Link>
+  const isFormTab = formTabs.includes(activeTab)
+  const activeTabDef = allTabs.find((t) => t.value === activeTab)
+  const headerTitle = activeTabDef?.label ?? title
+
+  const tabContent = (
+    <>
+      {activeTab === "library" && <LibraryTab />}
+      {activeTab === "processing" && <ProcessingTab />}
+      {activeTab === "auth" && <AuthTab />}
+      {activeTab === "upload" && (
+        <UploadTab maxUploadChunkSize={maxUploadChunkSize} />
+      )}
+      {activeTab === "users" && initialUsers && initialInvites && (
+        <UsersTab
+          initialUsers={initialUsers}
+          initialInvites={initialInvites}
+          disablePasswordLogin={settings.disablePasswordLogin}
+        />
+      )}
+      {activeTab === "email" && <EmailTab />}
+      {activeTab === "opds" && <OpdsTab />}
+      {activeTab === "changelog" && (
+        <ChangelogTab currentVersion={currentVersion} />
+      )}
+      {activeTab === "logs" && <LogsTab />}
+    </>
+  )
+
+  const headerActions = (
+    <div className="flex items-center gap-3">
+      {isFormTab && (
+        <>
+          <TooltipButton
+            size="sm"
+            variant="outline"
+            tooltip={t("exportSettings")}
+            nativeButton={false}
+            render={
+              <Link
+                href="/api/v2/settings"
+                aria-label="Export settings as JSON"
+                download="storyteller-config.json"
+              >
+                <IconDownload size={16} />
+              </Link>
+            }
+          />
+
+          {errorCount > 0 && (
+            <div className="text-destructive flex items-center gap-1.5 text-sm">
+              <IconAlertCircle className="h-4 w-4" />
+              <span>
+                {t("formHasErrors", {
+                  count: errorCount,
+                  plural: errorCount === 1 ? "one" : "other",
+                })}
+              </span>
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            form="settings-form"
+            disabled={isSaving}
+            size="sm"
+          >
+            {isSaving && <Spinner />}
+            {isSaving ? t("saving") : t("saveSettings")}
+          </Button>
+        </>
+      )}
+    </div>
+  )
+
+  const searchBar = isFormTab ? (
+    <div className="shrink-0 px-4 pb-2">
+      <div className="relative">
+        <IconSearch className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+        <Input
+          type="text"
+          placeholder={t("searchSettings")}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pr-9 pl-9"
+        />
+
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery("")}
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+          >
+            <IconX className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  ) : null
+
+  const sidebarContent = (
+    <SettingsSidebar
+      tabs={filteredTabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTabEvent}
+    />
+  )
+
+  const contentArea = (
+    <SettingsFormProvider form={form} lockedSettings={lockedKeys}>
+      <SearchContext.Provider value={{ query: searchQuery, isMatch }}>
+        {isFormTab ? (
+          <form
+            id="settings-form"
+            onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          >
+            {/* p-px prevents card ring clipping */}
+            <PageContent className="p-4">{tabContent}</PageContent>
+          </form>
+        ) : (
+          <PageContent className="p-4">{tabContent}</PageContent>
+        )}
+      </SearchContext.Provider>
+    </SettingsFormProvider>
+  )
+
+  if (isMobile) {
+    if (activeTab) {
+      return (
+        <div className="flex h-screen flex-col overflow-hidden">
+          <PageHeader>
+            <SiteHeader
+              breadcrumbs={[
+                { label: title },
+                ...(activeTabDef ? [{ label: activeTabDef.label }] : []),
+              ]}
+              actions={
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void setActiveTab(null)}
+                  >
+                    <IconArrowLeft className="mr-1 h-4 w-4" />
+                    {t("back")}
+                  </Button>
+
+                  {isFormTab && (
+                    <Button
+                      type="submit"
+                      form="settings-form"
+                      disabled={isSaving}
+                      size="sm"
+                    >
+                      {isSaving && <Spinner />}
+                      {isSaving ? t("saving") : t("saveSettings")}
+                    </Button>
+                  )}
+                </div>
               }
             />
-            {activeTab !== "users" && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  render={
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Link
-                            href="/api/v2/settings"
-                            aria-label="Export settings as JSON"
-                            download="storyteller-config.json"
-                          >
-                            <IconDownload size={16} />{" "}
-                          </Link>
-                        }
-                      />
-                      <TooltipContent>{t("exportSettings")}</TooltipContent>
-                    </Tooltip>
-                  }
-                />
-                {errorCount > 0 && (
-                  <div className="text-destructive flex items-center gap-1.5 text-sm">
-                    <IconAlertCircle className="h-4 w-4" />
-                    <span>
-                      {t("formHasErrors", {
-                        count: errorCount,
-                        plural: errorCount === 1 ? "one" : "other",
-                      })}
-                    </span>
-                  </div>
-                )}
-                <Button
-                  type="submit"
-                  form="settings-form"
-                  disabled={isSaving}
-                  size="sm"
-                >
-                  {isSaving && <Spinner />}
-                  {isSaving ? t("saving") : t("saveSettings")}
-                </Button>
-              </>
-            )}
-          </div>
-        }
-      />
-      <form
-        id="settings-form"
-        onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}
-        className="flex min-h-0 flex-1 flex-col overflow-hidden"
-      >
-        <div className="shrink-0 p-4 pb-0">
-          <div className="relative mb-4">
-            <IconSearch className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              type="text"
-              placeholder={t("searchSettings")}
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-              }}
-              className="pr-9 pl-9"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("")
-                }}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-              >
-                <IconX className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-        <SettingsFormProvider form={form} lockedSettings={lockedKeys}>
-          <SearchContext.Provider
-            value={{
-              query: searchQuery,
-              isMatch,
-            }}
-          >
-            <Tabs
-              value={activeTab}
-              onValueChange={(value) => {
-                void setActiveTab(value as Tab)
-              }}
-              className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4"
-            >
-              <TabsList className="scrollbar-hidden max-w-full shrink-0 overflow-x-auto">
-                {filteredTabs.map((tab) => (
-                  <TabsTrigger
-                    key={tab.value}
-                    value={tab.value}
-                    className="gap-1.5"
-                  >
-                    <tab.icon className="h-4 w-4" />
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+          </PageHeader>
 
-              {/*the p-px is really important, otherwise the ring of the cards gets cut off*/}
-              <div className="min-h-0 flex-1 overflow-y-auto p-px pb-4">
-                <LibraryTab />
-                <ProcessingTab />
-                <AuthTab />
-                <UploadTab maxUploadChunkSize={maxUploadChunkSize} />
-                {initialUsers && initialInvites && (
-                  <UsersTab
-                    initialUsers={initialUsers}
-                    initialInvites={initialInvites}
-                    disablePasswordLogin={settings.disablePasswordLogin}
-                  />
-                )}
-                <EmailTab />
-                <OpdsTab />
-                <ChangelogTab currentVersion={currentVersion} />
-              </div>
-            </Tabs>
-          </SearchContext.Provider>
-        </SettingsFormProvider>
-      </form>
-      {lockedKeys.size > 0 && (
-        <div className="absolute right-0 bottom-0 left-0 flex items-center gap-2 bg-amber-600/10 p-3 text-xs dark:bg-amber-600/20">
-          <IconAlertCircle className="h-4 w-4 text-amber-500" />
-          <span className="text-amber-500">{t("lockedSettings")}</span>
+          {searchBar}
+
+          {contentArea}
+
+          {lockedKeys.size > 0 && <LockedSettingsBanner t={t} />}
         </div>
-      )}
+      )
+    }
+
+    return (
+      <div className="flex h-screen flex-col">
+        <PageHeader>
+          <SiteHeader breadcrumbs={[{ label: title }]} />
+        </PageHeader>
+
+        <div className="flex-1 overflow-y-auto">{sidebarContent}</div>
+      </div>
+    )
+  }
+
+  return (
+    <PageLayout>
+      <PageSidebar width={SETTINGS_SIDEBAR_WIDTH}>{sidebarContent}</PageSidebar>
+
+      <PageMain>
+        <PageHeader>
+          <SiteHeader
+            breadcrumbs={[
+              {
+                render: (
+                  <h1 className="font-heading text-foreground truncate text-2xl font-normal">
+                    {headerTitle}
+                  </h1>
+                ),
+              },
+            ]}
+            actions={headerActions}
+          />
+        </PageHeader>
+
+        {searchBar}
+
+        {contentArea}
+
+        {lockedKeys.size > 0 && <LockedSettingsBanner t={t} />}
+      </PageMain>
+    </PageLayout>
+  )
+}
+
+function LockedSettingsBanner({
+  t,
+}: {
+  t: ReturnType<typeof useTranslation<"SettingsPage">>
+}) {
+  return (
+    <div className="flex items-center gap-2 bg-amber-600/10 p-3 text-xs dark:bg-amber-600/20">
+      <IconAlertCircle className="h-4 w-4 text-amber-500" />
+      <span className="text-amber-500">{t("lockedSettings")}</span>
+    </div>
+  )
+}
+
+function SettingsSidebar({
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  tabs: SidebarTabDef[]
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+}) {
+  const t = useTranslation("SettingsPage")
+
+  const settingsTabs = tabs.filter((tab) => formTabs.includes(tab.value))
+  const administrationTabs = tabs.filter((tab) => adminTabs.includes(tab.value))
+
+  return (
+    <ScrollArea className="flex h-full flex-col">
+      <div className="flex flex-col gap-4 px-2 pt-3 pb-3">
+        <h2 className="font-heading text-foreground truncate text-2xl font-normal">
+          {t("title")}
+        </h2>
+        {settingsTabs.length > 0 && (
+          <SidebarGroup
+            label={t("sidebar.settings")}
+            tabs={settingsTabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
+        )}
+
+        {administrationTabs.length > 0 && (
+          <SidebarGroup
+            label={t("sidebar.administration")}
+            tabs={administrationTabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
+        )}
+      </div>
+
+      <div className="border-border mt-auto border-t px-3 py-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          nativeButton={false}
+          className="text-muted-foreground hover:text-foreground w-full justify-start gap-2"
+          render={
+            <V3Link href="/preferences?tab=general">
+              <IconSettings2 className="h-4 w-4" />
+              {t("preferences")}
+            </V3Link>
+          }
+        />
+      </div>
+    </ScrollArea>
+  )
+}
+
+function SidebarGroup({
+  label,
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  label: string
+  tabs: SidebarTabDef[]
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+}) {
+  return (
+    <div>
+      <p className="text-muted-foreground mb-1 px-2 text-xs font-medium tracking-wider uppercase">
+        {label}
+      </p>
+
+      <div className="flex flex-col gap-0.5">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => onTabChange(tab.value)}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+              activeTab === tab.value
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+            )}
+          >
+            <tab.icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{tab.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
