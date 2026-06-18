@@ -74,7 +74,7 @@ export function BookCover({
         blurhash={book.ebook?.coverBlurhash}
         type="ebook"
         fallbackColors={book.ebook?.coverColors}
-        className="h-full rounded-xs"
+        className="h-full rounded-xs shadow-lg"
         imgClassName={imgClassName}
         onLoadingChange={onLoadingChange}
       />
@@ -129,7 +129,7 @@ export function BookCover({
       blurhash={book.ebook?.coverBlurhash}
       type="ebook"
       fallbackColors={book.ebook?.coverColors}
-      className="h-full overflow-clip rounded-sm border-green-500"
+      className="h-full overflow-clip rounded-sm border-green-500 shadow-lg"
       imgClassName={imgClassName}
       onLoadingChange={onLoadingChange}
     />
