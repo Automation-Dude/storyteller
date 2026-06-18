@@ -23,11 +23,7 @@ import {
   useSetBookRatingMutation,
 } from "@/store/api"
 
-import {
-  ensureContrast,
-  useCoverColors,
-  useIsDarkMode,
-} from "./useCoverColors"
+import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
 
 // inline number editor styled like EditableField (SEAMLESS_BOX), but committing
 // through setBookRating since the rating is per-user and not part of the form
@@ -263,7 +259,7 @@ export function ReviewSection({ className }: { className?: string }) {
                 setDraft(e.target.value)
               }}
               placeholder={t("review.reviewPlaceholder")}
-              className="min-h-24 resize-y"
+              className="min-h-24 resize-y font-serif"
               autoFocus
             />
             <div className="flex gap-2">
@@ -290,7 +286,9 @@ export function ReviewSection({ className }: { className?: string }) {
           </Field>
         ) : (
           currentReview && (
-            <p className="text-sm whitespace-pre-wrap">{currentReview}</p>
+            <p className="font-serif text-sm whitespace-pre-wrap">
+              {currentReview}
+            </p>
           )
         )}
       </div>

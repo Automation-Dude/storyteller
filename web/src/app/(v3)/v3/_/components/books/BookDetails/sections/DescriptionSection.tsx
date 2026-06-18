@@ -60,7 +60,7 @@ function CollapsibleDescription({
           if (canEdit) onEdit()
         }}
         className={cn(
-          "prose prose-sm dark:prose-invert max-w-none overflow-hidden text-xs transition-[max-height] duration-300",
+          "prose prose-sm dark:prose-invert max-w-none overflow-hidden font-serif text-xs transition-[max-height] duration-300",
           mustExpandFirst && "cursor-pointer",
           editableNow &&
             "hover:bg-input/10 -mx-1.5 cursor-text rounded-md px-1.5",
@@ -83,7 +83,8 @@ function CollapsibleDescription({
           onClick={() => {
             setExpanded((prev) => !prev)
           }}
-          className="text-primary mt-1 text-xs font-medium hover:underline"
+          className="text-primary relative z-10 mt-1 text-xs font-medium hover:underline"
+          aria-label={expanded ? t("showLess") : t("showMore")}
         >
           {expanded ? t("showLess") : t("showMore")}
         </button>
@@ -142,7 +143,7 @@ export function DescriptionSection({ className }: { className?: string }) {
                   }
                 }}
                 className={cn(
-                  "field-sizing-content w-full resize-y rounded-md border px-1.5 py-0.5 text-xs",
+                  "field-sizing-content w-full resize-y rounded-md border px-1.5 py-0.5 font-serif text-xs",
                   "border-input bg-input/20 dark:bg-input/30 outline-none",
                   "focus-visible:border-ring focus-visible:ring-ring/30 focus-visible:ring-[2px]",
                   "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[2px]",
