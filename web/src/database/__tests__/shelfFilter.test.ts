@@ -136,7 +136,7 @@ void describe("shelfFilterNodeSchema", () => {
   void it("accepts a simple condition", () => {
     const result = shelfFilterNodeSchema.safeParse({
       type: "condition",
-      field: "rating",
+      field: "userRating",
       operator: "greaterOrEqual",
       value: 3,
     })
@@ -144,12 +144,27 @@ void describe("shelfFilterNodeSchema", () => {
     assert.ok(result.success)
   })
 
+  void it("coerces the legacy aggregate rating field to userRating", () => {
+    const result = shelfFilterNodeSchema.safeParse({
+      type: "condition",
+      field: "rating",
+      operator: "greaterOrEqual",
+      value: 3,
+    })
+
+    assert.ok(result.success)
+    assert.strictEqual(
+      (result.data as { field: string }).field,
+      "userRating",
+    )
+  })
+
   void it("accepts an AND block with children", () => {
     const result = shelfFilterNodeSchema.safeParse({
       type: "and",
       children: [
         { type: "condition", field: "title", operator: "contains", value: "a" },
-        { type: "condition", field: "rating", operator: "is", value: 5 },
+        { type: "condition", field: "userRating", operator: "is", value: 5 },
       ],
     })
 
@@ -240,7 +255,6 @@ void describe("getFieldType", () => {
   })
 
   void it("classifies number fields", () => {
-    assert.strictEqual(getFieldType("rating"), "number")
     assert.strictEqual(getFieldType("userRating"), "number")
     assert.strictEqual(getFieldType("duration"), "number")
     assert.strictEqual(getFieldType("pageCount"), "number")
@@ -362,7 +376,7 @@ void describe("createAndBlock", () => {
   void it("accepts custom children", () => {
     const children: ShelfFilterNode[] = [
       { type: "condition", field: "title", operator: "is", value: "A" },
-      { type: "condition", field: "rating", operator: "is", value: 5 },
+      { type: "condition", field: "userRating", operator: "is", value: 5 },
     ]
 
     const block = createAndBlock(children)
@@ -756,6 +770,91 @@ void describe("buildFilterExpression sql", () => {
     })
     assert.match(sql, /creator/)
     assert.match(sql, /series/)
+  })
+
+  void it("compiles audiobook-only Format to audiobook present and ebook absent", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "mediaType",
+          operator: "isAnyOf",
+          value: ["audiobook-only"],
+        },
+      ],
+    })
+    // audiobook exists AND not (ebook exists)
+    assert.match(sql, /exists.*from "audiobook"/s)
+    assert.match(sql, /not exists.*from "ebook"/s)
+  })
+
+  void it("compiles missing-readaloud Format to ebook+audiobook present and not aligned", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "mediaType",
+          operator: "isAnyOf",
+          value: ["missing-readaloud"],
+        },
+      ],
+    })
+    assert.match(sql, /from "ebook"/)
+    assert.match(sql, /from "audiobook"/)
+    // the readaloud assets are excluded (ALIGNED is a bound param, not literal)
+    assert.match(sql, /not exists.*from "readaloud"/s)
+  })
+
+  void it("scopes a role-tagged creators include to that relator role", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "creators",
+          operator: "includes",
+          value: ["33333333-3333-3333-3333-333333333333"],
+          role: "nrt",
+        },
+      ],
+    })
+    assert.match(sql, /from "book_to_creator"/)
+    assert.match(sql, /"book_to_creator"\."role"/)
+  })
+
+  void it("leaves a creators include unscoped when no role is given", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "creators",
+          operator: "includes",
+          value: ["33333333-3333-3333-3333-333333333333"],
+        },
+      ],
+    })
+    assert.match(sql, /from "book_to_creator"/)
+    assert.doesNotMatch(sql, /"book_to_creator"\."role"/)
+  })
+
+  void it("scopes a role-tagged creators isEmpty to that relator role", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "creators",
+          operator: "isEmpty",
+          role: "aut",
+        },
+      ],
+    })
+    // "no author" is a not-exists over book_to_creator scoped to role
+    assert.match(sql, /not exists.*from "book_to_creator"/s)
+    assert.match(sql, /"book_to_creator"\."role"/)
   })
 })
 

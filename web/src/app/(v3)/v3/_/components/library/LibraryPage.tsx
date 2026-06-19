@@ -25,12 +25,12 @@ import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { EditCreatorDialog } from "@v3/_/components/library/EditCreatorDialog"
 import { EditTagDialog } from "@v3/_/components/library/EditTagDialog"
 import { SidebarEntityActions } from "@v3/_/components/library/SidebarEntityActions"
-import { filterBooksClientSide } from "@v3/_/components/library/filter-books-client"
 import {
   type LibraryEntityType,
   type LibraryItem,
   type LibrarySectionDef,
   NONE_KEY,
+  sectionSeedQueryArg,
 } from "@v3/_/components/library/library-sections"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
@@ -65,18 +65,20 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { type ShelfFilterNode } from "@/shelves"
 import { type SortContext, deriveDisplayField } from "@/sort"
 import {
+  type ListBooksQueryArg,
+  api,
   useDeleteCollectionMutation,
   useDeleteCreatorMutation,
   useDeleteSeriesMutation,
   useDeleteTagMutation,
-  useListBooksQuery,
+  useGetSectionFacetsQuery,
+  useListInfiniteBooksInfiniteQuery,
 } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
 
-const noop = () => {}
 const SIDEBAR_ROW_HEIGHT = 30
 
 function findScrollParent(node: HTMLElement | null): HTMLElement | null {
@@ -145,7 +147,11 @@ export function LibraryPage({
     (state) => state.uiSettings.librarySidebarWidth,
   )
 
-  const { data: books, isLoading: booksLoading } = useListBooksQuery()
+  // the sidebar facet list + per-facet counts, computed in SQL (never loads the
+  // whole catalog).
+  const { data: facets, isLoading: facetsLoading } = useGetSectionFacetsQuery({
+    section: section.key,
+  })
 
   const [selectedItem, setSelectedItem] = useQueryState("item", parseAsString)
   const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
@@ -162,6 +168,7 @@ export function LibraryPage({
   const {
     state: filterState,
     onChange: onFilterChange,
+    queryArg,
     isSearching,
     deferredSearch,
     activeFilterCount,
@@ -180,7 +187,6 @@ export function LibraryPage({
   const seriesContextUuid = isSeriesSection
     ? (selectedItem as UUID | null)
     : null
-  // memoized so it doesn't churn the filteredBooks memo every render
   const displayContext = useMemo<SortContext>(
     () => ({ seriesUuid: seriesContextUuid }),
     [seriesContextUuid],
@@ -191,28 +197,28 @@ export function LibraryPage({
     displayOverride,
   )
 
-  const allItems = useMemo(() => {
-    if (!books) return []
+  // the server returns the facet list; the client only relabels the synthetic
+  // "(no X)" bucket and any format keys.
+  const allItems = useMemo<LibraryItem[]>(() => {
+    if (!facets) return []
 
-    let items = section.extractItems(books)
-
-    if (itemLabels) {
-      items = items.map((item) => {
-        const label = itemLabels[item.key]
-        return label ? { ...item, name: label } : item
-      })
-    }
-
-    if (noneLabel && section.filterNone) {
-      const noneCount = section.filterNone(books).length
-
-      if (noneCount > 0) {
-        items = [...items, { key: NONE_KEY, name: noneLabel, bookCount: noneCount }]
+    return facets.flatMap((facet) => {
+      if (facet.key === NONE_KEY) {
+        if (!noneLabel) return []
+        return [{ key: NONE_KEY, name: noneLabel, bookCount: facet.bookCount }]
       }
-    }
 
-    return items
-  }, [books, section, noneLabel, itemLabels])
+      return [
+        {
+          key: facet.key,
+          name: itemLabels?.[facet.key] ?? facet.name,
+          bookCount: facet.bookCount,
+          icon: facet.icon,
+          color: facet.color,
+        },
+      ]
+    })
+  }, [facets, noneLabel, itemLabels])
 
   const visibleItems = useMemo(() => {
     let items = allItems
@@ -252,34 +258,38 @@ export function LibraryPage({
     setSelectedItem,
   ])
 
-  const sectionBooks = useMemo(() => {
-    if (!books || !selectedItem) return []
+  // the grid is the same server-filtered, paginated query the books page uses,
+  // seeded with the selected facet (the locked seed) ANDed under the quick
+  // filters / search / sort.
+  const gridArg = useMemo<ListBooksQueryArg>(
+    () => ({
+      ...queryArg,
+      ...(selectedItem ? sectionSeedQueryArg(section, selectedItem) : {}),
+    }),
+    [queryArg, section, selectedItem],
+  )
 
-    if (selectedItem === NONE_KEY && section.filterNone) {
-      return section.filterNone(books)
-    }
+  const {
+    data: gridData,
+    isLoading: gridLoading,
+    isFetching: gridFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useListInfiniteBooksInfiniteQuery(gridArg, { skip: !selectedItem })
 
-    return section.filterBooks(books, selectedItem)
-  }, [books, selectedItem, section])
-
-  const filteredBooks = useMemo(() => {
-    if (sectionBooks.length === 0) return []
-
-    return filterBooksClientSide(sectionBooks, {
-      search: deferredSearch || undefined,
-      sortField: filterState.sortField,
-      sortDirection: filterState.sortDirection,
-      mediaFilter: filterState.mediaFilter,
-      statusFilter: filterState.statusFilter,
-      sortContext: displayContext,
-    })
-  }, [sectionBooks, deferredSearch, filterState, displayContext])
+  const filteredBooks = useMemo(
+    () => gridData?.pages.flatMap((page) => page) ?? [],
+    [gridData?.pages],
+  )
 
   const selectedItemName = allItems.find((i) => i.key === selectedItem)?.name
 
+  // the detail panel fetches by uuid; this only seeds its cache when the book is
+  // already on a loaded page (deep links still resolve via the fetch).
   const selectedBook = useMemo(
-    () => books?.find((b) => b.uuid === selectedBookUuid),
-    [books, selectedBookUuid],
+    () => filteredBooks.find((b) => b.uuid === selectedBookUuid),
+    [filteredBooks, selectedBookUuid],
   )
 
   const handleSidebarWidthChange = useCallback(
@@ -289,59 +299,32 @@ export function LibraryPage({
     [dispatch],
   )
 
-  // ref-stabilized so the callback identity never changes, preventing
-  // the entire sidebar list from re-rendering when selectedItem changes
-  const itemClickDepsRef = useRef({
-    selectedItem,
-    selectedBookUuid,
-    books,
-    section,
-    deferredSearch,
-    filterState,
-  })
-  itemClickDepsRef.current = {
-    selectedItem,
-    selectedBookUuid,
-    books,
-    section,
-    deferredSearch,
-    filterState,
-  }
-
+  // switching facets closes the open book panel (the grid is now paginated, so
+  // there's no cheap "first book of the next facet" to jump to). functional
+  // updates keep these callbacks stable so the virtualized sidebar doesn't churn.
   const handleItemClick = useCallback(
     (key: string) => {
-      const {
-        selectedItem: current,
-        selectedBookUuid: bookUuid,
-        books: allBooks,
-        section: sec,
-        deferredSearch: search,
-        filterState: filters,
-      } = itemClickDepsRef.current
-
-      const next = key === current ? null : key
-      void setSelectedItem(next)
-
-      if (next && bookUuid && allBooks) {
-        const isSeries = sec.entityType === "series"
-        const nextBooks = filterBooksClientSide(
-          sec.filterBooks(allBooks, next),
-          {
-            search: search || undefined,
-            sortField: filters.sortField,
-            sortDirection: filters.sortDirection,
-            mediaFilter: filters.mediaFilter,
-            statusFilter: filters.statusFilter,
-            sortContext: isSeries ? { seriesUuid: next as UUID } : undefined,
-          },
-        )
-        void setSelectedBookUuid(nextBooks[0]?.uuid ?? null)
-        return
-      }
-
+      void setSelectedItem((current) => (key === current ? null : key))
       void setSelectedBookUuid(null)
     },
     [setSelectedItem, setSelectedBookUuid],
+  )
+
+  // warm the grid query for a facet on hover so clicking it feels instant.
+  // subscribe:false caches the first page without leaving a live subscription.
+  const prefetchDepsRef = useRef({ queryArg, section })
+  prefetchDepsRef.current = { queryArg, section }
+  const handleHoverItem = useCallback(
+    (key: string) => {
+      const { queryArg: qa, section: sec } = prefetchDepsRef.current
+      void dispatch(
+        api.endpoints.listInfiniteBooks.initiate(
+          { ...qa, ...sectionSeedQueryArg(sec, key) },
+          { subscribe: false },
+        ),
+      )
+    },
+    [dispatch],
   )
 
   const handleBookClick = useCallback(
@@ -430,19 +413,22 @@ export function LibraryPage({
     variant: "destructive",
   })
 
-  const showMuted = isSearching
+  const showMuted =
+    isSearching ||
+    (gridFetching && !isFetchingNextPage && filteredBooks.length > 0)
 
   const sidebarContent = (
     <SidebarPanel
       title={title}
       items={visibleItems}
       selectedKey={selectedItem}
-      isLoading={booksLoading}
+      isLoading={facetsLoading}
       search={sidebarSearch}
       onSearchChange={setSidebarSearch}
       sortMode={sidebarSort}
       onSortModeChange={setSidebarSort}
       onItemClick={handleItemClick}
+      onHoverItem={handleHoverItem}
       entityType={entityType}
       itemSelection={itemSelection}
       onEditItem={entityType ? handleEditItem : undefined}
@@ -475,10 +461,10 @@ export function LibraryPage({
           <BookSelectionProvider key={selectedItem}>
             <BookGrid
               books={filteredBooks}
-              isLoading={booksLoading}
-              isFetchingNextPage={false}
-              hasNextPage={false}
-              fetchNextPage={noop}
+              isLoading={gridLoading}
+              isFetchingNextPage={isFetchingNextPage}
+              hasNextPage={hasNextPage}
+              fetchNextPage={fetchNextPage}
               showMuted={showMuted}
               emptySubMessage={
                 deferredSearch || activeFilterCount > 0
@@ -727,20 +713,14 @@ function EntityEditDialog({
     )
   }
 
-  if (entityType === "collection") {
-    return (
-      <CreateCollectionDialog
-        open={open}
-        onOpenChange={onOpenChange}
-        collectionUuid={item ? item.key : null}
-      />
-    )
-  }
-
-  // series and collections already have edit dialogs elsewhere;
-  // for now the sidebar edit uses the tag/creator ones.
-  // a full implementation could import EditSeriesDialog / EditCollectionDialog here.
-  return null
+  // the only remaining entity type is "collection"
+  return (
+    <CreateCollectionDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      collectionUuid={item ? item.key : null}
+    />
+  )
 }
 
 function SidebarPanel({
@@ -753,6 +733,7 @@ function SidebarPanel({
   sortMode,
   onSortModeChange,
   onItemClick,
+  onHoverItem,
   onPinItem,
   entityType,
   itemSelection,
@@ -770,6 +751,7 @@ function SidebarPanel({
   sortMode: SidebarSortMode
   onSortModeChange: (mode: SidebarSortMode) => void
   onItemClick: (key: string) => void
+  onHoverItem?: (key: string) => void
   onPinItem?: (item: LibraryItem) => void
   entityType?: LibraryEntityType
   itemSelection?: ReturnType<typeof useItemSelection>
@@ -868,6 +850,7 @@ function SidebarPanel({
           items={items}
           selectedKey={selectedKey}
           onItemClick={onItemClick}
+          onHoverItem={onHoverItem}
           isLoading={isLoading}
           entityType={entityType}
           itemSelection={itemSelection}
@@ -943,6 +926,7 @@ function SidebarItemList({
   items,
   selectedKey,
   onItemClick,
+  onHoverItem,
   isLoading,
   entityType,
   itemSelection,
@@ -951,6 +935,7 @@ function SidebarItemList({
   items: LibraryItem[]
   selectedKey: string | null
   onItemClick: (key: string) => void
+  onHoverItem?: (key: string) => void
   isLoading: boolean
   entityType?: LibraryEntityType
   itemSelection?: ReturnType<typeof useItemSelection>
@@ -964,11 +949,13 @@ function SidebarItemList({
   // new function identities on every parent re-render
   const callbacksRef = useRef({
     onItemClick,
+    onHoverItem,
     onOpenItemMenu,
     itemSelection,
   })
   callbacksRef.current = {
     onItemClick,
+    onHoverItem,
     onOpenItemMenu,
     itemSelection,
   }
@@ -977,6 +964,10 @@ function SidebarItemList({
 
   const handleRowClick = useCallback((key: string) => {
     callbacksRef.current.onItemClick(key)
+  }, [])
+
+  const handleRowHover = useCallback((key: string) => {
+    callbacksRef.current.onHoverItem?.(key)
   }, [])
 
   const handleRowToggle = useCallback((key: string) => {
@@ -1073,6 +1064,7 @@ function SidebarItemList({
                 canSelect={canSelect && item.key !== NONE_KEY}
                 hasRowActions={hasRowActions && item.key !== NONE_KEY}
                 onItemClick={handleRowClick}
+                onHover={handleRowHover}
                 onToggle={handleRowToggle}
                 onOpenMenu={handleRowMenu}
               />
@@ -1092,6 +1084,7 @@ function SidebarRow({
   canSelect,
   hasRowActions,
   onItemClick,
+  onHover,
   onToggle,
   onOpenMenu,
 }: {
@@ -1102,6 +1095,7 @@ function SidebarRow({
   canSelect: boolean
   hasRowActions: boolean
   onItemClick: (key: string) => void
+  onHover: (key: string) => void
   onToggle: (key: string) => void
   onOpenMenu: (item: LibraryItem, anchor: HTMLElement) => void
 }) {
@@ -1117,6 +1111,9 @@ function SidebarRow({
     >
       <button
         type="button"
+        onMouseEnter={() => {
+          onHover(item.key)
+        }}
         onClick={() => {
           if (isSelecting && canSelect) {
             onToggle(item.key)

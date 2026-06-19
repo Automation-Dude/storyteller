@@ -56,10 +56,6 @@ function secondaryText(
   ctx: SortContext | undefined,
 ): string | null {
   switch (field) {
-    case "rating":
-      return book.globalBookRating != null
-        ? `★ ${book.globalBookRating.toFixed(1)}`
-        : null
     case "userRating":
       return book.rating?.rating != null
         ? `★ ${book.rating.rating.toFixed(1)}`

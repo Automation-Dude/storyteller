@@ -10,7 +10,6 @@ export const SHELF_FILTER_FIELDS = [
   "description",
   "language",
   "publicationDate",
-  "rating",
   "userRating",
   "duration",
   "pageCount",
@@ -82,7 +81,6 @@ export const DATE_FIELDS = [
 ] as const satisfies readonly ShelfFilterField[]
 
 export const NUMBER_FIELDS = [
-  "rating",
   "userRating",
   "duration",
   "pageCount",
@@ -104,7 +102,18 @@ export const ENUM_FIELDS = [
   "mediaType",
 ] as const satisfies readonly ShelfFilterField[]
 
-export const MEDIA_TYPE_VALUES = ["ebook", "audiobook", "synced"] as const
+// the "Format" filter. the first three are broad (has-ebook / has-audiobook /
+// has-aligned-readaloud); the rest are composites mirroring getFormatKey so a
+// user can ask for e.g. "audiobook only" or "ebook+audiobook but not synced".
+export const MEDIA_TYPE_VALUES = [
+  "ebook",
+  "audiobook",
+  "synced",
+  "ebook-only",
+  "audiobook-only",
+  "missing-readaloud",
+  "no-media",
+] as const
 
 // fields that support isEmpty / isNotEmpty. mediaType, search and
 // ratingDimension are handled separately (ratingDimension carries `dimension`).
@@ -280,6 +289,12 @@ const arrayCondition = z
     field: z.enum(ARRAY_FIELDS),
     operator: z.enum(ARRAY_OPERATORS),
     value: z.array(z.string()).describe("the related entity uuids"),
+    role: z
+      .string()
+      .optional()
+      .describe(
+        "creators only: scope to a marc relator role (aut / nrt / trl)",
+      ),
   })
   .describe("relation membership (tags, collections, series, creators)")
 
@@ -363,6 +378,12 @@ const unaryCondition = z
     type: TYPE,
     field: z.enum(EMPTINESS_FIELDS),
     operator: z.enum(UNARY_OPERATORS),
+    role: z
+      .string()
+      .optional()
+      .describe(
+        "creators only: scope to a marc relator role (aut / nrt / trl)",
+      ),
   })
   .describe("presence test (is empty / is not empty)")
 
@@ -389,17 +410,24 @@ const conditionVariants = z.union([
 // unary operators take no value; tolerate legacy conditions that still carry an
 // empty value by stripping it before matching the strict variants above.
 export const shelfFilterConditionSchema = z.preprocess((val) => {
-  if (
-    val &&
-    typeof val === "object" &&
-    "operator" in val &&
-    (val.operator === "isEmpty" || val.operator === "isNotEmpty") &&
-    "value" in val
-  ) {
-    const { value: _omit, ...rest } = val as Record<string, unknown>
+  if (!val || typeof val !== "object") return val
+  let obj = val as Record<string, unknown>
+
+  // the aggregate book `rating` field was removed; only the user's own rating
+  // remains. map any legacy saved condition onto userRating so it still loads.
+  if (obj["field"] === "rating") {
+    obj = { ...obj, field: "userRating" }
+  }
+
+  // unary operators take no value; tolerate legacy conditions that still carry
+  // an empty value by stripping it before matching the strict variants above.
+  const op = obj["operator"]
+  if ((op === "isEmpty" || op === "isNotEmpty") && "value" in obj) {
+    const { value: _omit, ...rest } = obj
     return rest
   }
-  return val
+
+  return obj
 }, conditionVariants)
 
 // the in-memory condition the editor manipulates is intentionally loose; the
@@ -412,6 +440,9 @@ export type ShelfFilterCondition = {
   operator: ShelfFilterOperator
   value?: ShelfFilterValue
   dimension?: string
+  // only meaningful when field is "creators": scopes the match to a single marc
+  // relator role (aut / nrt / trl). absent = any role.
+  role?: string
 }
 
 export type ShelfFilterAnd = {
@@ -472,7 +503,7 @@ export const shelfFilterRootSchema = z.discriminatedUnion("type", [
   }),
 ])
 
-export const shelfFilterSchema = shelfFilterRootSchema
+export const shelfFilterSchema = z.union([shelfFilterRootSchema])
 
 // ---------------------------------------------------------------------------
 // labels + editor helpers
@@ -507,7 +538,6 @@ export const FIELD_LABELS: Record<ShelfFilterField, string> = {
   description: "Description",
   language: "Language",
   publicationDate: "Publication Date",
-  rating: "Rating (book)",
   userRating: "My Rating",
   duration: "Duration",
   pageCount: "Page Count",
@@ -517,7 +547,7 @@ export const FIELD_LABELS: Record<ShelfFilterField, string> = {
   collections: "Collections",
   series: "Series",
   creators: "Authors / Creators",
-  mediaType: "Media Type",
+  mediaType: "Format",
   createdAt: "Date Added",
   updatedAt: "Date Updated",
   review: "My Review",
@@ -581,12 +611,50 @@ export function operatorRequiresRangeValue(
   return operator === "between"
 }
 
-export function createEmptyCondition(): ShelfFilterCondition {
+// the operator a freshly-added filter on a field should default to. `is` is
+// rarely what you want (slow to fill, often the wrong question); pick the common
+// case instead: contains for text, between for numbers/dates, any-of for
+// relations/enums.
+export function defaultOperatorForField(
+  field: ShelfFilterField,
+): ShelfFilterOperator {
+  if (field === "search" || field === "review") return "contains"
+
+  switch (getFieldType(field)) {
+    case "string":
+      return "contains"
+    case "number":
+    case "date":
+      return "between"
+    case "array":
+      return "includes"
+    case "enum":
+      return "isAnyOf"
+    case "uuid":
+      return "is"
+  }
+}
+
+// the starting value shape for a freshly-added operator, so the condition is
+// well-formed (if not yet complete) the moment it appears in the editor.
+function initialValueForOperator(
+  operator: ShelfFilterOperator,
+): ShelfFilterValue | undefined {
+  if (!operatorRequiresValue(operator)) return undefined
+  if (operatorRequiresArrayValue(operator)) return []
+  if (operatorRequiresRangeValue(operator)) return undefined
+  return ""
+}
+
+export function createEmptyCondition(
+  field: ShelfFilterField = "title",
+): ShelfFilterCondition {
+  const operator = defaultOperatorForField(field)
   return {
     type: "condition",
-    field: "title",
-    operator: "contains",
-    value: "",
+    field,
+    operator,
+    value: initialValueForOperator(operator),
   }
 }
 

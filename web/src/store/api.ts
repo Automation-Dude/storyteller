@@ -22,7 +22,11 @@ import { type CollectionWithRelations } from "@/database/collections"
 import { type Creator } from "@/database/creators"
 import { type HomeStats } from "@/database/homeStats"
 import { type ImportRuleWithCollections } from "@/database/importRules"
-import { type LibraryCounts } from "@/database/libraryCounts"
+import {
+  type FacetSection,
+  type LibraryCounts,
+  type LibraryFacet,
+} from "@/database/libraryCounts"
 import { type Position } from "@/database/positions"
 import {
   type RatingDimensionScores,
@@ -905,6 +909,23 @@ export const api = createApi({
         "Sidebar",
       ],
     }),
+    getSectionFacets: build.query<LibraryFacet[], { section: FacetSection }>({
+      query: ({ section }) => `/library/facets?section=${section}`,
+      // the facet list + per-facet book counts for one library section. shares
+      // the broad invalidation set with the counts query so badges stay honest.
+      providesTags: [
+        "Books",
+        "Series",
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Tags",
+        "Statuses",
+        "Collections",
+        "UserRatings",
+        "Sidebar",
+      ],
+    }),
     listStatuses: build.query<Status[], void>({
       query: () => `/statuses`,
       providesTags: (statuses) =>
@@ -1779,6 +1800,8 @@ export const {
   useListInvitesQuery,
   useListSeriesQuery,
   useGetLibraryCountsQuery,
+  useGetSectionFacetsQuery,
+  usePrefetch,
   useListStatusesQuery,
   useListTagsQuery,
   useListUsersQuery,

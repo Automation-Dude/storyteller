@@ -5,8 +5,8 @@ import {
   sql,
 } from "kysely"
 
+import { type Role } from "@/components/books/edit/marcRelators"
 import {
-  type NumberOperators,
   type ShelfFilter,
   type ShelfFilterCondition,
   type ShelfFilterField,
@@ -230,7 +230,7 @@ function buildConditionExpression(
   condition: ShelfFilterCondition,
   userId?: UUID,
 ): FilterExpression {
-  const { field, operator, value } = condition
+  const { field, operator, value, role } = condition
 
   if (field === "review") {
     return buildReviewComparison(eb, operator, value, userId)
@@ -252,24 +252,25 @@ function buildConditionExpression(
   }
 
   if (operator === "isEmpty") {
-    return buildIsEmptyExpression(eb, field, userId)
+    return buildIsEmptyExpression(eb, field, userId, role)
   }
 
   if (operator === "isNotEmpty") {
-    return eb.not(buildIsEmptyExpression(eb, field, userId))
+    return eb.not(buildIsEmptyExpression(eb, field, userId, role))
   }
 
   if (value === undefined || value === null) {
     return eb.lit(true)
   }
 
-  return buildComparisonExpression(eb, field, operator, value, userId)
+  return buildComparisonExpression(eb, field, operator, value, userId, role)
 }
 
 function buildIsEmptyExpression(
   eb: EB,
   field: ScalarField,
   userId?: UUID,
+  role?: string,
 ): FilterExpression {
   switch (field) {
     case "title":
@@ -301,9 +302,6 @@ function buildIsEmptyExpression(
 
     case "updatedAt":
       return eb("book.updatedAt", "is", null)
-
-    case "rating":
-      return eb("book.rating", "is", null)
 
     case "userRating":
       return eb.not(
@@ -447,7 +445,11 @@ function buildIsEmptyExpression(
           eb
             .selectFrom("bookToCreator")
             .select(sql.lit(1).as("one"))
-            .whereRef("bookToCreator.bookUuid", "=", "book.uuid"),
+            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
+            .$if(!!role, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              qb.where("bookToCreator.role", "=", role! as Role),
+            ),
         ),
       )
 
@@ -487,6 +489,7 @@ function buildComparisonExpression(
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
   userId?: UUID,
+  role?: string,
 ): FilterExpression {
   const fieldType = getFieldType(field)
 
@@ -510,12 +513,10 @@ function buildComparisonExpression(
         value,
       )
     case "number":
-      return buildNumberComparison(
-        eb,
-        field as "rating",
-        operator,
-        value,
-      )
+      // every numeric field is intercepted before the switch (userRating via
+      // its subquery; pageCount / duration / fileSize as asset numerics), so
+      // this branch is unreachable - kept only for switch exhaustiveness.
+      return eb.lit(true)
     case "date":
       return buildDateComparison(
         eb,
@@ -531,6 +532,7 @@ function buildComparisonExpression(
         field as "tags" | "collections" | "series" | "creators",
         operator,
         value,
+        role,
       )
     case "enum":
       return buildEnumComparison(eb, field as "mediaType", operator, value)
@@ -613,50 +615,6 @@ function buildStringComparison(
 
     default:
       return eb.lit(true)
-  }
-}
-
-function buildNumberComparison(
-  eb: EB,
-  field: "rating",
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-): FilterExpression {
-  const column = `book.${field}` as const
-
-  switch (operator) {
-    case "is":
-      return eb(column, "=", Number(value))
-
-    case "isNot":
-      return eb(column, "!=", Number(value))
-
-    case "greaterThan":
-      return eb(column, ">", Number(value))
-
-    case "lessThan":
-      return eb(column, "<", Number(value))
-
-    case "greaterOrEqual":
-      return eb(column, ">=", Number(value))
-
-    case "lessOrEqual":
-      return eb(column, "<=", Number(value))
-
-    case "between":
-      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
-      return eb.and([
-        eb(column, ">=", Number(value[0])),
-        eb(column, "<=", Number(value[1])),
-      ])
-
-    default: {
-      const _exhaustive: Exclude<
-        typeof operator,
-        Exclude<NumberOperators, "isEmpty" | "isNotEmpty">
-      > = operator
-      return eb.lit(true)
-    }
   }
 }
 
@@ -895,8 +853,6 @@ export function buildSortExpression(
       return sql`book.publication_date`
     case "language":
       return sql`book.language`
-    case "rating":
-      return sql`book.rating`
     case "pageCount":
     case "duration":
     case "fileSize":
@@ -1110,6 +1066,7 @@ function buildArrayComparison(
   field: "tags" | "collections" | "series" | "creators",
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
+  role?: string,
 ): FilterExpression {
   if (!Array.isArray(value)) return eb.lit(true)
 
@@ -1123,7 +1080,7 @@ function buildArrayComparison(
     case "series":
       return buildSeriesComparison(eb, operator, uuids)
     case "creators":
-      return buildCreatorComparison(eb, operator, uuids)
+      return buildCreatorComparison(eb, operator, uuids, role)
   }
 }
 
@@ -1263,7 +1220,10 @@ function buildCreatorComparison(
   eb: EB,
   operator: ShelfFilterOperator,
   uuids: UUID[],
+  role?: string,
 ): FilterExpression {
+  // scope the membership test to a single relator role (author / narrator /
+  // translator) when asked; absent role matches a person in any role.
   switch (operator) {
     case "includes":
       return eb.exists(
@@ -1271,7 +1231,11 @@ function buildCreatorComparison(
           .selectFrom("bookToCreator")
           .select(sql.lit(1).as("one"))
           .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-          .where("bookToCreator.creatorUuid", "in", uuids),
+          .where("bookToCreator.creatorUuid", "in", uuids)
+          .$if(!!role, (qb) =>
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            qb.where("bookToCreator.role", "=", role! as Role),
+          ),
       )
 
     case "includesAll":
@@ -1282,7 +1246,11 @@ function buildCreatorComparison(
               .selectFrom("bookToCreator")
               .select(sql.lit(1).as("one"))
               .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-              .where("bookToCreator.creatorUuid", "=", uuid),
+              .where("bookToCreator.creatorUuid", "=", uuid)
+              .$if(!!role, (qb) =>
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                qb.where("bookToCreator.role", "=", role! as Role),
+              ),
           ),
         ),
       )
@@ -1294,7 +1262,11 @@ function buildCreatorComparison(
             .selectFrom("bookToCreator")
             .select(sql.lit(1).as("one"))
             .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-            .where("bookToCreator.creatorUuid", "in", uuids),
+            .where("bookToCreator.creatorUuid", "in", uuids)
+            .$if(!!role, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              qb.where("bookToCreator.role", "=", role! as Role),
+            ),
         ),
       )
 
@@ -1309,69 +1281,44 @@ function buildEnumComparison(
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
 ): FilterExpression {
+  const hasEbook = eb.exists(
+    eb
+      .selectFrom("ebook")
+      .select(sql.lit(1).as("one"))
+      .whereRef("ebook.bookUuid", "=", "book.uuid"),
+  )
+  const hasAudiobook = eb.exists(
+    eb
+      .selectFrom("audiobook")
+      .select(sql.lit(1).as("one"))
+      .whereRef("audiobook.bookUuid", "=", "book.uuid"),
+  )
+  const hasAligned = eb.exists(
+    eb
+      .selectFrom("readaloud")
+      .select(sql.lit(1).as("one"))
+      .whereRef("readaloud.bookUuid", "=", "book.uuid")
+      .where("readaloud.status", "=", "ALIGNED"),
+  )
+
+  // the first three are broad (does the book have this asset at all); the rest
+  // are composites mirroring getFormatKey in library-sections.ts.
   const mediaTypeCondition = (type: string): FilterExpression => {
     switch (type) {
       case "ebook":
-        return eb.and([
-          eb.exists(
-            eb
-              .selectFrom("ebook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("ebook.bookUuid", "=", "book.uuid"),
-          ),
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("audiobook")
-                .select(sql.lit(1).as("one"))
-                .whereRef("audiobook.bookUuid", "=", "book.uuid"),
-            ),
-          ),
-        ])
-
+        return hasEbook
       case "audiobook":
-        return eb.and([
-          eb.exists(
-            eb
-              .selectFrom("audiobook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("audiobook.bookUuid", "=", "book.uuid"),
-          ),
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("ebook")
-                .select(sql.lit(1).as("one"))
-                .whereRef("ebook.bookUuid", "=", "book.uuid"),
-            ),
-          ),
-        ])
-
+        return hasAudiobook
       case "synced":
-        return eb.or([
-          eb.exists(
-            eb
-              .selectFrom("readaloud")
-              .select(sql.lit(1).as("one"))
-              .whereRef("readaloud.bookUuid", "=", "book.uuid")
-              .where("readaloud.status", "=", "ALIGNED"),
-          ),
-          eb.and([
-            eb.exists(
-              eb
-                .selectFrom("ebook")
-                .select(sql.lit(1).as("one"))
-                .whereRef("ebook.bookUuid", "=", "book.uuid"),
-            ),
-            eb.exists(
-              eb
-                .selectFrom("audiobook")
-                .select(sql.lit(1).as("one"))
-                .whereRef("audiobook.bookUuid", "=", "book.uuid"),
-            ),
-          ]),
-        ])
-
+        return hasAligned
+      case "ebook-only":
+        return eb.and([hasEbook, eb.not(hasAudiobook)])
+      case "audiobook-only":
+        return eb.and([hasAudiobook, eb.not(hasEbook)])
+      case "missing-readaloud":
+        return eb.and([hasEbook, hasAudiobook, eb.not(hasAligned)])
+      case "no-media":
+        return eb.and([eb.not(hasEbook), eb.not(hasAudiobook), eb.not(hasAligned)])
       default:
         return eb.lit(false)
     }

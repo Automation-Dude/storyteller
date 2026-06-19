@@ -47,8 +47,16 @@ export const GET = withHasPermission("bookList")(async (request) => {
     } catch {
       return NextResponse.json({ error: "Invalid filter" }, { status: 400 })
     }
+    if (parsed.type === "condition") {
+      parsed = {
+        type: "and",
+        children: [parsed],
+      }
+    }
     const validated = shelfFilterSchema.safeParse(parsed)
     if (!validated.success) {
+      console.log(parsed)
+      console.error(validated.error)
       return NextResponse.json(
         { error: validated.error.message },
         { status: 400 },
@@ -65,7 +73,10 @@ export const GET = withHasPermission("bookList")(async (request) => {
     opts.offset = parseInt(offsetParam)
   }
 
-  if (orderByParam && (SORTABLE_FIELDS as readonly string[]).includes(orderByParam)) {
+  if (
+    orderByParam &&
+    (SORTABLE_FIELDS as readonly string[]).includes(orderByParam)
+  ) {
     opts.orderBy = orderByParam as SortField
   }
 

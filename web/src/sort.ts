@@ -13,7 +13,6 @@ export const SORTABLE_FIELDS = [
   "createdAt",
   "updatedAt",
   "publicationDate",
-  "rating",
   "userRating",
   "pageCount",
   "duration",
@@ -37,7 +36,6 @@ export const SORT_FIELD_LABELS: Record<SortField, string> = {
   createdAt: FIELD_LABELS.createdAt,
   updatedAt: FIELD_LABELS.updatedAt,
   publicationDate: FIELD_LABELS.publicationDate,
-  rating: FIELD_LABELS.rating,
   userRating: FIELD_LABELS.userRating,
   pageCount: FIELD_LABELS.pageCount,
   duration: FIELD_LABELS.duration,
@@ -110,8 +108,6 @@ function sortValue(
       return book.updatedAt
     case "publicationDate":
       return book.publicationDate
-    case "rating":
-      return book.globalBookRating
     case "userRating":
       return book.rating?.rating ?? null
     case "pageCount":

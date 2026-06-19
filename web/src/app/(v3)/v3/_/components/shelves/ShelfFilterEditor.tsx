@@ -93,7 +93,7 @@ const FILTER_PRESETS: FilterPreset[] = [
     key: "highlyRated",
     node: {
       type: "condition",
-      field: "rating",
+      field: "userRating",
       operator: "greaterOrEqual",
       value: 4,
     },
@@ -138,7 +138,7 @@ const FILTER_PRESETS: FilterPreset[] = [
     key: "unrated",
     node: {
       type: "condition",
-      field: "rating",
+      field: "userRating",
       operator: "isEmpty",
       value: undefined,
     },
@@ -757,7 +757,7 @@ const FIELD_GROUPS: {
   },
   {
     key: "review",
-    fields: ["rating", "review", "userRating", "ratingDimension"],
+    fields: ["review", "userRating", "ratingDimension"],
   },
   {
     key: "relations",
@@ -1188,7 +1188,6 @@ type NumericFieldConfig = {
 
 function getNumericFieldConfig(field: ShelfFilterField): NumericFieldConfig {
   switch (field) {
-    case "rating":
     case "userRating":
     case "ratingDimension":
       return {

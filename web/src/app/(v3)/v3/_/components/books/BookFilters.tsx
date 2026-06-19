@@ -90,7 +90,6 @@ const DISPLAY_AUTO = "__auto__"
 // a compact, curated subset for the Show override (not every sortable field)
 const DISPLAY_OVERRIDE_FIELDS: DisplayField[] = [
   "authors",
-  "rating",
   "userRating",
   "pageCount",
   "duration",
