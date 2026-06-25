@@ -17,6 +17,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+import { TooltipButton } from "../ui/tooltip-button"
 
 type RelationItem = {
   uuid: string
@@ -30,7 +31,9 @@ type RelationItem = {
 // the icon (or a color dot fallback) shown at the start of an item, when set
 const RelationGlyph = ({ item }: { item: RelationItem }) => {
   if (item.icon) {
-    return <DynamicIcon iconId={item.icon} color={item.color} className="h-3 w-3" />
+    return (
+      <DynamicIcon iconId={item.icon} color={item.color} className="h-3 w-3" />
+    )
   }
   if (item.color) {
     return (
@@ -92,10 +95,11 @@ const RelationChip = ({
           size="icon-xs"
           variant="ghost"
           aria-label={label}
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault()
             onRemoveItem(item)
           }}
-          className="absolute top-1/2 -right-1 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
+          className="absolute top-[55%] -right-0.5 z-20 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
         >
           <IconX className="h-3 w-3" />
         </Button>
@@ -108,12 +112,12 @@ const RelationChip = ({
       <Badge
         variant={badgeVariant}
         className={cn(
-          "group/badge relative gap-0.5 px-3 font-normal transition-all",
+          "group/badge relative h-5 gap-0.5 px-3 font-normal transition-all hover:pr-4",
         )}
         render={
           <V3Link
             href={item.url}
-            className="hover:text-primary hover:underline"
+            className="hover:text-primary hover:underline has-[button:hover]:no-underline"
           >
             {base}
           </V3Link>
@@ -125,7 +129,7 @@ const RelationChip = ({
     <Badge
       variant={badgeVariant}
       className={cn(
-        "group/badge relative gap-0.5 px-4 font-normal transition-all",
+        "group/badge relative gap-0.5 px-4 font-normal transition-all hover:pr-4",
       )}
     >
       {base}
@@ -224,16 +228,16 @@ export function RelationChipEditor<T extends RelationItem>({
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           render={
-            <Button
+            <TooltipButton
               variant="ghost"
-              size="sm"
               className={cn(
-                "border-border text-muted-foreground h-5 rounded-full border border-dashed text-xs transition-opacity",
+                "border-border text-muted-foreground/80 h-5 rounded-full border border-dashed text-xs transition-opacity",
               )}
+              tooltip={tLabels("add.plain")}
+              aria-label={tLabels("add.plain")}
             >
               <IconPlus className="h-3 w-3" />
-              Add
-            </Button>
+            </TooltipButton>
           }
         />
 

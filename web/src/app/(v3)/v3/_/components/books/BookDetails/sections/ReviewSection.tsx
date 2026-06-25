@@ -203,22 +203,35 @@ export function ReviewSection({ className }: { className?: string }) {
       icon={<IconStar className="size-3.5 stroke-1" />}
       className={className}
       rightElement={
-        !editing && (
-          <TooltipButton
-            variant="ghost"
-            className="text-muted-foreground font-thin"
-            onClick={(e) => {
-              e.stopPropagation()
-              startEdit()
-            }}
-            aria-label={
-              currentReview ? t("review.edit") : t("review.addReview")
-            }
-            tooltip={currentReview ? t("review.edit") : t("review.addReview")}
-          >
-            <IconPencil className="size-3.5 stroke-[1.5]" />
-          </TooltipButton>
-        )
+        <div className="flex items-center">
+          {!editing && (
+            <TooltipButton
+              variant="ghost"
+              className="text-muted-foreground font-thin"
+              onClick={(e) => {
+                e.stopPropagation()
+                startEdit()
+              }}
+              aria-label={
+                currentReview ? t("review.edit") : t("review.addReview")
+              }
+              tooltip={currentReview ? t("review.edit") : t("review.addReview")}
+            >
+              <IconPencil className="size-3.5 stroke-[1.5]" />
+            </TooltipButton>
+          )}
+          {!hasDimensions && (
+            <TooltipButton
+              variant="ghost"
+              className="text-muted-foreground ml-auto"
+              onClick={addAdvancedRating}
+              tooltip={t("review.addAdvanced")}
+              aria-label={t("review.addAdvanced")}
+            >
+              <IconChartRadar className="mr-1 h-3.5 w-3.5" />
+            </TooltipButton>
+          )}
+        </div>
       }
     >
       <div className="flex flex-col gap-4">
@@ -245,15 +258,6 @@ export function ReviewSection({ className }: { className?: string }) {
               placeholder={t("review.ratePlaceholder")}
               onCommit={applyManualRating}
             />
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground ml-auto"
-              onClick={addAdvancedRating}
-            >
-              <IconChartRadar className="mr-1 h-3.5 w-3.5" />
-              {t("review.addAdvanced")}
-            </Button>
           </div>
         )}
 
