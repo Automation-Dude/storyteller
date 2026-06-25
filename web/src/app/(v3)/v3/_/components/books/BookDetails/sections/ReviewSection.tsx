@@ -224,7 +224,10 @@ export function ReviewSection({ className }: { className?: string }) {
             <TooltipButton
               variant="ghost"
               className="text-muted-foreground ml-auto"
-              onClick={addAdvancedRating}
+              onClick={(e) => {
+                e.stopPropagation()
+                addAdvancedRating()
+              }}
               tooltip={t("review.addAdvanced")}
               aria-label={t("review.addAdvanced")}
             >
