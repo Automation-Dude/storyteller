@@ -12,6 +12,8 @@ type TooltipButtonProps = React.ComponentProps<typeof Button> &
     tooltipSide?: TooltipPrimitive.Positioner.Props["side"]
     tooltipAlign?: TooltipPrimitive.Positioner.Props["align"]
     delay?: number
+    /* required bc you will forget it */
+    "aria-label": string
   }
 
 export function TooltipButton({
@@ -23,7 +25,7 @@ export function TooltipButton({
 }: TooltipButtonProps) {
   return (
     <Tooltip delay={delay}>
-      <TooltipTrigger render={<Button {...buttonProps} />} />
+      <TooltipTrigger render={<Button size="icon-sm" {...buttonProps} />} />
       <TooltipContent side={tooltipSide} align={tooltipAlign}>
         {tooltip}
       </TooltipContent>

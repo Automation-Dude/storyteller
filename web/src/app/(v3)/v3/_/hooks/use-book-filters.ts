@@ -25,6 +25,7 @@ type UseBookFiltersOptions = {
   // the sort field used when no `sortBy` is present in the url (e.g. series
   // pages default to position)
   defaultSortField?: SortField
+  defaultSortDirection?: SortDirection
 }
 
 export function useBookFilters(options: UseBookFiltersOptions = {}) {
@@ -40,7 +41,9 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   )
   const [sortDirection, setSortDirection] = useQueryState(
     "sortDir",
-    parseAsStringLiteral(sortDirectionValues).withDefault("desc"),
+    parseAsStringLiteral(sortDirectionValues).withDefault(
+      options.defaultSortDirection ?? "desc",
+    ),
   )
   const [mediaFilter, setMediaFilter] = useQueryState(
     "media",

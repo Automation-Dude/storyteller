@@ -22,7 +22,7 @@
       "eyebrow": "Waar je gebleven was",
       "by": "door {authors}",
       "narratedBy": "voorgelezen door {narrators}",
-      "readAlong": "Meelezen",
+      "readAlong": "Hardop lezen",
       "read": "Lezen",
       "listen": "Luisteren",
       "viewDetails": "Details bekijken",
@@ -1037,6 +1037,7 @@
       "overrideTitle": "Meerdimensionale beoordeling overschrijven?",
       "overrideDescription": "Handmatig beoordelen vervangt je meerdimensionale beoordeling door één waarde.",
       "overrideConfirm": "Overschrijven",
+      "apply": "Toepassen",
       "adjustScores": "Scores aanpassen",
       "addDimension": "{label} toevoegen",
       "removeDimension": "{label} verwijderen"
@@ -1055,7 +1056,10 @@
       "positionPlaceholder": "bijv. 1",
       "positionHint": "Laat leeg om zonder positie toe te voegen.",
       "cancel": "Annuleren",
-      "add": "Toevoegen"
+      "add": "Toevoegen",
+      "save": "Opslaan",
+      "editPositionTitle": "Positie bewerken",
+      "editPositionDescription": "Wijzig de positie van dit boek in {series}."
     },
     "collections": {
       "notInAnyCollections": "Geen deel van een verzameling",
@@ -1073,9 +1077,6 @@
       "ebook": "Ebook bestand",
       "audiobook": "Audiobook bestand",
       "title": "Bestanden",
-      "lastAligned": "Laatst gesynchroniseerd",
-      "transcriptionEngine": "Transcriptie engine",
-      "storytellerVersion": "<em>Storyteller</em> versie",
       "assetFolder": "<em>Asset</em> map"
     },
     "alignment": {
@@ -1088,7 +1089,11 @@
       "unprocessed": "Niet gesynchroniseerd",
       "cancel": "Annuleren",
       "retry": "Opnieuw proberen",
-      "createReadaloud": "Create <em>readaloud</em>"
+      "createReadaloud": "Creëer <em>readaloud</em>",
+
+      "lastAligned": "Laatst gesynchroniseerd",
+      "transcriptionEngine": "Transcriptie engine",
+      "storytellerVersion": "<em>Storyteller</em> versie"
     },
     "scan": {
       "cancelScan": "Annuleer scan",

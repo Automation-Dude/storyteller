@@ -12,6 +12,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
 import { type HomeSectionWithDetails } from "@/database/shelves"
+import { type DisplayField } from "@/sort"
 import {
   useListBooksQuery,
   useListShelfBooksQuery,
@@ -27,7 +28,7 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
   const t = useTranslation("HomePage")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  const { books, isLoading, seeAllHref } = useShelfBooks(shelf)
+  const { books, isLoading, seeAllHref, displayField } = useShelfBooks(shelf)
 
   const scrollLeft = () => {
     if (!scrollContainerRef.current) return
@@ -97,7 +98,7 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
             key={book.uuid}
             className="w-[150px] shrink-0 snap-mandatory snap-start"
           >
-            <BookCard book={book} />
+            <BookCard book={book} displayField={displayField} />
           </div>
         ))}
       </div>
@@ -109,6 +110,7 @@ type UseShelfBooksResult = {
   books: BookWithRelations[]
   isLoading: boolean
   seeAllHref: string
+  displayField?: DisplayField
 }
 
 function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
@@ -180,6 +182,7 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
       books: recentlyAddedBooks,
       isLoading: isLoadingAllBooks,
       seeAllHref: "/books?sort=createdAt,desc",
+      displayField: "createdAt",
     }
   }
 

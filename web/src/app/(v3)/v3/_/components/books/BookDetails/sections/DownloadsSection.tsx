@@ -18,7 +18,7 @@ export function DownloadsSection({ className }: { className?: string }) {
   return (
     <section className={className}>
       <h2 className="section-label mb-4">
-        <IconDownload className="h-4 w-4" />
+        <IconDownload className="size-3.5 stroke-1" />
         {tLabels("downloads")}
       </h2>
 

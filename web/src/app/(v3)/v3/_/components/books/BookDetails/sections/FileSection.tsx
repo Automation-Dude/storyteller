@@ -45,14 +45,10 @@ import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
 import { useRemoveBookAssetMutation } from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
+import { CollapsibleSection } from "./CollapsibleSection"
+import { TooltipButton } from "../../../ui/tooltip-button"
 
 type Format = "ebook" | "audiobook" | "readaloud"
-
-const FORMAT_LABELS: Record<Format, string> = {
-  ebook: "Ebook",
-  audiobook: "Audiobook",
-  readaloud: "Readaloud",
-}
 
 const FORMAT_ICONS: Record<Format, ComponentType<{ className?: string }>> = {
   ebook: IconBook,
@@ -89,6 +85,14 @@ function FormatFileRow({
   const directory = lastSlash >= 0 ? filepath.slice(0, lastSlash + 1) : ""
   const filename = lastSlash >= 0 ? filepath.slice(lastSlash + 1) : filepath
 
+  const t = useTranslation("BookDetailsPage")
+
+  const FORMAT_LABELS: Record<Format, string> = {
+    ebook: "Ebook",
+    audiobook: "Audiobook",
+    readaloud: "Readaloud",
+  }
+
   const pageCount =
     format !== "audiobook"
       ? book.pageCount ?? ("pageCount" in fmt ? fmt.pageCount : null)
@@ -103,10 +107,10 @@ function FormatFileRow({
     <div className="flex items-start gap-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-          <span className="text-muted-foreground font-sans text-xs font-semibold uppercase">
+          <span className="text-muted-foreground font-sans text-xs uppercase">
             {FORMAT_LABELS[format]}
           </span>
+          <Icon className="text-muted-foreground h-4 w-4 shrink-0 stroke-1" />
           {fmt.missing && (
             <Badge
               variant="destructive"
@@ -125,7 +129,7 @@ function FormatFileRow({
 
         <div className="text-sm" title={filepath}>
           <span className="text-muted-foreground">{directory}</span>
-          <code className="font-mono font-medium">{filename}</code>
+          <code className="text-xs font-medium">{filename}</code>
         </div>
 
         <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 text-xs">
@@ -140,13 +144,15 @@ function FormatFileRow({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button
+                <TooltipButton
                   variant="ghost"
                   size="icon-sm"
+                  tooltip={t("fileInformation.replaceFile")}
+                  className="text-muted-foreground font-thin"
                   aria-label={`Replace ${format} file`}
                 >
-                  <IconRefresh className="h-3.5 w-3.5" />
-                </Button>
+                  <IconRefresh className="h-3.5 w-3.5 stroke-[1.5]" />
+                </TooltipButton>
               }
             />
             <DropdownMenuContent align="end">
@@ -198,6 +204,12 @@ export function FileSection({
   const formatDate = useFormatDate()
   const [removeAsset, { isLoading: isRemoving }] = useRemoveBookAssetMutation()
 
+  const FORMAT_LABELS: Record<Format, string> = {
+    ebook: "Ebook",
+    audiobook: "Audiobook",
+    readaloud: "Readaloud",
+  }
+
   const [fileDialog, setFileDialog] = useState<{
     format: Format
     mode: "server" | "upload"
@@ -221,21 +233,27 @@ export function FileSection({
     assetsDir && book.assetDir ? `${assetsDir}/${book.assetDir}` : book.assetDir
 
   return (
-    <section className={cn(className)}>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="section-label flex-1">
-          <IconFileText className="h-4 w-4" />
-          {t("fileInformation.title")}
-        </h2>
-
-        {canEdit && missingFormats.length > 0 && (
+    <CollapsibleSection
+      title={t("fileInformation.title")}
+      icon={<IconFileText className="size-3.5 stroke-1" />}
+      className={className}
+      rightElement={
+        canEdit &&
+        missingFormats.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="ghost" size="sm" aria-label="Add file">
-                  <IconPlus className="mr-1 h-3.5 w-3.5" />
-                  {t("fileInformation.addFile")}
-                </Button>
+                <TooltipButton
+                  variant="ghost"
+                  className="text-muted-foreground font-thin"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                  aria-label={t("fileInformation.addFile")}
+                  tooltip={t("fileInformation.addFile")}
+                >
+                  <IconPlus className="size-3.5 stroke-[1.5]" />
+                </TooltipButton>
               }
             />
             <DropdownMenuContent align="end" className="w-fit">
@@ -269,9 +287,9 @@ export function FileSection({
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
-      </div>
-
+        )
+      }
+    >
       <div className="space-y-3">
         {presentFormats.map((format) => (
           <FormatFileRow
@@ -290,27 +308,6 @@ export function FileSection({
             }}
           />
         ))}
-
-        {book.alignedAt && (
-          <FilePathRow
-            label={t("fileInformation.lastAligned")}
-            filepath={formatDate(book.alignedAt)}
-          />
-        )}
-
-        {book.alignedWith && (
-          <FilePathRow
-            label={t("fileInformation.transcriptionEngine")}
-            filepath={book.alignedWith}
-          />
-        )}
-
-        {book.alignedByStorytellerVersion && (
-          <FilePathRow
-            label={t("fileInformation.storytellerVersion")}
-            filepath={book.alignedByStorytellerVersion}
-          />
-        )}
 
         {canEdit && assetFolder && (
           <div className="flex flex-col gap-0.5">
@@ -382,6 +379,6 @@ export function FileSection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </CollapsibleSection>
   )
 }

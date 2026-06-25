@@ -33,6 +33,7 @@ import { useAppDispatch } from "@/store/appState"
 import { BookFormProvider, useBookForm } from "./BookDetails/BookFormProvider"
 import { DeleteBookModal } from "./BookDetails/DeleteBookModal"
 import { TranscriptionStatus } from "./BookDetails/TranscriptionStatus"
+import { CollapsibleSection } from "./BookDetails/sections/CollapsibleSection"
 import { ContributorsSection } from "./BookDetails/sections/ContributorsSection"
 import { DescriptionSection } from "./BookDetails/sections/DescriptionSection"
 import { DetailsSection } from "./BookDetails/sections/DetailsSection"
@@ -209,11 +210,11 @@ function BookDetailsContentInner({
             <HeroSection compact={compact || false} />
 
             <div className="flex flex-col gap-5 p-6">
-              <DescriptionSection />
-
               <ReviewSection />
 
-              <TranscriptionStatus book={book} />
+              <DescriptionSection />
+
+              <DetailsSection />
 
               <div className="flex w-full flex-col gap-4 @xl/book:grid @xl/book:grid-cols-2 @xl/book:gap-10">
                 <TagsSection />
@@ -222,9 +223,9 @@ function BookDetailsContentInner({
 
               <ContributorsSection />
 
-              {permissions?.bookDownload && <DownloadsSection />}
+              {/* {permissions?.bookDownload && <DownloadsSection />} */}
 
-              <DetailsSection />
+              <TranscriptionStatus book={book} />
 
               <FileSection book={book} assetsDir={assetsDir} />
             </div>
@@ -438,19 +439,17 @@ function TagsSection() {
   const tLabels = useTranslation("Labels")
 
   return (
-    <section>
-      <h2 className="section-label mb-3">
-        <IconTag className="h-4 w-4" />
-        {tLabels("tags")}
-      </h2>
-
+    <CollapsibleSection
+      title={tLabels("tags")}
+      icon={<IconTag className="size-3.5 stroke-[1.5]" />}
+    >
       <TagEditor
         bookUuid={book.uuid}
         tags={book.tags.map((t) => ({ uuid: t.uuid, name: t.name }))}
         onUpdate={() => {}}
         editMode={isEditing}
       />
-    </section>
+    </CollapsibleSection>
   )
 }
 
@@ -459,12 +458,10 @@ function CollectionsSection() {
   const tLabels = useTranslation("Labels")
 
   return (
-    <section>
-      <h2 className="section-label mb-3">
-        <IconFolder className="h-4 w-4" />
-        {tLabels("collections")}
-      </h2>
-
+    <CollapsibleSection
+      title={tLabels("collections")}
+      icon={<IconFolder className="size-3.5 stroke-[1.5]" />}
+    >
       <CollectionEditor
         bookUuid={book.uuid}
         collections={book.collections.map((c) => ({
@@ -474,6 +471,6 @@ function CollectionsSection() {
         onUpdate={() => {}}
         editMode={isEditing}
       />
-    </section>
+    </CollapsibleSection>
   )
 }

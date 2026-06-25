@@ -4,7 +4,7 @@ import { IconChartRadar, IconPencil, IconStar } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
-import { SEAMLESS_BOX } from "@v3/_/components/books/BookDetails/EditableField"
+import { SEAMLESS_BOX } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import { MultidimensionalRating } from "@v3/_/components/books/BookDetails/sections/MultidimensionalRating"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { Button } from "@v3/_/components/ui/button"
@@ -24,6 +24,8 @@ import {
 } from "@/store/api"
 
 import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
+import { CollapsibleSection } from "./CollapsibleSection"
+import { TooltipButton } from "../../../ui/tooltip-button"
 
 // inline number editor styled like EditableField (SEAMLESS_BOX), but committing
 // through setBookRating since the rating is per-user and not part of the form
@@ -196,23 +198,29 @@ export function ReviewSection({ className }: { className?: string }) {
   )
 
   return (
-    <section className={className}>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-label flex-1">
-          <IconStar className="h-4 w-4" />
-          <span className="sr-only @md/book:not-sr-only">
-            {t("review.title")}
-          </span>
-        </h2>
-
-        {!editing && (
-          <Button size="sm" variant="ghost" onClick={startEdit}>
-            <IconPencil className="mr-1 h-3.5 w-3.5" />
-            {currentReview ? t("review.edit") : t("review.addReview")}
-          </Button>
-        )}
-      </div>
-
+    <CollapsibleSection
+      title={t("review.title")}
+      icon={<IconStar className="size-3.5 stroke-1" />}
+      className={className}
+      rightElement={
+        !editing && (
+          <TooltipButton
+            variant="ghost"
+            className="text-muted-foreground font-thin"
+            onClick={(e) => {
+              e.stopPropagation()
+              startEdit()
+            }}
+            aria-label={
+              currentReview ? t("review.edit") : t("review.addReview")
+            }
+            tooltip={currentReview ? t("review.edit") : t("review.addReview")}
+          >
+            <IconPencil className="size-3.5 stroke-[1.5]" />
+          </TooltipButton>
+        )
+      }
+    >
       <div className="flex flex-col gap-4">
         {hasDimensions ? (
           <MultidimensionalRating
@@ -292,6 +300,6 @@ export function ReviewSection({ className }: { className?: string }) {
           )
         )}
       </div>
-    </section>
+    </CollapsibleSection>
   )
 }

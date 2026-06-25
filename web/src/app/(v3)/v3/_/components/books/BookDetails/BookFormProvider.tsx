@@ -26,6 +26,8 @@ function bookToFormValues(book: BookWithRelations): BookFormValues {
     description: book.description,
     language: book.language,
     publicationDate: book.publicationDate,
+    pageCount: book.pageCount,
+    duration: book.duration,
     authors: book.authors.map((a) => a.name),
     narrators: book.narrators.map((n) => n.name),
     creators: book.creators
@@ -114,6 +116,8 @@ export function BookFormProvider({
           description: values.description,
           language: values.language,
           publicationDate: values.publicationDate,
+          pageCount: values.pageCount,
+          duration: values.duration,
           authors: values.authors,
           narrators: values.narrators,
           creators: values.creators

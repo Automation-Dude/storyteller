@@ -506,38 +506,49 @@ export function useBookActionItems({
         </DropdownMenuItem>
       )}
 
+      {canProcess &&
+        (() => {
+          const hasProcessable =
+            mode === "bulk" || books.some((b) => b.audiobook || b.ebook)
+
+          if (!hasProcessable) return null
+
+          return (
+            <>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={(event) => {
+                  if (mode === "single") {
+                    setProcessingModalOpen(true)
+                  } else {
+                    processAction.confirm(event)
+                  }
+                }}
+              >
+                <IconProgress className="mr-2 h-4 w-4" />
+                {t("process")}
+              </DropdownMenuItem>
+
+              {mode === "bulk" && (
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    clearCacheAction.confirm(event)
+                  }}
+                >
+                  <IconRefresh className="mr-2 h-4 w-4" />
+                  {t("clearCache")}
+                </DropdownMenuItem>
+              )}
+            </>
+          )
+        })()}
+
       {canProcess && (
-        <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleScan}>
-            <IconScan className="mr-2 h-4 w-4" />
-            {t("scan")}
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={(event) => {
-              if (mode === "single") {
-                setProcessingModalOpen(true)
-              } else {
-                processAction.confirm(event)
-              }
-            }}
-          >
-            <IconProgress className="mr-2 h-4 w-4" />
-            {t("process")}
-          </DropdownMenuItem>
-
-          {mode === "bulk" && (
-            <DropdownMenuItem
-              onClick={(event) => {
-                clearCacheAction.confirm(event)
-              }}
-            >
-              <IconRefresh className="mr-2 h-4 w-4" />
-              {t("clearCache")}
-            </DropdownMenuItem>
-          )}
-        </>
+        <DropdownMenuItem onClick={handleScan}>
+          <IconScan className="mr-2 h-4 w-4" />
+          {t("scan")}
+        </DropdownMenuItem>
       )}
 
       {canDelete && (

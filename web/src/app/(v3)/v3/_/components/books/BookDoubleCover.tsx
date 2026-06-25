@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { useIsMobile } from "@v3/_/hooks/use-mobile"
+
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
@@ -50,6 +52,9 @@ export function BookDoubleCover({
   forceAligned?: boolean
   onLoadingChange?: (loading: boolean) => void
 }) {
+  const isMobile = useIsMobile()
+  const hoverDisabled = disableHover || isMobile
+
   const bookIsAligned = book.readaloud?.status === "ALIGNED"
   const isAligned = forceAligned ?? bookIsAligned
 
@@ -192,11 +197,11 @@ export function BookDoubleCover({
     <div
       className="group/covers relative h-full w-full"
       onPointerEnter={() => {
-        if (disableHover) return
+        if (hoverDisabled) return
         if (stateRef.current === "idle") transitionTo("separated")
       }}
       onPointerLeave={() => {
-        if (disableHover) return
+        if (hoverDisabled) return
         transitionTo("idle")
       }}
     >
@@ -205,11 +210,11 @@ export function BookDoubleCover({
         className={TILE_CLASS}
         style={{ width: "82%", aspectRatio: "1 / 1" }}
         onPointerEnter={() => {
-          if (disableHover) return
+          if (hoverDisabled) return
           transitionTo("audiobook-front")
         }}
         onPointerLeave={(e) => {
-          if (disableHover) return
+          if (hoverDisabled) return
           // if we're still inside the cover-stack, fall back to separated
           const next = e.relatedTarget as Node | null
           if (next && e.currentTarget.parentElement?.contains(next)) {

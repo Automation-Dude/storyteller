@@ -21,7 +21,7 @@ type EditableTextProps = {
   /** display element when not editing (h1, p, span, ...) */
   as?: ElementType
   placeholder?: string
-  type?: "text" | "date"
+  type?: "text" | "date" | "number"
   multiline?: boolean
   /** custom display rendering (e.g. formatted/derived value) */
   renderDisplay?: (value: string) => React.ReactNode

@@ -1,7 +1,13 @@
 "use client"
 
-import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
+import {
+  IconBook,
+  IconDownload,
+  IconHeadphones,
+  IconPlayerPlay,
+} from "@tabler/icons-react"
 import { motion } from "motion/react"
+import { useState } from "react"
 
 import {
   AuthorEditor,
@@ -9,7 +15,7 @@ import {
 } from "@v3/_/components/books/AuthorEditor"
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { CoverEditor } from "@v3/_/components/books/BookDetails/CoverEditor"
-import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
+import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import {
   ProgressDisplayBar,
   getReadingProgress,
@@ -18,11 +24,21 @@ import { RatingDisplay, RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@v3/_/components/ui/dropdown-menu"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
+import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
+import { usePermissions } from "@/hooks/usePermissions"
 import {
+  getDownloadUrl,
   useDeleteBookRatingMutation,
   useSetBookRatingMutation,
 } from "@/store/api"
@@ -33,17 +49,42 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./useCoverColors"
+import { TooltipButton } from "../../../ui/tooltip-button"
+
+const MAX_CREATORS = 5
 
 export function HeroSection({ compact }: { compact: boolean }) {
-  const { book, isEditing, editingCovers, isFieldActive } = useBookForm()
+  const {
+    book,
+    isEditing,
+    editingCovers,
+    isFieldActive,
+    setEditingField,
+    canEdit,
+  } = useBookForm()
   const tLabels = useTranslation("Labels")
   const t = useTranslation("BookDetailsPage")
 
+  const permissions = usePermissions()
   const [setBookRating] = useSetBookRatingMutation()
   const [deleteBookRating] = useDeleteBookRatingMutation()
 
   const authors = book.authors
   const narrators = book.narrators
+
+  const [authorsExpanded, setAuthorsExpanded] = useState(false)
+  const [narratorsExpanded, setNarratorsExpanded] = useState(false)
+  const [ratingOverrideActive, setRatingOverrideActive] = useState(false)
+
+  const visibleAuthors = authorsExpanded
+    ? authors
+    : authors.slice(0, MAX_CREATORS)
+  const hiddenAuthorCount = authors.length - MAX_CREATORS
+
+  const visibleNarrators = narratorsExpanded
+    ? narrators
+    : narrators.slice(0, MAX_CREATORS)
+  const hiddenNarratorCount = narrators.length - MAX_CREATORS
 
   // a multidimensional rating is edited in the review section; the hero just
   // shows its computed average read-only so it can't be overridden by accident
@@ -74,7 +115,7 @@ export function HeroSection({ compact }: { compact: boolean }) {
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center gap-5 px-6 pt-7 pb-5 text-center",
+        "group/hero relative flex flex-col items-center gap-5 px-6 pt-7 pb-5 text-center",
         // layout reacts to the container width (panel or full page), not the
         // viewport, so the side panel and main view share one layout
         `@xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
@@ -118,62 +159,120 @@ export function HeroSection({ compact }: { compact: boolean }) {
             />
           )}
 
-          {isEditing ? (
+          {isEditing || isFieldActive("authors") ? (
             <AuthorEditor />
           ) : (
             authors.length > 0 && (
               <p
+                role={canEdit ? "button" : undefined}
+                tabIndex={canEdit ? 0 : undefined}
+                onClick={canEdit ? () => setEditingField("authors") : undefined}
                 className={cn(
                   "text-muted-foreground mt-0.5 flex flex-wrap justify-center gap-x-1 text-xs",
                   `@xl/book:justify-start`,
+                  canEdit && "cursor-pointer",
                 )}
               >
                 <span>{t("writtenBy")}</span>
-                {authors.map((author, idx) => (
-                  <V3Link
+
+                {visibleAuthors.map((author, idx) => (
+                  <span
                     key={author.uuid}
-                    href={`/authors?item=${author.uuid}`}
                     className="hover:text-primary text-foreground font-serif font-medium hover:underline"
                   >
                     {author.name.trim()}
-                    {idx < authors.length - 1 && <span>,</span>}
-                  </V3Link>
+                    {idx < visibleAuthors.length - 1 && <span>,</span>}
+                  </span>
                 ))}
+
+                {!authorsExpanded && hiddenAuthorCount > 0 && (
+                  <button
+                    type="button"
+                    className="hover:text-foreground underline"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setAuthorsExpanded(true)
+                    }}
+                  >
+                    +{hiddenAuthorCount} more
+                  </button>
+                )}
               </p>
             )
           )}
 
-          {isEditing ? (
+          {isEditing || isFieldActive("narrators") ? (
             <NarratorEditor />
           ) : (
             narrators.length > 0 && (
               <p
+                role={canEdit ? "button" : undefined}
+                tabIndex={canEdit ? 0 : undefined}
+                onClick={
+                  canEdit ? () => setEditingField("narrators") : undefined
+                }
                 className={cn(
                   "text-muted-foreground flex flex-wrap justify-center gap-x-1 text-xs",
                   `@xl/book:justify-start`,
+                  canEdit && "cursor-pointer",
                 )}
               >
                 <span className="italic">{t("narratedBy")}</span>
-                {narrators.map((narrator, idx) => (
-                  <V3Link
+
+                {visibleNarrators.map((narrator, idx) => (
+                  <span
                     key={narrator.uuid}
-                    href={`/narrators?item=${narrator.uuid}`}
                     className="hover:text-primary text-foreground hover:underline"
                   >
                     {narrator.name.trim()}
-                    {idx < narrators.length - 1 && <span>,</span>}
-                  </V3Link>
+                    {idx < visibleNarrators.length - 1 && <span>,</span>}
+                  </span>
                 ))}
+
+                {!narratorsExpanded && hiddenNarratorCount > 0 && (
+                  <button
+                    type="button"
+                    className="hover:text-foreground underline"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setNarratorsExpanded(true)
+                    }}
+                  >
+                    +{hiddenNarratorCount} more
+                  </button>
+                )}
               </p>
             )
           )}
 
+          {(() => {
+            const pageCount = book.ebook?.pageCount ?? book.pageCount
+            const duration = book.audiobook?.duration ?? book.duration
+            const hasMetrics = pageCount != null || duration != null
+
+            if (!hasMetrics) return null
+
+            return (
+              <p className="text-muted-foreground flex flex-wrap gap-x-3 text-xs">
+                {pageCount != null && <span>{pageCount} pages</span>}
+                {duration != null && <span>{formatTimeHuman(duration)}</span>}
+              </p>
+            )
+          })()}
+
           <div className="mt-1">
-            {hasDimensions ? (
-              <RatingDisplay
-                rating={book.rating?.rating ?? null}
-                color={ratingColor}
-              />
+            {hasDimensions && !ratingOverrideActive ? (
+              <button
+                type="button"
+                className="cursor-pointer"
+                onClick={() => setRatingOverrideActive(true)}
+                title="click to override"
+              >
+                <RatingDisplay
+                  rating={book.rating?.rating ?? null}
+                  color={ratingColor}
+                />
+              </button>
             ) : (
               <RatingInput
                 value={book.rating?.rating ?? null}
@@ -183,7 +282,13 @@ export function HeroSection({ compact }: { compact: boolean }) {
             )}
           </div>
 
-          <div className="mt-1">
+          <div
+            className={cn(
+              "transition-opacity",
+              !book.series.length && "opacity-0",
+              "group-hover/hero:opacity-100",
+            )}
+          >
             <SeriesEditor
               bookUuid={book.uuid}
               series={book.series.map((s) => ({
@@ -247,6 +352,65 @@ export function HeroSection({ compact }: { compact: boolean }) {
               }
             />
           )}
+
+          {permissions?.bookDownload &&
+            (book.ebook || book.audiobook || book.readaloud?.filepath) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <TooltipButton
+                      variant="outline"
+                      size="icon-sm"
+                      className="border-primary text-primary"
+                      aria-label={t("downloads.download")}
+                      tooltip={t("downloads.download")}
+                    >
+                      <IconDownload className="size-3.5 stroke-[1.5]" />
+                    </TooltipButton>
+                  }
+                />
+                <DropdownMenuContent align="end" className="w-fit">
+                  {book.readaloud?.filepath && (
+                    <DropdownMenuItem
+                      render={
+                        <a
+                          href={getDownloadUrl(book.uuid, "readaloud")}
+                          download
+                        >
+                          <IconReadaloud className="text-st-orange-500 mr-2 h-4 w-4" />
+                          {t("downloads.downloadReadaloud")}
+                        </a>
+                      }
+                    />
+                  )}
+
+                  {book.ebook && (
+                    <DropdownMenuItem
+                      render={
+                        <a href={getDownloadUrl(book.uuid, "ebook")} download>
+                          <IconBook className="mr-2 h-4 w-4" />
+                          {t("downloads.downloadEbook")}
+                        </a>
+                      }
+                    />
+                  )}
+
+                  {book.audiobook && (
+                    <DropdownMenuItem
+                      render={
+                        <a
+                          href={getDownloadUrl(book.uuid, "audiobook")}
+                          download
+                        >
+                          <IconHeadphones className="mr-2 h-4 w-4" />
+                          {t("downloads.downloadAudiobook")}
+                        </a>
+                      }
+                    />
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
         </div>
       </motion.div>
 

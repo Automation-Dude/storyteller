@@ -13,6 +13,8 @@ export const bookFormSchema = z.object({
   description: z.string().nullable(),
   language: z.string().nullable(),
   publicationDate: z.string().nullable(),
+  pageCount: z.number().int().positive().nullable(),
+  duration: z.number().positive().nullable(),
   authors: z.array(z.string()),
   narrators: z.array(z.string()),
   creators: z.array(editableCreatorSchema),

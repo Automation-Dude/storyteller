@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Fragment, memo, useState } from "react"
+import { Fragment, memo, useMemo, useState } from "react"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { cn } from "@v3/_/lib/utils"
@@ -48,8 +48,6 @@ function formatFileSize(bytes: number): string {
   return `${size.toFixed(1)} ${units[i]}`
 }
 
-// the formatted secondary text for a non-authors display field, or null when
-// the book has no value for it (the card then falls back to authors).
 function secondaryText(
   book: BookWithRelations,
   field: DisplayField,
@@ -58,34 +56,36 @@ function secondaryText(
   switch (field) {
     case "userRating":
       return book.rating?.rating != null
-        ? `★ ${book.rating.rating.toFixed(1)}`
-        : null
+        ? `\u2605 ${book.rating.rating.toFixed(1)}`
+        : "\u2014"
     case "seriesPosition": {
       if (!ctx?.seriesUuid) return null
+
       const s = book.series.find((x) => x.uuid === ctx.seriesUuid)
-      if (!s || s.position == null) return null
+      if (!s || s.position == null) return "\u2014"
+
       return `#${s.position} in ${s.name}`
     }
     case "publicationDate":
-      return book.publicationDate ? book.publicationDate.slice(0, 4) : null
+      return book.publicationDate ? book.publicationDate.slice(0, 4) : "\u2014"
     case "createdAt":
       return `Added ${new Date(book.createdAt).toLocaleDateString()}`
     case "updatedAt":
       return `Updated ${new Date(book.updatedAt).toLocaleDateString()}`
     case "pageCount": {
       const p = book.ebook?.pageCount ?? book.pageCount
-      return p != null ? `${p} pages` : null
+      return p != null ? `${p} pages` : "\u2014"
     }
     case "duration": {
       const d = book.audiobook?.duration ?? book.duration
-      return d != null ? formatDuration(d) : null
+      return d != null ? formatDuration(d) : "\u2014"
     }
     case "fileSize": {
       const f = book.ebook?.fileSize ?? book.audiobook?.fileSize ?? null
-      return f != null ? formatFileSize(f) : null
+      return f != null ? formatFileSize(f) : "\u2014"
     }
     case "language":
-      return book.language ?? null
+      return book.language ?? "\u2014"
     case "title":
     case "authors":
       return null
@@ -105,9 +105,18 @@ export const BookCard = memo(function BookCard({
 }: BookCardProps) {
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
+  const isProcessing =
+    book.readaloud?.status === "PROCESSING" ||
+    book.readaloud?.status === "QUEUED"
   const hasDualFormat = isDualFormat(book)
 
+  const MAX_CARD_AUTHORS = 5
   const authors = book.authors
+  const visibleAuthors = useMemo(
+    () => authors.slice(0, MAX_CARD_AUTHORS),
+    [authors],
+  )
+  const hiddenAuthorCount = authors.length - visibleAuthors.length
   const progress = getReadingProgress(book)
 
   // non-authors fields render a plain muted line; a null value (or an explicit
@@ -159,6 +168,12 @@ export const BookCard = memo(function BookCard({
         >
           {progress !== null && progress > 0 && (
             <ProgressDisplayBar progress={progress} book={book} />
+          )}
+
+          {isProcessing && (
+            <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+            </div>
           )}
         </div>
 
@@ -224,25 +239,22 @@ export const BookCard = memo(function BookCard({
         )}
         {showAuthors && authors.length > 0 && (
           <p className="text-muted-foreground/80 line-clamp-1 text-xs">
-            {authors.map((a, index) => {
-              return (
-                <Fragment key={a.uuid}>
-                  <Link
-                    key={a.uuid}
-                    className="hover:text-primary relative z-20 hover:underline"
-                    prefetch={false}
-                    href={`/v3/authors?item=${a.uuid}`}
-                    onClick={(e) => {
-                      // otherwise clicking the link would toggle selection
-                      e.stopPropagation()
-                    }}
-                  >
-                    {a.name}
-                  </Link>
-                  {index < authors.length - 1 && ", "}
-                </Fragment>
-              )
-            })}
+            {visibleAuthors.map((a, index) => (
+              <Fragment key={a.uuid}>
+                <Link
+                  className="hover:text-primary relative z-20 hover:underline"
+                  prefetch={false}
+                  href={`/v3/authors?item=${a.uuid}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                >
+                  {a.name}
+                </Link>
+                {index < visibleAuthors.length - 1 && ", "}
+              </Fragment>
+            ))}
+            {hiddenAuthorCount > 0 && ` +${hiddenAuthorCount}`}
           </p>
         )}
         <Link

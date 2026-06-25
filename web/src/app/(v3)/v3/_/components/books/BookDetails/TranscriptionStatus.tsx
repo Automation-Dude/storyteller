@@ -20,6 +20,9 @@ import {
 } from "@/store/api"
 
 import { ProcessingModal } from "./ProcessingModal"
+import { CollapsibleSection } from "./sections/CollapsibleSection"
+import { FilePathRow } from "./FilePathRow"
+import { useFormatDate } from "../../../lib/date"
 
 const PROCESSING_STAGE_LABELS: Record<string, string> = {
   SPLIT_TRACKS: "Pre-processing audio",
@@ -45,30 +48,46 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
 
   const t = useTranslation("BookDetailsPage.alignment")
 
+  const formatDate = useFormatDate()
   if (!readaloudStatus && !canCreateReadaloud && !canProcess) {
     return null
   }
 
   return (
-    <section className="mb-3">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="section-label flex-1">
-          <IconProgress className="h-4 w-4" />
-          {t("title")}
-        </h2>
-      </div>
+    <CollapsibleSection
+      name="alignment"
+      title={t("title")}
+      icon={<IconProgress className="size-3.5 stroke-[1.5]" />}
+      className="mb-3 flex flex-col gap-2"
+    >
+      {readaloudStatus === "ALIGNED" && (
+        <div className="flex items-center gap-2 text-sm">
+          <IconCheck className="h-4 w-4 text-green-600" />
+          <span>{t("aligned")}</span>
+        </div>
+      )}
 
-      <div className="bg-muted/50 rounded-lg p-4">
-        {readaloudStatus === "ALIGNED" && (
-          <div className="flex items-center gap-2 text-sm">
-            <IconCheck className="h-4 w-4 text-green-600" />
-            <span>{t("aligned")}</span>
-          </div>
-        )}
+      {readaloudStatus === "QUEUED" && (
+        <div className="flex items-center justify-between">
+          <span className="text-sm">{t("queued")}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void cancelProcessing({ uuid: book.uuid })}
+          >
+            <IconX className="mr-1 h-3 w-3" />
+            {t("cancel")}
+          </Button>
+        </div>
+      )}
 
-        {readaloudStatus === "QUEUED" && (
+      {readaloudStatus === "PROCESSING" && (
+        <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm">{t("queued")}</span>
+            <span className="text-sm">
+              {PROCESSING_STAGE_LABELS[book.readaloud?.currentStage ?? ""] ??
+                t("processing")}
+            </span>
             <Button
               variant="ghost"
               size="sm"
@@ -78,71 +97,52 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
               {t("cancel")}
             </Button>
           </div>
-        )}
 
-        {readaloudStatus === "PROCESSING" && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">
-                {PROCESSING_STAGE_LABELS[book.readaloud?.currentStage ?? ""] ??
-                  t("processing")}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void cancelProcessing({ uuid: book.uuid })}
-              >
-                <IconX className="mr-1 h-3 w-3" />
-                {t("cancel")}
-              </Button>
-            </div>
-
-            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-              <div
-                className="bg-primary h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.floor((book.readaloud?.stageProgress ?? 0) * 100)}%`,
-                }}
-              />
-            </div>
+          <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+            <div
+              className="bg-primary h-full rounded-full transition-all"
+              style={{
+                width: `${Math.floor((book.readaloud?.stageProgress ?? 0) * 100)}%`,
+              }}
+            />
           </div>
-        )}
+        </div>
+      )}
 
-        {(readaloudStatus === "ERROR" || readaloudStatus === "STOPPED") && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <IconAlertTriangle className="text-destructive h-4 w-4" />
-              <span>
-                {readaloudStatus === "ERROR" ? t("error") : t("stopped")}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void processBook({ uuid: book.uuid })}
-            >
-              {t("retry")}
-            </Button>
+      {(readaloudStatus === "ERROR" || readaloudStatus === "STOPPED") && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <IconAlertTriangle className="text-destructive h-4 w-4" />
+            <span>
+              {readaloudStatus === "ERROR" ? t("error") : t("stopped")}
+            </span>
           </div>
-        )}
-
-        {!readaloudStatus && canCreateReadaloud && (
           <Button
             variant="outline"
             size="sm"
             onClick={() => void processBook({ uuid: book.uuid })}
           >
-            <IconReadaloud className="mr-1 h-4 w-4" />
-            {t("createReadaloud")}
+            {t("retry")}
           </Button>
-        )}
+        </div>
+      )}
 
-        {!readaloudStatus && !canCreateReadaloud && (
-          <span className="text-muted-foreground text-sm">
-            {t("unprocessed")}
-          </span>
-        )}
-      </div>
+      {!readaloudStatus && canCreateReadaloud && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void processBook({ uuid: book.uuid })}
+        >
+          <IconReadaloud className="mr-1 h-4 w-4" />
+          {t("createReadaloud")}
+        </Button>
+      )}
+
+      {!readaloudStatus && !canCreateReadaloud && (
+        <span className="text-muted-foreground text-sm">
+          {t("unprocessed")}
+        </span>
+      )}
 
       {canProcess && (
         <ProcessingModal
@@ -152,6 +152,27 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
           onOpenChange={setProcessingModalOpen}
         />
       )}
-    </section>
+
+      {book.alignedAt && (
+        <FilePathRow
+          label={t("lastAligned")}
+          filepath={formatDate(book.alignedAt)}
+        />
+      )}
+
+      {book.alignedWith && (
+        <FilePathRow
+          label={t("transcriptionEngine")}
+          filepath={book.alignedWith}
+        />
+      )}
+
+      {book.alignedByStorytellerVersion && (
+        <FilePathRow
+          label={t("storytellerVersion")}
+          filepath={book.alignedByStorytellerVersion}
+        />
+      )}
+    </CollapsibleSection>
   )
 }

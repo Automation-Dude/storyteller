@@ -44,6 +44,7 @@ type SeriesEditorProps = {
 
 // the series the user picked but hasn't committed yet, while they set a position
 type PendingSeries = { name: string; uuid?: string }
+type EditingPosition = { uuid: string; name: string; currentPosition: number | null }
 
 export function SeriesEditor({
   bookUuid,
@@ -59,6 +60,7 @@ export function SeriesEditor({
 
   const [pending, setPending] = useState<PendingSeries | null>(null)
   const [position, setPosition] = useState("")
+  const [editing, setEditing] = useState<EditingPosition | null>(null)
 
   // selecting/creating a series opens the position prompt rather than adding
   // immediately, so the user can place the book within the series.
@@ -98,6 +100,35 @@ export function SeriesEditor({
     [removeFromSeries, bookUuid, onUpdate],
   )
 
+  const handleEditPosition = useCallback(
+    (s: { uuid: string; name: string; position: number | null }) => {
+      setEditing({ uuid: s.uuid, name: s.name, currentPosition: s.position })
+      setPosition(s.position != null ? String(s.position) : "")
+    },
+    [],
+  )
+
+  const handleUpdatePosition = useCallback(async () => {
+    if (!editing) return
+
+    const trimmed = position.trim()
+    const existing = series.find((s) => s.uuid === editing.uuid)
+
+    await addToSeries({
+      series: { uuid: editing.uuid as UUID, name: editing.name },
+      relations: [
+        {
+          bookUuid: bookUuid as UUID,
+          position: trimmed === "" ? null : Number(trimmed),
+          featured: existing?.featured ?? false,
+        },
+      ],
+    })
+
+    setEditing(null)
+    onUpdate()
+  }, [editing, position, addToSeries, bookUuid, series, onUpdate])
+
   const seriesItems = series.map((s) => ({
     uuid: s.uuid,
     name: s.name,
@@ -125,11 +156,28 @@ export function SeriesEditor({
         onCreateInline={(name) => {
           handlePick(name)
         }}
-        renderBadgeExtra={(s) =>
-          s.position !== null ? (
-            <span className="text-muted-foreground">#{s.position}</span>
-          ) : null
-        }
+        renderBadgeExtra={(s) => {
+          if (!editMode && s.position != null) {
+            return <span className="text-muted-foreground">#{s.position}</span>
+          }
+
+          if (editMode) {
+            return (
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground cursor-pointer underline"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleEditPosition(s)
+                }}
+              >
+                {s.position != null ? `#${s.position}` : "#?"}
+              </button>
+            )
+          }
+
+          return null
+        }}
       />
 
       <Dialog
@@ -181,6 +229,59 @@ export function SeriesEditor({
                 {t("cancel")}
               </Button>
               <Button type="submit">{t("add")}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!editing}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("editPositionTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("editPositionDescription", { series: editing?.name ?? "" })}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleUpdatePosition()
+            }}
+          >
+            <FieldGroup className="py-4">
+              <Field>
+                <FieldLabel htmlFor="edit-series-position">
+                  {t("position")}
+                </FieldLabel>
+                <Input
+                  id="edit-series-position"
+                  type="number"
+                  step="any"
+                  autoFocus
+                  placeholder={t("positionPlaceholder")}
+                  value={position}
+                  onChange={(e) => {
+                    setPosition(e.target.value)
+                  }}
+                />
+              </Field>
+            </FieldGroup>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditing(null)
+                }}
+              >
+                {t("cancel")}
+              </Button>
+              <Button type="submit">{t("save")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

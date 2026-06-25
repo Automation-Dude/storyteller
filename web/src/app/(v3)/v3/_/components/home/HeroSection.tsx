@@ -75,18 +75,27 @@ function Hero({ book }: { book: BookWithRelations }) {
   const read = getReadLink(book)
   const ReadIcon = read.icon
 
+  const MAX_CREATORS = 5
+
+  const formatCreators = (list: { name: string }[]) => {
+    const visible = list.slice(0, MAX_CREATORS).map((c) => c.name)
+    const hidden = list.length - MAX_CREATORS
+
+    return hidden > 0
+      ? `${visible.join(", ")} +${hidden} more`
+      : visible.join(", ")
+  }
+
   const byline = [
     book.authors.length > 0
-      ? t("hero.by", { authors: book.authors.map((a) => a.name).join(", ") })
+      ? t("hero.by", { authors: formatCreators(book.authors) })
       : null,
     book.narrators.length > 0
-      ? t("hero.narratedBy", {
-          narrators: book.narrators.map((n) => n.name).join(", "),
-        })
+      ? t("hero.narratedBy", { narrators: formatCreators(book.narrators) })
       : null,
   ]
     .filter(Boolean)
-    .join(" · ")
+    .join(" \u00b7 ")
 
   return (
     <section

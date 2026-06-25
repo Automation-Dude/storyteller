@@ -22,7 +22,7 @@
       "eyebrow": "Where you left off",
       "by": "by {authors}",
       "narratedBy": "narrated by {narrators}",
-      "readAlong": "Read along",
+      "readAlong": "Read aloud",
       "read": "Read",
       "listen": "Listen",
       "viewDetails": "View details",
@@ -1028,7 +1028,7 @@
     "editing": "Editing…",
     "saveFailed": "Failed to save changes",
     "review": {
-      "title": "My notes & review",
+      "title": "My rating & review",
       "addReview": "Add a review",
       "yourRating": "Your rating",
       "yourReview": "Your review",
@@ -1044,6 +1044,7 @@
       "overrideTitle": "Override multidimensional rating?",
       "overrideDescription": "Rating manually replaces your multidimensional rating with a single value.",
       "overrideConfirm": "Override",
+      "apply": "Apply",
       "adjustScores": "Adjust scores",
       "addDimension": "Add {label}",
       "removeDimension": "Remove {label}"
@@ -1069,7 +1070,10 @@
       "positionPlaceholder": "e.g. 1",
       "positionHint": "Leave blank to add without a position.",
       "cancel": "Cancel",
-      "add": "Add"
+      "add": "Add",
+      "save": "Save",
+      "editPositionTitle": "Edit position",
+      "editPositionDescription": "Change this book's position in {series}."
     },
     "collections": {
       "notInAnyCollections": "Not in any collections",
@@ -1087,9 +1091,6 @@
       "ebook": "Ebook file",
       "audiobook": "Audiobook file",
       "title": "Files",
-      "lastAligned": "Last aligned",
-      "transcriptionEngine": "Transcription engine",
-      "storytellerVersion": "Storyteller version",
       "assetFolder": "Asset folder"
     },
     "alignment": {
@@ -1102,7 +1103,10 @@
       "unprocessed": "Unprocessed",
       "cancel": "Cancel",
       "retry": "Retry",
-      "createReadaloud": "Create readaloud"
+      "createReadaloud": "Create readaloud",
+      "lastAligned": "Last aligned",
+      "transcriptionEngine": "Transcription engine",
+      "storytellerVersion": "Storyteller version"
     }
   },
   "Labels": {

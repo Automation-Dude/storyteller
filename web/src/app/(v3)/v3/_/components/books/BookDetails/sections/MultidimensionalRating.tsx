@@ -1,6 +1,12 @@
 "use client"
 
-import { IconChevronDown, IconPlus, IconTrash, IconX } from "@tabler/icons-react"
+import {
+  IconCheck,
+  IconChevronDown,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
@@ -31,7 +37,6 @@ import {
 // the polygon, and the labels all line up; resizing it throws that off.
 const SIZE = 280
 const LABEL_PADDING = 42
-const COMMIT_DELAY = 350
 
 const chartConfig = {
   value: { label: "Score", color: "var(--primary)" },
@@ -64,7 +69,10 @@ function normalizeAngle(rad: number): number {
 }
 
 // value-compare so an unstable scores reference doesn't clobber the local draft
-function sameScores(a: RatingDimensionScores, b: RatingDimensionScores): boolean {
+function sameScores(
+  a: RatingDimensionScores,
+  b: RatingDimensionScores,
+): boolean {
   const keys = Object.keys(a)
   if (keys.length !== Object.keys(b).length) return false
   return keys.every((k) => a[k] === b[k])
@@ -105,7 +113,6 @@ export function MultidimensionalRating({
 
   const draggingRef = useRef(false)
   const activeIdRef = useRef<string | null>(null)
-  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     // adopt server/optimistic state unless the user is mid-drag; the value
@@ -115,35 +122,23 @@ export function MultidimensionalRating({
     if (!sameScores(incoming, draftRef.current)) setDraft({ ...incoming })
   }, [scores])
 
-  useEffect(
-    () => () => {
-      if (commitTimer.current) clearTimeout(commitTimer.current)
-    },
-    [],
-  )
+  const [dirty, setDirty] = useState(false)
 
-  const commit = useCallback(
-    (next: RatingDimensionScores, immediate: boolean) => {
-      if (commitTimer.current) clearTimeout(commitTimer.current)
-      if (immediate) {
-        onChange(next)
-      } else {
-        commitTimer.current = setTimeout(() => {
-          onChange(next)
-        }, COMMIT_DELAY)
-      }
-    },
-    [onChange],
-  )
+  const markDirty = useCallback(() => setDirty(true), [])
+
+  const applyChanges = useCallback(() => {
+    onChange(draftRef.current)
+    setDirty(false)
+  }, [onChange])
 
   const setValue = useCallback(
-    (id: string, value: number, immediate: boolean) => {
+    (id: string, value: number) => {
       const next = { ...draftRef.current, [id]: snap(value) }
       draftRef.current = next
       setDraft(next)
-      commit(next, immediate)
+      markDirty()
     },
-    [commit],
+    [markDirty],
   )
 
   const toggle = useCallback(
@@ -156,9 +151,9 @@ export function MultidimensionalRating({
           : { ...draftRef.current, [id]: 0 }
       draftRef.current = next
       setDraft(next)
-      commit(next, true)
+      markDirty()
     },
-    [commit],
+    [markDirty],
   )
 
   const cx = SIZE / 2
@@ -193,7 +188,7 @@ export function MultidimensionalRating({
     const a = axisAngleRad(index, count)
     // project the pointer onto the axis spoke to get the radius
     const proj = local.dx * Math.cos(a) + local.dy * Math.sin(a)
-    setValue(id, (proj / outerRadius) * RATING_DIMENSION_MAX, false)
+    setValue(id, (proj / outerRadius) * RATING_DIMENSION_MAX)
   }
 
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -224,10 +219,10 @@ export function MultidimensionalRating({
 
   const endDrag = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!draggingRef.current) return
+
     draggingRef.current = false
     activeIdRef.current = null
     svgRef.current?.releasePointerCapture(e.pointerId)
-    commit(draftRef.current, true)
   }
 
   // when the sliders open, move focus into them so keyboard/screen-reader users
@@ -340,12 +335,25 @@ export function MultidimensionalRating({
         </svg>
       </div>
 
-      {/* live average, centered under the radar so edits are easy to read off */}
-      <div className="flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center gap-1">
         <RatingDisplay rating={average} color={color} size="lg" />
+
         <span className="text-muted-foreground text-xs tabular-nums">
-          {t("review.avg")} {average == null ? "–" : formatRating(average)}
+          {t("review.avg")} {average == null ? "\u2013" : formatRating(average)}
         </span>
+
+        {dirty && (
+          <Button
+            type="button"
+            size="sm"
+            variant="default"
+            className="mt-1"
+            onClick={applyChanges}
+          >
+            <IconCheck className="mr-1 h-4 w-4" />
+            {t("review.apply")}
+          </Button>
+        )}
       </div>
 
       {/* re-add axes the user deselected without digging into the sliders */}
@@ -369,7 +377,10 @@ export function MultidimensionalRating({
         </div>
       )}
 
-      <Collapsible className="group w-full max-w-xs" onOpenChange={handleScoresOpen}>
+      <Collapsible
+        className="group w-full max-w-xs"
+        onOpenChange={handleScoresOpen}
+      >
         <CollapsibleTrigger className="text-muted-foreground hover:text-foreground mx-auto flex items-center gap-1 text-xs">
           <IconChevronDown className="h-3.5 w-3.5 transition-transform group-data-open:rotate-180" />
           {t("review.adjustScores")}
@@ -393,17 +404,14 @@ export function MultidimensionalRating({
                   </span>
                   <Slider
                     aria-label={d.label}
-                    className="flex-1"
+                    className="min-w-40 flex-1"
                     min={RATING_DIMENSION_MIN}
                     max={RATING_DIMENSION_MAX}
                     step={RATING_DIMENSION_STEP}
                     value={value}
                     disabled={!selected}
                     onValueChange={(next) => {
-                      setValue(d.id, toNumber(next), false)
-                    }}
-                    onValueCommitted={(next) => {
-                      setValue(d.id, toNumber(next), true)
+                      setValue(d.id, toNumber(next))
                     }}
                   />
                   <span className="text-muted-foreground w-7 shrink-0 text-right text-sm tabular-nums">

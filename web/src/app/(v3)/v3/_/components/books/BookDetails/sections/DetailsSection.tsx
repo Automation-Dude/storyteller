@@ -1,13 +1,16 @@
 "use client"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
-import { EditableText } from "@v3/_/components/books/BookDetails/EditableField"
+import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
+import { LanguageEdit } from "@v3/_/components/books/LanguageEdit"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { useFormatDate } from "@v3/_/lib/date"
 import { cn } from "@v3/_/lib/utils"
 
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
+import { CollapsibleSection } from "./CollapsibleSection"
+import { IconBook } from "@tabler/icons-react"
 
 type LocaleInfo = {
   displayName: string
@@ -74,12 +77,15 @@ export function DetailsSection({ className }: { className?: string }) {
   const totalDuration = bookDuration(book)
 
   return (
-    <section className={className}>
-      <h2 className="section-label mb-4">{tLabels("bookDetails")}</h2>
-
+    <CollapsibleSection
+      title={tLabels("bookDetails")}
+      icon={<IconBook className="size-3.5 stroke-[1.5]" />}
+      className={className}
+    >
       <div className="grid grid-cols-2 items-start gap-x-4 gap-y-2">
         <DetailRow label={tLabels("language")}>
-          <EditableText
+          <LanguageEdit />
+          {/* <EditableText
             name="language"
             className="text-sm"
             placeholder="e.g. en, nl, fr-FR"
@@ -94,29 +100,49 @@ export function DetailsSection({ className }: { className?: string }) {
                 </span>
               )
             }}
-          />
+          /> */}
         </DetailRow>
 
         <DetailRow label={tLabels("publicationDate")}>
           <EditableText
             name="publicationDate"
             type="date"
-            className="text-sm"
+            className="min-h-8 text-sm"
             renderDisplay={(value) =>
               formatDate(value, { timeStyle: undefined })
             }
           />
         </DetailRow>
 
-        {pages != null && (
-          <DetailRow label={tLabels("pages")}>{pages}</DetailRow>
-        )}
+        <DetailRow label={tLabels("pages")}>
+          <EditableText
+            name="pageCount"
+            type="number"
+            className="text-sm"
+            placeholder="Page count"
+            renderDisplay={(value) => {
+              const override = Number(value)
+              const display =
+                !isNaN(override) && override > 0 ? override : pages
+              return display != null ? String(display) : null
+            }}
+          />
+        </DetailRow>
 
-        {totalDuration != null && (
-          <DetailRow label={tLabels("duration")}>
-            {formatTimeHuman(totalDuration)}
-          </DetailRow>
-        )}
+        <DetailRow label={tLabels("duration")}>
+          <EditableText
+            name="duration"
+            type="number"
+            className="text-sm"
+            placeholder="Duration (seconds)"
+            renderDisplay={(value) => {
+              const override = Number(value)
+              const display =
+                !isNaN(override) && override > 0 ? override : totalDuration
+              return display != null ? formatTimeHuman(display) : null
+            }}
+          />
+        </DetailRow>
 
         <DetailRow label={tLabels("added")}>
           {formatDate(book.createdAt)}
@@ -126,6 +152,6 @@ export function DetailsSection({ className }: { className?: string }) {
           {formatDate(book.updatedAt)}
         </DetailRow>
       </div>
-    </section>
+    </CollapsibleSection>
   )
 }

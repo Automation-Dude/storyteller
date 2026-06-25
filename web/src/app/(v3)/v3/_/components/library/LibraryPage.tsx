@@ -78,7 +78,6 @@ import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
-
 const SIDEBAR_ROW_HEIGHT = 30
 
 function findScrollParent(node: HTMLElement | null): HTMLElement | null {
@@ -179,7 +178,12 @@ export function LibraryPage({
     onDisplayOverrideChange,
     // series pages default to ordering by position (overridable in the sort menu)
   } = useBookFilters(
-    isSeriesSection ? { defaultSortField: "seriesPosition" } : {},
+    isSeriesSection
+      ? {
+          defaultSortField: "seriesPosition",
+          defaultSortDirection: "asc" as const,
+        }
+      : {},
   )
 
   // on a series page the books carry a position within the selected series;
@@ -239,19 +243,23 @@ export function LibraryPage({
     return items
   }, [allItems, sidebarSearch, sidebarSort])
 
-  useEffect(() => {
-    if (selectedItem) return
+  const didAutoSelectRef = useRef(false)
 
-    // prefer an explicit initial item (its facet must exist in the list),
-    // otherwise fall back to the first visible item.
+  useEffect(() => {
+    if (selectedItem || isMobile || didAutoSelectRef.current) return
+
     const initial =
       initialSelectedItem && allItems.some((i) => i.key === initialSelectedItem)
         ? initialSelectedItem
-        : visibleItems[0]?.key
+        : visibleItems.find((i) => i.key !== NONE_KEY)?.key
 
-    if (initial) void setSelectedItem(initial)
+    if (initial) {
+      didAutoSelectRef.current = true
+      void setSelectedItem(initial)
+    }
   }, [
     selectedItem,
+    isMobile,
     visibleItems,
     allItems,
     initialSelectedItem,
@@ -558,14 +566,9 @@ export function LibraryPage({
         sidebar={sidebarContent}
         sidebarWidth={sidebarWidth}
         onSidebarWidthChange={handleSidebarWidthChange}
-        headerBreadcrumbs={[
-          { label: title, url: "" },
-          ...(selectedItemName ? [{ label: selectedItemName }] : []),
-        ]}
+        headerBreadcrumbs={[{ label: selectedItemName ?? title }]}
         headerActions={
-          selectedItem &&
-          selectedItemName &&
-          selectedItem !== NONE_KEY ? (
+          selectedItem && selectedItemName && selectedItem !== NONE_KEY ? (
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -1106,7 +1109,7 @@ function SidebarRow({
         isActive
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "hover:bg-sidebar-accent/50",
-        isChecked && "ring-primary/40 ring-1",
+        isChecked && "ring-primary/40 ring-1 ring-inset",
       )}
     >
       <button
@@ -1150,7 +1153,7 @@ function SidebarRow({
             onClick={(e) => {
               onOpenMenu(item, e.currentTarget)
             }}
-            className="text-muted-foreground hover:text-foreground hidden rounded p-0.5 opacity-0 transition-opacity group-hover/item:block group-hover/item:opacity-100 peer-focus/item:block peer-focus/item:opacity-100 focus-visible:opacity-100"
+            className="text-muted-foreground hover:text-foreground pointer-events-none invisible rounded p-0.5 opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:visible group-hover/item:opacity-100 peer-focus/item:pointer-events-auto peer-focus/item:visible peer-focus/item:opacity-100 focus-visible:opacity-100"
           >
             <IconDotsVertical className="size-3.5" />
           </button>
