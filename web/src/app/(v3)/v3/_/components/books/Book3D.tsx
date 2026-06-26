@@ -82,6 +82,11 @@ const VIEWS = [
 const SPRING = { stiffness: 140, damping: 18, mass: 0.6 }
 const DRAG_SENSITIVITY = 0.4
 
+// a transparent outline forces chrome to inflate the composited 3d quad and
+// antialias its edges, otherwise rotated faces in a preserve-3d context render
+// with jagged silhouettes
+const AA_EDGE = { outline: "1px solid transparent" } as const
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
@@ -455,6 +460,7 @@ function Slab({
           style={{
             transform: `translateZ(${half}px)`,
             backfaceVisibility: "hidden",
+            ...AA_EDGE,
           }}
         >
           {front}
@@ -466,6 +472,7 @@ function Slab({
           style={{
             transform: `rotateY(180deg) translateZ(${half}px)`,
             backfaceVisibility: "hidden",
+            ...AA_EDGE,
           }}
         >
           <DescriptionBack book={book} primary={primary} width={width} />
@@ -480,6 +487,7 @@ function Slab({
             transform: "rotateY(-90deg)",
             background: primary.solid,
             backfaceVisibility: "hidden",
+            ...AA_EDGE,
           }}
         >
           <div
@@ -537,6 +545,7 @@ function Slab({
             transform: "rotateY(90deg)",
             background: edgeV,
             backfaceVisibility: "hidden",
+            ...AA_EDGE,
           }}
         />
 
@@ -549,6 +558,7 @@ function Slab({
             transform: "rotateX(90deg)",
             background: edgeH,
             backfaceVisibility: "hidden",
+            ...AA_EDGE,
           }}
         />
 
@@ -561,6 +571,7 @@ function Slab({
             transform: "rotateX(-90deg)",
             background: edgeH,
             backfaceVisibility: "hidden",
+            ...AA_EDGE,
           }}
         />
 
