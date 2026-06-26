@@ -243,7 +243,7 @@ const BookListItem = memo(function BookListItem({
     <div
       data-book-uuid={book.uuid}
       className={cn(
-        "group hover:bg-accent relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors",
+        "group hover:bg-accent relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md py-px pr-3 pl-px transition-colors",
         muted && "opacity-50",
         isBookSelected && "bg-accent ring-primary ring-1 ring-inset",
         selected &&
@@ -262,7 +262,7 @@ const BookListItem = memo(function BookListItem({
     >
       {/* cover */}
       <div
-        className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded"
+        className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md"
         style={showTint ? { background: tint(primary, 0.36) } : undefined}
       >
         <div className="relative flex h-12 w-10 items-center justify-center">
@@ -403,8 +403,8 @@ const BookListItem = memo(function BookListItem({
 
 export function BookListItemSkeleton() {
   return (
-    <div className="flex items-center gap-3 px-3 py-2">
-      <Skeleton className="h-14 w-10 rounded" />
+    <div className="flex h-14 items-center gap-3 rounded-md py-px pr-3 pl-px">
+      <Skeleton className="h-14 w-14 rounded-md" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-48" />
         <Skeleton className="h-3 w-32" />
@@ -554,17 +554,7 @@ export function BookList({
     (f) => f !== "title" && f !== "authors",
   )
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <BookListItemSkeleton key={i} />
-        ))}
-      </div>
-    )
-  }
-
-  if (books.length === 0) {
+  if (!isLoading && books.length === 0) {
     return (
       <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
         <IconSearch className="h-12 w-12 opacity-40" />
@@ -611,28 +601,32 @@ export function BookList({
 
       <div
         className={cn(
-          "animate-in fade-in-0 flex flex-col transition-opacity duration-300",
+          "animate-in fade-in-0 relative flex flex-col gap-px py-2 transition-opacity duration-300",
           showMuted && "opacity-60",
         )}
       >
-        {books.map((book) => (
-          <BookListItem
-            key={book.uuid}
-            book={book}
-            muted={showMuted}
-            selected={book.uuid === selectedBookUuid}
-            isSelecting={isSelecting}
-            isBookSelected={selection?.isSelected(book.uuid) ?? false}
-            onToggleSelection={toggleSelection}
-            onSelectRange={handleSelectRange}
-            onOpenMenu={handleOpenMenu}
-            isMenuOpen={menuOpen && menuBook?.uuid === book.uuid}
-            onClick={onBookClick}
-            displayField={displayField}
-            displayContext={displayContext}
-            visibleColumns={visibleColumns}
-          />
-        ))}
+        {isLoading
+          ? Array.from({ length: 12 }).map((_, i) => (
+              <BookListItemSkeleton key={i} />
+            ))
+          : books.map((book) => (
+              <BookListItem
+                key={book.uuid}
+                book={book}
+                muted={showMuted}
+                selected={book.uuid === selectedBookUuid}
+                isSelecting={isSelecting}
+                isBookSelected={selection?.isSelected(book.uuid) ?? false}
+                onToggleSelection={toggleSelection}
+                onSelectRange={handleSelectRange}
+                onOpenMenu={handleOpenMenu}
+                isMenuOpen={menuOpen && menuBook?.uuid === book.uuid}
+                onClick={onBookClick}
+                displayField={displayField}
+                displayContext={displayContext}
+                visibleColumns={visibleColumns}
+              />
+            ))}
       </div>
 
       <div ref={loadMoreRef} className="mt-8 flex justify-center">

@@ -254,7 +254,12 @@ export function HeroSection({ compact }: { compact: boolean }) {
 
             return (
               <p className="text-muted-foreground flex flex-wrap gap-x-3 text-xs">
-                {pageCount != null && <span>{pageCount} pages</span>}
+                <EditableText
+                  name="pageCount"
+                  type="number"
+                  className="w-fit min-w-16 text-xs whitespace-nowrap"
+                  placeholder="Unknown page count"
+                />
                 {duration != null && <span>{formatTimeHuman(duration)}</span>}
               </p>
             )
