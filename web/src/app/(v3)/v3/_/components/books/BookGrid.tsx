@@ -240,6 +240,27 @@ export function BookGrid({
   const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
 
+  const handleMenuOpenChange = useCallback(
+    (
+      open: boolean,
+      eventDetails?: {
+        reason?: string
+        trigger?: EventTarget | null
+        event?: Event | null
+      },
+    ) => {
+      const isSiblingOpenClose =
+        !open && eventDetails?.reason === "sibling-open"
+      const shouldIgnoreSiblingOpenClose = isSiblingOpenClose && menuOpen
+      if (shouldIgnoreSiblingOpenClose) {
+        return
+      }
+
+      setMenuOpen(open)
+    },
+    [menuOpen],
+  )
+
   const handleOpenMenu = useCallback(
     (book: BookWithRelations, anchor: HTMLElement) => {
       setMenuBook(book)
@@ -340,9 +361,7 @@ export function BookGrid({
                       onToggleSelection={toggleSelection}
                       onSelectRange={handleSelectRange}
                       onOpenMenu={handleOpenMenu}
-                      isMenuOpen={
-                        menuOpen && menuBook?.uuid === book.uuid
-                      }
+                      isMenuOpen={menuOpen && menuBook?.uuid === book.uuid}
                       onClick={onBookClick}
                       displayField={displayField}
                       displayContext={displayContext}
@@ -362,7 +381,7 @@ export function BookGrid({
         </div>
       )}
 
-      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+      <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpenChange}>
         <DropdownMenuContent
           align="end"
           className="pointer-events-auto z-100 min-w-44"

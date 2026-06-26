@@ -387,6 +387,7 @@ const BookListItem = memo(function BookListItem({
             <button
               type="button"
               className="text-muted-foreground hover:text-foreground flex size-6 items-center justify-center rounded-md transition-colors"
+              id={book.title + book.uuid}
               onClick={(e) => {
                 e.stopPropagation()
                 onOpenMenu(book, e.currentTarget)
@@ -501,12 +502,36 @@ export function BookList({
   // shared card menu: one instance, positioned at whichever row opened it
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const menuAnchor = useRef<HTMLElement | null>(null)
+
+  const handleMenuOpenChange = useCallback(
+    (
+      open: boolean,
+      eventDetails?: {
+        reason?: string
+        trigger?: EventTarget | null
+        event?: Event | null
+      },
+    ) => {
+      // weird issue where the menu would get closed when the user hovered over a submenu
+      // unsure why
+      const isSiblingOpenClose =
+        !open && eventDetails?.reason === "sibling-open"
+      const shouldIgnoreSiblingOpenClose = isSiblingOpenClose && menuOpen
+
+      if (shouldIgnoreSiblingOpenClose) {
+        return
+      }
+
+      setMenuOpen(open)
+    },
+    [menuOpen],
+  )
 
   const handleOpenMenu = useCallback(
     (book: BookWithRelations, anchor: HTMLElement) => {
       setMenuBook(book)
-      setMenuAnchor(anchor)
+      menuAnchor.current = anchor
       setMenuOpen(true)
     },
     [],
@@ -579,7 +604,7 @@ export function BookList({
     <>
       {/* column header row */}
       {extraColumns.length > 0 && (
-        <div className="border-border flex items-center gap-3 border-b px-3 pb-1.5">
+        <div className="border-border bg-background sticky -top-4 z-10 -mx-4 flex items-center gap-3 border-b px-3 pb-1.5">
           {/* spacer for cover + title */}
           <div className="h-px w-10 shrink-0" />
           <div className="min-w-0 flex-1" />
@@ -638,7 +663,7 @@ export function BookList({
         )}
       </div>
 
-      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+      <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpenChange}>
         <DropdownMenuContent
           align="end"
           className="pointer-events-auto z-100 min-w-44"
