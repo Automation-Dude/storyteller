@@ -1,5 +1,9 @@
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit"
 
+import { type DisplayField } from "@/sort"
+
+export type BookView = "grid" | "list"
+
 export type LogDisplayPrefs = {
   wrapLines: boolean
   highlighting: boolean
@@ -12,6 +16,8 @@ export type LogDisplayPrefs = {
 export type UISettings = {
   detailPanelWidth: number
   librarySidebarWidth: number
+  bookView: BookView
+  listVisibleColumns: DisplayField[]
   logDisplay: LogDisplayPrefs
 }
 
@@ -27,9 +33,17 @@ const defaultLogDisplay: LogDisplayPrefs = {
   levelFilter: "all",
 }
 
+const defaultListVisibleColumns: DisplayField[] = [
+  "authors",
+  "duration",
+  "pageCount",
+]
+
 const defaults: UISettings = {
   detailPanelWidth: 420,
   librarySidebarWidth: 280,
+  bookView: "grid",
+  listVisibleColumns: defaultListVisibleColumns,
   logDisplay: defaultLogDisplay,
 }
 
@@ -53,7 +67,6 @@ export const loadUISettingsFromCookie = (): Partial<UISettings> | null => {
   return parseCookie(document.cookie)
 }
 
-// kept for backwards compat during transition; reads from localStorage then migrates to cookie
 export const loadUISettingsFromStorage = (): Partial<UISettings> | null => {
   if (typeof window === "undefined") return null
 
@@ -66,7 +79,6 @@ export const loadUISettingsFromStorage = (): Partial<UISettings> | null => {
 
     const parsed = JSON.parse(stored) as Partial<UISettings>
 
-    // migrate to cookie and remove localStorage entry
     saveToCookie({ ...defaults, ...parsed })
     localStorage.removeItem("ui-settings")
 
@@ -97,10 +109,23 @@ export const uiSettingsSlice = createSlice({
     initUISettings: (state, action: PayloadAction<Partial<UISettings>>) => {
       const merged = { ...defaults, ...state, ...action.payload }
 
-      // ensure logDisplay is fully populated even if the cookie predates it
       merged.logDisplay = {
         ...defaultLogDisplay,
         ...merged.logDisplay,
+      }
+
+      // backwards compat: cookies that predate the rename
+      const legacy = action.payload as Record<string, unknown>
+      if (
+        !merged.listVisibleColumns.length &&
+        Array.isArray(legacy["listVisibleFields"])
+      ) {
+        merged.listVisibleColumns =
+          legacy["listVisibleFields"] as DisplayField[]
+      }
+
+      if (merged.listVisibleColumns.length === 0) {
+        merged.listVisibleColumns = defaultListVisibleColumns
       }
 
       return merged
@@ -113,6 +138,16 @@ export const uiSettingsSlice = createSlice({
 
     setLibrarySidebarWidth: (state, action: PayloadAction<number>) => {
       state.librarySidebarWidth = action.payload
+      saveToCookie(state)
+    },
+
+    setBookView: (state, action: PayloadAction<BookView>) => {
+      state.bookView = action.payload
+      saveToCookie(state)
+    },
+
+    setListVisibleColumns: (state, action: PayloadAction<DisplayField[]>) => {
+      state.listVisibleColumns = action.payload
       saveToCookie(state)
     },
 
@@ -133,6 +168,12 @@ export const selectDetailPanelWidth = (state: { uiSettings: UISettings }) =>
 
 export const selectLibrarySidebarWidth = (state: { uiSettings: UISettings }) =>
   state.uiSettings.librarySidebarWidth
+
+export const selectBookView = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.bookView
+
+export const selectListVisibleColumns = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.listVisibleColumns
 
 export const selectLogDisplayPrefs = (state: { uiSettings: UISettings }) =>
   state.uiSettings.logDisplay

@@ -50,7 +50,11 @@ import {
   useListStatusesQuery,
 } from "@/store/api"
 
+import { type BookView } from "@/store/slices/uiSettingsSlice"
+
+import { ColumnSelector } from "./ColumnSelector"
 import { SearchInput } from "./SearchInput"
+import { ViewSelector } from "./ViewSelector"
 
 export type { SortDirection, SortField }
 
@@ -76,12 +80,13 @@ type BookFiltersProps = {
   hideSeriesFilter?: boolean
   showSaveSearch?: boolean
   className?: string
-  // when provided, renders a "Show" control that overrides the card secondary
-  // line. null override = automatic (derived from the active sort / context).
   displayOverride?: DisplayField | null
   onDisplayOverrideChange?: (value: DisplayField | null) => void
-  // whether a series context is active (enables the "Series position" option)
   hasSeriesContext?: boolean
+  bookView?: BookView
+  onBookViewChange?: (view: BookView) => void
+  listVisibleColumns?: DisplayField[]
+  onListVisibleColumnsChange?: (fields: DisplayField[]) => void
 }
 
 // the sentinel for "automatic" in the Show select (Select values are strings)
@@ -107,6 +112,10 @@ export function BookFilters({
   displayOverride,
   onDisplayOverrideChange,
   hasSeriesContext = false,
+  bookView,
+  onBookViewChange,
+  listVisibleColumns,
+  onListVisibleColumnsChange,
 }: BookFiltersProps) {
   const t = useTranslation("BooksPage")
   const { data: collections } = useListCollectionsQuery()
@@ -392,6 +401,19 @@ export function BookFilters({
             </SelectContent>
           </Select>
         )}
+
+        {bookView && onBookViewChange && (
+          <ViewSelector value={bookView} onChange={onBookViewChange} />
+        )}
+
+        {bookView === "list" &&
+          listVisibleColumns &&
+          onListVisibleColumnsChange && (
+            <ColumnSelector
+              visibleFields={listVisibleColumns}
+              onChange={onListVisibleColumnsChange}
+            />
+          )}
       </div>
 
       <div className="scroll-x flex items-center gap-1.5">

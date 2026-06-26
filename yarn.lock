@@ -16778,7 +16778,6 @@ __metadata:
     typescript: "npm:^5.9.2"
     typescript-plugin-css-modules: "npm:^5.0.1"
     uuid: "npm:^11.1.0"
-    vaul: "npm:^1.1.2"
     vaul-base: "npm:^1.0.0"
     wink-eng-lite-web-model: "npm:^1.8.0"
     wink-nlp: "npm:^2.3.0"

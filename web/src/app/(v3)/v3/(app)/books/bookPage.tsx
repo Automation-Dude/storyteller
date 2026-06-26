@@ -2,10 +2,11 @@
 
 import { IconAdjustmentsHorizontal, IconBookmarkPlus } from "@tabler/icons-react"
 import { parseAsString, useQueryState } from "nuqs"
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
+import { BookList } from "@v3/_/components/books/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SaveAsShelfDialog } from "@v3/_/components/books/SaveAsShelfDialog"
 import {
@@ -21,8 +22,21 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type UserPermissionSet } from "@/database/users"
 import { type ShelfFilterNode } from "@/shelves"
-import { type SortContext, deriveDisplayField } from "@/sort"
+import {
+  type DisplayField,
+  type SortContext,
+  type SortDirection,
+  type SortField,
+  deriveDisplayField,
+} from "@/sort"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import {
+  selectBookView,
+  selectListVisibleColumns,
+  uiSettingsSlice,
+  type BookView,
+} from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
 export default function BookPage({
@@ -31,6 +45,24 @@ export default function BookPage({
   permissions: UserPermissionSet
 }) {
   const t = useTranslation("BooksPage")
+  const dispatch = useAppDispatch()
+
+  const bookView = useAppSelector(selectBookView)
+  const listVisibleColumns = useAppSelector(selectListVisibleColumns)
+
+  const handleBookViewChange = useCallback(
+    (view: BookView) => {
+      dispatch(uiSettingsSlice.actions.setBookView(view))
+    },
+    [dispatch],
+  )
+
+  const handleListColumnsChange = useCallback(
+    (fields: DisplayField[]) => {
+      dispatch(uiSettingsSlice.actions.setListVisibleColumns(fields))
+    },
+    [dispatch],
+  )
 
   const { isSelecting, toggleSelection } = useBookSelection()
 
@@ -52,6 +84,14 @@ export default function BookPage({
     displayOverride,
     onDisplayOverrideChange,
   } = useBookFilters()
+
+  const handleColumnSort = useCallback(
+    (field: SortField, direction: SortDirection) => {
+      onChange("sortField", field)
+      onChange("sortDirection", direction)
+    },
+    [onChange],
+  )
 
   // a series filter makes series position a meaningful secondary line
   const displayContext: SortContext = {
@@ -146,6 +186,10 @@ export default function BookPage({
           displayOverride={displayOverride}
           onDisplayOverrideChange={onDisplayOverrideChange}
           hasSeriesContext={!!state.seriesFilter}
+          bookView={bookView}
+          onBookViewChange={handleBookViewChange}
+          listVisibleColumns={listVisibleColumns}
+          onListVisibleColumnsChange={handleListColumnsChange}
         />
 
         <div className="flex items-center gap-2 px-4 pt-1">
@@ -194,25 +238,51 @@ export default function BookPage({
         )}
 
         <PageContent className="p-4">
-          <BookGrid
-            books={books}
-            isLoading={isLoading}
-            isFetchingNextPage={isFetchingNextPage}
-            hasNextPage={hasNextPage}
-            fetchNextPage={fetchNextPage}
-            showMuted={showMuted}
-            emptySubMessage={
-              deferredSearch || activeFilterCount > 0
-                ? "Try adjusting your search or filters"
-                : undefined
-            }
-            onClearFilters={clearFilters}
-            hasActiveFilters={activeFilterCount > 0}
-            selectedBookUuid={selectedBookUuid}
-            onBookClick={handleBookClick}
-            displayField={displayField}
-            displayContext={displayContext}
-          />
+          {bookView === "list" ? (
+            <BookList
+              books={books}
+              isLoading={isLoading}
+              isFetchingNextPage={isFetchingNextPage}
+              hasNextPage={hasNextPage}
+              fetchNextPage={fetchNextPage}
+              showMuted={showMuted}
+              emptySubMessage={
+                deferredSearch || activeFilterCount > 0
+                  ? "Try adjusting your search or filters"
+                  : undefined
+              }
+              onClearFilters={clearFilters}
+              hasActiveFilters={activeFilterCount > 0}
+              selectedBookUuid={selectedBookUuid}
+              onBookClick={handleBookClick}
+              displayField={displayField}
+              displayContext={displayContext}
+              visibleColumns={listVisibleColumns}
+              sortField={state.sortField}
+              sortDirection={state.sortDirection}
+              onSortChange={handleColumnSort}
+            />
+          ) : (
+            <BookGrid
+              books={books}
+              isLoading={isLoading}
+              isFetchingNextPage={isFetchingNextPage}
+              hasNextPage={hasNextPage}
+              fetchNextPage={fetchNextPage}
+              showMuted={showMuted}
+              emptySubMessage={
+                deferredSearch || activeFilterCount > 0
+                  ? "Try adjusting your search or filters"
+                  : undefined
+              }
+              onClearFilters={clearFilters}
+              hasActiveFilters={activeFilterCount > 0}
+              selectedBookUuid={selectedBookUuid}
+              onBookClick={handleBookClick}
+              displayField={displayField}
+              displayContext={displayContext}
+            />
+          )}
         </PageContent>
       </BookListLayout>
     </div>

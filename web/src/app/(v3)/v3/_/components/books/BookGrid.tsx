@@ -11,17 +11,26 @@ import {
   useState,
 } from "react"
 
-import { BookCard } from "@v3/_/components/books/BookCard"
-import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
-import { Button } from "@v3/_/components/ui/button"
-import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
-import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
-import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { cn } from "@v3/_/lib/utils"
-
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { type DisplayField, type SortContext } from "@/sort"
+
+import { BookCard } from "@v3/_/components/books/BookCard"
+import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
+import { Button } from "@v3/_/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@v3/_/components/ui/dropdown-menu"
+import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
+import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
+import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { useTranslation } from "@v3/_/hooks/use-translation"
+import { cn } from "@v3/_/lib/utils"
+
+import { useBookActionItems } from "./BookActionMenuItems"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -216,6 +225,39 @@ export function BookGrid({
     }
   })
 
+  const orderedUuids = useMemo(() => books.map((b) => b.uuid), [books])
+
+  const handleSelectRange = useCallback(
+    (uuid: string) => {
+      selection?.selectRange(uuid, orderedUuids)
+    },
+    [selection, orderedUuids],
+  )
+
+  // shared card menu: one instance, positioned at whichever card opened it
+  const t = useTranslation("BookActions")
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+
+  const handleOpenMenu = useCallback(
+    (book: BookWithRelations, anchor: HTMLElement) => {
+      setMenuBook(book)
+      setMenuAnchor(anchor)
+      setMenuOpen(true)
+    },
+    [],
+  )
+
+  const { items: menuItems, dialogs: menuDialogs } = useBookActionItems({
+    books: menuBook ? [menuBook] : [],
+    mode: "single",
+  })
+
+  const menuBookIsSelected = menuBook
+    ? selection?.isSelected(menuBook.uuid) ?? false
+    : false
+
   if (isLoading) {
     return (
       <div
@@ -296,6 +338,11 @@ export function BookGrid({
                       isSelecting={isSelecting}
                       isBookSelected={selection?.isSelected(book.uuid) ?? false}
                       onToggleSelection={toggleSelection}
+                      onSelectRange={handleSelectRange}
+                      onOpenMenu={handleOpenMenu}
+                      isMenuOpen={
+                        menuOpen && menuBook?.uuid === book.uuid
+                      }
                       onClick={onBookClick}
                       displayField={displayField}
                       displayContext={displayContext}
@@ -314,6 +361,31 @@ export function BookGrid({
           <span>Loading more...</span>
         </div>
       )}
+
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuContent
+          align="end"
+          className="pointer-events-auto z-100 min-w-44"
+          anchor={menuAnchor}
+        >
+          {toggleSelection && menuBook && (
+            <>
+              <DropdownMenuItem
+                onClick={() => {
+                  toggleSelection(menuBook.uuid)
+                }}
+              >
+                {menuBookIsSelected ? t("deselect") : t("select")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {menuItems}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {menuDialogs}
     </>
   )
 }

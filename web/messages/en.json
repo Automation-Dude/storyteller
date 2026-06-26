@@ -271,7 +271,9 @@
     "upgradeDescription": "Converts EPUB 2 files to EPUB 3 in place.",
     "upgradeStarted": "EPUB upgrade started",
     "mergeTitle": "Merge into \"{target}\"?",
-    "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone."
+    "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone.",
+    "select": "Select",
+    "deselect": "Deselect"
   },
   "ShelfPage": {
     "emptyShelf": "This shelf is empty",

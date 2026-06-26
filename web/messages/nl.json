@@ -271,7 +271,9 @@
     "upgradeDescription": "Converteert EPUB 2-bestanden naar EPUB 3.",
     "upgradeStarted": "EPUB-upgrade gestart",
     "mergeTitle": "Samenvoegen in \"{target}\"?",
-    "mergeDescription": "De andere geselecteerde boeken worden hierin samengevoegd en daarna verwijderd. Dit kan niet ongedaan worden."
+    "mergeDescription": "De andere geselecteerde boeken worden hierin samengevoegd en daarna verwijderd. Dit kan niet ongedaan worden.",
+    "select": "Selecteren",
+    "deselect": "Deselecteren"
   },
   "ShelfPage": {
     "emptyShelf": "Deze plank is leeg",

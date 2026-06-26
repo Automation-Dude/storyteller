@@ -16,6 +16,7 @@ import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
+import { BookList } from "@v3/_/components/books/BookList"
 import {
   BookDetailDrawer,
   BookListLayout,
@@ -63,7 +64,13 @@ import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/_CreateSeri
 import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/_EditSeriesDialog"
 import { usePermissions } from "@/hooks/usePermissions"
 import { type ShelfFilterNode } from "@/shelves"
-import { type SortContext, deriveDisplayField } from "@/sort"
+import {
+  type DisplayField,
+  type SortContext,
+  type SortDirection,
+  type SortField,
+  deriveDisplayField,
+} from "@/sort"
 import {
   type ListBooksQueryArg,
   api,
@@ -75,7 +82,12 @@ import {
   useListInfiniteBooksInfiniteQuery,
 } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
-import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
+import {
+  type BookView,
+  selectBookView,
+  selectListVisibleColumns,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
 const SIDEBAR_ROW_HEIGHT = 30
@@ -142,6 +154,23 @@ export function LibraryPage({
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
 
+  const bookView = useAppSelector(selectBookView)
+  const listVisibleColumns = useAppSelector(selectListVisibleColumns)
+
+  const handleBookViewChange = useCallback(
+    (view: BookView) => {
+      dispatch(uiSettingsSlice.actions.setBookView(view))
+    },
+    [dispatch],
+  )
+
+  const handleListColumnsChange = useCallback(
+    (fields: DisplayField[]) => {
+      dispatch(uiSettingsSlice.actions.setListVisibleColumns(fields))
+    },
+    [dispatch],
+  )
+
   const sidebarWidth = useAppSelector(
     (state) => state.uiSettings.librarySidebarWidth,
   )
@@ -184,6 +213,14 @@ export function LibraryPage({
           defaultSortDirection: "asc" as const,
         }
       : {},
+  )
+
+  const handleColumnSort = useCallback(
+    (field: SortField, direction: SortDirection) => {
+      onFilterChange("sortField", field)
+      onFilterChange("sortDirection", direction)
+    },
+    [onFilterChange],
   )
 
   // on a series page the books carry a position within the selected series;
@@ -462,30 +499,60 @@ export function LibraryPage({
         displayOverride={displayOverride}
         onDisplayOverrideChange={onDisplayOverrideChange}
         hasSeriesContext={!!seriesContextUuid}
+        bookView={bookView}
+        onBookViewChange={handleBookViewChange}
+        listVisibleColumns={listVisibleColumns}
+        onListVisibleColumnsChange={handleListColumnsChange}
       />
 
       <PageContent className="p-4">
         {selectedItem ? (
           <BookSelectionProvider key={selectedItem}>
-            <BookGrid
-              books={filteredBooks}
-              isLoading={gridLoading}
-              isFetchingNextPage={isFetchingNextPage}
-              hasNextPage={hasNextPage}
-              fetchNextPage={fetchNextPage}
-              showMuted={showMuted}
-              emptySubMessage={
-                deferredSearch || activeFilterCount > 0
-                  ? "Try adjusting your search or filters"
-                  : undefined
-              }
-              onClearFilters={clearFilters}
-              hasActiveFilters={activeFilterCount > 0}
-              selectedBookUuid={selectedBookUuid}
-              onBookClick={handleBookClick}
-              displayField={displayField}
-              displayContext={displayContext}
-            />
+            {bookView === "list" ? (
+              <BookList
+                books={filteredBooks}
+                isLoading={gridLoading}
+                isFetchingNextPage={isFetchingNextPage}
+                hasNextPage={hasNextPage}
+                fetchNextPage={fetchNextPage}
+                showMuted={showMuted}
+                emptySubMessage={
+                  deferredSearch || activeFilterCount > 0
+                    ? "Try adjusting your search or filters"
+                    : undefined
+                }
+                onClearFilters={clearFilters}
+                hasActiveFilters={activeFilterCount > 0}
+                selectedBookUuid={selectedBookUuid}
+                onBookClick={handleBookClick}
+                displayField={displayField}
+                displayContext={displayContext}
+                visibleColumns={listVisibleColumns}
+                sortField={filterState.sortField}
+                sortDirection={filterState.sortDirection}
+                onSortChange={handleColumnSort}
+              />
+            ) : (
+              <BookGrid
+                books={filteredBooks}
+                isLoading={gridLoading}
+                isFetchingNextPage={isFetchingNextPage}
+                hasNextPage={hasNextPage}
+                fetchNextPage={fetchNextPage}
+                showMuted={showMuted}
+                emptySubMessage={
+                  deferredSearch || activeFilterCount > 0
+                    ? "Try adjusting your search or filters"
+                    : undefined
+                }
+                onClearFilters={clearFilters}
+                hasActiveFilters={activeFilterCount > 0}
+                selectedBookUuid={selectedBookUuid}
+                onBookClick={handleBookClick}
+                displayField={displayField}
+                displayContext={displayContext}
+              />
+            )}
 
             <SelectionToolbar
               allBookUuids={filteredBooks.map((book) => book.uuid)}

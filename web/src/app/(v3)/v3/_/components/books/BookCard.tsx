@@ -1,12 +1,14 @@
+import { IconDotsVertical } from "@tabler/icons-react"
 import Link from "next/link"
-import { Fragment, memo, useMemo, useState } from "react"
-
-import { Checkbox } from "@v3/_/components/ui/checkbox"
-import { cn } from "@v3/_/lib/utils"
+import { Fragment, memo, useCallback, useMemo, useState } from "react"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { type DisplayField, type SortContext } from "@/sort"
+
+import { Checkbox } from "@v3/_/components/ui/checkbox"
+import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { cn } from "@v3/_/lib/utils"
 
 import { BookCover, isDualFormat } from "./BookCover"
 import {
@@ -24,8 +26,10 @@ type BookCardProps = {
   isSelecting?: boolean
   isBookSelected?: boolean
   onToggleSelection?: (uuid: string) => void
+  onSelectRange?: (uuid: string) => void
+  onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
+  isMenuOpen?: boolean
   onClick?: (book: BookWithRelations) => void
-  // what the secondary line under the title shows; defaults to authors
   displayField?: DisplayField
   displayContext?: SortContext
 }
@@ -48,7 +52,7 @@ function formatFileSize(bytes: number): string {
   return `${size.toFixed(1)} ${units[i]}`
 }
 
-function secondaryText(
+export function secondaryText(
   book: BookWithRelations,
   field: DisplayField,
   ctx: SortContext | undefined,
@@ -99,10 +103,15 @@ export const BookCard = memo(function BookCard({
   isSelecting = false,
   isBookSelected = false,
   onToggleSelection,
+  onSelectRange,
+  onOpenMenu,
+  isMenuOpen = false,
   onClick,
   displayField = "authors",
   displayContext,
 }: BookCardProps) {
+  const isMobile = useIsMobile()
+
   const hasReadaloud = book.readaloud !== null
   const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
   const isProcessing =
@@ -119,8 +128,6 @@ export const BookCard = memo(function BookCard({
   const hiddenAuthorCount = authors.length - visibleAuthors.length
   const progress = getReadingProgress(book)
 
-  // non-authors fields render a plain muted line; a null value (or an explicit
-  // authors/title pick) falls back to the author links below.
   const secondary =
     displayField === "authors"
       ? null
@@ -135,13 +142,17 @@ export const BookCard = memo(function BookCard({
 
   const showCheckbox = !!onToggleSelection
 
-  const handleCheckboxClick = () => {
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    if (e.shiftKey && onSelectRange) {
+      onSelectRange(book.uuid)
+      return
+    }
+
     onToggleSelection?.(book.uuid)
   }
 
-  // cover-derived ui coloring (hover title, badge, accent vars) only at "full";
-  // otherwise we leave the theme primary in place. the cover colors are nudged
-  // for contrast against the active surface rather than falling back to orange.
   const cPrimary = ensureContrast(primary, isDark)
   const cAccent = ensureContrast(accent, isDark)
   const style = showAccent
@@ -156,9 +167,6 @@ export const BookCard = memo(function BookCard({
   const cardContent = (
     <>
       <div className="relative flex aspect-13/16 flex-col items-center justify-center transition-shadow">
-        {/* rounded background sits behind the cover and always keeps its
-            corners; it never clips the cover, so a dual cover can animate out
-            of the frame on hover without the card rounding appearing to break */}
         <div
           className={cn(
             "bg-muted absolute inset-0 flex flex-col-reverse overflow-hidden rounded-lg",
@@ -180,8 +188,6 @@ export const BookCard = memo(function BookCard({
         <div
           className={cn(
             "absolute inset-0 flex items-center justify-center p-3",
-            // single covers stay clipped to the card; a dual cover is allowed
-            // to spill past the edges during its hover animation
             hasDualFormat ? "overflow-visible" : "overflow-hidden rounded-lg",
           )}
         >
@@ -201,14 +207,11 @@ export const BookCard = memo(function BookCard({
                 !isSelecting &&
                 "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
             )}
-            onClick={(e) => {
-              e.stopPropagation()
-            }}
+            onClick={handleCheckboxClick}
           >
             <Checkbox
               tabIndex={0}
               checked={isBookSelected}
-              onCheckedChange={handleCheckboxClick}
               className="hover:border-primary relative h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors focus-within:border-blue-500 data-checked:border-2 data-checked:border-white"
               onClick={(e) => {
                 e.stopPropagation()
@@ -217,7 +220,7 @@ export const BookCard = memo(function BookCard({
           </div>
         )}
 
-        {isSynced && (
+        {isSynced && !isMobile && (
           <div className="absolute top-4.5 right-3">
             <div
               className="flex size-5 items-center justify-center rounded-full shadow-md"
@@ -227,6 +230,31 @@ export const BookCard = memo(function BookCard({
             >
               <IconReadaloud className="size-6 text-white" />
             </div>
+          </div>
+        )}
+
+        {onOpenMenu && (
+          <div
+            className={cn(
+              "absolute right-3 bottom-3 z-20",
+              !isMobile &&
+                !isMenuOpen &&
+                "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
+            )}
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+          >
+            <button
+              type="button"
+              className="flex size-6 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenMenu(book, e.currentTarget)
+              }}
+            >
+              <IconDotsVertical className="size-3.5" />
+            </button>
           </div>
         )}
       </div>
@@ -270,14 +298,25 @@ export const BookCard = memo(function BookCard({
     </>
   )
 
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.shiftKey && onSelectRange) {
+        e.preventDefault()
+        onSelectRange(book.uuid)
+        return
+      }
+
+      onClick?.(book)
+    },
+    [book, onClick, onSelectRange],
+  )
+
   return (
     <div
       data-book-uuid={book.uuid}
       className={cn(
         "group relative flex flex-col rounded-lg transition-opacity duration-200",
         muted && "opacity-50",
-        // book currently open in the detail panel: a soft, persistent cue that
-        // reads differently from the bold multi-select ring below.
         selected &&
           !isBookSelected &&
           "ring-primary/40 bg-primary/5 [&_h3]:text-primary ring-2 ring-offset-2",
@@ -286,7 +325,6 @@ export const BookCard = memo(function BookCard({
     >
       <div
         key={book.uuid}
-        // im sorry a11y gods
         role="button"
         onKeyDown={
           onClick
@@ -298,13 +336,7 @@ export const BookCard = memo(function BookCard({
             : undefined
         }
         tabIndex={0}
-        onClick={
-          onClick
-            ? () => {
-                onClick(book)
-              }
-            : undefined
-        }
+        onClick={onClick ? handleCardClick : undefined}
         className={cn(
           "relative h-full",
           isBookSelected && "ring-primary rounded-lg ring-2",

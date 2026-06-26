@@ -12,7 +12,9 @@ import {
 type BookSelectionContextValue = {
   selectedBooks: Set<string>
   isSelecting: boolean
+  lastSelectedUuid: string | null
   toggleSelection: (uuid: string) => void
+  selectRange: (targetUuid: string, orderedUuids: string[]) => void
   selectAll: (uuids: string[]) => void
   selectNone: () => void
   invertSelection: (allUuids: string[]) => void
@@ -28,8 +30,10 @@ const BookSelectionContext = createContext<BookSelectionContextValue | null>(
 export function BookSelectionProvider({ children }: { children: ReactNode }) {
   const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set())
   const [isSelecting, setIsSelecting] = useState(false)
+  const [lastSelectedUuid, setLastSelectedUuid] = useState<string | null>(null)
 
   const toggleSelection = useCallback((uuid: string) => {
+    setLastSelectedUuid(uuid)
     setSelectedBooks((prev) => {
       const next = new Set(prev)
       if (next.has(uuid)) {
@@ -40,6 +44,52 @@ export function BookSelectionProvider({ children }: { children: ReactNode }) {
       return next
     })
   }, [])
+
+  // toggle the inclusive range between the last-selected card and the target.
+  // if the anchor was a deselect, the range deselects; if a select, it selects.
+  const selectRange = useCallback(
+    (targetUuid: string, orderedUuids: string[]) => {
+      const anchorUuid = lastSelectedUuid
+
+      if (!anchorUuid) {
+        setLastSelectedUuid(targetUuid)
+        setSelectedBooks((prev) => new Set([...prev, targetUuid]))
+        return
+      }
+
+      const anchorIdx = orderedUuids.indexOf(anchorUuid)
+      const targetIdx = orderedUuids.indexOf(targetUuid)
+
+      if (anchorIdx === -1 || targetIdx === -1) {
+        setLastSelectedUuid(targetUuid)
+        setSelectedBooks((prev) => new Set([...prev, targetUuid]))
+        return
+      }
+
+      const from = Math.min(anchorIdx, targetIdx)
+      const to = Math.max(anchorIdx, targetIdx)
+      const rangeUuids = orderedUuids.slice(from, to + 1)
+
+      setLastSelectedUuid(targetUuid)
+      setSelectedBooks((prev) => {
+        // if the anchor book is currently selected, we're extending a selection;
+        // if it was deselected, we're extending a deselection.
+        const anchorIsSelected = prev.has(anchorUuid)
+        const next = new Set(prev)
+
+        for (const uuid of rangeUuids) {
+          if (anchorIsSelected) {
+            next.add(uuid)
+          } else {
+            next.delete(uuid)
+          }
+        }
+
+        return next
+      })
+    },
+    [lastSelectedUuid],
+  )
 
   const selectAll = useCallback((uuids: string[]) => {
     setSelectedBooks(new Set(uuids))
@@ -67,6 +117,7 @@ export function BookSelectionProvider({ children }: { children: ReactNode }) {
   const stopSelecting = useCallback(() => {
     setIsSelecting(false)
     setSelectedBooks(new Set())
+    setLastSelectedUuid(null)
   }, [])
 
   // having some selected books counts as selecting
@@ -76,7 +127,9 @@ export function BookSelectionProvider({ children }: { children: ReactNode }) {
     () => ({
       selectedBooks,
       isSelecting: isActuallySelcting,
+      lastSelectedUuid,
       toggleSelection,
+      selectRange,
       selectAll,
       selectNone,
       invertSelection,
@@ -87,7 +140,9 @@ export function BookSelectionProvider({ children }: { children: ReactNode }) {
     [
       selectedBooks,
       isActuallySelcting,
+      lastSelectedUuid,
       toggleSelection,
+      selectRange,
       selectAll,
       selectNone,
       invertSelection,

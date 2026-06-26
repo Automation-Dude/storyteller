@@ -19,19 +19,6 @@ import {
 import { type MouseEvent, useCallback, useState } from "react"
 import { toast } from "sonner"
 
-import {
-  ConfirmDialog,
-  useConfirmAction,
-} from "@v3/_/components/ui/confirm-dialog"
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from "@v3/_/components/ui/dropdown-menu"
-import { useTranslation } from "@v3/_/hooks/use-translation"
-
 import { type BookWithRelations, type CreatorRelation } from "@/database/books"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
@@ -55,6 +42,19 @@ import {
   useUpgradeBookEpubMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
+
+import {
+  ConfirmDialog,
+  useConfirmAction,
+} from "@v3/_/components/ui/confirm-dialog"
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@v3/_/components/ui/dropdown-menu"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { ProcessingModal } from "./BookDetails/ProcessingModal"
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
