@@ -11,6 +11,7 @@ import { useState } from "react"
 import { Button } from "@v3/_/components/ui/button"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { useFormatDate } from "@/app/(v3)/v3/_/lib/date"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
@@ -19,10 +20,11 @@ import {
   useProcessBookMutation,
 } from "@/store/api"
 
+import { FilePathRow } from "./FilePathRow"
+import { ProcessRunDialog } from "./ProcessRunDialog"
 import { ProcessingModal } from "./ProcessingModal"
 import { CollapsibleSection } from "./sections/CollapsibleSection"
-import { FilePathRow } from "./FilePathRow"
-import { useFormatDate } from "../../../lib/date"
+
 
 const PROCESSING_STAGE_LABELS: Record<string, string> = {
   SPLIT_TRACKS: "Pre-processing audio",
@@ -34,8 +36,17 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
   const [processBook] = useProcessBookMutation()
   const [cancelProcessing] = useCancelProcessingMutation()
   const canProcess = usePermission("bookProcess")
+  // the per-run dialog surfaces the same secret-bearing settings as the settings
+  // page, so only offer it to settings admins; others process with global defaults.
+  const canConfigure = usePermission("settingsUpdate")
 
   const [processingModalOpen, setProcessingModalOpen] = useState(false)
+  const [runDialogOpen, setRunDialogOpen] = useState(false)
+
+  const beginProcessing = () => {
+    if (canConfigure) setRunDialogOpen(true)
+    else void processBook({ uuid: book.uuid })
+  }
 
   const hasEbook = book.ebook !== null
   const hasAudiobook = book.audiobook !== null
@@ -117,22 +128,14 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
               {readaloudStatus === "ERROR" ? t("error") : t("stopped")}
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void processBook({ uuid: book.uuid })}
-          >
+          <Button variant="outline" size="sm" onClick={beginProcessing}>
             {t("retry")}
           </Button>
         </div>
       )}
 
       {!readaloudStatus && canCreateReadaloud && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void processBook({ uuid: book.uuid })}
-        >
+        <Button variant="outline" size="sm" onClick={beginProcessing}>
           <IconReadaloud className="mr-1 h-4 w-4" />
           {t("createReadaloud")}
         </Button>
@@ -150,6 +153,14 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
           aligned={aligned}
           open={processingModalOpen}
           onOpenChange={setProcessingModalOpen}
+        />
+      )}
+
+      {canConfigure && (
+        <ProcessRunDialog
+          book={book}
+          open={runDialogOpen}
+          onOpenChange={setRunDialogOpen}
         />
       )}
 

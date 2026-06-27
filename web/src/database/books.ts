@@ -661,6 +661,30 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
           .$if(includeManifest, (eb) => eb.select(["readaloud.manifest"]))
           .whereRef("readaloud.bookUuid", "=", "book.uuid"),
       ).as("readaloud"),
+      // the active processing job for this book, if any. config is intentionally
+      // excluded - it carries api keys and never goes to the client.
+      jsonObjectFrom(
+        eb
+          .selectFrom("job")
+          .select([
+            "job.uuid",
+            "job.bookUuid",
+            "job.type",
+            "job.status",
+            "job.stage",
+            "job.progress",
+            "job.position",
+            "job.error",
+            "job.createdAt",
+            "job.updatedAt",
+            "job.startedAt",
+            "job.finishedAt",
+          ])
+          .whereRef("job.bookUuid", "=", "book.uuid")
+          .where("job.status", "in", ["QUEUED", "RUNNING", "PAUSED"])
+          .orderBy("job.createdAt", "desc")
+          .limit(1),
+      ).as("processingJob"),
     ])
     .$if(!!userId, (qb) =>
       qb

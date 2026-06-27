@@ -222,6 +222,23 @@ export interface ImportRuleToCollection {
   importRuleUuid: import("@/uuid").UUID
 }
 
+export interface Job {
+  bookUuid: string | null
+  config: string | null
+  createdAt: Generated<string>
+  error: string | null
+  finishedAt: string | null
+  position: Generated<number>
+  progress: Generated<number>
+  restart: string | null
+  stage: string | null
+  startedAt: string | null
+  status: Generated<string>
+  type: string
+  updatedAt: Generated<string>
+  uuid: Generated<string>
+}
+
 export interface Migration {
   createdAt: Generated<string>
   hash: string
@@ -473,6 +490,7 @@ export interface DB {
   homeSection: HomeSection
   importRule: ImportRule
   importRuleToCollection: ImportRuleToCollection
+  job: Job
   migration: Migration
   position: Position
   readaloud: Readaloud

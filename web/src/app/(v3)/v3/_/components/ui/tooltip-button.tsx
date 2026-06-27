@@ -14,19 +14,25 @@ type TooltipButtonProps = React.ComponentProps<typeof Button> &
     delay?: number
     /* required bc you will forget it */
     "aria-label": string
+    tooltipClassName?: string
   }
 
 export function TooltipButton({
   tooltip,
   tooltipSide,
   tooltipAlign,
+  tooltipClassName,
   delay,
   ...buttonProps
 }: TooltipButtonProps) {
   return (
     <Tooltip delay={delay}>
       <TooltipTrigger render={<Button size="icon-sm" {...buttonProps} />} />
-      <TooltipContent side={tooltipSide} align={tooltipAlign}>
+      <TooltipContent
+        side={tooltipSide}
+        align={tooltipAlign}
+        className={tooltipClassName}
+      >
         {tooltip}
       </TooltipContent>
     </Tooltip>

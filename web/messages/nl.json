@@ -1103,6 +1103,34 @@
       "scanningFailed": "Scan mislukt"
     }
   },
+  "Fields": {
+    "label": {
+      "title": "Titel",
+      "authors": "Auteurs",
+      "createdAt": "Toegevoegd",
+      "updatedAt": "Bijgewerkt",
+      "publicationDate": "Publicatiedatum",
+      "userRating": "Mijn score",
+      "pageCount": "Pagina's",
+      "duration": "Duur",
+      "fileSize": "Grootte",
+      "language": "Taal",
+      "seriesPosition": "Seriepositie"
+    },
+    "short": {
+      "title": "Titel",
+      "authors": "Auteurs",
+      "createdAt": "Toeg.",
+      "updatedAt": "Bijgew.",
+      "publicationDate": "Gepubl.",
+      "userRating": "Score",
+      "pageCount": "Pag.",
+      "duration": "Duur",
+      "fileSize": "Grootte",
+      "language": "Taal",
+      "seriesPosition": "Pos."
+    }
+  },
   "Labels": {
     "title": "Titel",
     "subtitle": "Ondertitel",

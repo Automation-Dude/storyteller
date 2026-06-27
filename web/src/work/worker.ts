@@ -42,6 +42,7 @@ import type { UUID } from "@/uuid"
 import { getCurrentVersion } from "@/versions"
 
 import type { RestartMode } from "./distributor"
+import type { RunConfig } from "./runConfig"
 
 const STAGES = ["SPLIT_TRACKS", "TRANSCRIBE_CHAPTERS", "SYNC_CHAPTERS"] as const
 
@@ -54,10 +55,12 @@ if (process.env["DEBUG_WORKER"] === "true") {
 export default async function processBook({
   bookUuid,
   restart,
+  config,
   port,
 }: {
   bookUuid: UUID
   restart: RestartMode
+  config: RunConfig | null
   port: MessagePort
 }) {
   const processTiming = createTiming()
@@ -82,6 +85,13 @@ export default async function processBook({
     port.postMessage({ requestId, update, relations })
 
     return await promise
+  }
+
+  // the run config snapshots the transcription/audio settings for this run; library
+  // level settings (readaloud location, cache cleanup) still come from globals.
+  async function getEffectiveSettings() {
+    const settings = await getSettings()
+    return config ? { ...settings, ...config } : settings
   }
 
   let book = await getBookOrThrow(bookUuid)
@@ -149,7 +159,7 @@ export default async function processBook({
         // shame not to reuse stuff, but too easy to produce bugs if we do
         await deleteProcessed(book)
 
-        const settings = await getSettings()
+        const settings = await getEffectiveSettings()
         logger.info("Pre-processing...")
         await processTiming.timeAsync("split_tracks", () =>
           processAudiobook(
@@ -176,11 +186,12 @@ export default async function processBook({
         using epub = await Epub.from(book.ebook!.filepath)
         book = await getBookOrThrow(bookUuid)
 
-        const locale = book.language
-          ? new Intl.Locale(book.language)
+        const runLanguage = config?.language ?? book.language
+        const locale = runLanguage
+          ? new Intl.Locale(runLanguage)
           : (await epub.getLanguage()) ?? new Intl.Locale("en-US")
 
-        const settings = await getSettings()
+        const settings = await getEffectiveSettings()
         await processTiming.timeAsync("transcribe_chapters", () =>
           transcribe(
             getProcessedAudioFilepath(book),
@@ -229,7 +240,7 @@ export default async function processBook({
           logger,
         })
 
-        const settings = await getSettings()
+        const settings = await getEffectiveSettings()
         const readaloudFilepath = getReadaloudFilepath(book, settings)
         const readaloudDirectory = dirname(readaloudFilepath)
         await mkdir(readaloudDirectory, { recursive: true })

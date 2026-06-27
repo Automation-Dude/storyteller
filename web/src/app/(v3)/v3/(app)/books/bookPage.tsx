@@ -188,8 +188,6 @@ export default function BookPage({
           hasSeriesContext={!!state.seriesFilter}
           bookView={bookView}
           onBookViewChange={handleBookViewChange}
-          listVisibleColumns={listVisibleColumns}
-          onListVisibleColumnsChange={handleListColumnsChange}
         />
 
         <div className="flex items-center gap-2 px-4 pt-1">
@@ -258,6 +256,7 @@ export default function BookPage({
               displayField={displayField}
               displayContext={displayContext}
               visibleColumns={listVisibleColumns}
+              onVisibleColumnsChange={handleListColumnsChange}
               sortField={state.sortField}
               sortDirection={state.sortDirection}
               onSortChange={handleColumnSort}

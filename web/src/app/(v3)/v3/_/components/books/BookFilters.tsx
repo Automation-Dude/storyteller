@@ -52,7 +52,6 @@ import {
 
 import { type BookView } from "@/store/slices/uiSettingsSlice"
 
-import { ColumnSelector } from "./ColumnSelector"
 import { SearchInput } from "./SearchInput"
 import { ViewSelector } from "./ViewSelector"
 
@@ -85,8 +84,6 @@ type BookFiltersProps = {
   hasSeriesContext?: boolean
   bookView?: BookView
   onBookViewChange?: (view: BookView) => void
-  listVisibleColumns?: DisplayField[]
-  onListVisibleColumnsChange?: (fields: DisplayField[]) => void
 }
 
 // the sentinel for "automatic" in the Show select (Select values are strings)
@@ -114,8 +111,6 @@ export function BookFilters({
   hasSeriesContext = false,
   bookView,
   onBookViewChange,
-  listVisibleColumns,
-  onListVisibleColumnsChange,
 }: BookFiltersProps) {
   const t = useTranslation("BooksPage")
   const { data: collections } = useListCollectionsQuery()
@@ -405,15 +400,6 @@ export function BookFilters({
         {bookView && onBookViewChange && (
           <ViewSelector value={bookView} onChange={onBookViewChange} />
         )}
-
-        {bookView === "list" &&
-          listVisibleColumns &&
-          onListVisibleColumnsChange && (
-            <ColumnSelector
-              visibleFields={listVisibleColumns}
-              onChange={onListVisibleColumnsChange}
-            />
-          )}
       </div>
 
       <div className="scroll-x flex items-center gap-1.5">

@@ -25,12 +25,10 @@ import {
   DropdownMenuSeparator,
 } from "@v3/_/components/ui/dropdown-menu"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
-import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { useBookActionItems } from "./BookActionMenuItems"
+import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -64,18 +62,6 @@ const GAP = BOOK_GRID_GAP
 const COVER_ASPECT = 16 / 13 // aspect-[13/16]
 const TEXT_BLOCK_HEIGHT = 60 // author + 2-line title + spacing
 
-// walks up the dom to the nearest scrollable ancestor so the virtualizer
-// tracks the real scroll container (PageContent) rather than the window.
-function findScrollParent(node: HTMLElement | null): HTMLElement | null {
-  let el = node?.parentElement ?? null
-  while (el) {
-    const overflowY = getComputedStyle(el).overflowY
-    if (overflowY === "auto" || overflowY === "scroll") return el
-    el = el.parentElement
-  }
-  return null
-}
-
 export function BookGrid({
   books,
   isLoading,
@@ -92,8 +78,7 @@ export function BookGrid({
   displayField,
   displayContext,
 }: BookGridProps) {
-  const selection = useOptionalBookSelection()
-  const isSelecting = (selection?.selectedBooks.size ?? 0) > 0
+  const menu = useBookActionMenu(books)
 
   const isMobile = useIsMobile()
   const { gridCardSize } = useUserPreferences()
@@ -160,6 +145,7 @@ export function BookGrid({
   const lastVirtualRowIndex = virtualRows.at(-1)?.index
   useEffect(() => {
     if (lastVirtualRowIndex === undefined) return
+
     if (
       lastVirtualRowIndex >= rowCount - 1 &&
       hasNextPage &&
@@ -212,6 +198,7 @@ export function BookGrid({
       anchorRef.current = null
       return
     }
+
     const card = scrollElement.querySelector(
       `[data-book-uuid="${selectedBookUuid}"]`,
     )
@@ -224,60 +211,6 @@ export function BookGrid({
       viewportTop: cardTop - viewTop,
     }
   })
-
-  const orderedUuids = useMemo(() => books.map((b) => b.uuid), [books])
-
-  const handleSelectRange = useCallback(
-    (uuid: string) => {
-      selection?.selectRange(uuid, orderedUuids)
-    },
-    [selection, orderedUuids],
-  )
-
-  // shared card menu: one instance, positioned at whichever card opened it
-  const t = useTranslation("BookActions")
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
-
-  const handleMenuOpenChange = useCallback(
-    (
-      open: boolean,
-      eventDetails?: {
-        reason?: string
-        trigger?: EventTarget | null
-        event?: Event | null
-      },
-    ) => {
-      const isSiblingOpenClose =
-        !open && eventDetails?.reason === "sibling-open"
-      const shouldIgnoreSiblingOpenClose = isSiblingOpenClose && menuOpen
-      if (shouldIgnoreSiblingOpenClose) {
-        return
-      }
-
-      setMenuOpen(open)
-    },
-    [menuOpen],
-  )
-
-  const handleOpenMenu = useCallback(
-    (book: BookWithRelations, anchor: HTMLElement) => {
-      setMenuBook(book)
-      setMenuAnchor(anchor)
-      setMenuOpen(true)
-    },
-    [],
-  )
-
-  const { items: menuItems, dialogs: menuDialogs } = useBookActionItems({
-    books: menuBook ? [menuBook] : [],
-    mode: "single",
-  })
-
-  const menuBookIsSelected = menuBook
-    ? selection?.isSelected(menuBook.uuid) ?? false
-    : false
 
   if (isLoading) {
     return (
@@ -317,8 +250,6 @@ export function BookGrid({
     )
   }
 
-  const toggleSelection = selection?.toggleSelection
-
   return (
     <>
       <div
@@ -356,12 +287,16 @@ export function BookGrid({
                       book={book}
                       muted={showMuted}
                       selected={book.uuid === selectedBookUuid}
-                      isSelecting={isSelecting}
-                      isBookSelected={selection?.isSelected(book.uuid) ?? false}
-                      onToggleSelection={toggleSelection}
-                      onSelectRange={handleSelectRange}
-                      onOpenMenu={handleOpenMenu}
-                      isMenuOpen={menuOpen && menuBook?.uuid === book.uuid}
+                      isSelecting={menu.isSelecting}
+                      isBookSelected={
+                        menu.selection?.isSelected(book.uuid) ?? false
+                      }
+                      onToggleSelection={menu.toggleSelection}
+                      onSelectRange={menu.handleSelectRange}
+                      onOpenMenu={menu.handleOpenMenu}
+                      isMenuOpen={
+                        menu.menuOpen && menu.menuBook?.uuid === book.uuid
+                      }
                       onClick={onBookClick}
                       displayField={displayField}
                       displayContext={displayContext}
@@ -381,30 +316,35 @@ export function BookGrid({
         </div>
       )}
 
-      <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpenChange}>
+      <DropdownMenu
+        open={menu.menuOpen}
+        onOpenChange={menu.handleMenuOpenChange}
+      >
         <DropdownMenuContent
           align="end"
           className="pointer-events-auto z-100 min-w-44"
-          anchor={menuAnchor}
+          anchor={menu.menuAnchor}
         >
-          {toggleSelection && menuBook && (
+          {menu.toggleSelection && menu.menuBook && (
             <>
               <DropdownMenuItem
                 onClick={() => {
-                  toggleSelection(menuBook.uuid)
+                  menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
                 }}
               >
-                {menuBookIsSelected ? t("deselect") : t("select")}
+                {menu.menuBookIsSelected
+                  ? menu.t("deselect")
+                  : menu.t("select")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
           )}
 
-          {menuItems}
+          {menu.menuItems}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {menuDialogs}
+      {menu.menuDialogs}
     </>
   )
 }

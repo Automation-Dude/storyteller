@@ -1111,6 +1111,34 @@
       "storytellerVersion": "Storyteller version"
     }
   },
+  "Fields": {
+    "label": {
+      "title": "Title",
+      "authors": "Authors",
+      "createdAt": "Date Added",
+      "updatedAt": "Last Updated",
+      "publicationDate": "Publication Date",
+      "userRating": "My Rating",
+      "pageCount": "Page Count",
+      "duration": "Duration",
+      "fileSize": "File Size",
+      "language": "Language",
+      "seriesPosition": "Series Position"
+    },
+    "short": {
+      "title": "Title",
+      "authors": "Authors",
+      "createdAt": "Added",
+      "updatedAt": "Updated",
+      "publicationDate": "Published",
+      "userRating": "Rating",
+      "pageCount": "Pages",
+      "duration": "Duration",
+      "fileSize": "Size",
+      "language": "Lang.",
+      "seriesPosition": "Pos."
+    }
+  },
   "Labels": {
     "title": "Title",
     "subtitle": "Subtitle",

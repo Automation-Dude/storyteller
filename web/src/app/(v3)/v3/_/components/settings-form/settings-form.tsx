@@ -8,6 +8,7 @@ import {
   IconDownload,
   IconFileText,
   IconHistory,
+  IconListNumbers,
   IconMail,
   IconMicrophone,
   IconRss,
@@ -19,7 +20,12 @@ import {
   IconX,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import { type SingleParser, parseAsString, useQueryState } from "nuqs"
+import {
+  type SingleParser,
+  parseAsBoolean,
+  parseAsString,
+  useQueryState,
+} from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { type FieldErrors, useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -58,8 +64,16 @@ import { LibraryTab } from "./library-tab"
 import { LogsTab } from "./logs-tab"
 import { OpdsTab } from "./opds-tab"
 import { ProcessingTab } from "./processing-tab"
+import { QueueTab } from "./queue-tab"
 import { type IsMatch, SearchContext } from "./shared"
-import { type SectionKeywords, type Tab } from "./tabs"
+import {
+  AdminTab,
+  adminTabs,
+  SettingsFormTab,
+  settingsFormTabs,
+  type SectionKeywords,
+  type Tab,
+} from "./tabs"
 import { UploadTab } from "./upload-tab"
 import { UsersTab } from "./users-tab"
 
@@ -182,9 +196,6 @@ function resolveFieldErrors(
 }
 
 const SETTINGS_SIDEBAR_WIDTH = 220
-
-const formTabs = ["library", "processing", "auth", "upload", "email", "opds"]
-const adminTabs = ["users", "changelog", "logs"]
 
 type SidebarTabDef = {
   value: Tab
@@ -323,15 +334,20 @@ export function SettingsForm({
         icon: IconHistory,
       },
       { value: "logs", label: t("tabs.logs.title"), icon: IconFileText },
+      { value: "queue", label: "Queue", icon: IconListNumbers },
     ],
     [t, hasUsers],
   )
 
   const [activeTabRaw, setActiveTab] = useQueryState(
     "tab",
-    parseAsString.withDefault("library") as SingleParser<Tab>,
+    parseAsString as SingleParser<Tab>,
   )
-  const activeTab: Tab = activeTabRaw ?? "library"
+
+  const activeTab: Tab | null = isMobile
+    ? activeTabRaw
+    : activeTabRaw ?? "library"
+  const showMobileSidebar = isMobile && !activeTab
 
   const setActiveTabEvent = useCallback(
     (tab: Tab) => {
@@ -391,11 +407,13 @@ export function SettingsForm({
 
   const filteredTabs = searchQuery
     ? allTabs.filter(
-        (tab) => matchingTabs.has(tab.value) || adminTabs.includes(tab.value),
+        (tab) =>
+          matchingTabs.has(tab.value) ||
+          adminTabs.includes(tab.value as AdminTab),
       )
     : allTabs
 
-  const isFormTab = formTabs.includes(activeTab)
+  const isFormTab = settingsFormTabs.includes(activeTab as SettingsFormTab)
   const activeTabDef = allTabs.find((t) => t.value === activeTab)
 
   const tabContent = (
@@ -419,6 +437,7 @@ export function SettingsForm({
         <ChangelogTab currentVersion={currentVersion} />
       )}
       {activeTab === "logs" && <LogsTab />}
+      {activeTab === "queue" && <QueueTab />}
     </>
   )
 
@@ -431,12 +450,9 @@ export function SettingsForm({
             variant="outline"
             tooltip={t("exportSettings")}
             nativeButton={false}
+            aria-label={t("exportSettings")}
             render={
-              <Link
-                href="/api/v2/settings"
-                aria-label="Export settings as JSON"
-                download="storyteller-config.json"
-              >
+              <Link href="/api/v2/settings" download="storyteller-config.json">
                 <IconDownload size={16} />
               </Link>
             }
@@ -467,6 +483,7 @@ export function SettingsForm({
       )}
     </div>
   )
+  console.log("activeTab", activeTab)
 
   const sidebarContent = (
     <SettingsSidebar
@@ -497,56 +514,57 @@ export function SettingsForm({
   )
 
   if (isMobile) {
-    if (activeTab) {
-      return (
-        <div className="flex h-screen flex-col overflow-hidden">
-          <PageHeader>
-            <SiteHeader
-              breadcrumbs={[
-                { label: title },
-                ...(activeTabDef ? [{ label: activeTabDef.label }] : []),
-              ]}
-              actions={
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void setActiveTab(null)}
-                  >
-                    <IconArrowLeft className="mr-1 h-4 w-4" />
-                    {t("back")}
-                  </Button>
+    console.log("activeTab", activeTab)
 
-                  {isFormTab && (
-                    <Button
-                      type="submit"
-                      form="settings-form"
-                      disabled={isSaving}
-                      size="sm"
-                    >
-                      {isSaving && <Spinner />}
-                      {isSaving ? t("saving") : t("saveSettings")}
-                    </Button>
-                  )}
-                </div>
-              }
-            />
+    if (showMobileSidebar) {
+      return (
+        <div className="flex h-screen flex-col">
+          <PageHeader>
+            <SiteHeader breadcrumbs={[{ label: title }]} />
           </PageHeader>
 
-          {contentArea}
-
-          {lockedKeys.size > 0 && <LockedSettingsBanner t={t} />}
+          {sidebarContent}
         </div>
       )
     }
-
     return (
-      <div className="flex h-screen flex-col">
+      <div className="flex h-screen flex-col overflow-hidden">
         <PageHeader>
-          <SiteHeader breadcrumbs={[{ label: title }]} />
+          <SiteHeader
+            breadcrumbs={[
+              { label: title },
+              ...(activeTabDef ? [{ label: activeTabDef.label }] : []),
+            ]}
+            actions={
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void setActiveTab(null)}
+                >
+                  <IconArrowLeft className="mr-1 h-4 w-4" />
+                  {t("back")}
+                </Button>
+
+                {isFormTab && (
+                  <Button
+                    type="submit"
+                    form="settings-form"
+                    disabled={isSaving}
+                    size="sm"
+                  >
+                    {isSaving && <Spinner />}
+                    {isSaving ? t("saving") : t("saveSettings")}
+                  </Button>
+                )}
+              </div>
+            }
+          />
         </PageHeader>
 
-        <div className="flex-1 overflow-y-auto">{sidebarContent}</div>
+        {contentArea}
+
+        {lockedKeys.size > 0 && <LockedSettingsBanner t={t} />}
       </div>
     )
   }
@@ -607,11 +625,15 @@ function SettingsSidebar({
 }) {
   const t = useTranslation("SettingsPage")
 
-  const settingsTabs = tabs.filter((tab) => formTabs.includes(tab.value))
-  const administrationTabs = tabs.filter((tab) => adminTabs.includes(tab.value))
+  const settingsTabs = tabs.filter((tab) =>
+    settingsFormTabs.includes(tab.value as SettingsFormTab),
+  )
+  const administrationTabs = tabs.filter((tab) =>
+    adminTabs.includes(tab.value as AdminTab),
+  )
 
   return (
-    <ScrollArea className="flex h-full flex-col">
+    <div className="scroll-y flex h-full flex-col">
       <div className="flex flex-col gap-4 px-2 pt-3 pb-3">
         {settingsTabs.length > 0 && (
           <div>
@@ -674,7 +696,7 @@ function SettingsSidebar({
           }
         />
       </div>
-    </ScrollArea>
+    </div>
   )
 }
 

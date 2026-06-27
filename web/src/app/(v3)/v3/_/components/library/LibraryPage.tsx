@@ -501,8 +501,6 @@ export function LibraryPage({
         hasSeriesContext={!!seriesContextUuid}
         bookView={bookView}
         onBookViewChange={handleBookViewChange}
-        listVisibleColumns={listVisibleColumns}
-        onListVisibleColumnsChange={handleListColumnsChange}
       />
 
       <PageContent className="p-4">
@@ -528,6 +526,7 @@ export function LibraryPage({
                 displayField={displayField}
                 displayContext={displayContext}
                 visibleColumns={listVisibleColumns}
+                onVisibleColumnsChange={handleListColumnsChange}
                 sortField={filterState.sortField}
                 sortDirection={filterState.sortDirection}
                 onSortChange={handleColumnSort}

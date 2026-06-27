@@ -1,6 +1,6 @@
 import { IconColumns3 } from "@tabler/icons-react"
 
-import { DISPLAY_FIELD_LABELS, GENERAL_SORT_FIELDS, type DisplayField } from "@/sort"
+import { GENERAL_SORT_FIELDS, type DisplayField } from "@/sort"
 
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@v3/_/components/ui/popover"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 // all general sort fields plus authors are pickable as list columns
 const PICKABLE_FIELDS: DisplayField[] = [
@@ -19,12 +20,16 @@ const PICKABLE_FIELDS: DisplayField[] = [
 type ColumnSelectorProps = {
   visibleFields: DisplayField[]
   onChange: (fields: DisplayField[]) => void
+  compact?: boolean
 }
 
 export function ColumnSelector({
   visibleFields,
   onChange,
+  compact = false,
 }: ColumnSelectorProps) {
+  const t = useTranslation("Fields")
+
   const toggle = (field: DisplayField) => {
     if (visibleFields.includes(field)) {
       onChange(visibleFields.filter((f) => f !== field))
@@ -37,14 +42,23 @@ export function ColumnSelector({
     <Popover>
       <PopoverTrigger
         render={
-          <Button
-            variant="outline"
-            size="default"
-            className="shrink-0 gap-1.5 text-xs font-normal"
-          >
-            <IconColumns3 className="h-3.5 w-3.5" />
-            Fields
-          </Button>
+          compact ? (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground flex size-6 items-center justify-center rounded-md transition-colors"
+            >
+              <IconColumns3 className="size-3.5" />
+            </button>
+          ) : (
+            <Button
+              variant="outline"
+              size="default"
+              className="shrink-0 gap-1.5 text-xs font-normal"
+            >
+              <IconColumns3 className="h-3.5 w-3.5" />
+              Fields
+            </Button>
+          )
         }
       />
 
@@ -61,7 +75,7 @@ export function ColumnSelector({
                   toggle(field)
                 }}
               />
-              {DISPLAY_FIELD_LABELS[field]}
+              {t(`label.${field}`)}
             </label>
           ))}
         </div>

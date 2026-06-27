@@ -22,6 +22,7 @@ import { type CollectionWithRelations } from "@/database/collections"
 import { type Creator } from "@/database/creators"
 import { type HomeStats } from "@/database/homeStats"
 import { type ImportRuleWithCollections } from "@/database/importRules"
+import { type PublicJob } from "@/database/jobs"
 import {
   type FacetSection,
   type LibraryCounts,
@@ -62,8 +63,10 @@ import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import { type ShelfFilter } from "@/shelves"
 import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
+import { type RunConfig } from "@/work/runConfig"
 
 import { subscribeToBookEventStream } from "./bookEventsStream"
+import { subscribeToJobEventStream } from "./jobEventsStream"
 
 // client-side shape of a home section (plain string uuids over the wire)
 type HomeSectionBody = {
@@ -111,6 +114,8 @@ export const api = createApi({
     "UserShelves",
     "UserSettings",
     "Sidebar",
+    "Jobs",
+    "Settings",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -182,13 +187,17 @@ export const api = createApi({
       query: () => "/settings/maxUploadChunkSize",
       providesTags: () => ["MaxUploadChunkSize"],
     }),
+    getSettings: build.query<Settings, void>({
+      query: () => "/settings",
+      providesTags: ["Settings"],
+    }),
     updateSettings: build.mutation({
       query: (settings: Settings) => ({
         url: "/settings",
         method: "PUT",
         body: settings,
       }),
-      invalidatesTags: ["MaxUploadChunkSize"],
+      invalidatesTags: ["MaxUploadChunkSize", "Settings"],
     }),
     getGpuBuildWarning: build.query<
       | {
@@ -515,9 +524,10 @@ export const api = createApi({
         uuid: UUID
         restart?: "full" | "transcription" | "sync" | false
         dismissGpuWarning?: boolean
+        config?: Partial<RunConfig>
       }
     >({
-      query: ({ uuid, restart, dismissGpuWarning }) => {
+      query: ({ uuid, restart, dismissGpuWarning, config }) => {
         const params: Record<string, string> = {}
         if (restart) params["restart"] = restart
         if (dismissGpuWarning) params["gpuWarning"] = "dismiss"
@@ -525,10 +535,11 @@ export const api = createApi({
           url: `/books/${uuid}/process`,
           method: "POST",
           ...(Object.keys(params).length > 0 && { params }),
+          ...(config && { body: { config } }),
         }
       },
       invalidatesTags: (_result, _error, { dismissGpuWarning }) =>
-        dismissGpuWarning ? ["GpuBuildWarning"] : [],
+        dismissGpuWarning ? ["GpuBuildWarning", "Jobs"] : ["Jobs"],
     }),
     cancelProcessing: build.mutation<void, { uuid: UUID }>({
       query: ({ uuid }) => ({
@@ -1389,7 +1400,7 @@ export const api = createApi({
           api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
             const existing = draft.rating
             const nextReview =
-              review !== undefined ? review : (existing?.review ?? null)
+              review !== undefined ? review : existing?.review ?? null
 
             // mirror the server: dimensions, when provided, drive the rating
             let nextRating: number | null
@@ -1406,11 +1417,11 @@ export const api = createApi({
                 nextRating = computeRatingAverage(scores)
               } else {
                 nextRating =
-                  rating !== undefined ? rating : (existing?.rating ?? null)
+                  rating !== undefined ? rating : existing?.rating ?? null
               }
             } else {
               nextRating =
-                rating !== undefined ? rating : (existing?.rating ?? null)
+                rating !== undefined ? rating : existing?.rating ?? null
               nextDimensions = existing?.dimensions ?? null
             }
 
@@ -1592,7 +1603,10 @@ export const api = createApi({
       providesTags: ["Sidebar"],
     }),
 
-    setSidebar: build.mutation<SidebarItemWithGroupDetails[], SidebarItemBody[]>({
+    setSidebar: build.mutation<
+      SidebarItemWithGroupDetails[],
+      SidebarItemBody[]
+    >({
       query: (body) => ({
         url: "/sidebar",
         method: "PUT",
@@ -1606,7 +1620,10 @@ export const api = createApi({
       providesTags: ["Sidebar"],
     }),
 
-    setSidebarGroups: build.mutation<SidebarGroupWithItems[], SidebarGroupBody[]>({
+    setSidebarGroups: build.mutation<
+      SidebarGroupWithItems[],
+      SidebarGroupBody[]
+    >({
       query: (body) => ({
         url: "/sidebar-groups",
         method: "PUT",
@@ -1757,6 +1774,71 @@ export const api = createApi({
         method: "POST",
       }),
     }),
+
+    // processing jobs queue
+    getJobs: build.query<
+      PublicJob[],
+      {
+        type?: "active" | "finished" | "all"
+        limit?: number
+        offset?: number
+      } | void
+    >({
+      query: (arg) => {
+        const params = new URLSearchParams()
+        if (arg?.type) params.set("type", arg.type)
+        if (arg?.limit) params.set("limit", String(arg.limit))
+        if (arg?.offset) params.set("offset", String(arg.offset))
+        return `/jobs?${params.toString()}`
+      },
+      providesTags: ["Jobs"],
+      onCacheEntryAdded: async (
+        _arg,
+        /* eslint-disable-next-line @typescript-eslint/unbound-method */
+        { dispatch, cacheDataLoaded, cacheEntryRemoved },
+      ) => {
+        try {
+          await cacheDataLoaded
+        } catch {
+          /* empty */
+        }
+
+        const unsubscribe = subscribeToJobEventStream(() => {
+          dispatch(api.util.invalidateTags(["Jobs"]))
+        })
+
+        await cacheEntryRemoved
+        unsubscribe()
+      },
+    }),
+    cancelJob: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({ url: `/jobs/${uuid}`, method: "DELETE" }),
+      invalidatesTags: ["Jobs"],
+    }),
+    reorderJobs: build.mutation<void, { order: UUID[] }>({
+      query: ({ order }) => ({
+        url: "/jobs",
+        method: "PATCH",
+        body: { order },
+      }),
+      invalidatesTags: ["Jobs"],
+    }),
+    pauseJob: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({
+        url: `/jobs/${uuid}`,
+        method: "PATCH",
+        body: { action: "pause" },
+      }),
+      invalidatesTags: ["Jobs"],
+    }),
+    resumeJob: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({
+        url: `/jobs/${uuid}`,
+        method: "PATCH",
+        body: { action: "resume" },
+      }),
+      invalidatesTags: ["Jobs"],
+    }),
   }),
 })
 
@@ -1807,6 +1889,11 @@ export const {
   useListUsersQuery,
   useMergeBooksMutation,
   useProcessBookMutation,
+  useGetJobsQuery,
+  useCancelJobMutation,
+  useReorderJobsMutation,
+  usePauseJobMutation,
+  useResumeJobMutation,
   useTriggerBookScanMutation,
   useCancelScanMutation,
   useTriggerScanMutation,
@@ -1819,6 +1906,7 @@ export const {
   useUpdateCollectionMutation,
   useUpdateReadingStatusMutation,
   useUpdateSeriesMutation,
+  useGetSettingsQuery,
   useUpdateSettingsMutation,
   useUpdateStatusMutation,
   useUpdateUserMutation,

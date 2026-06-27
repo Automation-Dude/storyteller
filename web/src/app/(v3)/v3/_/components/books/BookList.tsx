@@ -7,13 +7,13 @@ import {
   IconLoader,
   IconSearch,
 } from "@tabler/icons-react"
+import { useVirtualizer } from "@tanstack/react-virtual"
 import Link from "next/link"
 import {
   Fragment,
   memo,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react"
@@ -21,7 +21,6 @@ import {
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import {
-  DISPLAY_FIELD_LABELS,
   type DisplayField,
   type SortContext,
   type SortDirection,
@@ -37,12 +36,10 @@ import {
   DropdownMenuSeparator,
 } from "@v3/_/components/ui/dropdown-menu"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
-import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { useBookActionItems } from "./BookActionMenuItems"
 import { secondaryText } from "./BookCard"
 import { BookCover } from "./BookCover"
 import {
@@ -51,7 +48,9 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
+import { ColumnSelector } from "./ColumnSelector"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
+import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
 type BookListProps = {
   books: BookWithRelations[]
@@ -69,6 +68,7 @@ type BookListProps = {
   displayField?: DisplayField
   displayContext?: SortContext
   visibleColumns?: DisplayField[]
+  onVisibleColumnsChange?: (fields: DisplayField[]) => void
   sortField?: SortField
   sortDirection?: SortDirection
   onSortChange?: (field: SortField, direction: SortDirection) => void
@@ -137,6 +137,8 @@ export function columnValue(
 }
 
 const DEFAULT_COLUMNS: DisplayField[] = ["authors", "duration", "pageCount"]
+
+const ESTIMATED_ROW_HEIGHT = 58
 
 const BookListItem = memo(function BookListItem({
   book,
@@ -425,11 +427,13 @@ function ColumnHeader({
   sortDirection?: SortDirection
   onSortChange?: (field: SortField, direction: SortDirection) => void
 }) {
+  const t = useTranslation("Fields")
+
   if (field === "authors" || field === "title") return null
 
   const isSortable = !!onSortChange
   const isActive = sortField === field
-  const label = DISPLAY_FIELD_LABELS[field]
+  const label = t(`short.${field}`)
 
   const handleClick = () => {
     if (!onSortChange) return
@@ -481,103 +485,74 @@ export function BookList({
   displayField = "authors",
   displayContext,
   visibleColumns = DEFAULT_COLUMNS,
+  onVisibleColumnsChange,
   sortField,
   sortDirection,
   onSortChange,
 }: BookListProps) {
-  const selection = useOptionalBookSelection()
-  const isSelecting = (selection?.selectedBooks.size ?? 0) > 0
-  const toggleSelection = selection?.toggleSelection
-  const t = useTranslation("BookActions")
-
-  const orderedUuids = useMemo(() => books.map((b) => b.uuid), [books])
-
-  const handleSelectRange = useCallback(
-    (uuid: string) => {
-      selection?.selectRange(uuid, orderedUuids)
-    },
-    [selection, orderedUuids],
-  )
-
-  // shared card menu: one instance, positioned at whichever row opened it
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
-  const menuAnchor = useRef<HTMLElement | null>(null)
-
-  const handleMenuOpenChange = useCallback(
-    (
-      open: boolean,
-      eventDetails?: {
-        reason?: string
-        trigger?: EventTarget | null
-        event?: Event | null
-      },
-    ) => {
-      // weird issue where the menu would get closed when the user hovered over a submenu
-      // unsure why
-      const isSiblingOpenClose =
-        !open && eventDetails?.reason === "sibling-open"
-      const shouldIgnoreSiblingOpenClose = isSiblingOpenClose && menuOpen
-
-      if (shouldIgnoreSiblingOpenClose) {
-        return
-      }
-
-      setMenuOpen(open)
-    },
-    [menuOpen],
-  )
-
-  const handleOpenMenu = useCallback(
-    (book: BookWithRelations, anchor: HTMLElement) => {
-      setMenuBook(book)
-      menuAnchor.current = anchor
-      setMenuOpen(true)
-    },
-    [],
-  )
-
-  const { items: menuItems, dialogs: menuDialogs } = useBookActionItems({
-    books: menuBook ? [menuBook] : [],
-    mode: "single",
-  })
-
-  const menuBookIsSelected = menuBook
-    ? selection?.isSelected(menuBook.uuid) ?? false
-    : false
-
-  const loadMoreRef = useRef<HTMLDivElement>(null)
-
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [entry] = entries
-      if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage()
-      }
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage],
-  )
-
-  useEffect(() => {
-    const element = loadMoreRef.current
-    if (!element) return
-
-    const observer = new IntersectionObserver(handleObserver, {
-      root: null,
-      rootMargin: "200px",
-      threshold: 0,
-    })
-
-    observer.observe(element)
-    return () => {
-      observer.disconnect()
-    }
-  }, [handleObserver])
+  const menu = useBookActionMenu(books)
 
   // the column headers that get their own column (not title/authors)
   const extraColumns = visibleColumns.filter(
     (f) => f !== "title" && f !== "authors",
   )
+
+  // --- virtualization ---
+
+  const observerRef = useRef<ResizeObserver | null>(null)
+  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
+
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    observerRef.current?.disconnect()
+
+    if (!node) {
+      observerRef.current = null
+      return
+    }
+
+    setScrollElement(findScrollParent(node))
+
+    const observer = new ResizeObserver(() => {
+      // we only need the scroll parent, no width tracking for a list
+    })
+    observer.observe(node)
+    observerRef.current = observer
+  }, [])
+
+  const rowVirtualizer = useVirtualizer({
+    count: books.length,
+    getScrollElement: () => scrollElement,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    overscan: 8,
+    measureElement:
+      typeof window !== "undefined"
+        ? (element) => element.getBoundingClientRect().height
+        : undefined,
+    useFlushSync: false,
+    directDomUpdates: true,
+  })
+
+  const virtualRows = rowVirtualizer.getVirtualItems()
+
+  const lastVirtualRowIndex = virtualRows.at(-1)?.index
+
+  useEffect(() => {
+    if (lastVirtualRowIndex === undefined) return
+
+    if (
+      lastVirtualRowIndex >= books.length - 1 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage()
+    }
+  }, [
+    lastVirtualRowIndex,
+    books.length,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ])
 
   if (!isLoading && books.length === 0) {
     return (
@@ -619,74 +594,107 @@ export function BookList({
             />
           ))}
 
-          {/* spacer matching right-side actions width */}
-          <div className="w-[3.25rem] shrink-0" />
+          {/* column selector + spacer, aligned above the row actions */}
+          <div className="flex w-[3.25rem] shrink-0 items-center justify-end">
+            {onVisibleColumnsChange && (
+              <ColumnSelector
+                visibleFields={visibleColumns}
+                onChange={onVisibleColumnsChange}
+                compact
+              />
+            )}
+          </div>
         </div>
       )}
 
-      <div
-        className={cn(
-          "animate-in fade-in-0 relative flex flex-col gap-px py-2 transition-opacity duration-300",
-          showMuted && "opacity-60",
-        )}
+      {isLoading ? (
+        <div className="flex flex-col gap-px py-2">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <BookListItemSkeleton key={i} />
+          ))}
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          className={cn(
+            "animate-in fade-in-0 relative w-full py-2 transition-opacity duration-300",
+            showMuted && "opacity-60",
+          )}
+          style={{ height: rowVirtualizer.getTotalSize() }}
+        >
+          {virtualRows.map((virtualRow) => {
+            const book = books[virtualRow.index]
+            if (!book) return null
+
+            return (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
+                className="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
+                <BookListItem
+                  book={book}
+                  muted={showMuted}
+                  selected={book.uuid === selectedBookUuid}
+                  isSelecting={menu.isSelecting}
+                  isBookSelected={
+                    menu.selection?.isSelected(book.uuid) ?? false
+                  }
+                  onToggleSelection={menu.toggleSelection}
+                  onSelectRange={menu.handleSelectRange}
+                  onOpenMenu={menu.handleOpenMenu}
+                  isMenuOpen={
+                    menu.menuOpen && menu.menuBook?.uuid === book.uuid
+                  }
+                  onClick={onBookClick}
+                  displayField={displayField}
+                  displayContext={displayContext}
+                  visibleColumns={visibleColumns}
+                />
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {isFetchingNextPage && (
+        <div className="text-muted-foreground mt-4 flex items-center justify-center gap-2">
+          <IconLoader className="h-5 w-5 animate-spin" />
+          <span>Loading more...</span>
+        </div>
+      )}
+
+      <DropdownMenu
+        open={menu.menuOpen}
+        onOpenChange={menu.handleMenuOpenChange}
       >
-        {isLoading
-          ? Array.from({ length: 12 }).map((_, i) => (
-              <BookListItemSkeleton key={i} />
-            ))
-          : books.map((book) => (
-              <BookListItem
-                key={book.uuid}
-                book={book}
-                muted={showMuted}
-                selected={book.uuid === selectedBookUuid}
-                isSelecting={isSelecting}
-                isBookSelected={selection?.isSelected(book.uuid) ?? false}
-                onToggleSelection={toggleSelection}
-                onSelectRange={handleSelectRange}
-                onOpenMenu={handleOpenMenu}
-                isMenuOpen={menuOpen && menuBook?.uuid === book.uuid}
-                onClick={onBookClick}
-                displayField={displayField}
-                displayContext={displayContext}
-                visibleColumns={visibleColumns}
-              />
-            ))}
-      </div>
-
-      <div ref={loadMoreRef} className="mt-8 flex justify-center">
-        {isFetchingNextPage && (
-          <div className="text-muted-foreground flex items-center gap-2">
-            <IconLoader className="h-5 w-5 animate-spin" />
-            <span>Loading more...</span>
-          </div>
-        )}
-      </div>
-
-      <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpenChange}>
         <DropdownMenuContent
           align="end"
           className="pointer-events-auto z-100 min-w-44"
-          anchor={menuAnchor}
+          anchor={menu.menuAnchor}
         >
-          {toggleSelection && menuBook && (
+          {menu.toggleSelection && menu.menuBook && (
             <>
               <DropdownMenuItem
                 onClick={() => {
-                  toggleSelection(menuBook.uuid)
+                  menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
                 }}
               >
-                {menuBookIsSelected ? t("deselect") : t("select")}
+                {menu.menuBookIsSelected
+                  ? menu.t("deselect")
+                  : menu.t("select")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
           )}
 
-          {menuItems}
+          {menu.menuItems}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {menuDialogs}
+      {menu.menuDialogs}
     </>
   )
 }

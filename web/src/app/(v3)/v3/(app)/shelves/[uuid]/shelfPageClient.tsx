@@ -136,8 +136,6 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
         setFilterPopoverOpen={setFilterPopoverOpen}
         bookView={bookView}
         onBookViewChange={handleBookViewChange}
-        listVisibleColumns={listVisibleColumns}
-        onListVisibleColumnsChange={handleListColumnsChange}
       />
 
       <PageContent className="p-4">
@@ -160,6 +158,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
             selectedBookUuid={selectedBookUuid}
             onBookClick={handleBookClick}
             visibleColumns={listVisibleColumns}
+            onVisibleColumnsChange={handleListColumnsChange}
             sortField={filterState.sortField}
             sortDirection={filterState.sortDirection}
             onSortChange={handleColumnSort}

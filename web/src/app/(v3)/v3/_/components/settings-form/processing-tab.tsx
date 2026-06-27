@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -12,15 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@v3/_/components/ui/card"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@v3/_/components/ui/dialog"
 import {
   Field,
   FieldDescription,
@@ -38,12 +28,13 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { ConfirmDialog, useConfirmAction } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 import { usePermissions } from "@/hooks/usePermissions"
 import { useClearBooksCacheMutation } from "@/store/api"
+
 
 import {
   LockTooltip,
@@ -51,9 +42,20 @@ import {
   useSettingsForm,
 } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"
-import { ConfirmDialog, useConfirmAction } from "../ui/confirm-dialog"
 
 export function ProcessingTab() {
+  return (
+    <div className="space-y-6">
+      <ReadaloudSection />
+      <ProcessingSettingsFields />
+    </div>
+  )
+}
+
+// the transcription/audio/parallelization settings, reused both in the settings
+// tab and the per-run "process with options" dialog. excludes the readaloud
+// location/cache controls, which are library-level rather than per-run.
+export function ProcessingSettingsFields() {
   const { form } = useSettingsForm()
   const tt = useTranslation(
     "SettingsPage.tabs.processing.sections.transcription",
@@ -113,8 +115,6 @@ export function ProcessingTab() {
 
   return (
     <div className="space-y-6">
-      <ReadaloudSection />
-
       <SettingsSection tab="processing" section="transcription">
         <Card>
           <CardHeader>
@@ -769,8 +769,7 @@ function ReadaloudSection() {
   const { form, lockedSettings } = useSettingsForm()
 
   const permissions = usePermissions()
-  const [clearBooksCache, { isLoading: isClearingCache }] =
-    useClearBooksCacheMutation()
+  const [clearBooksCache] = useClearBooksCacheMutation()
   const {
     isLoading,
     confirm: clearCacheConfirm,
