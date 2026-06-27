@@ -1,6 +1,3 @@
--- per-user, ordered sidebar nav config. builtin items use a stable string key
--- (route-derived, not an entity). collection/shelf items carry a real FK so
--- deleting the entity cleanly removes its sidebar entry.
 CREATE TABLE IF NOT EXISTS sidebar_item (
   uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
   user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,

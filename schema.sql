@@ -374,7 +374,9 @@ CREATE TABLE tag (
   uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
   name TEXT NOT NULL UNIQUE,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  icon TEXT,
+  color TEXT
 );
 
 CREATE TRIGGER tag_update_trigger AFTER
@@ -769,3 +771,48 @@ WHERE
 END;
 
 CREATE INDEX idx_sidebar_group_user ON sidebar_group (user_id);
+
+CREATE UNIQUE INDEX idx_book_to_collection_unique ON book_to_collection (book_uuid, collection_uuid);
+
+CREATE TABLE job (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'QUEUED',
+  position INTEGER NOT NULL DEFAULT 0,
+  book_uuid TEXT REFERENCES book (uuid) ON DELETE CASCADE,
+  restart TEXT,
+  config TEXT,
+  stage TEXT,
+  progress REAL NOT NULL DEFAULT 0,
+  error TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  started_at TEXT,
+  finished_at TEXT
+);
+
+CREATE TRIGGER job_update_trigger AFTER
+UPDATE ON job FOR EACH ROW BEGIN
+UPDATE job
+SET
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  uuid = OLD.uuid;
+
+END;
+
+CREATE INDEX idx_job_status_position ON job (status, position);
+
+CREATE INDEX idx_job_book ON job (book_uuid);
+
+CREATE TABLE alignment_report (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  job_uuid TEXT REFERENCES job (uuid) ON DELETE SET NULL,
+  book_uuid TEXT REFERENCES book (uuid) ON DELETE CASCADE,
+  report TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_alignment_report_job ON alignment_report (job_uuid);
+
+CREATE INDEX idx_alignment_report_book ON alignment_report (book_uuid);

@@ -138,17 +138,23 @@ export async function getJobs(filter?: {
     .orderBy("createdAt", "asc")
     .execute()
 
-  console.log("getJobs", rows)
   return rows.map(parseJob)
 }
+
+export type JobSort = "finishedAt" | "title" | "status"
 
 export async function getQueuedJobs(): Promise<Job[]> {
   return getJobs({ statuses: ACTIVE_JOB_STATUSES })
 }
 
 // jobs joined with their book title and redacted config, for the queue ui / toast.
+// search filters on book title; sort/order drive the finished-jobs list ordering
+// (active jobs are always ordered by queue position).
 export async function getDisplayJobs(filter?: {
   statuses?: readonly JobStatus[]
+  search?: string
+  sort?: JobSort
+  order?: "asc" | "desc"
   limit?: number
   offset?: number
 }): Promise<PublicJob[]> {
@@ -157,20 +163,31 @@ export async function getDisplayJobs(filter?: {
     .leftJoin("book", "book.uuid", "job.bookUuid")
     .selectAll("job")
     .select("book.title as bookTitle")
+
   if (filter?.statuses?.length) {
-    console.log("filter.statuses", filter.statuses)
     query = query.where("job.status", "in", filter.statuses)
   }
+  if (filter?.search) {
+    query = query.where("book.title", "like", `%${filter.search}%`)
+  }
+
+  const order = filter?.order ?? "asc"
+  if (filter?.sort === "title") {
+    query = query.orderBy("book.title", order)
+  } else if (filter?.sort === "status") {
+    query = query.orderBy("job.status", order)
+  } else if (filter?.sort === "finishedAt") {
+    query = query.orderBy("job.finishedAt", order)
+  } else {
+    query = query.orderBy("job.position", "asc").orderBy("job.createdAt", "asc")
+  }
+
   const rows = await query
-    .orderBy("job.position", "asc")
-    .orderBy("job.createdAt", "asc")
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .$if(!!filter?.limit, (qb) => qb.limit(filter!.limit!))
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .$if(!!filter?.offset, (qb) => qb.offset(filter!.offset!))
     .execute()
-
-  console.log("getDisplayJobs", rows)
 
   return rows.map(({ bookTitle, ...row }) =>
     toPublicJob(parseJob(row), bookTitle ?? null),

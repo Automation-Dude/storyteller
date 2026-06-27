@@ -67,13 +67,13 @@ type AlignedChapter = {
   endOffset: number
 }
 
-interface AudioFileContext {
+export interface AudioFileContext {
   start: number
   end: number
   filepath: string
 }
 
-interface ChapterReport {
+export interface ChapterReport {
   href: string
 
   transcriptionOffset: number
@@ -107,15 +107,19 @@ interface ChapterReport {
   audioFiles: AudioFileContext[]
 }
 
-type UnalignedChapterReason = "too-short" | "not-found" | "is-nav" | "no-text"
+export type UnalignedChapterReason =
+  | "too-short"
+  | "not-found"
+  | "is-nav"
+  | "no-text"
 
-interface UnalignedChapterReport {
+export interface UnalignedChapterReport {
   href: string
 
   reason: Exclude<UnalignedChapterReason, "not-found">
 }
 
-interface UnalignedNotFoundChapterReport {
+export interface UnalignedNotFoundChapterReport {
   href: string
 
   reason: "not-found"
@@ -124,7 +128,7 @@ interface UnalignedNotFoundChapterReport {
   end: string
 }
 
-interface AudioFileReport {
+export interface AudioFileReport {
   filepath: string
 
   matchedRanges: {
@@ -136,11 +140,11 @@ interface AudioFileReport {
   alignedDuration: number
 }
 
-interface UnalignedAudioFileReport {
+export interface UnalignedAudioFileReport {
   filepath: string
 }
 
-interface Report {
+export interface Report {
   chapters: ChapterReport[]
   unalignedChapters: (UnalignedChapterReport | UnalignedNotFoundChapterReport)[]
   audioFiles: AudioFileReport[]

@@ -1,48 +1,78 @@
 "use client"
 
 import {
+  IconBook,
   IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
   IconChevronUp,
+  IconFileText,
   IconPlayerPause,
   IconPlayerPlay,
   IconX,
 } from "@tabler/icons-react"
 import { formatDistanceToNow } from "date-fns"
+import { useEffect, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
+import { Input } from "@v3/_/components/ui/input"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@v3/_/components/ui/item"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@v3/_/components/ui/select"
 
+import { AlignmentReportDialog } from "@/app/(v3)/v3/_/components/processing/AlignmentReportDialog"
+import { StaticProgressBar } from "@/app/(v3)/v3/_/components/processing/ProgressVisualization"
 import {
   STAGE_LABELS,
   jobToView,
   overallProgress,
 } from "@/app/(v3)/v3/_/components/processing/shared"
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { type PublicJob } from "@/database/jobs"
 import {
+  getCoverUrl,
   useCancelJobMutation,
   useGetJobsQuery,
   usePauseJobMutation,
   useReorderJobsMutation,
   useResumeJobMutation,
 } from "@/store/api"
-import { StaticProgressBar } from "../processing/ProgressVisualization"
-import { TooltipButton } from "../ui/tooltip-button"
+import { type UUID } from "@/uuid"
+
+const PAGE_SIZE = 10
+
+// compound sort options fold the order direction into the choice for a simpler ui.
+const SORT_OPTIONS = {
+  recent: { sort: "finishedAt", order: "desc", label: "Recently finished" },
+  oldest: { sort: "finishedAt", order: "asc", label: "Oldest first" },
+  title: { sort: "title", order: "asc", label: "Title A–Z" },
+  status: { sort: "status", order: "asc", label: "Status" },
+} as const
+
+type SortKey = keyof typeof SORT_OPTIONS
 
 export function QueueTab() {
-  const { data: activeJobs } = useGetJobsQuery(
-    { type: "active" },
-    {
-      pollingInterval: 15000,
-    },
-  )
-  const { data: finishedJobs } = useGetJobsQuery(
-    { type: "finished" },
-    { pollingInterval: 15000 },
-  )
+  const { data: activeJobs } = useGetJobsQuery({ type: "active" })
   const [cancelJob] = useCancelJobMutation()
   const [pauseJob] = usePauseJobMutation()
   const [resumeJob] = useResumeJobMutation()
   const [reorderJobs] = useReorderJobsMutation()
+
+  const [reportJob, setReportJob] = useState<PublicJob | null>(null)
+  const [reportOpen, setReportOpen] = useState(false)
 
   const list = activeJobs ?? []
   const queued = list.filter((j) => j.status === "QUEUED")
@@ -60,47 +90,173 @@ export function QueueTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="font-serif text-lg font-medium">Processing queue</h2>
-        <p className="text-muted-foreground text-sm">
-          Books currently processing or waiting.
-        </p>
-      </div>
-      <div className="space-y-2">
-        {list.length === 0 && (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <div>
+          <h2 className="font-serif text-lg font-medium">Processing queue</h2>
+          <p className="text-muted-foreground text-sm">
+            Books currently processing or waiting.
+          </p>
+        </div>
+
+        {list.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             Nothing is processing right now.
           </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {list.map((job) => {
+              const queuedIndex = queued.findIndex((j) => j.uuid === job.uuid)
+              return (
+                <JobItem
+                  key={job.uuid}
+                  job={job}
+                  isFirst={queuedIndex <= 0}
+                  isLast={queuedIndex >= queued.length - 1}
+                  move={move}
+                  pauseJob={(uuid) => void pauseJob({ uuid })}
+                  resumeJob={(uuid) => void resumeJob({ uuid })}
+                  cancelJob={(uuid) => void cancelJob({ uuid })}
+                />
+              )
+            })}
+          </div>
         )}
+      </div>
 
-        {list.map((job) => {
-          const queuedIndex = queued.findIndex((j) => j.uuid === job.uuid)
-          return (
-            <JobItem
-              key={job.uuid}
-              job={job}
-              isLast={queuedIndex >= queued.length - 1}
-              isFirst={queuedIndex <= 0}
-              move={move}
-              resumeJob={resumeJob}
-              pauseJob={pauseJob}
-              cancelJob={cancelJob}
-            />
-          )
-        })}
-      </div>
-      <div className="space-y-2">
-        <h2 className="text-md font-serif">Finished jobs</h2>
-        {finishedJobs?.map((job) => {
-          return <JobItem key={job.uuid} job={job} queuedIndex={0} />
-        })}
-      </div>
+      <FinishedJobs
+        onShowReport={(job) => {
+          setReportJob(job)
+          setReportOpen(true)
+        }}
+      />
+
+      {reportJob && (
+        <AlignmentReportDialog
+          jobUuid={reportJob.uuid}
+          bookTitle={reportJob.bookTitle}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+        />
+      )}
     </div>
   )
 }
 
-const styles: Record<string, string> = {
+function FinishedJobs({
+  onShowReport,
+}: {
+  onShowReport: (job: PublicJob) => void
+}) {
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [sortKey, setSortKey] = useState<SortKey>("recent")
+  const [page, setPage] = useState(0)
+
+  // debounce the search input so we are not refetching on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(0)
+    }, 300)
+    return () => {
+      clearTimeout(id)
+    }
+  }, [search])
+
+  const { sort, order } = SORT_OPTIONS[sortKey]
+  const { data: finishedJobs } = useGetJobsQuery(
+    {
+      type: "finished",
+      search: debouncedSearch || undefined,
+      sort,
+      order,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    },
+    { pollingInterval: 15000 },
+  )
+
+  const jobs = finishedJobs ?? []
+  const hasNext = jobs.length === PAGE_SIZE
+  const hasPrev = page > 0
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="font-serif text-lg font-medium">Finished jobs</h2>
+
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Search by title"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+          }}
+          className="h-9 flex-1"
+        />
+        <Select
+          value={sortKey}
+          onValueChange={(value) => {
+            setSortKey(value as SortKey)
+            setPage(0)
+          }}
+        >
+          <SelectTrigger className="h-9 w-44">
+            <SelectValue>
+              {(value: SortKey) => SORT_OPTIONS[value].label}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(SORT_OPTIONS).map(([key, { label }]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {jobs.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No finished jobs.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {jobs.map((job) => (
+            <JobItem key={job.uuid} job={job} onShowReport={onShowReport} />
+          ))}
+        </div>
+      )}
+
+      {(hasPrev || hasNext) && (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!hasPrev}
+            onClick={() => {
+              setPage((p) => Math.max(p - 1, 0))
+            }}
+          >
+            <IconChevronLeft className="size-4" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!hasNext}
+            onClick={() => {
+              setPage((p) => p + 1)
+            }}
+          >
+            Next
+            <IconChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const statusStyles: Record<string, string> = {
   RUNNING: "bg-primary/10 text-primary",
   QUEUED: "bg-muted text-muted-foreground",
   PAUSED: "bg-amber-500/10 text-amber-600",
@@ -108,10 +264,11 @@ const styles: Record<string, string> = {
   DONE: "bg-green-500/10 text-green-600",
   CANCELED: "bg-orange-500/10 text-orange-600",
 }
+
 function StatusBadge({ status }: { status: PublicJob["status"] }) {
   return (
     <span
-      className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${styles[status] ?? "bg-muted text-muted-foreground"}`}
+      className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${statusStyles[status] ?? "bg-muted text-muted-foreground"}`}
     >
       {status.toLowerCase()}
     </span>
@@ -120,146 +277,179 @@ function StatusBadge({ status }: { status: PublicJob["status"] }) {
 
 function JobItem({
   job,
-  isLast,
   isFirst,
+  isLast,
   move,
-  resumeJob,
   pauseJob,
+  resumeJob,
   cancelJob,
+  onShowReport,
 }: {
   job: PublicJob
-  isLast: boolean
-  isFirst: boolean
+  isFirst?: boolean
+  isLast?: boolean
   move?: (job: PublicJob, direction: -1 | 1) => void
-  resumeJob?: (job: PublicJob) => void
-  pauseJob?: (job: PublicJob) => void
-  cancelJob?: (job: PublicJob) => void
+  pauseJob?: (uuid: UUID) => void
+  resumeJob?: (uuid: UUID) => void
+  cancelJob?: (uuid: UUID) => void
+  onShowReport?: (job: PublicJob) => void
 }) {
   const view = jobToView(job)
   const pct = Math.round(overallProgress(view) * 100)
   const stageLabel = view.stage ? STAGE_LABELS[view.stage] : null
-  // const isQueued = job.status === "QUEUED"
+  const isActive = job.status === "RUNNING" || job.status === "PAUSED"
+
+  const detail =
+    job.status === "RUNNING" && stageLabel
+      ? `${stageLabel} · ${pct}%`
+      : job.status === "QUEUED"
+        ? "Waiting"
+        : job.status === "PAUSED"
+          ? "Paused"
+          : job.finishedAt
+            ? `Finished ${formatDistanceToNow(new Date(job.finishedAt), { addSuffix: true })}`
+            : job.status.toLowerCase()
+
+  const configSummary = [
+    job.config?.transcriptionEngine,
+    job.config?.whisperModel,
+    job.config?.language,
+  ]
+    .filter(Boolean)
+    .join(" · ")
 
   return (
-    <div key={job.uuid} className="flex flex-col gap-2 rounded-lg border p-3">
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <V3Link
-              href={`/books/${job.bookUuid}`}
-              className="hover:text-primary truncate text-sm font-medium hover:underline"
-            >
-              {job.bookTitle ?? "Untitled"}
-            </V3Link>
-            <StatusBadge status={job.status} />
+    <Item variant="outline" className="items-start">
+      <ItemMedia variant="image" className="self-center">
+        {job.bookUuid ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={getCoverUrl(job.bookUuid, {
+              width: 64,
+              height: 64,
+              updatedAt: job.updatedAt,
+            })}
+            alt=""
+          />
+        ) : (
+          <div className="bg-muted flex size-full items-center justify-center">
+            <IconBook className="text-muted-foreground size-4" />
           </div>
-          <div className="text-muted-foreground mt-0.5 text-xs">
-            {job.status === "RUNNING" && stageLabel
-              ? `${stageLabel} · ${pct}%`
-              : job.status === "QUEUED"
-                ? "Waiting"
-                : job.status === "PAUSED"
-                  ? "Paused"
-                  : job.status}
-            {job.config?.transcriptionEngine
-              ? ` · ${job.config.transcriptionEngine}`
-              : ""}
-            {job.config?.whisperModel ? ` · ${job.config.whisperModel}` : ""}
-            {job.config?.language ? ` · ${job.config.language}` : ""}
-            {job.finishedAt
-              ? ` · finished ${formatDistanceToNow(new Date(job.finishedAt), { addSuffix: true })}`
-              : ""}
-            {job.error ? ` · ${job.error}` : ""}
-          </div>
-        </div>
+        )}
+      </ItemMedia>
 
-        <div className="flex shrink-0 items-center gap-1">
-          {move && (
-            <>
-              <TooltipButton
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                aria-label="Move up"
-                tooltip="Move up"
-                delay={500}
-                disabled={isFirst}
-                onClick={() => {
-                  move(job, -1)
-                }}
-              >
-                <IconChevronUp className="size-4" />
-              </TooltipButton>
-              <TooltipButton
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                tooltip="Move down"
-                delay={500}
-                aria-label="Move down"
-                disabled={isLast}
-                onClick={() => {
-                  move(job, 1)
-                }}
-              >
-                <IconChevronDown className="size-4" />
-              </TooltipButton>
-            </>
-          )}
+      <ItemContent>
+        <ItemTitle className="max-w-full">
+          <V3Link
+            href={`/books/${job.bookUuid}`}
+            className="hover:text-primary truncate hover:underline"
+          >
+            {job.bookTitle ?? "Untitled"}
+          </V3Link>
+          <StatusBadge status={job.status} />
+        </ItemTitle>
+        <ItemDescription>
+          {detail}
+          {configSummary ? ` · ${configSummary}` : ""}
+          {job.error ? ` · ${job.error}` : ""}
+        </ItemDescription>
+        {isActive && (
+          <StaticProgressBar view={view} className="mt-1.5 max-w-xs" />
+        )}
+      </ItemContent>
 
-          {job.status === "PAUSED" && resumeJob ? (
+      <ItemActions>
+        {move && (
+          <>
             <TooltipButton
               variant="ghost"
               size="icon"
               className="size-7"
-              aria-label="Resume"
-              tooltip="Resume job"
+              aria-label="Move up"
+              tooltip="Move up"
+              delay={500}
+              disabled={isFirst}
               onClick={() => {
-                resumeJob({ uuid: job.uuid })
+                move(job, -1)
               }}
             >
-              <IconPlayerPlay className="size-4" />
+              <IconChevronUp className="size-4" />
             </TooltipButton>
-          ) : pauseJob ? (
             <TooltipButton
               variant="ghost"
               size="icon"
               className="size-7"
-              aria-label="Pause"
-              tooltip="Pause job"
+              aria-label="Move down"
+              tooltip="Move down"
+              delay={500}
+              disabled={isLast}
               onClick={() => {
-                pauseJob({ uuid: job.uuid })
+                move(job, 1)
               }}
             >
-              <IconPlayerPause className="size-4" />
+              <IconChevronDown className="size-4" />
             </TooltipButton>
-          ) : null}
+          </>
+        )}
 
-          {cancelJob ? (
-            <TooltipButton
-              variant="ghost-destructive"
-              size="icon"
-              className="size-7"
-              aria-label="Cancel"
-              tooltip="Cancel job"
-              onClick={() => {
-                cancelJob({ uuid: job.uuid })
-              }}
-            >
-              <IconX className="size-4" />
-            </TooltipButton>
-          ) : null}
-        </div>
-      </div>
-      {job.status === "RUNNING" || job.status === "PAUSED" ? (
-        <StaticProgressBar
-          view={{
-            stage: job.stage,
-            stageProgress: job.progress,
-            status: job.status.toLowerCase() as Lowercase<typeof job.status>,
-          }}
-        />
-      ) : null}
-    </div>
+        {job.status === "PAUSED" && resumeJob ? (
+          <TooltipButton
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            aria-label="Resume"
+            tooltip="Resume job"
+            onClick={() => {
+              resumeJob(job.uuid)
+            }}
+          >
+            <IconPlayerPlay className="size-4" />
+          </TooltipButton>
+        ) : pauseJob ? (
+          <TooltipButton
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            aria-label="Pause"
+            tooltip="Pause job"
+            onClick={() => {
+              pauseJob(job.uuid)
+            }}
+          >
+            <IconPlayerPause className="size-4" />
+          </TooltipButton>
+        ) : null}
+
+        {cancelJob ? (
+          <TooltipButton
+            variant="ghost-destructive"
+            size="icon"
+            className="size-7"
+            aria-label="Cancel"
+            tooltip="Cancel job"
+            onClick={() => {
+              cancelJob(job.uuid)
+            }}
+          >
+            <IconX className="size-4" />
+          </TooltipButton>
+        ) : null}
+
+        {onShowReport && job.status === "DONE" ? (
+          <TooltipButton
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            aria-label="View alignment report"
+            tooltip="Alignment report"
+            onClick={() => {
+              onShowReport(job)
+            }}
+          >
+            <IconFileText className="size-4" />
+          </TooltipButton>
+        ) : null}
+      </ItemActions>
+    </Item>
   )
 }

@@ -9,6 +9,7 @@ import {
   type User,
 } from "@/apiModels"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
+import { type AlignmentReport } from "@/database/alignmentReports"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
@@ -115,6 +116,7 @@ export const api = createApi({
     "UserSettings",
     "Sidebar",
     "Jobs",
+    "JobReport",
     "Settings",
   ],
   endpoints: (build) => ({
@@ -1780,6 +1782,9 @@ export const api = createApi({
       PublicJob[],
       {
         type?: "active" | "finished" | "all"
+        search?: string
+        sort?: "finishedAt" | "title" | "status"
+        order?: "asc" | "desc"
         limit?: number
         offset?: number
       } | void
@@ -1787,6 +1792,9 @@ export const api = createApi({
       query: (arg) => {
         const params = new URLSearchParams()
         if (arg?.type) params.set("type", arg.type)
+        if (arg?.search) params.set("search", arg.search)
+        if (arg?.sort) params.set("sort", arg.sort)
+        if (arg?.order) params.set("order", arg.order)
         if (arg?.limit) params.set("limit", String(arg.limit))
         if (arg?.offset) params.set("offset", String(arg.offset))
         return `/jobs?${params.toString()}`
@@ -1839,6 +1847,12 @@ export const api = createApi({
       }),
       invalidatesTags: ["Jobs"],
     }),
+    getJobReport: build.query<AlignmentReport, { uuid: UUID }>({
+      query: ({ uuid }) => `/jobs/${uuid}/report`,
+      providesTags: (_result, _error, { uuid }) => [
+        { type: "JobReport", id: uuid },
+      ],
+    }),
   }),
 })
 
@@ -1890,6 +1904,7 @@ export const {
   useMergeBooksMutation,
   useProcessBookMutation,
   useGetJobsQuery,
+  useGetJobReportQuery,
   useCancelJobMutation,
   useReorderJobsMutation,
   usePauseJobMutation,

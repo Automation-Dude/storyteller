@@ -27,6 +27,18 @@ export interface Account {
   userId: string
 }
 
+export interface AlignmentReport {
+  bookUuid: import("@/uuid").UUID | null
+  createdAt: Generated<string>
+  jobUuid: import("@/uuid").UUID | null
+  report: ColumnType<
+    import("@storyteller-platform/align").Report,
+    string,
+    string
+  >
+  uuid: Generated<import("@/uuid").UUID>
+}
+
 export interface Audiobook {
   bookUuid: import("@/uuid").UUID
   coverBlurhash: string | null
@@ -223,20 +235,24 @@ export interface ImportRuleToCollection {
 }
 
 export interface Job {
-  bookUuid: string | null
-  config: string | null
+  bookUuid: import("@/uuid").UUID
+  config: ColumnType<
+    import("@/work/runConfig").RunConfig,
+    string,
+    string
+  > | null
   createdAt: Generated<string>
   error: string | null
   finishedAt: string | null
   position: Generated<number>
   progress: Generated<number>
   restart: string | null
-  stage: string | null
+  stage: import("@/work/distributor").Readaloud["currentStage"] | null
   startedAt: string | null
-  status: Generated<string>
+  status: Generated<import("@/work/distributor").JobStatus>
   type: string
   updatedAt: Generated<string>
-  uuid: Generated<string>
+  uuid: Generated<import("@/uuid").UUID>
 }
 
 export interface Migration {
@@ -474,6 +490,7 @@ export interface VerificationToken {
 
 export interface DB {
   account: Account
+  alignmentReport: AlignmentReport
   audiobook: Audiobook
   book: Book
   bookToCollection: BookToCollection

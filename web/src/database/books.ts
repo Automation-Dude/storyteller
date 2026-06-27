@@ -1054,6 +1054,13 @@ export async function deleteBook(
     await tr.deleteFrom("audiobook").where("bookUuid", "=", bookUuid).execute()
     await tr.deleteFrom("ebook").where("bookUuid", "=", bookUuid).execute()
 
+    // delete user ratings
+    // delete when cascade deletes are added
+    await tr
+      .deleteFrom("userBookRating")
+      .where("bookUuid", "=", bookUuid)
+      .execute()
+
     await tr.deleteFrom("book").where("uuid", "=", bookUuid).execute()
   }
 

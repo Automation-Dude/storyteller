@@ -1,10 +1,3 @@
--- first-class jobs. a job is a unit of background work plus its captured config
--- and queue/lifecycle state. authoritative for processing; the readaloud row's
--- status/currentStage/stageProgress/queuePosition/restartPending columns become a
--- deprecated compatibility mirror the distributor keeps writing for legacy consumers.
--- type-generic so scan/cleanup can become jobs later. book_uuid is the subject for
--- book_align jobs. config holds a json RunConfig snapshot so a run is not affected by
--- later edits to global settings.
 CREATE TABLE IF NOT EXISTS job (
   uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
   type TEXT NOT NULL,

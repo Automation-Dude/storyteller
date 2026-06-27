@@ -277,6 +277,7 @@ async function runJob(job: Job): Promise<void> {
   try {
     await alignmentPiscina.run(
       {
+        jobUuid: job.uuid,
         bookUuid,
         restart: job.restart,
         config: job.config,

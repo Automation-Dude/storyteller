@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { withHasPermission } from "@/auth/auth"
 import {
   ACTIVE_JOB_STATUSES,
+  type JobSort,
   TERMINAL_JOB_STATUSES,
   getDisplayJobs,
 } from "@/database/jobs"
@@ -17,9 +18,13 @@ export const dynamic = "force-dynamic"
  *       Run config is summarized (no secrets) before returning.
  */
 export const GET = withHasPermission("bookProcess")(async (request) => {
-  const type = request.nextUrl.searchParams.get("type")
-  const limit = request.nextUrl.searchParams.get("limit")
-  const offset = request.nextUrl.searchParams.get("offset")
+  const params = request.nextUrl.searchParams
+  const type = params.get("type")
+  const limit = params.get("limit")
+  const offset = params.get("offset")
+  const search = params.get("search")
+  const sort = params.get("sort")
+  const order = params.get("order")
   const jobs = await getDisplayJobs({
     ...(type
       ? {
@@ -31,6 +36,9 @@ export const GET = withHasPermission("bookProcess")(async (request) => {
                 : undefined,
         }
       : {}),
+    ...(search ? { search } : {}),
+    ...(sort ? { sort: sort as JobSort } : {}),
+    ...(order === "asc" || order === "desc" ? { order } : {}),
     ...(limit ? { limit: parseInt(limit) } : {}),
     ...(offset ? { offset: parseInt(offset) } : {}),
   })

@@ -38,3 +38,5 @@ local.envrc
 
 /.idea/*
 /.helix/
+
+logs/

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { mkdir } from "node:fs/promises"
+import { mkdir, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import type { MessagePort } from "node:worker_threads"
@@ -25,6 +25,7 @@ import {
   getReadaloudFilepath,
   getTranscriptionsFilepath,
 } from "@/assets/paths"
+import { type Report, createAlignmentReport } from "@/database/alignmentReports"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
@@ -53,11 +54,13 @@ if (process.env["DEBUG_WORKER"] === "true") {
 }
 
 export default async function processBook({
+  jobUuid,
   bookUuid,
   restart,
   config,
   port,
 }: {
+  jobUuid: UUID
   bookUuid: UUID
   restart: RestartMode
   config: RunConfig | null
@@ -234,9 +237,13 @@ export default async function processBook({
           `${book.uuid}.epub`,
         )
 
+        // markup and align share this stage, so weight them into one monotonic
+        // 0..1 instead of letting each reset progress to 0 (markup is the short part).
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         await markup(book.ebook!.filepath, markupFilepath, {
-          onProgress,
+          onProgress: (p) => {
+            onProgress(p * 0.15)
+          },
           logger,
         })
 
@@ -245,6 +252,7 @@ export default async function processBook({
         const readaloudDirectory = dirname(readaloudFilepath)
         await mkdir(readaloudDirectory, { recursive: true })
 
+        const reportFilepath = getAlignmentReportFilepath(book)
         await align(
           markupFilepath,
           readaloudFilepath,
@@ -252,11 +260,27 @@ export default async function processBook({
           getProcessedAudioFilepath(book),
           {
             granularity: "sentence",
-            reportsPath: getAlignmentReportFilepath(book),
+            reportsPath: reportFilepath,
             logger,
-            onProgress,
+            onProgress: (p) => {
+              onProgress(0.15 + p * 0.85)
+            },
           },
         )
+
+        // persist the alignment report tied to this job before any cache cleanup
+        // can remove the on-disk file. best-effort: a missing report should not
+        // fail the run.
+        try {
+          const reportJson = await readFile(reportFilepath, { encoding: "utf-8" })
+          await createAlignmentReport({
+            jobUuid,
+            bookUuid,
+            report: JSON.parse(reportJson) as Report,
+          })
+        } catch (err) {
+          logger.warn({ msg: "Failed to persist alignment report", bookUuid, err })
+        }
 
         book = await updateBook(null, {
           readaloud: {

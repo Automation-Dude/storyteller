@@ -106,7 +106,7 @@ function ItemMedia({
     <div
       data-slot="item-media"
       data-variant={variant}
-      className={cn(itemMediaVariants({ variant, className }))}
+      className={cn(itemMediaVariants({ variant }), className)}
       {...props}
     />
   )
