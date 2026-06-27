@@ -1,8 +1,5 @@
 import { IconColumns3 } from "@tabler/icons-react"
 
-import { GENERAL_SORT_FIELDS, type DisplayField } from "@/sort"
-
-import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import {
   Popover,
@@ -10,6 +7,10 @@ import {
   PopoverTrigger,
 } from "@v3/_/components/ui/popover"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import { cn } from "@/cn"
+import { type DisplayField, GENERAL_SORT_FIELDS } from "@/sort"
 
 // all general sort fields plus authors are pickable as list columns
 const PICKABLE_FIELDS: DisplayField[] = [
@@ -20,13 +21,13 @@ const PICKABLE_FIELDS: DisplayField[] = [
 type ColumnSelectorProps = {
   visibleFields: DisplayField[]
   onChange: (fields: DisplayField[]) => void
-  compact?: boolean
+  className?: string
 }
 
 export function ColumnSelector({
   visibleFields,
   onChange,
-  compact = false,
+  className,
 }: ColumnSelectorProps) {
   const t = useTranslation("Fields")
 
@@ -42,23 +43,14 @@ export function ColumnSelector({
     <Popover>
       <PopoverTrigger
         render={
-          compact ? (
-            <button
-              type="button"
-              className="text-muted-foreground hover:text-foreground flex size-6 items-center justify-center rounded-md transition-colors"
-            >
-              <IconColumns3 className="size-3.5" />
-            </button>
-          ) : (
-            <Button
-              variant="outline"
-              size="default"
-              className="shrink-0 gap-1.5 text-xs font-normal"
-            >
-              <IconColumns3 className="h-3.5 w-3.5" />
-              Fields
-            </Button>
-          )
+          <TooltipButton
+            variant="ghost"
+            className={cn("shrink-0 gap-1.5 text-xs font-normal", className)}
+            tooltip="Show/hide columns"
+            aria-label="Fields"
+          >
+            <IconColumns3 className="h-3.5 w-3.5" />
+          </TooltipButton>
         }
       />
 

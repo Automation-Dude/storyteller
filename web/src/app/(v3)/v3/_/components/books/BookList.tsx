@@ -8,24 +8,9 @@ import {
   IconSearch,
 } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
+import { useFormatter } from "next-intl"
 import Link from "next/link"
-import {
-  Fragment,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react"
-
-import { IconReadaloud } from "@/components/icons/IconReadaloud"
-import { type BookWithRelations } from "@/database/books"
-import {
-  type DisplayField,
-  type SortContext,
-  type SortDirection,
-  type SortField,
-} from "@/sort"
+import { Fragment, memo, useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
@@ -39,6 +24,20 @@ import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
+
+import {
+  DEFAULT_DATE_OPTIONS,
+  useFormatList,
+  useFormatRelativeTime,
+} from "@/app/(v3)/v3/_/lib/date"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
+import { type BookWithRelations } from "@/database/books"
+import {
+  type DisplayField,
+  type SortContext,
+  type SortDirection,
+  type SortField,
+} from "@/sort"
 
 import { secondaryText } from "./BookCard"
 import { BookCover } from "./BookCover"
@@ -95,23 +94,46 @@ function formatFileSize(bytes: number): string {
   return `${size.toFixed(1)} ${units[i]}`
 }
 
-export function columnValue(
-  book: BookWithRelations,
-  field: DisplayField,
-): string {
+export function ColumnValue({
+  book,
+  field,
+}: {
+  book: BookWithRelations
+  field: DisplayField
+}) {
+  const formatRelativeTime = useFormatRelativeTime()
+  // const formatDate = useFormatDate()
+  const formatList = useFormatList()
+  const { dateTime } = useFormatter()
+
   switch (field) {
     case "authors":
-      return book.authors.map((a) => a.name).join(", ") || "\u2014"
+      return formatList(book.authors.map((a) => a.name)) || "\u2014"
     case "userRating":
       return book.rating?.rating != null
         ? `\u2605 ${book.rating.rating.toFixed(1)}`
         : "\u2014"
     case "publicationDate":
-      return book.publicationDate ? book.publicationDate.slice(0, 4) : "\u2014"
+      if (!book.publicationDate) return "\u2014"
+      return dateTime(new Date(book.publicationDate), {
+        year: "numeric",
+      })
     case "createdAt":
-      return new Date(book.createdAt).toLocaleDateString()
+      return dateTime(new Date(book.createdAt), {
+        dateStyle: "medium",
+      })
     case "updatedAt":
-      return new Date(book.updatedAt).toLocaleDateString()
+      return (
+        <time
+          dateTime={book.updatedAt}
+          title={dateTime(new Date(book.updatedAt), DEFAULT_DATE_OPTIONS)}
+        >
+          {formatRelativeTime(book.updatedAt, {
+            now: new Date(),
+            style: "narrow",
+          })}
+        </time>
+      )
     case "pageCount": {
       const p = book.ebook?.pageCount ?? book.pageCount
       return p != null ? `${p}` : "\u2014"
@@ -140,6 +162,20 @@ const DEFAULT_COLUMNS: DisplayField[] = ["authors", "duration", "pageCount"]
 
 const ESTIMATED_ROW_HEIGHT = 58
 
+const columnWidths: Record<DisplayField, number> = {
+  authors: 80,
+  duration: 40,
+  pageCount: 40,
+  fileSize: 40,
+  language: 50,
+  publicationDate: 50,
+  createdAt: 80,
+  updatedAt: 100,
+  seriesPosition: 30,
+  title: 100,
+  userRating: 50,
+}
+
 const BookListItem = memo(function BookListItem({
   book,
   muted = false,
@@ -153,9 +189,10 @@ const BookListItem = memo(function BookListItem({
   onClick,
   displayField = "authors",
   displayContext,
-  visibleColumns = DEFAULT_COLUMNS,
+  visibleColumns,
 }: {
   book: BookWithRelations
+  visibleColumns: { field: DisplayField; label: string }[]
   muted?: boolean
   selected?: boolean
   isSelecting?: boolean
@@ -167,7 +204,6 @@ const BookListItem = memo(function BookListItem({
   onClick?: (book: BookWithRelations) => void
   displayField?: DisplayField
   displayContext?: SortContext
-  visibleColumns?: DisplayField[]
 }) {
   const isMobile = useIsMobile()
 
@@ -183,7 +219,8 @@ const BookListItem = memo(function BookListItem({
   // if the sort field is already visible as a column, keep showing authors
   // in the secondary line. otherwise replace authors with the sort field.
   const sortFieldIsVisibleColumn =
-    displayField === "authors" || visibleColumns.includes(displayField)
+    displayField === "authors" ||
+    visibleColumns.some((c) => c.field === displayField)
 
   const effectiveSecondary = sortFieldIsVisibleColumn
     ? null
@@ -238,7 +275,7 @@ const BookListItem = memo(function BookListItem({
 
   // columns that aren't title or authors get dedicated cells
   const extraColumns = visibleColumns.filter(
-    (f) => f !== "title" && f !== "authors",
+    (c) => c.field !== "title" && c.field !== "authors",
   )
 
   return (
@@ -342,12 +379,15 @@ const BookListItem = memo(function BookListItem({
       </div>
 
       {/* column values */}
-      {extraColumns.map((field) => (
+      {extraColumns.map(({ field, label }) => (
         <span
           key={field}
-          className="text-muted-foreground hidden w-20 flex-shrink-0 text-right text-xs tabular-nums sm:block"
+          className="text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums sm:block"
+          style={{
+            width: getColumnWidth(field, label),
+          }}
         >
-          {columnValue(book, field)}
+          <ColumnValue book={book} field={field} />
         </span>
       ))}
 
@@ -416,6 +456,12 @@ export function BookListItemSkeleton() {
   )
 }
 
+function getColumnWidth(field: DisplayField, label: string) {
+  // + 2 is for the chevron
+  // could also use retext to measure the actual width of the label
+  return `max(${columnWidths[field]}px, ${label.length + 2}ch)`
+}
+
 function ColumnHeader({
   field,
   sortField,
@@ -450,10 +496,11 @@ function ColumnHeader({
     <button
       type="button"
       className={cn(
-        "text-muted-foreground hidden w-20 shrink-0 items-center justify-end gap-0.5 text-right text-[11px] font-medium tracking-wider uppercase sm:flex",
+        "text-muted-foreground hidden h-full min-w-fit shrink-0 items-center justify-end gap-0.5 text-right text-[11px] font-medium tracking-wider uppercase sm:flex",
         isSortable && "hover:text-foreground cursor-pointer",
         isActive && "text-foreground",
       )}
+      style={{ width: getColumnWidth(field, label) }}
       onClick={isSortable ? handleClick : undefined}
       disabled={!isSortable}
     >
@@ -536,6 +583,8 @@ export function BookList({
 
   const lastVirtualRowIndex = virtualRows.at(-1)?.index
 
+  const t = useTranslation("Fields")
+
   useEffect(() => {
     if (lastVirtualRowIndex === undefined) return
 
@@ -575,6 +624,13 @@ export function BookList({
     )
   }
 
+  const translatedVisibleColumns = visibleColumns.map((field) => {
+    return {
+      field,
+      label: t(`short.${field}`),
+    }
+  })
+
   return (
     <>
       {/* column header row */}
@@ -595,12 +651,12 @@ export function BookList({
           ))}
 
           {/* column selector + spacer, aligned above the row actions */}
-          <div className="flex w-[3.25rem] shrink-0 items-center justify-end">
+          <div className="flex w-[4rem] shrink-0 items-center justify-center">
             {onVisibleColumnsChange && (
               <ColumnSelector
                 visibleFields={visibleColumns}
                 onChange={onVisibleColumnsChange}
-                compact
+                className="h-4"
               />
             )}
           </div>
@@ -617,7 +673,7 @@ export function BookList({
         <div
           ref={containerRef}
           className={cn(
-            "animate-in fade-in-0 relative w-full py-2 transition-opacity duration-300",
+            "animate-in fade-in-0 relative w-full py-4 transition-opacity duration-300",
             showMuted && "opacity-60",
           )}
           style={{ height: rowVirtualizer.getTotalSize() }}
@@ -631,7 +687,7 @@ export function BookList({
                 key={virtualRow.key}
                 data-index={virtualRow.index}
                 ref={rowVirtualizer.measureElement}
-                className="absolute top-0 left-0 w-full"
+                className="absolute top-1 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
                 <BookListItem
@@ -651,7 +707,7 @@ export function BookList({
                   onClick={onBookClick}
                   displayField={displayField}
                   displayContext={displayContext}
-                  visibleColumns={visibleColumns}
+                  visibleColumns={translatedVisibleColumns}
                 />
               </div>
             )
