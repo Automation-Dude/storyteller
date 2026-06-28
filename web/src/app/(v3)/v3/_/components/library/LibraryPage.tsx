@@ -55,6 +55,7 @@ import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
 import { useItemSelection } from "@v3/_/hooks/use-item-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
+import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
@@ -186,6 +187,7 @@ export function LibraryPage({
     "book",
     parseAsString,
   )
+  const [, setReportMode] = useReportPanel()
 
   const [sidebarSearch, setSidebarSearch] = useState("")
   const [sidebarSort, setSidebarSort] =
@@ -374,14 +376,25 @@ export function LibraryPage({
 
   const handleBookClick = useCallback(
     (book: { uuid: string }) => {
+      void setReportMode(false)
       void setSelectedBookUuid(book.uuid)
     },
-    [setSelectedBookUuid],
+    [setReportMode, setSelectedBookUuid],
+  )
+
+  // alignment grade/score cell opens the panel straight into the report.
+  const handleColumnClick = useCallback(
+    (book: { uuid: string }) => {
+      void setReportMode(true)
+      void setSelectedBookUuid(book.uuid)
+    },
+    [setReportMode, setSelectedBookUuid],
   )
 
   const handleClosePanel = useCallback(() => {
     void setSelectedBookUuid(null)
-  }, [setSelectedBookUuid])
+    void setReportMode(false)
+  }, [setReportMode, setSelectedBookUuid])
 
   const handleBackToList = useCallback(() => {
     void setSelectedItem(null)
@@ -523,6 +536,7 @@ export function LibraryPage({
                 hasActiveFilters={activeFilterCount > 0}
                 selectedBookUuid={selectedBookUuid}
                 onBookClick={handleBookClick}
+                onColumnClick={handleColumnClick}
                 displayField={displayField}
                 displayContext={displayContext}
                 visibleColumns={listVisibleColumns}

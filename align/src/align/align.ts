@@ -142,6 +142,12 @@ export interface AudioFileReport {
 
 export interface UnalignedAudioFileReport {
   filepath: string
+
+  // the transcription of this audio file, so an unaligned file is debuggable
+  // (you can see what was said). truncated; optional on older reports.
+  transcription?: {
+    text: string
+  }
 }
 
 export interface Report {
@@ -333,6 +339,10 @@ export class Aligner {
 
   private audioFileDurations: Record<string, number> = {}
 
+  // per-audiofile transcript text, kept so unaligned files can carry their
+  // transcription in the report for debugging.
+  private audiofileTranscripts: Record<string, string> = {}
+
   public report: Report = {
     chapters: [],
     unalignedChapters: [],
@@ -350,6 +360,13 @@ export class Aligner {
     private logger?: Logger | null,
   ) {
     this.transcription = concatTranscriptions(transcriptions, audiofiles)
+
+    // transcriptions are positional with audiofiles (concatTranscriptions zips
+    // them); keep each file's transcript for the unaligned-audio report.
+    audiofiles.forEach((audiofile, index) => {
+      this.audiofileTranscripts[audiofile] =
+        transcriptions[index]?.transcript ?? ""
+    })
 
     this.getChapterSentences = memoize(this.getChapterSentences.bind(this))
 
@@ -955,7 +972,13 @@ export class Aligner {
       if (
         !this.report.audioFiles.some(({ filepath }) => filepath === audiofile)
       ) {
-        this.report.unalignedAudioFiles.push({ filepath: audiofile })
+        const transcript = this.audiofileTranscripts[audiofile]?.trim()
+        this.report.unalignedAudioFiles.push({
+          filepath: audiofile,
+          ...(transcript
+            ? { transcription: { text: transcript.slice(0, 2000) } }
+            : {}),
+        })
       }
     }
 

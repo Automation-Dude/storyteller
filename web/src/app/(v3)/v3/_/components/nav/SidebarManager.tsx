@@ -43,6 +43,7 @@ import {
   type SidebarGroupWithItems,
   type SidebarItemKind,
 } from "@/database/sidebar"
+import { usePermissions } from "@/hooks/usePermissions"
 import {
   useListCollectionsQuery,
   useListUserShelvesQuery,
@@ -94,6 +95,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
   const t = useTranslation("SidebarManager")
   const tApp = useTranslation("AppSidebar")
   const tLibrary = useTranslation("LibraryPage")
+  const permissions = usePermissions()
 
   const { data: collections = [] } = useListCollectionsQuery()
 
@@ -172,7 +174,10 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
     .map((i) => i.shelfUuid)
 
   const availableBuiltins = BUILTIN_SIDEBAR_ITEMS.filter(
-    (b) => !shownBuiltinKeys.includes(b.key),
+    (b) =>
+      !shownBuiltinKeys.includes(b.key) &&
+      // do not offer permission-gated entries the user cannot access.
+      (!b.permission || !!permissions?.[b.permission]),
   )
   const availableCollections = collections.filter(
     (c) => !shownCollectionUuids.includes(c.uuid),

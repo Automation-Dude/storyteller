@@ -64,6 +64,14 @@ export interface Book {
   alignedAt: string | null
   alignedByStorytellerVersion: string | null
   alignedWith: string | null
+  alignmentChapters: number | null
+  alignmentFailedChapters: number | null
+  alignmentGrade: string | null
+  alignmentMissingSentences: number | null
+  alignmentMutedChapters: number | null
+  alignmentReportUuid: string | null
+  alignmentScore: number | null
+  alignmentUnalignedAudio: number | null
   assetDir: Generated<string>
   createdAt: Generated<string>
   description: string | null

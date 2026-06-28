@@ -10,6 +10,7 @@ export type SidebarItemKind = "builtin" | "collection" | "shelf"
 export const DEFAULT_SIDEBAR_BUILTINS = [
   "home",
   "books",
+  "alignment-quality",
   "series",
   "authors",
   "narrators",
@@ -21,7 +22,7 @@ export const DEFAULT_SIDEBAR_BUILTINS = [
   "formats",
 ] as const
 
-const MAIN_BUILTINS = new Set<string>(["home", "books"])
+const MAIN_BUILTINS = new Set<string>(["home", "books", "alignment-quality"])
 
 export type SidebarItemInput = {
   kind: SidebarItemKind

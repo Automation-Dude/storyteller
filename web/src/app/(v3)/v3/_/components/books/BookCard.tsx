@@ -18,6 +18,7 @@ import {
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
+import { GradePill } from "./grade-pill"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -30,7 +31,7 @@ type BookCardProps = {
   onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
   isMenuOpen?: boolean
   onClick?: (book: BookWithRelations) => void
-  displayField?: DisplayField
+  displayFields?: DisplayField[]
   displayContext?: SortContext
 }
 
@@ -52,47 +53,102 @@ function formatFileSize(bytes: number): string {
   return `${size.toFixed(1)} ${units[i]}`
 }
 
-export function secondaryText(
-  book: BookWithRelations,
-  field: DisplayField,
-  ctx: SortContext | undefined,
-): string | null {
+export function SecondaryText({
+  book,
+  field,
+  ctx,
+}: {
+  book: BookWithRelations
+  field: DisplayField
+  ctx: SortContext | undefined
+}): React.ReactNode {
   switch (field) {
     case "userRating":
-      return book.rating?.rating != null
-        ? `\u2605 ${book.rating.rating.toFixed(1)}`
-        : "\u2014"
+      return book.rating?.rating != null ? (
+        <span>
+          {"\u2605 "}
+          {book.rating.rating.toFixed(1)}
+        </span>
+      ) : (
+        <span>{"\u2014"}</span>
+      )
     case "seriesPosition": {
       if (!ctx?.seriesUuid) return null
 
       const s = book.series.find((x) => x.uuid === ctx.seriesUuid)
-      if (!s || s.position == null) return "\u2014"
+      if (!s || s.position == null) return <span>{"\u2014"}</span>
 
-      return `#${s.position} in ${s.name}`
+      return (
+        <span>
+          #{s.position} in {s.name}
+        </span>
+      )
     }
     case "publicationDate":
-      return book.publicationDate ? book.publicationDate.slice(0, 4) : "\u2014"
+      return book.publicationDate ? (
+        <span>{book.publicationDate.slice(0, 4)}</span>
+      ) : (
+        <span>{"\u2014"}</span>
+      )
     case "createdAt":
-      return `Added ${new Date(book.createdAt).toLocaleDateString()}`
+      return <span>Added {new Date(book.createdAt).toLocaleDateString()}</span>
     case "updatedAt":
-      return `Updated ${new Date(book.updatedAt).toLocaleDateString()}`
+      return (
+        <span>Updated {new Date(book.updatedAt).toLocaleDateString()}</span>
+      )
     case "pageCount": {
       const p = book.ebook?.pageCount ?? book.pageCount
-      return p != null ? `${p} pages` : "\u2014"
+      return p != null ? <span>{p} pages</span> : <span>{"\u2014"}</span>
     }
     case "duration": {
       const d = book.audiobook?.duration ?? book.duration
-      return d != null ? formatDuration(d) : "\u2014"
+      return d != null ? (
+        <span>{formatDuration(d)}</span>
+      ) : (
+        <span>{"\u2014"}</span>
+      )
     }
     case "fileSize": {
       const f = book.ebook?.fileSize ?? book.audiobook?.fileSize ?? null
-      return f != null ? formatFileSize(f) : "\u2014"
+      return f != null ? (
+        <span>{formatFileSize(f)}</span>
+      ) : (
+        <span>{"\u2014"}</span>
+      )
     }
     case "language":
-      return book.language ?? "\u2014"
+      return book.language ?? <span>{"\u2014"}</span>
     case "title":
     case "authors":
       return null
+    case "alignmentScore":
+      return book.alignmentScore != null ? (
+        <span>{Math.round(book.alignmentScore)}%</span>
+      ) : (
+        <span>{"\u2014"}</span>
+      )
+    case "alignmentGrade":
+      return book.alignmentGrade ? (
+        <GradePill grade={book.alignmentGrade} />
+      ) : (
+        <span>{"\u2014"}</span>
+      )
+    case "alignmentMissingSentences":
+      return book.alignmentMissingSentences != null ? (
+        <span>{book.alignmentMissingSentences}</span>
+      ) : (
+        <span>{"\u2014"}</span>
+      )
+    case "alignmentMutedChapters":
+      return book.alignmentMutedChapters != null ? (
+        <span>{book.alignmentMutedChapters}</span>
+      ) : (
+        <span>{"\u2014"}</span>
+      )
+    default: {
+      const _exhaustive: never = field
+      return null
+    }
   }
 }
 
@@ -107,7 +163,7 @@ export const BookCard = memo(function BookCard({
   onOpenMenu,
   isMenuOpen = false,
   onClick,
-  displayField = "authors",
+  displayFields = ["authors"],
   displayContext,
 }: BookCardProps) {
   const isMobile = useIsMobile()
@@ -127,12 +183,6 @@ export const BookCard = memo(function BookCard({
   )
   const hiddenAuthorCount = authors.length - visibleAuthors.length
   const progress = getReadingProgress(book)
-
-  const secondary =
-    displayField === "authors"
-      ? null
-      : secondaryText(book, displayField, displayContext)
-  const showAuthors = secondary === null
 
   const { primary, accent } = useCoverColors(book)
   const { showTint, showAccent, tint } = useColorPreferences()
@@ -260,12 +310,15 @@ export const BookCard = memo(function BookCard({
       </div>
 
       <div className="mt-2 flex flex-col gap-0.5 px-1">
-        {!showAuthors && (
-          <p className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums">
-            {secondary}
+        {displayFields.map((field) => (
+          <p
+            key={field}
+            className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums"
+          >
+            <SecondaryText book={book} field={field} ctx={displayContext} />
           </p>
-        )}
-        {showAuthors && authors.length > 0 && (
+        ))}
+        {displayFields.includes("authors") && authors.length > 0 && (
           <p className="text-muted-foreground/80 line-clamp-1 text-xs">
             {visibleAuthors.map((a, index) => (
               <Fragment key={a.uuid}>

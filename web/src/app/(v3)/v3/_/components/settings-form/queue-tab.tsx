@@ -32,7 +32,6 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 
-import { AlignmentReportDialog } from "@/app/(v3)/v3/_/components/processing/AlignmentReportDialog"
 import { StaticProgressBar } from "@/app/(v3)/v3/_/components/processing/ProgressVisualization"
 import {
   STAGE_LABELS,
@@ -70,9 +69,6 @@ export function QueueTab() {
   const [pauseJob] = usePauseJobMutation()
   const [resumeJob] = useResumeJobMutation()
   const [reorderJobs] = useReorderJobsMutation()
-
-  const [reportJob, setReportJob] = useState<PublicJob | null>(null)
-  const [reportOpen, setReportOpen] = useState(false)
 
   const list = activeJobs ?? []
   const queued = list.filter((j) => j.status === "QUEUED")
@@ -124,30 +120,12 @@ export function QueueTab() {
         )}
       </div>
 
-      <FinishedJobs
-        onShowReport={(job) => {
-          setReportJob(job)
-          setReportOpen(true)
-        }}
-      />
-
-      {reportJob && (
-        <AlignmentReportDialog
-          jobUuid={reportJob.uuid}
-          bookTitle={reportJob.bookTitle}
-          open={reportOpen}
-          onOpenChange={setReportOpen}
-        />
-      )}
+      <FinishedJobs />
     </div>
   )
 }
 
-function FinishedJobs({
-  onShowReport,
-}: {
-  onShowReport: (job: PublicJob) => void
-}) {
+function FinishedJobs() {
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("recent")
@@ -221,7 +199,7 @@ function FinishedJobs({
       ) : (
         <div className="flex flex-col gap-2">
           {jobs.map((job) => (
-            <JobItem key={job.uuid} job={job} onShowReport={onShowReport} />
+            <JobItem key={job.uuid} job={job} />
           ))}
         </div>
       )}
@@ -283,7 +261,6 @@ function JobItem({
   pauseJob,
   resumeJob,
   cancelJob,
-  onShowReport,
 }: {
   job: PublicJob
   isFirst?: boolean
@@ -292,7 +269,6 @@ function JobItem({
   pauseJob?: (uuid: UUID) => void
   resumeJob?: (uuid: UUID) => void
   cancelJob?: (uuid: UUID) => void
-  onShowReport?: (job: PublicJob) => void
 }) {
   const view = jobToView(job)
   const pct = Math.round(overallProgress(view) * 100)
@@ -435,16 +411,14 @@ function JobItem({
           </TooltipButton>
         ) : null}
 
-        {onShowReport && job.status === "DONE" ? (
+        {job.status === "DONE" && job.bookUuid ? (
           <TooltipButton
             variant="ghost"
             size="icon"
             className="size-7"
             aria-label="View alignment report"
             tooltip="Alignment report"
-            onClick={() => {
-              onShowReport(job)
-            }}
+            render={<V3Link href={`/books/${job.bookUuid}/alignment`} />}
           >
             <IconFileText className="size-4" />
           </TooltipButton>

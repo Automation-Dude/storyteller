@@ -152,6 +152,7 @@ export async function getQueuedJobs(): Promise<Job[]> {
 // (active jobs are always ordered by queue position).
 export async function getDisplayJobs(filter?: {
   statuses?: readonly JobStatus[]
+  bookUuid?: UUID
   search?: string
   sort?: JobSort
   order?: "asc" | "desc"
@@ -166,6 +167,9 @@ export async function getDisplayJobs(filter?: {
 
   if (filter?.statuses?.length) {
     query = query.where("job.status", "in", filter.statuses)
+  }
+  if (filter?.bookUuid) {
+    query = query.where("job.bookUuid", "=", filter.bookUuid)
   }
   if (filter?.search) {
     query = query.where("book.title", "like", `%${filter.search}%`)

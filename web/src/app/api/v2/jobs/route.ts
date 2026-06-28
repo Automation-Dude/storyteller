@@ -25,6 +25,7 @@ export const GET = withHasPermission("bookProcess")(async (request) => {
   const search = params.get("search")
   const sort = params.get("sort")
   const order = params.get("order")
+  const bookUuid = params.get("bookUuid")
   const jobs = await getDisplayJobs({
     ...(type
       ? {
@@ -36,6 +37,7 @@ export const GET = withHasPermission("bookProcess")(async (request) => {
                 : undefined,
         }
       : {}),
+    ...(bookUuid ? { bookUuid: bookUuid as UUID } : {}),
     ...(search ? { search } : {}),
     ...(sort ? { sort: sort as JobSort } : {}),
     ...(order === "asc" || order === "desc" ? { order } : {}),

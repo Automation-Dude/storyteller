@@ -22,6 +22,11 @@ export const SHELF_FILTER_FIELDS = [
   "mediaType",
   "createdAt",
   "updatedAt",
+  // denormalized alignment quality columns on book (see summarizeReport)
+  "alignmentGrade",
+  "alignmentScore",
+  "alignmentMissingSentences",
+  "alignmentMutedChapters",
   // user review text on the book (per-user, from userBookRating.review)
   "review",
   // a single axis of the multidimensional rating; the axis id is carried in the
@@ -72,6 +77,8 @@ export const STRING_FIELDS = [
   "subtitle",
   "description",
   "language",
+  // a short grade string (A+ .. F); is / is-any-of are the useful operators.
+  "alignmentGrade",
 ] as const satisfies readonly ShelfFilterField[]
 
 export const DATE_FIELDS = [
@@ -85,6 +92,9 @@ export const NUMBER_FIELDS = [
   "duration",
   "pageCount",
   "fileSize",
+  "alignmentScore",
+  "alignmentMissingSentences",
+  "alignmentMutedChapters",
 ] as const satisfies readonly ShelfFilterField[]
 
 export const UUID_FIELDS = [
@@ -550,6 +560,10 @@ export const FIELD_LABELS: Record<ShelfFilterField, string> = {
   mediaType: "Format",
   createdAt: "Date Added",
   updatedAt: "Date Updated",
+  alignmentGrade: "Alignment Grade",
+  alignmentScore: "Alignment Score",
+  alignmentMissingSentences: "Missing Sentences",
+  alignmentMutedChapters: "Muted Chapters",
   review: "My Review",
   ratingDimension: "Rating Dimension",
   search: "Search (any field)",

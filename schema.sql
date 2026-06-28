@@ -33,7 +33,15 @@ CREATE TABLE "book" (
   subtitle TEXT,
   "duration" real,
   "page_count" integer,
-  asset_dir text NOT NULL DEFAULT ''
+  asset_dir text NOT NULL DEFAULT '',
+  alignment_grade TEXT,
+  alignment_score REAL,
+  alignment_chapters INTEGER,
+  alignment_missing_sentences INTEGER,
+  alignment_muted_chapters INTEGER,
+  alignment_failed_chapters INTEGER,
+  alignment_unaligned_audio INTEGER,
+  alignment_report_uuid TEXT
 );
 
 CREATE TRIGGER book_update_trigger AFTER

@@ -957,6 +957,7 @@
   "AppSidebar": {
     "home": "Start",
     "books": "Boeken",
+    "alignmentQuality": "Uitlijnkwaliteit",
     "allBooks": "Alle boeken",
     "collections": "Verzamelingen",
     "allCollections": "Alle verzamelingen",
@@ -1115,6 +1116,10 @@
       "duration": "Duur",
       "fileSize": "Grootte",
       "language": "Taal",
+      "alignmentScore": "Uitlijnscore",
+      "alignmentGrade": "Uitlijncijfer",
+      "alignmentMissingSentences": "Ontbrekende zinnen",
+      "alignmentMutedChapters": "Gedempte hoofdstukken",
       "seriesPosition": "Seriepositie"
     },
     "short": {
@@ -1128,6 +1133,10 @@
       "duration": "Duur",
       "fileSize": "Grootte",
       "language": "Taal",
+      "alignmentScore": "Score",
+      "alignmentGrade": "Cijfer",
+      "alignmentMissingSentences": "Ontbrekend",
+      "alignmentMutedChapters": "Gedempt",
       "seriesPosition": "Pos."
     }
   },

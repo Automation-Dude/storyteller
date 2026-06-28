@@ -2,6 +2,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 
 import {
+  type AlignmentFacets,
+  type BookAlignmentReportView,
+} from "@/alignmentReportView"
+import {
   type Invite,
   type InviteRequest,
   type Settings,
@@ -117,6 +121,7 @@ export const api = createApi({
     "Sidebar",
     "Jobs",
     "JobReport",
+    "BookAlignmentReport",
     "Settings",
   ],
   endpoints: (build) => ({
@@ -1782,6 +1787,7 @@ export const api = createApi({
       PublicJob[],
       {
         type?: "active" | "finished" | "all"
+        bookUuid?: UUID
         search?: string
         sort?: "finishedAt" | "title" | "status"
         order?: "asc" | "desc"
@@ -1792,6 +1798,7 @@ export const api = createApi({
       query: (arg) => {
         const params = new URLSearchParams()
         if (arg?.type) params.set("type", arg.type)
+        if (arg?.bookUuid) params.set("bookUuid", arg.bookUuid)
         if (arg?.search) params.set("search", arg.search)
         if (arg?.sort) params.set("sort", arg.sort)
         if (arg?.order) params.set("order", arg.order)
@@ -1853,6 +1860,19 @@ export const api = createApi({
         { type: "JobReport", id: uuid },
       ],
     }),
+    getBookAlignmentReport: build.query<
+      BookAlignmentReportView,
+      { uuid: UUID }
+    >({
+      query: ({ uuid }) => `/books/${uuid}/alignment-report`,
+      providesTags: (_result, _error, { uuid }) => [
+        { type: "BookAlignmentReport", id: uuid },
+      ],
+    }),
+    getAlignmentFacets: build.query<AlignmentFacets, void>({
+      query: () => `/books/alignment-facets`,
+      providesTags: ["Books"],
+    }),
   }),
 })
 
@@ -1905,6 +1925,8 @@ export const {
   useProcessBookMutation,
   useGetJobsQuery,
   useGetJobReportQuery,
+  useGetBookAlignmentReportQuery,
+  useGetAlignmentFacetsQuery,
   useCancelJobMutation,
   useReorderJobsMutation,
   usePauseJobMutation,

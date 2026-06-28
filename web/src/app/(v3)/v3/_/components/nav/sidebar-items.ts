@@ -8,16 +8,19 @@ import {
   IconLanguage,
   IconList,
   IconMicrophone2,
-  IconStar,
+  IconReportAnalytics,
   IconStack2,
+  IconStar,
   IconTag,
   IconUser,
   type TablerIcon,
 } from "@tabler/icons-react"
 
+import { type Permission } from "@/database/users"
+
 export type SidebarGroup = "main" | "library"
 
-type AppSidebarLabelKey = "home" | "books"
+type AppSidebarLabelKey = "home" | "books" | "alignmentQuality"
 type LibraryLabelKey =
   | "Series.plain"
   | "Authors.plain"
@@ -36,6 +39,8 @@ type BuiltinBase = {
   href: string
   // count lookup key in useLibraryCounts; omitted for entries without a badge
   countKey?: string
+  // permission required to see / add this entry; omitted means everyone.
+  permission?: Permission
 }
 
 // presentation metadata for a builtin nav entry. the DB stores only the stable
@@ -62,6 +67,15 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
     href: "/books",
     labelNs: "AppSidebar",
     labelKey: "books",
+  },
+  {
+    key: "alignment-quality",
+    group: "main",
+    icon: IconReportAnalytics,
+    href: "/quality",
+    permission: "bookProcess",
+    labelNs: "AppSidebar",
+    labelKey: "alignmentQuality",
   },
   {
     key: "series",

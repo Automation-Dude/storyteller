@@ -46,6 +46,7 @@ import {
   type SidebarGroupWithItems,
   type SidebarItemDetail,
 } from "@/database/sidebar"
+import { usePermissions } from "@/hooks/usePermissions"
 import {
   useGetLatestVersionQuery,
   useListSidebarGroupsQuery,
@@ -308,10 +309,19 @@ function SidebarNavGroup({
 }) {
   const t = useTranslation("AppSidebar")
   const tLibrary = useTranslation("LibraryPage")
+  const permissions = usePermissions()
   const [toggleCollapsed] = useToggleSidebarGroupCollapsedMutation()
   const [localCollapsed, setLocalCollapsed] = useState(group.collapsed)
 
-  const visibleItems = group.items.filter((item) => !item.hidden)
+  const visibleItems = group.items.filter((item) => {
+    if (item.hidden) return false
+    // hide builtins the user lacks the permission for (e.g. alignment-quality).
+    if (item.kind === "builtin" && item.builtinKey) {
+      const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
+      if (builtin?.permission && !permissions?.[builtin.permission]) return false
+    }
+    return true
+  })
 
   if (visibleItems.length === 0) return null
 

@@ -964,6 +964,7 @@
   "AppSidebar": {
     "home": "Home",
     "books": "Books",
+    "alignmentQuality": "Alignment quality",
     "allBooks": "All books",
     "collections": "Collections",
     "allCollections": "All collections",
@@ -1123,6 +1124,10 @@
       "duration": "Duration",
       "fileSize": "File Size",
       "language": "Language",
+      "alignmentScore": "Alignment Score",
+      "alignmentGrade": "Alignment Grade",
+      "alignmentMissingSentences": "Missing Sentences",
+      "alignmentMutedChapters": "Muted Chapters",
       "seriesPosition": "Series Position"
     },
     "short": {
@@ -1136,6 +1141,10 @@
       "duration": "Duration",
       "fileSize": "Size",
       "language": "Lang.",
+      "alignmentScore": "Score",
+      "alignmentGrade": "Grade",
+      "alignmentMissingSentences": "Missing",
+      "alignmentMutedChapters": "Muted",
       "seriesPosition": "Pos."
     }
   },

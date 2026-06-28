@@ -9,6 +9,7 @@ import {
   IconTag,
   IconX,
 } from "@tabler/icons-react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -22,6 +23,7 @@ import { ActionBar } from "@v3/_/components/ui/action-bar"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
+import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
@@ -37,7 +39,6 @@ import { CollapsibleSection } from "./BookDetails/sections/CollapsibleSection"
 import { ContributorsSection } from "./BookDetails/sections/ContributorsSection"
 import { DescriptionSection } from "./BookDetails/sections/DescriptionSection"
 import { DetailsSection } from "./BookDetails/sections/DetailsSection"
-import { DownloadsSection } from "./BookDetails/sections/DownloadsSection"
 import { FileSection } from "./BookDetails/sections/FileSection"
 import { HeroSection } from "./BookDetails/sections/HeroSection"
 import { ReviewSection } from "./BookDetails/sections/ReviewSection"
@@ -47,6 +48,16 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
+
+// table-heavy report view; lazy so it stays out of the book-details bundle and
+// only loads when a book is actually viewed in report mode.
+const DynamicAlignmentReport = dynamic(
+  () =>
+    import(
+      "@v3/_/components/books/AlignmentReport/AlignmentReportContent"
+    ).then((mod) => mod.AlignmentReportContent),
+  { ssr: false },
+)
 
 type BookDetailsContentProps = {
   uuid: UUID
@@ -153,6 +164,10 @@ function BookDetailsContentInner({
 }) {
   const permissions = usePermissions()
   const [localIsEditing, setLocalIsEditing] = useState(false)
+  const [reportMode, setReportMode] = useReportPanel()
+
+  // only honor report mode when there is actually a report to show.
+  const showReport = reportMode && !!book.alignmentGrade
 
   const isControlled = controlledIsEditing !== undefined
   const isEditing = isControlled ? controlledIsEditing : localIsEditing
@@ -169,7 +184,7 @@ function BookDetailsContentInner({
   )
 
   const { primary, accent } = useCoverColors(book)
-  const { showAccent } = useColorPreferences()
+  const { showAccent, tint } = useColorPreferences()
   const isDark = useIsDarkMode()
 
   // cover-derived primary/accent only at "full"; otherwise the theme colors
@@ -201,34 +216,48 @@ function BookDetailsContentInner({
         <BookEditBar />
 
         <div className="@container-size scroll-y @container/book h-full flex-1">
+          {/* this is some fucked up structure but its necessary in order to get full width background 
+        for full page view
+         */}
+          <HeroSection
+            compact={compact || false}
+            className={cn(!compact && "mx-auto max-w-5xl")}
+          />
           <div
             className={cn(
               "flex flex-col gap-4",
               !compact && "mx-auto max-w-5xl",
             )}
           >
-            <HeroSection compact={compact || false} />
+            {showReport ? (
+              <DynamicAlignmentReport
+                uuid={book.uuid}
+                compact
+                embedded
+                onBack={() => void setReportMode(false)}
+              />
+            ) : (
+              <div className="flex flex-col gap-5 p-6">
+                <ReviewSection />
 
-            <div className="flex flex-col gap-5 p-6">
-              <ReviewSection />
+                <DescriptionSection />
 
-              <DescriptionSection />
+                <DetailsSection />
 
-              <DetailsSection />
+                <div className="flex w-full flex-col gap-4 @xl/book:grid @xl/book:grid-cols-2 @xl/book:gap-10">
+                  <TagsSection />
+                  <CollectionsSection />
+                </div>
 
-              <div className="flex w-full flex-col gap-4 @xl/book:grid @xl/book:grid-cols-2 @xl/book:gap-10">
-                <TagsSection />
-                <CollectionsSection />
+                <ContributorsSection />
+
+                {/* {permissions?.bookDownload && <DownloadsSection />} */}
+
+                <TranscriptionStatus book={book} />
+
+                <FileSection book={book} assetsDir={assetsDir} />
               </div>
-
-              <ContributorsSection />
-
-              {/* {permissions?.bookDownload && <DownloadsSection />} */}
-
-              <TranscriptionStatus book={book} />
-
-              <FileSection book={book} assetsDir={assetsDir} />
-            </div>
+            )}
 
             {permissions?.bookDelete && <DeleteBookModal book={book} />}
           </div>

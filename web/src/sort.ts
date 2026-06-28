@@ -18,8 +18,25 @@ export const SORTABLE_FIELDS = [
   "duration",
   "fileSize",
   "language",
+  "alignmentScore",
+  "alignmentGrade",
+  "alignmentMissingSentences",
+  "alignmentMutedChapters",
   "seriesPosition",
 ] as const
+
+// best-to-worst rank so a descending sort surfaces the strongest alignments
+// first, consistent with score. mirrors the analyzer's grade order.
+export const GRADE_RANK: Record<string, number> = {
+  "A+": 8,
+  A: 7,
+  "A-": 6,
+  B: 5,
+  "B-": 4,
+  C: 3,
+  D: 2,
+  F: 1,
+}
 
 export type SortField = (typeof SORTABLE_FIELDS)[number]
 export type SortDirection = "asc" | "desc"
@@ -41,6 +58,10 @@ export const SORT_FIELD_LABELS: Record<SortField, string> = {
   duration: FIELD_LABELS.duration,
   fileSize: FIELD_LABELS.fileSize,
   language: FIELD_LABELS.language,
+  alignmentScore: FIELD_LABELS.alignmentScore,
+  alignmentGrade: FIELD_LABELS.alignmentGrade,
+  alignmentMissingSentences: FIELD_LABELS.alignmentMissingSentences,
+  alignmentMutedChapters: FIELD_LABELS.alignmentMutedChapters,
   seriesPosition: "Series Position",
 }
 
@@ -116,6 +137,14 @@ function sortValue(
       return book.audiobook?.duration ?? book.duration
     case "fileSize":
       return book.ebook?.fileSize ?? book.audiobook?.fileSize ?? null
+    case "alignmentScore":
+      return book.alignmentScore
+    case "alignmentGrade":
+      return book.alignmentGrade ? GRADE_RANK[book.alignmentGrade] ?? null : null
+    case "alignmentMissingSentences":
+      return book.alignmentMissingSentences
+    case "alignmentMutedChapters":
+      return book.alignmentMutedChapters
     case "seriesPosition":
       return seriesPositionOf(book, ctx)
   }

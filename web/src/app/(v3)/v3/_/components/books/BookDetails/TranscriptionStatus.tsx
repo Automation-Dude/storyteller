@@ -6,19 +6,25 @@ import {
   IconProgress,
   IconX,
 } from "@tabler/icons-react"
+import { formatDistanceToNow } from "date-fns"
 import { useState } from "react"
 
+import { GradePill } from "@v3/_/components/books/grade-pill"
 import { Button } from "@v3/_/components/ui/button"
+import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useFormatDate } from "@/app/(v3)/v3/_/lib/date"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
+import { type PublicJob } from "@/database/jobs"
 import { usePermission } from "@/hooks/usePermission"
 import {
   useCancelProcessingMutation,
+  useGetJobsQuery,
   useProcessBookMutation,
 } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 import { FilePathRow } from "./FilePathRow"
 import { ProcessRunDialog } from "./ProcessRunDialog"
@@ -36,6 +42,7 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
   const [processBook] = useProcessBookMutation()
   const [cancelProcessing] = useCancelProcessingMutation()
   const canProcess = usePermission("bookProcess")
+  const [, setReportMode] = useReportPanel()
   // the per-run dialog surfaces the same secret-bearing settings as the settings
   // page, so only offer it to settings admins; others process with global defaults.
   const canConfigure = usePermission("settingsUpdate")
@@ -164,6 +171,28 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
         />
       )}
 
+      {book.alignmentGrade && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <GradePill grade={book.alignmentGrade} />
+            {book.alignmentScore != null && (
+              <span className="text-muted-foreground">
+                {Math.round(book.alignmentScore)}% aligned
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            className="text-primary text-sm hover:underline"
+            onClick={() => void setReportMode(true)}
+          >
+            View full report
+          </button>
+        </div>
+      )}
+
+      {canProcess && <RecentRuns bookUuid={book.uuid} />}
+
       {book.alignedAt && (
         <FilePathRow
           label={t("lastAligned")}
@@ -185,5 +214,54 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
         />
       )}
     </CollapsibleSection>
+  )
+}
+
+const RUN_DOT: Record<string, string> = {
+  DONE: "bg-green-500",
+  ERROR: "bg-destructive",
+  CANCELED: "bg-orange-500",
+}
+
+// a compact history of the last few finished runs for this book. intentionally
+// lighter than the queue tab's JobItem.
+function RecentRuns({ bookUuid }: { bookUuid: UUID }) {
+  const { data } = useGetJobsQuery({
+    type: "finished",
+    bookUuid,
+    limit: 5,
+  })
+  if (!data || data.length === 0) return null
+
+  const configSummary = (job: PublicJob) =>
+    [job.config?.transcriptionEngine, job.config?.whisperModel, job.config?.language]
+      .filter(Boolean)
+      .join(" · ")
+
+  return (
+    <div className="flex flex-col gap-1.5 pt-1">
+      <span className="text-muted-foreground text-xs font-medium">
+        Recent runs
+      </span>
+      {data.map((job) => (
+        <div key={job.uuid} className="flex items-center gap-2 text-xs">
+          <span
+            className={`size-1.5 shrink-0 rounded-full ${RUN_DOT[job.status] ?? "bg-muted-foreground"}`}
+          />
+          <span className="text-muted-foreground">
+            {job.finishedAt
+              ? formatDistanceToNow(new Date(job.finishedAt), {
+                  addSuffix: true,
+                })
+              : job.status.toLowerCase()}
+          </span>
+          {configSummary(job) && (
+            <span className="text-muted-foreground truncate">
+              · {configSummary(job)}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }

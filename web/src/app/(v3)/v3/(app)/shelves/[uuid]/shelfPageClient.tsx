@@ -27,6 +27,7 @@ import { filterBooksClientSide } from "@v3/_/components/library/filter-books-cli
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
+import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
@@ -55,6 +56,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     "book",
     parseAsString,
   )
+  const [, setReportMode] = useReportPanel()
 
   const { data: books = [], isLoading } = useListShelfBooksQuery({ shelfUuid })
   const { data: shelves = [] } = useListUserShelvesQuery()
@@ -113,11 +115,19 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
       return
     }
 
+    void setReportMode(false)
+    void setSelectedBookUuid(book.uuid)
+  }
+
+  // alignment grade/score cell opens the panel straight into the report.
+  const handleColumnClick = (book: BookWithRelations) => {
+    void setReportMode(true)
     void setSelectedBookUuid(book.uuid)
   }
 
   const handleClosePanel = () => {
     void setSelectedBookUuid(null)
+    void setReportMode(false)
   }
 
   return (
@@ -157,6 +167,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
             hasActiveFilters={activeFilterCount > 0}
             selectedBookUuid={selectedBookUuid}
             onBookClick={handleBookClick}
+            onColumnClick={handleColumnClick}
             visibleColumns={listVisibleColumns}
             onVisibleColumnsChange={handleListColumnsChange}
             sortField={filterState.sortField}

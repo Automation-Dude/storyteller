@@ -303,6 +303,18 @@ function buildIsEmptyExpression(
     case "updatedAt":
       return eb("book.updatedAt", "is", null)
 
+    case "alignmentGrade":
+      return eb("book.alignmentGrade", "is", null)
+
+    case "alignmentScore":
+      return eb("book.alignmentScore", "is", null)
+
+    case "alignmentMissingSentences":
+      return eb("book.alignmentMissingSentences", "is", null)
+
+    case "alignmentMutedChapters":
+      return eb("book.alignmentMutedChapters", "is", null)
+
     case "userRating":
       return eb.not(
         eb.exists(
@@ -497,6 +509,33 @@ function buildComparisonExpression(
     return buildUserRatingComparison(eb, operator, value, userId)
   }
 
+  if (field === "alignmentScore") {
+    return buildNumericExprComparison(
+      eb,
+      sql<number>`book.alignment_score`,
+      operator,
+      value,
+    )
+  }
+
+  if (field === "alignmentMissingSentences") {
+    return buildNumericExprComparison(
+      eb,
+      sql<number>`book.alignment_missing_sentences`,
+      operator,
+      value,
+    )
+  }
+
+  if (field === "alignmentMutedChapters") {
+    return buildNumericExprComparison(
+      eb,
+      sql<number>`book.alignment_muted_chapters`,
+      operator,
+      value,
+    )
+  }
+
   const isAssetNumeric =
     field === "fileSize" || field === "duration" || field === "pageCount"
 
@@ -508,7 +547,12 @@ function buildComparisonExpression(
     case "string":
       return buildStringComparison(
         eb,
-        field as "title" | "subtitle" | "description" | "language",
+        field as
+          | "title"
+          | "subtitle"
+          | "description"
+          | "language"
+          | "alignmentGrade",
         operator,
         value,
       )
@@ -545,7 +589,7 @@ function buildComparisonExpression(
 
 function buildStringComparison(
   eb: EB,
-  field: "title" | "subtitle" | "description" | "language",
+  field: "title" | "subtitle" | "description" | "language" | "alignmentGrade",
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
 ): FilterExpression {
@@ -853,6 +897,18 @@ export function buildSortExpression(
       return sql`book.publication_date`
     case "language":
       return sql`book.language`
+    case "alignmentScore":
+      return sql`book.alignment_score`
+    case "alignmentMissingSentences":
+      return sql`book.alignment_missing_sentences`
+    case "alignmentMutedChapters":
+      return sql`book.alignment_muted_chapters`
+    case "alignmentGrade":
+      // rank best-to-worst so a descending sort surfaces the strongest first.
+      return sql`case book.alignment_grade
+        when 'A+' then 8 when 'A' then 7 when 'A-' then 6
+        when 'B' then 5 when 'B-' then 4 when 'C' then 3
+        when 'D' then 2 when 'F' then 1 else null end`
     case "pageCount":
     case "duration":
     case "fileSize":
@@ -914,8 +970,17 @@ function buildAssetNumericComparison(
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
 ): FilterExpression {
-  const expr = assetNumericExpr(field)
+  return buildNumericExprComparison(eb, assetNumericExpr(field), operator, value)
+}
 
+// numeric comparison against an arbitrary scalar expression (an asset coalesce,
+// or a plain book column like alignment_score).
+function buildNumericExprComparison(
+  eb: EB,
+  expr: ReturnType<typeof sql<number>>,
+  operator: ShelfFilterOperator,
+  value: ShelfFilterValue,
+): FilterExpression {
   switch (operator) {
     case "is":
       return eb(expr, "=", Number(value))

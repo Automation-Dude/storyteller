@@ -8,8 +8,8 @@ import {
   IconSearch,
 } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { useFormatter } from "next-intl"
 import Link from "next/link"
+import { useFormatter } from "next-intl"
 import { Fragment, memo, useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -39,7 +39,7 @@ import {
   type SortField,
 } from "@/sort"
 
-import { secondaryText } from "./BookCard"
+import { SecondaryText } from "./BookCard"
 import { BookCover } from "./BookCover"
 import {
   ensureContrast,
@@ -49,6 +49,7 @@ import {
 } from "./BookDetails/sections/useCoverColors"
 import { ColumnSelector } from "./ColumnSelector"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
+import { GradePill } from "./grade-pill"
 import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
 type BookListProps = {
@@ -64,7 +65,10 @@ type BookListProps = {
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
   onBookClick?: (book: BookWithRelations) => void
-  displayField?: DisplayField
+  // click on a specific column cell (e.g. the alignment grade) instead of the
+  // row. when omitted, those cells fall through to the row click.
+  onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
+  displayFields?: DisplayField[]
   displayContext?: SortContext
   visibleColumns?: DisplayField[]
   onVisibleColumnsChange?: (fields: DisplayField[]) => void
@@ -148,6 +152,24 @@ export function ColumnValue({
     }
     case "language":
       return book.language ?? "\u2014"
+    case "alignmentScore":
+      return book.alignmentScore != null
+        ? `${Math.round(book.alignmentScore)}%`
+        : "\u2014"
+    case "alignmentGrade":
+      return book.alignmentGrade ? (
+        <GradePill grade={book.alignmentGrade} />
+      ) : (
+        "\u2014"
+      )
+    case "alignmentMissingSentences":
+      return book.alignmentMissingSentences != null
+        ? `${book.alignmentMissingSentences}`
+        : "\u2014"
+    case "alignmentMutedChapters":
+      return book.alignmentMutedChapters != null
+        ? `${book.alignmentMutedChapters}`
+        : "\u2014"
     case "title":
       return book.title
     case "seriesPosition": {
@@ -174,6 +196,10 @@ const columnWidths: Record<DisplayField, number> = {
   seriesPosition: 30,
   title: 100,
   userRating: 50,
+  alignmentScore: 50,
+  alignmentGrade: 40,
+  alignmentMissingSentences: 60,
+  alignmentMutedChapters: 60,
 }
 
 const BookListItem = memo(function BookListItem({
@@ -187,7 +213,8 @@ const BookListItem = memo(function BookListItem({
   onOpenMenu,
   isMenuOpen = false,
   onClick,
-  displayField = "authors",
+  onColumnClick,
+  displayFields = ["authors"],
   displayContext,
   visibleColumns,
 }: {
@@ -202,7 +229,8 @@ const BookListItem = memo(function BookListItem({
   onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
   isMenuOpen?: boolean
   onClick?: (book: BookWithRelations) => void
-  displayField?: DisplayField
+  onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
+  displayFields?: DisplayField[]
   displayContext?: SortContext
 }) {
   const isMobile = useIsMobile()
@@ -219,14 +247,10 @@ const BookListItem = memo(function BookListItem({
   // if the sort field is already visible as a column, keep showing authors
   // in the secondary line. otherwise replace authors with the sort field.
   const sortFieldIsVisibleColumn =
-    displayField === "authors" ||
-    visibleColumns.some((c) => c.field === displayField)
+    displayFields.includes("authors") ||
+    visibleColumns.some((c) => displayFields.includes(c.field))
 
-  const effectiveSecondary = sortFieldIsVisibleColumn
-    ? null
-    : secondaryText(book, displayField, displayContext)
-
-  const showAuthors = effectiveSecondary === null
+  // const showAuthors = effectiveSecondary === null
 
   const showCheckbox = !!onToggleSelection
 
@@ -351,13 +375,18 @@ const BookListItem = memo(function BookListItem({
           )}
         </div>
 
-        {!showAuthors && (
-          <p className="text-muted-foreground/80 truncate text-xs tabular-nums">
-            {effectiveSecondary}
-          </p>
-        )}
+        <div className="text-muted-foreground/80 flex gap-2 truncate text-xs tabular-nums">
+          {displayFields.map((field) => (
+            <SecondaryText
+              key={field}
+              book={book}
+              field={field}
+              ctx={displayContext}
+            />
+          ))}
+        </div>
 
-        {showAuthors && authors.length > 0 && (
+        {displayFields.includes("authors") && authors.length > 0 && (
           <p className="text-muted-foreground/80 truncate text-xs">
             {authors.map((a, i) => (
               <Fragment key={a.uuid}>
@@ -379,17 +408,36 @@ const BookListItem = memo(function BookListItem({
       </div>
 
       {/* column values */}
-      {extraColumns.map(({ field, label }) => (
-        <span
-          key={field}
-          className="text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums sm:block"
-          style={{
-            width: getColumnWidth(field, label),
-          }}
-        >
-          <ColumnValue book={book} field={field} />
-        </span>
-      ))}
+      {extraColumns.map(({ field, label }) => {
+        // the alignment columns open the report panel rather than the row's
+        // details, when a column-click handler is provided.
+        const isClickable =
+          !!onColumnClick &&
+          (field === "alignmentGrade" || field === "alignmentScore") &&
+          book.alignmentGrade != null
+        return (
+          <span
+            key={field}
+            className={cn(
+              "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums sm:block",
+              isClickable && "hover:text-foreground cursor-pointer",
+            )}
+            style={{
+              width: getColumnWidth(field, label),
+            }}
+            onClick={
+              isClickable
+                ? (e) => {
+                    e.stopPropagation()
+                    onColumnClick(book, field)
+                  }
+                : undefined
+            }
+          >
+            <ColumnValue book={book} field={field} />
+          </span>
+        )
+      })}
 
       {/* actions: checkbox + ellipsis */}
       <div className="flex shrink-0 items-center gap-1">
@@ -529,7 +577,8 @@ export function BookList({
   hasActiveFilters,
   selectedBookUuid,
   onBookClick,
-  displayField = "authors",
+  onColumnClick,
+  displayFields = ["authors"],
   displayContext,
   visibleColumns = DEFAULT_COLUMNS,
   onVisibleColumnsChange,
@@ -634,13 +683,13 @@ export function BookList({
   return (
     <>
       {/* column header row */}
-      {extraColumns.length > 0 && (
-        <div className="border-border bg-background sticky -top-4 z-10 -mx-4 flex items-center gap-3 border-b px-3 pb-1.5">
-          {/* spacer for cover + title */}
-          <div className="h-px w-10 shrink-0" />
-          <div className="min-w-0 flex-1" />
+      <div className="border-border bg-background sticky -top-4 z-10 -mx-4 flex items-center gap-3 border-b px-3 pb-1.5">
+        {/* spacer for cover + title */}
+        <div className="h-px w-10 shrink-0" />
+        <div className="min-w-0 flex-1" />
 
-          {extraColumns.map((field) => (
+        {extraColumns.length > 0 &&
+          extraColumns.map((field) => (
             <ColumnHeader
               key={field}
               field={field}
@@ -649,19 +698,16 @@ export function BookList({
               onSortChange={onSortChange}
             />
           ))}
-
-          {/* column selector + spacer, aligned above the row actions */}
-          <div className="flex w-[4rem] shrink-0 items-center justify-center">
-            {onVisibleColumnsChange && (
-              <ColumnSelector
-                visibleFields={visibleColumns}
-                onChange={onVisibleColumnsChange}
-                className="h-4"
-              />
-            )}
-          </div>
+        <div className="flex w-[4rem] shrink-0 items-center justify-center">
+          {onVisibleColumnsChange && (
+            <ColumnSelector
+              visibleFields={visibleColumns}
+              onChange={onVisibleColumnsChange}
+              className="h-4"
+            />
+          )}
         </div>
-      )}
+      </div>
 
       {isLoading ? (
         <div className="flex flex-col gap-px py-2">
@@ -705,7 +751,8 @@ export function BookList({
                     menu.menuOpen && menu.menuBook?.uuid === book.uuid
                   }
                   onClick={onBookClick}
-                  displayField={displayField}
+                  onColumnClick={onColumnClick}
+                  displayFields={displayFields}
                   displayContext={displayContext}
                   visibleColumns={translatedVisibleColumns}
                 />

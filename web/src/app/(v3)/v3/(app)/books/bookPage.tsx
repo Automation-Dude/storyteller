@@ -18,6 +18,7 @@ import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useDebounce } from "@v3/_/hooks/use-debounce"
+import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type UserPermissionSet } from "@/database/users"
@@ -70,6 +71,7 @@ export default function BookPage({
     "book",
     parseAsString,
   )
+  const [, setReportMode] = useReportPanel()
 
   const {
     state,
@@ -146,11 +148,20 @@ export default function BookPage({
       toggleSelection(book.uuid)
       return
     }
+    void setReportMode(false)
+    void setSelectedBookUuid(book.uuid)
+  }
+
+  // clicking the alignment grade/score cell opens the panel straight into the
+  // report rather than the book's details.
+  const handleColumnClick = (book: { uuid: string }) => {
+    void setReportMode(true)
     void setSelectedBookUuid(book.uuid)
   }
 
   const handleClosePanel = () => {
     void setSelectedBookUuid(null)
+    void setReportMode(false)
   }
 
   return (
@@ -253,6 +264,7 @@ export default function BookPage({
               hasActiveFilters={activeFilterCount > 0}
               selectedBookUuid={selectedBookUuid}
               onBookClick={handleBookClick}
+              onColumnClick={handleColumnClick}
               displayField={displayField}
               displayContext={displayContext}
               visibleColumns={listVisibleColumns}
