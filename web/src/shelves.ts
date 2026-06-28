@@ -857,6 +857,7 @@ export function getFieldDef(field: ShelfFilterField): FieldDef {
 }
 
 // the filter fields offered in the quick "Add filter" menu, in registry order.
+// TODO: don't make this a function stupid
 export function quickFilterFields(): ShelfFilterField[] {
   return (Object.keys(FIELD_REGISTRY) as ShelfFilterField[]).filter(
     (f) => FIELD_REGISTRY[f].quick,

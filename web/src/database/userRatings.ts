@@ -50,22 +50,24 @@ export async function setUserBookRating(
   if (values.review !== undefined) patch.review = values.review
 
   if (values.dimensions !== undefined) {
-    // the multidimensional rating is authoritative for the star rating: the
-    // server computes the average so storage is always in sync. an empty /
-    // fully-deselected set clears it.
+    // an empty / fully-deselected set clears the multidimensional rating
     const scores =
       values.dimensions && Object.values(values.dimensions).length
         ? values.dimensions
         : null
     patch.dimensions = scores ? JSON.stringify(scores) : null
 
-    if (scores) {
-      patch.rating = computeRatingAverage(scores)
-    } else if (values.rating !== undefined) {
-      // dimensions cleared but an explicit rating was provided (e.g. the hero
-      // star input overriding a previous multidimensional rating)
+    if (values.rating !== undefined) {
+      // an explicit rating sent alongside dimensions is a manual override that
+      // wins over the computed average (the user can rate 5 even if the axes
+      // average to 4)
       patch.rating = values.rating
+    } else if (scores) {
+      // dimensions changed on their own: keep the star rating in sync with the
+      // freshly computed average, discarding any prior manual override
+      patch.rating = computeRatingAverage(scores)
     }
+    // dimensions cleared with no rating provided: leave the rating untouched
   } else if (values.rating !== undefined) {
     patch.rating = values.rating
   }

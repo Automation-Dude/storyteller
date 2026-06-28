@@ -17,7 +17,9 @@ export function CollapsibleSection({
   rightElement,
 }: {
   title: string
-  name: string
+  // optional stable key for the section; currently unused but kept so callers
+  // can label sections without a type error
+  name?: string
   icon?: React.ReactNode
   children: React.ReactNode
   defaultOpen?: boolean

@@ -3,7 +3,6 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconBookmarkPlus,
-  IconChevronDown,
   IconColumns,
   IconPlus,
 } from "@tabler/icons-react"
@@ -88,10 +87,7 @@ export function BookFilters({
   // on its own - no separate "pending" state needed.
   const shownFields = activeFields
 
-  const addableFields = useMemo(
-    () => quickFilterFields().filter((f) => !shownFields.includes(f)),
-    [shownFields],
-  )
+  const addableFields = useMemo(() => quickFilterFields(), [shownFields])
 
   const sortFieldOptions = useMemo<
     { value: SortField; label: string }[]
@@ -102,10 +98,9 @@ export function BookFilters({
     return fields.map((value) => ({ value, label: tLabel(value) }))
   }, [hasSeriesContext, tLabel])
 
-  // a complex tree (or / not / nesting) can't be shown as chips; force the
-  // advanced builder visible so the filter is never hidden from the user.
   const advancedVisible = advancedOpen || isAdvanced
 
+  // TODO: esc doesnt properly close the menu
   return (
     <div
       className={cn(
@@ -127,18 +122,18 @@ export function BookFilters({
           onChange={setSort}
         />
 
-        {/* quiet view options: card secondary line override */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button
+              <TooltipButton
                 variant="ghost"
                 size="icon"
                 aria-label="View options"
                 className="shrink-0"
+                tooltip="View options"
               >
                 <IconColumns className="h-4 w-4" />
-              </Button>
+              </TooltipButton>
             }
           />
           <DropdownMenuContent className="w-44" align="end">
@@ -181,21 +176,6 @@ export function BookFilters({
           </span>
         )}
 
-        {!isAdvanced &&
-          shownFields.map((field) => (
-            <FilterControl
-              key={field}
-              field={field}
-              conditions={conditionsForField(field)}
-              onChange={(next) => {
-                setConditionsForField(field, next)
-              }}
-              onRemove={() => {
-                removeField(field)
-              }}
-            />
-          ))}
-
         {!isAdvanced && (
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -218,6 +198,20 @@ export function BookFilters({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+        {!isAdvanced &&
+          shownFields.map((field) => (
+            <FilterControl
+              key={field}
+              field={field}
+              conditions={conditionsForField(field)}
+              onChange={(next) => {
+                setConditionsForField(field, next)
+              }}
+              onRemove={() => {
+                removeField(field)
+              }}
+            />
+          ))}
 
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {onToggleAdvanced && (
@@ -246,10 +240,6 @@ export function BookFilters({
   )
 }
 
-// one entry in the fan-out "Add filter" menu: hovering opens a submenu with the
-// field's value editor inline, so a tag (or range, or date) can be picked in a
-// single hover without first materializing an empty chip. the editor only
-// fetches its options once the submenu opens.
 function AddFilterSubmenu({
   field,
   controller,
@@ -261,23 +251,27 @@ function AddFilterSubmenu({
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <DropdownMenuSub open={open} onOpenChange={setOpen}>
+    <DropdownMenuSub
+      open={open}
+      onOpenChange={(newOpen) => {
+        setOpen(newOpen)
+      }}
+    >
       <DropdownMenuSubTrigger>
         <FieldIcon field={field} className="mr-2 h-4 w-4" />
         {label}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-72 p-0">
-        {/* the editor is not a menu item: keep keystrokes (so the search input
-            works, not menu typeahead) and clicks (so toggling several values
-            doesn't close the menu) from bubbling to the menu. */}
         <div
           onKeyDown={(e) => {
             e.stopPropagation()
           }}
           onClick={(e) => {
+            // e.preventDefault()
             e.stopPropagation()
           }}
           onPointerDown={(e) => {
+            // e.preventDefault()
             e.stopPropagation()
           }}
         >
@@ -314,18 +308,19 @@ function SortControl({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <ButtonGroup className="shrink-0 text-sm">
+      <ButtonGroup className="h-full shrink-0 text-sm [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-full!">
         <DropdownMenuTrigger
           render={
             <Button
-              className="min-w-[100px] justify-between text-xs font-normal"
+              className="justify-between rounded-full text-xs font-normal"
               variant="outline"
             >
               <span className="flex items-center gap-1.5">
                 <FieldIcon field={field} className="h-3.5 w-3.5" />
-                {options.find((o) => o.value === field)?.label ?? field}
+                <span className="sr-only">
+                  {options.find((o) => o.value === field)?.label ?? field}
+                </span>
               </span>
-              <IconChevronDown className="h-3 w-3" />
             </Button>
           }
         />
@@ -333,6 +328,7 @@ function SortControl({
           variant="outline"
           onClick={flip}
           aria-label="Toggle sort direction"
+          className="rounded-r-full!"
         >
           {direction === "asc" ? (
             <IconArrowUp className="h-3 w-3" />
@@ -346,6 +342,7 @@ function SortControl({
           <DropdownMenuItem
             key={option.value}
             className="justify-between gap-4"
+            closeOnClick={false}
             onClick={() => {
               if (option.value === field) {
                 flip()

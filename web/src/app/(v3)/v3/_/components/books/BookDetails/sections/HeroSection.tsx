@@ -33,10 +33,14 @@ import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
+import {
+  DurationEdit,
+  PageCountEdit,
+} from "@/app/(v3)/v3/_/components/books/BookDetails/MetricEdit"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
-import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
+import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
   getDownloadUrl,
@@ -98,18 +102,15 @@ export function HeroSection({
     !!book.rating?.dimensions && Object.keys(book.rating.dimensions).length > 0
 
   const handleRatingChange = async (rating: number | null) => {
-    // preserve any existing review when changing / clearing the rating; only
-    // drop the whole row when there's nothing left to keep
+    // send only the rating so any review/dimensions are preserved: with
+    // dimensions present this reads as a manual override, and the server drops
+    // the row on its own when nothing is left to keep
     const review = book.rating?.review ?? null
-    if (rating == null && !review) {
+    const dims = book.rating?.dimensions ?? null
+    if (rating == null && !review && !dims) {
       await deleteBookRating({ bookUuid: book.uuid })
     } else {
-      await setBookRating({
-        bookUuid: book.uuid,
-        rating,
-        review,
-        dimensions: null,
-      })
+      await setBookRating({ bookUuid: book.uuid, rating })
     }
   }
 
@@ -263,21 +264,22 @@ export function HeroSection({
             )}
 
             {(() => {
-              const pageCount = book.ebook?.pageCount ?? book.pageCount
-              const duration = book.audiobook?.duration ?? book.duration
-              const hasMetrics = pageCount != null || duration != null
+              const pageCount = bookPageCount(book)
+              const duration = bookDuration(book)
+              const hasMetrics =
+                pageCount != null || duration != null || canEdit
 
               if (!hasMetrics) return null
 
               return (
-                <p className="text-muted-foreground flex flex-wrap gap-x-3 text-xs">
-                  <EditableText
-                    name="pageCount"
-                    type="number"
-                    className="w-fit min-w-16 text-xs whitespace-nowrap"
-                    placeholder="Unknown page count"
-                  />
-                  {duration != null && <span>{formatTimeHuman(duration)}</span>}
+                <p
+                  className={cn(
+                    "text-muted-foreground flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs",
+                    `@xl/book:justify-start`,
+                  )}
+                >
+                  <PageCountEdit />
+                  <DurationEdit />
                 </p>
               )
             })()}

@@ -646,7 +646,13 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
               <tr key={hg.id}>
                 {hg.headers.map((h) => {
                   const sortable = h.column.getCanSort()
-                  const dir = h.column.getIsSorted()
+                  const sorted = sorting.find((s) => s.id === h.id)
+                  const sortingHandler = sortable
+                    ? h.column.getToggleSortingHandler()
+                    : undefined
+
+                  console.log("sortingHandler", sortingHandler)
+
                   return (
                     <th
                       key={h.id}
@@ -654,11 +660,7 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
                         "px-2 py-1.5 text-left text-xs font-medium",
                         sortable && "hover:text-foreground cursor-pointer",
                       )}
-                      onClick={
-                        sortable
-                          ? h.column.getToggleSortingHandler()
-                          : undefined
-                      }
+                      onClick={sortingHandler}
                     >
                       <span className="inline-flex items-center gap-1">
                         {h.isPlaceholder
@@ -668,10 +670,10 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
                               h.getContext(),
                             )}
                         {sortable &&
-                          (dir === "asc" ? (
-                            <IconSortAscending className="size-3" />
-                          ) : dir === "desc" ? (
+                          (sorted?.desc ? (
                             <IconSortDescending className="size-3" />
+                          ) : sorted?.desc === false ? (
+                            <IconSortAscending className="size-3" />
                           ) : (
                             <IconArrowsSort className="size-3 opacity-40" />
                           ))}
@@ -686,13 +688,14 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
             {table.getRowModel().rows.map((row) => {
               const isExpanded =
                 typeof expanded === "boolean" || expanded[row.id]
+              const isSorted = sorting.find((s) => s.id === row.id)
               return (
                 <Fragment key={row.id}>
                   <tr
                     className={cn(
                       "hover:bg-muted/40 cursor-pointer border-t",
                       row.original.flagged &&
-                        "border-l-2 border-l-amber-400/80",
+                        "border-l-moderate-border/80 border-l-2",
                     )}
                     onClick={row.getToggleExpandedHandler()}
                   >
@@ -914,14 +917,14 @@ function UnalignedAudio({ view }: { view: BookAlignmentReportView }) {
   if (view.unalignedAudioFiles.length === 0) return null
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="flex items-center gap-1.5 font-serif text-lg font-normal text-amber-700 dark:text-amber-400">
+      <h2 className="text-poor dark:text-poor flex items-center gap-1.5 font-serif text-lg font-normal">
         <IconHeadphones className="size-4" />
         Unaligned audio{" "}
         <span className="text-muted-foreground font-mono text-xs">
           ({view.unalignedAudioFiles.length})
         </span>
       </h2>
-      <div className="divide-y divide-amber-200/70 overflow-hidden rounded-xl border border-amber-200 bg-amber-50/40 dark:divide-amber-900/40 dark:border-amber-900/50 dark:bg-amber-950/20">
+      <div className="border-poor-border bg-poor-bg/40 dark:divide-poor-900/40 dark:border-poor-900/50 dark:bg-poor-950/20 divide-y divide-amber-200/70 overflow-hidden border">
         {view.unalignedAudioFiles.map((uaf, i) => (
           <div key={i} className="flex flex-col gap-1 px-3 py-2.5">
             <div className="flex items-baseline justify-between gap-2">
@@ -947,11 +950,6 @@ function UnalignedAudio({ view }: { view: BookAlignmentReportView }) {
           </div>
         ))}
       </div>
-      <p className="text-muted-foreground flex items-center gap-1.5 font-serif text-xs italic">
-        <IconSparkles className="size-3.5 shrink-0" />
-        These are usually the publisher&apos;s intro and end credits, not
-        anything missing from the book.
-      </p>
     </section>
   )
 }

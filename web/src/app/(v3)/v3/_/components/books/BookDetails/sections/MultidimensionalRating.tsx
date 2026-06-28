@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react"
 import { PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
-import { RatingDisplay } from "@v3/_/components/books/RatingInput"
+import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { Button } from "@v3/_/components/ui/button"
 import { type ChartConfig, ChartContainer } from "@v3/_/components/ui/chart"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
@@ -83,7 +83,13 @@ type Props = {
   scores: RatingDimensionScores | null
   onChange: (scores: RatingDimensionScores) => void
   onRemove: () => void
-  // cover-derived accent for the average stars
+  // the stored star rating, which may be a manual override of the average
+  rating: number | null
+  // set a manual star rating that overrides the computed dimension average
+  onRatingChange: (value: number | null) => void
+  // re-sync the star rating back to the computed dimension average
+  onUseAverage: () => void
+  // cover-derived accent for the stars
   color?: string
   className?: string
 }
@@ -99,6 +105,9 @@ export function MultidimensionalRating({
   scores,
   onChange,
   onRemove,
+  rating,
+  onRatingChange,
+  onUseAverage,
   color,
   className,
 }: Props) {
@@ -163,6 +172,11 @@ export function MultidimensionalRating({
   const deselectedDimensions = dimensions.filter((d) => !(d.id in draft))
   const count = inUseDimensions.length
   const average = computeRatingAverage(draft)
+
+  // the star rating is a manual override when it diverges from the average the
+  // dimensions currently compute to
+  const isManualOverride =
+    rating != null && average != null && Math.abs(rating - average) > 0.01
 
   const data = inUseDimensions.map((d) => ({
     label: d.label,
@@ -239,7 +253,9 @@ export function MultidimensionalRating({
   return (
     <div className={cn("relative flex flex-col items-center gap-4", className)}>
       <div
-        className="relative mx-auto aspect-square h-[260px] w-[280px]"
+        // must stay square: the pointer hit-testing maps the box back onto the
+        // SIZE x SIZE polar geometry, so a non-square box skews click accuracy
+        className="relative mx-auto h-[280px] w-[280px]"
         // hidden from screen readers; they use the sliders under "Adjust scores"
         aria-hidden
       >
@@ -336,10 +352,25 @@ export function MultidimensionalRating({
       </div>
 
       <div className="flex flex-col items-center gap-1">
-        <RatingDisplay rating={average} color={color} size="lg" />
+        {/* the prominent stars are the user's actual rating and stay directly
+            editable, so a manual rating can sit on top of the dimensions */}
+        <RatingInput value={rating} onChange={onRatingChange} color={color} size="lg" />
 
-        <span className="text-muted-foreground text-xs tabular-nums">
-          {t("review.avg")} {average == null ? "\u2013" : formatRating(average)}
+        <span className="text-muted-foreground flex items-center gap-1 text-xs tabular-nums">
+          <span>
+            {t("review.avg")}{" "}
+            {average == null ? "\u2013" : formatRating(average)}
+          </span>
+
+          {isManualOverride && (
+            <button
+              type="button"
+              className="hover:text-foreground underline"
+              onClick={onUseAverage}
+            >
+              {t("review.useAverage")}
+            </button>
+          )}
         </span>
 
         {dirty && (

@@ -1044,6 +1044,8 @@
       "addAdvanced": "Add multidimensional rating",
       "removeAdvanced": "Remove multidimensional rating",
       "avg": "Avg",
+      "useAverage": "use average",
+      "revertManual": "Revert to {rating}",
       "overrideTitle": "Override multidimensional rating?",
       "overrideDescription": "Rating manually replaces your multidimensional rating with a single value.",
       "overrideConfirm": "Override",

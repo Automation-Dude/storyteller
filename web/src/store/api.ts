@@ -1406,7 +1406,8 @@ export const api = createApi({
             const nextReview =
               review !== undefined ? review : existing?.review ?? null
 
-            // mirror the server: dimensions, when provided, drive the rating
+            // mirror the server: an explicit rating wins (manual override),
+            // otherwise dimension-only edits drive the rating from the average
             let nextRating: number | null
             let nextDimensions: RatingDimensionScores | null
 
@@ -1417,11 +1418,12 @@ export const api = createApi({
                   : null
               nextDimensions = scores
 
-              if (scores) {
+              if (rating !== undefined) {
+                nextRating = rating
+              } else if (scores) {
                 nextRating = computeRatingAverage(scores)
               } else {
-                nextRating =
-                  rating !== undefined ? rating : existing?.rating ?? null
+                nextRating = existing?.rating ?? null
               }
             } else {
               nextRating =

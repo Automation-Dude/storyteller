@@ -16,6 +16,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import {
   type RatingDimensionScores,
+  computeRatingAverage,
   formatRating,
 } from "@/database/ratingDimensions"
 import {
@@ -197,6 +198,36 @@ export function ReviewSection({ className }: { className?: string }) {
     [book.uuid, setBookRating],
   )
 
+  // a manual star rating that sits on top of the dimensions; sent without
+  // dimensions so the server keeps them and treats this as an override
+  const lastManualRef = useRef<number | null>(null)
+  const setManualRating = useCallback(
+    (value: number | null) => {
+      if (value != null) lastManualRef.current = value
+      void setBookRating({ bookUuid: book.uuid, rating: value })
+    },
+    [book.uuid, setBookRating],
+  )
+
+  // re-sync the star rating to whatever the dimensions currently average to
+  const useDimensionAverage = useCallback(() => {
+    if (currentDimensions) {
+      void setBookRating({ bookUuid: book.uuid, dimensions: currentDimensions })
+    }
+  }, [book.uuid, currentDimensions, setBookRating])
+
+  const dimensionAverage = computeRatingAverage(currentDimensions)
+  const isManualOverride =
+    hasDimensions &&
+    currentRating != null &&
+    dimensionAverage != null &&
+    Math.abs(currentRating - dimensionAverage) > 0.01
+  const canRevertManual =
+    hasDimensions &&
+    !isManualOverride &&
+    lastManualRef.current != null &&
+    lastManualRef.current !== currentRating
+
   return (
     <CollapsibleSection
       title={t("review.title")}
@@ -239,13 +270,34 @@ export function ReviewSection({ className }: { className?: string }) {
     >
       <div className="flex flex-col gap-4">
         {hasDimensions ? (
-          <MultidimensionalRating
-            dimensions={ratingDimensions}
-            scores={currentDimensions}
-            onChange={handleChangeDimensions}
-            onRemove={removeAdvancedRating}
-            color={ratingColor}
-          />
+          <div className="flex flex-col items-center gap-2">
+            <MultidimensionalRating
+              dimensions={ratingDimensions}
+              scores={currentDimensions}
+              onChange={handleChangeDimensions}
+              onRemove={removeAdvancedRating}
+              rating={currentRating}
+              onRatingChange={setManualRating}
+              onUseAverage={useDimensionAverage}
+              color={ratingColor}
+            />
+
+            {canRevertManual && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => {
+                  setManualRating(lastManualRef.current)
+                }}
+              >
+                {t("review.revertManual", {
+                  rating: formatRating(lastManualRef.current ?? 0),
+                })}
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-muted-foreground sr-only text-xs uppercase">

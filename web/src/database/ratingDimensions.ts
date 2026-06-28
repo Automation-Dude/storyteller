@@ -1,20 +1,11 @@
-// shared, db-free types + helpers for multidimensional ("JoJo") ratings.
-// imported by both the server (userRatings) and the client (optimistic update +
-// display), mirroring how userPreferencesTypes is shared.
-
-// a single rating axis the user can customize in preferences. the id is stable
-// (renaming the label keeps recorded scores), the label is what's displayed.
 export type RatingDimension = { id: string; label: string }
 
-// per-book scores keyed by dimension id. a missing key means that axis is
-// deselected for this book and is excluded from the average.
 export type RatingDimensionScores = Record<string, number>
 
 export const RATING_DIMENSION_MIN = 0
 export const RATING_DIMENSION_MAX = 5
-export const RATING_DIMENSION_STEP = 0.5
+export const RATING_DIMENSION_STEP = 1
 
-// the default 5 P's (the user's text said "point", the reference uses Purpose)
 export const DEFAULT_RATING_DIMENSIONS: RatingDimension[] = [
   { id: "plot", label: "Plot" },
   { id: "personal", label: "Personal" },
@@ -43,8 +34,6 @@ export function isValidDimensionScores(
   )
 }
 
-// mean of the selected (present) axes, rounded to 2 decimals. null when nothing
-// is scored, so the caller can treat it as "no rating".
 export function computeRatingAverage(
   scores: RatingDimensionScores | null | undefined,
 ): number | null {

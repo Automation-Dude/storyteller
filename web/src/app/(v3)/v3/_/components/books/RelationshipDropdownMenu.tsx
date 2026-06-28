@@ -38,17 +38,6 @@ import {
 import { RelationGlyph } from "./RelationChipEditor"
 import { FieldIcon } from "./field-icons"
 
-// ---------------------------------------------------------------------------
-// the generic filter control
-//
-// one component drives every quick-filter field. it reads the field's registry
-// entry (getFieldDef) to decide which value editor to render, fetches facet
-// options from the right list endpoint, shows a uniform chip trigger with an
-// active-count badge, and reads/writes the *top-level conditions that target
-// this field* (0..2 of them, e.g. an includes + an excludes). callers never
-// reshape data or rewrite a trigger per field.
-// ---------------------------------------------------------------------------
-
 export type FilterControlProps = {
   field: ShelfFilterField
   // all top-level conditions currently targeting this field (the hook owns the
@@ -68,15 +57,15 @@ type Item = {
   color?: string | null
 }
 
-// labels for the composite Format values + the per-asset discriminator. these
-// are filter *values*, not fields, so they live here rather than Fields.label.
-const FORMAT_VALUE_LABELS: Record<string, string> = {
+// TODO: remove, localize
+const FORMAT_VALUE_LABELS = {
   ebook: "Ebook",
   audiobook: "Audiobook",
-  synced: "Read-along (synced)",
+  synced: "Readaloud",
   "ebook-only": "Ebook only",
   "audiobook-only": "Audiobook only",
   "missing-readaloud": "Ebook + audiobook, not synced",
+  "missing-files": "Missing files",
   "no-media": "No media",
 }
 
@@ -85,11 +74,6 @@ const ASSET_FORMAT_LABELS: Record<AssetFormat, string> = {
   audiobook: "Audiobook",
   readaloud: "Readaloud",
 }
-
-// ---------------------------------------------------------------------------
-// facet helpers: a field's include / exclude operators and how its two
-// conditions encode the selected sets.
-// ---------------------------------------------------------------------------
 
 function facetOperators(field: ShelfFilterField): {
   inc: ShelfFilterOperator

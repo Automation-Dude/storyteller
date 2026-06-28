@@ -392,15 +392,20 @@ function BookEditBar() {
   )
 }
 
+// the panel used to have a full-width top bar; instead the select / actions /
+// close controls float over the hero so the cover gets the full height. a
+// translucent, blurred pill keeps them legible over both the tinted hero and
+// the plain background once the user scrolls.
 function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   const { book, isEditing, setIsEditing } = useBookForm()
-  const { primary, accent } = useCoverColors(book)
-  const { showTint, showAccent, tint } = useColorPreferences()
+  const { showAccent } = useColorPreferences()
+  const { accent } = useCoverColors(book)
   const isDark = useIsDarkMode()
   const cAccent = ensureContrast(accent, isDark)
 
   const selection = useOptionalBookSelection()
   const isSelected = selection?.isSelected(book.uuid) ?? false
+  const showCheckbox = !!selection && (selection.isSelecting || isSelected)
 
   const handleToggleSelection = () => {
     if (!selection) return
@@ -408,22 +413,13 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
     selection.toggleSelection(book.uuid)
   }
 
+  const pill =
+    "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
+
   return (
-    <div
-      className="sticky top-0 z-50 flex h-10 items-center justify-between border-b bg-transparent px-4 py-2"
-      style={
-        {
-          // backgroundColor: `color-mix(in oklab, ${primary.solid} 50%, var(--background))`,
-          // // : undefined,
-          // color: showAccent ? primary.onColor : undefined,
-          // ...(isSelected && {
-          //   borderColor: showAccent ? cAccent.solid : "var(--primary)",
-          // }),
-        }
-      }
-    >
-      <div className="flex items-center gap-3">
-        {selection && (
+    <>
+      {showCheckbox && (
+        <div className={cn("absolute top-2.5 left-3 z-50 p-1", pill)}>
           <Checkbox
             aria-label="Toggle selection"
             checked={isSelected}
@@ -439,10 +435,10 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
             onCheckedChange={handleToggleSelection}
             className="h-5 w-5"
           />
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="flex items-center gap-1">
+      <div className={cn("absolute top-2.5 right-3 z-50", pill)}>
         <BookActionsMenu
           book={book}
           showOpenFullPage
@@ -458,7 +454,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
           </Button>
         )}
       </div>
-    </div>
+    </>
   )
 }
 

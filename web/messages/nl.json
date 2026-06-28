@@ -1037,6 +1037,8 @@
       "addAdvanced": "Voeg meerdimensionale beoordeling toe",
       "removeAdvanced": "Verwijder meerdimensionale beoordeling",
       "avg": "Gem.",
+      "useAverage": "gebruik gemiddelde",
+      "revertManual": "Terug naar {rating}",
       "overrideTitle": "Meerdimensionale beoordeling overschrijven?",
       "overrideDescription": "Handmatig beoordelen vervangt je meerdimensionale beoordeling door één waarde.",
       "overrideConfirm": "Overschrijven",
