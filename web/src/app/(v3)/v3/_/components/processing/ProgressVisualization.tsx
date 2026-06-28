@@ -150,8 +150,7 @@ export function StaticProgressBar({
   className?: string
 }) {
   const pct = Math.round(overallProgress(view) * 100)
-  const tint =
-    view.status === "error" ? "bg-destructive" : "bg-primary"
+  const tint = view.status === "error" ? "bg-destructive" : "bg-primary"
 
   return (
     <div

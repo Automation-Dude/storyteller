@@ -6,11 +6,7 @@ import {
 } from "kysely"
 import { jsonArrayFrom } from "kysely/helpers/sqlite"
 
-import type {
-  HomeSectionKind,
-  ShelfFilter,
-  ShelfOrderBy,
-} from "@/shelves"
+import type { HomeSectionKind, ShelfFilter, ShelfOrderBy } from "@/shelves"
 import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
 

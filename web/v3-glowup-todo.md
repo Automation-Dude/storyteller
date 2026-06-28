@@ -1,7 +1,7 @@
 # V3 glowup todo
 
-Braindump of small-to-medium changes still needed for V3. Grouped by topic,
-not prioritized. Not a plan, just a capture.
+Braindump of small-to-medium changes still needed for V3. Grouped by topic, not
+prioritized. Not a plan, just a capture.
 
 ## Mobile/small viewport
 
@@ -12,14 +12,14 @@ not prioritized. Not a plan, just a capture.
       on the card (hover-only on desktop, always visible on mobile) that spawns
       the card actions menu, and add a `select` action (plus a `deselect`
       action) that enters select mode
-- [ ] shift-click range selection on desktop: select a card, hold shift,
-      select another -> selects the range between them. maybe some equivalent
-      on mobile but not critical (no serious data management on mobile)
+- [ ] shift-click range selection on desktop: select a card, hold shift, select
+      another -> selects the range between them. maybe some equivalent on mobile
+      but not critical (no serious data management on mobile)
 - [ ] auto-select-first-facet breaks mobile. library/tags/shell/etc pages
       default to selecting the first facet. intended mobile flow is: facet list
       -> tap a facet -> book list -> back to facet list. auto-select skips
-      straight to the book list and you cannot get back to the facet view.
-      fix this
+      straight to the book list and you cannot get back to the facet view. fix
+      this
   - [ ] also: do not auto-select a "no X" facet first (e.g. "no narrators")
         since those can be huge and you land in a giant list
   - [ ] desktop auto-select is probably correct but the implementation
@@ -39,9 +39,9 @@ not prioritized. Not a plan, just a capture.
 ## Statuses
 
 - [ ] let users edit statuses (db technically supports it already)
-- [ ] add a `kind` enum to statuses: read, unread, in-progress, custom. keep
-      the kind stable while allowing all labels to be edited
-- [ ] some code branches on status *name* ("if status is read ..."). move those
+- [ ] add a `kind` enum to statuses: read, unread, in-progress, custom. keep the
+      kind stable while allowing all labels to be edited
+- [ ] some code branches on status _name_ ("if status is read ..."). move those
       checks to `kind`, since name becomes user-editable
 - [ ] migration must be careful: some users already customized statuses. do not
       blindly map name->kind. instead ensure there is a status with the right
@@ -55,9 +55,9 @@ not prioritized. Not a plan, just a capture.
       collapsible "hidden" list at the bottom or a dropdown. a plain hidden tab
       is not the right approach
 - [ ] add quick edit/hide for the facet sidebar items (we already have quick
-      hide/edit for shelves/collections, but not for the facet sidebar). e.g.
-      on the collection page be able to hide the collection facet sidebar, and
-      also quickly create one from there
+      hide/edit for shelves/collections, but not for the facet sidebar). e.g. on
+      the collection page be able to hide the collection facet sidebar, and also
+      quickly create one from there
 
 ## Book details drawer
 
@@ -85,8 +85,8 @@ not prioritized. Not a plan, just a capture.
   - transcription phase: chunks get "burned" / bar turns orange
   - alignment phase: sections re-align one at a time to signify alignment
   - celebratory done state
-- [ ] show a processing/transcribing/aligning indicator on book grid cards
-      (V2 had this)
+- [ ] show a processing/transcribing/aligning indicator on book grid cards (V2
+      had this)
 - [ ] transcription/processing queue somewhere (probably settings): cancel,
       reorder, and pause jobs
 - [ ] expose "last aligned at" in filtering and sorting options
@@ -116,8 +116,7 @@ not prioritized. Not a plan, just a capture.
 
 ## Book grid / list views
 
-- [ ] add a List view (grid view already exists). not interested in a table
-      view
+- [ ] add a List view (grid view already exists). not interested in a table view
 - [ ] List view should let you pick which fields to show
 - [ ] the "show for"/dynamic field feature is weak. selecting a field should
       make every card show it and hide the default. e.g. sorting by rating
@@ -165,11 +164,13 @@ not prioritized. Not a plan, just a capture.
 - [ ] add a social section: show the last N (configurable count and time range)
       ratings/reviews by other users on the server
 - [ ] a dedicated social page somewhere to browse everyone's ratings/reviews
-- [ ] global privacy config: let other users on the server see your ratings,
-      and separately whether they can see your progress (must be able to opt
-      out). note: not truly private, the server admin can inspect the db, so
-      there should be an id they can correlate
-- [ ] recently added: should show date added instead of author. also should have a "completed" row that would show your rating or date completed if no rating present
+- [ ] global privacy config: let other users on the server see your ratings, and
+      separately whether they can see your progress (must be able to opt out).
+      note: not truly private, the server admin can inspect the db, so there
+      should be an id they can correlate
+- [ ] recently added: should show date added instead of author. also should have
+      a "completed" row that would show your rating or date completed if no
+      rating present
 
 ## Themes
 

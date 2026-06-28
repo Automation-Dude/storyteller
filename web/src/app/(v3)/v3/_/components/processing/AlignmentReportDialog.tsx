@@ -18,7 +18,6 @@ import {
 import { useGetJobReportQuery } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-
 // minimal surfacing of a job's alignment report: headline counts plus the raw json.
 // a richer report table / analytics view is a later product decision.
 export function AlignmentReportDialog({
@@ -45,9 +44,7 @@ export function AlignmentReportDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Alignment report</DialogTitle>
-          <DialogDescription>
-            {bookTitle ?? "Untitled"}
-          </DialogDescription>
+          <DialogDescription>{bookTitle ?? "Untitled"}</DialogDescription>
         </DialogHeader>
 
         {isLoading && (

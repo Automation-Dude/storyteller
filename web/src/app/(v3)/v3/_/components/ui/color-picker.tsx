@@ -7,11 +7,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { Button } from "./button"
 import { Input } from "./input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./popover"
+import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 
 const PRESET_COLORS = [
   "#ef4444", // red
@@ -60,7 +56,9 @@ export const ColorPicker = memo(function ColorPicker({
                 style={{ backgroundColor: value }}
               />
             ) : (
-              <span className="text-muted-foreground text-xs">Choose color</span>
+              <span className="text-muted-foreground text-xs">
+                Choose color
+              </span>
             )}
           </Button>
         }
@@ -93,7 +91,10 @@ export const ColorPicker = memo(function ColorPicker({
               placeholder="#hex"
               className="h-7 flex-1 text-xs"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && customColor.match(/^#[0-9a-f]{3,8}$/i)) {
+                if (
+                  e.key === "Enter" &&
+                  customColor.match(/^#[0-9a-f]{3,8}$/i)
+                ) {
                   onChange(customColor)
                   setOpen(false)
                 }

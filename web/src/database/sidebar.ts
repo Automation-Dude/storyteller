@@ -64,7 +64,9 @@ export type SidebarItemWithDetails = SidebarItemDetail & {
   groupUuid: string | null
 }
 
-export async function getSidebarGroups(userId: UUID): Promise<SidebarGroupWithItems[]> {
+export async function getSidebarGroups(
+  userId: UUID,
+): Promise<SidebarGroupWithItems[]> {
   const groups = await db
     .selectFrom("sidebarGroup")
     .selectAll()
@@ -257,7 +259,10 @@ export async function setSidebarItems(
   )
 }
 
-export async function toggleGroupCollapsed(groupUuid: string, collapsed: boolean) {
+export async function toggleGroupCollapsed(
+  groupUuid: string,
+  collapsed: boolean,
+) {
   await db
     .updateTable("sidebarGroup")
     .set({ collapsed: collapsed ? 1 : 0 })
@@ -292,13 +297,13 @@ export async function initializeDefaultSidebar(userId: UUID) {
     .groupBy("collection.uuid")
     .execute()
 
-  const mainItems: SidebarItemInput[] = DEFAULT_SIDEBAR_BUILTINS
-    .filter((key) => MAIN_BUILTINS.has(key))
-    .map((builtinKey) => ({ kind: "builtin" as const, builtinKey }))
+  const mainItems: SidebarItemInput[] = DEFAULT_SIDEBAR_BUILTINS.filter((key) =>
+    MAIN_BUILTINS.has(key),
+  ).map((builtinKey) => ({ kind: "builtin" as const, builtinKey }))
 
-  const libraryItems: SidebarItemInput[] = DEFAULT_SIDEBAR_BUILTINS
-    .filter((key) => !MAIN_BUILTINS.has(key))
-    .map((builtinKey) => ({ kind: "builtin" as const, builtinKey }))
+  const libraryItems: SidebarItemInput[] = DEFAULT_SIDEBAR_BUILTINS.filter(
+    (key) => !MAIN_BUILTINS.has(key),
+  ).map((builtinKey) => ({ kind: "builtin" as const, builtinKey }))
 
   const groups: SidebarGroupInput[] = [
     { name: "Main", items: mainItems },

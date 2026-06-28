@@ -369,7 +369,11 @@ export function LibraryPage({
   prefetchDepsRef.current = { sort, deferredSearch, section }
   const handleHoverItem = useCallback(
     (key: string) => {
-      const { sort: s, deferredSearch: ds, section: sec } = prefetchDepsRef.current
+      const {
+        sort: s,
+        deferredSearch: ds,
+        section: sec,
+      } = prefetchDepsRef.current
       void dispatch(
         api.endpoints.listInfiniteBooks.initiate(
           {

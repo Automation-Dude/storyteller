@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache"
 
-import { assertAuthenticatedUser, createConfig, hashPassword } from "@/auth/auth"
+import {
+  assertAuthenticatedUser,
+  createConfig,
+  hashPassword,
+} from "@/auth/auth"
 import { updateUser } from "@/database/users"
 
 export async function updateProfileAction(data: {

@@ -651,7 +651,8 @@ export function hasPermission(
 export async function getCurrentUser(): Promise<UserWithPermissions | null> {
   const cookieStore = await cookies()
   const authToken =
-    cookieStore.get("st_token")?.value ?? extractTokenFromHeader(await headers())
+    cookieStore.get("st_token")?.value ??
+    extractTokenFromHeader(await headers())
 
   if (!authToken) return null
 

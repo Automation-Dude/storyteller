@@ -120,8 +120,9 @@ export const uiSettingsSlice = createSlice({
         !merged.listVisibleColumns.length &&
         Array.isArray(legacy["listVisibleFields"])
       ) {
-        merged.listVisibleColumns =
-          legacy["listVisibleFields"] as DisplayField[]
+        merged.listVisibleColumns = legacy[
+          "listVisibleFields"
+        ] as DisplayField[]
       }
 
       if (merged.listVisibleColumns.length === 0) {

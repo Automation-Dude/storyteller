@@ -73,8 +73,10 @@ export async function setUserBookRating(
   // merge against the current row so the CHECK (rating or review) holds: when
   // nothing is left to store we remove the row instead of writing a null/null
   const existing = await getUserBookRating(userId, bookUuid)
-  const nextRating = patch.rating !== undefined ? patch.rating : existing?.rating
-  const nextReview = patch.review !== undefined ? patch.review : existing?.review
+  const nextRating =
+    patch.rating !== undefined ? patch.rating : existing?.rating
+  const nextReview =
+    patch.review !== undefined ? patch.review : existing?.review
 
   if (nextRating == null && nextReview == null) {
     await deleteUserBookRating(userId, bookUuid)

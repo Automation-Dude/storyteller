@@ -182,9 +182,7 @@ export async function addBooksToCollections(
       ),
     )
     // a book can only be in a collection once (unique index); re-adding is a no-op
-    .onConflict((oc) =>
-      oc.columns(["bookUuid", "collectionUuid"]).doNothing(),
-    )
+    .onConflict((oc) => oc.columns(["bookUuid", "collectionUuid"]).doNothing())
     .execute()
 
   const collections = await getCollections()
@@ -194,7 +192,9 @@ export async function addBooksToCollections(
     const existingUuids = new Set(book.collections.map((c) => c.uuid))
     const added = collectionUuids
       .filter((collectionUuid) => !existingUuids.has(collectionUuid))
-      .map((collectionUuid) => collections.find((c) => c.uuid === collectionUuid))
+      .map((collectionUuid) =>
+        collections.find((c) => c.uuid === collectionUuid),
+      )
       .filter((c) => !!c)
 
     BookEvents.emit("message", {

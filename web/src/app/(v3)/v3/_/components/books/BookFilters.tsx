@@ -93,7 +93,9 @@ export function BookFilters({
     [shownFields],
   )
 
-  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(() => {
+  const sortFieldOptions = useMemo<
+    { value: SortField; label: string }[]
+  >(() => {
     const fields: SortField[] = hasSeriesContext
       ? ["seriesPosition", ...GENERAL_SORT_FIELDS]
       : [...GENERAL_SORT_FIELDS]

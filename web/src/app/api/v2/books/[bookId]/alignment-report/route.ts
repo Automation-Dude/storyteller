@@ -47,7 +47,8 @@ export const GET = withHasPermission<Params>("bookProcess")(async (
     createdAt: report.createdAt,
     summary: summarizeReport(report.report),
     ebookManifest: (book?.ebook?.manifest as ManifestLike | null) ?? null,
-    audiobookManifest: (book?.audiobook?.manifest as ManifestLike | null) ?? null,
+    audiobookManifest:
+      (book?.audiobook?.manifest as ManifestLike | null) ?? null,
   })
 
   return Response.json(view)

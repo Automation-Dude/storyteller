@@ -272,14 +272,20 @@ export default async function processBook({
         // can remove the on-disk file. best-effort: a missing report should not
         // fail the run.
         try {
-          const reportJson = await readFile(reportFilepath, { encoding: "utf-8" })
+          const reportJson = await readFile(reportFilepath, {
+            encoding: "utf-8",
+          })
           await createAlignmentReport({
             jobUuid,
             bookUuid,
             report: JSON.parse(reportJson) as Report,
           })
         } catch (err) {
-          logger.warn({ msg: "Failed to persist alignment report", bookUuid, err })
+          logger.warn({
+            msg: "Failed to persist alignment report",
+            bookUuid,
+            err,
+          })
         }
 
         book = await updateBook(null, {

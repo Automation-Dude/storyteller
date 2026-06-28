@@ -10,7 +10,9 @@ type IconComponent = React.ComponentType<{ className?: string }>
 // a chunk boundary so only icons actually rendered get loaded.
 const iconCache = new Map<string, React.LazyExoticComponent<IconComponent>>()
 
-function getLazyIcon(tablerName: string): React.LazyExoticComponent<IconComponent> {
+function getLazyIcon(
+  tablerName: string,
+): React.LazyExoticComponent<IconComponent> {
   const cached = iconCache.get(tablerName)
   if (cached) return cached
 

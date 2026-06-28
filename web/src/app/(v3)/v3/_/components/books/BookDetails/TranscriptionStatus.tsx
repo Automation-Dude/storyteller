@@ -31,7 +31,6 @@ import { ProcessRunDialog } from "./ProcessRunDialog"
 import { ProcessingModal } from "./ProcessingModal"
 import { CollapsibleSection } from "./sections/CollapsibleSection"
 
-
 const PROCESSING_STAGE_LABELS: Record<string, string> = {
   SPLIT_TRACKS: "Pre-processing audio",
   TRANSCRIBE_CHAPTERS: "Transcribing tracks",
@@ -234,7 +233,11 @@ function RecentRuns({ bookUuid }: { bookUuid: UUID }) {
   if (!data || data.length === 0) return null
 
   const configSummary = (job: PublicJob) =>
-    [job.config?.transcriptionEngine, job.config?.whisperModel, job.config?.language]
+    [
+      job.config?.transcriptionEngine,
+      job.config?.whisperModel,
+      job.config?.language,
+    ]
       .filter(Boolean)
       .join(" · ")
 

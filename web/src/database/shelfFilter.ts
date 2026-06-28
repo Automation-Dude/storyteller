@@ -1192,8 +1192,6 @@ function buildNumericExprComparison(
   }
 }
 
-
-
 function buildDateComparison(
   eb: EB,
   field: "publicationDate" | "createdAt" | "updatedAt",
@@ -1563,7 +1561,11 @@ function buildEnumComparison(
       case "missing-readaloud":
         return eb.and([hasEbook, hasAudiobook, eb.not(hasAligned)])
       case "no-media":
-        return eb.and([eb.not(hasEbook), eb.not(hasAudiobook), eb.not(hasAligned)])
+        return eb.and([
+          eb.not(hasEbook),
+          eb.not(hasAudiobook),
+          eb.not(hasAligned),
+        ])
       default:
         return eb.lit(false)
     }

@@ -3,7 +3,6 @@
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 
-
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { BookList } from "@v3/_/components/books/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"

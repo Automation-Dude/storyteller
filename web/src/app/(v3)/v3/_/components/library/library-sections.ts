@@ -83,15 +83,19 @@ function buildRelationSection<
     icon?: string | null
     color?: string | null
   },
->(getRelations: (book: BookWithRelations) => T[]): Omit<
-  LibrarySectionDef,
-  "key"
-> {
+>(
+  getRelations: (book: BookWithRelations) => T[],
+): Omit<LibrarySectionDef, "key"> {
   return {
     extractItems(books) {
       const map = new Map<
         string,
-        { name: string; count: number; icon: string | null; color: string | null }
+        {
+          name: string
+          count: number
+          icon: string | null
+          color: string | null
+        }
       >()
 
       for (const book of books) {

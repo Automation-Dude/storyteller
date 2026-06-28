@@ -180,7 +180,10 @@ export function ColumnValue({
       return book.position?.updatedAt ? (
         <time
           dateTime={book.position.updatedAt}
-          title={dateTime(new Date(book.position.updatedAt), DEFAULT_DATE_OPTIONS)}
+          title={dateTime(
+            new Date(book.position.updatedAt),
+            DEFAULT_DATE_OPTIONS,
+          )}
         >
           {formatRelativeTime(book.position.updatedAt, {
             now: new Date(),

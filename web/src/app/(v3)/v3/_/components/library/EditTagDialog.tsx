@@ -50,7 +50,9 @@ export function EditTagDialog({
 
   // the sidebar only passes uuid+name, so seed icon/color from the full tag
   const { data: allTags = [] } = useListTagsQuery()
-  const fullTag = tag ? allTags.find((candidate) => candidate.uuid === tag.uuid) : null
+  const fullTag = tag
+    ? allTags.find((candidate) => candidate.uuid === tag.uuid)
+    : null
 
   const [icon, setIcon] = useState<string | null>(null)
   const [color, setColor] = useState<string | null>(null)

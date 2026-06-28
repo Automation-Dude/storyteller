@@ -30,11 +30,13 @@ import {
 import { Switch } from "@v3/_/components/ui/switch"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { ConfirmDialog, useConfirmAction } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
+import {
+  ConfirmDialog,
+  useConfirmAction,
+} from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 import { usePermissions } from "@/hooks/usePermissions"
 import { useClearBooksCacheMutation } from "@/store/api"
-
 
 import {
   LockTooltip,

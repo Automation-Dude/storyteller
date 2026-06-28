@@ -318,7 +318,8 @@ function SidebarNavGroup({
     // hide builtins the user lacks the permission for (e.g. alignment-quality).
     if (item.kind === "builtin" && item.builtinKey) {
       const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
-      if (builtin?.permission && !permissions?.[builtin.permission]) return false
+      if (builtin?.permission && !permissions?.[builtin.permission])
+        return false
     }
     return true
   })

@@ -129,7 +129,14 @@ export function CreateCollectionDialog({
       setIsPublic(true)
       setMemberIds([])
     }
-  }, [open, editingCollection, collectionUuid, initialName, currentUser?.id, reset])
+  }, [
+    open,
+    editingCollection,
+    collectionUuid,
+    initialName,
+    currentUser?.id,
+    reset,
+  ])
 
   const handleClose = useCallback(() => {
     reset()

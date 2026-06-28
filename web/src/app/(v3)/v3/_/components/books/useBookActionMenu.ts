@@ -87,7 +87,7 @@ export function useBookActionMenu(books: BookWithRelations[]) {
   })
 
   const menuBookIsSelected = menuBook
-    ? (selection?.isSelected(menuBook.uuid) ?? false)
+    ? selection?.isSelected(menuBook.uuid) ?? false
     : false
 
   return {

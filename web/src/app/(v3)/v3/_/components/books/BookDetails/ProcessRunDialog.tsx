@@ -47,7 +47,6 @@ import {
 } from "@/store/api"
 import { RUN_CONFIG_SETTING_KEYS, type RunConfig } from "@/work/runConfig"
 
-
 // "process with options": capture transcription/audio settings for this run only,
 // pre-filled from the current defaults. optionally also save the edits as the new
 // defaults. requires settingsUpdate (it surfaces the same secret-bearing fields as
@@ -69,7 +68,8 @@ export function ProcessRunDialog({
         <DialogHeader>
           <DialogTitle>Process “{book.title}”</DialogTitle>
           <DialogDescription>
-            These settings apply to this run only, unless you save them as defaults.
+            These settings apply to this run only, unless you save them as
+            defaults.
           </DialogDescription>
         </DialogHeader>
 
@@ -77,7 +77,9 @@ export function ProcessRunDialog({
           <RunConfigForm
             book={book}
             settings={settings}
-            onClose={() => { onOpenChange(false); }}
+            onClose={() => {
+              onOpenChange(false)
+            }}
           />
         ) : (
           <div className="flex justify-center py-8">
@@ -137,7 +139,9 @@ function RunConfigForm({
           <FieldLabel htmlFor="run-language">Language</FieldLabel>
           <Select
             value={language}
-            onValueChange={(v) => { setLanguage(v ?? "auto"); }}
+            onValueChange={(v) => {
+              setLanguage(v ?? "auto")
+            }}
           >
             <SelectTrigger id="run-language" className="w-full">
               <SelectValue placeholder="Auto (detect from book)" />

@@ -164,7 +164,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
               render={({ field }) => (
                 <Field>
                   <FieldLabel>{t("gridDisplay.sizeLabel")}</FieldLabel>
-                  <FieldDescription>{t("gridDisplay.sizeHint")}</FieldDescription>
+                  <FieldDescription>
+                    {t("gridDisplay.sizeHint")}
+                  </FieldDescription>
                   <SegmentedControl
                     value={field.value}
                     onChange={(value) => field.onChange(value)}

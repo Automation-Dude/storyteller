@@ -157,10 +157,7 @@ void describe("shelfFilterNodeSchema", () => {
     })
 
     assert.ok(result.success)
-    assert.strictEqual(
-      (result.data as { field: string }).field,
-      "userRating",
-    )
+    assert.strictEqual((result.data as { field: string }).field, "userRating")
   })
 
   void it("accepts an AND block with children", () => {
@@ -761,7 +758,12 @@ void describe("buildFilterExpression sql", () => {
     const sql = compile({
       type: "and",
       children: [
-        { type: "condition", field: "review", operator: "contains", value: "x" },
+        {
+          type: "condition",
+          field: "review",
+          operator: "contains",
+          value: "x",
+        },
       ],
     })
     assert.match(sql, /user_book_rating/)
@@ -788,7 +790,12 @@ void describe("buildFilterExpression sql", () => {
     const sql = compile({
       type: "and",
       children: [
-        { type: "condition", field: "search", operator: "contains", value: "x" },
+        {
+          type: "condition",
+          field: "search",
+          operator: "contains",
+          value: "x",
+        },
       ],
     })
     assert.match(sql, /creator/)

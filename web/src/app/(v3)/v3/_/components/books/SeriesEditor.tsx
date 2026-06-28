@@ -44,7 +44,11 @@ type SeriesEditorProps = {
 
 // the series the user picked but hasn't committed yet, while they set a position
 type PendingSeries = { name: string; uuid?: string }
-type EditingPosition = { uuid: string; name: string; currentPosition: number | null }
+type EditingPosition = {
+  uuid: string
+  name: string
+  currentPosition: number | null
+}
 
 export function SeriesEditor({
   bookUuid,
