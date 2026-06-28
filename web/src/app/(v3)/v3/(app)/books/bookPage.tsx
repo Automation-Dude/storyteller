@@ -1,6 +1,5 @@
 "use client"
 
-import { IconAdjustmentsHorizontal, IconBookmarkPlus } from "@tabler/icons-react"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo, useState } from "react"
 
@@ -9,36 +8,29 @@ import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { BookList } from "@v3/_/components/books/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SaveAsShelfDialog } from "@v3/_/components/books/SaveAsShelfDialog"
-import {
-  ShelfFilterEditor,
-  isFilterValid,
-} from "@v3/_/components/shelves/ShelfFilterEditor"
-import { Button } from "@v3/_/components/ui/button"
+import { ShelfFilterEditor } from "@v3/_/components/shelves/ShelfFilterEditor"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
-import { useDebounce } from "@v3/_/hooks/use-debounce"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type UserPermissionSet } from "@/database/users"
-import { type ShelfFilterNode } from "@/shelves"
 import {
   type DisplayField,
   type SortContext,
   type SortDirection,
   type SortField,
-  deriveDisplayField,
+  deriveDisplayFields,
 } from "@/sort"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
+  type BookView,
   selectBookView,
   selectListVisibleColumns,
   uiSettingsSlice,
-  type BookView,
 } from "@/store/slices/uiSettingsSlice"
-import { type UUID } from "@/uuid"
 
 export default function BookPage({
   permissions: _permissions,
@@ -73,48 +65,42 @@ export default function BookPage({
   )
   const [, setReportMode] = useReportPanel()
 
+  const controller = useBookFilters()
   const {
-    state,
-    onChange,
     queryArg,
+    effectiveFilter,
+    userFilter,
+    setUserFilter,
+    sort,
+    setSort,
+    displayOverrides,
     isSearching,
     deferredSearch,
     activeFilterCount,
-    clearFilters,
-    filterPopoverOpen,
-    setFilterPopoverOpen,
-    displayOverride,
-    onDisplayOverrideChange,
-  } = useBookFilters()
+    clearAll,
+  } = controller
 
   const handleColumnSort = useCallback(
     (field: SortField, direction: SortDirection) => {
-      onChange("sortField", field)
-      onChange("sortDirection", direction)
+      setSort(field, direction)
     },
-    [onChange],
+    [setSort],
   )
 
-  // a series filter makes series position a meaningful secondary line
-  const displayContext: SortContext = {
-    seriesUuid: (state.seriesFilter as UUID | null) ?? null,
-  }
-  const displayField = deriveDisplayField(
-    state.sortField,
+  // the books page has no single-series context; position is not offered.
+  const displayContext: SortContext = useMemo(() => ({ seriesUuid: null }), [])
+  const displayFields = deriveDisplayFields(
+    sort.field,
     displayContext,
-    displayOverride,
+    displayOverrides,
   )
 
-  // opt-in advanced filter (the shelf filter tree). kept in page state rather
-  // than the url; only a complete/valid tree is sent to the server, debounced.
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [advancedFilter, setAdvancedFilter] = useState<ShelfFilterNode | null>(
-    null,
-  )
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
-  const advancedFilterValid = isFilterValid(advancedFilter)
-  const effectiveFilter = advancedFilterValid ? advancedFilter : undefined
-  const debouncedFilter = useDebounce(effectiveFilter, 400)
+
+  // a tree too complex for the quick chips always shows the builder so it is
+  // never hidden; otherwise the toggle controls it.
+  const advancedVisible = showAdvanced || controller.isAdvanced
 
   const {
     data,
@@ -123,10 +109,7 @@ export default function BookPage({
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = useListInfiniteBooksInfiniteQuery({
-    ...queryArg,
-    filter: debouncedFilter ?? undefined,
-  })
+  } = useListInfiniteBooksInfiniteQuery(queryArg)
 
   const books = useMemo(
     () => data?.pages.flatMap((page) => page) ?? [],
@@ -152,8 +135,6 @@ export default function BookPage({
     void setSelectedBookUuid(book.uuid)
   }
 
-  // clicking the alignment grade/score cell opens the panel straight into the
-  // report rather than the book's details.
   const handleColumnClick = (book: { uuid: string }) => {
     void setReportMode(true)
     void setSelectedBookUuid(book.uuid)
@@ -164,14 +145,13 @@ export default function BookPage({
     void setReportMode(false)
   }
 
+  const emptySubMessage =
+    deferredSearch || activeFilterCount > 0
+      ? "Try adjusting your search or filters"
+      : undefined
+
   return (
-    <div
-      style={
-        {
-          "--header-height": "6rem",
-        } as React.CSSProperties
-      }
-    >
+    <div style={{ "--header-height": "6rem" } as React.CSSProperties}>
       <BookListLayout
         headerBreadcrumbs={[
           {
@@ -189,60 +169,35 @@ export default function BookPage({
         headerActions={[<AddBookButton key="add-book" />]}
       >
         <BookFilters
-          state={state}
-          onChange={onChange}
-          filterPopoverOpen={filterPopoverOpen}
-          setFilterPopoverOpen={setFilterPopoverOpen}
-          showSaveSearch
-          displayOverride={displayOverride}
-          onDisplayOverrideChange={onDisplayOverrideChange}
-          hasSeriesContext={!!state.seriesFilter}
+          controller={controller}
           bookView={bookView}
           onBookViewChange={handleBookViewChange}
+          advancedOpen={advancedVisible}
+          onToggleAdvanced={() => {
+            setShowAdvanced((v) => !v)
+          }}
+          onSaveAsShelf={
+            effectiveFilter
+              ? () => {
+                  setSaveDialogOpen(true)
+                }
+              : undefined
+          }
         />
 
-        <div className="flex items-center gap-2 px-4 pt-1">
-          <Button
-            variant={showAdvanced || advancedFilterValid ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setShowAdvanced((v) => !v)
-            }}
-          >
-            <IconAdjustmentsHorizontal className="mr-1 h-4 w-4" />
-            Advanced filter
-          </Button>
-
-          {advancedFilterValid && advancedFilter && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSaveDialogOpen(true)
-              }}
-            >
-              <IconBookmarkPlus className="mr-1 h-4 w-4" />
-              Save as shelf
-            </Button>
-          )}
-        </div>
-
-        {showAdvanced && (
+        {advancedVisible && (
           <div className="border-border border-b px-4 pt-2 pb-4">
-            <ShelfFilterEditor
-              filter={advancedFilter}
-              onChange={setAdvancedFilter}
-            />
+            <ShelfFilterEditor filter={userFilter} onChange={setUserFilter} />
           </div>
         )}
 
-        {advancedFilter && (
+        {effectiveFilter && (
           <SaveAsShelfDialog
             open={saveDialogOpen}
             onOpenChange={setSaveDialogOpen}
-            filter={advancedFilter}
-            sortField={state.sortField}
-            sortDirection={state.sortDirection}
+            filter={effectiveFilter}
+            sortField={sort.field}
+            sortDirection={sort.direction}
           />
         )}
 
@@ -255,22 +210,18 @@ export default function BookPage({
               hasNextPage={hasNextPage}
               fetchNextPage={fetchNextPage}
               showMuted={showMuted}
-              emptySubMessage={
-                deferredSearch || activeFilterCount > 0
-                  ? "Try adjusting your search or filters"
-                  : undefined
-              }
-              onClearFilters={clearFilters}
+              emptySubMessage={emptySubMessage}
+              onClearFilters={clearAll}
               hasActiveFilters={activeFilterCount > 0}
               selectedBookUuid={selectedBookUuid}
               onBookClick={handleBookClick}
               onColumnClick={handleColumnClick}
-              displayField={displayField}
+              displayFields={displayFields}
               displayContext={displayContext}
               visibleColumns={listVisibleColumns}
               onVisibleColumnsChange={handleListColumnsChange}
-              sortField={state.sortField}
-              sortDirection={state.sortDirection}
+              sortField={sort.field}
+              sortDirection={sort.direction}
               onSortChange={handleColumnSort}
             />
           ) : (
@@ -281,16 +232,12 @@ export default function BookPage({
               hasNextPage={hasNextPage}
               fetchNextPage={fetchNextPage}
               showMuted={showMuted}
-              emptySubMessage={
-                deferredSearch || activeFilterCount > 0
-                  ? "Try adjusting your search or filters"
-                  : undefined
-              }
-              onClearFilters={clearFilters}
+              emptySubMessage={emptySubMessage}
+              onClearFilters={clearAll}
               hasActiveFilters={activeFilterCount > 0}
               selectedBookUuid={selectedBookUuid}
               onBookClick={handleBookClick}
-              displayField={displayField}
+              displayFields={displayFields}
               displayContext={displayContext}
             />
           )}

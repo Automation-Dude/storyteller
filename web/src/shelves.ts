@@ -22,11 +22,17 @@ export const SHELF_FILTER_FIELDS = [
   "mediaType",
   "createdAt",
   "updatedAt",
+  // when the book's read-along alignment last completed (book.alignedAt)
+  "alignedAt",
   // denormalized alignment quality columns on book (see summarizeReport)
   "alignmentGrade",
   "alignmentScore",
   "alignmentMissingSentences",
   "alignmentMutedChapters",
+  // per-user reading progress, derived from the position table: lastRead is
+  // position.timestamp, readingPosition is the locator's total progression (0-1)
+  "lastRead",
+  "readingPosition",
   // user review text on the book (per-user, from userBookRating.review)
   "review",
   // a single axis of the multidimensional rating; the axis id is carried in the
@@ -85,6 +91,9 @@ export const DATE_FIELDS = [
   "publicationDate",
   "createdAt",
   "updatedAt",
+  "alignedAt",
+  // per-user, derived from position.timestamp (see shelfFilter.ts)
+  "lastRead",
 ] as const satisfies readonly ShelfFilterField[]
 
 export const NUMBER_FIELDS = [
@@ -95,7 +104,15 @@ export const NUMBER_FIELDS = [
   "alignmentScore",
   "alignmentMissingSentences",
   "alignmentMutedChapters",
+  // per-user, locator total progression 0-1 (see shelfFilter.ts)
+  "readingPosition",
 ] as const satisfies readonly ShelfFilterField[]
+
+// the asset a format-scoped numeric (fileSize / duration / pageCount) targets.
+// absent = the cross-format fallback (assetNumericExpr coalesce). mirrors the
+// `role` discriminator on creator conditions.
+export const ASSET_FORMATS = ["ebook", "audiobook", "readaloud"] as const
+export type AssetFormat = (typeof ASSET_FORMATS)[number]
 
 export const UUID_FIELDS = [
   "status",
@@ -241,6 +258,12 @@ const numberCompareCondition = z
     field: z.enum(NUMBER_FIELDS),
     operator: z.enum(NUMBER_COMPARE_OPERATORS),
     value: z.number().describe("the number to compare against"),
+    format: z
+      .enum(ASSET_FORMATS)
+      .optional()
+      .describe(
+        "fileSize / duration / pageCount only: scope to one asset format",
+      ),
   })
   .describe("scalar comparison on a numeric field")
 
@@ -252,6 +275,12 @@ const numberRangeCondition = z
     value: z
       .tuple([z.number(), z.number()])
       .describe("inclusive [min, max] range"),
+    format: z
+      .enum(ASSET_FORMATS)
+      .optional()
+      .describe(
+        "fileSize / duration / pageCount only: scope to one asset format",
+      ),
   })
   .describe("range (between) on a numeric field")
 
@@ -453,6 +482,9 @@ export type ShelfFilterCondition = {
   // only meaningful when field is "creators": scopes the match to a single marc
   // relator role (aut / nrt / trl). absent = any role.
   role?: string
+  // only meaningful for fileSize / duration / pageCount: scopes the numeric to
+  // one asset format. absent = the cross-format fallback.
+  format?: AssetFormat
 }
 
 export type ShelfFilterAnd = {
@@ -542,31 +574,127 @@ export const OPERATOR_LABELS: Record<ShelfFilterOperator, string> = {
   isNotEmpty: "is not empty",
 }
 
-export const FIELD_LABELS: Record<ShelfFilterField, string> = {
-  title: "Title",
-  subtitle: "Subtitle",
-  description: "Description",
-  language: "Language",
-  publicationDate: "Publication Date",
-  userRating: "My Rating",
-  duration: "Duration",
-  pageCount: "Page Count",
-  fileSize: "File Size",
-  status: "Reading Status",
-  tags: "Tags",
-  collections: "Collections",
-  series: "Series",
-  creators: "Authors / Creators",
-  mediaType: "Format",
-  createdAt: "Date Added",
-  updatedAt: "Date Updated",
-  alignmentGrade: "Alignment Grade",
-  alignmentScore: "Alignment Score",
-  alignmentMissingSentences: "Missing Sentences",
-  alignmentMutedChapters: "Muted Chapters",
-  review: "My Review",
-  ratingDimension: "Rating Dimension",
-  search: "Search (any field)",
+// ---------------------------------------------------------------------------
+// field registry
+//
+// one entry per field describing everything the ui needs to know about it:
+// which value control to render, whether it can be sorted, whether it shows in
+// the quick "Add filter" menu, where to fetch its options (facets), display
+// hints, an optional per-condition discriminator (role / format), and the
+// future search-query token. labels are NOT here - they live in the i18n
+// `Fields.label` / `Fields.short` namespaces keyed by `labelKey` - so copy stays
+// in one place. the per-field operator set still comes from
+// getOperatorsForField, and the value type from getFieldType; this registry is
+// the single source for the *ui + sort + serialization* metadata that was
+// previously scattered across BookFilters, use-book-filters, sort.ts and the
+// editor.
+// ---------------------------------------------------------------------------
+
+export type FieldControl =
+  | "text"
+  | "number-range"
+  | "date-range"
+  | "duration-range"
+  | "facet"
+  | "format-enum"
+
+export type FacetSource =
+  | "tags"
+  | "collections"
+  | "series"
+  | "creators"
+  | "statuses"
+
+export type FieldScale = {
+  min?: number
+  max?: number
+  step?: number
+  unit?: "bytes" | "seconds" | "count" | "ratio" | "year"
+}
+
+export type FieldDef = {
+  control: FieldControl
+  // member of the sort menu (the registry is the source of truth for the
+  // sortable set; seriesPosition is the one sort that is not a filter field and
+  // is added in sort.ts).
+  sortable: boolean
+  // member of the quick "Add filter" menu (the advanced editor offers all).
+  quick: boolean
+  // facet fields: the list endpoint the generic control fetches options from.
+  source?: FacetSource
+  // numeric / date display hints (slider bounds, year vs full date, unit).
+  scale?: FieldScale
+  // an extra per-condition discriminator the control must collect: creators ->
+  // role, asset numerics -> format.
+  discriminator?: "role" | "format"
+  // the future search-query token (e.g. tag:foo). carried now so the parser /
+  // url codec in a later pass reads it from one place.
+  token: string
+  // key under the i18n `Fields.label` / `Fields.short` namespaces.
+  labelKey: string
+}
+
+export const FIELD_REGISTRY: Record<ShelfFilterField, FieldDef> = {
+  // -- text -----------------------------------------------------------------
+  title: { control: "text", sortable: true, quick: false, token: "title", labelKey: "title" },
+  subtitle: { control: "text", sortable: false, quick: false, token: "subtitle", labelKey: "subtitle" },
+  description: { control: "text", sortable: false, quick: false, token: "description", labelKey: "description" },
+  language: { control: "text", sortable: true, quick: false, token: "language", labelKey: "language" },
+  review: { control: "text", sortable: false, quick: false, token: "review", labelKey: "review" },
+  search: { control: "text", sortable: false, quick: false, token: "text", labelKey: "search" },
+  alignmentGrade: { control: "text", sortable: true, quick: false, token: "grade", labelKey: "alignmentGrade" },
+
+  // -- facets / enum --------------------------------------------------------
+  status: { control: "facet", sortable: false, quick: true, source: "statuses", token: "status", labelKey: "status" },
+  tags: { control: "facet", sortable: false, quick: true, source: "tags", token: "tag", labelKey: "tags" },
+  collections: { control: "facet", sortable: false, quick: true, source: "collections", token: "collection", labelKey: "collections" },
+  series: { control: "facet", sortable: false, quick: true, source: "series", token: "series", labelKey: "series" },
+  creators: { control: "facet", sortable: false, quick: true, source: "creators", discriminator: "role", token: "author", labelKey: "creators" },
+  mediaType: { control: "format-enum", sortable: false, quick: true, token: "format", labelKey: "mediaType" },
+
+  // -- numeric --------------------------------------------------------------
+  userRating: { control: "number-range", sortable: true, quick: true, scale: { min: 0, max: 5, step: 1, unit: "count" }, token: "rating", labelKey: "userRating" },
+  ratingDimension: { control: "number-range", sortable: false, quick: false, scale: { min: 0, max: 5, step: 1, unit: "count" }, token: "axis", labelKey: "ratingDimension" },
+  pageCount: { control: "number-range", sortable: true, quick: true, discriminator: "format", scale: { min: 0, unit: "count" }, token: "pages", labelKey: "pageCount" },
+  duration: { control: "duration-range", sortable: true, quick: true, discriminator: "format", scale: { min: 0, unit: "seconds" }, token: "duration", labelKey: "duration" },
+  fileSize: { control: "number-range", sortable: true, quick: true, discriminator: "format", scale: { min: 0, unit: "bytes" }, token: "size", labelKey: "fileSize" },
+  readingPosition: { control: "number-range", sortable: false, quick: true, scale: { min: 0, max: 1, step: 0.01, unit: "ratio" }, token: "progress", labelKey: "readingPosition" },
+  alignmentScore: { control: "number-range", sortable: true, quick: false, scale: { min: 0, max: 100, unit: "count" }, token: "score", labelKey: "alignmentScore" },
+  alignmentMissingSentences: { control: "number-range", sortable: true, quick: false, scale: { min: 0, unit: "count" }, token: "missing", labelKey: "alignmentMissingSentences" },
+  alignmentMutedChapters: { control: "number-range", sortable: true, quick: false, scale: { min: 0, unit: "count" }, token: "muted", labelKey: "alignmentMutedChapters" },
+
+  // -- dates ----------------------------------------------------------------
+  publicationDate: { control: "date-range", sortable: true, quick: true, scale: { unit: "year" }, token: "published", labelKey: "publicationDate" },
+  createdAt: { control: "date-range", sortable: true, quick: true, token: "added", labelKey: "createdAt" },
+  updatedAt: { control: "date-range", sortable: true, quick: false, token: "updated", labelKey: "updatedAt" },
+  alignedAt: { control: "date-range", sortable: true, quick: true, token: "aligned", labelKey: "alignedAt" },
+  lastRead: { control: "date-range", sortable: true, quick: true, token: "read", labelKey: "lastRead" },
+}
+
+export function getFieldDef(field: ShelfFilterField): FieldDef {
+  return FIELD_REGISTRY[field]
+}
+
+// the filter fields offered in the quick "Add filter" menu, in registry order.
+export function quickFilterFields(): ShelfFilterField[] {
+  return (Object.keys(FIELD_REGISTRY) as ShelfFilterField[]).filter(
+    (f) => FIELD_REGISTRY[f].quick,
+  )
+}
+
+// the facet fields (relation/uuid lists fetched from a list endpoint).
+export function facetFields(): ShelfFilterField[] {
+  return (Object.keys(FIELD_REGISTRY) as ShelfFilterField[]).filter(
+    (f) => FIELD_REGISTRY[f].control === "facet",
+  )
+}
+
+// the sortable filter fields, in registry order. seriesPosition (a context-only
+// sort that is not a filter field) is appended in sort.ts.
+export function registrySortableFields(): ShelfFilterField[] {
+  return (Object.keys(FIELD_REGISTRY) as ShelfFilterField[]).filter(
+    (f) => FIELD_REGISTRY[f].sortable,
+  )
 }
 
 export function getFieldType(

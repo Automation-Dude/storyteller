@@ -8,6 +8,7 @@ import { Field, FieldError } from "@v3/_/components/ui/field"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
+import { CollapsibleSection } from "./CollapsibleSection"
 
 const COLLAPSED_HEIGHT = 96
 
@@ -110,9 +111,11 @@ export function DescriptionSection({ className }: { className?: string }) {
   const inlineMode = editingField === "description" && !isEditing
 
   return (
-    <section className={className}>
-      <h2 className="section-label mb-3">{tLabels("description")}</h2>
-
+    <CollapsibleSection
+      title={tLabels("description")}
+      name={"description"}
+      className={className}
+    >
       {active ? (
         <Controller
           name="description"
@@ -181,6 +184,6 @@ export function DescriptionSection({ className }: { className?: string }) {
           {t("noDescriptionAvailable")}
         </p>
       )}
-    </section>
+    </CollapsibleSection>
   )
 }

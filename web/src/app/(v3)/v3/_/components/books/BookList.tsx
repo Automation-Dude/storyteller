@@ -172,6 +172,24 @@ export function ColumnValue({
         : "\u2014"
     case "title":
       return book.title
+    case "alignedAt":
+      return book.alignedAt
+        ? dateTime(new Date(book.alignedAt), { dateStyle: "medium" })
+        : "\u2014"
+    case "lastRead":
+      return book.position?.updatedAt ? (
+        <time
+          dateTime={book.position.updatedAt}
+          title={dateTime(new Date(book.position.updatedAt), DEFAULT_DATE_OPTIONS)}
+        >
+          {formatRelativeTime(book.position.updatedAt, {
+            now: new Date(),
+            style: "narrow",
+          })}
+        </time>
+      ) : (
+        "\u2014"
+      )
     case "seriesPosition": {
       const s = book.series[0]
       if (!s || s.position == null) return "\u2014"
@@ -193,6 +211,8 @@ const columnWidths: Record<DisplayField, number> = {
   publicationDate: 50,
   createdAt: 80,
   updatedAt: 100,
+  alignedAt: 80,
+  lastRead: 100,
   seriesPosition: 30,
   title: 100,
   userRating: 50,

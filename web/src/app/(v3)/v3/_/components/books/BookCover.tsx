@@ -59,14 +59,14 @@ export function BookCover({
     width: scaledWidth,
     height: scaledHeight,
     audio: false,
-    updatedAt: book.ebook?.updatedAt ?? book.updatedAt,
+    updatedAt: book.updatedAt,
   })
 
   const audiobookCoverUrl = getCoverUrl(book.uuid, {
     width: scaledAudioSize,
     height: scaledAudioSize,
     audio: true,
-    updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
+    updatedAt: book.updatedAt,
   })
 
   const imgClassName = cn(

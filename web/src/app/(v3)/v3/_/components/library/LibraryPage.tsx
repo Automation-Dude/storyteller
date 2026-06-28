@@ -49,7 +49,6 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
 import { PageContent } from "@v3/_/components/ui/page-layout"
-import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
 import { useItemSelection } from "@v3/_/hooks/use-item-selection"
@@ -70,7 +69,7 @@ import {
   type SortContext,
   type SortDirection,
   type SortField,
-  deriveDisplayField,
+  deriveDisplayFields,
 } from "@/sort"
 import {
   type ListBooksQueryArg,
@@ -195,34 +194,43 @@ export function LibraryPage({
 
   const isSeriesSection = section.entityType === "series"
 
+  // the selected facet becomes the locked seed: a filter condition for most
+  // sections, or a native series / collection sort-context arg (so getBooks can
+  // resolve series-position ordering and reuse its membership filters).
+  const seedArg = useMemo<ListBooksQueryArg>(
+    () => (selectedItem ? sectionSeedQueryArg(section, selectedItem) : {}),
+    [section, selectedItem],
+  )
+
+  // series pages default to ordering by position (overridable in the sort menu).
+  const controller = useBookFilters({
+    seed: seedArg.filter ?? null,
+    seriesContext: seedArg.series as UUID | undefined,
+    collectionContext: seedArg.collection as UUID | undefined,
+    ...(isSeriesSection
+      ? {
+          defaultSortField: "seriesPosition" as const,
+          defaultSortDirection: "asc" as const,
+        }
+      : {}),
+  })
+
   const {
-    state: filterState,
-    onChange: onFilterChange,
     queryArg,
+    sort,
+    setSort,
+    displayOverrides,
     isSearching,
     deferredSearch,
     activeFilterCount,
-    clearFilters,
-    filterPopoverOpen,
-    setFilterPopoverOpen,
-    displayOverride,
-    onDisplayOverrideChange,
-    // series pages default to ordering by position (overridable in the sort menu)
-  } = useBookFilters(
-    isSeriesSection
-      ? {
-          defaultSortField: "seriesPosition",
-          defaultSortDirection: "asc" as const,
-        }
-      : {},
-  )
+    clearAll,
+  } = controller
 
   const handleColumnSort = useCallback(
     (field: SortField, direction: SortDirection) => {
-      onFilterChange("sortField", field)
-      onFilterChange("sortDirection", direction)
+      setSort(field, direction)
     },
-    [onFilterChange],
+    [setSort],
   )
 
   // on a series page the books carry a position within the selected series;
@@ -234,10 +242,11 @@ export function LibraryPage({
     () => ({ seriesUuid: seriesContextUuid }),
     [seriesContextUuid],
   )
-  const displayField = deriveDisplayField(
-    filterState.sortField,
+
+  const displayFields = deriveDisplayFields(
+    sort.field,
     displayContext,
-    displayOverride,
+    displayOverrides,
   )
 
   // the server returns the facet list; the client only relabels the synthetic
@@ -305,16 +314,10 @@ export function LibraryPage({
     setSelectedItem,
   ])
 
-  // the grid is the same server-filtered, paginated query the books page uses,
-  // seeded with the selected facet (the locked seed) ANDed under the quick
-  // filters / search / sort.
-  const gridArg = useMemo<ListBooksQueryArg>(
-    () => ({
-      ...queryArg,
-      ...(selectedItem ? sectionSeedQueryArg(section, selectedItem) : {}),
-    }),
-    [queryArg, section, selectedItem],
-  )
+  // the grid is the same server-filtered, paginated query the books page uses.
+  // the controller already folds the selected facet (locked seed) + native
+  // series/collection context into queryArg, ANDed under the quick filters.
+  const gridArg = queryArg
 
   const {
     data: gridData,
@@ -359,14 +362,22 @@ export function LibraryPage({
 
   // warm the grid query for a facet on hover so clicking it feels instant.
   // subscribe:false caches the first page without leaving a live subscription.
-  const prefetchDepsRef = useRef({ queryArg, section })
-  prefetchDepsRef.current = { queryArg, section }
+  // rebuilt from sort + search (not the current queryArg) so hovering a
+  // different facet swaps in that facet's seed; warms the common no-extra-filter
+  // case, which is enough to make the click feel instant.
+  const prefetchDepsRef = useRef({ sort, deferredSearch, section })
+  prefetchDepsRef.current = { sort, deferredSearch, section }
   const handleHoverItem = useCallback(
     (key: string) => {
-      const { queryArg: qa, section: sec } = prefetchDepsRef.current
+      const { sort: s, deferredSearch: ds, section: sec } = prefetchDepsRef.current
       void dispatch(
         api.endpoints.listInfiniteBooks.initiate(
-          { ...qa, ...sectionSeedQueryArg(sec, key) },
+          {
+            orderBy: s.field,
+            orderDirection: s.direction,
+            ...(ds ? { search: ds } : {}),
+            ...sectionSeedQueryArg(sec, key),
+          },
           { subscribe: false },
         ),
       )
@@ -503,14 +514,8 @@ export function LibraryPage({
     <>
       <BookFilters
         className="pt-1"
-        state={filterState}
-        onChange={onFilterChange}
-        filterPopoverOpen={filterPopoverOpen}
-        setFilterPopoverOpen={setFilterPopoverOpen}
-        hideCollectionFilter
-        hideSeriesFilter
-        displayOverride={displayOverride}
-        onDisplayOverrideChange={onDisplayOverrideChange}
+        controller={controller}
+        seedLabel={selectedItemName}
         hasSeriesContext={!!seriesContextUuid}
         bookView={bookView}
         onBookViewChange={handleBookViewChange}
@@ -532,17 +537,17 @@ export function LibraryPage({
                     ? "Try adjusting your search or filters"
                     : undefined
                 }
-                onClearFilters={clearFilters}
+                onClearFilters={clearAll}
                 hasActiveFilters={activeFilterCount > 0}
                 selectedBookUuid={selectedBookUuid}
                 onBookClick={handleBookClick}
                 onColumnClick={handleColumnClick}
-                displayField={displayField}
+                displayFields={displayFields}
                 displayContext={displayContext}
                 visibleColumns={listVisibleColumns}
                 onVisibleColumnsChange={handleListColumnsChange}
-                sortField={filterState.sortField}
-                sortDirection={filterState.sortDirection}
+                sortField={sort.field}
+                sortDirection={sort.direction}
                 onSortChange={handleColumnSort}
               />
             ) : (
@@ -558,11 +563,11 @@ export function LibraryPage({
                     ? "Try adjusting your search or filters"
                     : undefined
                 }
-                onClearFilters={clearFilters}
+                onClearFilters={clearAll}
                 hasActiveFilters={activeFilterCount > 0}
                 selectedBookUuid={selectedBookUuid}
                 onBookClick={handleBookClick}
-                displayField={displayField}
+                displayFields={displayFields}
                 displayContext={displayContext}
               />
             )}
@@ -890,7 +895,7 @@ function SidebarPanel({
 
   return (
     <div className="relative flex h-full flex-col">
-      <ScrollArea className="flex h-full flex-col">
+      <div className="scroll-y flex h-full flex-col">
         <div className="bg-background sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-base">{title}</h2>
@@ -989,7 +994,7 @@ function SidebarPanel({
         </DropdownMenu>
 
         <ConfirmDialog {...rowDeleteAction.dialogProps} />
-      </ScrollArea>
+      </div>
 
       {entityType && itemSelection && (
         <SidebarEntityActions

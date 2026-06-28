@@ -516,9 +516,6 @@ export const api = createApi({
         if (queryArg.search) params.set("search", queryArg.search)
         if (queryArg.collection) params.set("collection", queryArg.collection)
         if (queryArg.series) params.set("series", queryArg.series)
-        if (queryArg.mediaFilter && queryArg.mediaFilter !== "all")
-          params.set("mediaFilter", queryArg.mediaFilter)
-        if (queryArg.statusFilter) params.set("status", queryArg.statusFilter)
         if (queryArg.filter)
           params.set("filter", JSON.stringify(queryArg.filter))
         return `/books?${params.toString()}`
@@ -1717,6 +1714,11 @@ export const api = createApi({
         offset?: number
         orderBy?: ShelfOrderBy
         orderDirection?: "asc" | "desc"
+        // ad-hoc quick/advanced filter + search applied on top of the shelf's
+        // own books; sortField uses the richer books-page sort vocabulary.
+        sortField?: SortField
+        search?: string
+        filter?: ShelfFilter
       }
     >({
       query: ({ shelfUuid, ...params }) => {
@@ -1727,9 +1729,14 @@ export const api = createApi({
         if (params.orderBy) searchParams.set("orderBy", params.orderBy)
         if (params.orderDirection)
           searchParams.set("orderDirection", params.orderDirection)
+        if (params.sortField) searchParams.set("sortField", params.sortField)
+        if (params.search) searchParams.set("search", params.search)
+        if (params.filter)
+          searchParams.set("filter", JSON.stringify(params.filter))
 
         return `/shelves/${shelfUuid}/books?${searchParams.toString()}`
       },
+      providesTags: ["Books"],
     }),
 
     previewShelfFilter: build.mutation<
@@ -2029,17 +2036,15 @@ export function getCoverUrl(
   return `/api/v2/books/${bookUuid}/cover?${searchParams.toString()}&v=${new Date(updatedAt).getTime()}`
 }
 
-export type MediaFilter = "all" | "ebook" | "audiobook" | "synced"
-
 export type ListBooksQueryArg = {
   limit?: number | undefined
   orderBy?: SortField | undefined
   orderDirection?: "asc" | "desc" | undefined
   search?: string | undefined
+  // native membership + sort-context args (series-position ordering). all other
+  // filtering goes through the `filter` tree below.
   collection?: string | undefined
   series?: string | undefined
-  mediaFilter?: MediaFilter | undefined
-  statusFilter?: string | undefined
   // ad-hoc filter tree (same shape as shelves), serialized as json in the query
   filter?: ShelfFilter | undefined
 }

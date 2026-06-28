@@ -7,6 +7,7 @@ import {
 
 import { type Role } from "@/components/books/edit/marcRelators"
 import {
+  type AssetFormat,
   type ShelfFilter,
   type ShelfFilterCondition,
   type ShelfFilterField,
@@ -230,7 +231,7 @@ function buildConditionExpression(
   condition: ShelfFilterCondition,
   userId?: UUID,
 ): FilterExpression {
-  const { field, operator, value, role } = condition
+  const { field, operator, value, role, format } = condition
 
   if (field === "review") {
     return buildReviewComparison(eb, operator, value, userId)
@@ -263,7 +264,15 @@ function buildConditionExpression(
     return eb.lit(true)
   }
 
-  return buildComparisonExpression(eb, field, operator, value, userId, role)
+  return buildComparisonExpression(
+    eb,
+    field,
+    operator,
+    value,
+    userId,
+    role,
+    format,
+  )
 }
 
 function buildIsEmptyExpression(
@@ -314,6 +323,44 @@ function buildIsEmptyExpression(
 
     case "alignmentMutedChapters":
       return eb("book.alignmentMutedChapters", "is", null)
+
+    case "alignedAt":
+      return eb("book.alignedAt", "is", null)
+
+    case "lastRead":
+      // no position row for this user = never read
+      return eb.not(
+        eb.exists(
+          eb
+            .selectFrom("position")
+            .select(sql.lit(1).as("one"))
+            .whereRef("position.bookUuid", "=", "book.uuid")
+            .$if(!!userId, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              qb.where("position.userId", "=", userId!),
+            ),
+        ),
+      )
+
+    case "readingPosition":
+      // no position row, or one without a recorded total progression
+      return eb.not(
+        eb.exists(
+          eb
+            .selectFrom("position")
+            .select(sql.lit(1).as("one"))
+            .whereRef("position.bookUuid", "=", "book.uuid")
+            .$if(!!userId, (qb) =>
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              qb.where("position.userId", "=", userId!),
+            )
+            .where(
+              sql`json_extract(${sql.ref("position.locator")}, '$.locations.totalProgression')`,
+              "is not",
+              null,
+            ),
+        ),
+      )
 
     case "userRating":
       return eb.not(
@@ -502,11 +549,20 @@ function buildComparisonExpression(
   value: ShelfFilterValue,
   userId?: UUID,
   role?: string,
+  format?: AssetFormat,
 ): FilterExpression {
   const fieldType = getFieldType(field)
 
   if (field === "userRating") {
     return buildUserRatingComparison(eb, operator, value, userId)
+  }
+
+  if (field === "lastRead") {
+    return buildLastReadComparison(eb, operator, value, userId)
+  }
+
+  if (field === "readingPosition") {
+    return buildReadingPositionComparison(eb, operator, value, userId)
   }
 
   if (field === "alignmentScore") {
@@ -540,7 +596,7 @@ function buildComparisonExpression(
     field === "fileSize" || field === "duration" || field === "pageCount"
 
   if (isAssetNumeric) {
-    return buildAssetNumericComparison(eb, field, operator, value)
+    return buildAssetNumericComparison(eb, field, operator, value, format)
   }
 
   switch (fieldType) {
@@ -738,6 +794,91 @@ function buildUserRatingComparison(
   }
 }
 
+// last-read date lives on the per-user position row (position.updatedAt, an iso
+// datetime); each operator becomes an exists against the user's row, mirroring
+// the userRating pattern.
+function buildLastReadComparison(
+  eb: EB,
+  operator: ShelfFilterOperator,
+  value: ShelfFilterValue,
+  userId?: UUID,
+): FilterExpression {
+  const base = eb
+    .selectFrom("position")
+    .select(sql.lit(1).as("one"))
+    .whereRef("position.bookUuid", "=", "book.uuid")
+    .$if(!!userId, (qb) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      qb.where("position.userId", "=", userId!),
+    )
+
+  const col = "position.updatedAt" as const
+
+  switch (operator) {
+    case "is":
+      return eb.exists(base.where(col, "=", String(value)))
+    case "isNot":
+      return eb.not(eb.exists(base.where(col, "=", String(value))))
+    case "before":
+      return eb.exists(base.where(col, "<", String(value)))
+    case "after":
+      return eb.exists(base.where(col, ">", String(value)))
+    case "between":
+      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
+      return eb.exists(
+        base
+          .where(col, ">=", String(value[0]))
+          .where(col, "<=", String(value[1])),
+      )
+    default:
+      return eb.lit(true)
+  }
+}
+
+// reading progress is the locator's total progression (0-1), stored as json on
+// the per-user position row. extract it with json_extract (a literal path, not
+// interpolated sql) and compare numerically.
+function buildReadingPositionComparison(
+  eb: EB,
+  operator: ShelfFilterOperator,
+  value: ShelfFilterValue,
+  userId?: UUID,
+): FilterExpression {
+  const progression = sql<number>`json_extract(${sql.ref("position.locator")}, '$.locations.totalProgression')`
+  const base = eb
+    .selectFrom("position")
+    .select(sql.lit(1).as("one"))
+    .whereRef("position.bookUuid", "=", "book.uuid")
+    .$if(!!userId, (qb) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      qb.where("position.userId", "=", userId!),
+    )
+
+  switch (operator) {
+    case "is":
+      return eb.exists(base.where(progression, "=", Number(value)))
+    case "isNot":
+      return eb.not(eb.exists(base.where(progression, "=", Number(value))))
+    case "greaterThan":
+      return eb.exists(base.where(progression, ">", Number(value)))
+    case "lessThan":
+      return eb.exists(base.where(progression, "<", Number(value)))
+    case "greaterOrEqual":
+      return eb.exists(base.where(progression, ">=", Number(value)))
+    case "lessOrEqual":
+      return eb.exists(base.where(progression, "<=", Number(value)))
+    case "between":
+      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
+      return eb.exists(
+        base
+          .where(progression, ">=", Number(value[0]))
+          .where(progression, "<=", Number(value[1])),
+      )
+    default:
+      return eb.lit(true)
+  }
+}
+
 function buildReviewComparison(
   eb: EB,
   operator: ShelfFilterOperator,
@@ -895,6 +1036,12 @@ export function buildSortExpression(
       return sql`book.updated_at`
     case "publicationDate":
       return sql`book.publication_date`
+    case "alignedAt":
+      return sql`book.aligned_at`
+    case "lastRead":
+      return ctx?.userId
+        ? sql`(select updated_at from position where book_uuid = book.uuid and user_id = ${ctx.userId} limit 1)`
+        : sql`(select updated_at from position where book_uuid = book.uuid limit 1)`
     case "language":
       return sql`book.language`
     case "alignmentScore":
@@ -964,13 +1111,46 @@ function assetNumericExpr(
   }
 }
 
+// a single asset format's numeric column, when the condition scopes to one
+// format (e.g. "ebook file size"). combinations that don't exist (an audiobook
+// has no page count) resolve to null so the comparison simply matches nothing.
+function formatScopedNumericExpr(
+  field: "fileSize" | "duration" | "pageCount",
+  format: AssetFormat,
+): ReturnType<typeof sql<number>> {
+  switch (format) {
+    case "ebook":
+      if (field === "pageCount")
+        return sql<number>`(select e.page_count from ebook e where e.book_uuid = book.uuid limit 1)`
+      if (field === "fileSize")
+        return sql<number>`(select e.file_size from ebook e where e.book_uuid = book.uuid limit 1)`
+      return sql<number>`null`
+    case "audiobook":
+      if (field === "duration")
+        return sql<number>`(select a.duration from audiobook a where a.book_uuid = book.uuid limit 1)`
+      if (field === "fileSize")
+        return sql<number>`(select a.file_size from audiobook a where a.book_uuid = book.uuid limit 1)`
+      return sql<number>`null`
+    case "readaloud":
+      if (field === "pageCount")
+        return sql<number>`(select r.page_count from readaloud r where r.book_uuid = book.uuid limit 1)`
+      if (field === "duration")
+        return sql<number>`(select r.duration from readaloud r where r.book_uuid = book.uuid limit 1)`
+      return sql<number>`(select r.file_size from readaloud r where r.book_uuid = book.uuid limit 1)`
+  }
+}
+
 function buildAssetNumericComparison(
   eb: EB,
   field: "fileSize" | "duration" | "pageCount",
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
+  format?: AssetFormat,
 ): FilterExpression {
-  return buildNumericExprComparison(eb, assetNumericExpr(field), operator, value)
+  const expr = format
+    ? formatScopedNumericExpr(field, format)
+    : assetNumericExpr(field)
+  return buildNumericExprComparison(eb, expr, operator, value)
 }
 
 // numeric comparison against an arbitrary scalar expression (an asset coalesce,

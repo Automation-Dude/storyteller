@@ -5,9 +5,13 @@
 // seriesPosition.
 
 import { type BookWithRelations } from "@/database/books"
-import { FIELD_LABELS } from "@/shelves"
+import { registrySortableFields } from "@/shelves"
 import { type UUID } from "@/uuid"
 
+// kept as an explicit tuple (not derived) so SortField stays a narrow literal
+// union the sort switches below + buildSortExpression can exhaustively cover.
+// the field registry in shelves.ts is the conceptual source of truth; the
+// assertSortFieldsMatchRegistry guard (run in tests) keeps the two in sync.
 export const SORTABLE_FIELDS = [
   "title",
   "createdAt",
@@ -18,12 +22,31 @@ export const SORTABLE_FIELDS = [
   "duration",
   "fileSize",
   "language",
+  "alignedAt",
+  "lastRead",
   "alignmentScore",
   "alignmentGrade",
   "alignmentMissingSentences",
   "alignmentMutedChapters",
   "seriesPosition",
 ] as const
+
+// fails fast if a field's `sortable` flag in FIELD_REGISTRY drifts from the
+// tuple above (seriesPosition is the one allowed extra - it is not a filter
+// field). called from the unit tests.
+export function assertSortFieldsMatchRegistry(): void {
+  const fromTuple = new Set<string>(
+    SORTABLE_FIELDS.filter((f) => f !== "seriesPosition"),
+  )
+  const fromRegistry = new Set<string>(registrySortableFields())
+  const missing = [...fromRegistry].filter((f) => !fromTuple.has(f))
+  const extra = [...fromTuple].filter((f) => !fromRegistry.has(f))
+  if (missing.length || extra.length) {
+    throw new Error(
+      `SORTABLE_FIELDS out of sync with FIELD_REGISTRY: missing [${missing.join(", ")}] extra [${extra.join(", ")}]`,
+    )
+  }
+}
 
 // best-to-worst rank so a descending sort surfaces the strongest alignments
 // first, consistent with score. mirrors the analyzer's grade order.
@@ -48,23 +71,6 @@ export const GENERAL_SORT_FIELDS = SORTABLE_FIELDS.filter(
   (f) => f !== "seriesPosition",
 )
 
-export const SORT_FIELD_LABELS: Record<SortField, string> = {
-  title: FIELD_LABELS.title,
-  createdAt: FIELD_LABELS.createdAt,
-  updatedAt: FIELD_LABELS.updatedAt,
-  publicationDate: FIELD_LABELS.publicationDate,
-  userRating: FIELD_LABELS.userRating,
-  pageCount: FIELD_LABELS.pageCount,
-  duration: FIELD_LABELS.duration,
-  fileSize: FIELD_LABELS.fileSize,
-  language: FIELD_LABELS.language,
-  alignmentScore: FIELD_LABELS.alignmentScore,
-  alignmentGrade: FIELD_LABELS.alignmentGrade,
-  alignmentMissingSentences: FIELD_LABELS.alignmentMissingSentences,
-  alignmentMutedChapters: FIELD_LABELS.alignmentMutedChapters,
-  seriesPosition: "Series Position",
-}
-
 export type SortContext = { seriesUuid?: UUID | null }
 
 // the card's secondary line can show any sortable field, or fall back to the
@@ -72,11 +78,6 @@ export type SortContext = { seriesUuid?: UUID | null }
 export type DisplayField = SortField | "authors"
 
 export const DISPLAY_FIELDS = [...SORTABLE_FIELDS, "authors"] as const
-
-export const DISPLAY_FIELD_LABELS: Record<DisplayField, string> = {
-  ...SORT_FIELD_LABELS,
-  authors: "Author",
-}
 
 // fields whose value is already the title line or carries no useful secondary
 // signal -> keep showing authors rather than echoing the sort.
@@ -90,17 +91,17 @@ const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
 // what each card should show in its secondary line: an explicit override wins,
 // otherwise a series context shows position, a meaningful sort echoes itself,
 // and everything else falls back to authors.
-export function deriveDisplayField(
+export function deriveDisplayFields(
   sortField: SortField,
   ctx?: SortContext,
-  override?: DisplayField | null,
-): DisplayField {
-  if (override) return override
+  overrides?: DisplayField[] | null,
+): DisplayField[] {
+  if (overrides) return overrides
   // an explicit, meaningful sort echoes itself (show what you sorted by)
-  if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return sortField
+  if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return [sortField]
   // otherwise a series context still surfaces position over the authors
-  if (ctx?.seriesUuid) return "seriesPosition"
-  return "authors"
+  if (ctx?.seriesUuid) return ["seriesPosition"]
+  return ["authors"]
 }
 
 function seriesPositionOf(
@@ -140,11 +141,17 @@ function sortValue(
     case "alignmentScore":
       return book.alignmentScore
     case "alignmentGrade":
-      return book.alignmentGrade ? GRADE_RANK[book.alignmentGrade] ?? null : null
+      return book.alignmentGrade
+        ? GRADE_RANK[book.alignmentGrade] ?? null
+        : null
     case "alignmentMissingSentences":
       return book.alignmentMissingSentences
     case "alignmentMutedChapters":
       return book.alignmentMutedChapters
+    case "alignedAt":
+      return book.alignedAt
+    case "lastRead":
+      return book.position?.updatedAt ?? null
     case "seriesPosition":
       return seriesPositionOf(book, ctx)
   }

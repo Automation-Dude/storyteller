@@ -1,481 +1,370 @@
 import {
+  IconAdjustmentsHorizontal,
   IconArrowDown,
   IconArrowUp,
-  IconBook,
+  IconBookmarkPlus,
   IconChevronDown,
-  IconFilter,
-  IconHeadphones,
-  IconX,
+  IconColumns,
+  IconPlus,
 } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
 
-import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { ButtonGroup } from "@v3/_/components/ui/button-group"
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@v3/_/components/ui/popover"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@v3/_/components/ui/select"
-import { Separator } from "@v3/_/components/ui/separator"
+import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
+import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import {
-  DISPLAY_FIELD_LABELS,
-  type DisplayField,
-  GENERAL_SORT_FIELDS,
-  SORT_FIELD_LABELS,
-  type SortDirection,
-  type SortField,
-} from "@/sort"
-import {
-  type MediaFilter,
-  useListCollectionsQuery,
-  useListSeriesQuery,
-  useListStatusesQuery,
-} from "@/store/api"
-
+  type ShelfFilterField,
+  getFieldDef,
+  quickFilterFields,
+} from "@/shelves"
+import { DISPLAY_FIELDS, GENERAL_SORT_FIELDS, type SortField } from "@/sort"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
 
+import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
 import { SearchInput } from "./SearchInput"
 import { ViewSelector } from "./ViewSelector"
+import { FieldIcon } from "./field-icons"
 
-export type { SortDirection, SortField }
-
-export type BookFiltersState = {
-  searchInput: string
-  sortField: SortField
-  sortDirection: SortDirection
-  mediaFilter: MediaFilter
-  collectionFilter: string | null
-  seriesFilter: string | null
-  statusFilter: string | null
-}
+export type { SortDirection, SortField } from "@/sort"
 
 type BookFiltersProps = {
-  state: BookFiltersState
-  onChange: <K extends keyof BookFiltersState>(
-    key: K,
-    value: BookFiltersState[K],
-  ) => void
-  filterPopoverOpen: boolean
-  setFilterPopoverOpen: (open: boolean) => void
-  hideCollectionFilter?: boolean
-  hideSeriesFilter?: boolean
-  showSaveSearch?: boolean
-  className?: string
-  displayOverride?: DisplayField | null
-  onDisplayOverrideChange?: (value: DisplayField | null) => void
+  controller: BookFiltersController
   hasSeriesContext?: boolean
+  // a non-removable chip for a page-context seed (series / collection / shelf).
+  seedLabel?: string
+  className?: string
   bookView?: BookView
   onBookViewChange?: (view: BookView) => void
+  // the advanced builder lives in the page; this just toggles its visibility.
+  advancedOpen?: boolean
+  onToggleAdvanced?: () => void
+  onSaveAsShelf?: () => void
 }
 
-// the sentinel for "automatic" in the Show select (Select values are strings)
-const DISPLAY_AUTO = "__auto__"
-
-// a compact, curated subset for the Show override (not every sortable field)
-const DISPLAY_OVERRIDE_FIELDS: DisplayField[] = [
-  "authors",
-  "userRating",
-  "pageCount",
-  "duration",
-  "publicationDate",
-]
-
 export function BookFilters({
-  state,
-  onChange,
-  filterPopoverOpen,
-  setFilterPopoverOpen,
-  hideCollectionFilter = false,
-  hideSeriesFilter = false,
-  className,
-  displayOverride,
-  onDisplayOverrideChange,
+  controller,
   hasSeriesContext = false,
+  seedLabel,
+  className,
   bookView,
   onBookViewChange,
+  advancedOpen = false,
+  onToggleAdvanced,
+  onSaveAsShelf,
 }: BookFiltersProps) {
   const t = useTranslation("BooksPage")
-  const { data: collections } = useListCollectionsQuery()
-  const { data: seriesList } = useListSeriesQuery()
-  const { data: statuses } = useListStatusesQuery()
+  const tLabel = useTranslation("Fields.label")
 
-  const sortFieldOptions: { value: SortField; label: string }[] = useMemo(() => {
-    // series position is only offered (and defaulted to) inside a series context
+  const {
+    search,
+    setSearch,
+    sort,
+    setSort,
+    displayOverrides,
+    setDisplayOverrides,
+    isAdvanced,
+    activeFields,
+    conditionsForField,
+    setConditionsForField,
+    removeField,
+  } = controller
+
+  // fields whose chips are visible: those with active conditions. picking a
+  // field from the fan-out menu writes a condition directly, so a chip appears
+  // on its own - no separate "pending" state needed.
+  const shownFields = activeFields
+
+  const addableFields = useMemo(
+    () => quickFilterFields().filter((f) => !shownFields.includes(f)),
+    [shownFields],
+  )
+
+  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(() => {
     const fields: SortField[] = hasSeriesContext
       ? ["seriesPosition", ...GENERAL_SORT_FIELDS]
-      : GENERAL_SORT_FIELDS
-    return fields.map((value) => ({ value, label: SORT_FIELD_LABELS[value] }))
-  }, [hasSeriesContext])
+      : [...GENERAL_SORT_FIELDS]
+    return fields.map((value) => ({ value, label: tLabel(value) }))
+  }, [hasSeriesContext, tLabel])
 
-  const mediaFilterOptions: {
-    value: MediaFilter
-    label: string
-    icon?: React.ReactNode
-  }[] = [
-    { value: "all", label: t("mediaTypes.all") },
-    {
-      value: "ebook",
-      label: t("mediaTypes.ebook"),
-      icon: <IconBook className="h-3 w-3" />,
-    },
-    {
-      value: "audiobook",
-      label: t("mediaTypes.audiobook"),
-      icon: <IconHeadphones className="h-3 w-3" />,
-    },
-    {
-      value: "synced",
-      label: t("mediaTypes.readaloud"),
-      icon: <IconReadaloud className="h-4 w-4" />,
-    },
-  ]
-
-  const activeFilterCount = [
-    !hideCollectionFilter && state.collectionFilter,
-    !hideSeriesFilter && state.seriesFilter,
-    state.statusFilter,
-  ].filter(Boolean).length
-
-  const clearFilters = () => {
-    if (!hideCollectionFilter) onChange("collectionFilter", null)
-    if (!hideSeriesFilter) onChange("seriesFilter", null)
-    onChange("statusFilter", null)
-  }
-
-  const [sortFieldPopoverOpen, setSortFieldPopoverOpen] = useState(false)
-
-  const activeCollection = collections?.find(
-    (c) => c.uuid === state.collectionFilter,
-  )
-  const activeSeries = seriesList?.find((s) => s.uuid === state.seriesFilter)
-  const activeStatus = statuses?.find((s) => s.uuid === state.statusFilter)
+  // a complex tree (or / not / nesting) can't be shown as chips; force the
+  // advanced builder visible so the filter is never hidden from the user.
+  const advancedVisible = advancedOpen || isAdvanced
 
   return (
     <div
       className={cn(
-        "bg-background sticky top-0 z-30 flex flex-col gap-3 border-b px-4 py-3",
+        "bg-background sticky top-0 z-30 flex flex-col gap-2 border-b px-4 py-3",
         className,
       )}
     >
       <div className="flex items-center gap-2">
         <SearchInput
           placeholder={t("seachBooksPlaceholder")}
-          value={state.searchInput}
-          onChange={(value) => {
-            onChange("searchInput", value)
-          }}
+          value={search}
+          onChange={setSearch}
         />
 
-        <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-          <PopoverTrigger
+        <SortControl
+          options={sortFieldOptions}
+          field={sort.field}
+          direction={sort.direction}
+          onChange={setSort}
+        />
+
+        {/* quiet view options: card secondary line override */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
             render={
               <Button
-                variant="outline"
-                size="default"
-                className="shrink-0 gap-1.5 text-xs font-normal"
+                variant="ghost"
+                size="icon"
+                aria-label="View options"
+                className="shrink-0"
               >
-                <IconFilter className="h-3.5 w-3.5" />
-                {t("filters.filters")}
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-                    {activeFilterCount}
-                  </Badge>
-                )}
+                <IconColumns className="h-4 w-4" />
               </Button>
             }
           />
-          <PopoverContent className="w-72" align="end">
-            <div className="flex flex-col gap-4">
-              {!hideCollectionFilter && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                    {t("filters.collection")}
-                  </label>
-                  <Select
-                    value={state.collectionFilter ?? "all"}
-                    onValueChange={(v) => {
-                      onChange("collectionFilter", v === "all" ? null : v)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>{t("filters.allCollections")}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {t("filters.allCollections")}
-                      </SelectItem>
-                      {collections?.map((c) => (
-                        <SelectItem key={c.uuid} value={c.uuid}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {!hideSeriesFilter && (
-                <div className="flex flex-col gap-2">
-                  <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                    {t("filters.series")}
-                  </label>
-                  <Select
-                    value={state.seriesFilter ?? "all"}
-                    onValueChange={(v) => {
-                      onChange("seriesFilter", v === "all" ? null : v)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>{t("filters.allSeries")}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {t("filters.allSeries")}
-                      </SelectItem>
-                      {seriesList?.map((s) => (
-                        <SelectItem key={s.uuid} value={s.uuid}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2">
-                <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                  {t("filters.status")}
-                </label>
-                <Select
-                  value={state.statusFilter ?? "all"}
-                  onValueChange={(v) => {
-                    onChange("statusFilter", v === "all" ? null : v)
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue>{t("filters.allStatuses")}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">
-                      {t("filters.allStatuses")}
-                    </SelectItem>
-                    {statuses?.map((s) => (
-                      <SelectItem key={s.uuid} value={s.uuid}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {activeFilterCount > 0 && (
-                <>
-                  <Separator />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="w-full"
-                  >
-                    {t("filters.clearAllFilters")}
-                  </Button>
-                </>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        <DropdownMenu
-          open={sortFieldPopoverOpen}
-          onOpenChange={setSortFieldPopoverOpen}
-        >
-          <ButtonGroup className="shrink-0 text-sm">
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  className="min-w-[100px] justify-between text-xs font-normal"
-                  variant="outline"
-                >
-                  {
-                    sortFieldOptions.find((o) => o.value === state.sortField)
-                      ?.label
-                  }
-                  <IconChevronDown className="h-3 w-3" />
-                </Button>
-              }
-            />
-            <Button
-              variant="outline"
+          <DropdownMenuContent className="w-44" align="end">
+            <DropdownMenuItem disabled className="text-xs font-medium">
+              Show on card
+            </DropdownMenuItem>
+            <DropdownMenuCheckboxItem
+              checked={!displayOverrides}
               onClick={() => {
-                onChange(
-                  "sortDirection",
-                  state.sortDirection === "asc" ? "desc" : "asc",
-                )
+                void setDisplayOverrides(null)
               }}
             >
-              {state.sortDirection === "asc" ? (
-                <IconArrowUp className="h-3 w-3" />
-              ) : (
-                <IconArrowDown className="h-3 w-3" />
-              )}
-            </Button>
-          </ButtonGroup>
-          <DropdownMenuContent>
-            {sortFieldOptions.map((option) => (
-              <DropdownMenuItem
-                key={option.value}
-                className="justify-between"
+              Auto
+            </DropdownMenuCheckboxItem>
+            {DISPLAY_FIELDS.map((field) => (
+              <DropdownMenuCheckboxItem
+                key={field}
+                checked={displayOverrides?.includes(field) ?? false}
                 onClick={() => {
-                  if (option.value === state.sortField) {
-                    onChange(
-                      "sortDirection",
-                      state.sortDirection === "asc" ? "desc" : "asc",
-                    )
-                  } else {
-                    onChange("sortField", option.value)
-                    onChange("sortDirection", "desc")
-                  }
+                  void setDisplayOverrides([field])
                 }}
               >
-                <span>{option.label} </span>
-                {option.value === state.sortField ? (
-                  state.sortDirection === "asc" ? (
-                    <IconArrowUp className="h-3 w-3" />
-                  ) : (
-                    <IconArrowDown className="h-3 w-3" />
-                  )
-                ) : null}
-              </DropdownMenuItem>
+                <FieldIcon field={field} className="mr-2 h-4 w-4" />
+                {tLabel(field)}
+              </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {onDisplayOverrideChange && (
-          <Select
-            value={displayOverride ?? DISPLAY_AUTO}
-            onValueChange={(value) => {
-              onDisplayOverrideChange(
-                value === DISPLAY_AUTO ? null : (value as DisplayField),
-              )
-            }}
-          >
-            <SelectTrigger className="h-8 min-w-[110px] text-xs font-normal">
-              <span className="text-muted-foreground mr-1">Show</span>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={DISPLAY_AUTO}>Auto</SelectItem>
-              {DISPLAY_OVERRIDE_FIELDS.map((field) => (
-                <SelectItem key={field} value={field}>
-                  {DISPLAY_FIELD_LABELS[field]}
-                </SelectItem>
-              ))}
-              {hasSeriesContext && (
-                <SelectItem value="seriesPosition">
-                  {DISPLAY_FIELD_LABELS.seriesPosition}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        )}
 
         {bookView && onBookViewChange && (
           <ViewSelector value={bookView} onChange={onBookViewChange} />
         )}
       </div>
 
+      {/* chip row: seed (locked) + active filters + add filter; actions pinned right */}
       <div className="scroll-x flex items-center gap-1.5">
-        {mediaFilterOptions.map((opt) => {
-          const isActive = state.mediaFilter === opt.value
-          return (
-            <button
-              key={opt.value}
-              onClick={() => {
-                onChange("mediaFilter", opt.value)
+        {seedLabel && (
+          <span className="border-border bg-muted text-muted-foreground inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+            {seedLabel}
+          </span>
+        )}
+
+        {!isAdvanced &&
+          shownFields.map((field) => (
+            <FilterControl
+              key={field}
+              field={field}
+              conditions={conditionsForField(field)}
+              onChange={(next) => {
+                setConditionsForField(field, next)
               }}
-              className={cn(
-                "inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                isActive
-                  ? "bg-primary/10 border-primary/30 text-primary"
-                  : "bg-muted text-muted-foreground hover:bg-muted-foreground/15 hover:text-foreground border-transparent",
-              )}
+              onRemove={() => {
+                removeField(field)
+              }}
+            />
+          ))}
+
+        {!isAdvanced && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium">
+                  <IconPlus className="h-3 w-3" />
+                  {t("filters.filters")}
+                </button>
+              }
+            />
+            <DropdownMenuContent className="max-h-80 w-52 overflow-y-auto">
+              {addableFields.map((field) => (
+                <AddFilterSubmenu
+                  key={field}
+                  field={field}
+                  controller={controller}
+                  label={tLabel(getFieldDef(field).labelKey as never)}
+                />
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {onToggleAdvanced && (
+            <TooltipButton
+              variant={advancedVisible ? "secondary" : "ghost"}
+              aria-label="Toggle advanced filter"
+              tooltip="Advanced filter"
+              onClick={onToggleAdvanced}
             >
-              {opt.icon}
-              {opt.label}
-            </button>
-          )
-        })}
-
-        {(activeCollection || activeSeries || activeStatus) && (
-          <div className="bg-border mx-1 h-4 w-px shrink-0" />
-        )}
-
-        {activeCollection && (
-          <button
-            onClick={() => {
-              onChange("collectionFilter", null)
-            }}
-            className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-          >
-            {activeCollection.name}
-            <IconX className="h-3 w-3" />
-          </button>
-        )}
-
-        {activeSeries && (
-          <button
-            onClick={() => {
-              onChange("seriesFilter", null)
-            }}
-            className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-          >
-            {activeSeries.name}
-            <IconX className="h-3 w-3" />
-          </button>
-        )}
-
-        {activeStatus && (
-          <button
-            onClick={() => {
-              onChange("statusFilter", null)
-            }}
-            className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-          >
-            {activeStatus.name}
-            <IconX className="h-3 w-3" />
-          </button>
-        )}
+              <IconAdjustmentsHorizontal className="h-4 w-4" />
+            </TooltipButton>
+          )}
+          {onSaveAsShelf && (
+            <TooltipButton
+              variant="ghost"
+              aria-label="Save as shelf"
+              tooltip="Save as shelf"
+              onClick={onSaveAsShelf}
+            >
+              <IconBookmarkPlus className="h-4 w-4" />
+            </TooltipButton>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-export function getActiveFilterCount(
-  state: BookFiltersState,
-  options?: { hideCollectionFilter?: boolean; hideSeriesFilter?: boolean },
-): number {
-  return [
-    state.mediaFilter !== "all",
-    !options?.hideCollectionFilter && state.collectionFilter,
-    !options?.hideSeriesFilter && state.seriesFilter,
-    state.statusFilter,
-  ].filter(Boolean).length
+// one entry in the fan-out "Add filter" menu: hovering opens a submenu with the
+// field's value editor inline, so a tag (or range, or date) can be picked in a
+// single hover without first materializing an empty chip. the editor only
+// fetches its options once the submenu opens.
+function AddFilterSubmenu({
+  field,
+  controller,
+  label,
+}: {
+  field: ShelfFilterField
+  controller: BookFiltersController
+  label: string
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <DropdownMenuSub open={open} onOpenChange={setOpen}>
+      <DropdownMenuSubTrigger>
+        <FieldIcon field={field} className="mr-2 h-4 w-4" />
+        {label}
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent className="w-72 p-0">
+        {/* the editor is not a menu item: keep keystrokes (so the search input
+            works, not menu typeahead) and clicks (so toggling several values
+            doesn't close the menu) from bubbling to the menu. */}
+        <div
+          onKeyDown={(e) => {
+            e.stopPropagation()
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation()
+          }}
+        >
+          <FilterEditor
+            field={field}
+            def={getFieldDef(field)}
+            conditions={controller.conditionsForField(field)}
+            onChange={(next) => {
+              controller.setConditionsForField(field, next)
+            }}
+            enabled={open}
+          />
+        </div>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
+  )
+}
+
+function SortControl({
+  options,
+  field,
+  direction,
+  onChange,
+}: {
+  options: { value: SortField; label: string }[]
+  field: SortField
+  direction: "asc" | "desc"
+  onChange: (field: SortField, direction: "asc" | "desc") => void
+}) {
+  const [open, setOpen] = useState(false)
+  const flip = () => {
+    onChange(field, direction === "asc" ? "desc" : "asc")
+  }
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <ButtonGroup className="shrink-0 text-sm">
+        <DropdownMenuTrigger
+          render={
+            <Button
+              className="min-w-[100px] justify-between text-xs font-normal"
+              variant="outline"
+            >
+              <span className="flex items-center gap-1.5">
+                <FieldIcon field={field} className="h-3.5 w-3.5" />
+                {options.find((o) => o.value === field)?.label ?? field}
+              </span>
+              <IconChevronDown className="h-3 w-3" />
+            </Button>
+          }
+        />
+        <Button
+          variant="outline"
+          onClick={flip}
+          aria-label="Toggle sort direction"
+        >
+          {direction === "asc" ? (
+            <IconArrowUp className="h-3 w-3" />
+          ) : (
+            <IconArrowDown className="h-3 w-3" />
+          )}
+        </Button>
+      </ButtonGroup>
+      <DropdownMenuContent className="w-fit">
+        {options.map((option) => (
+          <DropdownMenuItem
+            key={option.value}
+            className="justify-between gap-4"
+            onClick={() => {
+              if (option.value === field) {
+                flip()
+              } else {
+                onChange(option.value, "desc")
+              }
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <FieldIcon field={option.value} className="h-4 w-4" />
+              {option.label}
+            </span>
+            {option.value === field &&
+              (direction === "asc" ? (
+                <IconArrowUp className="h-3 w-3" />
+              ) : (
+                <IconArrowDown className="h-3 w-3" />
+              ))}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }

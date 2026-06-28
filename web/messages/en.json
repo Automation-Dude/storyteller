@@ -1128,7 +1128,21 @@
       "alignmentGrade": "Alignment Grade",
       "alignmentMissingSentences": "Missing Sentences",
       "alignmentMutedChapters": "Muted Chapters",
-      "seriesPosition": "Series Position"
+      "alignedAt": "Date Aligned",
+      "lastRead": "Last Read",
+      "readingPosition": "Reading Progress",
+      "seriesPosition": "Series Position",
+      "subtitle": "Subtitle",
+      "description": "Description",
+      "status": "Reading Status",
+      "tags": "Tags",
+      "collections": "Collections",
+      "series": "Series",
+      "creators": "Authors / Creators",
+      "mediaType": "Format",
+      "review": "My Review",
+      "ratingDimension": "Rating Dimension",
+      "search": "Search (any field)"
     },
     "short": {
       "title": "Title",
@@ -1145,6 +1159,9 @@
       "alignmentGrade": "Grade",
       "alignmentMissingSentences": "Missing",
       "alignmentMutedChapters": "Muted",
+      "alignedAt": "Aligned",
+      "lastRead": "Last Read",
+      "readingPosition": "Progress",
       "seriesPosition": "Pos."
     }
   },

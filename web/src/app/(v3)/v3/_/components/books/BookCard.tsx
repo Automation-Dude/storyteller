@@ -1,14 +1,16 @@
 import { IconDotsVertical } from "@tabler/icons-react"
 import Link from "next/link"
+import { useFormatter, useLocale } from "next-intl"
 import { Fragment, memo, useCallback, useMemo, useState } from "react"
-
-import { IconReadaloud } from "@/components/icons/IconReadaloud"
-import { type BookWithRelations } from "@/database/books"
-import { type DisplayField, type SortContext } from "@/sort"
 
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+
+import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
+import { type BookWithRelations } from "@/database/books"
+import { type DisplayField, type SortContext } from "@/sort"
 
 import { BookCover, isDualFormat } from "./BookCover"
 import {
@@ -19,6 +21,7 @@ import {
 } from "./BookDetails/sections/useCoverColors"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
 import { GradePill } from "./grade-pill"
+import { Button } from "../ui/button"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -62,21 +65,26 @@ export function SecondaryText({
   field: DisplayField
   ctx: SortContext | undefined
 }): React.ReactNode {
+  const { dateTime, relativeTime } = useFormatter()
+  const { ratingIcon } = useUserPreferences()
+  const locale = useLocale()
+
+  const none = <span className="text-muted-foreground/80">{"\u2014"}</span>
+
   switch (field) {
     case "userRating":
       return book.rating?.rating != null ? (
         <span>
-          {"\u2605 "}
-          {book.rating.rating.toFixed(1)}
+          {ratingIcon === "star" ? "★" : "♥"} {book.rating.rating.toFixed(2)}
         </span>
       ) : (
-        <span>{"\u2014"}</span>
+        none
       )
     case "seriesPosition": {
       if (!ctx?.seriesUuid) return null
 
       const s = book.series.find((x) => x.uuid === ctx.seriesUuid)
-      if (!s || s.position == null) return <span>{"\u2014"}</span>
+      if (!s || s.position == null) return none
 
       return (
         <span>
@@ -88,36 +96,61 @@ export function SecondaryText({
       return book.publicationDate ? (
         <span>{book.publicationDate.slice(0, 4)}</span>
       ) : (
-        <span>{"\u2014"}</span>
+        none
       )
     case "createdAt":
-      return <span>Added {new Date(book.createdAt).toLocaleDateString()}</span>
+      return (
+        <span>
+          {dateTime(new Date(book.createdAt), { dateStyle: "medium" })}
+        </span>
+      )
     case "updatedAt":
       return (
-        <span>Updated {new Date(book.updatedAt).toLocaleDateString()}</span>
+        <span>
+          {relativeTime(new Date(book.updatedAt), {
+            now: new Date(),
+            style: "narrow",
+          })}
+        </span>
+      )
+    case "alignedAt":
+      return book.alignedAt ? (
+        <span>
+          {dateTime(new Date(book.alignedAt), { dateStyle: "medium" })}
+        </span>
+      ) : (
+        none
+      )
+    case "lastRead":
+      return book.position?.updatedAt ? (
+        <span>
+          {relativeTime(new Date(book.position.updatedAt), {
+            now: new Date(),
+            style: "narrow",
+          })}
+        </span>
+      ) : (
+        none
       )
     case "pageCount": {
       const p = book.ebook?.pageCount ?? book.pageCount
-      return p != null ? <span>{p} pages</span> : <span>{"\u2014"}</span>
+      return p != null ? <span>{p} pages</span> : none
     }
     case "duration": {
       const d = book.audiobook?.duration ?? book.duration
-      return d != null ? (
-        <span>{formatDuration(d)}</span>
-      ) : (
-        <span>{"\u2014"}</span>
-      )
+      return d != null ? <span>{formatDuration(d)}</span> : none
     }
     case "fileSize": {
       const f = book.ebook?.fileSize ?? book.audiobook?.fileSize ?? null
-      return f != null ? (
-        <span>{formatFileSize(f)}</span>
-      ) : (
-        <span>{"\u2014"}</span>
-      )
+      return f != null ? <span>{formatFileSize(f)}</span> : none
     }
     case "language":
-      return book.language ?? <span>{"\u2014"}</span>
+      return book.language
+        ? new Intl.DisplayNames([locale], {
+            type: "language",
+            languageDisplay: "dialect",
+          }).of(book.language)
+        : none
     case "title":
     case "authors":
       return null
@@ -125,25 +158,25 @@ export function SecondaryText({
       return book.alignmentScore != null ? (
         <span>{Math.round(book.alignmentScore)}%</span>
       ) : (
-        <span>{"\u2014"}</span>
+        none
       )
     case "alignmentGrade":
       return book.alignmentGrade ? (
         <GradePill grade={book.alignmentGrade} />
       ) : (
-        <span>{"\u2014"}</span>
+        none
       )
     case "alignmentMissingSentences":
       return book.alignmentMissingSentences != null ? (
         <span>{book.alignmentMissingSentences}</span>
       ) : (
-        <span>{"\u2014"}</span>
+        none
       )
     case "alignmentMutedChapters":
       return book.alignmentMutedChapters != null ? (
         <span>{book.alignmentMutedChapters}</span>
       ) : (
-        <span>{"\u2014"}</span>
+        none
       )
     default: {
       const _exhaustive: never = field
@@ -286,7 +319,7 @@ export const BookCard = memo(function BookCard({
         {onOpenMenu && (
           <div
             className={cn(
-              "absolute right-3 bottom-3 z-20",
+              "absolute bottom-3 left-3 z-20",
               !isMobile &&
                 !isMenuOpen &&
                 "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
@@ -295,16 +328,17 @@ export const BookCard = memo(function BookCard({
               e.stopPropagation()
             }}
           >
-            <button
-              type="button"
-              className="flex size-6 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+            <Button
+              variant="outline"
+              size="icon"
+              className="flex size-6 items-center justify-center rounded-full border-2 border-white text-white transition-colors"
               onClick={(e) => {
                 e.stopPropagation()
                 onOpenMenu(book, e.currentTarget)
               }}
             >
               <IconDotsVertical className="size-3.5" />
-            </button>
+            </Button>
           </div>
         )}
       </div>

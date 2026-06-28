@@ -3,12 +3,18 @@
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 
+
+import { BookFilters, BookGrid } from "@v3/_/components/books"
+import { BookList } from "@v3/_/components/books/BookList"
+import { BookListLayout } from "@v3/_/components/books/BookListLayout"
+import { PageContent } from "@v3/_/components/ui/page-layout"
+import { useBookFilters } from "@v3/_/hooks/use-book-filters"
+import { useBookSelection } from "@v3/_/hooks/use-book-selection"
+import { useReportPanel } from "@v3/_/hooks/use-report-panel"
+import { useTranslation } from "@v3/_/hooks/use-translation"
+
 import { type BookWithRelations } from "@/database/books"
-import {
-  type DisplayField,
-  type SortDirection,
-  type SortField,
-} from "@/sort"
+import { type DisplayField, type SortDirection, type SortField } from "@/sort"
 import { useListShelfBooksQuery, useListUserShelvesQuery } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
@@ -19,16 +25,6 @@ import {
 } from "@/store/slices/uiSettingsSlice"
 import { extractEmojiIcon } from "@/strings"
 import { type UUID } from "@/uuid"
-
-import { BookFilters, BookGrid } from "@v3/_/components/books"
-import { BookList } from "@v3/_/components/books/BookList"
-import { BookListLayout } from "@v3/_/components/books/BookListLayout"
-import { filterBooksClientSide } from "@v3/_/components/library/filter-books-client"
-import { PageContent } from "@v3/_/components/ui/page-layout"
-import { useBookFilters } from "@v3/_/hooks/use-book-filters"
-import { useBookSelection } from "@v3/_/hooks/use-book-selection"
-import { useReportPanel } from "@v3/_/hooks/use-report-panel"
-import { useTranslation } from "@v3/_/hooks/use-translation"
 
 export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
   const t = useTranslation("ShelfPage")
@@ -58,7 +54,6 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
   )
   const [, setReportMode] = useReportPanel()
 
-  const { data: books = [], isLoading } = useListShelfBooksQuery({ shelfUuid })
   const { data: shelves = [] } = useListUserShelvesQuery()
 
   const shelf = shelves.find((s) => s.uuid === shelfUuid)
@@ -66,45 +61,39 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     ? extractEmojiIcon(shelf.name).label || shelf.name
     : "Shelf"
 
+  const controller = useBookFilters()
   const {
-    state: filterState,
-    onChange: onFilterChange,
+    effectiveFilter,
+    sort,
+    setSort,
     isSearching,
     deferredSearch,
     activeFilterCount,
-    clearFilters,
-    filterPopoverOpen,
-    setFilterPopoverOpen,
-  } = useBookFilters()
+    clearAll,
+  } = controller
+
+  // the shelf's own books (manual + saved filter) with the page's quick /
+  // advanced filter + search + sort applied server-side.
+  const { data: books = [], isLoading } = useListShelfBooksQuery({
+    shelfUuid,
+    sortField: sort.field,
+    orderDirection: sort.direction,
+    ...(deferredSearch ? { search: deferredSearch } : {}),
+    ...(effectiveFilter ? { filter: effectiveFilter } : {}),
+  })
 
   const handleColumnSort = useCallback(
     (field: SortField, direction: SortDirection) => {
-      onFilterChange("sortField", field)
-      onFilterChange("sortDirection", direction)
+      setSort(field, direction)
     },
-    [onFilterChange],
+    [setSort],
   )
 
-  const filteredBooks = useMemo(() => {
-    if (books.length === 0) return []
-
-    return filterBooksClientSide(books, {
-      search: deferredSearch || undefined,
-      sortField: filterState.sortField,
-      sortDirection: filterState.sortDirection,
-      mediaFilter: filterState.mediaFilter,
-      statusFilter: filterState.statusFilter,
-    })
-  }, [books, deferredSearch, filterState])
-
-  const bookUuids = useMemo(
-    () => filteredBooks.map((b) => b.uuid),
-    [filteredBooks],
-  )
+  const bookUuids = useMemo(() => books.map((b) => b.uuid), [books])
 
   const selectedBook = useMemo(
-    () => filteredBooks.find((b) => b.uuid === selectedBookUuid),
-    [filteredBooks, selectedBookUuid],
+    () => books.find((b) => b.uuid === selectedBookUuid),
+    [books, selectedBookUuid],
   )
 
   const showMuted = isSearching
@@ -140,10 +129,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     >
       <BookFilters
         className="pt-1"
-        state={filterState}
-        onChange={onFilterChange}
-        filterPopoverOpen={filterPopoverOpen}
-        setFilterPopoverOpen={setFilterPopoverOpen}
+        controller={controller}
         bookView={bookView}
         onBookViewChange={handleBookViewChange}
       />
@@ -151,7 +137,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
       <PageContent className="p-4">
         {bookView === "list" ? (
           <BookList
-            books={filteredBooks}
+            books={books}
             isLoading={isLoading}
             isFetchingNextPage={false}
             hasNextPage={false}
@@ -163,20 +149,20 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
                 ? t("adjustFilters")
                 : undefined
             }
-            onClearFilters={clearFilters}
+            onClearFilters={clearAll}
             hasActiveFilters={activeFilterCount > 0}
             selectedBookUuid={selectedBookUuid}
             onBookClick={handleBookClick}
             onColumnClick={handleColumnClick}
             visibleColumns={listVisibleColumns}
             onVisibleColumnsChange={handleListColumnsChange}
-            sortField={filterState.sortField}
-            sortDirection={filterState.sortDirection}
+            sortField={sort.field}
+            sortDirection={sort.direction}
             onSortChange={handleColumnSort}
           />
         ) : (
           <BookGrid
-            books={filteredBooks}
+            books={books}
             isLoading={isLoading}
             isFetchingNextPage={false}
             hasNextPage={false}
@@ -188,7 +174,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
                 ? t("adjustFilters")
                 : undefined
             }
-            onClearFilters={clearFilters}
+            onClearFilters={clearAll}
             hasActiveFilters={activeFilterCount > 0}
             selectedBookUuid={selectedBookUuid}
             onBookClick={handleBookClick}

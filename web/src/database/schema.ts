@@ -255,9 +255,9 @@ export interface Job {
   position: Generated<number>
   progress: Generated<number>
   restart: string | null
-  stage: import("@/work/distributor").Readaloud["currentStage"] | null
+  stage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS" | null
   startedAt: string | null
-  status: Generated<import("@/work/distributor").JobStatus>
+  status: Generated<import("@/database/jobs").JobStatus>
   type: string
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>

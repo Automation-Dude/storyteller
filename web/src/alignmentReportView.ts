@@ -17,7 +17,7 @@ interface SentenceContext {
 
 // a flag is a short diagnostic about a chapter's audio / matching. tone drives
 // colour. info flags are not "problems" (they don't flag the chapter on their own).
-export type FlagTone = "error" | "warn" | "info"
+export type FlagTone = "poor" | "moderate" | "good" | "info"
 export interface ReportFlag {
   label: string
   tone: FlagTone
@@ -169,7 +169,8 @@ function chapterDiagnostics(ch: RawChapter): {
     }
   } else if (files[0]) {
     const span = files[0].end - files[0].start
-    if (Math.abs(span) < 1) flags.push({ label: "near-zero clip", tone: "warn" })
+    if (Math.abs(span) < 1)
+      flags.push({ label: "near-zero clip", tone: "warn" })
     else if (span < 0) flags.push({ label: "reversed clip", tone: "error" })
   }
 
@@ -212,7 +213,9 @@ export function buildReportView(args: {
     alignedAudioDuration += af.alignedDuration
   }
 
-  const chapterPrefix = commonPrefix(report.chapters.map((ch) => baseKey(ch.href)))
+  const chapterPrefix = commonPrefix(
+    report.chapters.map((ch) => baseKey(ch.href)),
+  )
   const unalignedPrefix = commonPrefix(
     report.unalignedChapters.map((uc) => baseKey(uc.href)),
   )
@@ -259,7 +262,9 @@ export function buildReportView(args: {
   const unalignedChapters: ReportUnalignedChapter[] =
     report.unalignedChapters.map((uc) => ({
       href: uc.href,
-      label: chapterTitles.get(baseKey(uc.href)) ?? strip(baseKey(uc.href), unalignedPrefix),
+      label:
+        chapterTitles.get(baseKey(uc.href)) ??
+        strip(baseKey(uc.href), unalignedPrefix),
       reason: uc.reason,
       preview:
         uc.reason === "not-found"

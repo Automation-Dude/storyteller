@@ -392,9 +392,6 @@ function BookEditBar() {
   )
 }
 
-// the colored action bar at the top of the panel / drawer. lives with the
-// content (rather than the layout) so it reads the book it already loaded and
-// needs no separate fetch.
 function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   const { book, isEditing, setIsEditing } = useBookForm()
   const { primary, accent } = useCoverColors(book)
@@ -413,15 +410,17 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
 
   return (
     <div
-      className="sticky top-0 z-50 flex h-10 items-center justify-between border-b px-4 py-2"
-      style={{
-        backgroundColor: `color-mix(in oklab, ${primary.solid} 50%, var(--background))`,
-        // : undefined,
-        color: showAccent ? primary.onColor : undefined,
-        ...(isSelected && {
-          borderColor: showAccent ? cAccent.solid : "var(--primary)",
-        }),
-      }}
+      className="sticky top-0 z-50 flex h-10 items-center justify-between border-b bg-transparent px-4 py-2"
+      style={
+        {
+          // backgroundColor: `color-mix(in oklab, ${primary.solid} 50%, var(--background))`,
+          // // : undefined,
+          // color: showAccent ? primary.onColor : undefined,
+          // ...(isSelected && {
+          //   borderColor: showAccent ? cAccent.solid : "var(--primary)",
+          // }),
+        }
+      }
     >
       <div className="flex items-center gap-3">
         {selection && (

@@ -17,7 +17,7 @@ export function SearchInput({
   return (
     <div
       className={cn(
-        "bg-card border-border focus-within:border-primary focus-within:ring-primary/15 relative flex flex-1 items-center gap-2 rounded-lg border px-3 py-2 transition-[border-color,box-shadow] focus-within:ring-2",
+        "bg-card border-border focus-within:border-primary focus-within:ring-primary/15 relative flex flex-1 items-center gap-2 rounded-full border px-3 py-2 transition-[border-color,box-shadow] focus-within:ring-2",
         className,
       )}
     >

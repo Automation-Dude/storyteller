@@ -6,13 +6,27 @@ import {
 } from "kysely"
 import { jsonArrayFrom } from "kysely/helpers/sqlite"
 
-import { HomeSectionKind, ShelfOrderBy, type ShelfFilter } from "@/shelves"
+import type {
+  HomeSectionKind,
+  ShelfFilter,
+  ShelfOrderBy,
+} from "@/shelves"
+import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
+
+// re-exported so the api layer + components can import the shelf vocabulary from
+// the db module they already use.
+export { HomeSectionKind, ShelfOrderBy } from "@/shelves"
 
 import { type BookWithRelations, booksQuery } from "./books"
 import { db } from "./connection"
 import { type DB } from "./schema"
-import { buildFilterExpression, extractEntityReferences } from "./shelfFilter"
+import {
+  buildBookSearchExpression,
+  buildFilterExpression,
+  buildSortExpression,
+  extractEntityReferences,
+} from "./shelfFilter"
 
 export type Shelf = Selectable<DB["shelf"]>
 export type NewShelf = Insertable<DB["shelf"]>
@@ -331,7 +345,7 @@ export async function getHomeSections(userId: UUID) {
   return sections.map((hs) => ({
     uuid: hs.uuid,
     shelfUuid: hs.shelfUuid,
-    kind: hs.kind as HomeSectionKind,
+    kind: hs.kind,
     enabled: hs.enabled !== 0,
     config: parseConfig(hs.config),
     position: hs.position,
@@ -442,6 +456,14 @@ export type GetShelfBooksOptions = {
   offset?: number
   orderBy?: ShelfOrderBy
   orderDirection?: "asc" | "desc"
+  // an ad-hoc filter tree + free-text search, ANDed on top of the shelf's own
+  // membership (manual books / saved filter). lets the shelf page reuse the
+  // same quick/advanced filter UI as the books page.
+  filter?: ShelfFilter
+  search?: string
+  // when present, ordering uses the sortField vocabulary (buildSortExpression)
+  // instead of the shelf's ShelfOrderBy; takes precedence over orderBy.
+  sortField?: SortField
 }
 
 export async function getShelfBooks(
@@ -476,6 +498,16 @@ export async function getShelfBooks(
     query = query.where("book.uuid", "in", manualBookUuids)
   }
 
+  // ad-hoc quick/advanced filter + search from the shelf page, ANDed on top.
+  if (opts?.filter) {
+    const adHoc = opts.filter
+    query = query.where((eb) => buildFilterExpression(eb, adHoc, userId))
+  }
+  if (opts?.search) {
+    const term = opts.search
+    query = query.where((eb) => buildBookSearchExpression(eb, term))
+  }
+
   const shelfLimit = (shelf as { limitCount?: number | null }).limitCount
   const effectiveLimit = opts?.limit ?? shelfLimit
 
@@ -492,8 +524,19 @@ export async function getShelfBooks(
   const shelfOrderDirection = (shelf as { orderDirection?: string | null })
     .orderDirection as "asc" | "desc" | null
 
-  const orderBy = opts?.orderBy ?? shelfOrderBy ?? "createdAt"
   const orderDirection = opts?.orderDirection ?? shelfOrderDirection ?? "desc"
+
+  // the shelf page drives ordering with the richer sortField vocabulary
+  // (userRating, alignment, ...); home sections etc. still use ShelfOrderBy.
+  if (opts?.sortField) {
+    query = query.orderBy(
+      buildSortExpression(opts.sortField, { userId }),
+      orderDirection,
+    )
+    return await query.execute()
+  }
+
+  const orderBy = opts?.orderBy ?? shelfOrderBy ?? "createdAt"
 
   if (orderBy === "position" && hasManualBooks) {
     query = query.orderBy(

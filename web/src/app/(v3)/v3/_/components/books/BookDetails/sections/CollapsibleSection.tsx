@@ -4,6 +4,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@v3/_/components/ui/collapsible"
+import { useState } from "react"
+import { Button } from "../../../ui/button"
+import { cn } from "@/cn"
 
 export function CollapsibleSection({
   title,
@@ -21,20 +24,39 @@ export function CollapsibleSection({
   className?: string
   rightElement?: React.ReactNode
 }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
   return (
-    <Collapsible defaultOpen={defaultOpen}>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="group/section">
-        <CollapsibleTrigger className="mb-3 flex w-full cursor-pointer items-center justify-between gap-3">
-          <span className="section-label flex flex-1 items-center gap-2">
-            {icon}
-            {title}
-          </span>
-
-          <div className="flex items-center gap-2">
+        <div className="relative mb-3 flex items-center gap-3">
+          <CollapsibleTrigger
+            className="flex h-full w-full cursor-pointer items-center justify-between gap-3"
+            aria-label={"Toggle section"}
+          >
+            <span className="section-label flex flex-1 items-center gap-2">
+              {icon}
+              {title}
+            </span>
+          </CollapsibleTrigger>
+          <div className="flex items-center gap-1">
             {rightElement}
-            <IconChevronDown className="text-muted-foreground size-3.5 stroke-[1.5] transition-transform group-data-open/section:rotate-180 in-data-open:rotate-180" />
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-hidden="true"
+              onClick={() => {
+                setIsOpen((prev) => !prev)
+              }}
+            >
+              <IconChevronDown
+                className={cn(
+                  "text-muted-foreground size-3.5 stroke-[1.5]",
+                  isOpen && "rotate-180",
+                )}
+              />
+            </Button>
           </div>
-        </CollapsibleTrigger>
+        </div>
 
         <CollapsibleContent className={className}>
           {children}

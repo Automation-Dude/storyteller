@@ -50,15 +50,8 @@ import { STAGE_LABELS, jobToView, overallProgress } from "./shared"
 // layout so it stays visible while jobs run, across navigation. driven by the jobs
 // query (live via the job event stream). also announces finished runs.
 export function ProcessingToast() {
-  const { data: jobs } = useGetJobsQuery(
-    { type: "active" },
-    // poll as a fallback in case the event stream drops; events drive most updates.
-    { pollingInterval: 3000 },
-  )
-  const { data: finishedJobs } = useGetJobsQuery(
-    { type: "finished", limit: 5 },
-    { pollingInterval: 5000 },
-  )
+  const { data: jobs } = useGetJobsQuery({ type: "active" })
+  const { data: finishedJobs } = useGetJobsQuery({ type: "finished", limit: 5 })
   const [cancelJob] = useCancelJobMutation()
   const [pauseJob] = usePauseJobMutation()
   const [resumeJob] = useResumeJobMutation()

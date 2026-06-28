@@ -12,7 +12,7 @@ import {
   removeDeletedEntityReferences,
 } from "@/database/shelfFilter"
 import {
-  FIELD_LABELS,
+  FIELD_REGISTRY,
   type ShelfFilterField,
   type ShelfFilterNode,
   createAndBlock,
@@ -31,7 +31,11 @@ import {
   shelfFilterOperatorSchema,
   shelfFilterValueSchema,
 } from "@/shelves"
-import { type SortField, makeBookComparator } from "@/sort"
+import {
+  type SortField,
+  assertSortFieldsMatchRegistry,
+  makeBookComparator,
+} from "@/sort"
 import { type UUID } from "@/uuid"
 
 // ---------------------------------------------------------------------------
@@ -40,7 +44,7 @@ import { type UUID } from "@/uuid"
 
 void describe("shelfFilterFieldSchema", () => {
   void it("accepts all known fields", () => {
-    const knownFields = Object.keys(FIELD_LABELS) as ShelfFilterField[]
+    const knownFields = Object.keys(FIELD_REGISTRY) as ShelfFilterField[]
 
     for (const field of knownFields) {
       const result = shelfFilterFieldSchema.safeParse(field)
@@ -581,29 +585,48 @@ void describe("removeDeletedEntityReferences", () => {
 })
 
 // ---------------------------------------------------------------------------
-// FIELD_LABELS completeness
+// FIELD_REGISTRY completeness
 // ---------------------------------------------------------------------------
 
-void describe("FIELD_LABELS", () => {
-  void it("has a label for every field in the schema", () => {
+void describe("FIELD_REGISTRY", () => {
+  void it("has an entry for every field in the schema", () => {
     const fields = shelfFilterFieldSchema.options
 
     for (const field of fields) {
       assert.ok(
-        field in FIELD_LABELS,
-        `FIELD_LABELS missing entry for "${field}"`,
+        field in FIELD_REGISTRY,
+        `FIELD_REGISTRY missing entry for "${field}"`,
       )
     }
   })
 
-  void it("has no extra labels beyond the schema", () => {
+  void it("has no extra entries beyond the schema", () => {
     const fields = new Set(shelfFilterFieldSchema.options)
 
-    for (const key of Object.keys(FIELD_LABELS)) {
+    for (const key of Object.keys(FIELD_REGISTRY)) {
       assert.ok(
         fields.has(key as ShelfFilterField),
-        `FIELD_LABELS has extra entry "${key}" not in schema`,
+        `FIELD_REGISTRY has extra entry "${key}" not in schema`,
       )
+    }
+  })
+
+  void it("declares a control that matches the field's value type", () => {
+    // facet/format controls map to array/enum types; text/range controls map to
+    // string/number/date/uuid. guards against a registry entry drifting from
+    // getFieldType.
+    for (const field of shelfFilterFieldSchema.options) {
+      const { control } = FIELD_REGISTRY[field]
+      const type = getFieldType(field)
+      // facet pickers cover both array relations (tags/series/...) and the uuid
+      // status field; both are entity-list selectors.
+      if (control === "facet") {
+        assert.ok(
+          type === "array" || type === "uuid",
+          `${field}: facet control expects array/uuid, got ${type}`,
+        )
+      }
+      if (control === "format-enum") assert.equal(type, "enum", field)
     }
   })
 })
@@ -856,6 +879,90 @@ void describe("buildFilterExpression sql", () => {
     assert.match(sql, /not exists.*from "book_to_creator"/s)
     assert.match(sql, /"book_to_creator"\."role"/)
   })
+
+  void it("compiles alignedAt between to a range on the book column", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "alignedAt",
+          operator: "between",
+          value: ["2024-01-01", "2024-12-31"],
+        },
+      ],
+    })
+    assert.match(sql, /"aligned_at"/)
+  })
+
+  void it("compiles lastRead to a correlated subquery on position.updated_at", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "lastRead",
+          operator: "after",
+          value: "2024-01-01",
+        },
+      ],
+    })
+    assert.match(sql, /from "position"/)
+    assert.match(sql, /"updated_at"/)
+  })
+
+  void it("compiles readingPosition to a json_extract of total progression", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "readingPosition",
+          operator: "between",
+          value: [0.01, 0.99],
+        },
+      ],
+    })
+    assert.match(sql, /from "position"/)
+    assert.match(sql, /json_extract/)
+    assert.match(sql, /totalProgression/)
+  })
+
+  void it("scopes a format-tagged fileSize to a single asset table", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "fileSize",
+          operator: "greaterThan",
+          value: 1000,
+          format: "ebook",
+        },
+      ],
+    })
+    // only the ebook asset is consulted, not the cross-format union
+    assert.match(sql, /from ebook /)
+    assert.doesNotMatch(sql, /from audiobook /)
+  })
+
+  void it("uses the cross-format fallback when fileSize has no format", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "fileSize",
+          operator: "greaterThan",
+          value: 1000,
+        },
+      ],
+    })
+    // the coalesce union touches every asset table
+    assert.match(sql, /from ebook /)
+    assert.match(sql, /from audiobook /)
+    assert.match(sql, /from readaloud /)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -898,6 +1005,25 @@ void describe("buildSortExpression sql", () => {
   void it("coalesces asset tables for an asset-numeric sort", () => {
     const sql = orderSql("pageCount")
     assert.match(sql, /coalesce/i)
+  })
+
+  void it("orders alignedAt by the book column", () => {
+    const sql = orderSql("alignedAt")
+    assert.match(sql, /aligned_at/)
+  })
+
+  void it("orders lastRead via a user-scoped position subquery", () => {
+    const sql = orderSql("lastRead", { userId })
+    assert.match(sql, /from position/)
+    assert.match(sql, /updated_at/)
+  })
+})
+
+void describe("SORTABLE_FIELDS / registry sync", () => {
+  void it("stays in sync with FIELD_REGISTRY sortable flags", () => {
+    assert.doesNotThrow(() => {
+      assertSortFieldsMatchRegistry()
+    })
   })
 })
 

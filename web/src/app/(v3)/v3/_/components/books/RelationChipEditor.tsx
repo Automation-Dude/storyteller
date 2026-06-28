@@ -16,8 +16,8 @@ import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
-import { TooltipButton } from "../ui/tooltip-button"
 
 type RelationItem = {
   uuid: string
@@ -29,7 +29,7 @@ type RelationItem = {
 }
 
 // the icon (or a color dot fallback) shown at the start of an item, when set
-const RelationGlyph = ({ item }: { item: RelationItem }) => {
+export const RelationGlyph = ({ item }: { item: RelationItem }) => {
   if (item.icon) {
     return (
       <DynamicIcon iconId={item.icon} color={item.color} className="h-3 w-3" />

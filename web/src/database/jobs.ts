@@ -84,13 +84,13 @@ export type JobUpdate = Partial<{
 function parseJob(row: JobRow): Job {
   return {
     ...row,
-    uuid: row.uuid as UUID,
+    uuid: row.uuid,
     bookUuid: (row.bookUuid as UUID | null) ?? null,
     type: row.type as JobType,
     status: row.status as JobStatus,
     restart: (row.restart as RestartMode | null) ?? false,
-    stage: row.stage as Readaloud["currentStage"] | null,
-    config: row.config ? (row.config as RunConfig) : null,
+    stage: row.stage | null,
+    config: row.config ? row.config : null,
   }
 }
 

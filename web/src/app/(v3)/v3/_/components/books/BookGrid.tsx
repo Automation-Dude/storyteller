@@ -43,7 +43,7 @@ type BookGridProps = {
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
   onBookClick?: (book: BookWithRelations) => void
-  displayField?: DisplayField
+  displayFields?: DisplayField[]
   displayContext?: SortContext
 }
 
@@ -75,7 +75,7 @@ export function BookGrid({
   hasActiveFilters,
   selectedBookUuid,
   onBookClick,
-  displayField,
+  displayFields,
   displayContext,
 }: BookGridProps) {
   const menu = useBookActionMenu(books)
@@ -298,7 +298,7 @@ export function BookGrid({
                         menu.menuOpen && menu.menuBook?.uuid === book.uuid
                       }
                       onClick={onBookClick}
-                      displayField={displayField}
+                      displayFields={displayFields}
                       displayContext={displayContext}
                     />
                   ))}

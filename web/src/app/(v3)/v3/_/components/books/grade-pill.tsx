@@ -3,14 +3,14 @@ import { cn } from "@v3/_/lib/utils"
 // the analyzer's grade colour ramp, mapped to tailwind. green = strong
 // alignment through red = failing, with light/dark variants.
 const GRADE_STYLES: Record<string, string> = {
-  "A+": "bg-green-200 text-green-900 dark:bg-green-900 dark:text-green-200",
-  A: "bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200",
-  "A-": "bg-cyan-200 text-cyan-900 dark:bg-cyan-900 dark:text-cyan-200",
-  B: "bg-sky-200 text-sky-900 dark:bg-sky-900 dark:text-sky-200",
-  "B-": "bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200",
-  C: "bg-yellow-100 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100",
-  D: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  F: "bg-red-100 text-red-800 italic dark:bg-red-900 dark:text-red-200",
+  "A+": "bg-positive-bg text-positive dark:bg-positive-900 dark:text-positive-200",
+  A: "bg-good-bg text-good dark:bg-good-900 dark:text-good-200",
+  "A-": "bg-good-bg text-good dark:bg-good-900 dark:text-good-200",
+  B: "bg-moderate-bg text-moderate dark:bg-moderate-900 dark:text-moderate-200",
+  "B-": "bg-moderate-bg text-moderate dark:bg-moderate-900 dark:text-moderate-200",
+  C: "bg-poor-bg text-poor dark:bg-poor-900 dark:text-poor-200",
+  D: "bg-poor-bg text-poor dark:bg-poor-900 dark:text-poor-200",
+  F: "bg-poor-bg text-poor dark:bg-poor-900 dark:text-poor-200",
 }
 
 export function GradePill({
