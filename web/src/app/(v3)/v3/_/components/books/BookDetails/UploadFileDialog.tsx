@@ -4,7 +4,7 @@ import { useState } from "react"
 
 import { UploadDialog } from "@v3/_/components/files/UploadDialog"
 import { type UppyFileType } from "@v3/_/components/files/useTusUpload"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -44,6 +44,7 @@ export function UploadFileDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const t = useTranslation("UploadDialog")
+  const c = useCommon()
   const isAdd = !book[format]?.filepath
   const [metadataMode, setMetadataMode] = useState<MetadataFieldMode>("merge")
 
@@ -100,13 +101,13 @@ export function UploadFileDialog({
       onMetadataModeChange={setMetadataMode}
       labels={{
         metadataBehavior: t("metadataBehavior"),
-        metadataMerge: t("metadataMerge"),
-        metadataSkip: t("metadataSkip"),
-        metadataOverwrite: t("metadataOverwrite"),
+        metadataMerge: c.plain("metadataBehavior.merge"),
+        metadataSkip: c.plain("metadataBehavior.keep"),
+        metadataOverwrite: c.plain("metadataBehavior.overwrite"),
         failedFiles: (count) => t("failedFiles", { count: String(count) }),
-        cancel: t("cancel"),
-        upload: t("upload"),
-        done: t("done"),
+        cancel: c.plain("actions.cancel"),
+        upload: c.plain("actions.upload"),
+        done: c.plain("actions.done"),
         uploadAnother: t("uploadAnother"),
       }}
     />

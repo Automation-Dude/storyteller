@@ -21,7 +21,7 @@ import {
 } from "@v3/_/components/ui/field"
 import { IconPicker } from "@v3/_/components/ui/icon-picker"
 import { Input } from "@v3/_/components/ui/input"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useListTagsQuery, useUpdateTagMutation } from "@/store/api"
 import { type UUID } from "@/uuid"
@@ -46,6 +46,7 @@ export function EditTagDialog({
   onUpdated,
 }: EditTagDialogProps) {
   const t = useTranslation("EntityActions")
+  const c = useCommon()
   const [updateTag, { isLoading }] = useUpdateTagMutation()
 
   // the sidebar only passes uuid+name, so seed icon/color from the full tag
@@ -134,11 +135,11 @@ export function EditTagDialog({
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t("cancel")}
+              {c("actions.cancel")}
             </Button>
 
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t("saving") : t("save")}
+              {isLoading ? c("states.saving") : c("actions.save")}
             </Button>
           </DialogFooter>
         </form>

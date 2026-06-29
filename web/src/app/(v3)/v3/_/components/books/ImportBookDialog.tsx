@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import { ImportFromServerDialog } from "@v3/_/components/files/ImportFromServerDialog"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type ImportMode } from "@/database/settingsTypes"
 import { useCreateBookMutation } from "@/store/api"
@@ -19,6 +19,7 @@ export function ImportBookDialog({
   collection?: UUID
 }) {
   const t = useTranslation("ImportFromServerDialog")
+  const c = useCommon()
   const [createBook, { isLoading }] = useCreateBookMutation()
   const [error, setError] = useState<string | null>(null)
 
@@ -50,21 +51,21 @@ export function ImportBookDialog({
       multiple
       onSubmit={(paths, importMode) => void handleSubmit(paths, importMode)}
       isSubmitting={isLoading}
-      submitLabel={t("import")}
+      submitLabel={c.plain("actions.import")}
       showMetadataMode={false}
       error={error}
       labels={{
         importMode: t("importMode"),
-        importModeReference: t("importModeReference"),
-        importModeCopy: t("importModeCopy"),
-        importModeMove: t("importModeMove"),
+        importModeReference: c.plain("importMode.reference"),
+        importModeCopy: c.plain("importMode.copy"),
+        importModeMove: c.plain("importMode.move"),
         importModeHardlink: t("importModeHardlink"),
         metadataBehavior: t("metadataBehavior"),
-        metadataMerge: t("metadataMerge"),
-        metadataSkip: t("metadataSkip"),
-        metadataOverwrite: t("metadataOverwrite"),
+        metadataMerge: c.plain("metadataBehavior.merge"),
+        metadataSkip: c.plain("metadataBehavior.keep"),
+        metadataOverwrite: c.plain("metadataBehavior.overwrite"),
         selected: t("selected"),
-        cancel: t("cancel"),
+        cancel: c.plain("actions.cancel"),
       }}
     />
   )

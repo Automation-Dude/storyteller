@@ -544,7 +544,7 @@ function ColumnHeader({
   sortDirection?: SortDirection
   onSortChange?: (field: SortField, direction: SortDirection) => void
 }) {
-  const t = useTranslation("Fields")
+  const t = useTranslation("Common.fields")
 
   if (field === "authors" || field === "title") return null
 
@@ -655,7 +655,7 @@ export function BookList({
 
   const lastVirtualRowIndex = virtualRows.at(-1)?.index
 
-  const t = useTranslation("Fields")
+  const t = useTranslation("Common.fields")
 
   useEffect(() => {
     if (lastVirtualRowIndex === undefined) return
@@ -809,8 +809,8 @@ export function BookList({
                 }}
               >
                 {menu.menuBookIsSelected
-                  ? menu.t("deselect")
-                  : menu.t("select")}
+                  ? menu.c("actions.deselect")
+                  : menu.c("actions.select")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>

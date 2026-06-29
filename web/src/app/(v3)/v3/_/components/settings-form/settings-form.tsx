@@ -39,7 +39,7 @@ import {
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type Invite, type Settings, type User } from "@/apiModels"
@@ -213,6 +213,7 @@ export function SettingsForm({
   initialInvites?: Invite[]
 }) {
   const t = useTranslation("SettingsPage")
+  const c = useCommon()
   const title = t("title")
   const isMobile = useIsMobile()
   const { data: maxUploadChunkSize } = useGetMaxUploadChunkSizeQuery()
@@ -471,7 +472,7 @@ export function SettingsForm({
             size="sm"
           >
             {isSaving && <Spinner />}
-            {isSaving ? t("saving") : t("saveSettings")}
+            {isSaving ? c("states.saving") : t("saveSettings")}
           </Button>
         </>
       )}
@@ -534,7 +535,7 @@ export function SettingsForm({
                   onClick={() => void setActiveTab(null)}
                 >
                   <IconArrowLeft className="mr-1 h-4 w-4" />
-                  {t("back")}
+                  {c("actions.back")}
                 </Button>
 
                 {isFormTab && (
@@ -545,7 +546,7 @@ export function SettingsForm({
                     size="sm"
                   >
                     {isSaving && <Spinner />}
-                    {isSaving ? t("saving") : t("saveSettings")}
+                    {isSaving ? c("states.saving") : t("saveSettings")}
                   </Button>
                 )}
               </div>

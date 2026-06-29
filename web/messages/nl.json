@@ -48,7 +48,6 @@
       "hidden": "Verborgen secties ({count})",
       "show": "Tonen",
       "save": "Wijzigingen opslaan",
-      "cancel": "Annuleren",
       "hideFromHome": "Verbergen van startpagina",
       "deletePermanently": "Plank permanent verwijderen",
       "customShelf": "Aangepaste plank"
@@ -88,6 +87,12 @@
     "description": "We konden de pagina die je zocht niet vinden. Mogelijk is deze verplaatst of bestaat deze niet meer.",
     "goBack": "Ga terug",
     "home": "Home"
+  },
+  "ForbiddenPage": {
+    "title": "Verboden toegang",
+    "description": "Stop, kwajongen! Gij zijt hier niet welkom. Je hebt niet voldoende toegangsrechten om bij deze pagina te komen. Als je denkt dat je dat wel zou moeten hebben, neem dan contact op met de administrator.",
+    "goBack": "Druip zielig af",
+    "home": "Dashboard"
   },
   "BooksPage": {
     "title": "Boeken",
@@ -178,27 +183,17 @@
       "no-media": "Geen media"
     },
     "search": "Zoeken...",
-    "noItemsFound": "Geen items gevonden",
     "pinAsShelf": "Vastpinnen als plank",
     "sortByCount": "Sorteren op aantal",
     "sortByName": "Sorteren op naam"
   },
   "EntityActions": {
-    "selected": "{count} geselecteerd",
-    "edit": "Bewerken",
-    "delete": "Verwijderen",
-    "deleting": "Verwijderen...",
     "mergeInto": "Samenvoegen naar...",
     "createShelfWith": "Plank maken met selectie",
     "deleteTitle": "{count} {entity} verwijderen?",
     "deleteDescription": "Dit verwijdert de geselecteerde items en ontkoppelt ze van alle boeken. Dit kan niet ongedaan worden.",
     "mergeTitle": "{count} items samenvoegen naar \"{target}\"?",
     "mergeDescription": "Alle boeken van de andere geselecteerde items worden toegewezen aan het doel. De andere items worden verwijderd.",
-    "merge": "Samenvoegen",
-    "confirm": "Bevestigen",
-    "cancel": "Annuleren",
-    "saving": "Opslaan...",
-    "save": "Opslaan",
     "shiftSkipHint": "houd shift ingedrukt om dit de volgende keer over te slaan",
     "editTag": "Label bewerken",
     "editTagDescription": "Werk de labelnaam, het pictogram en de kleur bij.",
@@ -221,8 +216,6 @@
     "createStatusDescription": "Voeg een nieuwe status toe die aan boeken kan worden toegekend.",
     "statusName": "Statusnaam",
     "statusNameHint": "Dit is de permanente interne naam. Deze kan later niet worden gewijzigd.",
-    "creating": "Aanmaken...",
-    "create": "Aanmaken",
     "deleteStatusConfirm": "Boeken met deze status verliezen hun status.",
     "coreStatus": "Kern",
     "entityTypes": {
@@ -234,28 +227,19 @@
     }
   },
   "SelectionToolbar": {
-    "select": "Selecteren",
     "selectAll": "Alles selecteren",
     "selectNone": "Niets selecteren",
     "invertSelection": "Selectie omkeren",
-    "selected": "{count} geselecteerd",
     "actions": "Acties",
     "addToCollection": "Toevoegen aan verzameling",
-    "noCollections": "Geen verzamelingen",
     "addToSeries": "Toevoegen aan serie",
-    "noSeries": "Geen series",
-    "scan": "Scannen",
-    "delete": "Verwijderen",
-    "deleting": "Verwijderen...",
     "deleteTitle": "{count} boek(en) verwijderen?",
-    "deleteDescription": "Dit kan niet ongedaan worden."
+    "deleteDescription": "Dit kan niet ongedaan worden.",
+    "cancelSelection": "Stop met selecteren"
   },
   "BookActions": {
     "openFullPage": "Volledige pagina openen",
-    "edit": "Bewerken",
-    "scan": "Scannen",
     "search": "Zoeken...",
-    "noResults": "Geen resultaten",
     "addToCollection": "Toevoegen aan verzameling",
     "newCollection": "Nieuwe verzameling...",
     "removeFromCollection": "Verwijderen uit verzameling",
@@ -267,15 +251,9 @@
     "removeTag": "Label verwijderen",
     "setStatus": "Leesstatus instellen",
     "upgradeEpub": "EPUB upgraden",
-    "process": "Verwerken",
     "clearCache": "Cache wissen",
     "merge": "Boeken samenvoegen",
     "mergeInto": "Samenvoegen in",
-    "delete": "Verwijderen",
-    "deleting": "Verwijderen...",
-    "noCollections": "Geen verzamelingen",
-    "noSeries": "Geen series",
-    "noTags": "Geen labels",
     "deleteTitle": "{count} boek(en) verwijderen?",
     "deleteDescription": "Bestanden in je assets-map worden verwijderd. Dit kan niet ongedaan worden.",
     "clearCacheTitle": "Cache wissen voor {count} boek(en)?",
@@ -286,16 +264,13 @@
     "upgradeDescription": "Converteert EPUB 2-bestanden naar EPUB 3.",
     "upgradeStarted": "EPUB-upgrade gestart",
     "mergeTitle": "Samenvoegen in \"{target}\"?",
-    "mergeDescription": "De andere geselecteerde boeken worden hierin samengevoegd en daarna verwijderd. Dit kan niet ongedaan worden.",
-    "select": "Selecteren",
-    "deselect": "Deselecteren"
+    "mergeDescription": "De andere geselecteerde boeken worden hierin samengevoegd en daarna verwijderd. Dit kan niet ongedaan worden."
   },
   "ShelfPage": {
     "emptyShelf": "Deze plank is leeg",
     "adjustFilters": "Probeer je zoekterm of filters aan te passen"
   },
   "ShelfFilterEditor": {
-    "add": "Toevoegen",
     "condition": "Voorwaarde",
     "andGroup": "EN-groep",
     "orGroup": "OF-groep",
@@ -422,16 +397,11 @@
     "manual": "Handmatig",
     "clearSelection": "Selectie wissen",
     "sortAndLimit": "Sorteren & limiet",
-    "reset": "Herstellen",
     "sortBy": "Sorteren op",
     "limit": "Limiet",
     "limitAll": "Alle",
-    "cancel": "Annuleren",
-    "save": "Opslaan",
-    "create": "Aanmaken",
     "searchBooks": "Zoek op titel of auteur...",
     "noBooksFound": "Geen boeken gevonden",
-    "selectedCount": "{count} geselecteerd",
     "searchToAdd": "Zoek om boeken aan deze plank toe te voegen",
     "orderBy": {
       "createdAt": "Datum toegevoegd",
@@ -453,20 +423,18 @@
     "exportSettings": "Exporteer instellingen als JSON",
     "lockedSettings": "Sommige instellingen worden via een configuratiebestand beheerd en kunnen hier niet gewijzigd worden.",
     "lockedSettingTooltip": "Deze instelling kan niet worden gewijzigd omdat het via wordt beheerd via een configuratiebestand.",
-    "saving": "Opslaan...",
     "settingsSavedSuccessfully": "Instellingen succesvol opgeslagen",
     "failedToSaveSettings": "Instellingen opslaan mislukt",
     "searchSettings": "Instellingen zoeken...",
-    "formHasErrors": "{count, plural, =1 {# fout} other {# fouten}}",
-    "back": "Terug",
+    "formHasErrors": "{count, plural, one {# probleem} other {# problemen}}",
     "sidebar": {
       "settings": "Instellingen",
       "administration": "Beheer"
     },
     "changelog": {
       "title": "Changelog",
-      "loadMore": "Meer laden",
       "noChangelogEntriesFound": "Geen changelogs gevonden.",
+      "loadMore": "Meer laden",
       "currentlyOn": "Huidige versie {version} (laatste: {latest})",
       "current": "huidig",
       "new": "nieuw",
@@ -499,28 +467,32 @@
             "useDefault": "standaard",
             "defaultImportMode": "Standaard importmodus",
             "defaultImportModeDescription": "Hoe bestanden in importmappen verwerkt worden. Individuele importregels kunnen dit overschrijven.",
-            "addWatchRule": "Importregel toevoegen",
-            "addWatchRuleDescription": "<em>Storyteller</em> zal deze map scannen voor nieuwe boeken.",
-            "searchWatchRules": "Importregels doorzoeken…",
-            "addIgnoreRule": "<em>Ignore-</em>regel toevoegen",
-            "searchIgnoreRules": "Ignore-regels doorzoeken…",
-            "noIgnoreRules": "Geen ignore-regels.",
-            "noIgnoreRulesMatchSearch": "Geen ignore-regels match je zoekopdracht.",
-            "showingRules": "Toont {start}–{end} van {total}",
-            "showingRulesTotal": "Toont {total} van {totalAuto}.",
-            "addIgnoreRuleDescription": "<em>Storyteller</em> zal deze map tijdens scans overslaan.",
-            "addAutoIgnoreRule": "<em>Auto-ignore-</em>regel toevoegen",
-            "searchAutoIgnoreRules": "Auto-ignore-regels doorzoeken…",
-            "autoIgnoreRulesDescription": "Auto-ignore-regels worden toegevoegd door <em>Storyteller</em> wanneer boeken worden verplaatst of gekopieerd, of als je ze verwijdert en \"herimporteren voorkomen\" selecteert. Als een boek niet wordt geïmporteerd, zoek hier naar het pad of de titel om te zien waarom.",
-            "noAutoIgnoreRules": "Geen auto-ignore-regels.",
-            "noAutoIgnoreRulesMatchSearch": "Geen auto-ignore-regels match je zoekopdracht.",
-            "noLinkedBook": "Geen gekoppeld boek",
-            "watch": "Importeren",
-            "ignore": "Negeren",
-            "autoIgnore": "Automatisch genegeerd",
+            "addPath": "Voeg pad toe",
+            "importMode": "Importmodus",
+            "importModeDescription": "Hoe er omgegaan moet worden met bestanden die in importmap worden gevonden. Individuele regels kunnen hier voorrang op hebben.",
             "importCollectionsDescription": "Voeg nieuwe boeken toe aan collecties wanneer ze worden geïmporteerd.",
             "importCollectionsPlaceholder": "Geen collectie",
             "importCollectionsAdd": "Collectie toevoegen",
+            "addWatchRule": "Importregel toevoegen",
+            "addWatchRuleDescription": "<em>Storyteller</em> zal deze map scannen voor nieuwe boeken.",
+            "addIgnoreRule": "<em>Ignore-</em>regel toevoegen",
+            "searchWatchRules": "Importregels doorzoeken…",
+            "noWatchRules": "Geen importregels.",
+            "noWatchRulesMatchSearch": "Geen importregels gevonden.",
+            "searchIgnoreRules": "Ignore-regels doorzoeken…",
+            "searchAutoIgnoreRules": "Auto-ignore-regels doorzoeken…",
+            "addIgnoreRuleDescription": "<em>Storyteller</em> zal deze map tijdens scans overslaan.",
+            "noIgnoreRules": "Geen ignore-regels.",
+            "noIgnoreRulesMatchSearch": "Geen ignore-regels match je zoekopdracht.",
+            "addAutoIgnoreRule": "<em>Auto-ignore-</em>regel toevoegen",
+            "autoIgnoreRulesDescription": "Auto-ignore-regels worden toegevoegd door <em>Storyteller</em> wanneer boeken worden verplaatst of gekopieerd, of als je ze verwijdert en \"herimporteren voorkomen\" selecteert. Als een boek niet wordt geïmporteerd, zoek hier naar het pad of de titel om te zien waarom.",
+            "noAutoIgnoreRules": "Geen auto-ignore-regels.",
+            "noAutoIgnoreRulesMatchSearch": "Geen auto-ignore-regels match je zoekopdracht.",
+            "showingRules": "Toont {start}–{end} van {total}",
+            "showingRulesTotal": "Toont {total} van {totalAuto}.",
+            "watch": "Importeren",
+            "ignore": "Negeren",
+            "autoIgnore": "Automatisch genegeerd",
             "ignoreSources": {
               "config": "<em>Config</em> bestand",
               "importRelocated": "Verplaatst",
@@ -528,29 +500,20 @@
               "importPreventReimport": "Herimporteren voorkomen"
             }
           },
-          "readaloudLocation": {
-            "title": "<em>Readaloud</em> Locatie",
-            "description": "Stel in waar nieuwe <em>readalouds</em> worden opgeslagen wanneer de (audio)boeken niet via de webclient zijn geüpload",
-            "locationType": "Locatietype",
-            "locationTypeSuffix": "In dezelfde map als de EPUB, met een suffix",
-            "locationTypeSiblingFolder": "In dezelfde map als de EPUB, in een map",
-            "locationTypeCustomFolder": "In een specifieke map",
-            "locationTypeInternal": "In de interne <em>Storyteller</em>-map"
-          },
           "scanControls": {
             "title": "Bibliotheek Scannen",
             "description": "Scan je bibliotheek voor nieuwe bestanden en wijzigingen. Scans controleren alle gevolgde boeken en importpaden voor toevoegingen, verwijderingen en gewijzigde bestanden.",
             "scanLibrary": "Bibliotheek scannen",
-            "showAdvancedCron": "Gebruik een cron expressie in plaats van een interval",
-            "showSimpleInterval": "Gebruik een eenvoudig interval in plaats van een cron expressie",
-            "cronExpression": "Cron expressie",
-            "cronExpressionDescription": "Standaard cron syntax (minuut uur dag maand weekdag). De expressie wordt uitgevoerd in de tijdzone van de server.",
-            "cronHelper": "Cron expressie referentie (crontab.guru)",
             "scanNote": "Leest alle importpaden en boekmetadata opnieuw in, ook als bestanden niet zijn gewijzigd sinds de laatste scan.",
             "scanRunning": "Scan wordt uitgevoerd ({source})",
             "cancelScan": "Annuleer scan",
             "enableScheduledScans": "Voer scans op een schema uit",
-            "scanInterval": "Scan interval (minuten)"
+            "scanInterval": "Scan interval (minuten)",
+            "showAdvancedCron": "Gebruik een cron expressie in plaats van een interval",
+            "showSimpleInterval": "Gebruik een eenvoudig interval in plaats van een cron expressie",
+            "cronExpression": "Cron expressie",
+            "cronExpressionDescription": "Standaard cron syntax (minuut uur dag maand weekdag). De expressie wordt uitgevoerd in de tijdzone van de server.",
+            "cronHelper": "Cron expressie referentie (crontab.guru)"
           },
           "skippedImportPaths": {
             "title": "Overgeslagen importpaden",
@@ -577,7 +540,6 @@
             "clearCacheConfirmTitle": "Cache wissen voor alle boeken",
             "clearCacheConfirmDescription": "Verwerkte audio- en transcriptiebestanden verwijderen voor elk boek in de bibliotheek? Dit maakt schijfruimte vrij, maar betekent dat een volledige herstart nodig is om boeken later opnieuw te synchroniseren. Originele bestanden blijven ongemoeid.",
             "clearCacheConfirm": "Cache wissen",
-            "clearCacheCancel": "Annuleren",
             "clearCacheSuccess": "Verwerkte cache gewist",
             "clearCacheError": "Cache wissen mislukt"
           },
@@ -611,6 +573,13 @@
             "amazonTranscribe": "Amazon Transcribe",
             "openaiCloud": "OpenAI Cloud Platform",
             "deepgram": "Deepgram Speech to Text",
+            "whisperBuildCpu": "CPU",
+            "whisperBuildCublas126": "cuBLAS 12.6 (NVIDIA GPU)",
+            "whisperBuildCublas130": "cuBLAS 13.0 (NVIDIA GPU)",
+            "whisperBuildHipblas": "hipBLAS (AMD GPU)",
+            "whisperBuildDeprecated": "cuBLAS 11.8 is no longer supported. Please update to version 12 or 13.",
+            "whisperModel": "Whisper model",
+            "whisperModelDescription": "Het standaard model (tiny) is voldoende voor de meeste Engelse en Nederlandse boeken. Voor boeken met veel ongewone woorden, of in andere talen dan Engels of Nederlands, heb je mogelijk grotere modellen nodig zoals small of medium. Tip: ga direct voor large-v3-turbo, die is bijna net zo snel als medium, maar veel accurater.",
             "whisperThreads": "Turbo mode",
             "whisperThreadsDescription": "Verander het parallelisatieniveau van het Whisper model. Kan een enorme snelheidsverhoging opleveren indien je GPU-acceleratie gebruikt.",
             "whisperThreadsNote": "We raden niet om deze waarde en de \"Parallelle audiotrack-transcriptie\" waarde beiden hoger dan 1 te zetten. Kies de één of de ander.",
@@ -626,8 +595,6 @@
             "whisperServerApiKey": "API key",
             "whisperServerApiKeyDescription": "Alleen nodig als je server een API key vereist.",
             "whisperServerDescription": "Gebruik een externe, zelf-gehoste whisper.cpp server voor transcriptie. Handig als je een krachtige machine hebt om transcriptie te offloaden.",
-            "whisperModel": "Whisper model",
-            "whisperModelDescription": "Het standaard model (tiny) is voldoende voor de meeste Engelse en Nederlandse boeken. Voor boeken met veel ongewone woorden, of in andere talen dan Engels of Nederlands, heb je mogelijk grotere modellen nodig zoals small of medium. Tip: ga direct voor large-v3-turbo, die is bijna net zo snel als medium, maar veel accurater.",
             "apiKey": "API key *",
             "subscriptionKey": "Subscription key *",
             "serviceRegion": "Serviceregio *",
@@ -769,7 +736,7 @@
           "bookList": "Alle boeken weergeven",
           "bookDelete": "Boeken verwijderen",
           "bookUpdate": "Boek informatie wijzigen",
-          "createCollections": "Verzamelingen aanmaken",
+          "collectionCreate": "Collecties aanmaken",
           "inviteList": "Gebruikers uitnodigingen bekijken",
           "inviteDelete": "Gebruikers uitnodigingen verwijderen",
           "userCreate": "Nieuwe gebruikers uitnodigen",
@@ -778,21 +745,21 @@
           "userDelete": "Gebruikers verwijderen",
           "userUpdate": "Andere gebruikers machtigingen wijzigen",
           "settingsUpdate": "Server instellingen wijzigen",
-          "collectionCreate": "Collecties aanmaken"
+          "createCollections": "Verzamelingen aanmaken"
         },
         "sections": {
           "users-invites": {
             "title": "Uitnodigingen",
             "description": "Beheer openstaande uitnodigingen voor je server.",
+            "invites": "Uitnodigingen",
+            "email": "E-mail",
             "inviteUser": "Voeg gebruiker toe",
             "inviteSent": "Uitnodiging verzonden",
             "inviteAnother": "Nog een uitnodiging verzenden",
             "inviteFailed": "Uitnodiging mislukt",
             "inviteFailedDescription": "Er is iets misgegaan bij het verzenden van de uitnodiging. Controleer de serverlogs voor meer informatie.",
             "inviteFailedButton": "Opnieuw proberen",
-            "email": "E-mail",
             "enablePasswordLogin": "Schakel inloggen met wachtwoord in om gebruikers via e-mail uit te nodigen",
-            "invites": "Uitnodigingen",
             "createInvite": "Nodig uit"
           },
           "users-list": {
@@ -805,10 +772,7 @@
   },
   "PreferencesPage": {
     "title": "Voorkeuren",
-    "back": "Terug",
-    "save": "Opslaan",
     "settingsPage": "Algemene instellingen",
-    "saving": "Opslaan...",
     "savedSuccessfully": "Voorkeuren opgeslagen",
     "failedToSave": "Voorkeuren opslaan mislukt",
     "searchPreferences": "Voorkeuren zoeken...",
@@ -825,7 +789,6 @@
       "changePassword": "Wachtwoord wijzigen",
       "addPassword": "Wachtwoord toevoegen",
       "saveProfile": "Profiel opslaan",
-      "saving": "Opslaan...",
       "savedSuccessfully": "Profiel opgeslagen",
       "failedToSave": "Profiel opslaan mislukt",
       "linkedAccounts": "Gekoppelde accounts",
@@ -972,6 +935,10 @@
             "placeholder": "Naam van dimensie",
             "remove": "Dimensie verwijderen"
           },
+          "ratings": {
+            "title": "Beoordelingen en recensies",
+            "description": "Verander hoe beoordelingen en recensies eruitzien en werken"
+          },
           "defaultStatus": {
             "title": "Standaard Status",
             "description": "Kies welke status nieuw toegevoegde boeken voor jou krijgen.",
@@ -1007,24 +974,21 @@
       "en": "Engels",
       "nl": "Nederlands"
     },
-    "preferences": "Voorkeuren",
     "switchToClassic": "Terug naar klassieke UI",
-    "switchToNew": "Nieuwe interface proberen"
+    "switchToNew": "Nieuwe interface proberen",
+    "preferences": "Voorkeuren"
   },
   "SidebarManager": {
     "customize": "Zijbalk aanpassen",
     "title": "Zijbalk bewerken",
     "description": "Items herordenen, verbergen wat je niet gebruikt, en verzamelingen of planken toevoegen.",
     "available": "Aan zijbalk toevoegen",
-    "add": "Toevoegen",
     "addGroup": "Sectie toevoegen",
     "hideFromSidebar": "Verbergen uit zijbalk",
     "collection": "Verzameling",
     "shelf": "Plank",
     "createShelf": "Nieuwe plank",
-    "customizeHome": "Homepagina aanpassen",
-    "save": "Klaar",
-    "cancel": "Annuleren"
+    "customizeHome": "Homepagina aanpassen"
   },
   "BookDetailsPage": {
     "bookNotFound": "Boek niet gevonden",
@@ -1035,7 +999,6 @@
       "edit": "Cover bewerken",
       "uploadEbook": "Ebook-cover uploaden",
       "uploadAudiobook": "Audioboek-cover uploaden",
-      "clear": "Verwijderen",
       "setDefaultPosition": "Als standaardpositie instellen",
       "savedDefaultPosition": "Standaardpositie opgeslagen"
     },
@@ -1044,12 +1007,7 @@
     "addAuthor": "Auteur toevoegen...",
     "addNarrator": "Verteller toevoegen...",
     "invalidLanguageCode": "Onbekende taalcode",
-    "edit": "Bewerken",
     "deleteBook": "Boek verwijderen",
-    "saving": "Aan het opslaan...",
-    "save": "Opslaan",
-    "cancel": "Annuleren",
-    "discard": "Verwerpen",
     "editing": "Bezig met bewerken…",
     "saveFailed": "Opslaan mislukt",
     "review": {
@@ -1058,9 +1016,6 @@
       "yourRating": "Jouw beoordeling",
       "yourReview": "Jouw recensie",
       "reviewPlaceholder": "Wat vond je van dit boek?",
-      "edit": "Bewerken",
-      "save": "Opslaan",
-      "cancel": "Annuleren",
       "clear": "Wissen",
       "ratePlaceholder": "Beoordeel",
       "addAdvanced": "Voeg meerdimensionale beoordeling toe",
@@ -1076,8 +1031,16 @@
       "addDimension": "{label} toevoegen",
       "removeDimension": "{label} verwijderen"
     },
+    "scan": {
+      "title": "Scan",
+      "scanning": "Aan het scannen...",
+      "cancelScan": "Annuleer scan",
+      "scanningComplete": "Scan voltooid",
+      "scanningFailed": "Scan mislukt"
+    },
     "downloads": {
-      "download<em>Readaloud</em>": "Download <em>Readaloud</em>",
+      "download": "Downloaden",
+      "downloadReadaloud": "Download <em>Readaloud</em>",
       "downloadEbook": "Download Ebook",
       "downloadAudiobook": "Download Audiobook"
     },
@@ -1089,9 +1052,6 @@
       "position": "Positie",
       "positionPlaceholder": "bijv. 1",
       "positionHint": "Laat leeg om zonder positie toe te voegen.",
-      "cancel": "Annuleren",
-      "add": "Toevoegen",
-      "save": "Opslaan",
       "editPositionTitle": "Positie bewerken",
       "editPositionDescription": "Wijzig de positie van dit boek in {series}."
     },
@@ -1121,72 +1081,15 @@
       "error": "Synchronisatie mislukt",
       "stopped": "Synchronisatie gestopt",
       "unprocessed": "Niet gesynchroniseerd",
-      "cancel": "Annuleren",
       "retry": "Opnieuw proberen",
       "createReadaloud": "Creëer <em>readaloud</em>",
-
       "lastAligned": "Laatst gesynchroniseerd",
       "transcriptionEngine": "Transcriptie engine",
       "storytellerVersion": "<em>Storyteller</em> versie"
-    },
-    "scan": {
-      "cancelScan": "Annuleer scan",
-      "scanning": "Aan het scannen...",
-      "scanningFailed": "Scan mislukt"
-    }
-  },
-  "Fields": {
-    "label": {
-      "title": "Titel",
-      "authors": "Auteurs",
-      "createdAt": "Toegevoegd",
-      "updatedAt": "Bijgewerkt",
-      "publicationDate": "Publicatiedatum",
-      "userRating": "Mijn score",
-      "pageCount": "Pagina's",
-      "duration": "Duur",
-      "fileSize": "Grootte",
-      "language": "Taal",
-      "alignmentScore": "Uitlijnscore",
-      "alignmentGrade": "Uitlijncijfer",
-      "alignmentMissingSentences": "Ontbrekende zinnen",
-      "alignmentMutedChapters": "Gedempte hoofdstukken",
-      "seriesPosition": "Seriepositie"
-    },
-    "short": {
-      "title": "Titel",
-      "authors": "Auteurs",
-      "createdAt": "Toeg.",
-      "updatedAt": "Bijgew.",
-      "publicationDate": "Gepubl.",
-      "userRating": "Score",
-      "pageCount": "Pag.",
-      "duration": "Duur",
-      "fileSize": "Grootte",
-      "language": "Taal",
-      "alignmentScore": "Score",
-      "alignmentGrade": "Cijfer",
-      "alignmentMissingSentences": "Ontbrekend",
-      "alignmentMutedChapters": "Gedempt",
-      "seriesPosition": "Pos."
     }
   },
   "Labels": {
-    "title": "Titel",
-    "subtitle": "Ondertitel",
-    "description": "Beschrijving",
-    "language": "Taal",
-    "publicationDate": "Publicatie datum",
-    "collections": "Verzamelingen",
-    "dateAdded": "Toegevoegd op",
-    "dateUpdated": "Bijgewerkt op",
-    "tags": "Labels",
     "bookDetails": "Details",
-    "pages": "Pagina's",
-    "duration": "Duur",
-    "added": "Toegevoegd",
-    "lastUpdated": "Laatst bijgewerkt",
-    "authors": "Auteurs",
     "narrators": "Vertellers",
     "otherContributors": "Andere bijdragers",
     "downloads": "Downloads",
@@ -1206,13 +1109,6 @@
     "metadata": {
       "metadataFieldOverrides": "Metadata gedrag",
       "metadataFieldOverridesDescription": "Bepaalt hoe <em><em>Storyteller</em></em> metadata uit boekbestanden verwerkt tijdens scans. Het standaardgedrag (alleen lege velden invullen) is geschikt voor de meeste gebruikers. Als je je boeken ook met andere tools beheert (bijv. <em>Calibre</em>, <em>Audiobookshelf</em>) en wilt dat die wijzigingen in <em>Storyteller</em> worden overgenomen, kies dan voor altijd overschrijven.",
-      "modeDefault": "Standaard modus",
-      "modeSkip": "Overslaan",
-      "modeMerge": "Samenvoegen",
-      "modeAlways": "Altijd overschrijven",
-      "modeCustom": "Aangepast",
-      "showAdvancedOverrides": "Toon instellingen per veld",
-      "showSimpleOverrides": "Gebruik een enkele instelling voor alle velden",
       "fieldTitle": "Titel",
       "fieldSubtitle": "Ondertitel",
       "fieldDescription": "Omschrijving",
@@ -1223,38 +1119,37 @@
       "fieldNarrators": "Vertellers",
       "fieldCreators": "Andere creatoren",
       "fieldSeries": "Serie",
-      "fieldTags": "Tags"
-    },
-    "delete": {
-      "withInput": "Verwijder {input}",
-      "plain": "Verwijder"
+      "fieldTags": "Tags",
+      "modeDefault": "Standaard modus",
+      "modeSkip": "Overslaan",
+      "modeMerge": "Samenvoegen",
+      "modeAlways": "Altijd overschrijven",
+      "modeCustom": "Aangepast",
+      "showAdvancedOverrides": "Toon instellingen per veld",
+      "showSimpleOverrides": "Gebruik een enkele instelling voor alle velden"
     },
     "create": {
-      "withInput": "Maak {input} aan",
-      "plain": "Creëer"
+      "withInput": "Maak {input} aan"
+    },
+    "delete": {
+      "withInput": "Verwijder {input}"
     },
     "update": {
       "withInput": "Update {input}",
       "plain": "Update"
     },
     "edit": {
-      "withInput": "Bewerk {input}",
-      "plain": "Bewerk"
+      "withInput": "Bewerk {input}"
     },
     "add": {
-      "withInput": "Voeg {input} toe",
-      "plain": "Voeg toe"
-    }
+      "withInput": "Voeg {input} toe"
+    },
+    "dateUpdated": "Bijgewerkt op",
+    "missing": "Ontbreekt"
   },
   "UploadDialog": {
     "metadataBehavior": "Metadata-gedrag",
-    "metadataMerge": "Samenvoegen met bestaand",
-    "metadataSkip": "Bestaand behouden",
-    "metadataOverwrite": "Overschrijven vanuit nieuw bestand",
     "failedFiles": "{count} bestand(en) niet geüpload — verwerk de rest toch",
-    "cancel": "Annuleren",
-    "upload": "Uploaden",
-    "done": "Klaar",
     "uploadAnother": "Nog een uploaden",
     "uploadFormat": "Upload {format}",
     "uploadReplacementFormat": "Upload vervanging {format}",
@@ -1271,18 +1166,9 @@
   },
   "ImportFromServerDialog": {
     "importMode": "Importmodus",
-    "importModeReference": "Referentie op locatie",
-    "importModeCopy": "Kopieer naar bibliotheek",
-    "importModeMove": "Verplaats naar bibliotheek",
     "importModeHardlink": "Hard link naar bibliotheek",
     "metadataBehavior": "Metadata-gedrag",
-    "metadataMerge": "Samenvoegen met bestaand",
-    "metadataSkip": "Bestaand behouden",
-    "metadataOverwrite": "Overschrijven vanuit nieuw bestand",
     "selected": "Geselecteerd",
-    "cancel": "Annuleren",
-    "import": "Importeren",
-    "replace": "Vervangen",
     "importFormatTitle": "Importeer {format} van server",
     "replaceFormatTitle": "Vervang {format} van server",
     "audioDescription": "Kies een map met audiobestanden, of een bestand om de bovenliggende map te gebruiken.",
@@ -1294,5 +1180,128 @@
     "errorGeneric": "Mislukt. Controleer de serverlogs.",
     "importBooksTitle": "Importeer boeken van server",
     "importBooksDescription": "Kies EPUB- of audiobestanden op de server om als nieuwe boeken te importeren."
+  },
+  "Common": {
+    "Nouns": {
+      "ebook": "{count, plural, one {Ebook} other {Ebooks}}",
+      "audiobook": "{count, plural, one {Audioboek} other {Audioboeken}}",
+      "readaloud": "{count, plural, one {Readaloud} other {Readalouds}}",
+      "book": "{count, plural, one {Boek} other {Boeken}}",
+      "chapter": "{count, plural, one {Hoofdstuk} other {Hoofdstukken}}",
+      "sentence": "{count, plural, one {Zin} other {Zinnen}}",
+      "note": "{count, plural, one {Notitie} other {Notities}}",
+      "transcription": "{count, plural, one {Transcriptie} other {Transcripties}}",
+      "transcript": "{count, plural, one {Transcript} other {Transcripten}}",
+      "author": "{count, plural, one {Auteur} other {Auteurs}}",
+      "narrator": "{count, plural, one {Verteller} other {Vertellers}}",
+      "creator": "{count, plural, one {Maker} other {Makers}}",
+      "series": "{count, plural, one {Serie} other {Series}}",
+      "tag": "{count, plural, one {Label} other {Labels}}",
+      "collection": "{count, plural, one {Verzameling} other {Verzamelingen}}",
+      "shelf": "{count, plural, one {Plank} other {Planken}}",
+      "file": "{count, plural, one {Bestand} other {Bestanden}}"
+    },
+    "actions": {
+      "save": "Opslaan",
+      "cancel": "Annuleren",
+      "edit": "Bewerken",
+      "delete": "Verwijderen",
+      "add": "Toevoegen",
+      "create": "Aanmaken",
+      "back": "Terug",
+      "home": "Start",
+      "scan": "Scannen",
+      "upload": "Uploaden",
+      "merge": "Samenvoegen",
+      "import": "Importeren",
+      "replace": "Vervangen",
+      "done": "Klaar",
+      "discard": "Verwerpen",
+      "reset": "Herstellen",
+      "remove": "Verwijderen",
+      "select": "Selecteren",
+      "deselect": "Deselecteren",
+      "confirm": "Bevestigen"
+    },
+    "states": {
+      "saving": "Opslaan...",
+      "deleting": "Verwijderen...",
+      "creating": "Aanmaken...",
+      "loading": "Laden...",
+      "processing": "Verwerken"
+    },
+    "fields": {
+      "label": {
+        "title": "Titel",
+        "authors": "Auteurs",
+        "createdAt": "Toegevoegd",
+        "updatedAt": "Bijgewerkt",
+        "publicationDate": "Publicatiedatum",
+        "userRating": "Mijn score",
+        "pageCount": "Pagina's",
+        "duration": "Duur",
+        "fileSize": "Grootte",
+        "language": "Taal",
+        "alignmentScore": "Uitlijnscore",
+        "alignmentGrade": "Uitlijncijfer",
+        "alignmentMissingSentences": "Ontbrekende zinnen",
+        "alignmentMutedChapters": "Gedempte hoofdstukken",
+        "alignedAt": "Laatst gesynchroniseerd",
+        "lastRead": "Laatst gelezen",
+        "readingPosition": "Voortgang",
+        "seriesPosition": "Seriepositie",
+        "subtitle": "Ondertitel",
+        "description": "Beschrijving",
+        "status": "Status",
+        "tags": "Labels",
+        "collections": "Verzamelingen",
+        "series": "Reeksen",
+        "creators": "Auteurs / Betrokkenen",
+        "mediaType": "Formaat",
+        "review": "Mijn recensie",
+        "ratingDimension": "Beoordelingsdimensie",
+        "search": "Zoek (alle velden)"
+      },
+      "short": {
+        "title": "Titel",
+        "authors": "Auteurs",
+        "createdAt": "Toeg.",
+        "updatedAt": "Bijgew.",
+        "publicationDate": "Gepubl.",
+        "userRating": "Score",
+        "pageCount": "Pag.",
+        "duration": "Duur",
+        "fileSize": "Grootte",
+        "language": "Taal",
+        "alignmentScore": "Score",
+        "alignmentGrade": "Cijfer",
+        "alignmentMissingSentences": "Ontbrekend",
+        "alignmentMutedChapters": "Gedempt",
+        "alignedAt": "Gesynchroniseerd",
+        "lastRead": "Laatst gelezen",
+        "readingPosition": "Voortgang",
+        "seriesPosition": "Pos."
+      }
+    },
+    "empty": {
+      "noItemsFound": "Geen items gevonden",
+      "noResults": "Geen resultaten",
+      "noCollections": "Geen verzamelingen",
+      "noSeries": "Geen series",
+      "noTags": "Geen labels"
+    },
+    "importMode": {
+      "reference": "Referentie op locatie",
+      "copy": "Kopieer naar bibliotheek",
+      "move": "Verplaats naar bibliotheek",
+      "hardlink": "Hard link"
+    },
+    "metadataBehavior": {
+      "merge": "Samenvoegen met bestaand",
+      "keep": "Bestaand behouden",
+      "overwrite": "Overschrijven vanuit nieuw bestand"
+    },
+    "selectedCount": "{count} geselecteerd",
+    "outOf": "{count, number} van {total, number}"
   }
 }

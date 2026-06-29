@@ -36,7 +36,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type User } from "@/apiModels"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
-import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   type UserPreferences,
   UserPreferencesSchema,
@@ -78,6 +78,7 @@ export function PreferencesForm({
   disablePasswordLogin: boolean
 }) {
   const t = useTranslation("PreferencesPage")
+  const c = useCommon()
   const canUpdateSettings = usePermission("settingsUpdate")
   const isMobile = useIsMobile()
 
@@ -223,7 +224,7 @@ export function PreferencesForm({
           size="sm"
         >
           {isSaving && <Spinner />}
-          {isSaving ? t("saving") : t("save")}
+          {isSaving ? c("states.saving") : c("actions.save")}
         </Button>
       )}
     </div>
@@ -274,7 +275,7 @@ export function PreferencesForm({
                     onClick={() => void setActiveTab(null)}
                   >
                     <IconArrowLeft className="mr-1 h-4 w-4" />
-                    {t("back")}
+                    {c("actions.back")}
                   </Button>
 
                   {showSaveButton && (
@@ -285,7 +286,7 @@ export function PreferencesForm({
                       size="sm"
                     >
                       {isSaving && <Spinner />}
-                      {isSaving ? t("saving") : t("save")}
+                      {isSaving ? c("states.saving") : c("actions.save")}
                     </Button>
                   )}
                 </div>

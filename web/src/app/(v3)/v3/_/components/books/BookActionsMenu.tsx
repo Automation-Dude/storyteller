@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
@@ -42,6 +42,7 @@ export function BookActionsMenu({
   className?: string
 }) {
   const t = useTranslation("BookActions")
+  const c = useCommon()
   const canEdit = usePermission("bookUpdate")
   const { items, dialogs } = useBookActionItems({
     books: [book],
@@ -81,7 +82,7 @@ export function BookActionsMenu({
           {onEdit && canEdit && (
             <DropdownMenuItem onClick={onEdit}>
               <IconEdit className="mr-2 h-4 w-4" />
-              {t("edit")}
+              {c("actions.edit")}
             </DropdownMenuItem>
           )}
 

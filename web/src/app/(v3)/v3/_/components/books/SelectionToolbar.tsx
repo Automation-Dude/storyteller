@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
@@ -33,6 +33,7 @@ export function SelectionToolbar({
   className,
 }: SelectionToolbarProps) {
   const t = useTranslation("SelectionToolbar")
+  const c = useCommon()
 
   const {
     selectedBooks,
@@ -62,8 +63,8 @@ export function SelectionToolbar({
             <DropdownMenuTrigger
               render={
                 <TooltipButton
-                  tooltip={t("select")}
-                  aria-label={t("select")}
+                  tooltip={c("actions.select")}
+                  aria-label={c("actions.select")}
                   variant="real-ghost"
                   size="sm"
                   className="gap-1 rounded-full"
@@ -118,7 +119,7 @@ export function SelectionToolbar({
           </DropdownMenu>
 
           <span className="px-2 font-sans text-xs whitespace-nowrap">
-            {t("selected", { count: selectedBooks.size })}
+            {c("selectedCount", { count: selectedBooks.size })}
           </span>
         </ActionBar>
         <ActionBar show={isSelecting} className="p-1">

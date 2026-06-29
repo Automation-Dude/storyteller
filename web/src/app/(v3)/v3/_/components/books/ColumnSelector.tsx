@@ -29,7 +29,7 @@ export function ColumnSelector({
   onChange,
   className,
 }: ColumnSelectorProps) {
-  const t = useTranslation("Fields")
+  const t = useTranslation("Common.fields")
 
   const toggle = (field: DisplayField) => {
     if (visibleFields.includes(field)) {

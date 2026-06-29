@@ -17,7 +17,7 @@ import {
   FieldLabel,
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useAddBooksToSeriesMutation,
@@ -61,6 +61,7 @@ export function SeriesEditor({
   const [removeFromSeries] = useRemoveBooksFromSeriesMutation()
 
   const t = useTranslation("BookDetailsPage.series")
+  const c = useCommon()
 
   const [pending, setPending] = useState<PendingSeries | null>(null)
   const [position, setPosition] = useState("")
@@ -230,9 +231,9 @@ export function SeriesEditor({
                   setPending(null)
                 }}
               >
-                {t("cancel")}
+                {c("actions.cancel")}
               </Button>
-              <Button type="submit">{t("add")}</Button>
+              <Button type="submit">{c("actions.add")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -283,9 +284,9 @@ export function SeriesEditor({
                   setEditing(null)
                 }}
               >
-                {t("cancel")}
+                {c("actions.cancel")}
               </Button>
-              <Button type="submit">{t("save")}</Button>
+              <Button type="submit">{c("actions.save")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

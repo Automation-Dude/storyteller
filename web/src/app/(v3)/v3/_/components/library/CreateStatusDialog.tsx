@@ -21,7 +21,7 @@ import {
   FieldLabel,
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useCreateStatusMutation } from "@/store/api"
 
@@ -42,6 +42,7 @@ export function CreateStatusDialog({
   onOpenChange,
 }: CreateStatusDialogProps) {
   const t = useTranslation("EntityActions")
+  const c = useCommon()
   const [createStatus, { isLoading }] = useCreateStatusMutation()
 
   const {
@@ -129,11 +130,11 @@ export function CreateStatusDialog({
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t("cancel")}
+              {c("actions.cancel")}
             </Button>
 
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t("creating") : t("create")}
+              {isLoading ? c("states.creating") : c("actions.create")}
             </Button>
           </DialogFooter>
         </form>

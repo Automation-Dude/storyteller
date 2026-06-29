@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react"
 
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
 
@@ -40,6 +40,7 @@ export function useBookActionMenu(books: BookWithRelations[]) {
   )
 
   const t = useTranslation("BookActions")
+  const c = useCommon()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
@@ -113,5 +114,6 @@ export function useBookActionMenu(books: BookWithRelations[]) {
     menuBookIsSelected,
 
     t,
+    c,
   }
 }

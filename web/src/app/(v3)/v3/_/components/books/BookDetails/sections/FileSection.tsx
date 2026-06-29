@@ -29,7 +29,7 @@ import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
 import { ConfirmDialog } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
-import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
@@ -70,6 +70,7 @@ function FormatFileRow({
   const tUpload = useTranslation("UploadDialog")
   const tImport = useTranslation("ImportFromServerDialog")
   const tLabels = useTranslation("Labels")
+  const c = useCommon()
 
   if (!fmt) return null
 
@@ -141,7 +142,7 @@ function FormatFileRow({
                 <TooltipButton
                   variant="ghost"
                   size="icon-sm"
-                  tooltip={tImport("replace")}
+                  tooltip={c.plain("actions.replace")}
                   className="text-muted-foreground font-thin"
                   aria-label={`Replace ${format} file`}
                 >
@@ -155,14 +156,14 @@ function FormatFileRow({
                 className="whitespace-nowrap"
               >
                 <IconServer className="mr-2 h-4 w-4" />
-                {tImport("import")}
+                {c("actions.import")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onReplaceUpload}
                 className="whitespace-nowrap"
               >
                 <IconUpload className="mr-2 h-4 w-4" />
-                {tUpload("upload")}
+                {c("actions.upload")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

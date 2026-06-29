@@ -72,7 +72,7 @@ export function BookFilters({
   onSaveAsShelf,
 }: BookFiltersProps) {
   const t = useTranslation("BooksPage")
-  const tLabel = useTranslation("Fields.label")
+  const tLabel = useTranslation("Common.fields.label")
 
   const {
     search,
@@ -336,7 +336,7 @@ function CollapsedOptionsMenu({
   bookView?: BookView
   onBookViewChange?: (view: BookView) => void
 }) {
-  const tLabel = useTranslation("Fields.label")
+  const tLabel = useTranslation("Common.fields.label")
   const flip = () => {
     onSortChange(sortField, sortDirection === "asc" ? "desc" : "asc")
   }

@@ -334,8 +334,8 @@ export function BookGrid({
                 }}
               >
                 {menu.menuBookIsSelected
-                  ? menu.t("deselect")
-                  : menu.t("select")}
+                  ? menu.c("actions.deselect")
+                  : menu.c("actions.select")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>

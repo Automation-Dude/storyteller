@@ -10,7 +10,7 @@ import { Button } from "@v3/_/components/ui/button"
 import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Textarea } from "@v3/_/components/ui/textarea"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { SEAMLESS_BOX } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
@@ -117,6 +117,7 @@ function InlineRatingNumber({
 export function ReviewSection({ className }: { className?: string }) {
   const { book } = useBookForm()
   const t = useTranslation("BookDetailsPage")
+  const c = useCommon()
   const { ratingDimensions } = useUserPreferences()
 
   const [setBookRating, { isLoading: isSaving }] = useSetBookRatingMutation()
@@ -245,9 +246,9 @@ export function ReviewSection({ className }: { className?: string }) {
                 startEdit()
               }}
               aria-label={
-                currentReview ? t("review.edit") : t("review.addReview")
+                currentReview ? c("actions.edit") : t("review.addReview")
               }
-              tooltip={currentReview ? t("review.edit") : t("review.addReview")}
+              tooltip={currentReview ? c("actions.edit") : t("review.addReview")}
             >
               <IconPencil className="size-3.5 stroke-[1.5]" />
             </TooltipButton>
@@ -338,7 +339,7 @@ export function ReviewSection({ className }: { className?: string }) {
                 }}
                 disabled={isSaving}
               >
-                {t("review.save")}
+                {c("actions.save")}
               </Button>
               <Button
                 size="sm"
@@ -348,7 +349,7 @@ export function ReviewSection({ className }: { className?: string }) {
                 }}
                 disabled={isSaving}
               >
-                {t("review.cancel")}
+                {c("actions.cancel")}
               </Button>
             </div>
           </Field>

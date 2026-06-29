@@ -77,3 +77,9 @@ export function useTranslation<
     ) => (t as any)(key, values),
   })
 }
+
+// shared vocabulary lives under the Common namespace. prefer these over
+// page-specific keys for verbs, states, field labels and nouns.
+export function useCommon() {
+  return useTranslation("Common")
+}

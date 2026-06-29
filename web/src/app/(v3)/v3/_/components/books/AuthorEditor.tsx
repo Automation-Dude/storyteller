@@ -3,7 +3,7 @@ import { type ComponentType, useMemo } from "react"
 import { useWatch } from "react-hook-form"
 
 import { Button } from "@v3/_/components/ui/button"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
@@ -28,6 +28,7 @@ function CreatorChipField({
   const { form, isEditing, editingField, setEditingField, commitField } =
     useBookForm()
   const t = useTranslation("BookDetailsPage")
+  const c = useCommon()
   const values = useWatch({
     control: form.control,
     name: field,
@@ -75,7 +76,7 @@ function CreatorChipField({
             }}
           >
             <IconCheck className="mr-1 h-3.5 w-3.5" />
-            {t("review.save")}
+            {c("actions.save")}
           </Button>
           <Button
             size="sm"
@@ -86,7 +87,7 @@ function CreatorChipField({
             }}
           >
             <IconX className="mr-1 h-3.5 w-3.5" />
-            {t("review.cancel")}
+            {c("actions.cancel")}
           </Button>
         </div>
       )}
@@ -97,6 +98,7 @@ function CreatorChipField({
 export function AuthorEditor() {
   const { form } = useBookForm()
   const t = useTranslation()
+  const c = useCommon()
 
   const formAuthors = useWatch({ control: form.control, name: "authors" })
   const { data: allAuthors = [] } = useListAuthorsQuery()
@@ -115,7 +117,7 @@ export function AuthorEditor() {
   return (
     <CreatorChipField
       field="authors"
-      label={t("Labels.authors")}
+      label={c.plain("fields.label.authors")}
       icon={IconUser}
       searchPlaceholder={t("BookDetailsPage.addAuthor")}
       items={authorItems}

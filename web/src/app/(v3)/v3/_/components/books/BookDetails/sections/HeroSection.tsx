@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { V3Link } from "@v3/_/components/v3-link"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 
 import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
@@ -79,6 +79,7 @@ export function HeroSection({
   } = useBookForm()
   const tLabels = useTranslation("Labels")
   const t = useTranslation("BookDetailsPage")
+  const c = useCommon()
 
   const permissions = usePermissions()
   const [setBookRating] = useSetBookRatingMutation()
@@ -163,7 +164,7 @@ export function HeroSection({
                 "font-heading w-full text-center text-xl leading-tight font-normal tracking-tight text-balance",
                 `@xl/book:w-auto @xl/book:text-left`,
               )}
-              placeholder={tLabels("title")}
+              placeholder={c.plain("fields.label.title")}
             />
 
             {(book.subtitle || isFieldActive("subtitle")) && (
@@ -171,7 +172,7 @@ export function HeroSection({
                 name="subtitle"
                 as="p"
                 className="text-muted-foreground font-heading text-sm italic"
-                placeholder={tLabels("subtitle")}
+                placeholder={c.plain("fields.label.subtitle")}
               />
             )}
 
@@ -509,7 +510,8 @@ function QuickAddEmptyFields({
   onAddSeries: () => void
 }) {
   const tLabels = useTranslation("Labels")
-  const tFields = useTranslation("Fields.label")
+  const tFields = useTranslation("Common.fields.label")
+  const c = useCommon()
 
   const chips: {
     key: string
@@ -521,7 +523,7 @@ function QuickAddEmptyFields({
     chips.push({
       key: "subtitle",
       icon: IconH2,
-      label: tLabels("subtitle"),
+      label: c("fields.label.subtitle"),
       onClick: onAddSubtitle,
     })
   if (showNarrators)
@@ -538,8 +540,6 @@ function QuickAddEmptyFields({
       label: tFields("series"),
       onClick: onAddSeries,
     })
-  const t = useTranslation("Labels")
-
   if (chips.length === 0) return null
 
   return (
@@ -548,8 +548,8 @@ function QuickAddEmptyFields({
         render={
           <TooltipButton
             className={cn("rounded-full")}
-            tooltip={t("add.plain")}
-            aria-label={t("add.plain")}
+            tooltip={c("actions.add")}
+            aria-label={c("actions.add")}
           >
             <IconPlus className="size-3.5 stroke-[1.5]" />
           </TooltipButton>

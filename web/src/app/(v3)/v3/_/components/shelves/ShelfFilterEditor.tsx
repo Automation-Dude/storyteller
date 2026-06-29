@@ -41,7 +41,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
@@ -275,6 +275,7 @@ function AddNodeDropdown({
   onAdd: (node: ShelfFilterNode) => void
 }) {
   const t = useTranslation("ShelfFilterEditor")
+  const c = useCommon()
 
   return (
     <DropdownMenu>
@@ -282,7 +283,7 @@ function AddNodeDropdown({
         render={
           <Button variant="ghost" size="sm" className="h-7 w-fit gap-1 text-xs">
             <IconPlus className="size-3" />
-            {t.plain("add")}
+            {c.plain("actions.add")}
           </Button>
         }
       />

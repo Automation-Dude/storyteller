@@ -24,7 +24,7 @@ import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
@@ -322,6 +322,7 @@ function BookEditBar() {
     discardCovers,
   } = useBookForm()
   const t = useTranslation("BookDetailsPage")
+  const c = useCommon()
 
   const show = isEditing || editingField !== null || editingCovers
 
@@ -356,12 +357,12 @@ function BookEditBar() {
       className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2"
     >
       <span className="text-muted-foreground px-2 text-xs">
-        {isSaving ? t("saving") : t("editing")}
+        {isSaving ? c("states.saving") : t("editing")}
       </span>
 
       <TooltipButton
-        tooltip={t("discard")}
-        aria-label={t("discard")}
+        tooltip={c("actions.discard")}
+        aria-label={c("actions.discard")}
         variant="real-ghost"
         onMouseDown={(e) => {
           e.preventDefault()
@@ -373,8 +374,8 @@ function BookEditBar() {
       </TooltipButton>
 
       <TooltipButton
-        tooltip={isSaving ? t("saving") : t("save")}
-        aria-label={t("save")}
+        tooltip={isSaving ? c("states.saving") : c("actions.save")}
+        aria-label={c("actions.save")}
         onMouseDown={(e) => {
           e.preventDefault()
           void handleSave()
@@ -452,11 +453,11 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
 
 function TagsSection() {
   const { book, isEditing } = useBookForm()
-  const tLabels = useTranslation("Labels")
+  const c = useCommon()
 
   return (
     <CollapsibleSection
-      title={tLabels("tags")}
+      title={c("fields.label.tags")}
       icon={<IconTag className="size-3.5 stroke-[1.5]" />}
     >
       <TagEditor
@@ -471,11 +472,11 @@ function TagsSection() {
 
 function CollectionsSection() {
   const { book, isEditing } = useBookForm()
-  const tLabels = useTranslation("Labels")
+  const c = useCommon()
 
   return (
     <CollapsibleSection
-      title={tLabels("collections")}
+      title={c("fields.label.collections")}
       icon={<IconFolder className="size-3.5 stroke-[1.5]" />}
     >
       <CollectionEditor

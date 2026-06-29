@@ -5,7 +5,7 @@ import { Controller, useWatch } from "react-hook-form"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { Field, FieldError } from "@v3/_/components/ui/field"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
 
@@ -98,6 +98,7 @@ function CollapsibleDescription({
 export function DescriptionSection({ className }: { className?: string }) {
   const t = useTranslation("BookDetailsPage")
   const tLabels = useTranslation("Labels")
+  const c = useCommon()
   const {
     form,
     canEdit,
@@ -113,7 +114,7 @@ export function DescriptionSection({ className }: { className?: string }) {
 
   return (
     <CollapsibleSection
-      title={tLabels("description")}
+      title={c("fields.label.description")}
       name={"description"}
       className={className}
     >

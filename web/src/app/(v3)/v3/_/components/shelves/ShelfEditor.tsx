@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Textarea } from "@v3/_/components/ui/textarea"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
@@ -77,6 +77,7 @@ export function ShelfEditor({
   initialName,
 }: ShelfEditorProps) {
   const t = useTranslation("ShelfEditor")
+  const c = useCommon()
   const isEditing = !!shelf
 
   const initialMode: SelectionMode =
@@ -435,7 +436,7 @@ export function ShelfEditor({
                       className="h-6 gap-1 text-xs"
                     >
                       <IconX className="size-3" />
-                      {t.plain("reset")}
+                      {c.plain("actions.reset")}
                     </Button>
                   )}
                 </div>
@@ -534,11 +535,11 @@ export function ShelfEditor({
               }}
               disabled={isSaving}
             >
-              {t.plain("cancel")}
+              {c.plain("actions.cancel")}
             </Button>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-              {isEditing ? t.plain("save") : t.plain("create")}
+              {isEditing ? c.plain("actions.save") : c.plain("actions.create")}
             </Button>
           </DialogFooter>
         </form>
@@ -559,6 +560,7 @@ function BookSelector({
   onRemove,
 }: BookSelectorProps) {
   const t = useTranslation("ShelfEditor")
+  const c = useCommon()
   const [searchQuery, setSearchQuery] = useState("")
   const { data: allBooks = [], isLoading } = useListBooksQuery()
 
@@ -635,7 +637,7 @@ function BookSelector({
       {selectedBooks.length > 0 && (
         <div className="flex flex-col gap-1">
           <Label className="text-muted-foreground text-xs">
-            {t.plain("selectedCount", { count: selectedBooks.length })}
+            {c.plain("selectedCount", { count: selectedBooks.length })}
           </Label>
 
           <div className="scroll-y flex max-h-[140px] flex-col gap-0.5">

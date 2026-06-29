@@ -9,7 +9,7 @@ import {
 import { useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useFormatDate } from "@/app/(v3)/v3/_/lib/date"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
@@ -57,6 +57,7 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
   //   readaloudStatus === "QUEUED" || readaloudStatus === "PROCESSING"
 
   const t = useTranslation("BookDetailsPage.alignment")
+  const c = useCommon()
 
   const formatDate = useFormatDate()
   if (!readaloudStatus && !canCreateReadaloud && !canProcess) {
@@ -86,7 +87,7 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
             onClick={() => void cancelProcessing({ uuid: book.uuid })}
           >
             <IconX className="mr-1 h-3 w-3" />
-            {t("cancel")}
+            {c("actions.cancel")}
           </Button>
         </div>
       )}
@@ -104,7 +105,7 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
               onClick={() => void cancelProcessing({ uuid: book.uuid })}
             >
               <IconX className="mr-1 h-3 w-3" />
-              {t("cancel")}
+              {c("actions.cancel")}
             </Button>
           </div>
 

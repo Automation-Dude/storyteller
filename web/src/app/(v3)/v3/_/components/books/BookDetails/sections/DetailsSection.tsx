@@ -4,7 +4,7 @@ import { IconBook } from "@tabler/icons-react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { LanguageEdit } from "@v3/_/components/books/LanguageEdit"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { useFormatDate } from "@v3/_/lib/date"
 
@@ -37,6 +37,7 @@ function DetailRow({
 export function DetailsSection({ className }: { className?: string }) {
   const { book } = useBookForm()
   const tLabels = useTranslation("Labels")
+  const c = useCommon()
   const formatDate = useFormatDate()
 
   const pages = bookPageCount(book)
@@ -49,11 +50,11 @@ export function DetailsSection({ className }: { className?: string }) {
       className={className}
     >
       <div className="grid grid-cols-2 items-start gap-x-4 gap-y-2">
-        <DetailRow label={tLabels("language")}>
+        <DetailRow label={c("fields.label.language")}>
           <LanguageEdit />
         </DetailRow>
 
-        <DetailRow label={tLabels("publicationDate")}>
+        <DetailRow label={c("fields.label.publicationDate")}>
           <EditableText
             name="publicationDate"
             type="date"
@@ -65,24 +66,24 @@ export function DetailsSection({ className }: { className?: string }) {
         </DetailRow>
 
         {pages != null && (
-          <DetailRow label={tLabels("pages")}>
+          <DetailRow label={c("fields.short.pageCount")}>
             <span className="text-sm tabular-nums">{pages}</span>
           </DetailRow>
         )}
 
         {totalDuration != null && (
-          <DetailRow label={tLabels("duration")}>
+          <DetailRow label={c("fields.label.duration")}>
             <span className="text-sm tabular-nums">
               {formatTimeHuman(totalDuration)}
             </span>
           </DetailRow>
         )}
 
-        <DetailRow label={tLabels("added")}>
+        <DetailRow label={c("fields.short.createdAt")}>
           {formatDate(book.createdAt)}
         </DetailRow>
 
-        <DetailRow label={tLabels("lastUpdated")}>
+        <DetailRow label={c("fields.label.updatedAt")}>
           {formatDate(book.updatedAt)}
         </DetailRow>
       </div>

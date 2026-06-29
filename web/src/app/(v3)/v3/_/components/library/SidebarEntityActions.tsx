@@ -31,7 +31,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type ShelfFilterNode } from "@/shelves"
 import {
@@ -110,6 +110,7 @@ export function SidebarEntityActions({
   toShelfFilter,
 }: SidebarEntityActionsProps) {
   const t = useTranslation("EntityActions")
+  const c = useCommon()
   const { deleteEntity, mergeEntities } = useEntityMutations(entityType)
   const [isDeleting, setIsDeleting] = useState(false)
   const [shelfEditorOpen, setShelfEditorOpen] = useState(false)
@@ -178,7 +179,7 @@ export function SidebarEntityActions({
     onConfirm: handleDelete,
     title: t("deleteTitle", { count, entity: entityLabel }),
     description: t("deleteDescription"),
-    confirmLabel: t("delete"),
+    confirmLabel: c("actions.delete"),
     variant: "destructive",
   })
 
@@ -186,9 +187,9 @@ export function SidebarEntityActions({
     onConfirm: handleMerge,
     title: mergeTarget
       ? t("mergeTitle", { count, target: mergeTarget.name })
-      : t("merge"),
+      : c("actions.merge"),
     description: t("mergeDescription"),
-    confirmLabel: t("merge"),
+    confirmLabel: c("actions.merge"),
     variant: "default",
   })
 
@@ -207,7 +208,7 @@ export function SidebarEntityActions({
         className="absolute inset-x-2 bottom-2 gap-1 p-1.5"
       >
         <span className="text-muted-foreground flex-1 px-1 text-xs tabular-nums">
-          {t("selected", { count })}
+          {c("selectedCount", { count })}
         </span>
 
         <DropdownMenu>
@@ -227,7 +228,7 @@ export function SidebarEntityActions({
                 }}
               >
                 <IconEdit className="mr-2 h-4 w-4" />
-                {t("edit")}
+                {c("actions.edit")}
               </DropdownMenuItem>
             )}
 
@@ -276,7 +277,7 @@ export function SidebarEntityActions({
               className="text-destructive focus:text-destructive"
             >
               <IconTrash className="mr-2 h-4 w-4" />
-              {isDeleting ? t("deleting") : t("delete")}
+              {isDeleting ? c("states.deleting") : c("actions.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

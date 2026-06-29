@@ -30,7 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@v3/_/components/ui/dialog"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type HomeSectionKind, type ShelfWithBooks } from "@/database/shelves"
@@ -106,6 +106,7 @@ const BUILT_IN_KINDS: HomeSectionKind[] = [
 
 function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   const t = useTranslation("HomePage")
+  const c = useCommon()
   const { data: homeShelves, isLoading } = useListHomeShelvesQuery()
   const { data: userShelves = [], refetch: refetchUserShelves } =
     useListUserShelvesQuery()
@@ -349,7 +350,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
 
       <DialogFooter className="mt-4">
         <Button variant="outline" onClick={onClose} disabled={isSaving}>
-          {t("sections.cancel")}
+          {c("actions.cancel")}
         </Button>
 
         <Button onClick={handleSave} disabled={isSaving}>

@@ -48,7 +48,6 @@
       "hidden": "Hidden sections ({count})",
       "show": "Show",
       "save": "Save Changes",
-      "cancel": "Cancel",
       "hideFromHome": "Hide from home",
       "deletePermanently": "Delete shelf permanently",
       "customShelf": "Custom shelf"
@@ -184,28 +183,17 @@
       "no-media": "No media"
     },
     "search": "Search...",
-    "noItemsFound": "No items found",
     "pinAsShelf": "Pin as shelf",
     "sortByCount": "Sort by count",
-    "sortByName": "Sort by name",
-    "back": "Back"
+    "sortByName": "Sort by name"
   },
   "EntityActions": {
-    "selected": "{count} selected",
-    "edit": "Edit",
-    "delete": "Delete",
-    "deleting": "Deleting...",
     "mergeInto": "Merge into...",
     "createShelfWith": "Create shelf with selected",
     "deleteTitle": "Delete {count} {entity}?",
     "deleteDescription": "This will remove the selected items and unlink them from all books. This cannot be undone.",
     "mergeTitle": "Merge {count} items into \"{target}\"?",
     "mergeDescription": "All books from the other selected items will be reassigned to the target. The other items will be deleted.",
-    "merge": "Merge",
-    "confirm": "Confirm",
-    "cancel": "Cancel",
-    "saving": "Saving...",
-    "save": "Save",
     "shiftSkipHint": "hold shift to skip this next time",
     "editTag": "Edit Tag",
     "editTagDescription": "Update the tag name, icon, and color.",
@@ -228,8 +216,6 @@
     "createStatusDescription": "Add a new status that can be assigned to books.",
     "statusName": "Status name",
     "statusNameHint": "This is the permanent internal identifier. It cannot be changed later.",
-    "creating": "Creating...",
-    "create": "Create",
     "deleteStatusConfirm": "Books with this status will become unset.",
     "coreStatus": "Core",
     "entityTypes": {
@@ -241,29 +227,19 @@
     }
   },
   "SelectionToolbar": {
-    "select": "Select",
     "selectAll": "Select all",
     "selectNone": "Select none",
     "invertSelection": "Invert selection",
-    "selected": "{count} selected",
     "actions": "Actions",
     "addToCollection": "Add to Collection",
-    "noCollections": "No collections",
     "addToSeries": "Add to Series",
-    "noSeries": "No series",
-    "scan": "Scan",
-    "delete": "Delete",
-    "deleting": "Deleting...",
     "deleteTitle": "Delete {count} book(s)?",
     "deleteDescription": "This cannot be undone.",
     "cancelSelection": "Stop selecting"
   },
   "BookActions": {
     "openFullPage": "Open full page",
-    "edit": "Edit",
-    "scan": "Scan",
     "search": "Search...",
-    "noResults": "No results",
     "addToCollection": "Add to collection",
     "newCollection": "New collection...",
     "removeFromCollection": "Remove from collection",
@@ -275,15 +251,9 @@
     "removeTag": "Remove tag",
     "setStatus": "Set reading status",
     "upgradeEpub": "Upgrade EPUB",
-    "process": "Processing",
     "clearCache": "Clear cache",
     "merge": "Merge books",
     "mergeInto": "Merge into",
-    "delete": "Delete",
-    "deleting": "Deleting...",
-    "noCollections": "No collections",
-    "noSeries": "No series",
-    "noTags": "No tags",
     "deleteTitle": "Delete {count} book(s)?",
     "deleteDescription": "Files in your assets folder will be deleted. This cannot be undone.",
     "clearCacheTitle": "Clear cache for {count} book(s)?",
@@ -294,16 +264,13 @@
     "upgradeDescription": "Converts EPUB 2 files to EPUB 3 in place.",
     "upgradeStarted": "EPUB upgrade started",
     "mergeTitle": "Merge into \"{target}\"?",
-    "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone.",
-    "select": "Select",
-    "deselect": "Deselect"
+    "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone."
   },
   "ShelfPage": {
     "emptyShelf": "This shelf is empty",
     "adjustFilters": "Try adjusting your search or filters"
   },
   "ShelfFilterEditor": {
-    "add": "Add",
     "condition": "Condition",
     "andGroup": "AND group",
     "orGroup": "OR group",
@@ -430,16 +397,11 @@
     "manual": "Manual",
     "clearSelection": "Clear selection",
     "sortAndLimit": "Sort & Limit",
-    "reset": "Reset",
     "sortBy": "Sort by",
     "limit": "Limit",
     "limitAll": "All",
-    "cancel": "Cancel",
-    "save": "Save",
-    "create": "Create",
     "searchBooks": "Search by title or author...",
     "noBooksFound": "No books found",
-    "selectedCount": "{count} selected",
     "searchToAdd": "Search to add books to this shelf",
     "orderBy": {
       "createdAt": "Date Added",
@@ -461,12 +423,10 @@
     "exportSettings": "Export settings as JSON",
     "lockedSettings": "Some settings are managed via the configuration file and cannot be changed here.",
     "lockedSettingTooltip": "This setting is locked because it is managed via the settings configuration file.",
-    "saving": "Saving...",
     "settingsSavedSuccessfully": "Settings saved successfully",
     "failedToSaveSettings": "Failed to save settings",
     "searchSettings": "Search settings...",
     "formHasErrors": "{count, plural, one {# error} other {# errors}}",
-    "back": "Back",
     "sidebar": {
       "settings": "Settings",
       "administration": "Administration"
@@ -580,7 +540,6 @@
             "clearCacheConfirmTitle": "Clear cache for all books",
             "clearCacheConfirmDescription": "Delete processed audio and transcription files for every book in the library? This frees disk space but means a full restart is needed to re-align books later. Original files are left untouched.",
             "clearCacheConfirm": "Clear cache",
-            "clearCacheCancel": "Cancel",
             "clearCacheSuccess": "Cleared processed cache",
             "clearCacheError": "Failed to clear cache"
           },
@@ -816,10 +775,7 @@
   },
   "PreferencesPage": {
     "title": "Preferences",
-    "back": "Back",
-    "save": "Save",
     "settingsPage": "Global settings",
-    "saving": "Saving...",
     "savedSuccessfully": "Preferences saved",
     "failedToSave": "Failed to save preferences",
     "searchPreferences": "Search preferences...",
@@ -836,7 +792,6 @@
       "changePassword": "Change password",
       "addPassword": "Add password",
       "saveProfile": "Save profile",
-      "saving": "Saving...",
       "savedSuccessfully": "Profile saved",
       "failedToSave": "Failed to save profile",
       "linkedAccounts": "Linked accounts",
@@ -1031,15 +986,12 @@
     "title": "Edit sidebar",
     "description": "Reorder items, hide what you don't use, and add collections or shelves.",
     "available": "Add to sidebar",
-    "add": "Add",
     "addGroup": "Add section",
     "hideFromSidebar": "Hide from sidebar",
     "collection": "Collection",
     "shelf": "Shelf",
     "createShelf": "New shelf",
-    "customizeHome": "Customize homepage",
-    "save": "Done",
-    "cancel": "Cancel"
+    "customizeHome": "Customize homepage"
   },
   "BookDetailsPage": {
     "bookNotFound": "Book not found",
@@ -1050,7 +1002,6 @@
       "edit": "Edit cover",
       "uploadEbook": "Upload ebook cover",
       "uploadAudiobook": "Upload audiobook cover",
-      "clear": "Remove",
       "setDefaultPosition": "Set as default position",
       "savedDefaultPosition": "Saved default position"
     },
@@ -1059,12 +1010,7 @@
     "addAuthor": "Add author...",
     "addNarrator": "Add narrator...",
     "invalidLanguageCode": "Unknown language code",
-    "edit": "Edit",
     "deleteBook": "Delete book",
-    "saving": "Saving...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "discard": "Discard",
     "editing": "Editing…",
     "saveFailed": "Failed to save changes",
     "review": {
@@ -1073,9 +1019,6 @@
       "yourRating": "Your rating",
       "yourReview": "Your review",
       "reviewPlaceholder": "What did you think of this book?",
-      "edit": "Edit",
-      "save": "Save",
-      "cancel": "Cancel",
       "clear": "Clear",
       "ratePlaceholder": "Rate",
       "addAdvanced": "Add multidimensional rating",
@@ -1099,6 +1042,7 @@
       "scanningFailed": "Scan failed"
     },
     "downloads": {
+      "download": "Download",
       "downloadReadaloud": "Download Readaloud",
       "downloadEbook": "Download Ebook",
       "downloadAudiobook": "Download Audiobook"
@@ -1111,9 +1055,6 @@
       "position": "Position",
       "positionPlaceholder": "e.g. 1",
       "positionHint": "Leave blank to add without a position.",
-      "cancel": "Cancel",
-      "add": "Add",
-      "save": "Save",
       "editPositionTitle": "Edit position",
       "editPositionDescription": "Change this book's position in {series}."
     },
@@ -1143,65 +1084,11 @@
       "error": "Processing failed",
       "stopped": "Processing stopped",
       "unprocessed": "Unprocessed",
-      "cancel": "Cancel",
       "retry": "Retry",
       "createReadaloud": "Create readaloud",
       "lastAligned": "Last aligned",
       "transcriptionEngine": "Transcription engine",
       "storytellerVersion": "Storyteller version"
-    }
-  },
-  "Fields": {
-    "label": {
-      "title": "Title",
-      "authors": "Authors",
-      "createdAt": "Date Added",
-      "updatedAt": "Last Updated",
-      "publicationDate": "Publication Date",
-      "userRating": "My Rating",
-      "pageCount": "Page Count",
-      "duration": "Duration",
-      "fileSize": "File Size",
-      "language": "Language",
-      "alignmentScore": "Alignment Score",
-      "alignmentGrade": "Alignment Grade",
-      "alignmentMissingSentences": "Missing Sentences",
-      "alignmentMutedChapters": "Muted Chapters",
-      "alignedAt": "Date Aligned",
-      "lastRead": "Last Read",
-      "readingPosition": "Reading Progress",
-      "seriesPosition": "Series Position",
-      "subtitle": "Subtitle",
-      "description": "Description",
-      "status": "Reading Status",
-      "tags": "Tags",
-      "collections": "Collections",
-      "series": "Series",
-      "creators": "Authors / Creators",
-      "mediaType": "Format",
-      "review": "My Review",
-      "ratingDimension": "Rating Dimension",
-      "search": "Search (any field)"
-    },
-    "short": {
-      "title": "Title",
-      "authors": "Authors",
-      "createdAt": "Added",
-      "updatedAt": "Updated",
-      "publicationDate": "Year",
-      "userRating": "Rating",
-      "pageCount": "Pages",
-      "duration": "Dur.",
-      "fileSize": "Size",
-      "language": "Lang.",
-      "alignmentScore": "Score",
-      "alignmentGrade": "Grade",
-      "alignmentMissingSentences": "Missing",
-      "alignmentMutedChapters": "Muted",
-      "alignedAt": "Aligned",
-      "lastRead": "Read",
-      "readingPosition": "Progress",
-      "seriesPosition": "Pos."
     }
   },
   "Common": {
@@ -1224,28 +1111,116 @@
       "shelf": "{count, plural, one {Shelf} other {Shelves}}",
       "file": "{count, plural, one {File} other {Files}}"
     },
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "add": "Add",
+      "create": "Create",
+      "back": "Back",
+      "home": "Home",
+      "scan": "Scan",
+      "upload": "Upload",
+      "merge": "Merge",
+      "import": "Import",
+      "replace": "Replace",
+      "done": "Done",
+      "discard": "Discard",
+      "reset": "Reset",
+      "remove": "Remove",
+      "select": "Select",
+      "deselect": "Deselect",
+      "confirm": "Confirm"
+    },
+    "states": {
+      "saving": "Saving...",
+      "deleting": "Deleting...",
+      "creating": "Creating...",
+      "loading": "Loading...",
+      "processing": "Processing"
+    },
+    "fields": {
+      "label": {
+        "title": "Title",
+        "authors": "Authors",
+        "createdAt": "Date Added",
+        "updatedAt": "Last Updated",
+        "publicationDate": "Publication Date",
+        "userRating": "My Rating",
+        "pageCount": "Page Count",
+        "duration": "Duration",
+        "fileSize": "File Size",
+        "language": "Language",
+        "alignmentScore": "Alignment Score",
+        "alignmentGrade": "Alignment Grade",
+        "alignmentMissingSentences": "Missing Sentences",
+        "alignmentMutedChapters": "Muted Chapters",
+        "alignedAt": "Date Aligned",
+        "lastRead": "Last Read",
+        "readingPosition": "Reading Progress",
+        "seriesPosition": "Series Position",
+        "subtitle": "Subtitle",
+        "description": "Description",
+        "status": "Reading Status",
+        "tags": "Tags",
+        "collections": "Collections",
+        "series": "Series",
+        "creators": "Authors / Creators",
+        "mediaType": "Format",
+        "review": "My Review",
+        "ratingDimension": "Rating Dimension",
+        "search": "Search (any field)"
+      },
+      "short": {
+        "title": "Title",
+        "authors": "Authors",
+        "createdAt": "Added",
+        "updatedAt": "Updated",
+        "publicationDate": "Year",
+        "userRating": "Rating",
+        "pageCount": "Pages",
+        "duration": "Dur.",
+        "fileSize": "Size",
+        "language": "Lang.",
+        "alignmentScore": "Score",
+        "alignmentGrade": "Grade",
+        "alignmentMissingSentences": "Missing",
+        "alignmentMutedChapters": "Muted",
+        "alignedAt": "Aligned",
+        "lastRead": "Read",
+        "readingPosition": "Progress",
+        "seriesPosition": "Pos."
+      }
+    },
+    "empty": {
+      "noItemsFound": "No items found",
+      "noResults": "No results",
+      "noCollections": "No collections",
+      "noSeries": "No series",
+      "noTags": "No tags"
+    },
+    "importMode": {
+      "reference": "Reference in place",
+      "copy": "Copy to library",
+      "move": "Move to library",
+      "hardlink": "Hard link"
+    },
+    "metadataBehavior": {
+      "merge": "Merge with existing",
+      "keep": "Keep existing",
+      "overwrite": "Overwrite from new file"
+    },
+    "selectedCount": "{count} selected",
     "outOf": "{count, number} of {total, number}"
   },
   "Labels": {
-    "title": "Title",
-    "subtitle": "Subtitle",
-    "description": "Description",
-    "tags": "Tags",
-    "language": "Language",
-    "publicationDate": "Publication Date",
-    "collections": "Collections",
     "bookDetails": "Book Details",
-    "pages": "Pages",
-    "duration": "Duration",
-    "added": "Added",
-    "lastUpdated": "Last Updated",
-    "authors": "Authors",
     "narrators": "Narrators",
     "otherContributors": "Other Contributors",
     "downloads": "Downloads",
     "fileInformation": "File Information",
     "folder": "Folder",
-    "missing": "Missing",
     "selected": {
       "withInput": "Selected {input}",
       "plain": "Selected"
@@ -1280,37 +1255,27 @@
       "showSimpleOverrides": "Use a single setting for all fields"
     },
     "create": {
-      "withInput": "Create {input}",
-      "plain": "Create"
+      "withInput": "Create {input}"
     },
     "delete": {
-      "withInput": "Delete {input}",
-      "plain": "Delete"
+      "withInput": "Delete {input}"
     },
     "update": {
       "withInput": "Update {input}",
       "plain": "Update"
     },
     "edit": {
-      "withInput": "Edit {input}",
-      "plain": "Edit"
+      "withInput": "Edit {input}"
     },
     "add": {
-      "withInput": "Add {input}",
-      "plain": "Add"
+      "withInput": "Add {input}"
     },
-    "dateAdded": "Date added",
-    "dateUpdated": "Date updated"
+    "dateUpdated": "Date updated",
+    "missing": "Missing"
   },
   "UploadDialog": {
     "metadataBehavior": "Metadata behavior",
-    "metadataMerge": "Merge with existing",
-    "metadataSkip": "Keep existing",
-    "metadataOverwrite": "Overwrite from new file",
     "failedFiles": "{count} file(s) failed to upload — process the rest anyway",
-    "cancel": "Cancel",
-    "upload": "Upload",
-    "done": "Done",
     "uploadAnother": "Upload another",
     "uploadFormat": "Upload {format}",
     "uploadReplacementFormat": "Upload replacement {format}",
@@ -1327,18 +1292,9 @@
   },
   "ImportFromServerDialog": {
     "importMode": "Import mode",
-    "importModeReference": "Reference in place",
-    "importModeCopy": "Copy to library",
-    "importModeMove": "Move to library",
     "importModeHardlink": "Hard link to library",
     "metadataBehavior": "Metadata behavior",
-    "metadataMerge": "Merge with existing",
-    "metadataSkip": "Keep existing",
-    "metadataOverwrite": "Overwrite from new file",
     "selected": "Selected",
-    "cancel": "Cancel",
-    "import": "Import",
-    "replace": "Replace",
     "importFormatTitle": "Import {format} from server",
     "replaceFormatTitle": "Replace {format} from server",
     "audioDescription": "Pick a directory of audio files, or a file to use its parent directory.",
@@ -1357,7 +1313,6 @@
     "loading": "Loading report…",
     "openFullPage": "Open full page",
     "createdByJob": "Created {relativeTime}",
-
     "heading": {
       "excellentAlignment": "Excellent alignment",
       "nearlyEverySentenceMatched": "nearly every sentence matched",

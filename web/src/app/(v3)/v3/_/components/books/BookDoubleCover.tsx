@@ -14,7 +14,7 @@ const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
 
 const TILE_CLASS =
-  "absolute inset-0 m-auto  rounded-sm shadow-md group-hover/covers:overflow-hidden ring-primary/50 group-hover/covers:ring-3  group-hover/covers:before:-inset-3 before:bg-white before:block before:absolute before:-z-10"
+  "absolute inset-0 m-auto rounded-sm shadow-md group-hover/covers:overflow-hidden  "
 
 type Pos = { x: string; scale: number; z: number; rotateX?: number } & Variant
 type CoverState = "idle" | "separated" | "audiobook-front"

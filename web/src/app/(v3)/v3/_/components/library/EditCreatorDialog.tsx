@@ -19,7 +19,7 @@ import {
   FieldLabel,
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useUpdateCreatorMutation } from "@/store/api"
 
@@ -44,6 +44,7 @@ export function EditCreatorDialog({
   onUpdated,
 }: EditCreatorDialogProps) {
   const t = useTranslation("EntityActions")
+  const c = useCommon()
   const [updateCreator, { isLoading }] = useUpdateCreatorMutation()
 
   const {
@@ -135,11 +136,11 @@ export function EditCreatorDialog({
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t("cancel")}
+              {c("actions.cancel")}
             </Button>
 
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t("saving") : t("save")}
+              {isLoading ? c("states.saving") : c("actions.save")}
             </Button>
           </DialogFooter>
         </form>

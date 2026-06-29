@@ -4,7 +4,7 @@ import { IconAlertTriangle } from "@tabler/icons-react"
 import { useState } from "react"
 
 import { ImportFromServerDialog } from "@v3/_/components/files/ImportFromServerDialog"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -74,6 +74,7 @@ export function ReplaceFileDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const t = useTranslation("ImportFromServerDialog")
+  const c = useCommon()
   const [replaceAsset, { isLoading }] = useReplaceBookAssetMutation()
   const [error, setError] = useState<string | null>(null)
   const [selectedPath, setSelectedPath] = useState<string>("")
@@ -162,21 +163,21 @@ export function ReplaceFileDialog({
         void handleSubmit(path, importMode, metadataMode)
       }}
       isSubmitting={isLoading}
-      submitLabel={isAdd ? t("import") : t("replace")}
+      submitLabel={isAdd ? c.plain("actions.import") : c.plain("actions.replace")}
       warnings={warnings}
       error={error}
       labels={{
         importMode: t("importMode"),
-        importModeReference: t("importModeReference"),
-        importModeCopy: t("importModeCopy"),
-        importModeMove: t("importModeMove"),
+        importModeReference: c.plain("importMode.reference"),
+        importModeCopy: c.plain("importMode.copy"),
+        importModeMove: c.plain("importMode.move"),
         importModeHardlink: t("importModeHardlink"),
         metadataBehavior: t("metadataBehavior"),
-        metadataMerge: t("metadataMerge"),
-        metadataSkip: t("metadataSkip"),
-        metadataOverwrite: t("metadataOverwrite"),
+        metadataMerge: c.plain("metadataBehavior.merge"),
+        metadataSkip: c.plain("metadataBehavior.keep"),
+        metadataOverwrite: c.plain("metadataBehavior.overwrite"),
         selected: t("selected"),
-        cancel: t("cancel"),
+        cancel: c.plain("actions.cancel"),
       }}
     />
   )

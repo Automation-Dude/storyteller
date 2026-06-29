@@ -21,7 +21,7 @@ import {
   FieldLabel,
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { isWellKnownStatus } from "@/database/statusKinds"
 import { useListStatusesQuery, useUpdateStatusLabelMutation } from "@/store/api"
@@ -45,6 +45,7 @@ export function EditStatusDialog({
   status,
 }: EditStatusDialogProps) {
   const t = useTranslation("EntityActions")
+  const c = useCommon()
   const [updateLabel, { isLoading }] = useUpdateStatusLabelMutation()
 
   const { data: allStatuses = [] } = useListStatusesQuery()
@@ -134,11 +135,11 @@ export function EditStatusDialog({
               onClick={handleClose}
               disabled={isLoading}
             >
-              {t("cancel")}
+              {c("actions.cancel")}
             </Button>
 
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t("saving") : t("save")}
+              {isLoading ? c("states.saving") : c("actions.save")}
             </Button>
           </DialogFooter>
         </form>

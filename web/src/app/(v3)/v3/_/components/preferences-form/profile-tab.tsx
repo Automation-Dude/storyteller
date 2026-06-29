@@ -16,7 +16,7 @@ import {
 import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type User } from "@/apiModels"
 
@@ -34,6 +34,7 @@ export function ProfileTab({
   disablePasswordLogin: boolean
 }) {
   const t = useTranslation("PreferencesPage.profile")
+  const c = useCommon()
   const router = useRouter()
 
   const [isSaving, setIsSaving] = useState(false)
@@ -157,7 +158,7 @@ export function ProfileTab({
             }}
           >
             {isSaving && <Spinner />}
-            {isSaving ? t("saving") : t("saveProfile")}
+            {isSaving ? c("states.saving") : t("saveProfile")}
           </Button>
         </CardContent>
       </Card>

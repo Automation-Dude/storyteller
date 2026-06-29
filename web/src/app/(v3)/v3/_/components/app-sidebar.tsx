@@ -455,10 +455,10 @@ function SidebarNavItem({
               <DynamicIcon
                 iconId={resolved.customIcon}
                 color={resolved.color}
-                className="size-4"
+                className="size-3.5! stroke-[1.5]"
               />
             ) : resolved.icon ? (
-              <resolved.icon />
+              <resolved.icon className="size-3.5! stroke-[1.5]" />
             ) : null}
             <span>{resolved.title}</span>
           </V3Link>

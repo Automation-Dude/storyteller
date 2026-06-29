@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@v3/_/components/ui/popover"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
@@ -155,6 +155,7 @@ export function RelationChipEditor<T extends RelationItem>({
 }: RelationChipEditorProps<T>) {
   const isMobile = useIsMobile()
   const tLabels = useTranslation("Labels")
+  const c = useCommon()
 
   const [search, setSearch] = useState("")
   const [isOpen, setIsOpen] = useState(false)
@@ -233,8 +234,8 @@ export function RelationChipEditor<T extends RelationItem>({
               className={cn(
                 "border-border text-muted-foreground/80 h-5 rounded-full border border-dashed text-xs transition-opacity",
               )}
-              tooltip={tLabels("add.plain")}
-              aria-label={tLabels("add.plain")}
+              tooltip={c.plain("actions.add")}
+              aria-label={c.plain("actions.add")}
             >
               <IconPlus className="h-3 w-3" />
             </TooltipButton>

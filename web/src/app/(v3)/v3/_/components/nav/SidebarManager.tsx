@@ -35,7 +35,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
 } from "@v3/_/components/ui/sidebar"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type ShelfWithBooks } from "@/database/shelves"
@@ -95,6 +95,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
   const t = useTranslation("SidebarManager")
   const tApp = useTranslation("AppSidebar")
   const tLibrary = useTranslation("LibraryPage")
+  const c = useCommon()
   const permissions = usePermissions()
 
   const { data: collections = [] } = useListCollectionsQuery()
@@ -301,7 +302,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
               size="icon-xs"
               onClick={onClose}
               disabled={isSaving}
-              title={t("cancel")}
+              title={c("actions.cancel")}
               className="text-muted-foreground hover:text-foreground size-5"
             >
               <IconX className="size-3.5" />
@@ -312,7 +313,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
               size="icon-xs"
               onClick={handleSave}
               disabled={isSaving}
-              title={t("save")}
+              title={c("actions.done")}
               className="text-muted-foreground hover:text-foreground size-5"
             >
               {isSaving ? (

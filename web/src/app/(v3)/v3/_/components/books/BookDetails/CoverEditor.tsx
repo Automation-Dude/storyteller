@@ -13,7 +13,7 @@ import {
 import { BookCover } from "@v3/_/components/books/BookCover"
 import { Button } from "@v3/_/components/ui/button"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { getCoverUrl, useSetUserSettingMutation } from "@/store/api"
@@ -64,7 +64,7 @@ function CoverSlot({
   square: boolean
   onFileChange: (file: File | null) => void
 }) {
-  const t = useTranslation("BookDetailsPage")
+  const c = useCommon()
   const previewUrl = useFilePreview(file)
 
   return (
@@ -105,7 +105,7 @@ function CoverSlot({
           variant="secondary"
           size="icon-sm"
           className="absolute top-1.5 right-1.5 z-10 opacity-90"
-          aria-label={t("cover.clear")}
+          aria-label={c("actions.remove")}
           onClick={() => {
             onFileChange(null)
           }}

@@ -234,7 +234,7 @@ export function FilterControl({
   onRemove,
 }: FilterControlProps) {
   const def = getFieldDef(field)
-  const tLabel = useTranslation("Fields.label")
+  const tLabel = useTranslation("Common.fields.label")
   const [open, setOpen] = useState(false)
 
   // labelKey is a registry string; the keys are exactly the Fields.label keys.

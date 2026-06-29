@@ -57,7 +57,7 @@ import { useItemSelection } from "@v3/_/hooks/use-item-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateCollectionDialog"
@@ -434,6 +434,7 @@ export function LibraryPage({
   }, [setSelectedItem, setSelectedBookUuid])
 
   const tEntity = useTranslation("EntityActions")
+  const c = useCommon()
   const { pinShelf, isPinning } = usePinShelf()
   const canPin = !!section.toShelfFilter
   const entityType = section.entityType
@@ -507,7 +508,7 @@ export function LibraryPage({
         : "",
     }),
     description: tEntity("deleteDescription"),
-    confirmLabel: tEntity("delete"),
+    confirmLabel: c("actions.delete"),
     variant: "destructive",
   })
 
@@ -661,7 +662,7 @@ export function LibraryPage({
                 }}
               >
                 <IconEdit className="mr-2 h-4 w-4" />
-                {tEntity("edit")}
+                {c("actions.edit")}
               </DropdownMenuItem>
             )}
 
@@ -691,7 +692,7 @@ export function LibraryPage({
                   className="text-destructive focus:text-destructive"
                 >
                   <IconTrash className="mr-2 h-4 w-4" />
-                  {tEntity("delete")}
+                  {c("actions.delete")}
                 </DropdownMenuItem>
               </>
             )}
@@ -779,6 +780,7 @@ function MobileBookView({
   actions: React.ReactNode
 }) {
   const t = useTranslation("LibraryPage")
+  const c = useCommon()
   return (
     <div className="flex h-screen flex-col">
       <div className="relative h-(--header-height) w-full shrink-0">
@@ -787,8 +789,8 @@ function MobileBookView({
           actions={
             <>
               <TooltipButton
-                tooltip={t("back")}
-                aria-label={t("back")}
+                tooltip={c("actions.back")}
+                aria-label={c("actions.back")}
                 className="bg-background/90 rounded-full backdrop-blur"
                 variant="secondary"
                 size="sm"
@@ -909,6 +911,7 @@ function SidebarPanel({
 }) {
   const t = useTranslation("LibraryPage")
   const tEntity = useTranslation("EntityActions")
+  const c = useCommon()
 
   const toggleSort = useCallback(() => {
     onSortModeChange(sortMode === "name" ? "count" : "name")
@@ -948,7 +951,7 @@ function SidebarPanel({
         })
       : "",
     description: tEntity("deleteDescription"),
-    confirmLabel: tEntity("delete"),
+    confirmLabel: c("actions.delete"),
     variant: "destructive",
   })
 
@@ -1018,7 +1021,7 @@ function SidebarPanel({
                 }}
               >
                 <IconEdit className="mr-2 h-4 w-4" />
-                {tEntity("edit")}
+                {c("actions.edit")}
               </DropdownMenuItem>
             )}
 
@@ -1051,7 +1054,7 @@ function SidebarPanel({
                     className="text-destructive focus:text-destructive"
                   >
                     <IconTrash className="mr-2 h-4 w-4" />
-                    {tEntity("delete")}
+                    {c("actions.delete")}
                   </DropdownMenuItem>
                 </>
               )}
@@ -1114,6 +1117,7 @@ function SidebarItemList({
   }
 
   const t = useTranslation("LibraryPage")
+  const c = useCommon()
 
   const handleRowClick = useCallback((key: string) => {
     callbacksRef.current.onItemClick(key)
@@ -1182,7 +1186,7 @@ function SidebarItemList({
   if (items.length === 0) {
     return (
       <div className="text-muted-foreground px-4 py-8 text-center text-sm">
-        {t("noItemsFound")}
+        {c("empty.noItemsFound")}
       </div>
     )
   }

@@ -37,7 +37,7 @@ import {
   DropdownMenuSubTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { Input } from "@v3/_/components/ui/input"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations, type CreatorRelation } from "@/database/books"
 import { statusDisplayLabel } from "@/database/statusKinds"
@@ -101,6 +101,7 @@ function ActionSubmenu({
   onCreate?: () => void
 }) {
   const t = useTranslation("BookActions")
+  const c = useCommon()
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
 
@@ -165,7 +166,7 @@ function ActionSubmenu({
 
             {filtered.length === 0 ? (
               <div className="text-muted-foreground px-2 py-1.5 text-xs">
-                {t("noResults")}
+                {c("empty.noResults")}
               </div>
             ) : (
               filtered.map((option) => (
@@ -199,6 +200,7 @@ export function useBookActionItems({
   onAfterDestructive?: () => void
 }) {
   const t = useTranslation("BookActions")
+  const c = useCommon()
   const permissions = usePermissions()
   const canUpdate = !!permissions?.bookUpdate
   const canDelete = !!permissions?.bookDelete
@@ -330,7 +332,7 @@ export function useBookActionItems({
     onConfirm: handleDelete,
     title: t("deleteTitle", { count }),
     description: t("deleteDescription"),
-    confirmLabel: t("delete"),
+    confirmLabel: c("actions.delete"),
     variant: "destructive",
   })
 
@@ -346,7 +348,7 @@ export function useBookActionItems({
     onConfirm: handleProcess,
     title: t("processTitle", { count }),
     description: t("processDescription"),
-    confirmLabel: t("process"),
+    confirmLabel: c("states.processing"),
   })
 
   const upgradeAction = useConfirmAction({
@@ -541,7 +543,7 @@ export function useBookActionItems({
                 }}
               >
                 <IconProgress className="mr-2 h-4 w-4" />
-                {t("process")}
+                {c("states.processing")}
               </DropdownMenuItem>
 
               {mode === "bulk" && (
@@ -561,7 +563,7 @@ export function useBookActionItems({
       {canProcess && (
         <DropdownMenuItem onClick={handleScan}>
           <IconScan className="mr-2 h-4 w-4" />
-          {t("scan")}
+          {c("actions.scan")}
         </DropdownMenuItem>
       )}
 
@@ -576,7 +578,7 @@ export function useBookActionItems({
             className="text-destructive focus:text-destructive"
           >
             <IconTrash className="mr-2 h-4 w-4" />
-            {deleteAction.isLoading ? t("deleting") : t("delete")}
+            {deleteAction.isLoading ? c("states.deleting") : c("actions.delete")}
           </DropdownMenuItem>
         </>
       )}
