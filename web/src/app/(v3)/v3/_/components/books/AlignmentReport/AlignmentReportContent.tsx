@@ -30,25 +30,18 @@ import { Switch } from "@v3/_/components/ui/switch"
 import { V3Link } from "@v3/_/components/v3-link"
 import { cn } from "@v3/_/lib/utils"
 
-import {
-  type BookAlignmentReportView,
-  type FlagTone,
-  type ReportChapterRow,
+
+import type {
+  BookAlignmentReportView,
+  FlagTone,
+  ReportChapterRow,
 } from "@/alignmentReportView"
 import { Badge } from "@/app/(v3)/v3/_/components/ui/badge"
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import { useFormatDate, useFormatRelativeTime } from "@/app/(v3)/v3/_/lib/date"
+import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { useGetBookAlignmentReportQuery } from "@/store/api"
-import { type UUID } from "@/uuid"
-
-// seconds -> H:MM:SS / M:SS.
-function fmtClock(seconds: number | null): string {
-  if (seconds == null) return "—"
-  const s = Math.round(seconds)
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const sec = s % 60
-  const pad = (n: number) => n.toString().padStart(2, "0")
-  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`
-}
+import type { UUID } from "@/uuid"
 
 const TONE_BADGE: Record<FlagTone, string> = {
   poor: "bg-poor-bg text-poor dark:bg-poor-950/40 dark:text-poor-300",
@@ -96,6 +89,7 @@ export function AlignmentReportContent({
   embedded?: boolean
 }) {
   const { data, isLoading, isError } = useGetBookAlignmentReportQuery({ uuid })
+  const t = useTranslation("AlignmentReport")
 
   return (
     <div className="flex h-full flex-col">
@@ -122,7 +116,7 @@ export function AlignmentReportContent({
               </Button>
             )}
             <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Alignment report
+              {t("title")}
             </span>
           </div>
           {onClose && (
@@ -140,12 +134,10 @@ export function AlignmentReportContent({
       )}
 
       {isLoading && (
-        <p className="text-muted-foreground p-4 text-sm">Loading report…</p>
+        <p className="text-muted-foreground p-4 text-sm">{t("loading")}</p>
       )}
       {isError && (
-        <p className="text-muted-foreground p-4 text-sm">
-          No alignment report is available for this book.
-        </p>
+        <p className="text-muted-foreground p-4 text-sm">{t("notAvailable")}</p>
       )}
 
       {data && (
@@ -163,16 +155,16 @@ export function AlignmentReportContent({
 }
 
 // soft gradient tinted by grade, so the whole thing feels alive rather than grey.
-const GRADE_GLOW: Record<string, string> = {
-  "A+": "from-positive-bg/70 dark:from-positive/500/20",
-  A: "from-positive-bg/70 dark:from-positive/500/20",
-  "A-": "from-positive-bg/70 dark:from-positive/500/20",
-  B: "from-good-bg/70 dark:from-good/500/20",
-  "B-": "from-good-bg/70 dark:from-good/500/20",
-  C: "from-moderate-bg/70 dark:from-moderate/500/20",
-  D: "from-poor-bg/70 dark:from-poor/500/20",
-  F: "from-poor-bg/70 dark:from-poor/500/20",
-}
+// const GRADE_GLOW: Record<string, string> = {
+//   "A+": "from-positive-bg/70 dark:from-positive/500/20",
+//   A: "from-positive-bg/70 dark:from-positive/500/20",
+//   "A-": "from-positive-bg/70 dark:from-positive/500/20",
+//   B: "from-good-bg/70 dark:from-good/500/20",
+//   "B-": "from-good-bg/70 dark:from-good/500/20",
+//   C: "from-moderate-bg/70 dark:from-moderate/500/20",
+//   D: "from-poor-bg/70 dark:from-poor/500/20",
+//   F: "from-poor-bg/70 dark:from-poor/500/20",
+// }
 
 function ReportHeader({
   view,
@@ -187,6 +179,8 @@ function ReportHeader({
   onBack?: () => void
   embedded?: boolean
 }) {
+  const t = useTranslation("AlignmentReport")
+  const relativeTime = useFormatRelativeTime()
   return (
     <header className={cn("relative px-4 py-3")}>
       <div className="flex items-start justify-between gap-3">
@@ -232,7 +226,7 @@ function ReportHeader({
             href={`/books/${view.bookUuid}/alignment`}
             className="hover:text-primary inline-flex items-center gap-1 hover:underline"
           >
-            <IconExternalLink className="size-3.5" /> Open full page
+            <IconExternalLink className="size-3.5" /> {t("openFullPage")}
           </V3Link>
           {!embedded && (
             <V3Link
@@ -247,7 +241,10 @@ function ReportHeader({
               href="/settings?tab=queue"
               className="hover:text-primary inline-flex items-center gap-1 hover:underline"
             >
-              <IconBriefcase className="size-3.5" /> Created by a job
+              <IconBriefcase className="size-3.5" />{" "}
+              {t("createdByJob", {
+                relativeTime: relativeTime(view.createdAt),
+              })}
             </V3Link>
           )}
         </div>
@@ -291,9 +288,10 @@ const MARK_TONE = {
 
 type MarkTone = keyof typeof MARK_TONE
 
-// a one-border verdict + supporting sentence, derived from the summary so the card
-// reads like a little report rather than a wall of numbers.
-function verdictFor(view: BookAlignmentReportView): {
+function verdictFor(
+  view: BookAlignmentReportView,
+  t: ReturnType<typeof useTranslation<"AlignmentReport">>,
+): {
   lead: string
   em: string
   body: string
@@ -302,47 +300,56 @@ function verdictFor(view: BookAlignmentReportView): {
   const g = summary.grade
   const lead =
     g === "A+" || g === "A"
-      ? "Excellent alignment"
+      ? t("heading.excellentAlignment")
       : g === "A-"
-        ? "Strong alignment"
+        ? t("heading.strongAlignment")
         : g.startsWith("B")
-          ? "Good alignment"
+          ? t("heading.goodAlignment")
           : g === "C"
-            ? "Rough alignment"
+            ? t("heading.roughAlignment")
             : g === "D"
-              ? "Patchy alignment"
-              : "Alignment struggled"
+              ? t("heading.patchyAlignment")
+              : t("heading.alignmentFailed")
   const em =
     g === "A+"
-      ? "nearly every sentence matched"
+      ? t("heading.nearlyEverySentenceMatched")
       : g === "A"
-        ? "almost everything lined up"
+        ? t("heading.almostEverythingLinedUp")
         : g === "A-"
-          ? "with only a handful of gaps"
+          ? t("heading.withOnlyAFewGaps")
           : g.startsWith("B")
-            ? "with a few rough patches"
+            ? t("heading.withAFewRoughPatches")
             : g === "C"
-              ? "noticeable gaps remain"
+              ? t("heading.noticeableGapsRemain")
               : g === "D"
-                ? "large stretches drifted"
-                : "much of the book did not match"
+                ? t("heading.largeStretchesDrifted")
+                : t("heading.muchOfTheBookDidNotMatch")
 
   const parts: string[] = []
   parts.push(
     summary.score != null
-      ? `${summary.score}% of the ebook aligned to the narration across ${summary.chapters} chapters.`
-      : `Across ${summary.chapters} chapters, no sentence-level alignment was recorded.`,
+      ? t("heading.partAlignedScore", {
+          score: summary.score.toString(),
+          chapters: summary.chapters.toString(),
+        })
+      : t("heading.partNotAlignedScore", {
+          chapters: summary.chapters.toString(),
+        }),
   )
   parts.push(
     summary.unalignedAudio === 0
-      ? "All audio was placed."
-      : `${summary.unalignedAudio} audio ${summary.unalignedAudio === 1 ? "file" : "files"} could not be placed.`,
+      ? t("heading.partAllAudioPlaced")
+      : t("heading.partSomeAudioNotPlaced", {
+          count: summary.unalignedAudio.toString(),
+        }),
   )
   if (summary.missingSentences > 0) {
     parts.push(
       summary.missingSentences <= 12
-        ? "The few gaps are scattered single sentences, not whole sections."
-        : `${summary.missingSentences} sentences went unmatched.`,
+        ? t("heading.partFewGaps")
+        : t("heading.partManyGaps", {
+            count: summary.missingSentences.toString(),
+          }),
     )
   }
   return { lead, em, body: parts.join(" ") }
@@ -351,7 +358,9 @@ function verdictFor(view: BookAlignmentReportView): {
 function Masthead({ view }: { view: BookAlignmentReportView }) {
   const { summary } = view
   const tone = gradeTone(summary.grade)
-  const verdict = verdictFor(view)
+  const t = useTranslation("AlignmentReport")
+  const tNouns = useTranslation("Common.Nouns")
+  const verdict = verdictFor(view, t)
   const audioPct =
     view.totalAudioDuration > 0
       ? Math.round((view.alignedAudioDuration / view.totalAudioDuration) * 100)
@@ -364,7 +373,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
     tone: MarkTone
   }[] = [
     {
-      label: "Score",
+      label: t("marks.score"),
       value: summary.score != null ? `${summary.score}%` : "—",
       tone:
         summary.score == null
@@ -376,9 +385,9 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
               : "poor",
     },
     {
-      label: "Audio aligned",
+      label: t("marks.audioAligned"),
       value: audioPct != null ? `${audioPct}%` : "—",
-      sub: `${fmtClock(view.alignedAudioDuration)} / ${fmtClock(view.totalAudioDuration)}`,
+      sub: `${formatTimeHuman(view.alignedAudioDuration)} / ${formatTimeHuman(view.totalAudioDuration)}`,
       tone:
         audioPct == null
           ? "muted"
@@ -388,23 +397,29 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
               ? "moderate"
               : "poor",
     },
-    { label: "Chapters", value: `${summary.chapters}`, tone: "muted" },
     {
-      label: "Missing sentences",
+      label: tNouns("chapter", { count: summary.chapters }),
+      value: `${summary.chapters}`,
+      tone: "muted",
+    },
+    {
+      label: t("marks.missingSentences"),
       value: `${summary.missingSentences}`,
       tone: summary.missingSentences === 0 ? "good" : "moderate",
     },
     {
-      label: "Failed chapters",
+      label: t("marks.failedChapters"),
       value: `${summary.failedChapters}`,
       tone: summary.failedChapters === 0 ? "muted" : "poor",
     },
     {
-      label: "Unaligned audio",
+      label: t("marks.unalignedAudio"),
       value: `${summary.unalignedAudio}`,
       tone: summary.unalignedAudio === 0 ? "muted" : "moderate",
     },
   ]
+
+  const formatDate = useFormatDate()
 
   return (
     <section className="bg-card overflow-hidden rounded-lg border">
@@ -436,7 +451,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
             {verdict.body}
           </p>
           <p className="text-muted-foreground/80 mt-2.5 font-mono text-[11px]">
-            Last graded {new Date(view.createdAt).toLocaleDateString()}
+            {t("lastGraded", { date: formatDate(view.createdAt) })}
           </p>
         </div>
       </div>
@@ -467,92 +482,91 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// chapter table
-// ---------------------------------------------------------------------------
-
 function shortHref(href: string): string {
   return (href.split("/").pop() ?? href).replace(/\.[^.]+$/, "")
 }
 
-const columns: ColumnDef<ReportChapterRow>[] = [
-  {
-    id: "expander",
-    enableSorting: false,
-    header: () => null,
-    cell: ({ row }) => (
-      <IconChevronRight
-        className={cn(
-          "text-muted-foreground size-4 transition-transform",
-          row.getIsExpanded() && "rotate-90",
-        )}
-      />
-    ),
-  },
-  {
-    id: "chapter",
-    header: "Chapter",
-    accessorFn: (r) => r.label,
-    cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span className="font-serif font-medium">{row.original.label}</span>
-        {row.original.title && (
-          <span className="text-muted-foreground truncate font-mono text-[10px]">
-            {shortHref(row.original.href)}
+const getColumns = (t: ReturnType<typeof useTranslation<"AlignmentReport">>) =>
+  [
+    {
+      id: "expander",
+      enableSorting: false,
+      header: () => null,
+      cell: ({ row }) => (
+        <IconChevronRight
+          className={cn(
+            "text-muted-foreground size-4 transition-transform",
+            row.getIsExpanded() && "rotate-90",
+          )}
+        />
+      ),
+    },
+    {
+      id: "chapter",
+      header: t("table.columns.chapter"),
+      accessorFn: (r) => r.label,
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-serif font-medium">{row.original.label}</span>
+          {row.original.title && (
+            <span className="text-muted-foreground truncate font-mono text-[10px]">
+              {shortHref(row.original.href)}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "audio",
+      enableSorting: false,
+      header: t("table.columns.audio"),
+      cell: ({ row }) => {
+        const files = row.original.audioFiles
+        if (files.length === 0)
+          return <FlagBadge tone="poor">no audio</FlagBadge>
+        return (
+          <span className="text-muted-foreground truncate text-xs">
+            {files.map((f) => f.title ?? shortHref(f.filepath)).join(", ")}
           </span>
-        )}
-      </div>
-    ),
-  },
-  {
-    id: "audio",
-    enableSorting: false,
-    header: "Audio",
-    cell: ({ row }) => {
-      const files = row.original.audioFiles
-      if (files.length === 0) return <FlagBadge tone="poor">no audio</FlagBadge>
-      return (
-        <span className="text-muted-foreground truncate text-xs">
-          {files.map((f) => f.title ?? shortHref(f.filepath)).join(", ")}
-        </span>
-      )
+        )
+      },
     },
-  },
-  {
-    id: "duration",
-    header: "Dur.",
-    accessorFn: (r) => r.audioFiles.reduce((s, f) => s + (f.duration ?? 0), 0),
-    cell: ({ getValue }) => {
-      const total = getValue<number>()
-      return (
-        <span className="text-muted-foreground tabular-nums">
-          {total > 0 ? fmtClock(total) : "—"}
-        </span>
-      )
+    {
+      id: "duration",
+      header: t("table.columns.duration"),
+      accessorFn: (r) =>
+        r.audioFiles.reduce((s, f) => s + (f.duration ?? 0), 0),
+      cell: ({ getValue }) => {
+        const total = getValue<number>()
+        return (
+          <span className="text-muted-foreground tabular-nums">
+            {total > 0 ? formatTimeHuman(total) : "—"}
+          </span>
+        )
+      },
     },
-  },
-  {
-    id: "sentences",
-    header: "Sentences",
-    // sort by share of unmatched sentences (the user's "delta in percentage").
-    accessorFn: (r) => r.deltaPct,
-    cell: ({ row }) => <SentenceCell row={row.original} />,
-  },
-  {
-    id: "notes",
-    enableSorting: false,
-    header: "Notes",
-    cell: ({ row }) => (
-      <div className="flex flex-wrap gap-1">
-        {row.original.flags.map((f) => (
-          <FlagBadge key={f.label} tone={f.tone}>
-            {f.label}
-          </FlagBadge>
-        ))}
-      </div>
-    ),
-  },
-]
+    {
+      id: "sentences",
+      header: t("table.columns.sentences"),
+      // sort by share of unmatched sentences (the user's "delta in percentage").
+      accessorFn: (r) => r.deltaPct,
+      cell: ({ row }) => <SentenceCell row={row.original} />,
+    },
+    {
+      id: "notes",
+      enableSorting: false,
+      header: t("table.columns.notes"),
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.flags.map((f) => (
+            <FlagBadge key={f.label} tone={f.tone}>
+              {f.label}
+            </FlagBadge>
+          ))}
+        </div>
+      ),
+    },
+  ] satisfies ColumnDef<ReportChapterRow>[]
 
 function SentenceCell({ row }: { row: ReportChapterRow }) {
   const { alignedSentenceCount: al, chapterSentenceCount: total, delta } = row
@@ -605,6 +619,11 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
     [chapters, flaggedOnly],
   )
 
+  const t = useTranslation("AlignmentReport")
+  const tCommon = useTranslation("Common")
+
+  const columns = useMemo(() => getColumns(t), [t])
+
   const table = useReactTable({
     data,
     columns,
@@ -621,19 +640,23 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <h2 className="font-serif text-lg font-normal">
-          Chapters{" "}
+          {tCommon("Nouns.chapter", { count: data.length })}{" "}
           <span className="text-muted-foreground font-mono text-xs">
-            ({data.length}
-            {flaggedOnly && flaggedCount !== chapters.length
-              ? ` of ${chapters.length}`
-              : ""}
+            ( {tCommon("outOf", { count: data.length, total: chapters.length })}
             )
           </span>
         </h2>
         {flaggedCount > 0 && (
-          <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
-            Flagged only
-            <Switch checked={flaggedOnly} onCheckedChange={setFlaggedOnly} />
+          <label
+            htmlFor="flagged-only"
+            className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs"
+          >
+            {t("table.flaggedOnly")}
+            <Switch
+              id="flagged-only"
+              checked={flaggedOnly}
+              onCheckedChange={setFlaggedOnly}
+            />
           </label>
         )}
       </div>
@@ -762,6 +785,7 @@ function MatchCard({
     transcriptText,
   )
 
+  const tNouns = useTranslation("Common.Nouns")
   return (
     <div className="bg-card overflow-hidden border">
       <div className="text-muted-foreground bg-muted/40 flex items-center gap-1.5 border-b px-3 py-2 text-[10px] font-medium tracking-wider uppercase">
@@ -769,7 +793,7 @@ function MatchCard({
       </div>
       <div className="px-3 py-2.5">
         <span className="text-muted-foreground flex items-center gap-1 text-[9px] font-medium tracking-wider uppercase">
-          <IconBook2 className="size-3" /> Ebook
+          <IconBook2 className="size-3" /> {tNouns("ebook", { count: 1 })}
         </span>
         <p className="mt-1 font-serif text-sm leading-relaxed">
           {ebook.prevSentence && (
@@ -788,7 +812,8 @@ function MatchCard({
       </div>
       <div className="border-t border-dashed px-3 py-2.5">
         <span className="text-muted-foreground flex items-center gap-1 text-[9px] font-medium tracking-wider uppercase">
-          <IconHeadphones className="size-3" /> Transcript
+          <IconHeadphones className="size-3" />{" "}
+          {tNouns("transcript", { count: 1 })}
         </span>
         <p className="text-muted-foreground mt-1 font-mono text-[11px] leading-relaxed">
           {otherNodes}
@@ -867,10 +892,6 @@ function highlightOverlap(
   }
 }
 
-// ---------------------------------------------------------------------------
-// unaligned sections (proper tables, coloured badges)
-// ---------------------------------------------------------------------------
-
 const REASON_TONE: Record<string, FlagTone> = {
   "not-found": "poor",
   "too-short": "moderate",
@@ -879,11 +900,12 @@ const REASON_TONE: Record<string, FlagTone> = {
 }
 
 function UnalignedChapters({ view }: { view: BookAlignmentReportView }) {
+  const t = useTranslation("AlignmentReport")
   if (view.unalignedChapters.length === 0) return null
   return (
     <section className="flex flex-col gap-2">
       <h2 className="font-serif text-lg font-normal">
-        Unaligned chapters{" "}
+        {t("unalignedChapters")}{" "}
         <span className="text-muted-foreground font-mono text-xs">
           ({view.unalignedChapters.length})
         </span>
@@ -891,8 +913,8 @@ function UnalignedChapters({ view }: { view: BookAlignmentReportView }) {
       <div className="overflow-hidden border">
         <table className="w-full text-sm">
           <tbody>
-            {view.unalignedChapters.map((uc, i) => (
-              <tr key={i} className="border-t first:border-t-0">
+            {view.unalignedChapters.map((uc) => (
+              <tr key={uc.href} className="border-t first:border-t-0">
                 <td className="px-2.5 py-1.5 text-xs">{uc.label}</td>
                 <td className="w-0 px-2.5 py-1.5">
                   <FlagBadge tone={REASON_TONE[uc.reason] ?? "info"}>
@@ -912,37 +934,38 @@ function UnalignedChapters({ view }: { view: BookAlignmentReportView }) {
 }
 
 function UnalignedAudio({ view }: { view: BookAlignmentReportView }) {
+  const t = useTranslation("AlignmentReport")
   if (view.unalignedAudioFiles.length === 0) return null
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-poor dark:text-poor flex items-center gap-1.5 font-serif text-lg font-normal">
         <IconHeadphones className="size-4" />
-        Unaligned audio{" "}
+        {t("unalignedAudio.title")}{" "}
         <span className="text-muted-foreground font-mono text-xs">
           ({view.unalignedAudioFiles.length})
         </span>
       </h2>
       <div className="border-poor-border bg-poor-bg/40 dark:divide-poor-900/40 dark:border-poor-900/50 dark:bg-poor-950/20 divide-y divide-amber-200/70 overflow-hidden border">
-        {view.unalignedAudioFiles.map((uaf, i) => (
-          <div key={i} className="flex flex-col gap-1 px-3 py-2.5">
+        {view.unalignedAudioFiles.map((uaf) => (
+          <div key={uaf.filepath} className="flex flex-col gap-1 px-3 py-2.5">
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-mono text-xs font-medium">
                 {uaf.title ?? shortHref(uaf.filepath)}
               </span>
               <span className="shrink-0 font-mono text-[11px] text-amber-700 tabular-nums dark:text-amber-400">
-                {fmtClock(uaf.duration)}
+                {uaf.duration ? formatTimeHuman(uaf.duration) : "—"}
               </span>
             </div>
             {uaf.transcription ? (
               <p className="text-muted-foreground text-xs leading-relaxed">
                 <span className="font-medium text-amber-700 dark:text-amber-400">
-                  heard:
+                  {t("unalignedAudio.heard")}:
                 </span>{" "}
                 {uaf.transcription}
               </p>
             ) : (
               <p className="text-muted-foreground/60 text-xs italic">
-                no transcription on file
+                {t("unalignedAudio.noTranscription")}
               </p>
             )}
           </div>

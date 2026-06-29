@@ -1188,10 +1188,10 @@
       "authors": "Authors",
       "createdAt": "Added",
       "updatedAt": "Updated",
-      "publicationDate": "Published",
+      "publicationDate": "Year",
       "userRating": "Rating",
       "pageCount": "Pages",
-      "duration": "Duration",
+      "duration": "Dur.",
       "fileSize": "Size",
       "language": "Lang.",
       "alignmentScore": "Score",
@@ -1199,10 +1199,32 @@
       "alignmentMissingSentences": "Missing",
       "alignmentMutedChapters": "Muted",
       "alignedAt": "Aligned",
-      "lastRead": "Last Read",
+      "lastRead": "Read",
       "readingPosition": "Progress",
       "seriesPosition": "Pos."
     }
+  },
+  "Common": {
+    "Nouns": {
+      "ebook": "{count, plural, one {Ebook} other {Ebooks}}",
+      "audiobook": "{count, plural, one {Audiobook} other {Audiobooks}}",
+      "readaloud": "{count, plural, one {Readaloud} other {Readalouds}}",
+      "book": "{count, plural, one {Book} other {Books}}",
+      "chapter": "{count, plural, one {Chapter} other {Chapters}}",
+      "sentence": "{count, plural, one {Sentence} other {Sentences}}",
+      "note": "{count, plural, one {Note} other {Notes}}",
+      "transcription": "{count, plural, one {Transcription} other {Transcriptions}}",
+      "transcript": "{count, plural, one {Transcript} other {Transcripts}}",
+      "author": "{count, plural, one {Author} other {Authors}}",
+      "narrator": "{count, plural, one {Narrator} other {Narrators}}",
+      "creator": "{count, plural, one {Creator} other {Creators}}",
+      "series": "{count, plural, one {Series} other {Series}}",
+      "tag": "{count, plural, one {Tag} other {Tags}}",
+      "collection": "{count, plural, one {Collection} other {Collections}}",
+      "shelf": "{count, plural, one {Shelf} other {Shelves}}",
+      "file": "{count, plural, one {File} other {Files}}"
+    },
+    "outOf": "{count, number} of {total, number}"
   },
   "Labels": {
     "title": "Title",
@@ -1328,5 +1350,61 @@
     "errorGeneric": "Failed. Check server logs.",
     "importBooksTitle": "Import books from server",
     "importBooksDescription": "Pick EPUB or audio files on the server to import as new books."
+  },
+  "AlignmentReport": {
+    "notAvailable": "No alignment report is available for this book.",
+    "title": "Alignment report",
+    "loading": "Loading report…",
+    "openFullPage": "Open full page",
+    "createdByJob": "Created {relativeTime}",
+
+    "heading": {
+      "excellentAlignment": "Excellent alignment",
+      "nearlyEverySentenceMatched": "nearly every sentence matched",
+      "almostEverythingLinedUp": "almost everything lined up",
+      "strongAlignment": "Strong Alignment",
+      "withOnlyAFewGaps": "with only a handful of gaps",
+      "goodAlignment": "Good alignment",
+      "withAFewRoughPatches": "with a few rough patches",
+      "roughAlignment": "Rough alignment",
+      "noticeableGapsRemain": "noticeable gaps remain",
+      "patchyAlignment": "Patchy alignment",
+      "largeStretchesDrifted": "large stretches drifted",
+      "alignmentFailed": "Alignment failed",
+      "muchOfTheBookDidNotMatch": "much of the book did not match",
+      "partAlignedScore": "{score}% of the ebook aligned to the narration across {chapters} chapters.",
+      "partNotAlignedScore": "Across {chapters} chapters, no sentence-level alignment was recorded.",
+      "partAllAudioPlaced": "All audio was placed.",
+      "partSomeAudioNotPlaced": "{count} audio file(s) could not be placed.",
+      "partFewGaps": "The few gaps are scattered single sentences, not whole sections.",
+      "partManyGaps": "{count} sentences went unmatched."
+    },
+    "marks": {
+      "score": "Score",
+      "audioAligned": "Audio aligned",
+      "missingSentences": "Missing sentences",
+      "failedChapters": "Failed chapters",
+      "unalignedAudio": "Unaligned audio"
+    },
+    "table": {
+      "flaggedOnly": "Flagged only",
+      "detail": {
+        "transcript": "Transcript"
+      },
+      "columns": {
+        "chapter": "Chapter",
+        "audio": "Audio",
+        "duration": "Dur.",
+        "sentences": "Sentences",
+        "notes": "Notes"
+      }
+    },
+    "lastGraded": "Last graded {date}",
+    "unalignedChapters": "Unaligned chapters",
+    "unalignedAudio": {
+      "title": "Unaligned audio",
+      "noTranscription": "no transcription on file",
+      "heard": "heard"
+    }
   }
 }
