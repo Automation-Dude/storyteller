@@ -94,6 +94,7 @@ import {
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
+import { TooltipButton } from "../ui/tooltip-button"
 
 const SIDEBAR_ROW_HEIGHT = 30
 
@@ -309,7 +310,7 @@ export function LibraryPage({
   const didAutoSelectRef = useRef(false)
 
   useEffect(() => {
-    if (selectedItem || isMobile || didAutoSelectRef.current) return
+    if (selectedItem || didAutoSelectRef.current) return
 
     const initial =
       initialSelectedItem && allItems.some((i) => i.key === initialSelectedItem)
@@ -636,6 +637,78 @@ export function LibraryPage({
     />
   )
 
+  const headerActions = (
+    <>
+      {selectedItem && selectedItemName && selectedItem !== NONE_KEY ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon-sm">
+                <IconDotsVertical className="h-4 w-4" />
+              </Button>
+            }
+          />
+
+          <DropdownMenuContent align="end" className="min-w-40">
+            {entityType && (
+              <DropdownMenuItem
+                onClick={() => {
+                  handleEditItem({
+                    key: selectedItem,
+                    name: selectedItemName,
+                    bookCount: 0,
+                  })
+                }}
+              >
+                <IconEdit className="mr-2 h-4 w-4" />
+                {tEntity("edit")}
+              </DropdownMenuItem>
+            )}
+
+            {canPin && (
+              <DropdownMenuItem
+                disabled={isPinning}
+                onClick={() => {
+                  handlePinFacet({
+                    key: selectedItem,
+                    name: selectedItemName,
+                    bookCount: 0,
+                  })
+                }}
+              >
+                <IconBookmarkPlus className="mr-2 h-4 w-4" />
+                {t("pinAsShelf")}
+              </DropdownMenuItem>
+            )}
+
+            {entityType && !isSelectedCoreStatus && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    headerDeleteAction.confirm(event)
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <IconTrash className="mr-2 h-4 w-4" />
+                  {tEntity("delete")}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : undefined}
+    </>
+  )
+  const editDialog = entityType ? (
+    <EntityEditDialog
+      entityType={entityType}
+      open={editDialogOpen}
+      onOpenChange={setEditDialogOpen}
+      item={editItem}
+    />
+  ) : null
+
   if (isMobile) {
     if (selectedItem && selectedItemName) {
       return (
@@ -644,6 +717,7 @@ export function LibraryPage({
             title={title}
             selectedItemName={selectedItemName}
             onBack={handleBackToList}
+            actions={headerActions}
           >
             {booksContent}
           </MobileBookView>
@@ -653,6 +727,7 @@ export function LibraryPage({
             selectedBook={selectedBook}
             onClose={handleClosePanel}
           />
+          {editDialog}
         </>
       )
     }
@@ -668,15 +743,6 @@ export function LibraryPage({
     )
   }
 
-  const editDialog = entityType ? (
-    <EntityEditDialog
-      entityType={entityType}
-      open={editDialogOpen}
-      onOpenChange={setEditDialogOpen}
-      item={editItem}
-    />
-  ) : null
-
   return (
     <>
       <BookListLayout
@@ -684,67 +750,7 @@ export function LibraryPage({
         sidebarWidth={sidebarWidth}
         onSidebarWidthChange={handleSidebarWidthChange}
         headerBreadcrumbs={[{ label: selectedItemName ?? title }]}
-        headerActions={
-          selectedItem && selectedItemName && selectedItem !== NONE_KEY ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon-sm">
-                    <IconDotsVertical className="h-4 w-4" />
-                  </Button>
-                }
-              />
-
-              <DropdownMenuContent align="end" className="min-w-40">
-                {entityType && (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handleEditItem({
-                        key: selectedItem,
-                        name: selectedItemName,
-                        bookCount: 0,
-                      })
-                    }}
-                  >
-                    <IconEdit className="mr-2 h-4 w-4" />
-                    {tEntity("edit")}
-                  </DropdownMenuItem>
-                )}
-
-                {canPin && (
-                  <DropdownMenuItem
-                    disabled={isPinning}
-                    onClick={() => {
-                      handlePinFacet({
-                        key: selectedItem,
-                        name: selectedItemName,
-                        bookCount: 0,
-                      })
-                    }}
-                  >
-                    <IconBookmarkPlus className="mr-2 h-4 w-4" />
-                    {t("pinAsShelf")}
-                  </DropdownMenuItem>
-                )}
-
-                {entityType && !isSelectedCoreStatus && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(event) => {
-                        headerDeleteAction.confirm(event)
-                      }}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <IconTrash className="mr-2 h-4 w-4" />
-                      {tEntity("delete")}
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : undefined
-        }
+        headerActions={headerActions}
         selectedBookUuid={selectedBookUuid}
         selectedBook={selectedBook}
         onClosePanel={handleClosePanel}
@@ -764,30 +770,41 @@ function MobileBookView({
   selectedItemName,
   onBack,
   children,
+  actions,
 }: {
   title: string
   selectedItemName: string
   onBack: () => void
   children: React.ReactNode
+  actions: React.ReactNode
 }) {
+  const t = useTranslation("LibraryPage")
   return (
     <div className="flex h-screen flex-col">
       <div className="relative h-(--header-height) w-full shrink-0">
         <SiteHeader
           breadcrumbs={[{ label: title }, { label: selectedItemName }]}
           actions={
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <IconArrowLeft className="mr-1 h-4 w-4" />
-              Back
-            </Button>
+            <>
+              <TooltipButton
+                tooltip={t("back")}
+                aria-label={t("back")}
+                className="bg-background/90 rounded-full backdrop-blur"
+                variant="secondary"
+                size="sm"
+                onClick={onBack}
+              >
+                <IconArrowLeft className="size-3.5 stroke-[1.5]" />
+              </TooltipButton>
+              {actions}
+            </>
           }
         />
+        {children}
       </div>
-      {children}
     </div>
   )
 }
-
 function EntityEditDialog({
   entityType,
   open,

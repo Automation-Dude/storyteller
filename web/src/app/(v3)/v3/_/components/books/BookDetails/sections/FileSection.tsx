@@ -46,6 +46,7 @@ import { useRemoveBookAssetMutation } from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
 
 import { CollapsibleSection } from "./CollapsibleSection"
+import { ConfirmDialog } from "../../../ui/confirm-dialog"
 
 type Format = "ebook" | "audiobook" | "readaloud"
 
@@ -312,11 +313,11 @@ export function FileSection({
         ))}
 
         {canEdit && assetFolder && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-muted-foreground font-sans text-xs font-semibold uppercase">
+          <div className="flex flex-col gap-0.5 text-xs">
+            <span className="text-muted-foreground font-sans text-xs uppercase">
               {t("fileInformation.assetFolder")}
             </span>
-            <code className="font-mono text-sm break-all">{assetFolder}</code>
+            <code className="font-mono break-all">{assetFolder}</code>
           </div>
         )}
       </div>
@@ -344,43 +345,23 @@ export function FileSection({
         />
       )}
 
-      <Dialog
+      <ConfirmDialog
         open={removeTarget !== null}
         onOpenChange={(next) => {
           if (!next) setRemoveTarget(null)
         }}
-      >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              Remove {removeTarget ? FORMAT_LABELS[removeTarget] : ""} from book
-            </DialogTitle>
-            <DialogDescription>
-              {removeTarget === "readaloud"
-                ? "The readaloud file will be deleted from disk."
-                : "Library-owned files will be deleted. Files in your watch folders are left on disk."}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setRemoveTarget(null)
-              }}
-              disabled={isRemoving}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => void handleConfirmRemove()}
-              disabled={isRemoving}
-            >
-              Remove
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title={`Remove ${removeTarget ? FORMAT_LABELS[removeTarget] : ""} from book`}
+        description={
+          removeTarget === "readaloud"
+            ? "The readaloud file will be deleted from disk."
+            : "Library-owned files will be deleted. Files in your watch folders are left on disk."
+        }
+        onConfirm={() => void handleConfirmRemove()}
+        isLoading={isRemoving}
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        variant="destructive"
+      />
     </CollapsibleSection>
   )
 }

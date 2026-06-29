@@ -11,10 +11,6 @@ import { useBookForm } from "./BookDetails/BookFormProvider"
 import { type BookFormValues } from "./BookDetails/schema"
 import { RelationChipEditor } from "./RelationChipEditor"
 
-// shared body for the authors/narrators chip editors: both are a labelled
-// RelationChipEditor bound to a string[] form field. when opened as a single
-// inline field (clicking the line, not global edit) it grows a save/cancel
-// footer so the edit actually persists and can be left, like the text fields.
 function CreatorChipField({
   field,
   label,

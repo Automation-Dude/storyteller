@@ -187,7 +187,8 @@
     "noItemsFound": "No items found",
     "pinAsShelf": "Pin as shelf",
     "sortByCount": "Sort by count",
-    "sortByName": "Sort by name"
+    "sortByName": "Sort by name",
+    "back": "Back"
   },
   "EntityActions": {
     "selected": "{count} selected",
