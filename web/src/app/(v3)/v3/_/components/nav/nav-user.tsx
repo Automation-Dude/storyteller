@@ -10,8 +10,8 @@ import {
   IconSun,
   IconUser,
 } from "@tabler/icons-react"
-import { useTheme } from "next-themes"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 
 import { LocaleChanger } from "@v3/_/components/locale-changer"
 import {

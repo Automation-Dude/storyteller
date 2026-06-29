@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  IconCaretUpDown,
   IconChevronDown,
   IconChevronRight,
   IconCopy,
@@ -37,9 +36,7 @@ import { Input } from "@v3/_/components/ui/input"
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
@@ -51,7 +48,6 @@ import { type BookWithRelations } from "@/database/books"
 import { DEFAULT_RATING_DIMENSIONS } from "@/database/ratingDimensions"
 import { statusDisplayLabel } from "@/database/statusKinds"
 import {
-  FIELD_LABELS,
   MEDIA_TYPE_VALUES,
   type ShelfFilterAnd,
   type ShelfFilterCondition,
@@ -79,10 +75,6 @@ import {
   useListStatusesQuery,
   useListTagsQuery,
 } from "@/store/api"
-
-// ---------------------------------------------------------------------------
-// filter presets
-// ---------------------------------------------------------------------------
 
 type FilterPreset = {
   key: string
@@ -840,7 +832,7 @@ function ConditionEditor({
     onChange({ ...condition, value: value ?? undefined })
   }
 
-  const allFieldItems = FIELD_GROUPS.flatMap((group) =>
+  const _allFieldItems = FIELD_GROUPS.flatMap((group) =>
     group.fields.map((field) => ({
       value: field,
       label: t.plain(`fields.${field}` as "fields.title"),
@@ -876,8 +868,8 @@ function ConditionEditor({
 
           <DropdownMenuContent className="w-[300px] md:w-xl">
             {FIELD_GROUPS.map((group) => (
-              <DropdownMenuGroup>
-                <DropdownMenuLabel key={group.key}>
+              <DropdownMenuGroup key={group.key}>
+                <DropdownMenuLabel>
                   {t.plain(`fieldGroups.${group.key}` as "fieldGroups.text")}
                 </DropdownMenuLabel>
                 <div className="flex flex-wrap gap-1">

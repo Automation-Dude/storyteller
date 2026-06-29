@@ -961,10 +961,7 @@ export const api = createApi({
         { type: "Statuses", id: uuid },
       ],
     }),
-    createStatus: build.mutation<
-      Status,
-      { name: string; label?: string }
-    >({
+    createStatus: build.mutation<Status, { name: string; label?: string }>({
       query: (body) => ({
         url: "/statuses",
         method: "POST",
@@ -1968,6 +1965,7 @@ export const {
   useListSeriesQuery,
   useGetLibraryCountsQuery,
   useGetSectionFacetsQuery,
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   usePrefetch,
   useListStatusesQuery,
   useListTagsQuery,

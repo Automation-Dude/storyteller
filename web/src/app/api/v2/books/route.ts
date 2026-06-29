@@ -15,7 +15,7 @@ import {
   getBooks,
 } from "@/database/books"
 import { type ImportMode } from "@/database/settingsTypes"
-import { shelfFilterSchema } from "@/shelves"
+import { type ShelfFilter, shelfFilterSchema } from "@/shelves"
 import { SORTABLE_FIELDS, type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
 
@@ -41,9 +41,9 @@ export const GET = withHasPermission("bookList")(async (request) => {
   const opts: GetBooksOptions = {}
 
   if (filterParam) {
-    let parsed: unknown
+    let parsed: ShelfFilter
     try {
-      parsed = JSON.parse(filterParam)
+      parsed = JSON.parse(filterParam) as ShelfFilter
     } catch {
       return NextResponse.json({ error: "Invalid filter" }, { status: 400 })
     }
@@ -55,7 +55,6 @@ export const GET = withHasPermission("bookList")(async (request) => {
     }
     const validated = shelfFilterSchema.safeParse(parsed)
     if (!validated.success) {
-      console.log(parsed)
       console.error(validated.error)
       return NextResponse.json(
         { error: validated.error.message },

@@ -10,7 +10,6 @@ import {
   IconHeadphones,
   IconSortAscending,
   IconSortDescending,
-  IconSparkles,
   IconX,
 } from "@tabler/icons-react"
 import {
@@ -25,7 +24,6 @@ import {
 } from "@tanstack/react-table"
 import { Fragment, useMemo, useState } from "react"
 
-import { GradePill } from "@v3/_/components/books/grade-pill"
 import { Button } from "@v3/_/components/ui/button"
 import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { Switch } from "@v3/_/components/ui/switch"
@@ -57,6 +55,7 @@ const TONE_BADGE: Record<FlagTone, string> = {
   moderate:
     "bg-moderate-bg text-moderate dark:bg-moderate-950/40 dark:text-moderate-300",
   info: "bg-highlight-bg text-highlight dark:bg-highlight-950/40 dark:text-highlight-300",
+  good: "bg-good-bg text-good dark:bg-good-950/40 dark:text-good-300",
 }
 
 function FlagBadge({
@@ -688,7 +687,8 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
             {table.getRowModel().rows.map((row) => {
               const isExpanded =
                 typeof expanded === "boolean" || expanded[row.id]
-              const isSorted = sorting.find((s) => s.id === row.id)
+              // necessary, tanstack table is dumb w compiler
+              const _isSorted = sorting.find((s) => s.id === row.id)
               return (
                 <Fragment key={row.id}>
                   <tr

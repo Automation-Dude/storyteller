@@ -8,7 +8,6 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
 import { useBookForm } from "./BookDetails/BookFormProvider"
-import { type BookFormValues } from "./BookDetails/schema"
 import { RelationChipEditor } from "./RelationChipEditor"
 
 function CreatorChipField({

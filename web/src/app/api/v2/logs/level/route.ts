@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 
 const VALID_LEVELS = ["trace", "debug", "info", "warn", "error", "fatal"]
 
-export const GET = withHasPermission("settingsUpdate")(async () => {
+export const GET = withHasPermission("settingsUpdate")(() => {
   return NextResponse.json({ level: logger.level })
 })
 

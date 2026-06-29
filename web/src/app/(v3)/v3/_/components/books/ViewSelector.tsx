@@ -1,11 +1,9 @@
 import { IconLayoutGrid, IconLayoutList } from "@tabler/icons-react"
 
-import { Button } from "@v3/_/components/ui/button"
 import { ButtonGroup } from "@v3/_/components/ui/button-group"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
-
 
 type ViewSelectorProps = {
   value: BookView

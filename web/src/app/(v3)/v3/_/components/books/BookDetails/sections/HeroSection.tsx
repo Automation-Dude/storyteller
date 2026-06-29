@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  Icon,
+  type Icon,
   IconBook,
   IconDownload,
   IconH2,

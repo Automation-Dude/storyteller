@@ -16,14 +16,6 @@ import { type ComponentType, useState } from "react"
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@v3/_/components/ui/dialog"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -36,6 +28,7 @@ import { useFormatDate } from "@v3/_/lib/date"
 
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
+import { ConfirmDialog } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
@@ -46,7 +39,6 @@ import { useRemoveBookAssetMutation } from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
 
 import { CollapsibleSection } from "./CollapsibleSection"
-import { ConfirmDialog } from "../../../ui/confirm-dialog"
 
 type Format = "ebook" | "audiobook" | "readaloud"
 
@@ -204,7 +196,6 @@ export function FileSection({
 }) {
   const canEdit = usePermission("bookUpdate")
   const t = useTranslation("BookDetailsPage")
-  const formatDate = useFormatDate()
   const [removeAsset, { isLoading: isRemoving }] = useRemoveBookAssetMutation()
 
   const FORMAT_LABELS: Record<Format, string> = {

@@ -11,7 +11,7 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import {
@@ -97,7 +97,7 @@ function formatLogMessage(entry: LogEntry): string {
   }
 
   const err = entry["err"]
-  if (err && typeof err === "object" && "message" in (err)) {
+  if (err && typeof err === "object" && "message" in err) {
     parts.push(`- ${(err as { message: string }).message}`)
   }
 
@@ -200,9 +200,10 @@ export function LogsTab() {
 
   const lines = (data?.lines ?? []).filter(isLogEntry)
 
+  const refectEvent = useEffectEvent(refetch)
+
   useEffect(() => {
-    void refetch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void refectEvent()
   }, [])
 
   return (
@@ -211,17 +212,25 @@ export function LogsTab() {
         search={search}
         onSearchChange={setSearch}
         levelFilter={prefs.levelFilter}
-        onLevelFilterChange={(v) => { updatePrefs({ levelFilter: v }); }}
+        onLevelFilterChange={(v) => {
+          updatePrefs({ levelFilter: v })
+        }}
         lineCount={prefs.lineCount}
-        onLineCountChange={(v) => { updatePrefs({ lineCount: v }); }}
+        onLineCountChange={(v) => {
+          updatePrefs({ lineCount: v })
+        }}
         wrapLines={prefs.wrapLines}
-        onWrapLinesToggle={() => { updatePrefs({ wrapLines: !prefs.wrapLines }); }}
+        onWrapLinesToggle={() => {
+          updatePrefs({ wrapLines: !prefs.wrapLines })
+        }}
         highlighting={prefs.highlighting}
-        onHighlightingToggle={() =>
-          { updatePrefs({ highlighting: !prefs.highlighting }); }
-        }
+        onHighlightingToggle={() => {
+          updatePrefs({ highlighting: !prefs.highlighting })
+        }}
         hideTime={prefs.hideTime}
-        onHideTimeToggle={() => { updatePrefs({ hideTime: !prefs.hideTime }); }}
+        onHideTimeToggle={() => {
+          updatePrefs({ hideTime: !prefs.hideTime })
+        }}
         isDebug={isDebug}
         onToggleDebug={handleToggleDebug}
         followMode={prefs.followMode}
@@ -381,14 +390,18 @@ function LogsToolbar({
           type="text"
           placeholder={t("searchLogs")}
           value={search}
-          onChange={(e) => { onSearchChange(e.target.value); }}
+          onChange={(e) => {
+            onSearchChange(e.target.value)
+          }}
           className="h-8 pr-8 pl-8 text-sm"
         />
 
         {search && (
           <button
             type="button"
-            onClick={() => { onSearchChange(""); }}
+            onClick={() => {
+              onSearchChange("")
+            }}
             className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
           >
             <IconX className="h-3.5 w-3.5" />
@@ -398,7 +411,9 @@ function LogsToolbar({
 
       <Select
         value={levelFilter}
-        onValueChange={(v) => { onLevelFilterChange(v as string); }}
+        onValueChange={(v) => {
+          onLevelFilterChange(v as string)
+        }}
         items={levelItems}
       >
         <SelectTrigger className="h-8 w-28 text-sm">
@@ -415,7 +430,9 @@ function LogsToolbar({
 
       <Select
         value={String(lineCount)}
-        onValueChange={(v) => { onLineCountChange(Number(v)); }}
+        onValueChange={(v) => {
+          onLineCountChange(Number(v))
+        }}
         items={lineCountItems}
       >
         <SelectTrigger className="h-8 w-28 text-sm">

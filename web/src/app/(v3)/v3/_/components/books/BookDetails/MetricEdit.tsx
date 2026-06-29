@@ -11,8 +11,6 @@ import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { useBookForm } from "./BookFormProvider"
 import { SEAMLESS_BOX } from "./EditableText"
 
-// shared look for the read-only metric "chips" so page count + duration line up
-// with the surrounding muted text but still read as clickable when editable.
 function metricDisplayClass(canEdit: boolean, empty: boolean) {
   return cn(
     SEAMLESS_BOX,
@@ -137,9 +135,7 @@ export function DurationEdit({ className }: { className?: string }) {
     if (active) {
       setParts(splitDuration(override ?? effective ?? 0))
     }
-    // re-seed only when entering edit mode
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active])
+  }, [active, setParts, override, effective])
 
   useEffect(() => {
     if (inlineMode) firstRef.current?.focus()

@@ -191,6 +191,7 @@ export async function setSidebarGroups(
     await trx.deleteFrom("sidebarGroup").where("userId", "=", userId).execute()
 
     for (let gi = 0; gi < groups.length; gi++) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const group = groups[gi]!
       const groupUuid = group.uuid ?? crypto.randomUUID()
 

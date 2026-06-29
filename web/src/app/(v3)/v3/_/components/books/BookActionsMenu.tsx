@@ -18,9 +18,9 @@ import {
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
+import { usePermission } from "@/hooks/usePermission"
 
 import { useBookActionItems } from "./BookActionMenuItems"
-import { usePermission } from "@/hooks/usePermission"
 
 // the single-book "..." menu. holds every action the bulk toolbar has (minus
 // merge) plus the single-only "open full page" and "edit" entries. used by both

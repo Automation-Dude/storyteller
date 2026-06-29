@@ -46,6 +46,7 @@ import {
   type SidebarGroupWithItems,
   type SidebarItemDetail,
 } from "@/database/sidebar"
+import { usePermission } from "@/hooks/usePermission"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
   useGetLatestVersionQuery,
@@ -57,7 +58,6 @@ import {
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
-import { usePermission } from "@/hooks/usePermission"
 import { CommandSearch, useCommandSearch } from "./command-search"
 import { SidebarManager } from "./nav/SidebarManager"
 import {

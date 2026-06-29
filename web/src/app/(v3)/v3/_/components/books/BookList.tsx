@@ -8,8 +8,8 @@ import {
   IconSearch,
 } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import Link from "next/link"
 import { useFormatter } from "next-intl"
+import Link from "next/link"
 import { Fragment, memo, useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"

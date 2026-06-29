@@ -68,7 +68,7 @@
       "import_rule.import_mode": "import(\"@/database/settingsTypes\").ImportMode | null",
       "import_rule_to_collection.import_rule_uuid": "import(\"@/uuid\").UUID",
       "import_rule_to_collection.collection_uuid": "import(\"@/uuid\").UUID",
-      "job.book_uuid": "import(\"@/uuid\").UUID",
+      "job.book_uuid": "import(\"@/uuid\").UUID | null",
       "job.uuid": "Generated<import(\"@/uuid\").UUID>",
       "job.status": "Generated<import(\"@/database/jobs\").JobStatus>",
       "job.restart": "import('@/work/distributor').RestartMode | null",

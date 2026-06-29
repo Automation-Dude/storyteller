@@ -15,8 +15,10 @@ import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { type SpineFit, fitSpine } from "@v3/_/lib/spineFit"
 
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
+
 
 import { isDualFormat } from "./BookCover"
 import {
@@ -24,7 +26,6 @@ import {
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
-import { TooltipButton } from "../ui/tooltip-button"
 
 // cap at 2x: the cover is the heaviest gpu texture here, 3x triples its area
 // for no visible gain on a small slab and chews memory while turning

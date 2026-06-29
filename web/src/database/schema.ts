@@ -243,7 +243,7 @@ export interface ImportRuleToCollection {
 }
 
 export interface Job {
-  bookUuid: import("@/uuid").UUID
+  bookUuid: import("@/uuid").UUID | null
   config: ColumnType<
     import("@/work/runConfig").RunConfig,
     string,

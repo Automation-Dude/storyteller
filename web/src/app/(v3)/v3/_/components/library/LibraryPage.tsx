@@ -65,6 +65,7 @@ import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialo
 import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/_CreateSeriesDialog"
 import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/_EditSeriesDialog"
 import { CreateStatusDialog } from "@/app/(v3)/v3/_/components/library/CreateStatusDialog"
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { isWellKnownStatus } from "@/database/statusKinds"
 import { usePermissions } from "@/hooks/usePermissions"
 import { type ShelfFilterNode } from "@/shelves"
@@ -94,7 +95,7 @@ import {
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
-import { TooltipButton } from "../ui/tooltip-button"
+
 
 const SIDEBAR_ROW_HEIGHT = 30
 

@@ -174,7 +174,7 @@ function DefaultStatusSection() {
                 if (v === NONE_STATUS) {
                   if (currentDefault) {
                     void setDefault({
-                      uuid: currentDefault.uuid as UUID,
+                      uuid: currentDefault.uuid,
                       isDefault: false,
                     })
                   }

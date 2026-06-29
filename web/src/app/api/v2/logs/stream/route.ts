@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 const POLL_INTERVAL = 500
 const READ_CHUNK = 64 * 1024
 
-export const GET = withHasPermission("settingsUpdate")(async (request) => {
+export const GET = withHasPermission("settingsUpdate")((request) => {
   if (request.headers.get("Accept") !== "text/event-stream") {
     return new NextResponse(null, { status: 405 })
   }
@@ -63,6 +63,7 @@ export const GET = withHasPermission("settingsUpdate")(async (request) => {
             try {
               // read new content in bounded chunks so a burst
               // of logs doesn't allocate one huge buffer
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               while (offset < currentSize && !cancelled) {
                 const readSize = Math.min(READ_CHUNK, currentSize - offset)
                 const buf = Buffer.alloc(readSize)
@@ -100,6 +101,7 @@ export const GET = withHasPermission("settingsUpdate")(async (request) => {
           // file read error, keep polling
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!cancelled) {
           setTimeout(() => void poll(), POLL_INTERVAL)
         }

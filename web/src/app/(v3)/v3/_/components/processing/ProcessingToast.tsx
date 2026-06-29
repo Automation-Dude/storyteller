@@ -25,7 +25,6 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import {
   Item,
-  ItemActions,
   ItemContent,
   ItemMedia,
   ItemTitle,
@@ -54,7 +53,6 @@ export function ProcessingToast() {
     { type: "active" },
     { pollingInterval: 30_000, skipPollingIfUnfocused: true },
   )
-  console.log("jobs", jobs)
   const { data: finishedJobs } = useGetJobsQuery({ type: "finished", limit: 5 })
   const [cancelJob] = useCancelJobMutation()
   const [pauseJob] = usePauseJobMutation()
@@ -93,7 +91,6 @@ export function ProcessingToast() {
 
   const view = jobToView(current)
   const pct = Math.round(overallProgress(view) * 100)
-  console.log("percenttt", pct, view)
   const queuedCount = active.length - 1
 
   const headline =

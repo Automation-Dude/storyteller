@@ -15,10 +15,11 @@ import { Button } from "@v3/_/components/ui/button"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { getCoverUrl, useSetUserSettingMutation } from "@/store/api"
 
+
 import { useBookForm } from "./BookFormProvider"
-import { TooltipButton } from "../../ui/tooltip-button"
 
 // local toggle: flip to "pages" or "duration" to print length info on the
 // spine instead of the author / title

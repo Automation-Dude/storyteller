@@ -26,6 +26,7 @@ import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { usePermissions } from "@/hooks/usePermissions"
@@ -48,7 +49,6 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
-import { TooltipButton } from "../ui/tooltip-button"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -185,7 +185,7 @@ function BookDetailsContentInner({
   )
 
   const { primary, accent } = useCoverColors(book)
-  const { showAccent, tint } = useColorPreferences()
+  const { showAccent } = useColorPreferences()
   const isDark = useIsDarkMode()
 
   // cover-derived primary/accent only at "full"; otherwise the theme colors
@@ -268,8 +268,6 @@ function BookDetailsContentInner({
   )
 }
 
-// the colored header for the full book page. mirrors the panel header's tint
-// but, per the page, swaps breadcrumbs for a back button and shows the title.
 function BookPageHeader() {
   const { book, isEditing, setIsEditing } = useBookForm()
   const { primary } = useCoverColors(book)

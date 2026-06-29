@@ -93,7 +93,7 @@ export function BookFilters({
   // on its own - no separate "pending" state needed.
   const shownFields = activeFields
 
-  const addableFields = useMemo(() => quickFilterFields(), [shownFields])
+  const addableFields = useMemo(() => quickFilterFields(), [])
 
   const sortFieldOptions = useMemo<
     { value: SortField; label: string }[]
