@@ -64,7 +64,7 @@ export function ProcessRunDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Process “{book.title}”</DialogTitle>
           <DialogDescription>
@@ -106,8 +106,8 @@ function RunConfigForm({
   const [processBook, { isLoading: isProcessing }] = useProcessBookMutation()
   const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation()
 
-  async function start(saveAsDefaults: boolean) {
-    const values = form.getValues()
+  async function start(values: Settings, saveAsDefaults?: boolean) {
+    // const values = form.getValues()
     const config: Partial<RunConfig> = {
       language: language === "auto" ? null : language,
     }
@@ -120,13 +120,17 @@ function RunConfigForm({
       await processBook({ uuid: book.uuid, restart: false, config }).unwrap()
       if (saveAsDefaults) {
         await updateSettings(values).unwrap()
-        toast.success("Saved as defaults and started processing")
+        toast.success("Saved as defaults and started processing", {
+          dismissible: true,
+        })
       } else {
-        toast.success("Started processing")
+        toast.success("Started processing", { dismissible: true })
       }
       onClose()
-    } catch {
-      toast.error("Failed to start processing")
+    } catch (e) {
+      toast.error("Failed to start processing", {
+        description: e instanceof Error ? e.message : "Unknown error",
+      })
     }
   }
 
@@ -134,54 +138,63 @@ function RunConfigForm({
 
   return (
     <SettingsFormProvider form={form} lockedSettings={new Set()}>
-      <div className="flex flex-col gap-4">
-        <Field>
-          <FieldLabel htmlFor="run-language">Language</FieldLabel>
-          <Select
-            value={language}
-            onValueChange={(v) => {
-              setLanguage(v ?? "auto")
-            }}
-          >
-            <SelectTrigger id="run-language" className="w-full">
-              <SelectValue placeholder="Auto (detect from book)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="auto">Auto (detect from book)</SelectItem>
-              {LANGUAGES.map((lang) => (
-                <SelectItem key={lang} value={lang}>
-                  {lang}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+      <form
+        onSubmit={form.handleSubmit(start)}
+        className="h-full max-h-[80vh] overflow-y-auto px-px"
+      >
+        <div className="flex flex-col gap-4">
+          <Field>
+            <FieldLabel htmlFor="run-language">Language</FieldLabel>
+            <Select
+              value={language}
+              onValueChange={(v) => {
+                setLanguage(v ?? "auto")
+              }}
+            >
+              <SelectTrigger id="run-language" className="w-full">
+                <SelectValue placeholder="Auto (detect from book)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Auto (detect from book)</SelectItem>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang} value={lang}>
+                    {lang}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
-        <ProcessingSettingsFields />
-      </div>
+          <ProcessingSettingsFields />
+        </div>
 
-      <DialogFooter>
-        <ButtonGroup>
-          <Button disabled={busy} onClick={() => void start(false)}>
-            {busy ? "Starting…" : "Start processing"}
-          </Button>
-          <ButtonGroupSeparator />
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button disabled={busy} aria-label="More start options">
-                  <IconChevronDown className="size-4" />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => void start(true)}>
-                Start and save as defaults
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </ButtonGroup>
-      </DialogFooter>
+        <DialogFooter className="mt-3">
+          <ButtonGroup>
+            <Button disabled={busy} type="submit">
+              {busy ? "Starting…" : "Start processing"}
+            </Button>
+            <ButtonGroupSeparator />
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button disabled={busy} aria-label="More start options">
+                    <IconChevronDown className="size-4" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    void form.handleSubmit(start)()
+                  }}
+                >
+                  Start and save as defaults
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
+        </DialogFooter>
+      </form>
     </SettingsFormProvider>
   )
 }

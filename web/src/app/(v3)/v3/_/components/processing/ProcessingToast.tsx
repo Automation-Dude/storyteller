@@ -50,7 +50,11 @@ import { STAGE_LABELS, jobToView, overallProgress } from "./shared"
 // layout so it stays visible while jobs run, across navigation. driven by the jobs
 // query (live via the job event stream). also announces finished runs.
 export function ProcessingToast() {
-  const { data: jobs } = useGetJobsQuery({ type: "active" })
+  const { data: jobs } = useGetJobsQuery(
+    { type: "active" },
+    { pollingInterval: 30_000, skipPollingIfUnfocused: true },
+  )
+  console.log("jobs", jobs)
   const { data: finishedJobs } = useGetJobsQuery({ type: "finished", limit: 5 })
   const [cancelJob] = useCancelJobMutation()
   const [pauseJob] = usePauseJobMutation()
@@ -65,7 +69,9 @@ export function ProcessingToast() {
 
   const active = (jobs ?? []).filter(
     (j) =>
-      j.status === "RUNNING" || j.status === "QUEUED" || j.status === "PAUSED",
+      j["status"] === "RUNNING" ||
+      j["status"] === "QUEUED" ||
+      j["status"] === "PAUSED",
   )
 
   // ask for notification permission once a run is in progress.
@@ -87,6 +93,7 @@ export function ProcessingToast() {
 
   const view = jobToView(current)
   const pct = Math.round(overallProgress(view) * 100)
+  console.log("percenttt", pct, view)
   const queuedCount = active.length - 1
 
   const headline =
@@ -153,88 +160,92 @@ export function ProcessingToast() {
           ) : (
             <>
               <ProgressVisualization view={view} percent={pct} />
-              <span className="text-muted-foreground text-xs">
-                {headline}
-                {queuedCount > 0 ? ` · +${queuedCount} queued` : ""}
-              </span>
+              <div className="flex items-center justify-between gap-0.5">
+                <span className="text-muted-foreground text-xs">
+                  {headline}
+                  {queuedCount > 0 ? ` · +${queuedCount} queued` : ""}
+                </span>
+
+                <div className="flex items-center gap-0.5">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          aria-label="More actions"
+                        />
+                      }
+                    >
+                      <IconDotsVertical className="size-3.5" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="z-50">
+                      <DropdownMenuItem
+                        render={<V3Link href="/settings?tab=queue" />}
+                      >
+                        <IconListNumbers className="size-4" />
+                        Manage queue
+                      </DropdownMenuItem>
+                      {current.status === "RUNNING" && (
+                        <DropdownMenuItem
+                          onClick={() => void pauseJob({ uuid: current.uuid })}
+                        >
+                          <IconPlayerPause className="size-4" />
+                          Pause
+                        </DropdownMenuItem>
+                      )}
+                      {current.status === "PAUSED" && (
+                        <DropdownMenuItem
+                          onClick={() => void resumeJob({ uuid: current.uuid })}
+                        >
+                          <IconPlayerPlay className="size-4" />
+                          Resume
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => void cancelJob({ uuid: current.uuid })}
+                      >
+                        <IconX className="size-4" />
+                        Cancel
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6"
+                    aria-label={minimized ? "Expand" : "Minimize"}
+                    onClick={() => {
+                      setMinimized((m) => !m)
+                    }}
+                  >
+                    {minimized ? (
+                      <IconChevronUp className="size-3.5" />
+                    ) : (
+                      <IconChevronDown className="size-3.5" />
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6"
+                    aria-label="Dismiss"
+                    onClick={() => {
+                      setDismissed(current.uuid)
+                    }}
+                  >
+                    <IconX className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
             </>
           )}
         </ItemContent>
-
-        <ItemActions className="gap-0.5">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-6"
-                  aria-label="More actions"
-                />
-              }
-            >
-              <IconDotsVertical className="size-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-50">
-              <DropdownMenuItem render={<V3Link href="/settings?tab=queue" />}>
-                <IconListNumbers className="size-4" />
-                Manage queue
-              </DropdownMenuItem>
-              {current.status === "RUNNING" && (
-                <DropdownMenuItem
-                  onClick={() => void pauseJob({ uuid: current.uuid })}
-                >
-                  <IconPlayerPause className="size-4" />
-                  Pause
-                </DropdownMenuItem>
-              )}
-              {current.status === "PAUSED" && (
-                <DropdownMenuItem
-                  onClick={() => void resumeJob({ uuid: current.uuid })}
-                >
-                  <IconPlayerPlay className="size-4" />
-                  Resume
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => void cancelJob({ uuid: current.uuid })}
-              >
-                <IconX className="size-4" />
-                Cancel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            aria-label={minimized ? "Expand" : "Minimize"}
-            onClick={() => {
-              setMinimized((m) => !m)
-            }}
-          >
-            {minimized ? (
-              <IconChevronUp className="size-3.5" />
-            ) : (
-              <IconChevronDown className="size-3.5" />
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6"
-            aria-label="Dismiss"
-            onClick={() => {
-              setDismissed(current.uuid)
-            }}
-          >
-            <IconX className="size-3.5" />
-          </Button>
-        </ItemActions>
       </Item>
     </div>
   )

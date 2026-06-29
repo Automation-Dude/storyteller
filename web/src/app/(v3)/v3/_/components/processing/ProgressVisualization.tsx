@@ -10,11 +10,6 @@ const SEGMENTS = 16
 const MAX_TILT = 40
 const ORANGE = "#f97316"
 
-// the concept: a straight bar breaks into tilted chunks as a sweep passes over it
-// (pre-processing), an orange burn sweeps across them (transcribing), then they
-// realign to a flat solid bar (synchronizing) and settle (done). every segment is
-// driven by its own position relative to the sweep (stage progress), so the change
-// propagates one segment at a time rather than the whole bar moving together.
 export function ProgressVisualization({
   view,
   percent,
@@ -26,6 +21,8 @@ export function ProgressVisualization({
   className?: string
 }) {
   const reduce = useReducedMotion()
+
+  console.log("percent", percent)
 
   if (reduce) {
     return (
@@ -61,6 +58,7 @@ function InlineRow({
   className?: string
   children: React.ReactNode
 }) {
+  console.log("percent", percent)
   return (
     <div className={cn("flex items-center gap-3", className)}>
       {children}
@@ -78,6 +76,14 @@ function InlineRow({
 function Segment({ index, view }: { index: number; view: ProcessingView }) {
   const { stage, stageProgress, status } = view
   const stageIndex = stage ? STAGE_SEQUENCE.indexOf(stage) : -1
+  console.log(
+    "stage",
+    stage,
+    "stageIndex",
+    stageIndex,
+    "stageProgress",
+    stageProgress,
+  )
 
   // local fill: position of the sweep relative to this segment within the stage.
   const sweep = stageProgress * SEGMENTS
@@ -119,6 +125,17 @@ function Segment({ index, view }: { index: number; view: ProcessingView }) {
     tiltFactor = 1 - local
   }
 
+  console.log(
+    "base",
+    base,
+    "fillColor",
+    fillColor,
+    "fill",
+    fill,
+    "tiltFactor",
+    tiltFactor,
+  )
+
   const rotation = 90 + lean * tiltFactor
 
   return (
@@ -150,7 +167,9 @@ export function StaticProgressBar({
   className?: string
 }) {
   const pct = Math.round(overallProgress(view) * 100)
+
   const tint = view.status === "error" ? "bg-destructive" : "bg-primary"
+  console.log("pct", pct)
 
   return (
     <div

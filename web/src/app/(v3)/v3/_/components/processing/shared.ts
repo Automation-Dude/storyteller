@@ -46,6 +46,7 @@ function normalizeStatus(status: string): ProcessingStatus {
 export function jobToView(
   job: Pick<PublicJob, "status" | "stage" | "progress">,
 ): ProcessingView {
+  console.log("jobToView", job)
   return {
     stage: job.stage,
     stageProgress: job.progress,
@@ -56,7 +57,7 @@ export function jobToView(
 // overall progress across the three stages, 0..1.
 export function overallProgress(view: ProcessingView): number {
   if (view.status === "done") return 1
-  if (!view.stage) return 0
+  if (view.stage == null) return 0
   const index = STAGE_SEQUENCE.indexOf(view.stage)
   return (index + view.stageProgress) / STAGE_SEQUENCE.length
 }

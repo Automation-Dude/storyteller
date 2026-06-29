@@ -36,21 +36,8 @@ export const TERMINAL_JOB_STATUSES = [
 
 type JobRow = Selectable<DB["job"]>
 
-export type Job = Omit<
-  JobRow,
-  "uuid" | "bookUuid" | "type" | "status" | "restart" | "stage" | "config"
-> & {
-  uuid: UUID
-  bookUuid: UUID | null
-  type: JobType
-  status: JobStatus
-  restart: RestartMode
-  stage: Readaloud["currentStage"] | null
-  config: RunConfig | null
-}
+export type Job = JobRow
 
-// client-safe job: the full config (with api keys) is replaced by a summary, and
-// the subject book's title is joined in for display.
 export type PublicJob = Omit<Job, "config"> & {
   config: RunConfigSummary | null
   bookTitle: string | null
@@ -65,7 +52,7 @@ export function toPublicJob(
 
 export type NewJob = {
   type: JobType
-  bookUuid: UUID | null
+  bookUuid: UUID
   restart: RestartMode
   config: RunConfig | null
   position: number
@@ -80,19 +67,6 @@ export type JobUpdate = Partial<{
   finishedAt: string | null
   position: number
 }>
-
-function parseJob(row: JobRow): Job {
-  return {
-    ...row,
-    uuid: row.uuid,
-    bookUuid: (row.bookUuid as UUID | null) ?? null,
-    type: row.type as JobType,
-    status: row.status as JobStatus,
-    restart: (row.restart as RestartMode | null) ?? false,
-    stage: row.stage | null,
-    config: row.config ? row.config : null,
-  }
-}
 
 function emit(type: "jobUpdated" | "jobCreated" | "jobDeleted", jobUuid: UUID) {
   JobEvents.emit("message", { type, jobUuid })
@@ -112,9 +86,8 @@ export async function createJob(job: NewJob): Promise<Job> {
     .returningAll()
     .executeTakeFirstOrThrow()
 
-  const parsed = parseJob(row)
-  emit("jobCreated", parsed.uuid)
-  return parsed
+  emit("jobCreated", row.uuid)
+  return row
 }
 
 export async function getJob(uuid: UUID): Promise<Job | null> {
@@ -122,8 +95,10 @@ export async function getJob(uuid: UUID): Promise<Job | null> {
     .selectFrom("job")
     .selectAll()
     .where("uuid", "=", uuid)
+    .limit(1)
     .executeTakeFirst()
-  return row ? parseJob(row) : null
+
+  return row ?? null
 }
 
 export async function getJobs(filter?: {
@@ -138,7 +113,7 @@ export async function getJobs(filter?: {
     .orderBy("createdAt", "asc")
     .execute()
 
-  return rows.map(parseJob)
+  return rows
 }
 
 export type JobSort = "finishedAt" | "title" | "status"
@@ -147,9 +122,6 @@ export async function getQueuedJobs(): Promise<Job[]> {
   return getJobs({ statuses: ACTIVE_JOB_STATUSES })
 }
 
-// jobs joined with their book title and redacted config, for the queue ui / toast.
-// search filters on book title; sort/order drive the finished-jobs list ordering
-// (active jobs are always ordered by queue position).
 export async function getDisplayJobs(filter?: {
   statuses?: readonly JobStatus[]
   bookUuid?: UUID
@@ -194,7 +166,7 @@ export async function getDisplayJobs(filter?: {
     .execute()
 
   return rows.map(({ bookTitle, ...row }) =>
-    toPublicJob(parseJob(row), bookTitle ?? null),
+    toPublicJob(row, bookTitle ?? null),
   )
 }
 
@@ -208,7 +180,7 @@ export async function getActiveJobForBook(bookUuid: UUID): Promise<Job | null> {
     .orderBy("createdAt", "desc")
     .limit(1)
     .executeTakeFirst()
-  return row ? parseJob(row) : null
+  return row ?? null
 }
 
 export async function updateJob(uuid: UUID, patch: JobUpdate): Promise<Job> {
@@ -218,9 +190,9 @@ export async function updateJob(uuid: UUID, patch: JobUpdate): Promise<Job> {
     .where("uuid", "=", uuid)
     .returningAll()
     .executeTakeFirstOrThrow()
-  const parsed = parseJob(row)
-  emit("jobUpdated", parsed.uuid)
-  return parsed
+  emit("jobUpdated", row.uuid)
+
+  return row
 }
 
 export async function getNextJobPosition(): Promise<number> {

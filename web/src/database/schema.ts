@@ -254,11 +254,11 @@ export interface Job {
   finishedAt: string | null
   position: Generated<number>
   progress: Generated<number>
-  restart: string | null
+  restart: import("@/work/distributor").RestartMode | null
   stage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS" | null
   startedAt: string | null
   status: Generated<import("@/database/jobs").JobStatus>
-  type: string
+  type: import("@/database/jobs").JobType
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>
 }
