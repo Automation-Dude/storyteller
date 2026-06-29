@@ -439,6 +439,7 @@ export function HeroSection({
 
                       {book.audiobook && (
                         <DropdownMenuItem
+                          disabled={book.audiobook.missing}
                           render={
                             <a
                               href={getDownloadUrl(book.uuid, "audiobook")}
@@ -446,6 +447,11 @@ export function HeroSection({
                             >
                               <IconHeadphones className="mr-2 h-4 w-4" />
                               {t("downloads.downloadAudiobook")}
+                              {book.audiobook.missing && (
+                                <span className="text-bad">
+                                  {tLabels("missing")}
+                                </span>
+                              )}
                             </a>
                           }
                         />

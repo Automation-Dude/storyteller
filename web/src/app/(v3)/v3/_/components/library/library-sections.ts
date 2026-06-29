@@ -2,9 +2,8 @@ import { type BookWithRelations } from "@/database/books"
 import { type FacetSection } from "@/database/libraryCounts"
 import { type ShelfFilterField, type ShelfFilterNode } from "@/shelves"
 import { type ListBooksQueryArg } from "@/store/api"
+import { type UUID } from "@/uuid"
 
-// mirrors NONE_FACET_KEY in libraryCounts.ts (kept as a separate literal so this
-// client module doesn't pull in the server db module).
 export const NONE_KEY = "__none__"
 
 export type LibraryItem = {
@@ -85,7 +84,7 @@ function emptyFilter(field: ShelfFilterField, role?: string): ShelfFilterNode {
 
 function buildRelationSection<
   T extends {
-    uuid: string
+    uuid: UUID
     name: string
     fileAs?: string
     icon?: string | null
@@ -97,7 +96,7 @@ function buildRelationSection<
   return {
     extractItems(books) {
       const map = new Map<
-        string,
+        UUID,
         {
           name: string
           count: number
