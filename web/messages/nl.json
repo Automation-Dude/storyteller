@@ -241,6 +241,8 @@
     "openFullPage": "Volledige pagina openen",
     "edit": "Bewerken",
     "scan": "Scannen",
+    "search": "Zoeken...",
+    "noResults": "Geen resultaten",
     "addToCollection": "Toevoegen aan verzameling",
     "newCollection": "Nieuwe verzameling...",
     "removeFromCollection": "Verwijderen uit verzameling",

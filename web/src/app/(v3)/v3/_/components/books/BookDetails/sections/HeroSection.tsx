@@ -5,6 +5,7 @@ import {
   IconDownload,
   IconHeadphones,
   IconPlayerPlay,
+  IconPlus,
 } from "@tabler/icons-react"
 import { motion } from "motion/react"
 import { useState } from "react"
@@ -85,6 +86,9 @@ export function HeroSection({
   const [authorsExpanded, setAuthorsExpanded] = useState(false)
   const [narratorsExpanded, setNarratorsExpanded] = useState(false)
   const [ratingOverrideActive, setRatingOverrideActive] = useState(false)
+  // series isn't part of the book form (separate mutations), so adding when
+  // empty is gated on a local flag instead of editingField
+  const [addingSeries, setAddingSeries] = useState(false)
 
   const visibleAuthors = authorsExpanded
     ? authors
@@ -278,8 +282,12 @@ export function HeroSection({
                     `@xl/book:justify-start`,
                   )}
                 >
-                  <PageCountEdit />
-                  <DurationEdit />
+                  {(book.pageCount || book.ebook || book.readaloud) && (
+                    <PageCountEdit />
+                  )}
+                  {(book.duration || book.audiobook || book.readaloud) && (
+                    <DurationEdit />
+                  )}
                 </p>
               )
             })()}
@@ -308,25 +316,40 @@ export function HeroSection({
               )}
             </div>
 
-            <div
-              className={cn(
-                "transition-opacity",
-                !book.series.length && "opacity-0",
-                "group-hover/hero:opacity-100",
-              )}
-            >
-              <SeriesEditor
-                bookUuid={book.uuid}
-                series={book.series.map((s) => ({
-                  uuid: s.uuid,
-                  name: s.name,
-                  position: s.position,
-                  featured: s.featured,
-                }))}
-                onUpdate={() => {}}
-                editMode={isEditing}
+            {(book.series.length > 0 || isEditing || addingSeries) && (
+              <div>
+                <SeriesEditor
+                  bookUuid={book.uuid}
+                  series={book.series.map((s) => ({
+                    uuid: s.uuid,
+                    name: s.name,
+                    position: s.position,
+                    featured: s.featured,
+                  }))}
+                  onUpdate={() => {}}
+                  editMode={isEditing}
+                />
+              </div>
+            )}
+
+            {canEdit && !isEditing && (
+              <QuickAddEmptyFields
+                showSubtitle={!book.subtitle && !isFieldActive("subtitle")}
+                showNarrators={
+                  narrators.length === 0 && !isFieldActive("narrators")
+                }
+                showSeries={book.series.length === 0 && !addingSeries}
+                onAddSubtitle={() => {
+                  setEditingField("subtitle")
+                }}
+                onAddNarrators={() => {
+                  setEditingField("narrators")
+                }}
+                onAddSeries={() => {
+                  setAddingSeries(true)
+                }}
               />
-            </div>
+            )}
           </div>
 
           <div
@@ -447,6 +470,70 @@ export function HeroSection({
           className="absolute right-0 bottom-0 left-0 rounded-none"
         />
       )}
+    </div>
+  )
+}
+
+// dashed "+ field" chips for the commonly-empty metadata fields. kept out of the
+// resting layout (opacity-0) and only revealed when the hero is hovered/focused.
+function QuickAddEmptyFields({
+  showSubtitle,
+  showNarrators,
+  showSeries,
+  onAddSubtitle,
+  onAddNarrators,
+  onAddSeries,
+}: {
+  showSubtitle: boolean
+  showNarrators: boolean
+  showSeries: boolean
+  onAddSubtitle: () => void
+  onAddNarrators: () => void
+  onAddSeries: () => void
+}) {
+  const tLabels = useTranslation("Labels")
+  const tFields = useTranslation("Fields.label")
+
+  const chips: { key: string; label: string; onClick: () => void }[] = []
+  if (showSubtitle)
+    chips.push({
+      key: "subtitle",
+      label: tLabels("subtitle"),
+      onClick: onAddSubtitle,
+    })
+  if (showNarrators)
+    chips.push({
+      key: "narrators",
+      label: tLabels("narrators"),
+      onClick: onAddNarrators,
+    })
+  if (showSeries)
+    chips.push({
+      key: "series",
+      label: tFields("series"),
+      onClick: onAddSeries,
+    })
+
+  if (chips.length === 0) return null
+
+  return (
+    <div
+      className={cn(
+        "mt-1 flex flex-wrap justify-center gap-1.5 opacity-0 transition-opacity group-hover/hero:opacity-100 focus-within:opacity-100",
+        `@xl/book:justify-start`,
+      )}
+    >
+      {chips.map((chip) => (
+        <button
+          key={chip.key}
+          type="button"
+          onClick={chip.onClick}
+          className="text-muted-foreground hover:text-foreground hover:border-input inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-0.5 text-xs"
+        >
+          <IconPlus className="h-3 w-3" />
+          {chip.label}
+        </button>
+      ))}
     </div>
   )
 }

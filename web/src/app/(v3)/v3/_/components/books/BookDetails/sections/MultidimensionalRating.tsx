@@ -123,15 +123,17 @@ export function MultidimensionalRating({
   const draggingRef = useRef(false)
   const activeIdRef = useRef<string | null>(null)
 
+  const [dirty, setDirty] = useState(false)
+
   useEffect(() => {
     // adopt server/optimistic state unless the user is mid-drag; the value
-    // compare keeps an unstable scores reference from looping or wiping edits
-    if (draggingRef.current) return
+    // compare keeps an unstable scores reference from looping or wiping edits.
+    // while there are uncommitted edits (dirty) an unrelated store refresh, e.g.
+    // setting a manual star rating, must not clobber the in-progress draft.
+    if (draggingRef.current || dirty) return
     const incoming = scores ?? {}
     if (!sameScores(incoming, draftRef.current)) setDraft({ ...incoming })
-  }, [scores])
-
-  const [dirty, setDirty] = useState(false)
+  }, [scores, dirty])
 
   const markDirty = useCallback(() => setDirty(true), [])
 
@@ -174,9 +176,17 @@ export function MultidimensionalRating({
   const average = computeRatingAverage(draft)
 
   // the star rating is a manual override when it diverges from the average the
-  // dimensions currently compute to
+  // *committed* dimensions compute to; comparing against the live draft instead
+  // would read every in-progress dimension tweak as a manual override
+  const committedAverage = computeRatingAverage(scores ?? {})
   const isManualOverride =
-    rating != null && average != null && Math.abs(rating - average) > 0.01
+    rating != null &&
+    committedAverage != null &&
+    Math.abs(rating - committedAverage) > 0.01
+
+  // without a manual override the stars follow the (live) dimension average, so
+  // the rating defaults to it instead of going blank
+  const effectiveRating = isManualOverride ? rating : average ?? rating
 
   const data = inUseDimensions.map((d) => ({
     label: d.label,
@@ -354,7 +364,12 @@ export function MultidimensionalRating({
       <div className="flex flex-col items-center gap-1">
         {/* the prominent stars are the user's actual rating and stay directly
             editable, so a manual rating can sit on top of the dimensions */}
-        <RatingInput value={rating} onChange={onRatingChange} color={color} size="lg" />
+        <RatingInput
+          value={effectiveRating}
+          onChange={onRatingChange}
+          color={color}
+          size="lg"
+        />
 
         <span className="text-muted-foreground flex items-center gap-1 text-xs tabular-nums">
           <span>

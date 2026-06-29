@@ -8,9 +8,8 @@ import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useBookActionItems } from "./BookActionMenuItems"
+import { event } from "next/dist/build/output/log"
 
-// walks up the dom to the nearest scrollable ancestor so the virtualizer
-// tracks the real scroll container (PageContent) rather than the window.
 export function findScrollParent(node: HTMLElement | null): HTMLElement | null {
   let el = node?.parentElement ?? null
 
@@ -56,14 +55,23 @@ export function useBookActionMenu(books: BookWithRelations[]) {
         event?: Event | null
       },
     ) => {
-      // weird issue where the menu would get closed when the user hovered
-      // over a submenu trigger -- the "sibling-open" reason fires even
-      // though no sibling is actually opening.
-      const isSiblingOpenClose =
-        !open && eventDetails?.reason === "sibling-open"
-      const shouldIgnore = isSiblingOpenClose && menuOpen
+      // the menu is anchored + opened programmatically (no real Trigger), which
+      // breaks base-ui's hover/focus coordination with submenus: moving the
+      // pointer into a submenu emits a transient close on the root and tears the
+      // whole thing down. suppress those hover/focus closes and only honor an
+      // explicit dismissal (escape, outside click, selecting an item).
+      const transientCloseReasons = new Set([
+        "sibling-open",
+        "focus-out",
+        "trigger-hover",
+      ])
+      const isTransientClose =
+        !open &&
+        menuOpen &&
+        !!eventDetails?.reason &&
+        transientCloseReasons.has(eventDetails.reason)
 
-      if (shouldIgnore) {
+      if (isTransientClose) {
         return
       }
 

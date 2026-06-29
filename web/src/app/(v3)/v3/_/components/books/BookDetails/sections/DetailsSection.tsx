@@ -2,14 +2,12 @@
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
-import {
-  DurationEdit,
-  PageCountEdit,
-} from "@/app/(v3)/v3/_/components/books/BookDetails/MetricEdit"
 import { LanguageEdit } from "@v3/_/components/books/LanguageEdit"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { useFormatDate } from "@v3/_/lib/date"
+
+import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 
 import { CollapsibleSection } from "./CollapsibleSection"
 import { IconBook } from "@tabler/icons-react"
@@ -36,7 +34,7 @@ function DetailRow({
 }
 
 export function DetailsSection({ className }: { className?: string }) {
-  const { book, canEdit } = useBookForm()
+  const { book } = useBookForm()
   const tLabels = useTranslation("Labels")
   const formatDate = useFormatDate()
 
@@ -65,15 +63,17 @@ export function DetailsSection({ className }: { className?: string }) {
           />
         </DetailRow>
 
-        {(pages != null || canEdit) && (
+        {pages != null && (
           <DetailRow label={tLabels("pages")}>
-            <PageCountEdit className="text-sm" />
+            <span className="text-sm tabular-nums">{pages}</span>
           </DetailRow>
         )}
 
-        {(totalDuration != null || canEdit) && (
+        {totalDuration != null && (
           <DetailRow label={tLabels("duration")}>
-            <DurationEdit className="text-sm" />
+            <span className="text-sm tabular-nums">
+              {formatTimeHuman(totalDuration)}
+            </span>
           </DetailRow>
         )}
 

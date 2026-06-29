@@ -701,6 +701,7 @@ function NumberRangeEditor({
 
       {sliderBounds && (
         <Slider
+          secondThumb
           min={sliderBounds.min}
           max={sliderBounds.max}
           step={sliderBounds.step}

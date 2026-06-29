@@ -6,8 +6,9 @@ import { cn } from "@v3/_/lib/utils"
 
 function Slider({
   className,
+  secondThumb = false,
   ...props
-}: SliderPrimitive.Root.Props & { className?: string }) {
+}: SliderPrimitive.Root.Props & { className?: string; secondThumb?: boolean }) {
   return (
     <SliderPrimitive.Root data-slot="slider" {...props}>
       <SliderPrimitive.Control
@@ -18,7 +19,13 @@ function Slider({
       >
         <SliderPrimitive.Track className="bg-muted relative h-1.5 w-full grow rounded-full">
           <SliderPrimitive.Indicator className="bg-primary absolute h-full rounded-full" />
-          <SliderPrimitive.Thumb className="border-primary bg-background ring-ring/30 block size-4 rounded-full border-2 shadow-sm transition-shadow outline-none focus-visible:ring-2 data-disabled:cursor-not-allowed data-disabled:opacity-50" />
+          {Array.from({ length: secondThumb ? 2 : 1 }).map((_, index) => (
+            <SliderPrimitive.Thumb
+              index={index}
+              key={index}
+              className="border-primary bg-background ring-ring/30 block size-4 rounded-full border-2 shadow-sm transition-shadow outline-none focus-visible:ring-2 data-disabled:cursor-not-allowed data-disabled:opacity-50"
+            />
+          ))}
         </SliderPrimitive.Track>
       </SliderPrimitive.Control>
     </SliderPrimitive.Root>

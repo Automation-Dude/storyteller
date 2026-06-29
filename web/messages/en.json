@@ -241,6 +241,8 @@
     "openFullPage": "Open full page",
     "edit": "Edit",
     "scan": "Scan",
+    "search": "Search...",
+    "noResults": "No results",
     "addToCollection": "Add to collection",
     "newCollection": "New collection...",
     "removeFromCollection": "Remove from collection",

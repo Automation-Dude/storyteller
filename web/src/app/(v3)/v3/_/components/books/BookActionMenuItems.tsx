@@ -16,7 +16,13 @@ import {
   IconTagOff,
   IconTrash,
 } from "@tabler/icons-react"
-import { type MouseEvent, useCallback, useState } from "react"
+import {
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+} from "react"
 import { toast } from "sonner"
 
 import { type BookWithRelations, type CreatorRelation } from "@/database/books"
@@ -54,6 +60,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
+import { Input } from "@v3/_/components/ui/input"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { ProcessingModal } from "./BookDetails/ProcessingModal"
@@ -75,11 +82,112 @@ function dedupeRelations(
   return Array.from(seen, ([uuid, name]) => ({ uuid: uuid as UUID, name }))
 }
 
-// the single source of truth for book actions. returns the dropdown items
-// (to render inside a DropdownMenuContent) and the dialogs (to render as a
-// sibling, outside the menu, so they survive the menu closing). shared by the
-// single-book ellipsis menu and the bulk selection toolbar; `merge` is the only
-// bulk-only action.
+type ActionOption = { id: string; name: string }
+
+function ActionSubmenu({
+  icon,
+  label,
+  options,
+  onSelect,
+  createLabel,
+  onCreate,
+}: {
+  icon: ReactNode
+  label: string
+  options: ActionOption[]
+  onSelect: (id: string, event: MouseEvent) => void
+  createLabel?: string
+  onCreate?: () => void
+}) {
+  const t = useTranslation("BookActions")
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return options
+    return options.filter((option) => option.name.toLowerCase().includes(term))
+  }, [options, search])
+
+  // TODO: this is fukcing jank
+  return (
+    <DropdownMenuSub
+      open={open}
+      onOpenChange={(next, eventDetails) => {
+        if (eventDetails.reason === "trigger-hover") {
+          setOpen(true)
+          return
+        }
+
+        setOpen(next)
+        if (!next) setSearch("")
+      }}
+    >
+      <DropdownMenuSubTrigger>
+        {icon}
+        {label}
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent className="w-60 p-1">
+        <div
+          onKeyDown={(e) => {
+            e.stopPropagation()
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation()
+          }}
+        >
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+            }}
+            placeholder={t("search")}
+            className="mb-1 h-8"
+          />
+          <div className="scroll-y flex max-h-56 flex-col gap-0.5">
+            {onCreate && createLabel && (
+              <button
+                type="button"
+                onClick={() => {
+                  onCreate()
+                  setOpen(false)
+                }}
+                className="hover:bg-accent text-foreground flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs"
+              >
+                <IconPlus className="h-3.5 w-3.5" />
+                {createLabel}
+              </button>
+            )}
+
+            {filtered.length === 0 ? (
+              <div className="text-muted-foreground px-2 py-1.5 text-xs">
+                {t("noResults")}
+              </div>
+            ) : (
+              filtered.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={(event) => {
+                    onSelect(option.id, event)
+                    setOpen(false)
+                  }}
+                  className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
+                >
+                  {option.name}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
+  )
+}
+
 export function useBookActionItems({
   books,
   mode,
@@ -268,232 +376,137 @@ export function useBookActionItems({
   const items = (
     <>
       {canMerge && (
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <IconArrowMerge className="mr-2 h-4 w-4" />
-            {t("mergeInto")}
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-            {books.map((book) => (
-              <DropdownMenuItem
-                key={book.uuid}
-                onClick={(event) => {
-                  handleMergeInto(book, event)
-                }}
-              >
-                {book.title}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        <ActionSubmenu
+          icon={<IconArrowMerge className="mr-2 h-4 w-4" />}
+          label={t("mergeInto")}
+          options={books.map((book) => ({ id: book.uuid, name: book.title }))}
+          onSelect={(id, event) => {
+            const target = books.find((b) => b.uuid === id)
+            if (target) handleMergeInto(target, event)
+          }}
+        />
       )}
 
       {canUpdate && (
         <>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <IconFolder className="mr-2 h-4 w-4" />
-              {t("addToCollection")}
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-              {canCreateCollection && (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setCreateCollectionOpen(true)
-                    }}
-                  >
-                    <IconPlus className="mr-2 h-4 w-4" />
-                    {t("newCollection")}
-                  </DropdownMenuItem>
-                  {collections.length > 0 && <DropdownMenuSeparator />}
-                </>
-              )}
-              {collections.length === 0 ? (
-                <DropdownMenuItem disabled>
-                  {t("noCollections")}
-                </DropdownMenuItem>
-              ) : (
-                collections.map((collection) => (
-                  <DropdownMenuItem
-                    key={collection.uuid}
-                    onClick={() => {
-                      void addToCollections({
-                        collections: [collection.uuid],
-                        books: bookUuids,
-                      })
-                    }}
-                  >
-                    {collection.name}
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+          <ActionSubmenu
+            icon={<IconFolder className="mr-2 h-4 w-4" />}
+            label={t("addToCollection")}
+            options={collections.map((c) => ({ id: c.uuid, name: c.name }))}
+            onSelect={(id) => {
+              void addToCollections({
+                collections: [id as UUID],
+                books: bookUuids,
+              })
+            }}
+            createLabel={canCreateCollection ? t("newCollection") : undefined}
+            onCreate={
+              canCreateCollection
+                ? () => {
+                    setCreateCollectionOpen(true)
+                  }
+                : undefined
+            }
+          />
 
           {usedCollections.length > 0 && (
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <IconFolderMinus className="mr-2 h-4 w-4" />
-                {t("removeFromCollection")}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                {usedCollections.map((collection) => (
-                  <DropdownMenuItem
-                    key={collection.uuid}
-                    onClick={() => {
-                      void removeFromCollections({
-                        collections: [collection.uuid],
-                        books: bookUuids,
-                      })
-                    }}
-                  >
-                    {collection.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+            <ActionSubmenu
+              icon={<IconFolderMinus className="mr-2 h-4 w-4" />}
+              label={t("removeFromCollection")}
+              options={usedCollections.map((c) => ({
+                id: c.uuid,
+                name: c.name,
+              }))}
+              onSelect={(id) => {
+                void removeFromCollections({
+                  collections: [id as UUID],
+                  books: bookUuids,
+                })
+              }}
+            />
           )}
 
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <IconLibrary className="mr-2 h-4 w-4" />
-              {t("addToSeries")}
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-              <DropdownMenuItem
-                onClick={() => {
-                  setCreateSeriesOpen(true)
-                }}
-              >
-                <IconPlus className="mr-2 h-4 w-4" />
-                {t("newSeries")}
-              </DropdownMenuItem>
-              {series.length > 0 && <DropdownMenuSeparator />}
-              {series.length === 0 ? (
-                <DropdownMenuItem disabled>{t("noSeries")}</DropdownMenuItem>
-              ) : (
-                series.map((s) => (
-                  <DropdownMenuItem
-                    key={s.uuid}
-                    onClick={() => {
-                      void addToSeries({
-                        series: { uuid: s.uuid, name: s.name },
-                        relations: bookUuids.map((bookUuid, index) => ({
-                          bookUuid,
-                          position: index + 1,
-                          featured: false,
-                        })),
-                      })
-                    }}
-                  >
-                    {s.name}
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+          <ActionSubmenu
+            icon={<IconLibrary className="mr-2 h-4 w-4" />}
+            label={t("addToSeries")}
+            options={series.map((s) => ({ id: s.uuid, name: s.name }))}
+            onSelect={(id) => {
+              const target = series.find((s) => s.uuid === id)
+              if (!target) return
+              void addToSeries({
+                series: { uuid: target.uuid, name: target.name },
+                relations: bookUuids.map((bookUuid, index) => ({
+                  bookUuid,
+                  position: index + 1,
+                  featured: false,
+                })),
+              })
+            }}
+            createLabel={t("newSeries")}
+            onCreate={() => {
+              setCreateSeriesOpen(true)
+            }}
+          />
 
           {usedSeries.length > 0 && (
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <IconLibraryMinus className="mr-2 h-4 w-4" />
-                {t("removeFromSeries")}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                {usedSeries.map((s) => (
-                  <DropdownMenuItem
-                    key={s.uuid}
-                    onClick={() => {
-                      void removeFromSeries({
-                        series: [s.uuid],
-                        books: bookUuids,
-                      })
-                    }}
-                  >
-                    {s.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+            <ActionSubmenu
+              icon={<IconLibraryMinus className="mr-2 h-4 w-4" />}
+              label={t("removeFromSeries")}
+              options={usedSeries.map((s) => ({ id: s.uuid, name: s.name }))}
+              onSelect={(id) => {
+                void removeFromSeries({
+                  series: [id as UUID],
+                  books: bookUuids,
+                })
+              }}
+            />
           )}
 
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <IconTag className="mr-2 h-4 w-4" />
-              {t("addTag")}
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-              <DropdownMenuItem
-                onClick={() => {
-                  setCreateTagOpen(true)
-                }}
-              >
-                <IconPlus className="mr-2 h-4 w-4" />
-                {t("newTag")}
-              </DropdownMenuItem>
-              {tags.length > 0 && <DropdownMenuSeparator />}
-              {tags.length === 0 ? (
-                <DropdownMenuItem disabled>{t("noTags")}</DropdownMenuItem>
-              ) : (
-                tags.map((tag) => (
-                  <DropdownMenuItem
-                    key={tag.uuid}
-                    onClick={() => {
-                      void addTags({ tags: [tag.name], books: bookUuids })
-                    }}
-                  >
-                    {tag.name}
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+          <ActionSubmenu
+            icon={<IconTag className="mr-2 h-4 w-4" />}
+            label={t("addTag")}
+            options={tags.map((tag) => ({ id: tag.uuid, name: tag.name }))}
+            onSelect={(id) => {
+              const target = tags.find((tag) => tag.uuid === id)
+              if (target)
+                void addTags({ tags: [target.name], books: bookUuids })
+            }}
+            createLabel={t("newTag")}
+            onCreate={() => {
+              setCreateTagOpen(true)
+            }}
+          />
 
           {usedTags.length > 0 && (
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <IconTagOff className="mr-2 h-4 w-4" />
-                {t("removeTag")}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                {usedTags.map((tag) => (
-                  <DropdownMenuItem
-                    key={tag.uuid}
-                    onClick={() => {
-                      void removeTags({ tags: [tag.uuid], books: bookUuids })
-                    }}
-                  >
-                    {tag.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+            <ActionSubmenu
+              icon={<IconTagOff className="mr-2 h-4 w-4" />}
+              label={t("removeTag")}
+              options={usedTags.map((tag) => ({
+                id: tag.uuid,
+                name: tag.name,
+              }))}
+              onSelect={(id) => {
+                void removeTags({ tags: [id as UUID], books: bookUuids })
+              }}
+            />
           )}
         </>
       )}
 
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <IconBook className="mr-2 h-4 w-4" />
-          {t("setStatus")}
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-          {statuses.map((status) => (
-            <DropdownMenuItem
-              key={status.uuid}
-              onClick={() => {
-                void updateReadingStatus({
-                  status: status.uuid,
-                  books: bookUuids,
-                })
-              }}
-            >
-              {status.name}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
+      <ActionSubmenu
+        icon={<IconBook className="mr-2 h-4 w-4" />}
+        label={t("setStatus")}
+        options={statuses.map((status) => ({
+          id: status.uuid,
+          name: status.name,
+        }))}
+        onSelect={(id) => {
+          void updateReadingStatus({
+            status: id as UUID,
+            books: bookUuids,
+          })
+        }}
+      />
 
       {canUpdate && epubBooks.length > 0 && (
         <DropdownMenuItem

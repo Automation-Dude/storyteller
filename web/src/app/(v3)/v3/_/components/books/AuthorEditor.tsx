@@ -1,13 +1,103 @@
-import { IconMicrophone, IconUser } from "@tabler/icons-react"
-import { useMemo } from "react"
+import { IconCheck, IconMicrophone, IconUser, IconX } from "@tabler/icons-react"
+import { type ComponentType, useMemo } from "react"
 import { useWatch } from "react-hook-form"
 
+import { Button } from "@v3/_/components/ui/button"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
 import { useBookForm } from "./BookDetails/BookFormProvider"
+import { type BookFormValues } from "./BookDetails/schema"
 import { RelationChipEditor } from "./RelationChipEditor"
+
+// shared body for the authors/narrators chip editors: both are a labelled
+// RelationChipEditor bound to a string[] form field. when opened as a single
+// inline field (clicking the line, not global edit) it grows a save/cancel
+// footer so the edit actually persists and can be left, like the text fields.
+function CreatorChipField({
+  field,
+  label,
+  icon,
+  searchPlaceholder,
+  items,
+  allItems,
+}: {
+  field: "authors" | "narrators"
+  label: string
+  icon: ComponentType<{ className?: string }>
+  searchPlaceholder: string
+  items: { uuid: string; name: string }[]
+  allItems: { uuid: string; name: string }[]
+}) {
+  const { form, isEditing, editingField, setEditingField, commitField } =
+    useBookForm()
+  const t = useTranslation("BookDetailsPage")
+  const values = useWatch({
+    control: form.control,
+    name: field,
+  }) as BookFormValues["authors"]
+
+  const inline = editingField === field && !isEditing
+
+  const setValues = (next: string[]) => {
+    form.setValue(field, next, { shouldDirty: true })
+  }
+
+  return (
+    <div className="mt-3">
+      <span className="text-muted-foreground mb-1.5 block text-xs font-medium uppercase">
+        {label}
+      </span>
+
+      <RelationChipEditor
+        items={items}
+        allItems={allItems}
+        icon={icon}
+        badgeVariant="outline"
+        groupName={field}
+        editMode
+        searchPlaceholder={searchPlaceholder}
+        emptyText=""
+        onSelectItem={(item) => {
+          setValues([...values, item.name])
+        }}
+        onRemoveItem={(item) => {
+          setValues(values.filter((name) => name !== item.name))
+        }}
+        canCreateInline
+        onCreateInline={(name) => {
+          setValues([...values, name])
+        }}
+      />
+
+      {inline && (
+        <div className="mt-2 flex gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              void commitField(field)
+            }}
+          >
+            <IconCheck className="mr-1 h-3.5 w-3.5" />
+            {t("review.save")}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              form.resetField(field)
+              setEditingField(null)
+            }}
+          >
+            <IconX className="mr-1 h-3.5 w-3.5" />
+            {t("review.cancel")}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function AuthorEditor() {
   const { form } = useBookForm()
@@ -28,35 +118,14 @@ export function AuthorEditor() {
   }, [formAuthors, allAuthors])
 
   return (
-    <div className="mt-3">
-      <span className="text-muted-foreground mb-1.5 block text-xs font-medium uppercase">
-        {t("Labels.authors")}
-      </span>
-
-      <RelationChipEditor
-        items={authorItems}
-        allItems={allAuthors}
-        icon={IconUser}
-        badgeVariant="outline"
-        groupName="authors"
-        editMode
-        searchPlaceholder={t("BookDetailsPage.addAuthor")}
-        emptyText=""
-        onSelectItem={(item) => {
-          form.setValue("authors", [...formAuthors, item.name])
-        }}
-        onRemoveItem={(item) => {
-          form.setValue(
-            "authors",
-            formAuthors.filter((name) => name !== item.name),
-          )
-        }}
-        canCreateInline
-        onCreateInline={(name) => {
-          form.setValue("authors", [...formAuthors, name])
-        }}
-      />
-    </div>
+    <CreatorChipField
+      field="authors"
+      label={t("Labels.authors")}
+      icon={IconUser}
+      searchPlaceholder={t("BookDetailsPage.addAuthor")}
+      items={authorItems}
+      allItems={allAuthors}
+    />
   )
 }
 
@@ -79,34 +148,13 @@ export function NarratorEditor() {
   }, [formNarrators, allNarrators])
 
   return (
-    <div className="mt-3">
-      <span className="text-muted-foreground mb-1.5 block text-xs font-medium uppercase">
-        {t("Labels.narrators")}
-      </span>
-
-      <RelationChipEditor
-        items={narratorItems}
-        allItems={allNarrators}
-        icon={IconMicrophone}
-        badgeVariant="outline"
-        groupName="narrators"
-        editMode
-        searchPlaceholder={t("BookDetailsPage.addNarrator")}
-        emptyText=""
-        onSelectItem={(item) => {
-          form.setValue("narrators", [...formNarrators, item.name])
-        }}
-        onRemoveItem={(item) => {
-          form.setValue(
-            "narrators",
-            formNarrators.filter((name) => name !== item.name),
-          )
-        }}
-        canCreateInline
-        onCreateInline={(name) => {
-          form.setValue("narrators", [...formNarrators, name])
-        }}
-      />
-    </div>
+    <CreatorChipField
+      field="narrators"
+      label={t("Labels.narrators")}
+      icon={IconMicrophone}
+      searchPlaceholder={t("BookDetailsPage.addNarrator")}
+      items={narratorItems}
+      allItems={allNarrators}
+    />
   )
 }
