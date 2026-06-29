@@ -14,7 +14,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogOverlay,
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
 import { IconPicker } from "@v3/_/components/ui/icon-picker"
@@ -33,7 +32,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfWithBooks } from "@/database/shelves"
-import { type ShelfFilterNode, ShelfOrderBy  } from "@/shelves"
+import { type ShelfFilterNode, ShelfOrderBy } from "@/shelves"
 import {
   getCoverUrl,
   useCreateUserShelfMutation,
@@ -116,8 +115,8 @@ export function ShelfEditor({
       form.reset({
         name: shelf.name,
         description: shelf.description ?? "",
-        orderBy: shelf.orderBy ?? "createdAt",
-        orderDirection: shelf.orderDirection ?? "desc",
+        orderBy: shelf.orderBy,
+        orderDirection: shelf.orderDirection,
         limitCount: shelf.limitCount ?? null,
       })
 

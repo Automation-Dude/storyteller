@@ -8,8 +8,8 @@ import {
   IconSearch,
 } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { useFormatter } from "next-intl"
 import Link from "next/link"
+import { useFormatter } from "next-intl"
 import { Fragment, memo, useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -269,7 +269,7 @@ const BookListItem = memo(function BookListItem({
 
   // if the sort field is already visible as a column, keep showing authors
   // in the secondary line. otherwise replace authors with the sort field.
-  const sortFieldIsVisibleColumn =
+  const _sortFieldIsVisibleColumn =
     displayFields.includes("authors") ||
     visibleColumns.some((c) => displayFields.includes(c.field))
 

@@ -25,6 +25,7 @@ import {
   useListInfiniteBooksInfiniteQuery,
   useUpdateSeriesMutation,
 } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 const seriesSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -37,7 +38,7 @@ type EditSeriesDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   series: {
-    uuid: string
+    uuid: UUID
     name: string
     description: string | null
   } | null

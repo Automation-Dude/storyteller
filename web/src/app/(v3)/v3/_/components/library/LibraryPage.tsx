@@ -63,7 +63,7 @@ import { cn } from "@v3/_/lib/utils"
 import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateCollectionDialog"
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/_CreateSeriesDialog"
-import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/_EditSeriesDialog"
+import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/EditSeriesDialog"
 import { CreateStatusDialog } from "@/app/(v3)/v3/_/components/library/CreateStatusDialog"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { isWellKnownStatus } from "@/database/statusKinds"
@@ -95,7 +95,6 @@ import {
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
-
 
 const SIDEBAR_ROW_HEIGHT = 30
 

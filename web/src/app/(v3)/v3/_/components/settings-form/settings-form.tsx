@@ -20,12 +20,7 @@ import {
   IconX,
 } from "@tabler/icons-react"
 import Link from "next/link"
-import {
-  type SingleParser,
-  parseAsBoolean,
-  parseAsString,
-  useQueryState,
-} from "nuqs"
+import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { type FieldErrors, useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -41,7 +36,6 @@ import {
   PageMain,
   PageSidebar,
 } from "@v3/_/components/ui/page-layout"
-import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
@@ -483,7 +477,6 @@ export function SettingsForm({
       )}
     </div>
   )
-  console.log("activeTab", activeTab)
 
   const sidebarContent = (
     <SettingsSidebar
@@ -514,8 +507,6 @@ export function SettingsForm({
   )
 
   if (isMobile) {
-    console.log("activeTab", activeTab)
-
     if (showMobileSidebar) {
       return (
         <div className="flex h-screen flex-col">
@@ -648,14 +639,18 @@ function SettingsSidebar({
                   type="text"
                   placeholder={t("searchSettings")}
                   value={searchQuery}
-                  onChange={(e) => { onSearchChange(e.target.value); }}
+                  onChange={(e) => {
+                    onSearchChange(e.target.value)
+                  }}
                   className="h-7 pr-7 pl-8 text-xs"
                 />
 
                 {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => { onSearchChange(""); }}
+                    onClick={() => {
+                      onSearchChange("")
+                    }}
                     className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
                   >
                     <IconX className="h-3 w-3" />
@@ -741,7 +736,9 @@ function SidebarTabList({
         <button
           key={tab.value}
           type="button"
-          onClick={() => { onTabChange(tab.value); }}
+          onClick={() => {
+            onTabChange(tab.value)
+          }}
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
             activeTab === tab.value

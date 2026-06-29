@@ -46,7 +46,6 @@ function normalizeStatus(status: string): ProcessingStatus {
 export function jobToView(
   job: Pick<PublicJob, "status" | "stage" | "progress">,
 ): ProcessingView {
-  console.log("jobToView", job)
   return {
     stage: job.stage,
     stageProgress: job.progress,

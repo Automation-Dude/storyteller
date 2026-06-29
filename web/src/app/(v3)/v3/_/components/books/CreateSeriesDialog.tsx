@@ -3,8 +3,7 @@ import { useCallback, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 
-import { useUpdateCollectionMutation } from "@/api/api"
-import { Button } from "@/components/ui/button"
+import { Button } from "@v3/_/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -12,114 +11,112 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@v3/_/components/ui/dialog"
 import {
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+} from "@v3/_/components/ui/field"
+import { Input } from "@v3/_/components/ui/input"
+import { Textarea } from "@v3/_/components/ui/textarea"
 
-const collectionSchema = z.object({
+import { useAddBooksToSeriesMutation } from "@/store/api"
+import { type UUID } from "@/uuid"
+
+const seriesSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
 })
 
-type CollectionFormData = z.infer<typeof collectionSchema>
+type SeriesFormData = z.infer<typeof seriesSchema>
 
-type EditCollectionDialogProps = {
+type CreateSeriesDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  collection: {
-    uuid: string
-    name: string
-    description: string | null
-  } | null
-  onUpdated?: () => void
+  onCreated?: (name: string) => void
+  initialName?: string
+  // when set, the new series is created with these books already attached
+  books?: UUID[]
 }
 
-export function EditCollectionDialog({
+export function CreateSeriesDialog({
   open,
   onOpenChange,
-  collection,
-  onUpdated,
-}: EditCollectionDialogProps) {
-  const [updateCollection, { isLoading }] = useUpdateCollectionMutation()
+  onCreated,
+  initialName = "",
+  books,
+}: CreateSeriesDialogProps) {
+  // series are created (and books attached) in one call via addBooksToSeries,
+  // which inserts the series when it doesn't exist yet.
+  const [addBooksToSeries, { isLoading }] = useAddBooksToSeriesMutation()
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CollectionFormData>({
-    resolver: zodResolver(collectionSchema),
+  } = useForm<SeriesFormData>({
+    resolver: zodResolver(seriesSchema),
     defaultValues: {
-      name: collection?.name ?? "",
-      description: collection?.description ?? "",
+      name: initialName,
+      description: "",
     },
   })
 
   useEffect(() => {
-    if (collection) {
-      reset({
-        name: collection.name,
-        description: collection.description ?? "",
-      })
-    }
-  }, [collection, reset])
+    if (open) reset({ name: initialName, description: "" })
+  }, [open, initialName, reset])
 
   const handleClose = useCallback(() => {
+    reset()
     onOpenChange(false)
-  }, [onOpenChange])
+  }, [reset, onOpenChange])
 
   const onSubmit = useCallback(
-    async (data: CollectionFormData) => {
-      if (!collection) return
+    async (data: SeriesFormData) => {
       try {
-        await updateCollection({
-          uuid: collection.uuid as `${string}-${string}-${string}-${string}-${string}`,
-          update: {
-            name: data.name,
-            description: data.description ?? null,
-          },
+        await addBooksToSeries({
+          series: { name: data.name, description: data.description ?? "" },
+          relations: (books ?? []).map((bookUuid, index) => ({
+            bookUuid,
+            position: index + 1,
+            featured: false,
+          })),
         }).unwrap()
-        onUpdated?.()
+        onCreated?.(data.name)
         handleClose()
       } catch {
         // error handling is done via the mutation error state
       }
     },
-    [updateCollection, collection, onUpdated, handleClose],
+    [addBooksToSeries, books, onCreated, handleClose],
   )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Collection</DialogTitle>
+          <DialogTitle>Create Series</DialogTitle>
           <DialogDescription>
-            Update the collection name and description.
+            Create a new series to group related books together.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="py-4">
             <Field>
-              <FieldLabel htmlFor="edit-collection-name">Name</FieldLabel>
+              <FieldLabel htmlFor="series-name">Name</FieldLabel>
               <Input
-                id="edit-collection-name"
-                placeholder="Collection name"
+                id="series-name"
+                placeholder="My Series"
                 {...register("name")}
               />
               {errors.name && <FieldError>{errors.name.message}</FieldError>}
             </Field>
             <Field>
-              <FieldLabel htmlFor="edit-collection-description">
-                Description
-              </FieldLabel>
+              <FieldLabel htmlFor="series-description">Description</FieldLabel>
               <Textarea
-                id="edit-collection-description"
+                id="series-description"
                 placeholder="Optional description..."
                 rows={3}
                 {...register("description")}
@@ -136,7 +133,7 @@ export function EditCollectionDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save"}
+              {isLoading ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
         </form>

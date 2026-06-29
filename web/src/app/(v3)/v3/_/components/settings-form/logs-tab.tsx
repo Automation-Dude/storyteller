@@ -451,6 +451,7 @@ function LogsToolbar({
         <TooltipButton
           variant={wrapLines ? "secondary" : "ghost"}
           size="icon-sm"
+          aria-label={t("wrapLines")}
           onClick={onWrapLinesToggle}
           tooltip={t("wrapLines")}
         >
@@ -461,6 +462,7 @@ function LogsToolbar({
           variant={highlighting ? "secondary" : "ghost"}
           size="icon-sm"
           onClick={onHighlightingToggle}
+          aria-label={t("highlighting")}
           tooltip={t("highlighting")}
         >
           <IconHighlight className="h-4 w-4" />
@@ -469,6 +471,7 @@ function LogsToolbar({
         <TooltipButton
           variant={hideTime ? "secondary" : "ghost"}
           size="icon-sm"
+          aria-label={hideTime ? t("showTime") : t("hideTime")}
           onClick={onHideTimeToggle}
           tooltip={hideTime ? t("showTime") : t("hideTime")}
         >
@@ -499,6 +502,7 @@ function LogsToolbar({
           variant="ghost"
           size="icon-sm"
           onClick={onClearLogs}
+          aria-label={t("clearLogs")}
           tooltip={t("clearLogs")}
         >
           <IconTrash className="h-4 w-4" />

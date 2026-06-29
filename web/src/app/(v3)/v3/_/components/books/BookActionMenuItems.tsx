@@ -64,11 +64,10 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-
 import { ProcessingModal } from "./BookDetails/ProcessingModal"
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
+import { CreateSeriesDialog } from "./CreateSeriesDialog"
 import { CreateTagDialog } from "./CreateTagDialog"
-import { CreateSeriesDialog } from "./_CreateSeriesDialog"
 
 type Mode = "single" | "bulk"
 

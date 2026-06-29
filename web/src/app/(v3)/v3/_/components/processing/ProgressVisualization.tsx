@@ -22,8 +22,6 @@ export function ProgressVisualization({
 }) {
   const reduce = useReducedMotion()
 
-  console.log("percent", percent)
-
   if (reduce) {
     return (
       <InlineRow percent={percent} className={className}>
@@ -58,7 +56,6 @@ function InlineRow({
   className?: string
   children: React.ReactNode
 }) {
-  console.log("percent", percent)
   return (
     <div className={cn("flex items-center gap-3", className)}>
       {children}
@@ -76,14 +73,6 @@ function InlineRow({
 function Segment({ index, view }: { index: number; view: ProcessingView }) {
   const { stage, stageProgress, status } = view
   const stageIndex = stage ? STAGE_SEQUENCE.indexOf(stage) : -1
-  console.log(
-    "stage",
-    stage,
-    "stageIndex",
-    stageIndex,
-    "stageProgress",
-    stageProgress,
-  )
 
   // local fill: position of the sweep relative to this segment within the stage.
   const sweep = stageProgress * SEGMENTS
@@ -125,17 +114,6 @@ function Segment({ index, view }: { index: number; view: ProcessingView }) {
     tiltFactor = 1 - local
   }
 
-  console.log(
-    "base",
-    base,
-    "fillColor",
-    fillColor,
-    "fill",
-    fill,
-    "tiltFactor",
-    tiltFactor,
-  )
-
   const rotation = 90 + lean * tiltFactor
 
   return (
@@ -169,7 +147,6 @@ export function StaticProgressBar({
   const pct = Math.round(overallProgress(view) * 100)
 
   const tint = view.status === "error" ? "bg-destructive" : "bg-primary"
-  console.log("pct", pct)
 
   return (
     <div

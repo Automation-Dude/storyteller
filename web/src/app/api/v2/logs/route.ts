@@ -85,15 +85,13 @@ async function readLastMatchingLines(
       // when we haven't reached the start of the file, the first segment
       // may be a partial line cut by the chunk boundary
       carry =
-        position > 0
-          ? (segments.shift() ?? Buffer.alloc(0))
-          : Buffer.alloc(0)
+        position > 0 ? segments.shift() ?? Buffer.alloc(0) : Buffer.alloc(0)
 
       // walk segments newest-first (end to start)
       for (let i = segments.length - 1; i >= 0; i--) {
         if (matched.length >= lineCount) break
 
-        const lineStr = segments[i]!.toString("utf-8")
+        const lineStr = segments[i]?.toString("utf-8")
         if (!lineStr) continue
 
         // search against the raw json line directly instead of re-stringifying
@@ -116,14 +114,12 @@ async function readLastMatchingLines(
       const lineStr = carry.toString("utf-8")
 
       if (lineStr) {
-        const searchOk =
-          !search || lineStr.toLowerCase().includes(search)
+        const searchOk = !search || lineStr.toLowerCase().includes(search)
 
         if (searchOk) {
           try {
             const entry = JSON.parse(lineStr) as { level?: number }
-            const levelOk =
-              minLevel === 0 || (entry.level ?? 0) >= minLevel
+            const levelOk = minLevel === 0 || (entry.level ?? 0) >= minLevel
 
             if (levelOk) {
               matched.push(entry)

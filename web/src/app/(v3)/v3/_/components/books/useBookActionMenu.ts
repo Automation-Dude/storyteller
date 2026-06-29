@@ -1,8 +1,6 @@
 "use client"
 
-import { event } from "next/dist/build/output/log"
 import { useCallback, useMemo, useState } from "react"
-
 
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useTranslation } from "@v3/_/hooks/use-translation"

@@ -650,8 +650,6 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
                     ? h.column.getToggleSortingHandler()
                     : undefined
 
-                  console.log("sortingHandler", sortingHandler)
-
                   return (
                     <th
                       key={h.id}
