@@ -11,7 +11,6 @@ import {
 } from "@v3/_/components/ui/card"
 import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
 import { Slider } from "@v3/_/components/ui/slider"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { ColorModes } from "@/database/userPreferencesTypes"

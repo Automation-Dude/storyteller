@@ -3,6 +3,7 @@ import { sql } from "kysely"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
+import { STATUS_READ, STATUS_READING } from "./statusKinds"
 
 export type HomeStats = {
   inProgress: number
@@ -25,7 +26,7 @@ async function countByStatusName(userId: UUID, statusName: string) {
 }
 
 export async function getHomeStats(userId: UUID): Promise<HomeStats> {
-  const inProgress = await countByStatusName(userId, "Reading")
+  const inProgress = await countByStatusName(userId, STATUS_READING)
 
   // approximate: no explicit finished-at, so use the last status-change date
   const year = new Date().getFullYear().toString()
@@ -33,7 +34,7 @@ export async function getHomeStats(userId: UUID): Promise<HomeStats> {
     .selectFrom("bookToStatus")
     .innerJoin("status", "status.uuid", "bookToStatus.statusUuid")
     .where("bookToStatus.userId", "=", userId)
-    .where("status.name", "=", "Read")
+    .where("status.name", "=", STATUS_READ)
     .where(sql<boolean>`strftime('%Y', book_to_status.updated_at) = ${year}`)
     .select((eb) => eb.fn.countAll<number>().as("count"))
     .executeTakeFirst()

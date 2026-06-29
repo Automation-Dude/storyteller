@@ -420,21 +420,58 @@ export async function createBook(
       }
     }
 
-    const defaultStatus = await getDefaultStatus(tr)
+    const libraryDefault = await getDefaultStatus(tr)
 
-    await tr
-      .insertInto("bookToStatus")
-      .columns(["bookUuid", "statusUuid", "userId"])
-      .expression((eb) =>
-        eb
-          .selectFrom("user")
-          .select([
-            sql.lit(uuid).as("bookUuid"),
-            sql.lit(defaultStatus.uuid).as("statusUuid"),
-            "user.id",
-          ]),
+    const userRows = await tr
+      .selectFrom("user")
+      .leftJoin("userSettings", (join) =>
+        join
+          .onRef("userSettings.userId", "=", "user.id")
+          .on("userSettings.name", "=", "defaultStatusUuid"),
       )
+      .select(["user.id as userId", "userSettings.value as defaultOverride"])
       .execute()
+
+    const allStatusUuids = new Set(
+      (await tr.selectFrom("status").select("uuid").execute()).map(
+        (s) => s.uuid,
+      ),
+    )
+
+    const statusRows: {
+      bookUuid: UUID
+      statusUuid: UUID
+      userId: UUID
+    }[] = []
+
+    const libraryDefaultUuid = libraryDefault?.uuid ?? null
+
+    for (const { userId, defaultOverride } of userRows) {
+      let statusUuid: UUID | null = libraryDefaultUuid
+
+      // per-user override, validated against existing statuses
+      if (defaultOverride) {
+        try {
+          const parsed = JSON.parse(defaultOverride) as unknown
+          if (
+            typeof parsed === "string" &&
+            allStatusUuids.has(parsed as UUID)
+          ) {
+            statusUuid = parsed as UUID
+          }
+        } catch {
+          /* use library default */
+        }
+      }
+
+      if (statusUuid) {
+        statusRows.push({ bookUuid: uuid, statusUuid, userId })
+      }
+    }
+
+    if (statusRows.length > 0) {
+      await tr.insertInto("bookToStatus").values(statusRows).execute()
+    }
   })
 
   const book = await getBook(uuid)
@@ -446,7 +483,7 @@ export async function createBook(
   BookEvents.emit("message", {
     type: "bookCreated",
     bookUuid: book.uuid,
-    payload: { ...book, status: await getDefaultStatus() },
+    payload: { ...book, status: (await getDefaultStatus()) ?? null },
   })
 
   return book
@@ -567,6 +604,7 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
                 .select([
                   "status.uuid",
                   "status.name",
+                  "status.label",
                   "status.createdAt",
                   "status.updatedAt",
                 ])

@@ -1,16 +1,17 @@
 "use client"
 
+import { IconBook } from "@tabler/icons-react"
+
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
-import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import { LanguageEdit } from "@v3/_/components/books/LanguageEdit"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { useFormatDate } from "@v3/_/lib/date"
 
+import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 
 import { CollapsibleSection } from "./CollapsibleSection"
-import { IconBook } from "@tabler/icons-react"
 
 // a single label + value pair occupying two grid cells, so the grid keeps the
 // same shape whether the value is read-only or an inline editor.

@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
 import { useTranslation } from "@v3/_/hooks/use-translation"
-import { useIsMobile } from "../../hooks/use-mobile"
+
+import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
 
 type ConfirmDialogProps = {
   open: boolean

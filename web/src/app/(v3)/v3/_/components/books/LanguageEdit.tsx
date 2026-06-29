@@ -11,10 +11,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@v3/_/components/ui/popover"
+
 import { cn } from "@/cn"
 
-import { SEAMLESS_BOX } from "./BookDetails/EditableText"
 import { useBookForm } from "./BookDetails/BookFormProvider"
+import { SEAMLESS_BOX } from "./BookDetails/EditableText"
 
 // a reasonable spread of ISO 639-1 codes; the localized labels come from
 // Intl.DisplayNames so we only have to keep the codes themselves around.
@@ -219,9 +220,7 @@ export function LanguageEdit() {
         <div
           className={cn(
             "px-1 py-1.5 text-xs",
-            candidate.maximized
-              ? "text-muted-foreground"
-              : "text-destructive",
+            candidate.maximized ? "text-muted-foreground" : "text-destructive",
           )}
         >
           {search.trim() ? (

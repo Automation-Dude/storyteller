@@ -827,6 +827,7 @@ export const api = createApi({
                   draft.status = {
                     uuid: status.uuid,
                     name: status.name,
+                    label: status.label,
                     createdAt: status.createdAt,
                     updatedAt: status.updatedAt,
                   }
@@ -893,6 +894,7 @@ export const api = createApi({
             draft.status = {
               uuid: status.uuid,
               name: status.name,
+              label: status.label,
               createdAt: status.createdAt,
               updatedAt: status.updatedAt,
             }
@@ -947,6 +949,46 @@ export const api = createApi({
         statuses?.map((status) => ({ type: "Statuses", id: status.uuid })) ?? [
           "Statuses",
         ],
+    }),
+    updateStatusLabel: build.mutation<void, { uuid: UUID; label: string }>({
+      query: ({ uuid, label }) => ({
+        url: `/statuses/${uuid}`,
+        method: "PUT",
+        body: { label },
+      }),
+      invalidatesTags: (_result, _error, { uuid }) => [
+        "Books",
+        { type: "Statuses", id: uuid },
+      ],
+    }),
+    createStatus: build.mutation<
+      Status,
+      { name: string; label?: string }
+    >({
+      query: (body) => ({
+        url: "/statuses",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Statuses"],
+    }),
+    deleteStatus: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({
+        url: `/statuses/${uuid}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Statuses", "Books"],
+    }),
+    setLibraryDefaultStatus: build.mutation<
+      void,
+      { uuid: UUID; isDefault: boolean }
+    >({
+      query: ({ uuid, isDefault }) => ({
+        url: `/statuses/${uuid}`,
+        method: "PUT",
+        body: { isDefault },
+      }),
+      invalidatesTags: ["Statuses"],
     }),
     listCreators: build.query<Creator[], void>({
       query: () => "/creators",
@@ -1955,6 +1997,10 @@ export const {
   useGetSettingsQuery,
   useUpdateSettingsMutation,
   useUpdateStatusMutation,
+  useUpdateStatusLabelMutation,
+  useCreateStatusMutation,
+  useDeleteStatusMutation,
+  useSetLibraryDefaultStatusMutation,
   useUpdateUserMutation,
   useGetChangelogQuery,
   useGetLatestVersionQuery,

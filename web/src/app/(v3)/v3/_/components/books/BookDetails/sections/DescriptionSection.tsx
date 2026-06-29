@@ -8,6 +8,7 @@ import { Field, FieldError } from "@v3/_/components/ui/field"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
+
 import { CollapsibleSection } from "./CollapsibleSection"
 
 const COLLAPSED_HEIGHT = 96

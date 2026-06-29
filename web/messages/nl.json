@@ -213,11 +213,24 @@
     "sortAs": "Sorteren als",
     "sortAsPlaceholder": "bijv. Schmidt, Annie M. G.",
     "nameRequired": "Naam is verplicht",
+    "editStatus": "Statuslabel bewerken",
+    "editStatusDescription": "Wijzig de weergavenaam voor deze status. De interne naam blijft hetzelfde.",
+    "statusLabel": "Weergavenaam",
+    "statusKind": "Interne naam",
+    "createStatus": "Status aanmaken",
+    "createStatusDescription": "Voeg een nieuwe status toe die aan boeken kan worden toegekend.",
+    "statusName": "Statusnaam",
+    "statusNameHint": "Dit is de permanente interne naam. Deze kan later niet worden gewijzigd.",
+    "creating": "Aanmaken...",
+    "create": "Aanmaken",
+    "deleteStatusConfirm": "Boeken met deze status verliezen hun status.",
+    "coreStatus": "Kern",
     "entityTypes": {
       "tag": "{count, plural, one {label} other {labels}}",
       "creator": "{count, plural, one {maker} other {makers}}",
       "series": "{count, plural, one {serie} other {series}}",
-      "collection": "{count, plural, one {verzameling} other {verzamelingen}}"
+      "collection": "{count, plural, one {verzameling} other {verzamelingen}}",
+      "status": "{count, plural, one {status} other {statussen}}"
     }
   },
   "SelectionToolbar": {
@@ -469,6 +482,13 @@
             "description": "Configureer je bibliotheeknaam en web URL",
             "libraryName": "Bibliotheeknaam",
             "webUrl": "Web URL"
+          },
+          "defaultStatus": {
+            "title": "Standaard Status",
+            "description": "Kies welke status nieuw geimporteerde boeken krijgen.",
+            "label": "Standaard status voor nieuwe boeken",
+            "hint": "Wanneer ingesteld krijgen alle nieuwe boeken deze status voor elke gebruiker. Gebruikers kunnen dit in hun eigen voorkeuren overschrijven.",
+            "none": "Geen (geen status)"
           },
           "autoImport": {
             "title": "Automatisch Importeren",
@@ -951,6 +971,13 @@
             "add": "Dimensie toevoegen",
             "placeholder": "Naam van dimensie",
             "remove": "Dimensie verwijderen"
+          },
+          "defaultStatus": {
+            "title": "Standaard Status",
+            "description": "Kies welke status nieuw toegevoegde boeken voor jou krijgen.",
+            "label": "Standaard status voor nieuwe boeken",
+            "hint": "Overschrijft de bibliotheekbrede standaard die door een beheerder is ingesteld. Kies \"Bibliotheek standaard\" om de beheerderinstelling te volgen.",
+            "useLibraryDefault": "Bibliotheek standaard"
           }
         }
       }

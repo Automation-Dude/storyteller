@@ -89,6 +89,12 @@
     "goBack": "Go back",
     "home": "Home"
   },
+  "ForbiddenPage": {
+    "title": "Forbidden",
+    "description": "Halt! You have violated the law. You are not authorized to access this page. If you believe this is an error, please contact your administrator.",
+    "goBack": "Go back in shame",
+    "home": "Home"
+  },
   "BooksPage": {
     "title": "Books",
     "addBook": "Add Book",
@@ -213,11 +219,24 @@
     "sortAs": "Sort as (file as)",
     "sortAsPlaceholder": "e.g. Martin, G. R. R.",
     "nameRequired": "Name is required",
+    "editStatus": "Edit Status Label",
+    "editStatusDescription": "Change the display name for this status. The internal identifier stays the same.",
+    "statusLabel": "Display label",
+    "statusKind": "Internal name",
+    "createStatus": "Create status",
+    "createStatusDescription": "Add a new status that can be assigned to books.",
+    "statusName": "Status name",
+    "statusNameHint": "This is the permanent internal identifier. It cannot be changed later.",
+    "creating": "Creating...",
+    "create": "Create",
+    "deleteStatusConfirm": "Books with this status will become unset.",
+    "coreStatus": "Core",
     "entityTypes": {
       "tag": "{count, plural, one {tag} other {tags}}",
       "creator": "{count, plural, one {creator} other {creators}}",
       "series": "{count, plural, one {series} other {series}}",
-      "collection": "{count, plural, one {collection} other {collections}}"
+      "collection": "{count, plural, one {collection} other {collections}}",
+      "status": "{count, plural, one {status} other {statuses}}"
     }
   },
   "SelectionToolbar": {
@@ -235,7 +254,8 @@
     "delete": "Delete",
     "deleting": "Deleting...",
     "deleteTitle": "Delete {count} book(s)?",
-    "deleteDescription": "This cannot be undone."
+    "deleteDescription": "This cannot be undone.",
+    "cancelSelection": "Stop selecting"
   },
   "BookActions": {
     "openFullPage": "Open full page",
@@ -469,6 +489,13 @@
             "description": "Configure your library name and web URL. These are used in for instance emails and the OPDS feed.",
             "libraryName": "Library name",
             "webUrl": "Web URL"
+          },
+          "defaultStatus": {
+            "title": "Default Status",
+            "description": "Choose which status newly imported books start with.",
+            "label": "Default status for new books",
+            "hint": "When set, all new books are assigned this status for every user. Users can override this in their own preferences.",
+            "none": "None (no status)"
           },
           "autoImport": {
             "title": "Auto-Import",
@@ -958,6 +985,13 @@
           "ratings": {
             "title": "Ratings and Reviews",
             "description": "Change how ratings and reviews display and work"
+          },
+          "defaultStatus": {
+            "title": "Default Status",
+            "description": "Choose which status newly added books start with for you.",
+            "label": "Default status for new books",
+            "hint": "Overrides the library-wide default set by an admin. Choose \"Use library default\" to follow the admin setting.",
+            "useLibraryDefault": "Use library default"
           }
         }
       }
@@ -1188,6 +1222,7 @@
     "downloads": "Downloads",
     "fileInformation": "File Information",
     "folder": "Folder",
+    "missing": "Missing",
     "selected": {
       "withInput": "Selected {input}",
       "plain": "Selected"

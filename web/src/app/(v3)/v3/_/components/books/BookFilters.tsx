@@ -4,6 +4,7 @@ import {
   IconArrowUp,
   IconBookmarkPlus,
   IconColumns,
+  IconDots,
   IconLayoutGrid,
   IconLayoutList,
   IconPlus,
@@ -16,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -350,68 +352,13 @@ function CollapsedOptionsMenu({
             aria-label="Sort and view options"
             tooltip="Sort & view"
           >
-            <IconAdjustmentsHorizontal className="h-4 w-4" />
+            <IconDots className="size-4" />
           </TooltipButton>
         }
       />
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="text-muted-foreground text-xs">
-          Sort by
-        </DropdownMenuLabel>
-        {sortOptions.map((option) => (
-          <DropdownMenuItem
-            key={option.value}
-            className="justify-between gap-4"
-            closeOnClick={false}
-            onClick={() => {
-              if (option.value === sortField) {
-                flip()
-              } else {
-                onSortChange(option.value, "desc")
-              }
-            }}
-          >
-            <span className="flex items-center gap-2">
-              <FieldIcon field={option.value} className="h-4 w-4" />
-              {option.label}
-            </span>
-            {option.value === sortField &&
-              (sortDirection === "asc" ? (
-                <IconArrowUp className="h-3 w-3" />
-              ) : (
-                <IconArrowDown className="h-3 w-3" />
-              ))}
-          </DropdownMenuItem>
-        ))}
-
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-muted-foreground text-xs">
-          Show on card
-        </DropdownMenuLabel>
-        <DropdownMenuCheckboxItem
-          checked={!displayOverrides}
-          onClick={() => {
-            void onDisplayOverridesChange(null)
-          }}
-        >
-          Auto
-        </DropdownMenuCheckboxItem>
-        {DISPLAY_FIELDS.map((field) => (
-          <DropdownMenuCheckboxItem
-            key={field}
-            checked={displayOverrides?.includes(field) ?? false}
-            onClick={() => {
-              void onDisplayOverridesChange([field])
-            }}
-          >
-            <FieldIcon field={field} className="mr-2 h-4 w-4" />
-            {tLabel(field)}
-          </DropdownMenuCheckboxItem>
-        ))}
-
         {bookView && onBookViewChange && (
-          <>
-            <DropdownMenuSeparator />
+          <DropdownMenuGroup>
             <DropdownMenuLabel className="text-muted-foreground text-xs">
               View
             </DropdownMenuLabel>
@@ -433,8 +380,66 @@ function CollapsedOptionsMenu({
               <IconLayoutList className="mr-2 h-4 w-4" />
               List
             </DropdownMenuCheckboxItem>
-          </>
+            <DropdownMenuSeparator />
+          </DropdownMenuGroup>
         )}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-muted-foreground text-xs">
+            Sort by
+          </DropdownMenuLabel>
+          {sortOptions.map((option) => (
+            <DropdownMenuItem
+              key={option.value}
+              className="justify-between gap-4"
+              closeOnClick={false}
+              onClick={() => {
+                if (option.value === sortField) {
+                  flip()
+                } else {
+                  onSortChange(option.value, "desc")
+                }
+              }}
+            >
+              <span className="flex items-center gap-2">
+                <FieldIcon field={option.value} className="h-4 w-4" />
+                {option.label}
+              </span>
+              {option.value === sortField &&
+                (sortDirection === "asc" ? (
+                  <IconArrowUp className="h-3 w-3" />
+                ) : (
+                  <IconArrowDown className="h-3 w-3" />
+                ))}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-muted-foreground text-xs">
+            Show on card
+          </DropdownMenuLabel>
+          <DropdownMenuCheckboxItem
+            checked={!displayOverrides}
+            onClick={() => {
+              void onDisplayOverridesChange(null)
+            }}
+          >
+            Auto
+          </DropdownMenuCheckboxItem>
+          {DISPLAY_FIELDS.map((field) => (
+            <DropdownMenuCheckboxItem
+              key={field}
+              checked={displayOverrides?.includes(field) ?? false}
+              onClick={() => {
+                void onDisplayOverridesChange([field])
+              }}
+            >
+              <FieldIcon field={field} className="mr-2 h-4 w-4" />
+              {tLabel(field)}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -19,6 +19,7 @@ import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
+import { statusDisplayLabel } from "@/database/statusKinds"
 import { getCoverUrl } from "@/store/api"
 
 type BookListProps = {
@@ -151,7 +152,7 @@ function BookListItem({
         )}
         {book.status && (
           <Badge variant="outline" className="text-muted-foreground">
-            {book.status.name}
+            {statusDisplayLabel(book.status)}
           </Badge>
         )}
       </div>

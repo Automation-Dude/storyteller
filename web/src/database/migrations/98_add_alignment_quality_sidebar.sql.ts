@@ -9,7 +9,7 @@ export default async function migrate() {
     const mainGroups = await sql<{ uuid: string; userId: string }>`
       SELECT uuid, user_id as "userId"
       FROM sidebar_group
-      WHERE name = 'Main'
+      WHERE name = 'library'
     `.execute(trx)
 
     for (const group of mainGroups.rows) {

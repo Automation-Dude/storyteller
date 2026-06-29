@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from "react"
 import { useWatch } from "react-hook-form"
 
-import { cn } from "@v3/_/lib/utils"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
+import { cn } from "@v3/_/lib/utils"
 
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 
-import { SEAMLESS_BOX } from "./EditableText"
 import { useBookForm } from "./BookFormProvider"
+import { SEAMLESS_BOX } from "./EditableText"
 
 // shared look for the read-only metric "chips" so page count + duration line up
 // with the surrounding muted text but still read as clickable when editable.
@@ -56,7 +56,10 @@ export function PageCountEdit({ className }: { className?: string }) {
         onClick={() => {
           if (canEdit) setEditingField("pageCount")
         }}
-        className={cn(metricDisplayClass(canEdit, effective == null), className)}
+        className={cn(
+          metricDisplayClass(canEdit, effective == null),
+          className,
+        )}
       >
         {effective != null ? `${effective} pages` : "Add pages"}
       </button>
@@ -156,7 +159,10 @@ export function DurationEdit({ className }: { className?: string }) {
         onClick={() => {
           if (canEdit) setEditingField("duration")
         }}
-        className={cn(metricDisplayClass(canEdit, effective == null), className)}
+        className={cn(
+          metricDisplayClass(canEdit, effective == null),
+          className,
+        )}
       >
         {effective != null ? formatTimeHuman(effective) : "Add duration"}
       </button>

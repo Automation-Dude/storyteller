@@ -23,6 +23,9 @@ import {
 } from "@v3/_/components/ui/select"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { MultidimensionalRating } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/MultidimensionalRating"
+import { RatingInput } from "@/app/(v3)/v3/_/components/books/RatingInput"
+import { statusDisplayLabel } from "@/database/statusKinds"
 import {
   BookDetailDisplays,
   DoubleCoverAlignments,
@@ -30,6 +33,7 @@ import {
   GridCoverDisplays,
   RatingIcons,
 } from "@/database/userPreferencesTypes"
+import { useListStatusesQuery } from "@/store/api"
 
 import { DetailDisplayPreview, GridCoverPreview } from "./cover-style-preview"
 import {
@@ -37,10 +41,9 @@ import {
   PreferencesSection,
   SegmentedControl,
 } from "./shared"
-import { RatingInput } from "../books/RatingInput"
-import { MultidimensionalRating } from "../books/BookDetails/sections/MultidimensionalRating"
 
 const VIEW_KEYS = ["cover", "spine", "pages", "back"] as const
+const USE_LIBRARY_DEFAULT = "__library_default__"
 
 export function BooksTab({ form }: { form: PreferencesFormType }) {
   const t = useTranslation("PreferencesPage.tabs.books.sections")
@@ -122,7 +125,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                       </FieldDescription>
                       <SegmentedControl
                         value={field.value}
-                        onChange={(value) => field.onChange(value)}
+                        onChange={(value) => {
+                          field.onChange(value)
+                        }}
                         options={gridCoverOptions}
                       />
                     </Field>
@@ -143,7 +148,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                         </FieldDescription>
                         <SegmentedControl
                           value={field.value}
-                          onChange={(value) => field.onChange(value)}
+                          onChange={(value) => {
+                            field.onChange(value)
+                          }}
                           options={alignmentOptions}
                         />
                       </Field>
@@ -169,7 +176,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                   </FieldDescription>
                   <SegmentedControl
                     value={field.value}
-                    onChange={(value) => field.onChange(value)}
+                    onChange={(value) => {
+                      field.onChange(value)
+                    }}
                     options={gridSizeOptions}
                   />
                 </Field>
@@ -199,7 +208,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                       </FieldDescription>
                       <SegmentedControl
                         value={field.value}
-                        onChange={(value) => field.onChange(value)}
+                        onChange={(value) => {
+                          field.onChange(value)
+                        }}
                         options={detailDisplayOptions}
                       />
                     </Field>
@@ -263,7 +274,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                   <FieldDescription>{t("ratingIcon.hint")}</FieldDescription>
                   <SegmentedControl
                     value={field.value}
-                    onChange={(value) => field.onChange(value)}
+                    onChange={(value) => {
+                      field.onChange(value)
+                    }}
                     options={ratingIconOptions}
                   />
                   <div className="mt-4 flex flex-col gap-2">
@@ -303,7 +316,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                       variant="ghost"
                       size="icon"
                       aria-label={t("ratingDimensions.remove")}
-                      onClick={() => removeDimension(index)}
+                      onClick={() => {
+                        removeDimension(index)
+                      }}
                     >
                       <IconTrash className="h-4 w-4" />
                     </Button>
@@ -315,7 +330,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                   variant="outline"
                   size="sm"
                   className="self-start"
-                  onClick={() => appendDimension({ id: uuidv4(), label: "" })}
+                  onClick={() => {
+                    appendDimension({ id: uuidv4(), label: "" })
+                  }}
                 >
                   <IconPlus className="mr-1 h-4 w-4" />
                   {t("ratingDimensions.add")}
@@ -340,6 +357,67 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
           </CardContent>
         </Card>
       </PreferencesSection>
+
+      <PreferencesSection tab="books" section="defaultStatus">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("defaultStatus.title")}</CardTitle>
+            <CardDescription>{t("defaultStatus.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DefaultStatusField form={form} />
+          </CardContent>
+        </Card>
+      </PreferencesSection>
     </div>
+  )
+}
+
+function DefaultStatusField({ form }: { form: PreferencesFormType }) {
+  const t = useTranslation("PreferencesPage.tabs.books.sections.defaultStatus")
+
+  const { data: statuses = [] } = useListStatusesQuery()
+
+  const items = statuses.map((status) => ({
+    value: status.uuid,
+    label: statusDisplayLabel(status),
+  }))
+
+  return (
+    <Controller
+      name="defaultStatusUuid"
+      control={form.control}
+      render={({ field }) => (
+        <Field>
+          <FieldLabel>{t("label")}</FieldLabel>
+          <FieldDescription>{t("hint")}</FieldDescription>
+
+          <Select
+            value={field.value ?? USE_LIBRARY_DEFAULT}
+            onValueChange={(v) => {
+              field.onChange(v === USE_LIBRARY_DEFAULT ? null : v)
+            }}
+            items={[
+              ...items,
+              { value: USE_LIBRARY_DEFAULT, label: t("useLibraryDefault") },
+            ]}
+          >
+            <SelectTrigger className="w-60">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={USE_LIBRARY_DEFAULT}>
+                {t("useLibraryDefault")}
+              </SelectItem>
+              {items.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
+    />
   )
 }

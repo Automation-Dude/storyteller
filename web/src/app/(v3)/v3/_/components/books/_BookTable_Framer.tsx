@@ -36,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { statusDisplayLabel } from "@/database/statusKinds"
 import { useOptionalBookSelection } from "@/hooks/useBookSelection"
 import { cn } from "@/lib/utils"
 import {
@@ -187,7 +188,8 @@ function TagsCell({ book }: { book: BookWithRelations }) {
 
 function StatusCell({ book }: { book: BookWithRelations }) {
   if (!book.status) return <span className="text-muted-foreground">-</span>
-  return <Badge variant="outline">{book.status.name}</Badge>
+
+  return <Badge variant="outline">{statusDisplayLabel(book.status)}</Badge>
 }
 
 function MediaTypeCell({ book }: { book: BookWithRelations }) {
@@ -355,14 +357,14 @@ function SelectionColumn(): ColumnDef<BookWithRelations> {
           table.getIsAllPageRowsSelected() ||
           (table.getIsSomePageRowsSelected() && "indeterminate")
         }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        onCheckedChange={(value) => { table.toggleAllPageRowsSelected(!!value); }}
         aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        onCheckedChange={(value) => { row.toggleSelected(!!value); }}
         aria-label="Select row"
       />
     ),

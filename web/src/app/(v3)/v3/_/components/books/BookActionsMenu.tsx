@@ -20,6 +20,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { type BookWithRelations } from "@/database/books"
 
 import { useBookActionItems } from "./BookActionMenuItems"
+import { usePermission } from "@/hooks/usePermission"
 
 // the single-book "..." menu. holds every action the bulk toolbar has (minus
 // merge) plus the single-only "open full page" and "edit" entries. used by both
@@ -30,6 +31,7 @@ export function BookActionsMenu({
   onEdit,
   onDeleted,
   fullPageHref,
+  className,
 }: {
   book: BookWithRelations
   showOpenFullPage?: boolean
@@ -37,23 +39,25 @@ export function BookActionsMenu({
   // called after the book is deleted, so the panel/page can close or navigate
   onDeleted?: () => void
   fullPageHref?: string
+  className?: string
 }) {
   const t = useTranslation("BookActions")
+  const canEdit = usePermission("bookUpdate")
   const { items, dialogs } = useBookActionItems({
     books: [book],
     mode: "single",
     onAfterDestructive: onDeleted,
   })
 
-  const hasTopItems = showOpenFullPage || !!onEdit
+  const hasTopItems = showOpenFullPage || (!!onEdit && canEdit)
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" size="icon-sm">
-              <IconDotsVertical className="h-4 w-4" />
+            <Button variant="real-ghost" size="icon-sm" className={className}>
+              <IconDotsVertical className="size-3.5 stroke-[1.5]" />
               <span className="sr-only">Open book actions menu</span>
             </Button>
           }
@@ -74,7 +78,7 @@ export function BookActionsMenu({
             />
           )}
 
-          {onEdit && (
+          {onEdit && canEdit && (
             <DropdownMenuItem onClick={onEdit}>
               <IconEdit className="mr-2 h-4 w-4" />
               {t("edit")}

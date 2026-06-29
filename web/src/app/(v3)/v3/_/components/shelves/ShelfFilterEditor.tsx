@@ -49,6 +49,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
 import { DEFAULT_RATING_DIMENSIONS } from "@/database/ratingDimensions"
+import { statusDisplayLabel } from "@/database/statusKinds"
 import {
   FIELD_LABELS,
   MEDIA_TYPE_VALUES,
@@ -1409,7 +1410,10 @@ function ConditionValueInput({
     if (isArray) {
       return (
         <MultiCombobox
-          options={statuses.map((s) => ({ value: s.uuid, label: s.name }))}
+          options={statuses.map((s) => ({
+            value: s.uuid,
+            label: statusDisplayLabel(s),
+          }))}
           value={Array.isArray(value) ? (value as string[]) : []}
           onChange={(v) => {
             onChange(v)
@@ -1424,7 +1428,10 @@ function ConditionValueInput({
       <Select
         value={typeof value === "string" ? value : ""}
         onValueChange={onChange}
-        items={statuses.map((s) => ({ value: s.uuid, label: s.name }))}
+        items={statuses.map((s) => ({
+          value: s.uuid,
+          label: statusDisplayLabel(s),
+        }))}
       >
         <SelectTrigger className="h-7 text-xs">
           <SelectValue placeholder={t.plain("selectStatus")} />
@@ -1432,7 +1439,7 @@ function ConditionValueInput({
         <SelectContent>
           {statuses.map((s) => (
             <SelectItem key={s.uuid} value={s.uuid}>
-              {s.name}
+              {statusDisplayLabel(s)}
             </SelectItem>
           ))}
         </SelectContent>

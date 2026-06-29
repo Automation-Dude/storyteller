@@ -34,19 +34,18 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import { useFormatDate } from "@v3/_/lib/date"
 
-import { FilePathRow } from "@/app/(v3)/v3/_/components/books/BookDetails/FilePathRow"
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
-import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
 import { useRemoveBookAssetMutation } from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
+
 import { CollapsibleSection } from "./CollapsibleSection"
-import { TooltipButton } from "../../../ui/tooltip-button"
 
 type Format = "ebook" | "audiobook" | "readaloud"
 
@@ -75,6 +74,11 @@ function FormatFileRow({
 
   const canEdit = usePermission("bookUpdate")
 
+  const t = useTranslation("BookDetailsPage")
+  const tUpload = useTranslation("UploadDialog")
+  const tImport = useTranslation("ImportFromServerDialog")
+  const tLabels = useTranslation("Labels")
+
   if (!fmt) return null
 
   const Icon = FORMAT_ICONS[format]
@@ -85,12 +89,10 @@ function FormatFileRow({
   const directory = lastSlash >= 0 ? filepath.slice(0, lastSlash + 1) : ""
   const filename = lastSlash >= 0 ? filepath.slice(lastSlash + 1) : filepath
 
-  const t = useTranslation("BookDetailsPage")
-
   const FORMAT_LABELS: Record<Format, string> = {
-    ebook: "Ebook",
-    audiobook: "Audiobook",
-    readaloud: "Readaloud",
+    ebook: t("fileInformation.ebook"),
+    audiobook: t("fileInformation.audiobook"),
+    readaloud: t("fileInformation.readaloud"),
   }
 
   const pageCount =
@@ -117,7 +119,7 @@ function FormatFileRow({
               className="h-4 gap-0.5 px-1 text-[10px]"
             >
               <IconAlertTriangle className="h-2.5 w-2.5" />
-              Missing
+              {tLabels("missing")}
             </Badge>
           )}
           {isEpub2 && (
@@ -147,7 +149,7 @@ function FormatFileRow({
                 <TooltipButton
                   variant="ghost"
                   size="icon-sm"
-                  tooltip={t("fileInformation.replaceFile")}
+                  tooltip={tImport("replace")}
                   className="text-muted-foreground font-thin"
                   aria-label={`Replace ${format} file`}
                 >
@@ -155,20 +157,20 @@ function FormatFileRow({
                 </TooltipButton>
               }
             />
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-fit">
               <DropdownMenuItem
                 onClick={onReplaceServer}
                 className="whitespace-nowrap"
               >
                 <IconServer className="mr-2 h-4 w-4" />
-                Import from server
+                {tImport("import")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onReplaceUpload}
                 className="whitespace-nowrap"
               >
                 <IconUpload className="mr-2 h-4 w-4" />
-                Upload
+                {tUpload("upload")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -205,9 +207,9 @@ export function FileSection({
   const [removeAsset, { isLoading: isRemoving }] = useRemoveBookAssetMutation()
 
   const FORMAT_LABELS: Record<Format, string> = {
-    ebook: "Ebook",
-    audiobook: "Audiobook",
-    readaloud: "Readaloud",
+    ebook: t("fileInformation.ebook"),
+    audiobook: t("fileInformation.audiobook"),
+    readaloud: t("fileInformation.readaloud"),
   }
 
   const [fileDialog, setFileDialog] = useState<{

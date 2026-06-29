@@ -11,8 +11,6 @@ import {
 } from "react-hook-form"
 import type z from "zod"
 
-import { type Settings } from "@/apiModels"
-import { type SettingsSchema } from "@/database/settingsTypes"
 
 import {
   Field,
@@ -26,6 +24,9 @@ import {
   TooltipTrigger,
 } from "@v3/_/components/ui/tooltip"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import { type Settings } from "@/apiModels"
+import { type SettingsSchema } from "@/database/settingsTypes"
 
 export type SettingsFormForm = UseFormReturn<z.infer<typeof SettingsSchema>>
 

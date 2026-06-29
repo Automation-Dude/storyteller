@@ -24,6 +24,7 @@ import {
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
+import { TooltipButton } from "../ui/tooltip-button"
 
 // cap at 2x: the cover is the heaviest gpu texture here, 3x triples its area
 // for no visible gain on a small slab and chews memory while turning
@@ -795,7 +796,7 @@ export function Book3D({
       />
 
       {actions && (
-        <div className="absolute top-1 -right-4 z-30 flex flex-col items-center justify-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+        <div className="absolute -right-4 bottom-1 z-30 flex flex-col items-center justify-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
           {actions}
         </div>
       )}
@@ -824,18 +825,18 @@ export function BookFullscreenButton({
 
   return (
     <>
-      <Button
+      <TooltipButton
         variant="secondary"
         size="icon-sm"
-        type="button"
         onClick={() => {
           setFullscreen(true)
         }}
         aria-label="View full screen"
-        className="bg-background/85 text-foreground/70 hover:text-foreground rounded-md p-1.5"
+        tooltip="View full screen"
+        className="bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
       >
-        <IconArrowsMaximize className="h-4 w-4" />
-      </Button>
+        <IconArrowsMaximize className="size-3.5 stroke-[1.5]" />
+      </TooltipButton>
 
       <Dialog open={fullscreen} onOpenChange={setFullscreen}>
         <DialogContent

@@ -26,7 +26,6 @@ import {
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Invite, type User } from "@/apiModels"

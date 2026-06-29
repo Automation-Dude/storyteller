@@ -48,6 +48,7 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
+import { TooltipButton } from "../ui/tooltip-button"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -251,9 +252,9 @@ function BookDetailsContentInner({
 
                 <ContributorsSection />
 
-                {/* {permissions?.bookDownload && <DownloadsSection />} */}
-
-                <TranscriptionStatus book={book} />
+                {permissions?.bookProcess &&
+                  ((!book.ebook?.missing && !book.audiobook?.missing) ||
+                    book.readaloud) && <TranscriptionStatus book={book} />}
 
                 <FileSection book={book} assetsDir={assetsDir} />
               </div>
@@ -309,10 +310,6 @@ function BookPageHeader() {
   )
 }
 
-// the single edit bar, shared by global edit, single-field inline edit, and
-// cover edit. it always offers both Discard and Save (covers used to be the
-// only mode with an explicit Save). uses onMouseDown so a click commits/cancels
-// before an active field's blur handler fires.
 function BookEditBar() {
   const {
     isEditing,
@@ -364,38 +361,35 @@ function BookEditBar() {
         {isSaving ? t("saving") : t("editing")}
       </span>
 
-      <Button
-        size="sm"
-        variant="ghost"
+      <TooltipButton
+        tooltip={t("discard")}
+        aria-label={t("discard")}
+        variant="real-ghost"
         onMouseDown={(e) => {
           e.preventDefault()
           handleDiscard()
         }}
         disabled={isSaving}
       >
-        <IconX className="mr-1 h-4 w-4" />
-        {t("discard")}
-      </Button>
+        <IconX className="size-4" />
+      </TooltipButton>
 
-      <Button
-        size="sm"
+      <TooltipButton
+        tooltip={isSaving ? t("saving") : t("save")}
+        aria-label={t("save")}
         onMouseDown={(e) => {
           e.preventDefault()
           void handleSave()
         }}
+        className="rounded-full"
         disabled={isSaving}
       >
-        <IconCheck className="mr-1 h-4 w-4" />
-        {isSaving ? t("saving") : t("save")}
-      </Button>
+        <IconCheck className="size-4" />
+      </TooltipButton>
     </ActionBar>
   )
 }
 
-// the panel used to have a full-width top bar; instead the select / actions /
-// close controls float over the hero so the cover gets the full height. a
-// translucent, blurred pill keeps them legible over both the tinted hero and
-// the plain background once the user scrolls.
 function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   const { book, isEditing, setIsEditing } = useBookForm()
   const { showAccent } = useColorPreferences()
@@ -419,7 +413,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   return (
     <>
       {showCheckbox && (
-        <div className={cn("absolute top-2.5 left-3 z-50 p-1", pill)}>
+        <div className={cn("absolute top-3 left-3 z-50 p-1", pill)}>
           <Checkbox
             aria-label="Toggle selection"
             checked={isSelected}
@@ -433,7 +427,7 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
                 : undefined
             }
             onCheckedChange={handleToggleSelection}
-            className="h-5 w-5"
+            className="size-5 rounded-full"
           />
         </div>
       )}
@@ -449,8 +443,8 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
         />
 
         {onClose && (
-          <Button variant="ghost" size="icon-sm" onClick={onClose}>
-            <IconX className="h-4 w-4" />
+          <Button variant="real-ghost" size="icon-sm" onClick={onClose}>
+            <IconX className="size-3.5 stroke-[1.5]" />
           </Button>
         )}
       </div>

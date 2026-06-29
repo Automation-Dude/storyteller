@@ -1,11 +1,13 @@
 import { IconChevronDown } from "@tabler/icons-react"
+import { useState } from "react"
+
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@v3/_/components/ui/collapsible"
-import { useState } from "react"
-import { Button } from "../../../ui/button"
+
+import { Button } from "@/app/(v3)/v3/_/components/ui/button"
 import { cn } from "@/cn"
 
 export function CollapsibleSection({

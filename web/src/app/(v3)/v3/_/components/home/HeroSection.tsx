@@ -14,6 +14,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
+import { STATUS_READING } from "@/database/statusKinds"
 import { useListBooksQuery } from "@/store/api"
 
 type ReadLink = {
@@ -49,7 +50,7 @@ export function HeroSection() {
 
   const book = useMemo(() => {
     return books
-      .filter((b) => b.status?.name === "Reading")
+      .filter((b) => b.status?.name === STATUS_READING)
       .sort(
         (a, b) => (b.position?.timestamp ?? 0) - (a.position?.timestamp ?? 0),
       )[0]

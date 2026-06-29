@@ -103,9 +103,9 @@ function MobileSidebarToggle() {
       size="icon"
       aria-label="Open navigation"
       onClick={sidebar.toggleSidebar}
-      className="bg-background/95 fixed bottom-4 left-4 z-30 size-11 rounded-full shadow-lg backdrop-blur md:hidden"
+      className="bg-background/90 fixed bottom-4 left-4 z-30 size-11 rounded-full shadow-lg backdrop-blur md:hidden"
     >
-      <IconLayoutSidebar className="size-5" />
+      <IconLayoutSidebar className="size-4" />
     </Button>
   )
 }

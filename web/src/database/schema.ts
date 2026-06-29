@@ -405,6 +405,7 @@ export interface SidebarItem {
 export interface Status {
   createdAt: Generated<string>
   isDefault: Generated<boolean>
+  label: string | null
   name: string
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>

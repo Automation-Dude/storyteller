@@ -57,6 +57,7 @@ import {
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
+import { usePermission } from "@/hooks/usePermission"
 import { CommandSearch, useCommandSearch } from "./command-search"
 import { SidebarManager } from "./nav/SidebarManager"
 import {
@@ -109,6 +110,7 @@ export function AppSidebar({
   const [editMode, setEditMode] = useState(false)
   const [editingShelfUuid, setEditingShelfUuid] = useState<string | null>(null)
   const [setSidebarGroupsMut] = useSetSidebarGroupsMutation()
+  const canAccessSettings = usePermission("settingsUpdate")
 
   const { data: latestVersionData } = useGetLatestVersionQuery(
     {
@@ -183,12 +185,16 @@ export function AppSidebar({
       ),
       key: "search",
     },
-    {
-      title: t("settings"),
-      url: "/settings",
-      icon: IconSettings,
-      badge: hasUpdate ? <UpdateDot /> : undefined,
-    },
+    ...(canAccessSettings
+      ? [
+          {
+            title: t("settings"),
+            url: "/settings",
+            icon: IconSettings,
+            badge: hasUpdate ? <UpdateDot /> : undefined,
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -375,6 +381,7 @@ function SidebarNavGroup({
     >
       <SidebarGroup>
         <CollapsibleTrigger
+          nativeButton={false}
           render={
             <SidebarGroupLabel className="cursor-pointer font-sans text-[10px] font-medium tracking-[0.14em] uppercase opacity-60">
               <IconChevronRight

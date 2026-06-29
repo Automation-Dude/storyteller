@@ -315,7 +315,7 @@ export async function initializeDefaultSidebar(userId: UUID) {
       name: "Collections",
       items: collections.map((c) => ({
         kind: "collection" as const,
-        collectionUuid: c.uuid as UUID,
+        collectionUuid: c.uuid,
       })),
     })
   }

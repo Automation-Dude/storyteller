@@ -1,5 +1,6 @@
 "use client"
 
+import { type Variant } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
@@ -8,7 +9,6 @@ import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
 import { CoverImage } from "./CoverImage"
-import { Variant } from "motion/react"
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2

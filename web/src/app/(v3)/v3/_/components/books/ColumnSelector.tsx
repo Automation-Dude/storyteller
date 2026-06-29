@@ -8,16 +8,17 @@ import {
 } from "@v3/_/components/ui/popover"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
-import { cn } from "@/cn"
-import { type DisplayField, GENERAL_SORT_FIELDS } from "@/sort"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu"
+} from "@/app/(v3)/v3/_/components/ui/dropdown-menu"
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import { cn } from "@/cn"
+import { type DisplayField, GENERAL_SORT_FIELDS } from "@/sort"
+
 
 // all general sort fields plus authors are pickable as list columns
 const PICKABLE_FIELDS: DisplayField[] = [

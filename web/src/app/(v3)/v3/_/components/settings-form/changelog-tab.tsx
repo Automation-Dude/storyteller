@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@v3/_/components/ui/card"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type ChangelogEntry } from "@/database/changelog"

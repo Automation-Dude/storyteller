@@ -18,6 +18,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { getCoverUrl, useSetUserSettingMutation } from "@/store/api"
 
 import { useBookForm } from "./BookFormProvider"
+import { TooltipButton } from "../../ui/tooltip-button"
 
 // local toggle: flip to "pages" or "duration" to print length info on the
 // spine instead of the author / title
@@ -148,18 +149,18 @@ export function CoverEditor({ compact }: { compact: boolean }) {
 
   if (!isEditing && !editingCovers) {
     const editAction = canEdit && (
-      <Button
-        type="button"
+      <TooltipButton
         variant="secondary"
         size="icon-sm"
         onClick={() => {
           setEditingCovers(true)
         }}
         aria-label={t("cover.edit")}
-        className="bg-background/85 text-foreground/70 hover:text-foreground rounded-md p-1.5"
+        tooltip={t("cover.edit")}
+        className="bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
       >
         <IconPencil className="size-4" />
-      </Button>
+      </TooltipButton>
     )
 
     // a flat cover that falls back to the user's grid cover-display choice
@@ -194,18 +195,18 @@ export function CoverEditor({ compact }: { compact: boolean }) {
             {editAction}
 
             {currentView !== (bookDetail3dView ?? 0) && (
-              <Button
-                type="button"
+              <TooltipButton
                 variant="secondary"
                 size="icon-sm"
                 onClick={() => {
                   void handleSaveDefaultView()
                 }}
                 aria-label={t("cover.setDefaultPosition")}
-                className="bg-background/85 text-foreground/70 hover:text-foreground rounded-md p-1.5"
+                tooltip={t("cover.setDefaultPosition")}
+                className="bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
               >
                 <IconPin className="size-4" />
-              </Button>
+              </TooltipButton>
             )}
 
             <BookFullscreenButton

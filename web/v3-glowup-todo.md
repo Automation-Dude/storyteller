@@ -184,3 +184,10 @@ prioritized. Not a plan, just a capture.
       theme primary color value
 - [ ] improve the book card previews in theme settings, they look too
       AI-generated
+
+## new
+
+- [ ] add a 403 page
+- [ ] collectioins dont paginate? are library pages not paginated?
+- [ ] nonadmin users get new version notifs
+- [ ] stop loading images on navigate away, its blocking nav

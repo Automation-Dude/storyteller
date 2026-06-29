@@ -4,11 +4,12 @@ import { IconBookFilled, IconHeadphonesFilled } from "@tabler/icons-react"
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
+import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
-import { useUserPreferences } from "../user-preferences-provider"
+
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 import { BookDoubleCover } from "./BookDoubleCover"
 import { CoverImage } from "./CoverImage"

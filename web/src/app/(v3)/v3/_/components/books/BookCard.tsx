@@ -7,10 +7,12 @@ import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
+import { Button } from "@/app/(v3)/v3/_/components/ui/button"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { type DisplayField, type SortContext } from "@/sort"
+
 
 import { BookCover, isDualFormat } from "./BookCover"
 import {
@@ -21,7 +23,6 @@ import {
 } from "./BookDetails/sections/useCoverColors"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
 import { GradePill } from "./grade-pill"
-import { Button } from "../ui/button"
 
 type BookCardProps = {
   book: BookWithRelations

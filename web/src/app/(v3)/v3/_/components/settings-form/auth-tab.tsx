@@ -34,7 +34,6 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { Providers } from "@/auth/providers"

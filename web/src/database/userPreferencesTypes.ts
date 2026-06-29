@@ -68,6 +68,9 @@ export const UserPreferencesSchema = z.object({
   ratingDimensions: z.array(
     z.object({ id: z.string().min(1), label: z.string() }),
   ),
+  // per-user default status assigned to newly added books. null means "use
+  // the library default". stored as a status uuid string.
+  defaultStatusUuid: z.string().nullable(),
 })
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>
@@ -86,6 +89,7 @@ export const defaultUserPreferences: UserPreferences = {
   ratingIcon: "star",
   accentColor: null,
   ratingDimensions: DEFAULT_RATING_DIMENSIONS,
+  defaultStatusUuid: null,
 }
 
 // the old colorMode values, mapped onto the new three-level scale

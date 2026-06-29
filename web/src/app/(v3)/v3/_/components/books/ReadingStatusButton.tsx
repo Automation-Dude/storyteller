@@ -11,6 +11,7 @@ import {
 
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
+import { statusDisplayLabel } from "@/database/statusKinds"
 import { useListStatusesQuery, useUpdateStatusMutation } from "@/store/api"
 
 import {
@@ -72,7 +73,7 @@ export function ReadingStatusButton({
             )}
           >
             <IconBook className="h-4 w-4" />
-            {currentStatus?.name ?? "Set Status"}
+            {currentStatus ? statusDisplayLabel(currentStatus) : "Set Status"}
             <IconChevronDown className="h-4 w-4" />
           </Button>
         }
@@ -86,7 +87,7 @@ export function ReadingStatusButton({
               String(currentStatus?.uuid) === status.uuid && "bg-accent",
             )}
           >
-            {status.name}
+            {statusDisplayLabel(status)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

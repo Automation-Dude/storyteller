@@ -135,7 +135,7 @@ export function MultidimensionalRating({
     if (!sameScores(incoming, draftRef.current)) setDraft({ ...incoming })
   }, [scores, dirty])
 
-  const markDirty = useCallback(() => setDirty(true), [])
+  const markDirty = useCallback(() => { setDirty(true); }, [])
 
   const applyChanges = useCallback(() => {
     onChange(draftRef.current)

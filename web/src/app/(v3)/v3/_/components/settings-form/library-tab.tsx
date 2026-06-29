@@ -23,6 +23,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
 import {
@@ -71,6 +76,7 @@ import {
   type MetadataFieldOverrides,
   defaultMetadataFieldOverrides,
 } from "@/database/settingsTypes"
+import { statusDisplayLabel } from "@/database/statusKinds"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
   useCancelScanMutation,
@@ -79,6 +85,8 @@ import {
   useGetImportRulesQuery,
   useGetScanStateQuery,
   useListCollectionsQuery,
+  useListStatusesQuery,
+  useSetLibraryDefaultStatusMutation,
   useTriggerScanMutation,
   useUpdateImportRuleMutation,
 } from "@/store/api"
@@ -91,6 +99,7 @@ export function LibraryTab() {
   return (
     <div className="space-y-6">
       <LibrarySection />
+      <DefaultStatusSection />
       <ImportRulesSection />
       <ScanControlsSection />
     </div>
@@ -132,6 +141,61 @@ function LibrarySection() {
               />
             )}
           />
+        </CardContent>
+      </Card>
+    </SettingsSection>
+  )
+}
+
+const NONE_STATUS = "__none__"
+
+function DefaultStatusSection() {
+  const t = useTranslation("SettingsPage.tabs.library.sections.defaultStatus")
+  const { data: statuses = [] } = useListStatusesQuery()
+  const [setDefault] = useSetLibraryDefaultStatusMutation()
+
+  const currentDefault = statuses.find((s) => s.isDefault)
+
+  return (
+    <SettingsSection tab="library" section="defaultStatus">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("title")}</CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Field>
+            <FieldLabel>{t("label")}</FieldLabel>
+            <FieldDescription>{t("hint")}</FieldDescription>
+
+            <Select
+              value={currentDefault?.uuid ?? NONE_STATUS}
+              onValueChange={(v) => {
+                if (v === NONE_STATUS) {
+                  if (currentDefault) {
+                    void setDefault({
+                      uuid: currentDefault.uuid as UUID,
+                      isDefault: false,
+                    })
+                  }
+                } else {
+                  void setDefault({ uuid: v as UUID, isDefault: true })
+                }
+              }}
+            >
+              <SelectTrigger className="w-60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE_STATUS}>{t("none")}</SelectItem>
+                {statuses.map((status) => (
+                  <SelectItem key={status.uuid} value={status.uuid}>
+                    {statusDisplayLabel(status)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
         </CardContent>
       </Card>
     </SettingsSection>

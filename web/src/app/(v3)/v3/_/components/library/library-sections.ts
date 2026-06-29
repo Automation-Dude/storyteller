@@ -14,10 +14,18 @@ export type LibraryItem = {
   // present for entities that carry an icon/color (tags, collections)
   icon?: string | null
   color?: string | null
+  // machine-readable kind for statuses, used to identify core statuses
+  kind?: string
 }
 
-// entity types that support edit/delete/merge from the sidebar
-export type LibraryEntityType = "tag" | "creator" | "series" | "collection"
+// entity types that support edit/delete/merge from the sidebar.
+// "status" only supports label editing (no delete/merge).
+export type LibraryEntityType =
+  | "tag"
+  | "creator"
+  | "series"
+  | "collection"
+  | "status"
 
 export type LibrarySectionDef = {
   // the section identifier, used to fetch its facet list from the server.
@@ -234,6 +242,7 @@ export const librarySections = {
   statuses: {
     key: "statuses" as const,
     ...buildRelationSection((book) => (book.status ? [book.status] : [])),
+    entityType: "status" as const,
     toShelfFilter: (itemKey: string): ShelfFilterNode => ({
       type: "condition",
       field: "status",

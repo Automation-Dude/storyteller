@@ -33,8 +33,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfWithBooks } from "@/database/shelves"
-import { ShelfOrderBy } from "@/shelves"
-import { type ShelfFilterNode } from "@/shelves"
+import { type ShelfFilterNode, ShelfOrderBy  } from "@/shelves"
 import {
   getCoverUrl,
   useCreateUserShelfMutation,
@@ -162,7 +161,7 @@ export function ShelfEditor({
         name: data["name"].trim(),
         description: data["description"]?.trim() || null,
         filter: selectionMode === "filter" ? filter : null,
-        orderBy: data["orderBy"] as ShelfOrderBy,
+        orderBy: data["orderBy"],
         orderDirection: data["orderDirection"],
         limitCount: data["limitCount"],
         books: selectionMode === "manual" ? selectedBookUuids : [],

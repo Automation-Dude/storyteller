@@ -36,7 +36,7 @@ function CreatorChipField({
   const values = useWatch({
     control: form.control,
     name: field,
-  }) as BookFormValues["authors"]
+  })
 
   const inline = editingField === field && !isEditing
 

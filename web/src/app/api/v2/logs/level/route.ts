@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
-import { logger } from "@/logging"
 import { env } from "@/env"
+import { logger } from "@/logging"
 
 export const dynamic = "force-dynamic"
 

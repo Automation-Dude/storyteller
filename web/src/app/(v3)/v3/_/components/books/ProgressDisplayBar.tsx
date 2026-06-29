@@ -1,17 +1,15 @@
+import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
+import { STATUS_READ } from "@/database/statusKinds"
 
 import {
   ensureContrast,
   useColorPreferences,
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
-import { cn } from "@/cn"
-
-// TODO: change this when we allow users to change the status names
-const READ_STATUS_NAME = "Read"
 
 export function isBookFinished(book: BookWithRelations): boolean {
-  return book.status?.name === READ_STATUS_NAME
+  return book.status?.name === STATUS_READ
 }
 
 export function getReadingProgress(book: BookWithRelations): number | null {

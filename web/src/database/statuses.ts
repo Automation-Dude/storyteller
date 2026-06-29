@@ -5,6 +5,8 @@ import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
 import { type DB } from "./schema"
+import { isWellKnownStatus } from "./statusKinds"
+import { getUserSetting } from "./userSettings"
 
 export type Status = Selectable<DB["status"]>
 export type NewStatus = Insertable<DB["status"]>
@@ -21,11 +23,87 @@ export async function getStatus(uuid: UUID) {
     .executeTakeFirstOrThrow()
 }
 
-export async function getDefaultStatus(tr?: Transaction<DB>) {
+export async function getDefaultStatus(
+  tr?: Transaction<DB>,
+): Promise<Status | undefined> {
   return (tr ?? db)
     .selectFrom("status")
     .selectAll("status")
     .where("isDefault", "=", true)
+    .executeTakeFirst()
+}
+
+// resolution order: per-user setting > library default > undefined
+export async function resolveDefaultStatusForUser(
+  userId: UUID,
+  tr?: Transaction<DB>,
+): Promise<Status | undefined> {
+  const { found, value } = await getUserSetting(userId, "defaultStatusUuid")
+
+  if (found && typeof value === "string") {
+    const conn = tr ?? db
+
+    const userStatus = await conn
+      .selectFrom("status")
+      .selectAll()
+      .where("uuid", "=", value as UUID)
+      .executeTakeFirst()
+
+    // the referenced status may have been deleted since the user chose it
+    if (userStatus) return userStatus
+  }
+
+  return getDefaultStatus(tr)
+}
+
+export async function createStatus(name: string, label?: string) {
+  return db
+    .insertInto("status")
+    .values({ name, label: label ?? name, isDefault: false })
+    .returningAll()
+    .executeTakeFirstOrThrow()
+}
+
+export async function deleteStatus(uuid: UUID) {
+  const status = await getStatus(uuid)
+
+  if (isWellKnownStatus(status.name)) {
+    throw new Error("Cannot delete a core status")
+  }
+
+  await db.transaction().execute(async (tr) => {
+    await tr
+      .deleteFrom("bookToStatus")
+      .where("statusUuid", "=", uuid)
+      .execute()
+
+    await tr.deleteFrom("status").where("uuid", "=", uuid).execute()
+  })
+}
+
+export async function setLibraryDefaultStatus(uuid: UUID | null) {
+  await db.transaction().execute(async (tr) => {
+    await tr
+      .updateTable("status")
+      .set({ isDefault: false })
+      .where("isDefault", "=", true)
+      .execute()
+
+    if (uuid) {
+      await tr
+        .updateTable("status")
+        .set({ isDefault: true })
+        .where("uuid", "=", uuid)
+        .execute()
+    }
+  })
+}
+
+export async function updateStatusLabel(uuid: UUID, label: string) {
+  return db
+    .updateTable("status")
+    .set({ label })
+    .where("uuid", "=", uuid)
     .executeTakeFirstOrThrow()
 }
 

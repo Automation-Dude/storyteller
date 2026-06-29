@@ -2,8 +2,10 @@
 
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+import { STATUS_READING } from "@/database/statusKinds"
 import { useGetHomeStatsQuery, useListStatusesQuery } from "@/store/api"
-import { V3Link } from "../v3-link"
+
 
 type Tile = {
   key: string
@@ -19,7 +21,7 @@ export function StatsBar() {
   const { data: statuses } = useListStatusesQuery()
 
   if (!stats || !statuses) return null
-  const readingStatus = statuses.find((s) => s.name === "Reading")
+  const readingStatus = statuses.find((s) => s.name === STATUS_READING)
 
   const tiles = [
     {

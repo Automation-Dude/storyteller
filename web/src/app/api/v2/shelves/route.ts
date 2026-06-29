@@ -2,8 +2,11 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { createShelf, getShelves } from "@/database/shelves"
-import { ShelfOrderBy } from "@/shelves"
-import { type ShelfFilter, shelfFilterSchema } from "@/shelves"
+import {
+  type ShelfFilter,
+  type ShelfOrderBy,
+  shelfFilterSchema,
+} from "@/shelves"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"

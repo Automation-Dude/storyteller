@@ -154,6 +154,7 @@ function SidebarProvider({
       hoverExpanded,
     ],
   )
+  //
 
   return (
     <SidebarContext.Provider value={contextValue}>
@@ -330,7 +331,8 @@ function Sidebar({
             ? isHoverExpanded
               ? "pr-0 pl-2"
               : "px-2"
-            : "group-data-[side=left]:border-r group-data-[side=right]:border-l",
+            : // : "group-data-[side=left]:border-r group-data-[side=right]:border-l",
+              null,
           className,
         )}
         onMouseEnter={handleMouseEnter}

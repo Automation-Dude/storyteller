@@ -12,6 +12,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
 import { type HomeSectionWithDetails } from "@/database/shelves"
+import { STATUS_READ, STATUS_READING } from "@/database/statusKinds"
 import { type DisplayField } from "@/sort"
 import {
   useListBooksQuery,
@@ -140,13 +141,13 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
     skip: shelf.kind !== "currentlyReading",
   })
 
-  const readingStatus = statuses?.find((s) => s.name === "Reading")
+  const readingStatus = statuses?.find((s) => s.name === STATUS_READING)
 
   const currentlyReadingBooks = useMemo(() => {
     if (shelf.kind !== "currentlyReading") return []
 
     return allBooks
-      .filter((book) => book.status?.name === "Reading")
+      .filter((book) => book.status?.name === STATUS_READING)
       .sort(
         (a, b) => (b.position?.timestamp ?? 0) - (a.position?.timestamp ?? 0),
       )
@@ -225,7 +226,7 @@ function computeNextUpInSeries(
       const latestRead = latestReadInSeries.get(s.uuid)
 
       if (!latestRead) {
-        if (book.status?.name === "Read") {
+        if (book.status?.name === STATUS_READ) {
           latestReadInSeries.set(s.uuid, book)
         }
         continue
@@ -235,7 +236,7 @@ function computeNextUpInSeries(
         latestRead.series.find((ls) => ls.uuid === s.uuid)?.position ?? 0
 
       if (latestSeriesPos < (s.position ?? 0)) {
-        if (book.status?.name === "Read") {
+        if (book.status?.name === STATUS_READ) {
           latestReadInSeries.set(s.uuid, book)
         } else if (!resultSet.has(book.uuid)) {
           resultSet.add(book.uuid)

@@ -1,9 +1,13 @@
 "use client"
 
 import {
+  Icon,
   IconBook,
   IconDownload,
+  IconH2,
   IconHeadphones,
+  IconList,
+  IconMicrophone,
   IconPlayerPlay,
   IconPlus,
 } from "@tabler/icons-react"
@@ -32,6 +36,7 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 
 import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import {
@@ -41,7 +46,6 @@ import {
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
-import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
   getDownloadUrl,
@@ -127,7 +131,7 @@ export function HeroSection({
     <div className={cn("relative")} style={{ background: tint(primary, 0.2) }}>
       <div
         className={cn(
-          "group/hero relative flex flex-col items-center gap-5 px-6 pt-7 pb-5 text-center",
+          "group/hero relative flex flex-col items-center gap-5 px-6 pt-14 pb-5 text-center",
           // layout reacts to the container width (panel or full page), not the
           // viewport, so the side panel and main view share one layout
           `@xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
@@ -331,25 +335,6 @@ export function HeroSection({
                 />
               </div>
             )}
-
-            {canEdit && !isEditing && (
-              <QuickAddEmptyFields
-                showSubtitle={!book.subtitle && !isFieldActive("subtitle")}
-                showNarrators={
-                  narrators.length === 0 && !isFieldActive("narrators")
-                }
-                showSeries={book.series.length === 0 && !addingSeries}
-                onAddSubtitle={() => {
-                  setEditingField("subtitle")
-                }}
-                onAddNarrators={() => {
-                  setEditingField("narrators")
-                }}
-                onAddSeries={() => {
-                  setAddingSeries(true)
-                }}
-              />
-            )}
           </div>
 
           <div
@@ -358,108 +343,136 @@ export function HeroSection({
               `w-full @xl/book:justify-between`,
             )}
           >
-            <ReadingStatusButton book={book} size="sm" />
+            <div className="flex grow flex-wrap justify-center gap-2 @xl/book:justify-start">
+              <ReadingStatusButton book={book} size="sm" />
 
-            {book.readaloud?.status === "ALIGNED" && (
-              <Button
-                variant="default"
-                size="sm"
-                nativeButton={false}
-                render={
-                  <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
-                    <IconPlayerPlay className="mr-1 h-4 w-4" />
-                    Read
-                  </V3Link>
-                }
-              />
-            )}
-
-            {book.readaloud?.status !== "ALIGNED" && book.ebook && (
-              <Button
-                variant="default"
-                size="sm"
-                nativeButton={false}
-                render={
-                  <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
-                    <IconBook className="mr-1 h-4 w-4" />
-                    Read
-                  </V3Link>
-                }
-              />
-            )}
-
-            {book.readaloud?.status !== "ALIGNED" && book.audiobook && (
-              <Button
-                variant="default"
-                size="sm"
-                nativeButton={false}
-                render={
-                  <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
-                    <IconHeadphones className="mr-1 h-4 w-4" />
-                    Listen
-                  </V3Link>
-                }
-              />
-            )}
-
-            {permissions?.bookDownload &&
-              (book.ebook || book.audiobook || book.readaloud?.filepath) && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
+              <div className="flex flex-wrap justify-center gap-2">
+                {book.readaloud?.status === "ALIGNED" && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    nativeButton={false}
                     render={
-                      <TooltipButton
-                        variant="outline"
-                        size="icon-sm"
-                        className="border-primary text-primary"
-                        aria-label={t("downloads.download")}
-                        tooltip={t("downloads.download")}
-                      >
-                        <IconDownload className="size-3.5 stroke-[1.5]" />
-                      </TooltipButton>
+                      <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
+                        <IconPlayerPlay className="mr-1 h-4 w-4" />
+                        Read
+                      </V3Link>
                     }
                   />
-                  <DropdownMenuContent align="end" className="w-fit">
-                    {book.readaloud?.filepath && (
-                      <DropdownMenuItem
-                        render={
-                          <a
-                            href={getDownloadUrl(book.uuid, "readaloud")}
-                            download
-                          >
-                            <IconReadaloud className="text-st-orange-500 mr-2 h-4 w-4" />
-                            {t("downloads.downloadReadaloud")}
-                          </a>
-                        }
-                      />
-                    )}
+                )}
 
-                    {book.ebook && (
-                      <DropdownMenuItem
-                        render={
-                          <a href={getDownloadUrl(book.uuid, "ebook")} download>
-                            <IconBook className="mr-2 h-4 w-4" />
-                            {t("downloads.downloadEbook")}
-                          </a>
-                        }
-                      />
-                    )}
+                {book.readaloud?.status !== "ALIGNED" && book.ebook && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
+                        <IconBook className="mr-1 h-4 w-4" />
+                        Read
+                      </V3Link>
+                    }
+                  />
+                )}
 
-                    {book.audiobook && (
-                      <DropdownMenuItem
-                        render={
-                          <a
-                            href={getDownloadUrl(book.uuid, "audiobook")}
-                            download
-                          >
-                            <IconHeadphones className="mr-2 h-4 w-4" />
-                            {t("downloads.downloadAudiobook")}
-                          </a>
-                        }
-                      />
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {book.readaloud?.status !== "ALIGNED" && book.audiobook && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
+                        <IconHeadphones className="mr-1 h-4 w-4" />
+                        Listen
+                      </V3Link>
+                    }
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2 self-end">
+              {permissions?.bookDownload &&
+                (book.ebook || book.audiobook || book.readaloud?.filepath) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <TooltipButton
+                          variant="outline"
+                          size="icon-sm"
+                          className="border-primary text-primary"
+                          aria-label={t("downloads.download")}
+                          tooltip={t("downloads.download")}
+                        >
+                          <IconDownload className="size-3.5 stroke-[1.5]" />
+                        </TooltipButton>
+                      }
+                    />
+                    <DropdownMenuContent align="end" className="w-fit">
+                      {book.readaloud?.filepath && (
+                        <DropdownMenuItem
+                          render={
+                            <a
+                              href={getDownloadUrl(book.uuid, "readaloud")}
+                              download
+                            >
+                              <IconReadaloud className="text-st-orange-500 mr-2 h-4 w-4" />
+                              {t("downloads.downloadReadaloud")}
+                            </a>
+                          }
+                        />
+                      )}
+
+                      {book.ebook && (
+                        <DropdownMenuItem
+                          render={
+                            <a
+                              href={getDownloadUrl(book.uuid, "ebook")}
+                              download
+                            >
+                              <IconBook className="mr-2 h-4 w-4" />
+                              {t("downloads.downloadEbook")}
+                            </a>
+                          }
+                        />
+                      )}
+
+                      {book.audiobook && (
+                        <DropdownMenuItem
+                          render={
+                            <a
+                              href={getDownloadUrl(book.uuid, "audiobook")}
+                              download
+                            >
+                              <IconHeadphones className="mr-2 h-4 w-4" />
+                              {t("downloads.downloadAudiobook")}
+                            </a>
+                          }
+                        />
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+              {canEdit && !isEditing && (
+                <QuickAddEmptyFields
+                  showSubtitle={!book.subtitle && !isFieldActive("subtitle")}
+                  showNarrators={
+                    narrators.length === 0 && !isFieldActive("narrators")
+                  }
+                  showSeries={book.series.length === 0 && !addingSeries}
+                  onAddSubtitle={() => {
+                    setEditingField("subtitle")
+                  }}
+                  onAddNarrators={() => {
+                    setEditingField("narrators")
+                  }}
+                  onAddSeries={() => {
+                    setAddingSeries(true)
+                  }}
+                />
               )}
+            </div>
           </div>
         </motion.div>
       </div>
@@ -474,8 +487,6 @@ export function HeroSection({
   )
 }
 
-// dashed "+ field" chips for the commonly-empty metadata fields. kept out of the
-// resting layout (opacity-0) and only revealed when the hero is hovered/focused.
 function QuickAddEmptyFields({
   showSubtitle,
   showNarrators,
@@ -494,46 +505,59 @@ function QuickAddEmptyFields({
   const tLabels = useTranslation("Labels")
   const tFields = useTranslation("Fields.label")
 
-  const chips: { key: string; label: string; onClick: () => void }[] = []
+  const chips: {
+    key: string
+    label: string
+    onClick: () => void
+    icon: Icon
+  }[] = []
   if (showSubtitle)
     chips.push({
       key: "subtitle",
+      icon: IconH2,
       label: tLabels("subtitle"),
       onClick: onAddSubtitle,
     })
   if (showNarrators)
     chips.push({
       key: "narrators",
+      icon: IconMicrophone,
       label: tLabels("narrators"),
       onClick: onAddNarrators,
     })
   if (showSeries)
     chips.push({
       key: "series",
+      icon: IconList,
       label: tFields("series"),
       onClick: onAddSeries,
     })
+  const t = useTranslation("Labels")
 
   if (chips.length === 0) return null
 
   return (
-    <div
-      className={cn(
-        "mt-1 flex flex-wrap justify-center gap-1.5 opacity-0 transition-opacity group-hover/hero:opacity-100 focus-within:opacity-100",
-        `@xl/book:justify-start`,
-      )}
-    >
-      {chips.map((chip) => (
-        <button
-          key={chip.key}
-          type="button"
-          onClick={chip.onClick}
-          className="text-muted-foreground hover:text-foreground hover:border-input inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-0.5 text-xs"
-        >
-          <IconPlus className="h-3 w-3" />
-          {chip.label}
-        </button>
-      ))}
-    </div>
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger
+        render={
+          <TooltipButton
+            className={cn("rounded-full")}
+            tooltip={t("add.plain")}
+            aria-label={t("add.plain")}
+          >
+            <IconPlus className="size-3.5 stroke-[1.5]" />
+          </TooltipButton>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-fit">
+        {chips.map((chip) => (
+          <DropdownMenuItem key={chip.key} onClick={chip.onClick}>
+            <chip.icon className="size-3.5 stroke-[1.5]" />
+            <span className="grow">{chip.label}</span>
+            <IconPlus className="h-3 w-3" />
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

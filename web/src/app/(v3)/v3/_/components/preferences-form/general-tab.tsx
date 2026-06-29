@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { ViewKinds } from "@/database/userPreferencesTypes"

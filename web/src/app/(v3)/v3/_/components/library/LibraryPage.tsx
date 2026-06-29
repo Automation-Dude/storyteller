@@ -5,6 +5,7 @@ import {
   IconBookmarkPlus,
   IconDotsVertical,
   IconEdit,
+  IconLock,
   IconPlus,
   IconSearch,
   IconSortAscending,
@@ -24,6 +25,7 @@ import {
 import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { EditCreatorDialog } from "@v3/_/components/library/EditCreatorDialog"
+import { EditStatusDialog } from "@v3/_/components/library/EditStatusDialog"
 import { EditTagDialog } from "@v3/_/components/library/EditTagDialog"
 import { SidebarEntityActions } from "@v3/_/components/library/SidebarEntityActions"
 import {
@@ -62,6 +64,8 @@ import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateC
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/_CreateSeriesDialog"
 import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/_EditSeriesDialog"
+import { CreateStatusDialog } from "@/app/(v3)/v3/_/components/library/CreateStatusDialog"
+import { isWellKnownStatus } from "@/database/statusKinds"
 import { usePermissions } from "@/hooks/usePermissions"
 import { type ShelfFilterNode } from "@/shelves"
 import {
@@ -77,6 +81,7 @@ import {
   useDeleteCollectionMutation,
   useDeleteCreatorMutation,
   useDeleteSeriesMutation,
+  useDeleteStatusMutation,
   useDeleteTagMutation,
   useGetSectionFacetsQuery,
   useListInfiniteBooksInfiniteQuery,
@@ -109,6 +114,7 @@ function useDeleteEntity(entityType?: LibraryEntityType) {
   const [deleteCreator] = useDeleteCreatorMutation()
   const [deleteSeries] = useDeleteSeriesMutation()
   const [deleteCollection] = useDeleteCollectionMutation()
+  const [deleteStatusMut] = useDeleteStatusMutation()
 
   return useCallback(
     async (uuid: UUID) => {
@@ -121,9 +127,18 @@ function useDeleteEntity(entityType?: LibraryEntityType) {
           return deleteSeries({ uuid }).unwrap()
         case "collection":
           return deleteCollection({ uuid }).unwrap()
+        case "status":
+          return deleteStatusMut({ uuid }).unwrap()
       }
     },
-    [entityType, deleteTag, deleteCreator, deleteSeries, deleteCollection],
+    [
+      entityType,
+      deleteTag,
+      deleteCreator,
+      deleteSeries,
+      deleteCollection,
+      deleteStatusMut,
+    ],
   )
 }
 
@@ -333,7 +348,8 @@ export function LibraryPage({
     [gridData?.pages],
   )
 
-  const selectedItemName = allItems.find((i) => i.key === selectedItem)?.name
+  const selectedFacet = allItems.find((i) => i.key === selectedItem)
+  const selectedItemName = selectedFacet?.name
 
   // the detail panel fetches by uuid; this only seeds its cache when the book is
   // already on a loaded page (deep links still resolve via the fetch).
@@ -421,6 +437,11 @@ export function LibraryPage({
   const canPin = !!section.toShelfFilter
   const entityType = section.entityType
 
+  const isSelectedCoreStatus =
+    entityType === "status" &&
+    !!selectedFacet?.kind &&
+    isWellKnownStatus(selectedFacet.kind)
+
   const itemSelection = useItemSelection()
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -438,7 +459,8 @@ export function LibraryPage({
   const canCreate =
     (entityType === "collection" && !!permissions?.collectionCreate) ||
     ((entityType === "tag" || entityType === "series") &&
-      !!permissions?.bookUpdate)
+      !!permissions?.bookUpdate) ||
+    (entityType === "status" && !!permissions?.settingsUpdate)
 
   const createLabel =
     entityType === "collection"
@@ -447,7 +469,9 @@ export function LibraryPage({
         ? tEntity("createTag")
         : entityType === "series"
           ? tEntity("createSeries")
-          : undefined
+          : entityType === "status"
+            ? tEntity("createStatus")
+            : undefined
 
   const handleCreateItem = useCallback(() => {
     setCreateDialogOpen(true)
@@ -590,7 +614,6 @@ export function LibraryPage({
     </>
   )
 
-  // canCreate already narrows entityType to collection | tag | series
   const createDialog = !canCreate ? null : entityType === "collection" ? (
     <CreateCollectionDialog
       open={createDialogOpen}
@@ -598,6 +621,11 @@ export function LibraryPage({
     />
   ) : entityType === "tag" ? (
     <CreateTagDialog
+      open={createDialogOpen}
+      onOpenChange={setCreateDialogOpen}
+    />
+  ) : entityType === "status" ? (
+    <CreateStatusDialog
       open={createDialogOpen}
       onOpenChange={setCreateDialogOpen}
     />
@@ -699,7 +727,7 @@ export function LibraryPage({
                   </DropdownMenuItem>
                 )}
 
-                {entityType && (
+                {entityType && !isSelectedCoreStatus && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -801,6 +829,16 @@ function EntityEditDialog({
         series={
           item ? { uuid: item.key, name: item.name, description: null } : null
         }
+      />
+    )
+  }
+
+  if (entityType === "status") {
+    return (
+      <EditStatusDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        status={item ? { uuid: item.key, name: item.name } : null}
       />
     )
   }
@@ -979,28 +1017,34 @@ function SidebarPanel({
               </DropdownMenuItem>
             )}
 
-            {entityType && menuTarget && (
-              <>
-                {(onEditItem || onPinItem) && <DropdownMenuSeparator />}
-                <DropdownMenuItem
-                  onClick={(event) => {
-                    rowDeleteAction.confirm(event)
-                    setMenuOpen(false)
-                  }}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <IconTrash className="mr-2 h-4 w-4" />
-                  {tEntity("delete")}
-                </DropdownMenuItem>
-              </>
-            )}
+            {entityType &&
+              menuTarget &&
+              !(
+                entityType === "status" &&
+                menuTarget.kind &&
+                isWellKnownStatus(menuTarget.kind)
+              ) && (
+                <>
+                  {(onEditItem || onPinItem) && <DropdownMenuSeparator />}
+                  <DropdownMenuItem
+                    onClick={(event) => {
+                      rowDeleteAction.confirm(event)
+                      setMenuOpen(false)
+                    }}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <IconTrash className="mr-2 h-4 w-4" />
+                    {tEntity("delete")}
+                  </DropdownMenuItem>
+                </>
+              )}
           </DropdownMenuContent>
         </DropdownMenu>
 
         <ConfirmDialog {...rowDeleteAction.dialogProps} />
       </div>
 
-      {entityType && itemSelection && (
+      {entityType && entityType !== "status" && itemSelection && (
         <SidebarEntityActions
           entityType={entityType}
           selectedItems={itemSelection.selectedItems}
@@ -1233,6 +1277,10 @@ function SidebarRow({
           />
         ) : null}
         <span className="min-w-0 truncate">{item.name}</span>
+
+        {item.kind && isWellKnownStatus(item.kind) && (
+          <IconLock className="text-muted-foreground/60 size-3 shrink-0" />
+        )}
       </button>
 
       <div className="flex shrink-0 items-center gap-1 pr-2">

@@ -323,19 +323,22 @@ export async function createUser(
 
     const defaultStatus = await getDefaultStatus(tr)
 
-    await tr
-      .insertInto("bookToStatus")
-      .columns(["bookUuid", "userId", "statusUuid"])
-      .expression((eb) =>
-        eb
-          .selectFrom("book")
-          .select((eb) => [
-            "book.uuid",
-            eb.val(userId).as("userId"),
-            eb.val(defaultStatus.uuid).as("statusUuid"),
-          ]),
-      )
-      .execute()
+    // new users haven't set a per-user default yet, so library default is used
+    if (defaultStatus) {
+      await tr
+        .insertInto("bookToStatus")
+        .columns(["bookUuid", "userId", "statusUuid"])
+        .expression((eb) =>
+          eb
+            .selectFrom("book")
+            .select((eb) => [
+              "book.uuid",
+              eb.val(userId).as("userId"),
+              eb.val(defaultStatus.uuid).as("statusUuid"),
+            ]),
+        )
+        .execute()
+    }
   })
 }
 

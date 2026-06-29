@@ -16,6 +16,9 @@ export type LibraryFacet = {
   bookCount: number
   icon?: string | null
   color?: string | null
+  // the machine-readable kind, used for status facets to determine if the
+  // status is a well-known/core status
+  kind?: string
 }
 
 // library sections whose facet list + per-facet book counts are computed
@@ -340,10 +343,11 @@ async function statusFacets(userId: UUID): Promise<LibraryFacet[]> {
     .where("bookToStatus.userId", "=", userId)
     .select((eb) => [
       "status.uuid as key",
-      "status.name as name",
+      sql<string>`coalesce(status.label, status.name)`.as("name"),
+      "status.name as kind",
       eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
     ])
-    .groupBy(["status.uuid", "status.name"])
+    .groupBy(["status.uuid", "status.label", "status.name"])
     .execute()
 }
 

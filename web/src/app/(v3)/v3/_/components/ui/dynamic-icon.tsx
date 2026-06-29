@@ -1,6 +1,6 @@
 "use client"
 
-import { type ComponentProps, lazy, memo, Suspense, useMemo } from "react"
+import { type ComponentProps, Suspense, lazy, memo, useMemo } from "react"
 
 import { ICON_MAP } from "@/icons/icon-registry"
 

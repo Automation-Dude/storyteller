@@ -6,8 +6,8 @@ import {
   IconBook,
   IconPalette,
   IconSearch,
-  IconSettings,
   IconSettings2,
+  IconSettings,
   IconUser,
   IconX,
 } from "@tabler/icons-react"
@@ -293,7 +293,7 @@ export function PreferencesForm({
             />
           </PageHeader>
 
-          <div className="min-h-0 flex-1 overflow-hidden">{contentArea}</div>
+          {contentArea}
         </div>
       )
     }
@@ -329,7 +329,7 @@ export function PreferencesForm({
           />
         </PageHeader>
 
-        <div className="min-h-0 flex-1 overflow-hidden">{contentArea}</div>
+        {contentArea}
       </PageMain>
     </PageLayout>
   )
@@ -380,14 +380,18 @@ function PreferencesSidebar({
                   type="text"
                   placeholder={t("searchPreferences")}
                   value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={(e) => {
+                    onSearchChange(e.target.value)
+                  }}
                   className="h-7 pr-7 pl-8 text-xs"
                 />
 
                 {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => onSearchChange("")}
+                    onClick={() => {
+                      onSearchChange("")
+                    }}
                     className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
                   >
                     <IconX className="h-3 w-3" />
@@ -466,7 +470,9 @@ function SidebarTabList({
         <button
           key={tab.value}
           type="button"
-          onClick={() => onTabChange(tab.value)}
+          onClick={() => {
+            onTabChange(tab.value)
+          }}
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
             activeTab === tab.value

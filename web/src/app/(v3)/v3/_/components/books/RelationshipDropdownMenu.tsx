@@ -535,10 +535,6 @@ function FacetEditor({
   )
 }
 
-// ---------------------------------------------------------------------------
-// number range editor (min/max + slider + optional asset-format scope)
-// ---------------------------------------------------------------------------
-
 type ScaleUnit = NonNullable<FieldDef["scale"]>["unit"]
 
 function unitDisplay(unit: ScaleUnit): {
@@ -702,11 +698,13 @@ function NumberRangeEditor({
       {sliderBounds && (
         <Slider
           secondThumb
+          thumbAlignment="edge-client-only"
+          className="[&_[data-slot='slider-indicator']]:bg-primary/70 [&_[data-slot='slider-thumb']]:border-primary/70"
           min={sliderBounds.min}
           max={sliderBounds.max}
           step={sliderBounds.step}
-          value={[lo ?? sliderBounds.min, hi ?? sliderBounds.max]}
-          onValueChange={(v) => {
+          defaultValue={[lo ?? sliderBounds.min, hi ?? sliderBounds.max]}
+          onValueCommitted={(v) => {
             const arr = (Array.isArray(v) ? v : [v]) as number[]
             set(arr[0] ?? null, arr[1] ?? null)
           }}

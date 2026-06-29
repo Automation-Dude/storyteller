@@ -4,7 +4,6 @@ import { IconChartRadar, IconPencil, IconStar } from "@tabler/icons-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
-import { SEAMLESS_BOX } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import { MultidimensionalRating } from "@v3/_/components/books/BookDetails/sections/MultidimensionalRating"
 import { RatingInput } from "@v3/_/components/books/RatingInput"
 import { Button } from "@v3/_/components/ui/button"
@@ -14,6 +13,8 @@ import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { SEAMLESS_BOX } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import {
   type RatingDimensionScores,
   computeRatingAverage,
@@ -24,9 +25,9 @@ import {
   useSetBookRatingMutation,
 } from "@/store/api"
 
-import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
+
 import { CollapsibleSection } from "./CollapsibleSection"
-import { TooltipButton } from "../../../ui/tooltip-button"
+import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
 
 // inline number editor styled like EditableField (SEAMLESS_BOX), but committing
 // through setBookRating since the rating is per-user and not part of the form

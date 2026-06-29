@@ -11,9 +11,6 @@ import {
   useState,
 } from "react"
 
-import { type BookWithRelations } from "@/database/books"
-import { type GridCardSize } from "@/database/userPreferencesTypes"
-import { type DisplayField, type SortContext } from "@/sort"
 
 import { BookCard } from "@v3/_/components/books/BookCard"
 import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
@@ -27,6 +24,10 @@ import {
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+
+import { type BookWithRelations } from "@/database/books"
+import { type GridCardSize } from "@/database/userPreferencesTypes"
+import { type DisplayField, type SortContext } from "@/sort"
 
 import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
