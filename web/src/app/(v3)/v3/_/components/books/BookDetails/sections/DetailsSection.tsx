@@ -58,7 +58,7 @@ export function DetailsSection({ className }: { className?: string }) {
           <EditableText
             name="publicationDate"
             type="date"
-            className="min-h-8 text-sm"
+            className="min-h-6 text-sm"
             renderDisplay={(value) =>
               formatDate(value, { timeStyle: undefined })
             }

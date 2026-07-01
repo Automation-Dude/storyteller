@@ -135,7 +135,9 @@ export function MultidimensionalRating({
     if (!sameScores(incoming, draftRef.current)) setDraft({ ...incoming })
   }, [scores, dirty])
 
-  const markDirty = useCallback(() => { setDirty(true); }, [])
+  const markDirty = useCallback(() => {
+    setDirty(true)
+  }, [])
 
   const applyChanges = useCallback(() => {
     onChange(draftRef.current)
@@ -175,9 +177,6 @@ export function MultidimensionalRating({
   const count = inUseDimensions.length
   const average = computeRatingAverage(draft)
 
-  // the star rating is a manual override when it diverges from the average the
-  // *committed* dimensions compute to; comparing against the live draft instead
-  // would read every in-progress dimension tweak as a manual override
   const committedAverage = computeRatingAverage(scores ?? {})
   const isManualOverride =
     rating != null &&

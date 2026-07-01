@@ -49,8 +49,8 @@ import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
   getDownloadUrl,
-  useDeleteBookRatingMutation,
-  useSetBookRatingMutation,
+  useDeleteUserBookRatingMutation,
+  useSetUserBookRatingMutation,
 } from "@/store/api"
 
 import {
@@ -82,8 +82,8 @@ export function HeroSection({
   const c = useCommon()
 
   const permissions = usePermissions()
-  const [setBookRating] = useSetBookRatingMutation()
-  const [deleteBookRating] = useDeleteBookRatingMutation()
+  const [setUserBookRating] = useSetUserBookRatingMutation()
+  const [deleteUserBookRating] = useDeleteUserBookRatingMutation()
 
   const authors = book.authors
   const narrators = book.narrators
@@ -105,21 +105,17 @@ export function HeroSection({
     : narrators.slice(0, MAX_CREATORS)
   const hiddenNarratorCount = narrators.length - MAX_CREATORS
 
-  // a multidimensional rating is edited in the review section; the hero just
-  // shows its computed average read-only so it can't be overridden by accident
   const hasDimensions =
-    !!book.rating?.dimensions && Object.keys(book.rating.dimensions).length > 0
+    !!book.userBookRating?.dimensions &&
+    Object.keys(book.userBookRating.dimensions).length > 0
 
   const handleRatingChange = async (rating: number | null) => {
-    // send only the rating so any review/dimensions are preserved: with
-    // dimensions present this reads as a manual override, and the server drops
-    // the row on its own when nothing is left to keep
-    const review = book.rating?.review ?? null
-    const dims = book.rating?.dimensions ?? null
+    const review = book.userBookRating?.review ?? null
+    const dims = book.userBookRating?.dimensions ?? null
     if (rating == null && !review && !dims) {
-      await deleteBookRating({ bookUuid: book.uuid })
+      await deleteUserBookRating({ bookUuid: book.uuid })
     } else {
-      await setBookRating({ bookUuid: book.uuid, rating })
+      await setUserBookRating({ bookUuid: book.uuid, rating })
     }
   }
 
@@ -133,11 +129,7 @@ export function HeroSection({
       <div
         className={cn(
           "group/hero relative flex flex-col items-center gap-5 px-6 pt-14 pb-5 text-center",
-          // layout reacts to the container width (panel or full page), not the
-          // viewport, so the side panel and main view share one layout
           `@xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
-          // fixed slim height only at rest; editing needs room for the cover
-          // upload slots (movement on entering edit mode is acceptable)
           !isEditing && !editingCovers && `@xl/book:h-80`,
           // !compact && `w-screen`,
           className,
@@ -308,13 +300,13 @@ export function HeroSection({
                   title="click to override"
                 >
                   <RatingDisplay
-                    rating={book.rating?.rating ?? null}
+                    rating={book.userBookRating?.rating ?? null}
                     color={ratingColor}
                   />
                 </button>
               ) : (
                 <RatingInput
-                  value={book.rating?.rating ?? null}
+                  value={book.userBookRating?.rating ?? null}
                   onChange={handleRatingChange}
                   color={ratingColor}
                 />

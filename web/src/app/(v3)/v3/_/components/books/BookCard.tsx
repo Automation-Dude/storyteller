@@ -1,9 +1,8 @@
 import { IconDotsVertical } from "@tabler/icons-react"
-import Link from "next/link"
 import { useFormatter, useLocale } from "next-intl"
+import Link from "next/link"
 import { Fragment, memo, useCallback, useMemo, useState } from "react"
 
-import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
@@ -12,7 +11,6 @@ import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { type DisplayField, type SortContext } from "@/sort"
-
 
 import { BookCover, isDualFormat } from "./BookCover"
 import {
@@ -74,9 +72,10 @@ export function SecondaryText({
 
   switch (field) {
     case "userRating":
-      return book.rating?.rating != null ? (
+      return book.userBookRating?.rating != null ? (
         <span>
-          {ratingIcon === "star" ? "★" : "♥"} {book.rating.rating.toFixed(2)}
+          {ratingIcon === "star" ? "★" : "♥"}{" "}
+          {book.userBookRating.rating.toFixed(2)}
         </span>
       ) : (
         none
@@ -284,24 +283,19 @@ export const BookCard = memo(function BookCard({
         </div>
 
         {showCheckbox && (
-          <div
+          <button
             className={cn(
-              "absolute top-4.5 left-3 z-30 transition-opacity",
+              "absolute top-1.5 left-1.5 z-30 transition-opacity",
               !isBookSelected &&
                 !isSelecting &&
                 "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+              "hover:border-primary bg-background size-4 rounded-full border shadow-sm transition-colors focus-within:border-blue-500",
+              isBookSelected && "bg-primary",
             )}
             onClick={handleCheckboxClick}
-          >
-            <Checkbox
-              tabIndex={0}
-              checked={isBookSelected}
-              className="hover:border-primary relative h-5 w-5 rounded-full border-4 border-white shadow-sm transition-colors focus-within:border-blue-500 data-checked:border-2 data-checked:border-white"
-              onClick={(e) => {
-                e.stopPropagation()
-              }}
-            />
-          </div>
+            aria-label="Select book"
+            type="button"
+          ></button>
         )}
 
         {isSynced && !isMobile && (
@@ -318,29 +312,24 @@ export const BookCard = memo(function BookCard({
         )}
 
         {onOpenMenu && (
-          <div
+          <Button
+            variant="secondary"
+            aria-label="Open menu"
+            size="icon"
             className={cn(
-              "absolute bottom-3 left-3 z-20",
+              "absolute bottom-2 left-1.5 z-20",
+              "flex size-4 items-center justify-center rounded-full text-white transition-colors",
               !isMobile &&
                 !isMenuOpen &&
                 "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
             )}
             onClick={(e) => {
               e.stopPropagation()
+              onOpenMenu(book, e.currentTarget)
             }}
           >
-            <Button
-              variant="outline"
-              size="icon"
-              className="flex size-6 items-center justify-center rounded-full border-2 border-white text-white transition-colors"
-              onClick={(e) => {
-                e.stopPropagation()
-                onOpenMenu(book, e.currentTarget)
-              }}
-            >
-              <IconDotsVertical className="size-3.5" />
-            </Button>
-          </div>
+            <IconDotsVertical className="size-3.5" />
+          </Button>
         )}
       </div>
 

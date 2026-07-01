@@ -66,8 +66,15 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
   const duration = getField<number | null>(formData, "duration") ?? null
 
   // null means delete the rating
-  const rating = getField<UserBookRatingRelation | null>(formData, "rating")
-  if (rating && rating.rating == null && rating.review == null) {
+  const userBookRating = getField<UserBookRatingRelation | null>(
+    formData,
+    "userBookRating",
+  )
+  if (
+    userBookRating &&
+    userBookRating.rating == null &&
+    userBookRating.review == null
+  ) {
     return NextResponse.json(
       {
         message:
@@ -79,10 +86,10 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
 
   // zod where are you i need you
   if (
-    rating &&
-    rating.rating != null &&
-    !isNaN(rating.rating) &&
-    (rating.rating < 0 || rating.rating > 5)
+    userBookRating &&
+    userBookRating.rating != null &&
+    !isNaN(userBookRating.rating) &&
+    (userBookRating.rating < 0 || userBookRating.rating > 5)
   ) {
     return NextResponse.json(
       {
@@ -188,9 +195,9 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         status: { statusUuid: status!, userId: request.auth.user.id },
       }),
-      ...(fields.has("rating") && {
-        rating: rating
-          ? { ...rating, userId: request.auth.user.id }
+      ...(fields.has("userBookRating") && {
+        userBookRating: userBookRating
+          ? { ...userBookRating, userId: request.auth.user.id }
           : { userId: request.auth.user.id },
       }),
     },

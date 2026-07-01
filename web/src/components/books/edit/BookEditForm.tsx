@@ -199,7 +199,7 @@ export function BookEditForm({ book }: Props) {
         onSubmit={form.onSubmit(async (values) => {
           setSavedState(SaveState.LOADING)
           const { textCover, audioCover, ...update } = values
-          const { rating, ...bookWithoutRating } = book
+          const { rating, userBookRating, ...bookWithoutRating } = book
           try {
             await updateBook({
               update: {

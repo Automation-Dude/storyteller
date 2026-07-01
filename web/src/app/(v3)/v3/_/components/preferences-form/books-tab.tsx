@@ -345,6 +345,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                 </span>
                 <MultidimensionalRating
                   dimensions={dimensions}
+                  rating={3.5}
+                  onRatingChange={() => {}}
+                  onUseAverage={() => {}}
                   scores={Object.fromEntries(
                     dimensions.map((d, i) => [d.id, 3.5 - (i % 2)]),
                   )}

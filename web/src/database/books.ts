@@ -499,7 +499,6 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
     .selectFrom("book")
     .selectAll("book")
     .select((eb) => [
-      "book.rating as globalBookRating",
       jsonArrayFrom(
         eb
           .selectFrom("bookToCreator")
@@ -634,7 +633,7 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
                 ])
                 .whereRef("userBookRating.bookUuid", "=", "book.uuid")
                 .where("userBookRating.userId", "=", userId),
-            ).as("rating"),
+            ).as("userBookRating"),
           ]
         : []),
       jsonObjectFrom(
@@ -1181,7 +1180,7 @@ export type BookRelationsUpdate = {
   readaloud?: ReadaloudRelation
   books?: UUID[]
   status?: StatusRelation
-  rating?: UserBookRatingRelation
+  userBookRating?: UserBookRatingRelation
 }
 
 export async function updateBook(
@@ -1442,22 +1441,25 @@ export async function updateBook(
         .execute()
     }
 
-    if (relations.rating !== undefined) {
-      if (relations.rating.rating == null && relations.rating.review == null) {
+    if (relations.userBookRating !== undefined) {
+      if (
+        relations.userBookRating.rating == null &&
+        relations.userBookRating.review == null
+      ) {
         // delete the rating
         await tr
           .deleteFrom("userBookRating")
           .where("bookUuid", "=", uuid)
-          .where("userId", "=", relations.rating.userId)
+          .where("userId", "=", relations.userBookRating.userId)
           .execute()
       } else {
         await tr
           .insertInto("userBookRating")
-          .values({ ...relations.rating, bookUuid: uuid })
+          .values({ ...relations.userBookRating, bookUuid: uuid })
           .onConflict((oc) =>
             oc.columns(["userId", "bookUuid"]).doUpdateSet({
-              rating: relations.rating?.rating,
-              review: relations.rating?.review,
+              rating: relations.userBookRating?.rating,
+              review: relations.userBookRating?.review,
             }),
           )
           .execute()

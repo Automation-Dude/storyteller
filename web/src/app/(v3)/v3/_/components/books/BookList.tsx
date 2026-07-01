@@ -114,8 +114,8 @@ export function ColumnValue({
     case "authors":
       return formatList(book.authors.map((a) => a.name)) || "\u2014"
     case "userRating":
-      return book.rating?.rating != null
-        ? `\u2605 ${book.rating.rating.toFixed(1)}`
+      return book.userBookRating?.rating != null
+        ? `\u2605 ${book.userBookRating.rating.toFixed(1)}`
         : "\u2014"
     case "publicationDate":
       if (!book.publicationDate) return "\u2014"

@@ -21,10 +21,9 @@ import {
   formatRating,
 } from "@/database/ratingDimensions"
 import {
-  useDeleteBookRatingMutation,
-  useSetBookRatingMutation,
+  useDeleteUserBookRatingMutation,
+  useSetUserBookRatingMutation,
 } from "@/store/api"
-
 
 import { CollapsibleSection } from "./CollapsibleSection"
 import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
@@ -120,12 +119,13 @@ export function ReviewSection({ className }: { className?: string }) {
   const c = useCommon()
   const { ratingDimensions } = useUserPreferences()
 
-  const [setBookRating, { isLoading: isSaving }] = useSetBookRatingMutation()
-  const [deleteBookRating] = useDeleteBookRatingMutation()
+  const [setUserBookRating, { isLoading: isSaving }] =
+    useSetUserBookRatingMutation()
+  const [deleteUserBookRating] = useDeleteUserBookRatingMutation()
 
-  const currentRating = book.rating?.rating ?? null
-  const currentReview = book.rating?.review ?? ""
-  const currentDimensions = book.rating?.dimensions ?? null
+  const currentRating = book.userBookRating?.rating ?? null
+  const currentReview = book.userBookRating?.review ?? ""
+  const currentDimensions = book.userBookRating?.dimensions ?? null
   const hasDimensions =
     !!currentDimensions && Object.keys(currentDimensions).length > 0
 
@@ -145,10 +145,10 @@ export function ReviewSection({ className }: { className?: string }) {
   // row when there's nothing left to keep
   const applyManualRating = (value: number | null) => {
     if (value == null && !currentReview) {
-      void deleteBookRating({ bookUuid: book.uuid })
+      void deleteUserBookRating({ bookUuid: book.uuid })
       return
     }
-    void setBookRating({
+    void setUserBookRating({
       bookUuid: book.uuid,
       rating: value,
       review: currentReview || null,
@@ -164,28 +164,28 @@ export function ReviewSection({ className }: { className?: string }) {
     const scores: RatingDimensionScores = Object.fromEntries(
       ratingDimensions.map((d) => [d.id, base]),
     )
-    void setBookRating({ bookUuid: book.uuid, dimensions: scores })
+    void setUserBookRating({ bookUuid: book.uuid, dimensions: scores })
   }
 
   const removeAdvancedRating = useCallback(() => {
     if (currentReview) {
-      void setBookRating({
+      void setUserBookRating({
         bookUuid: book.uuid,
         rating: null,
         review: currentReview,
         dimensions: null,
       })
     } else {
-      void deleteBookRating({ bookUuid: book.uuid })
+      void deleteUserBookRating({ bookUuid: book.uuid })
     }
-  }, [book.uuid, currentReview, deleteBookRating, setBookRating])
+  }, [book.uuid, currentReview, deleteUserBookRating, setUserBookRating])
 
   const handleSaveReview = async () => {
     const text = draft.trim()
     if (!text && currentRating == null && !hasDimensions) {
-      await deleteBookRating({ bookUuid: book.uuid })
+      await deleteUserBookRating({ bookUuid: book.uuid })
     } else {
-      await setBookRating({
+      await setUserBookRating({
         bookUuid: book.uuid,
         review: text || null,
       })
@@ -195,9 +195,9 @@ export function ReviewSection({ className }: { className?: string }) {
 
   const handleChangeDimensions = useCallback(
     (dimensions: RatingDimensionScores) => {
-      void setBookRating({ bookUuid: book.uuid, dimensions })
+      void setUserBookRating({ bookUuid: book.uuid, dimensions })
     },
-    [book.uuid, setBookRating],
+    [book.uuid, setUserBookRating],
   )
 
   // a manual star rating that sits on top of the dimensions; sent without
@@ -206,17 +206,20 @@ export function ReviewSection({ className }: { className?: string }) {
   const setManualRating = useCallback(
     (value: number | null) => {
       if (value != null) lastManualRef.current = value
-      void setBookRating({ bookUuid: book.uuid, rating: value })
+      void setUserBookRating({ bookUuid: book.uuid, rating: value })
     },
-    [book.uuid, setBookRating],
+    [book.uuid, setUserBookRating],
   )
 
   // re-sync the star rating to whatever the dimensions currently average to
   const useDimensionAverage = useCallback(() => {
     if (currentDimensions) {
-      void setBookRating({ bookUuid: book.uuid, dimensions: currentDimensions })
+      void setUserBookRating({
+        bookUuid: book.uuid,
+        dimensions: currentDimensions,
+      })
     }
-  }, [book.uuid, currentDimensions, setBookRating])
+  }, [book.uuid, currentDimensions, setUserBookRating])
 
   const dimensionAverage = computeRatingAverage(currentDimensions)
   const isManualOverride =
@@ -248,7 +251,9 @@ export function ReviewSection({ className }: { className?: string }) {
               aria-label={
                 currentReview ? c("actions.edit") : t("review.addReview")
               }
-              tooltip={currentReview ? c("actions.edit") : t("review.addReview")}
+              tooltip={
+                currentReview ? c("actions.edit") : t("review.addReview")
+              }
             >
               <IconPencil className="size-3.5 stroke-[1.5]" />
             </TooltipButton>

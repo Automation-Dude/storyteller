@@ -131,7 +131,7 @@ function sortValue(
     case "publicationDate":
       return book.publicationDate
     case "userRating":
-      return book.rating?.rating ?? null
+      return book.userBookRating?.rating ?? null
     case "pageCount":
       return book.ebook?.pageCount ?? book.pageCount
     case "duration":

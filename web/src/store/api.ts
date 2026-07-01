@@ -656,7 +656,7 @@ export const api = createApi({
           collections?: UUID[]
           tags?: string[]
           narrators?: string[]
-          rating?: UserBookRatingRelation
+          userBookRating?: UserBookRatingRelation
           description?: string | null
         }
         textCover?: File | null
@@ -834,11 +834,11 @@ export const api = createApi({
                 }
               }
 
-              if (update.rating !== undefined) {
+              if (update.userBookRating !== undefined) {
                 Object.assign(draft, {
-                  rating: {
-                    rating: update.rating.rating ?? null,
-                    review: update.rating.review ?? null,
+                  userBookRating: {
+                    rating: update.userBookRating.rating ?? null,
+                    review: update.userBookRating.review ?? null,
                   },
                 })
               }
@@ -1409,13 +1409,13 @@ export const api = createApi({
         body,
       }),
     }),
-    getBookRating: build.query<UserBookRating | null, { bookUuid: UUID }>({
+    getUserBookRating: build.query<UserBookRating | null, { bookUuid: UUID }>({
       query: ({ bookUuid }) => `/books/${bookUuid}/rating`,
       providesTags: (_result, _error, { bookUuid }) => [
         { type: "UserRatings", id: `${bookUuid}-${_result?.userId}` },
       ],
     }),
-    setBookRating: build.mutation<
+    setUserBookRating: build.mutation<
       UserBookRating | null,
       {
         bookUuid: UUID
@@ -1429,10 +1429,13 @@ export const api = createApi({
         method: "PUT",
         body,
       }),
+      // "Books" (broad) so the infinite list refetches too, not just getBook: an
+      // id-scoped { Books, id } tag doesn't match the list's general "Books"
+      // provider, leaving the list (and the panel's selectedBook it feeds) stale.
       invalidatesTags: (_result, _error, { bookUuid }) => [
-        { type: "UserRatings", id: bookUuid },
+        { type: "UserRatings", id: `${bookUuid}-${_result?.userId}` },
         "UserRatings",
-        { type: "Books", id: bookUuid },
+        "Books",
       ],
 
       onQueryStarted: async (
@@ -1441,7 +1444,7 @@ export const api = createApi({
       ) => {
         const patchResult = dispatch(
           api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
-            const existing = draft.rating
+            const existing = draft.userBookRating
             const nextReview =
               review !== undefined ? review : existing?.review ?? null
 
@@ -1470,10 +1473,8 @@ export const api = createApi({
               nextDimensions = existing?.dimensions ?? null
             }
 
-            // Object.assign (not a direct `draft.rating =`) sidesteps the
-            // intersection type kysely infers for the rating column
             Object.assign(draft, {
-              rating:
+              userBookRating:
                 nextRating == null && nextReview == null
                   ? null
                   : {
@@ -1492,7 +1493,7 @@ export const api = createApi({
         }
       },
     }),
-    deleteBookRating: build.mutation<void, { bookUuid: UUID }>({
+    deleteUserBookRating: build.mutation<void, { bookUuid: UUID }>({
       query: ({ bookUuid }) => ({
         url: `/books/${bookUuid}/rating`,
         method: "DELETE",
@@ -1500,13 +1501,13 @@ export const api = createApi({
       invalidatesTags: (_result, _error, { bookUuid }) => [
         { type: "UserRatings", id: bookUuid },
         "UserRatings",
-        { type: "Books", id: bookUuid },
+        "Books",
       ],
 
       onQueryStarted: async ({ bookUuid }, { dispatch, queryFulfilled }) => {
         const patchResult = dispatch(
           api.util.updateQueryData("getBook", { uuid: bookUuid }, (draft) => {
-            draft.rating = null
+            draft.userBookRating = null
           }),
         )
 
@@ -1517,7 +1518,7 @@ export const api = createApi({
         }
       },
     }),
-    listUserRatings: build.query<UserBookRating[], void>({
+    listUserBookRatings: build.query<UserBookRating[], void>({
       query: () => "/user/ratings",
       providesTags: (ratings) =>
         ratings?.map((r) => ({
@@ -2009,10 +2010,10 @@ export const {
   useUpdateImportRuleMutation,
   useDeleteImportRuleMutation,
   useDeleteImportRulesMutation,
-  useGetBookRatingQuery,
-  useSetBookRatingMutation,
-  useDeleteBookRatingMutation,
-  useListUserRatingsQuery,
+  useGetUserBookRatingQuery,
+  useSetUserBookRatingMutation,
+  useDeleteUserBookRatingMutation,
+  useListUserBookRatingsQuery,
   useGetHomeStatsQuery,
   useListHomeShelvesQuery,
   useSetHomeShelvesMutation,
