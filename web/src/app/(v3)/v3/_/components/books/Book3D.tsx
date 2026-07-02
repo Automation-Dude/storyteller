@@ -259,8 +259,8 @@ function DescriptionBack({
     .replace(/\s+/g, " ")
     .trim()
 
-  const fontSize = clamp(Math.round(width * 0.06), 8, 18)
-  const backFontSize = clamp(Math.round(width * 0.04), 8, 13)
+  const fontSize = clamp(Math.round(width * 0.06), 5, 18)
+  const backFontSize = clamp(Math.round(width * 0.03), 3, 13)
   const pad = Math.round(width * 0.07)
 
   return (
@@ -274,12 +274,14 @@ function DescriptionBack({
     >
       {text ? (
         <p
-          className="max-h-full text-left font-serif leading-relaxed first-letter:float-left first-letter:mr-[0.1em] first-letter:font-serif first-letter:text-[3.1em] first-letter:leading-[0.72] first-letter:font-semibold"
+          className="h-full max-h-full text-left font-serif leading-relaxed first-letter:float-left first-letter:mr-[0.1em] first-letter:font-serif first-letter:text-[3.1em] first-letter:leading-[0.72] first-letter:font-semibold"
+          // dont read that shit
+          aria-hidden
           style={{
             fontSize: backFontSize,
-            maskImage: "linear-gradient(to bottom, black 78%, transparent)",
+            maskImage: "linear-gradient(to bottom, black 91%, transparent)",
             WebkitMaskImage:
-              "linear-gradient(to bottom, black 78%, transparent)",
+              "linear-gradient(to bottom, black 91%, transparent)",
           }}
         >
           {text}
@@ -322,7 +324,8 @@ type SlabProps = {
   onActivate?: () => void
 }
 
-// a single turnable 3d slab (a book or a cd case)
+const BASE_WIDTH = 300
+
 function Slab({
   book,
   width,
@@ -340,6 +343,7 @@ function Slab({
   onActivate,
 }: SlabProps) {
   const half = thickness / 2
+  const edgeOffset = (5 * width) / BASE_WIDTH
   const spineText = accent === primary ? primary.onColor : accent.solid
   const { left, right } = spineLabel(book, spine)
 
@@ -460,7 +464,7 @@ function Slab({
           className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-clip rounded-r-xs [&_img]:rounded-none!"
           style={{
             transform: `translateZ(${half}px)`,
-            backfaceVisibility: "hidden",
+            backfaceVisibility: "visible",
             ...AA_EDGE,
           }}
         >
@@ -472,7 +476,7 @@ function Slab({
           className="pointer-events-none absolute inset-0 overflow-hidden rounded-l-xs"
           style={{
             transform: `rotateY(180deg) translateZ(${half}px)`,
-            backfaceVisibility: "hidden",
+            backfaceVisibility: "visible",
             ...AA_EDGE,
           }}
         >
@@ -487,7 +491,7 @@ function Slab({
             left: -half,
             transform: "rotateY(-90deg)",
             background: primary.solid,
-            backfaceVisibility: "hidden",
+            backfaceVisibility: "visible",
             ...AA_EDGE,
           }}
         >
@@ -539,11 +543,13 @@ function Slab({
 
         {/* fore-edge (pages) */}
         <div
-          className="pointer-events-none absolute top-0 h-full"
+          className="pointer-events-none absolute"
           style={{
             width: thickness,
             right: -half,
-            transform: "rotateY(90deg)",
+            top: edgeOffset,
+            bottom: edgeOffset,
+            transform: `rotateY(90deg) translateZ(-${edgeOffset}px)`,
             background: edgeV,
             backfaceVisibility: "hidden",
             ...AA_EDGE,
@@ -552,11 +558,12 @@ function Slab({
 
         {/* head (top) */}
         <div
-          className="pointer-events-none absolute left-0 w-full"
+          className="pointer-events-none absolute left-0"
           style={{
             height: thickness,
             top: -half,
-            transform: "rotateX(90deg)",
+            right: edgeOffset,
+            transform: `rotateX(90deg) translateZ(-${edgeOffset}px)`,
             background: edgeH,
             backfaceVisibility: "hidden",
             ...AA_EDGE,
@@ -565,11 +572,12 @@ function Slab({
 
         {/* tail (bottom) */}
         <div
-          className="pointer-events-none absolute left-0 w-full"
+          className="pointer-events-none absolute left-0"
           style={{
             height: thickness,
+            right: edgeOffset,
             bottom: -half,
-            transform: "rotateX(-90deg)",
+            transform: `rotateX(-90deg) translateZ(-${edgeOffset}px)`,
             background: edgeH,
             backfaceVisibility: "hidden",
             ...AA_EDGE,
