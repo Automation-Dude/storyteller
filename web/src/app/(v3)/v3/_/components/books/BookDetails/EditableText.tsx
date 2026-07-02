@@ -7,6 +7,7 @@ import { Field, FieldError } from "@v3/_/components/ui/field"
 import { cn } from "@v3/_/lib/utils"
 
 import { useBookForm } from "./BookFormProvider"
+import { InlineFieldChrome } from "./InlineEditChrome"
 import { type BookFormValues } from "./schema"
 
 // display and editor share this box so swapping between them never shifts
@@ -160,17 +161,33 @@ export function EditableText({
               if (inlineMode) void commitField(name)
             }
           },
-          className: cn(
-            SEAMLESS_BOX,
-            "border-input bg-input/20 dark:bg-input/30 outline-none",
-            "focus-visible:border-ring focus-visible:ring-ring/30 focus-visible:ring-[2px]",
-            "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[2px]",
-            "placeholder:text-muted-foreground placeholder:not-italic",
-            className,
-          ),
         }
 
-        return (
+        // inline edit lives inside the floating chrome card, which supplies the
+        // frame -- so the input drops its box for a dashed underline. global edit
+        // keeps the boxed, in-flow look.
+        const inputClassName = inlineMode
+          ? cn(
+              "border-input focus-visible:border-ring aria-invalid:border-destructive w-full border-0 border-b border-dashed bg-transparent px-0 py-0.5 outline-none",
+              "placeholder:text-muted-foreground placeholder:not-italic",
+              className,
+            )
+          : cn(
+              SEAMLESS_BOX,
+              "border-input bg-input/20 dark:bg-input/30 outline-none",
+              "focus-visible:border-ring focus-visible:ring-ring/30 focus-visible:ring-[2px]",
+              "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[2px]",
+              "placeholder:text-muted-foreground placeholder:not-italic",
+              className,
+            )
+
+        // when floating, the field fills the card; the measured size is reserved
+        // by the spacer below instead.
+        const inputStyle = inlineMode
+          ? { width: "100%" }
+          : { width: size?.width ?? "100%", height: size?.height }
+
+        const editor = (
           <Field orientation="vertical" className={cn("gap-1", fieldClassName)}>
             {type === "text" ? (
               <textarea
@@ -184,23 +201,15 @@ export function EditableText({
                 // takes over; in global edit there is nothing to measure, so we
                 // fall back to content sizing instead of a fixed 5-row height.
                 rows={multiline ? 5 : 1}
-                style={{
-                  width: size?.width ?? "100%",
-                  height: size?.height,
-                }}
-                className={cn(
-                  commonProps.className,
-                  "field-sizing-content resize-y",
-                )}
+                style={inputStyle}
+                className={cn(inputClassName, "field-sizing-content resize-y")}
               />
             ) : (
               <input
                 {...commonProps}
                 type={type}
-                style={{
-                  width: size?.width ?? "100%",
-                  height: size?.height,
-                }}
+                style={inputStyle}
+                className={inputClassName}
                 ref={(el) => {
                   field.ref(el)
                   ref.current = el
@@ -209,6 +218,18 @@ export function EditableText({
             )}
             <FieldError errors={[fieldState.error]} />
           </Field>
+        )
+
+        // in global edit mode the bottom edit bar owns save/discard; only the
+        // single-field inline edit wears its own chrome.
+        if (!inlineMode) return editor
+
+        // reserve the field's original footprint so the floating card can overlay
+        // it (and the content below) without shifting the layout.
+        return (
+          <InlineFieldChrome name={name} size={size}>
+            {editor}
+          </InlineFieldChrome>
         )
       }}
     />

@@ -66,11 +66,13 @@ export async function optimizeImage({
       quality: Math.max(quality - 20, 1),
       effort: 1,
     })
-  } else if (contentType === WEBP) {
-    transformer.webp({ quality })
   } else {
-    transformer.jpeg({ quality })
-    outputMimeType = JPEG
+    //if (contentType === WEBP) {
+    transformer.webp({ quality })
+    outputMimeType = WEBP
+    // } else {
+    //   transformer.jpeg({ quality })
+    //   outputMimeType = JPEG
   }
 
   const data = await transformer.toBuffer()

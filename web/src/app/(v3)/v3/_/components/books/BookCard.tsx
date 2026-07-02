@@ -20,6 +20,7 @@ import {
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
+import { SelectionCheckbox } from "./SelectionCheckbox"
 import { GradePill } from "./grade-pill"
 
 type BookCardProps = {
@@ -223,19 +224,6 @@ export const BookCard = memo(function BookCard({
 
   const [coverLoading, setCoverLoading] = useState(true)
 
-  const showCheckbox = !!onToggleSelection
-
-  const handleCheckboxClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-
-    if (e.shiftKey && onSelectRange) {
-      onSelectRange(book.uuid)
-      return
-    }
-
-    onToggleSelection?.(book.uuid)
-  }
-
   const cPrimary = ensureContrast(primary, isDark)
   const cAccent = ensureContrast(accent, isDark)
   const style = showAccent
@@ -282,20 +270,15 @@ export const BookCard = memo(function BookCard({
           />
         </div>
 
-        {showCheckbox && (
-          <button
-            className={cn(
-              "absolute top-1.5 left-1.5 z-30 transition-opacity",
-              !isBookSelected &&
-                !isSelecting &&
-                "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-              "hover:border-primary bg-background size-4 rounded-full border shadow-sm transition-colors focus-within:border-blue-500",
-              isBookSelected && "bg-primary",
-            )}
-            onClick={handleCheckboxClick}
-            aria-label="Select book"
-            type="button"
-          ></button>
+        {onToggleSelection && (
+          <SelectionCheckbox
+            uuid={book.uuid}
+            checked={isBookSelected}
+            isSelecting={isSelecting}
+            onToggle={onToggleSelection}
+            onSelectRange={onSelectRange}
+            className="absolute top-1.5 left-1.5 z-30"
+          />
         )}
 
         {isSynced && !isMobile && (

@@ -52,7 +52,10 @@ import {
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
-import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
+import {
+  BookSelectionProvider,
+  useBookSelection,
+} from "@v3/_/hooks/use-book-selection"
 import { useItemSelection } from "@v3/_/hooks/use-item-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
@@ -65,6 +68,7 @@ import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSerie
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/EditSeriesDialog"
 import { CreateStatusDialog } from "@/app/(v3)/v3/_/components/library/CreateStatusDialog"
+import { Dialog, DialogContent } from "@/app/(v3)/v3/_/components/ui/dialog"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { isWellKnownStatus } from "@/database/statusKinds"
 import { usePermissions } from "@/hooks/usePermissions"
@@ -158,7 +162,7 @@ type LibraryPageProps = {
   itemLabels?: Record<string, string>
 }
 
-export function LibraryPage({
+function LibraryPageInner({
   title,
   section,
   defaultSidebarSort = "name",
@@ -309,8 +313,9 @@ export function LibraryPage({
 
   const didAutoSelectRef = useRef(false)
 
+  // auto-select the initial item if it's not already selected and we're not on mobile
   useEffect(() => {
-    if (selectedItem || didAutoSelectRef.current) return
+    if (selectedItem || didAutoSelectRef.current || isMobile) return
 
     const initial =
       initialSelectedItem && allItems.some((i) => i.key === initialSelectedItem)
@@ -330,9 +335,6 @@ export function LibraryPage({
     setSelectedItem,
   ])
 
-  // the grid is the same server-filtered, paginated query the books page uses.
-  // the controller already folds the selected facet (locked seed) + native
-  // series/collection context into queryArg, ANDed under the quick filters.
   const gridArg = queryArg
 
   const {
@@ -351,6 +353,11 @@ export function LibraryPage({
 
   const selectedFacet = allItems.find((i) => i.key === selectedItem)
   const selectedItemName = selectedFacet?.name
+
+  const filteredBookUuids = useMemo(
+    () => filteredBooks.map((book) => book.uuid),
+    [filteredBooks],
+  )
 
   // the detail panel fetches by uuid; this only seeds its cache when the book is
   // already on a loaded page (deep links still resolve via the fetch).
@@ -406,12 +413,21 @@ export function LibraryPage({
     [dispatch],
   )
 
+  const {
+    isSelecting: isSelectingBooks,
+    toggleSelection: toggleBookSelection,
+  } = useBookSelection()
   const handleBookClick = useCallback(
     (book: { uuid: string }) => {
+      if (isSelectingBooks) {
+        toggleBookSelection(book.uuid)
+        return
+      }
+
       void setReportMode(false)
       void setSelectedBookUuid(book.uuid)
     },
-    [setReportMode, setSelectedBookUuid],
+    [setReportMode, setSelectedBookUuid, isSelectingBooks, toggleBookSelection],
   )
 
   // alignment grade/score cell opens the panel straight into the report.
@@ -552,67 +568,62 @@ export function LibraryPage({
       />
 
       <PageContent className="p-4">
-        {selectedItem ? (
-          <BookSelectionProvider key={selectedItem}>
-            {bookView === "list" ? (
-              <BookList
-                books={filteredBooks}
-                isLoading={gridLoading}
-                isFetchingNextPage={isFetchingNextPage}
-                hasNextPage={hasNextPage}
-                fetchNextPage={fetchNextPage}
-                showMuted={showMuted}
-                emptySubMessage={
-                  deferredSearch || activeFilterCount > 0
-                    ? "Try adjusting your search or filters"
-                    : undefined
-                }
-                onClearFilters={clearAll}
-                hasActiveFilters={activeFilterCount > 0}
-                selectedBookUuid={selectedBookUuid}
-                onBookClick={handleBookClick}
-                onColumnClick={handleColumnClick}
-                displayFields={displayFields}
-                displayContext={displayContext}
-                visibleColumns={listVisibleColumns}
-                onVisibleColumnsChange={handleListColumnsChange}
-                sortField={sort.field}
-                sortDirection={sort.direction}
-                onSortChange={handleColumnSort}
-              />
-            ) : (
-              <BookGrid
-                books={filteredBooks}
-                isLoading={gridLoading}
-                isFetchingNextPage={isFetchingNextPage}
-                hasNextPage={hasNextPage}
-                fetchNextPage={fetchNextPage}
-                showMuted={showMuted}
-                emptySubMessage={
-                  deferredSearch || activeFilterCount > 0
-                    ? "Try adjusting your search or filters"
-                    : undefined
-                }
-                onClearFilters={clearAll}
-                hasActiveFilters={activeFilterCount > 0}
-                selectedBookUuid={selectedBookUuid}
-                onBookClick={handleBookClick}
-                displayFields={displayFields}
-                displayContext={displayContext}
-              />
-            )}
-
-            <SelectionToolbar
-              allBookUuids={filteredBooks.map((book) => book.uuid)}
-            />
-          </BookSelectionProvider>
+        {bookView === "list" ? (
+          <BookList
+            books={filteredBooks}
+            isLoading={gridLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            fetchNextPage={fetchNextPage}
+            showMuted={showMuted}
+            emptySubMessage={
+              deferredSearch || activeFilterCount > 0
+                ? "Try adjusting your search or filters"
+                : undefined
+            }
+            onClearFilters={clearAll}
+            hasActiveFilters={activeFilterCount > 0}
+            selectedBookUuid={selectedBookUuid}
+            onBookClick={handleBookClick}
+            onColumnClick={handleColumnClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
+            visibleColumns={listVisibleColumns}
+            onVisibleColumnsChange={handleListColumnsChange}
+            sortField={sort.field}
+            sortDirection={sort.direction}
+            onSortChange={handleColumnSort}
+          />
         ) : (
+          <BookGrid
+            books={filteredBooks}
+            isLoading={gridLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            fetchNextPage={fetchNextPage}
+            showMuted={showMuted}
+            emptySubMessage={
+              deferredSearch || activeFilterCount > 0
+                ? "Try adjusting your search or filters"
+                : undefined
+            }
+            onClearFilters={clearAll}
+            hasActiveFilters={activeFilterCount > 0}
+            selectedBookUuid={selectedBookUuid}
+            onBookClick={handleBookClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
+          />
+        )}
+
+        {filteredBooks.length === 0 && (
           <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
             <IconSearch className="h-12 w-12 opacity-40" />
             <p className="text-lg font-medium">{t("emptyState")}</p>
           </div>
         )}
       </PageContent>
+      <SelectionToolbar allBookUuids={filteredBookUuids} />
     </>
   )
 
@@ -711,33 +722,38 @@ export function LibraryPage({
   ) : null
 
   if (isMobile) {
-    if (selectedItem && selectedItemName) {
-      return (
-        <>
-          <MobileBookView
-            title={title}
-            selectedItemName={selectedItemName}
-            onBack={handleBackToList}
-            actions={headerActions}
-          >
-            {booksContent}
-          </MobileBookView>
+    console.log("selectedItem", selectedItem)
+    // if (selectedItem && selectedItemName) {
+    return (
+      <>
+        <MobileBookView
+          title={title}
+          selectedItemName={selectedItemName}
+          onBack={handleBackToList}
+          actions={headerActions}
+        >
+          {booksContent}
+        </MobileBookView>
 
-          <BookDetailDrawer
-            selectedBookUuid={selectedBookUuid}
-            selectedBook={selectedBook}
-            onClose={handleClosePanel}
-          />
-          {editDialog}
-        </>
-      )
-    }
+        <BookDetailDrawer
+          selectedBookUuid={selectedBookUuid}
+          selectedBook={selectedBook}
+          onClose={handleClosePanel}
+        />
+        <Dialog open={!selectedItem} defaultOpen={!selectedItem}>
+          <DialogContent>{sidebarContent}</DialogContent>
+        </Dialog>
+        {editDialog}
+        {createDialog}
+      </>
+    )
+    // }
 
     return (
       <div className="flex h-screen flex-col">
-        <div className="relative h-(--header-height) w-full shrink-0">
+        {/* <div className="relative h-(--header-height) w-full shrink-0">
           <SiteHeader breadcrumbs={[{ label: title }]} />
-        </div>
+        </div> */}
         <div className="flex-1">{sidebarContent}</div>
         {createDialog}
       </div>
@@ -779,10 +795,9 @@ function MobileBookView({
   children: React.ReactNode
   actions: React.ReactNode
 }) {
-  const t = useTranslation("LibraryPage")
   const c = useCommon()
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <div className="relative h-(--header-height) w-full shrink-0">
         <SiteHeader
           breadcrumbs={[{ label: title }, { label: selectedItemName }]}
@@ -802,8 +817,8 @@ function MobileBookView({
             </>
           }
         />
-        {children}
       </div>
+      {children}
     </div>
   )
 }
@@ -956,8 +971,8 @@ function SidebarPanel({
   })
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div className="scroll-y flex h-full flex-col">
+    <div className="scroll-y relative flex h-full flex-col">
+      <div className="flex h-full flex-col">
         <div className="bg-background sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-base">{title}</h2>
@@ -1116,7 +1131,6 @@ function SidebarItemList({
     itemSelection,
   }
 
-  const t = useTranslation("LibraryPage")
   const c = useCommon()
 
   const handleRowClick = useCallback((key: string) => {
@@ -1347,5 +1361,13 @@ function SidebarRow({
         </span>
       </div>
     </div>
+  )
+}
+
+export function LibraryPage(props: LibraryPageProps) {
+  return (
+    <BookSelectionProvider>
+      <LibraryPageInner {...props} />
+    </BookSelectionProvider>
   )
 }

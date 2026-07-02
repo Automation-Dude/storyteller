@@ -19,7 +19,7 @@ import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
-import { ActionBar } from "@v3/_/components/ui/action-bar"
+import { ActionTray } from "@v3/_/components/ui/action-tray"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
@@ -308,23 +308,23 @@ function BookPageHeader() {
   )
 }
 
+// the docked bar for whole-book edit and cover edit. single-field inline edits
+// carry their own chrome (see InlineEditChrome), so this bar stays out of them.
 function BookEditBar() {
   const {
     isEditing,
     isSaving,
-    editingField,
     editingCovers,
     setIsEditing,
     setEditingCovers,
     submitForm,
-    commitField,
     discard,
     discardCovers,
   } = useBookForm()
   const t = useTranslation("BookDetailsPage")
   const c = useCommon()
 
-  const show = isEditing || editingField !== null || editingCovers
+  const show = isEditing || editingCovers
 
   const handleDiscard = () => {
     if (editingCovers) {
@@ -335,12 +335,6 @@ function BookEditBar() {
   }
 
   const handleSave = async () => {
-    if (editingField !== null) {
-      const ok = await commitField(editingField)
-      if (!ok) toast.error(t("saveFailed"))
-      return
-    }
-
     const ok = await submitForm()
     if (ok) {
       setIsEditing(false)
@@ -352,13 +346,16 @@ function BookEditBar() {
   }
 
   return (
-    <ActionBar
+    <ActionTray
       show={show}
-      className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2"
+      className="absolute bottom-0 left-1/2 z-50 -translate-x-1/2 gap-2 pr-1.5 pl-3"
     >
-      <span className="text-muted-foreground px-2 text-xs">
+      <span className="font-serif text-sm whitespace-nowrap">
         {isSaving ? c("states.saving") : t("editing")}
       </span>
+
+      <div className="flex-1" />
+      <div className="bg-border mx-0.5 h-5 w-px" />
 
       <TooltipButton
         tooltip={c("actions.discard")}
@@ -380,12 +377,12 @@ function BookEditBar() {
           e.preventDefault()
           void handleSave()
         }}
-        className="rounded-full"
+        className="bg-primary text-primary-foreground rounded-full hover:opacity-90"
         disabled={isSaving}
       >
         <IconCheck className="size-4" />
       </TooltipButton>
-    </ActionBar>
+    </ActionTray>
   )
 }
 

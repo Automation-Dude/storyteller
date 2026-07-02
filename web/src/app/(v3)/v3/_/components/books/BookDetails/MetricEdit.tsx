@@ -10,6 +10,14 @@ import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 
 import { useBookForm } from "./BookFormProvider"
 import { SEAMLESS_BOX } from "./EditableText"
+import { InlineFieldChrome } from "./InlineEditChrome"
+
+type Size = { width: number; height: number } | null
+
+function measure(el: HTMLElement | null): Size {
+  const rect = el?.getBoundingClientRect()
+  return rect ? { width: rect.width, height: rect.height } : null
+}
 
 function metricDisplayClass(canEdit: boolean, empty: boolean) {
   return cn(
@@ -37,6 +45,8 @@ export function PageCountEdit({ className }: { className?: string }) {
   const inlineMode = active && !isEditing
 
   const ref = useRef<HTMLInputElement>(null)
+  const displayRef = useRef<HTMLButtonElement>(null)
+  const [size, setSize] = useState<Size>(null)
   useEffect(() => {
     if (inlineMode) {
       ref.current?.focus()
@@ -49,10 +59,13 @@ export function PageCountEdit({ className }: { className?: string }) {
     if (effective == null && !canEdit) return null
     return (
       <button
+        ref={displayRef}
         type="button"
         disabled={!canEdit}
         onClick={() => {
-          if (canEdit) setEditingField("pageCount")
+          if (!canEdit) return
+          setSize(measure(displayRef.current))
+          setEditingField("pageCount")
         }}
         className={cn(
           metricDisplayClass(canEdit, effective == null),
@@ -64,7 +77,7 @@ export function PageCountEdit({ className }: { className?: string }) {
     )
   }
 
-  return (
+  const input = (
     <input
       ref={ref}
       type="number"
@@ -93,11 +106,26 @@ export function PageCountEdit({ className }: { className?: string }) {
       }}
       placeholder="Pages"
       className={cn(
-        SEAMLESS_BOX,
-        "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-20 tabular-nums outline-none focus-visible:ring-2",
+        inlineMode
+          ? // bare inside the floating chrome, which supplies the frame
+            "border-input focus-visible:border-ring w-full border-0 border-b border-dashed bg-transparent px-0 py-0.5 tabular-nums outline-none"
+          : cn(
+              SEAMLESS_BOX,
+              "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-20 tabular-nums outline-none focus-visible:ring-2",
+            ),
         className,
       )}
     />
+  )
+
+  // global edit mode uses the boxed input in flow; single-field inline edit
+  // floats the shared chrome over the metrics line.
+  if (!inlineMode) return input
+
+  return (
+    <InlineFieldChrome name="pageCount" size={size} inline>
+      {input}
+    </InlineFieldChrome>
   )
 }
 
@@ -130,6 +158,8 @@ export function DurationEdit({ className }: { className?: string }) {
   const effective = bookDuration(book)
   const [parts, setParts] = useState(() => splitDuration(effective ?? 0))
   const firstRef = useRef<HTMLInputElement>(null)
+  const displayRef = useRef<HTMLButtonElement>(null)
+  const [size, setSize] = useState<Size>(null)
 
   useEffect(() => {
     if (active) {
@@ -150,10 +180,13 @@ export function DurationEdit({ className }: { className?: string }) {
     if (effective == null && !canEdit) return null
     return (
       <button
+        ref={displayRef}
         type="button"
         disabled={!canEdit}
         onClick={() => {
-          if (canEdit) setEditingField("duration")
+          if (!canEdit) return
+          setSize(measure(displayRef.current))
+          setEditingField("duration")
         }}
         className={cn(
           metricDisplayClass(canEdit, effective == null),
@@ -188,7 +221,7 @@ export function DurationEdit({ className }: { className?: string }) {
     }
   }
 
-  return (
+  const group = (
     <span
       className={cn("inline-flex items-center gap-1 text-xs", className)}
       onBlur={(e) => {
@@ -236,5 +269,15 @@ export function DurationEdit({ className }: { className?: string }) {
       />
       <span className="text-muted-foreground">s</span>
     </span>
+  )
+
+  // global edit mode keeps the h/m/s group in flow; single-field inline edit
+  // floats the shared chrome over the metrics line.
+  if (!inlineMode) return group
+
+  return (
+    <InlineFieldChrome name="duration" size={size} inline>
+      {group}
+    </InlineFieldChrome>
   )
 }

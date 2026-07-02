@@ -383,14 +383,14 @@ function SidebarNavGroup({
         <CollapsibleTrigger
           nativeButton={false}
           render={
-            <SidebarGroupLabel className="cursor-pointer font-sans text-[10px] font-medium tracking-[0.14em] uppercase opacity-60">
+            <SidebarGroupLabel className="section-label after:bg-muted-foreground cursor-pointer font-serif! text-xs font-medium normal-case italic opacity-60">
               <IconChevronRight
                 className={cn(
                   "mr-1 size-3 transition-transform duration-200",
                   !localCollapsed && "rotate-90",
                 )}
               />
-              {group.name}
+              {group.name[0].toUpperCase() + group.name.slice(1)}
             </SidebarGroupLabel>
           }
         />

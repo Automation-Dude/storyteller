@@ -9,7 +9,6 @@ import {
   BOOK_GRID_GAP,
   GRID_CARD_WIDTHS,
 } from "@v3/_/components/books/BookGrid"
-import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { SiteHeader } from "@v3/_/components/site-header"
 import {
   MAX_PANEL_WIDTH,
@@ -54,8 +53,6 @@ type BookListLayoutProps = {
   // which seeds the getBook cache from it so the panel needs no extra fetch.
   selectedBook?: BookWithRelations
   onClosePanel: () => void
-
-  allBookUuids?: string[]
 }
 
 export function BookListLayout({
@@ -68,7 +65,6 @@ export function BookListLayout({
   selectedBookUuid,
   selectedBook,
   onClosePanel,
-  allBookUuids,
 }: BookListLayoutProps) {
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
@@ -199,10 +195,6 @@ export function BookListLayout({
     }
   }, [panelOpen, cardWidth, layoutWidth, snapChromeWidth])
 
-  const selectionToolbar = allBookUuids ? (
-    <SelectionToolbar allBookUuids={allBookUuids} />
-  ) : null
-
   if (isMobile) {
     return (
       <>
@@ -224,8 +216,6 @@ export function BookListLayout({
           selectedBook={selectedBook}
           onClose={onClosePanel}
         />
-
-        {selectionToolbar}
       </>
     )
   }
@@ -273,8 +263,6 @@ export function BookListLayout({
           )}
         </PagePanel>
       </PageLayout>
-
-      {selectionToolbar}
     </>
   )
 }

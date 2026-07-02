@@ -145,7 +145,7 @@ export function HeroSection({
         >
           <div
             className={cn(
-              "flex w-full flex-col items-center gap-1.5",
+              "flex w-full flex-col items-center gap-1",
               `@xl/book:items-start`,
             )}
           >
@@ -163,7 +163,7 @@ export function HeroSection({
               <EditableText
                 name="subtitle"
                 as="p"
-                className="text-muted-foreground font-heading text-sm italic"
+                className="text-muted-foreground font-heading text-primary/80 -mt-1 text-sm italic"
                 placeholder={c.plain("fields.label.subtitle")}
               />
             )}
@@ -188,7 +188,9 @@ export function HeroSection({
                     canEdit && "cursor-pointer",
                   )}
                 >
-                  <span>{t("writtenBy")}</span>
+                  <span className="text-primary/80 font-serif">
+                    {t("writtenBy")}
+                  </span>
 
                   {visibleAuthors.map((author, idx) => (
                     <span
@@ -236,7 +238,9 @@ export function HeroSection({
                     canEdit && "cursor-pointer",
                   )}
                 >
-                  <span className="italic">{t("narratedBy")}</span>
+                  <span className="text-primary/60 font-heading italic">
+                    {t("narratedBy")}
+                  </span>
 
                   {visibleNarrators.map((narrator, idx) => (
                     <span

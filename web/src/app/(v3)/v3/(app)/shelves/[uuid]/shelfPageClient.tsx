@@ -6,6 +6,7 @@ import { useCallback, useMemo } from "react"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { BookList } from "@v3/_/components/books/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
+import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
@@ -124,7 +125,6 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
       selectedBookUuid={selectedBookUuid}
       selectedBook={selectedBook}
       onClosePanel={handleClosePanel}
-      allBookUuids={bookUuids}
     >
       <BookFilters
         className="pt-1"
@@ -179,6 +179,8 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
             onBookClick={handleBookClick}
           />
         )}
+
+        <SelectionToolbar allBookUuids={bookUuids} />
       </PageContent>
     </BookListLayout>
   )

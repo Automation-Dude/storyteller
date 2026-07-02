@@ -8,6 +8,7 @@ import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { BookList } from "@v3/_/components/books/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SaveAsShelfDialog } from "@v3/_/components/books/SaveAsShelfDialog"
+import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { ShelfFilterEditor } from "@v3/_/components/shelves/ShelfFilterEditor"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
@@ -165,7 +166,6 @@ export default function BookPage({
         selectedBookUuid={selectedBookUuid}
         selectedBook={selectedBook}
         onClosePanel={handleClosePanel}
-        allBookUuids={bookUuids}
         headerActions={[<AddBookButton key="add-book" />]}
       >
         <BookFilters
@@ -241,6 +241,7 @@ export default function BookPage({
               displayContext={displayContext}
             />
           )}
+          <SelectionToolbar allBookUuids={bookUuids} />
         </PageContent>
       </BookListLayout>
     </div>

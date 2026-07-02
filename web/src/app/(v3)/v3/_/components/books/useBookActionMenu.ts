@@ -21,13 +21,12 @@ export function findScrollParent(node: HTMLElement | null): HTMLElement | null {
   return null
 }
 
-// shared menu and selection state used by both BookGrid and BookList.
-// bundles the ellipsis-menu wiring, selection helpers, and the
-// useBookActionItems call into a single hook so neither component
-// duplicates any of it.
 export function useBookActionMenu(books: BookWithRelations[]) {
   const selection = useOptionalBookSelection()
-  const isSelecting = (selection?.selectedBooks.size ?? 0) > 0
+  // single source of truth: the context's isSelecting already folds in
+  // "explicit selection mode OR anything selected", so cards agree with the
+  // toolbar even right after startSelecting() with nothing selected yet.
+  const isSelecting = selection?.isSelecting ?? false
   const toggleSelection = selection?.toggleSelection
 
   const orderedUuids = useMemo(() => books.map((b) => b.uuid), [books])

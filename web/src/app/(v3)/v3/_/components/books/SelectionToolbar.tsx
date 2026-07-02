@@ -7,7 +7,8 @@ import {
   IconX,
 } from "@tabler/icons-react"
 
-import { ActionBar } from "@v3/_/components/ui/action-bar"
+import { ActionTray } from "@v3/_/components/ui/action-tray"
+import { Button } from "@v3/_/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,9 @@ type SelectionToolbarProps = {
   className?: string
 }
 
+// docked to the bottom of the grid column (sticky) rather than floating over the
+// whole screen -- it shares the workspace surface. a serif selection count sits
+// left, then the core select / actions menus, then a close affordance.
 export function SelectionToolbar({
   allBookUuids,
   className,
@@ -55,26 +59,45 @@ export function SelectionToolbar({
     onAfterDestructive: selectNone,
   })
 
+  const hasSelection = selectedBooks.size > 0
+  const divider = <div className="bg-border/70 mx-1 h-5 w-px shrink-0" />
+
   return (
     <>
-      <div className="fixed bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2">
-        <ActionBar show={isSelecting} className={cn("gap-1 py-1", className)}>
+      <div className="@container pointer-events-none sticky inset-x-0 bottom-0 z-40 flex justify-center px-2">
+        <ActionTray
+          show={isSelecting}
+          className={cn(
+            "pointer-events-auto max-w-full min-w-0 gap-1.5 pr-1.5 pl-4",
+            className,
+          )}
+        >
+          <span className="font-heading mr-1 min-w-0 truncate text-sm">
+            {t.rich("selectedBooks", {
+              count: selectedBooks.size,
+              sel: (chunks) => <span className="italic">{chunks}</span>,
+            })}
+          </span>
+
+          {divider}
+
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <TooltipButton
-                  tooltip={c("actions.select")}
-                  aria-label={c("actions.select")}
+                <Button
                   variant="real-ghost"
                   size="sm"
-                  className="gap-1 rounded-full"
+                  className="shrink-0 gap-1.5 rounded-md"
                 >
-                  <IconSquareCheck className="size-4 stroke-[1.5]" />
-                  <IconChevronDown className="size-3" />
-                </TooltipButton>
+                  <IconSquareCheck className="size-3.5 stroke-[1.5]" />
+                  <span className="hidden @md:inline">
+                    {c("actions.select")}
+                  </span>
+                  <IconChevronDown className="size-3 opacity-60" />
+                </Button>
               }
             />
-            <DropdownMenuContent>
+            <DropdownMenuContent align="start">
               <DropdownMenuItem
                 onClick={() => {
                   selectAll(allBookUuids)
@@ -101,16 +124,16 @@ export function SelectionToolbar({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <TooltipButton
-                  tooltip={t("actions")}
-                  aria-label={t("actions")}
+                <Button
                   variant="real-ghost"
-                  className="gap-1 rounded-full"
-                  disabled={selectedBooks.size === 0}
+                  size="sm"
+                  className="shrink-0 gap-1.5 rounded-md"
+                  disabled={!hasSelection}
                 >
-                  <IconPointer className="size-4 stroke-[1.5]" />
-                  <IconChevronDown className="size-3" />
-                </TooltipButton>
+                  <IconPointer className="size-3.5 stroke-[1.5]" />
+                  <span className="hidden @md:inline">{t("actions")}</span>
+                  <IconChevronDown className="size-3 opacity-60" />
+                </Button>
               }
             />
             <DropdownMenuContent align="start" className="min-w-48">
@@ -118,21 +141,19 @@ export function SelectionToolbar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <span className="px-2 font-sans text-xs whitespace-nowrap">
-            {c("selectedCount", { count: selectedBooks.size })}
-          </span>
-        </ActionBar>
-        <ActionBar show={isSelecting} className="p-1">
+          {divider}
+
           <TooltipButton
             tooltip={t("cancelSelection")}
             aria-label={t("cancelSelection")}
-            variant="ghost"
+            variant="real-ghost"
+            size="icon-sm"
             onClick={stopSelecting}
-            className="rounded-full p-2 hover:bg-transparent"
+            className="shrink-0 rounded-full"
           >
             <IconX className="size-4 stroke-[1.5]" />
           </TooltipButton>
-        </ActionBar>
+        </ActionTray>
       </div>
 
       {dialogs}

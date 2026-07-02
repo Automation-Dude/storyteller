@@ -230,6 +230,7 @@
     "selectAll": "Alles selecteren",
     "selectNone": "Niets selecteren",
     "invertSelection": "Selectie omkeren",
+    "selectedBooks": "{count, plural, one {# boek} other {# boeken}} geselecteerd",
     "actions": "Acties",
     "addToCollection": "Toevoegen aan verzameling",
     "addToSeries": "Toevoegen aan serie",

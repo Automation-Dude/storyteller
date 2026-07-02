@@ -9,13 +9,12 @@ import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
-
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 import { BookDoubleCover } from "./BookDoubleCover"
 import { CoverImage } from "./CoverImage"
 
 const DPR =
-  typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 3) : 2
+  typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1
 
 export function isDualFormat(book: BookWithRelations): boolean {
   const isSynced =
@@ -83,7 +82,7 @@ export function BookCover({
         blurhash={book.ebook?.coverBlurhash}
         type="ebook"
         fallbackColors={book.ebook?.coverColors}
-        className="h-full rounded-xs shadow-lg"
+        className="h-full rounded-xs rounded-r-sm shadow-lg"
         imgClassName={imgClassName}
         onLoadingChange={onLoadingChange}
       />
@@ -139,7 +138,7 @@ export function BookCover({
       blurhash={book.ebook?.coverBlurhash}
       type="ebook"
       fallbackColors={book.ebook?.coverColors}
-      className="h-full overflow-clip rounded-sm border-green-500 shadow-lg"
+      className="h-full overflow-clip rounded-sm rounded-r-md shadow-sm transition-[transform_shadow] duration-200 ease-in-out hover:-translate-y-0.5 hover:-rotate-1 hover:shadow-lg"
       imgClassName={imgClassName}
       onLoadingChange={onLoadingChange}
     />

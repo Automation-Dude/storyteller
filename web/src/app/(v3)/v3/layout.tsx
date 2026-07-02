@@ -37,6 +37,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 const trySerif = IBM_Plex_Serif({
   subsets: ["latin"],
+  style: ["normal", "italic"],
   display: "swap",
   weight: ["400", "500", "700"],
   variable: "--font-try-serif",
@@ -89,6 +90,11 @@ export default async function RootLayout({
       className={`${fraunces.variable} ${ibmPlexSans.variable} ${trySerif.variable} antialiased`}
     >
       <head>
+        {/* apply locally-saved theme tweaks before paint to avoid a flash;
+            mirrors the storage shape in theme-tweaks/tweaks-store.ts */}
+        <Script id="theme-tweaks-init" strategy="beforeInteractive">
+          {`(function(){try{var raw=localStorage.getItem("st-theme-tweaks");if(!raw)return;var s=JSON.parse(raw);var el=document.documentElement;function apply(m){if(!m)return;for(var k in m){if(m[k])el.style.setProperty(k,m[k]);}}apply(s.colors);apply(s.fonts);}catch(e){}})();`}
+        </Script>
         {env.NODE_ENV === "development" && env.ENABLE_REACT_SCAN && (
           <Script
             src="//unpkg.com/react-scan/dist/auto.global.js"

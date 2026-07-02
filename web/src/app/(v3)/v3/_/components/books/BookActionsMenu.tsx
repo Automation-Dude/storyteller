@@ -22,9 +22,6 @@ import { usePermission } from "@/hooks/usePermission"
 
 import { useBookActionItems } from "./BookActionMenuItems"
 
-// the single-book "..." menu. holds every action the bulk toolbar has (minus
-// merge) plus the single-only "open full page" and "edit" entries. used by both
-// the panel header and the full-page header so a book has one action surface.
 export function BookActionsMenu({
   book,
   showOpenFullPage = false,

@@ -19,7 +19,6 @@ import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
 
-
 import { isDualFormat } from "./BookCover"
 import {
   type CoverColor,
@@ -822,7 +821,7 @@ export function BookFullscreenButton({
   const [fullscreen, setFullscreen] = useState(false)
   const isMobile = useIsMobile()
 
-  const fullscreenWidth = Math.round(width * (isMobile ? 1.2 : 1.7))
+  const fullscreenWidth = Math.round(width * (isMobile ? 2 : 3))
 
   return (
     <>

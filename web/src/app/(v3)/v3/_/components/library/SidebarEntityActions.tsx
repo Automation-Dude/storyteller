@@ -15,7 +15,7 @@ import {
   type LibraryItem,
 } from "@v3/_/components/library/library-sections"
 import { ShelfEditor } from "@v3/_/components/shelves/ShelfEditor"
-import { ActionBar } from "@v3/_/components/ui/action-bar"
+import { ActionTray } from "@v3/_/components/ui/action-tray"
 import { Button } from "@v3/_/components/ui/button"
 import {
   ConfirmDialog,
@@ -203,12 +203,15 @@ export function SidebarEntityActions({
 
   return (
     <>
-      <ActionBar
+      <ActionTray
         show={count > 0}
-        className="absolute inset-x-2 bottom-2 gap-1 p-1.5"
+        className="absolute inset-x-0 bottom-0 gap-1 border-r-0 p-1 pl-2.5"
       >
-        <span className="text-muted-foreground flex-1 px-1 text-xs tabular-nums">
-          {c("selectedCount", { count })}
+        <span className="flex-1 font-serif text-sm font-medium whitespace-nowrap">
+          {c.rich("selectedCount", {
+            count,
+            em: (chunks) => <em>{chunks}</em>,
+          })}
         </span>
 
         <DropdownMenu>
@@ -220,7 +223,7 @@ export function SidebarEntityActions({
             }
           />
 
-          <DropdownMenuContent align="end" className="min-w-40">
+          <DropdownMenuContent align="end" className="w-fit">
             {onEdit && singleSelected && (
               <DropdownMenuItem
                 onClick={() => {
@@ -285,7 +288,7 @@ export function SidebarEntityActions({
         <Button variant="ghost" size="icon-xs" onClick={onStopSelecting}>
           <IconX className="size-3.5" />
         </Button>
-      </ActionBar>
+      </ActionTray>
 
       <ConfirmDialog {...deleteAction.dialogProps} />
       <ConfirmDialog {...mergeAction.dialogProps} isLoading={isMerging} />

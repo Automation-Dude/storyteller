@@ -100,6 +100,8 @@ export function CoverImage({
       <img
         ref={imgRef}
         src={src}
+        // so covers loading arent blocking eg next batch of infinite query
+        fetchPriority="low"
         alt={alt}
         aria-hidden={ariaHidden}
         loading="lazy"

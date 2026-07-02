@@ -11,7 +11,6 @@ import {
   useState,
 } from "react"
 
-
 import { BookCard } from "@v3/_/components/books/BookCard"
 import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
@@ -29,6 +28,7 @@ import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { type DisplayField, type SortContext } from "@/sort"
 
+import { SelectionBullet } from "./SelectionCheckbox"
 import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
 type BookGridProps = {
@@ -333,6 +333,7 @@ export function BookGrid({
                   menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
                 }}
               >
+                <SelectionBullet selected={menu.menuBookIsSelected} />
                 {menu.menuBookIsSelected
                   ? menu.c("actions.deselect")
                   : menu.c("actions.select")}

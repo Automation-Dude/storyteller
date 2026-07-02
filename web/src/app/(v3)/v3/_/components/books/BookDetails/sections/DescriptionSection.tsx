@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
+import { InlineFieldChrome } from "@v3/_/components/books/BookDetails/InlineEditChrome"
 import { Field, FieldError } from "@v3/_/components/ui/field"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -112,6 +113,18 @@ export function DescriptionSection({ className }: { className?: string }) {
   const active = canEdit && (isEditing || editingField === "description")
   const inlineMode = editingField === "description" && !isEditing
 
+  // measure the read-only block on entering inline edit so the floating chrome
+  // can reserve its footprint and overlay (rather than reflow) the layout.
+  const readRef = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState<{ width: number; height: number } | null>(
+    null,
+  )
+  const startEdit = () => {
+    const rect = readRef.current?.getBoundingClientRect()
+    setSize(rect ? { width: rect.width, height: rect.height } : null)
+    setEditingField("description")
+  }
+
   return (
     <CollapsibleSection
       title={c("fields.label.description")}
@@ -122,69 +135,78 @@ export function DescriptionSection({ className }: { className?: string }) {
         <Controller
           name="description"
           control={form.control}
-          render={({ field, fieldState }) => (
-            <Field orientation="vertical" className="gap-1">
-              <textarea
-                {...field}
-                value={field.value ?? ""}
-                autoFocus={inlineMode}
-                rows={6}
-                placeholder={t("noDescriptionAvailable")}
-                aria-invalid={fieldState.invalid || undefined}
-                onBlur={() => {
-                  field.onBlur()
-                  if (!inlineMode) return
-                  if (form.getFieldState("description").isDirty) {
-                    void commitField("description")
-                  } else {
-                    setEditingField(null)
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    e.preventDefault()
-                    form.resetField("description")
-                    setEditingField(null)
-                  }
-                }}
-                className={cn(
-                  "field-sizing-content w-full resize-y rounded-md border px-1.5 py-0.5 font-serif text-xs",
-                  "border-input bg-input/20 dark:bg-input/30 outline-none",
-                  "focus-visible:border-ring focus-visible:ring-ring/30 focus-visible:ring-[2px]",
-                  "aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:ring-[2px]",
-                )}
-              />
-              <FieldError errors={[fieldState.error]} />
-            </Field>
-          )}
-        />
-      ) : value && value.trim() ? (
-        <CollapsibleDescription
-          html={value}
-          canEdit={canEdit}
-          onEdit={() => {
-            setEditingField("description")
+          render={({ field, fieldState }) => {
+            const editor = (
+              <Field orientation="vertical" className="gap-1">
+                <textarea
+                  {...field}
+                  value={field.value ?? ""}
+                  autoFocus={inlineMode}
+                  rows={6}
+                  placeholder={t("noDescriptionAvailable")}
+                  aria-invalid={fieldState.invalid || undefined}
+                  onBlur={() => {
+                    field.onBlur()
+                    if (!inlineMode) return
+                    if (form.getFieldState("description").isDirty) {
+                      void commitField("description")
+                    } else {
+                      setEditingField(null)
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault()
+                      form.resetField("description")
+                      setEditingField(null)
+                    }
+                  }}
+                  className={cn(
+                    "field-sizing-content w-full resize-y font-serif text-xs outline-none",
+                    inlineMode
+                      ? // the chrome card supplies the frame; the textarea is bare
+                        "aria-invalid:text-destructive bg-transparent px-0 py-0.5"
+                      : "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20 rounded-md border px-1.5 py-0.5 focus-visible:ring-[2px] aria-invalid:ring-[2px]",
+                  )}
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )
+
+            // global edit mode defers to the bottom edit bar; only the inline
+            // single-field edit wears its own save/discard chrome.
+            if (!inlineMode) return editor
+
+            return (
+              <InlineFieldChrome name="description" size={size}>
+                {editor}
+              </InlineFieldChrome>
+            )
           }}
         />
+      ) : value && value.trim() ? (
+        <div ref={readRef}>
+          <CollapsibleDescription
+            html={value}
+            canEdit={canEdit}
+            onEdit={startEdit}
+          />
+        </div>
       ) : (
-        <p
-          role={canEdit ? "button" : undefined}
-          tabIndex={canEdit ? 0 : undefined}
-          onClick={
-            canEdit
-              ? () => {
-                  setEditingField("description")
-                }
-              : undefined
-          }
-          className={cn(
-            "text-muted-foreground text-xs italic",
-            canEdit &&
-              "hover:bg-input/10 -mx-1.5 cursor-text rounded-md px-1.5",
-          )}
-        >
-          {t("noDescriptionAvailable")}
-        </p>
+        <div ref={readRef}>
+          <p
+            role={canEdit ? "button" : undefined}
+            tabIndex={canEdit ? 0 : undefined}
+            onClick={canEdit ? startEdit : undefined}
+            className={cn(
+              "text-muted-foreground text-xs italic",
+              canEdit &&
+                "hover:bg-input/10 -mx-1.5 cursor-text rounded-md px-1.5",
+            )}
+          >
+            {t("noDescriptionAvailable")}
+          </p>
+        </div>
       )}
     </CollapsibleSection>
   )

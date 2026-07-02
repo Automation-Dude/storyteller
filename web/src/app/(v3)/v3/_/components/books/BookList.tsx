@@ -13,7 +13,6 @@ import { useFormatter } from "next-intl"
 import { Fragment, memo, useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
-import { Checkbox } from "@v3/_/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +48,7 @@ import {
 } from "./BookDetails/sections/useCoverColors"
 import { ColumnSelector } from "./ColumnSelector"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
+import { SelectionBullet, SelectionCheckbox } from "./SelectionCheckbox"
 import { GradePill } from "./grade-pill"
 import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
@@ -275,20 +275,6 @@ const BookListItem = memo(function BookListItem({
 
   // const showAuthors = effectiveSecondary === null
 
-  const showCheckbox = !!onToggleSelection
-
-  const handleCheckboxClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-
-    if (e.shiftKey && onSelectRange) {
-      onSelectRange(book.uuid)
-      return
-    }
-
-    onToggleSelection?.(book.uuid)
-  }
-
   const { primary, accent } = useCoverColors(book)
   const { showTint, showAccent, tint } = useColorPreferences()
   const isDark = useIsDarkMode()
@@ -464,27 +450,14 @@ const BookListItem = memo(function BookListItem({
 
       {/* actions: checkbox + ellipsis */}
       <div className="flex shrink-0 items-center gap-1">
-        {showCheckbox && (
-          <div
-            className={cn(
-              "transition-opacity",
-              !isBookSelected &&
-                !isSelecting &&
-                "opacity-0 group-hover:opacity-100",
-            )}
-            onClick={handleCheckboxClick}
-            role="button"
-            tabIndex={0}
-          >
-            <Checkbox
-              onClick={(e) => {
-                e.stopPropagation()
-              }}
-              checked={isBookSelected}
-              tabIndex={-1}
-              className="hover:border-primary h-5 w-5 cursor-pointer rounded-full border-2 shadow-sm transition-colors data-checked:border-2"
-            />
-          </div>
+        {onToggleSelection && (
+          <SelectionCheckbox
+            uuid={book.uuid}
+            checked={isBookSelected}
+            isSelecting={isSelecting}
+            onToggle={onToggleSelection}
+            onSelectRange={onSelectRange}
+          />
         )}
 
         {onOpenMenu && (
@@ -808,6 +781,7 @@ export function BookList({
                   menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
                 }}
               >
+                <SelectionBullet selected={menu.menuBookIsSelected} />
                 {menu.menuBookIsSelected
                   ? menu.c("actions.deselect")
                   : menu.c("actions.select")}

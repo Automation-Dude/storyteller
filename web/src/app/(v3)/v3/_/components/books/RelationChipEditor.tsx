@@ -18,6 +18,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+import { useCoverColors } from "./BookDetails/sections/useCoverColors"
 
 type RelationItem = {
   uuid: string

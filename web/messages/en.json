@@ -230,6 +230,7 @@
     "selectAll": "Select all",
     "selectNone": "Select none",
     "invertSelection": "Invert selection",
+    "selectedBooks": "{count, plural, one {# book} other {# books}} <sel>selected</sel>",
     "actions": "Actions",
     "addToCollection": "Add to Collection",
     "addToSeries": "Add to Series",
@@ -1211,7 +1212,7 @@
       "keep": "Keep existing",
       "overwrite": "Overwrite from new file"
     },
-    "selectedCount": "{count} selected",
+    "selectedCount": "{count, number} <em>selected</em>",
     "outOf": "{count, number} of {total, number}"
   },
   "Labels": {

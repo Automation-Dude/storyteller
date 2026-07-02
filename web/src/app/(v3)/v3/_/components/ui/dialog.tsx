@@ -93,7 +93,7 @@ function DialogContent({
         <DialogOverlay forceRender={forceRender} />
         <Drawer.Content
           className={cn(
-            "bg-background fixed right-0 bottom-0 left-0 z-50 grid gap-4 overflow-hidden rounded-t-2xl p-4",
+            "bg-background fixed right-0 bottom-0 left-0 z-50 grid h-[85svh] gap-4 overflow-hidden rounded-t-2xl p-4",
             className,
           )}
           {...props}
