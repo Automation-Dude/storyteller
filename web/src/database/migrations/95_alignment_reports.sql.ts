@@ -100,6 +100,20 @@ async function backfillReports() {
 }
 
 async function backfillSummaries() {
+  // if the table was created by the old version of this migration it won't
+  // have the summary columns yet -- the repair migration (96) handles that.
+  const columns = await sql<{ name: string }>`
+    PRAGMA table_info (alignment_report)
+  `.execute(db)
+  const hasGrade = columns.rows.some((r) => r.name === "grade")
+
+  if (!hasGrade) {
+    logger.info({
+      msg: "Skipping backfillSummaries: summary columns not yet on alignment_report (repair migration will handle it).",
+    })
+    return
+  }
+
   logger.info({ msg: "Backfilling alignment summaries onto reports." })
 
   const rows = await db
