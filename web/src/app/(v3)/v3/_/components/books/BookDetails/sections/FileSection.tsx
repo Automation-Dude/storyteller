@@ -29,7 +29,10 @@ import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
 import { ConfirmDialog } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
-import { useCommon, useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import {
+  useCommon,
+  useTranslation,
+} from "@/app/(v3)/v3/_/hooks/use-translation"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"

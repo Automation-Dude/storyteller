@@ -1,9 +1,10 @@
+import { readFile } from "fs/promises"
+
 import { sql } from "kysely"
 
-import {
-  type Report,
-  summarizeReport,
-} from "@/database/alignmentReports"
+import { getAlignmentReportFilepath } from "@/assets/paths"
+import { type Report, createAlignmentReport } from "@/database/alignmentReports"
+import { type Book } from "@/database/books"
 import { db } from "@/database/connection"
 import { logger } from "@/logging"
 
@@ -51,8 +52,13 @@ async function addColumnsToReport() {
 
 async function backfillSummaries() {
   const rows = await db
-    .selectFrom("alignmentReport")
-    .select(["uuid", "report"])
+    .selectFrom("book")
+    .select(["uuid", "assetDir", "title"])
+    .innerJoin("readaloud", "readaloud.bookUuid", "book.uuid")
+    .leftJoin("alignmentReport", "alignmentReport.bookUuid", "book.uuid")
+    // .where("readaloud.missing", "=", false)
+    // .where("readaloud.status", "=", "ALIGNED")
+    .where("alignmentReport.bookUuid", "is", null)
     .where("grade", "is", null)
     .execute()
 
@@ -64,23 +70,35 @@ async function backfillSummaries() {
 
   let count = 0
   for (const row of rows) {
-    const report: Report =
-      typeof row.report === "string"
-        ? (JSON.parse(row.report) as Report)
-        : row.report
-    const s = summarizeReport(report)
+    let report: Report | null = null
+    try {
+      const reportText = await readFile(
+        getAlignmentReportFilepath(row as Book),
+        { encoding: "utf-8" },
+      )
 
-    await sql`
-      UPDATE alignment_report SET
-        grade = ${s.grade},
-        score = ${s.score},
-        chapters = ${s.chapters},
-        missing_sentences = ${s.missingSentences},
-        muted_chapters = ${s.mutedChapters},
-        failed_chapters = ${s.failedChapters},
-        unaligned_audio = ${s.unalignedAudio}
-      WHERE uuid = ${row.uuid}
-    `.execute(db)
+      report = JSON.parse(reportText) as Report
+    } catch (error) {
+      logger.warn({
+        msg: `Failed to read alignment report for book ${row.title}. This may be expected.`,
+        err: error,
+      })
+      continue
+    }
+
+    try {
+      await createAlignmentReport({
+        bookUuid: row.uuid,
+        report: report,
+        jobUuid: null,
+      })
+      logger.info({ msg: `Backfilled alignment report for book ${row.title}` })
+    } catch (error) {
+      logger.error({
+        msg: `Failed to create alignment report for book ${row.title}`,
+        err: error,
+      })
+    }
     count++
   }
 

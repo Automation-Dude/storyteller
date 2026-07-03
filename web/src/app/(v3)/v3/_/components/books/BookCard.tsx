@@ -157,26 +157,26 @@ export function SecondaryText({
     case "authors":
       return null
     case "alignmentScore":
-      return book.alignmentScore != null ? (
-        <span>{Math.round(book.alignmentScore)}%</span>
+      return book.alignmentSummary?.score != null ? (
+        <span>{Math.round(book.alignmentSummary.score)}%</span>
       ) : (
         none
       )
     case "alignmentGrade":
-      return book.alignmentGrade ? (
-        <GradePill grade={book.alignmentGrade} />
+      return book.alignmentSummary?.grade ? (
+        <GradePill grade={book.alignmentSummary.grade} />
       ) : (
         none
       )
     case "alignmentMissingSentences":
-      return book.alignmentMissingSentences != null ? (
-        <span>{book.alignmentMissingSentences}</span>
+      return book.alignmentSummary?.missingSentences != null ? (
+        <span>{book.alignmentSummary.missingSentences}</span>
       ) : (
         none
       )
     case "alignmentMutedChapters":
-      return book.alignmentMutedChapters != null ? (
-        <span>{book.alignmentMutedChapters}</span>
+      return book.alignmentSummary?.mutedChapters != null ? (
+        <span>{book.alignmentSummary.mutedChapters}</span>
       ) : (
         none
       )

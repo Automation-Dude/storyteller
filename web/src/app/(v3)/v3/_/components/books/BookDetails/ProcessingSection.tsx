@@ -208,7 +208,7 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
         </span>
       )}
 
-      {book.alignmentGrade && <AlignmentReportSummary book={book} />}
+      {book.alignmentSummary?.grade && <AlignmentReportSummary book={book} />}
 
       {dialog}
 
@@ -266,7 +266,7 @@ function AlignmentReportSummary({ book }: { book: BookWithRelations }) {
   const tNouns = useTranslation("Common.Nouns")
   const relativeTime = useFormatRelativeTime()
 
-  const grade = data?.summary.grade ?? book.alignmentGrade
+  const grade = data?.summary.grade ?? book.alignmentSummary?.grade
   if (!grade) return null
   const tone = gradeTone(grade)
   const summary = data?.summary
