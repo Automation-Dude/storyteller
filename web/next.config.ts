@@ -63,6 +63,7 @@ const nextConfig: import("next").NextConfig = {
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
     authInterrupts: true,
+    turbopackSourceMaps: true,
   },
   webpack: (config: Record<string, unknown>, { isServer, dev }) => {
     if (isServer && !dev) {
