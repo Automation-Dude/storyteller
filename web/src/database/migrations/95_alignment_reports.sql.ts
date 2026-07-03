@@ -164,14 +164,14 @@ async function enrichUnalignedAudio() {
 
   let enriched = 0
   for (const row of rows) {
-    const report: Report =
+    const report: Partial<Report> =
       typeof row.report === "string"
         ? (JSON.parse(row.report) as Report)
         : row.report
-    if (report.unalignedAudioFiles.length === 0) continue
+    if (report.unalignedAudioFiles?.length === 0) continue
 
     let changed = false
-    for (const uaf of report.unalignedAudioFiles) {
+    for (const uaf of report.unalignedAudioFiles ?? []) {
       if (uaf.transcription) continue
       try {
         const text = await readFile(

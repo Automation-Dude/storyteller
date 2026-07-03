@@ -34,7 +34,7 @@ export function summarizeReport(
       Pick<Report, "unalignedChapters" | "audioFiles" | "unalignedAudioFiles">
     >,
 ): AlignmentSummary {
-  const chapters = report.chapters ?? []
+  const chapters = report.chapters
 
   let totalSents = 0
   let totalAligned = 0
