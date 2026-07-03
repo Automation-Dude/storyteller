@@ -374,11 +374,40 @@ async function ratingFacets(userId: UUID): Promise<LibraryFacet[]> {
     )
     .where("userBookRating.rating", "is not", null)
     .select((eb) => [
-      rating.as("key"),
-      rating.as("name"),
+      eb
+        .case()
+        .when("userBookRating.rating", "<=", 1)
+        .then("0-1")
+        .when("userBookRating.rating", "<=", 2)
+        .then("1-2")
+        .when("userBookRating.rating", "<=", 3)
+        .then("2-3")
+        .when("userBookRating.rating", "<=", 4)
+        .then("3-4")
+        .when("userBookRating.rating", "<=", 5)
+        .then("4-5")
+        .else("no-rating")
+        .end()
+        .as("key"),
+
+      eb
+        .case()
+        .when("userBookRating.rating", "<=", 1)
+        .then("0-1")
+        .when("userBookRating.rating", "<=", 2)
+        .then("1-2")
+        .when("userBookRating.rating", "<=", 3)
+        .then("2-3")
+        .when("userBookRating.rating", "<=", 4)
+        .then("3-4")
+        .when("userBookRating.rating", "<=", 5)
+        .then("4-5")
+        .else("no-rating")
+        .end()
+        .as("key"),
       eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
     ])
-    .groupBy(rating)
+    .groupBy("key")
     .execute()
 }
 
@@ -506,11 +535,6 @@ async function countSectionNone(
   return row?.count ?? 0
 }
 
-// the facet list (with per-facet book counts) for a library section, computed
-// in SQL. counts are unconditional - they don't reflect the active grid filter,
-// matching the previous client behavior and keeping the result cache-stable.
-// a trailing NONE_FACET_KEY entry is appended when some visible books carry none
-// of the facet, so the sidebar can offer the "(no author)" bucket.
 export async function getSectionFacets(
   userId: UUID,
   section: FacetSection,
