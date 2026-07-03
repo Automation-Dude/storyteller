@@ -133,7 +133,7 @@ export function PreferencesForm({
     "tab",
     parseAsString.withDefault("profile"),
   )
-  const activeTab = (activeTabRaw ?? "profile") as Tab
+  const activeTab = activeTabRaw as Tab
 
   const setActiveTabEvent = useCallback(
     (tab: Tab) => {

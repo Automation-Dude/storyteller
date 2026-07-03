@@ -292,7 +292,6 @@ export function SettingsForm({
     toast.error(
       t("formHasErrors", {
         count: fieldErrorCount,
-        plural: fieldErrorCount === 1 ? "one" : "other",
       }),
       {
         description,
@@ -459,7 +458,6 @@ export function SettingsForm({
               <span>
                 {t("formHasErrors", {
                   count: errorCount,
-                  plural: errorCount === 1 ? "one" : "other",
                 })}
               </span>
             </div>
@@ -610,7 +608,7 @@ function SettingsSidebar({
   onSearchChange,
 }: {
   tabs: SidebarTabDef[]
-  activeTab: Tab
+  activeTab: Tab | null
   onTabChange: (tab: Tab) => void
   searchQuery: string
   onSearchChange: (query: string) => void
@@ -704,7 +702,7 @@ function SidebarGroup({
 }: {
   label: string
   tabs: SidebarTabDef[]
-  activeTab: Tab
+  activeTab: Tab | null
   onTabChange: (tab: Tab) => void
 }) {
   return (
@@ -728,7 +726,7 @@ function SidebarTabList({
   onTabChange,
 }: {
   tabs: SidebarTabDef[]
-  activeTab: Tab
+  activeTab: Tab | null
   onTabChange: (tab: Tab) => void
 }) {
   return (

@@ -1,6 +1,6 @@
 import { IconDotsVertical } from "@tabler/icons-react"
-import { useFormatter, useLocale } from "next-intl"
 import Link from "next/link"
+import { useFormatter, useLocale } from "next-intl"
 import { Fragment, memo, useCallback, useMemo, useState } from "react"
 
 import { useIsMobile } from "@v3/_/hooks/use-mobile"

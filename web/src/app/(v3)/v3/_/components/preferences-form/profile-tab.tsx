@@ -39,7 +39,7 @@ export function ProfileTab({
 
   const [isSaving, setIsSaving] = useState(false)
   const [username, setUsername] = useState(user.username ?? "")
-  const [email, setEmail] = useState(user.email ?? "")
+  const [email, setEmail] = useState(user.email)
   const [name, setName] = useState(user.name ?? "")
   const [password, setPassword] = useState("")
 
