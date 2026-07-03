@@ -292,11 +292,9 @@ function AddFilterSubmenu({
             e.stopPropagation()
           }}
           onClick={(e) => {
-            // e.preventDefault()
             e.stopPropagation()
           }}
           onPointerDown={(e) => {
-            // e.preventDefault()
             e.stopPropagation()
           }}
         >

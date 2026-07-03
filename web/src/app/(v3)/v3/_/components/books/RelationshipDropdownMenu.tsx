@@ -20,6 +20,9 @@ import {
   ASSET_FORMATS,
   type AssetFormat,
   type FieldDef,
+  FieldDefDate,
+  FieldDefDuration,
+  FieldDefEnum,
   FieldDefFacet,
   FieldDefNumeric,
   MEDIA_TYPE_VALUES,
@@ -139,7 +142,7 @@ function cycleTriState(
 }
 
 function useFacetItems(
-  source: FieldDef["source"] | undefined,
+  source: FieldDefFacet["source"] | undefined,
   enabled: boolean,
 ): { items: Item[]; loading: boolean } {
   const tags = useListTagsQuery(undefined, {
@@ -212,7 +215,10 @@ function summarize(
   return `: ≤ ${fmtBound(def, c.value as number | string)}`
 }
 
-function fmtBound(def: FieldDef, v: number | string): string {
+function fmtBound(
+  def: FieldDefDate | FieldDefNumeric | FieldDefDuration,
+  v: number | string,
+): string {
   if (def.control === "date-range") return String(v)
   const u = unitDisplay(def.scale?.unit)
   return `${u.to(Number(v))}${u.suffix}`
@@ -366,14 +372,17 @@ function FacetEditor({
   staticItems,
 }: {
   field: ShelfFilterField
-  def: FieldDefFacet
+  def: FieldDefFacet | FieldDefEnum
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
   enabled: boolean
   staticItems?: Item[]
 }) {
   const t = useTranslation("BooksPage")
-  const fetched = useFacetItems(staticItems ? undefined : def.source, enabled)
+  const fetched = useFacetItems(
+    staticItems ? undefined : (def as FieldDefFacet).source,
+    enabled,
+  )
   const items = staticItems ?? fetched.items
   const loading = staticItems ? false : fetched.loading
 
@@ -599,7 +608,7 @@ function NumberRangeEditor({
   onChange,
 }: {
   field: ShelfFilterField
-  def: FieldDefNumeric
+  def: FieldDefNumeric | FieldDefDuration
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
 }) {
@@ -767,10 +776,6 @@ function DateRangeEditor({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-// text editor (contains)
-// ---------------------------------------------------------------------------
 
 function TextEditor({
   field,
