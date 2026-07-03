@@ -35,8 +35,6 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
   const [processBook] = useProcessBookMutation()
   const [cancelProcessing] = useCancelProcessingMutation()
   const canProcess = usePermission("bookProcess")
-  // the per-run dialog surfaces the same secret-bearing settings as the settings
-  // page, so only offer it to settings admins; others process with global defaults.
   const canConfigure = usePermission("settingsUpdate")
 
   const [processingModalOpen, setProcessingModalOpen] = useState(false)
@@ -53,8 +51,6 @@ export function TranscriptionStatus({ book }: { book: BookWithRelations }) {
 
   const readaloudStatus = book.readaloud?.status
   const aligned = !!book.readaloud?.filepath
-  // const isBusy =
-  //   readaloudStatus === "QUEUED" || readaloudStatus === "PROCESSING"
 
   const t = useTranslation("BookDetailsPage.alignment")
   const c = useCommon()

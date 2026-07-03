@@ -47,6 +47,7 @@ import {
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
 import { ColumnSelector } from "./ColumnSelector"
+import { ProcessingIndicator } from "./ProcessingIndicator"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
 import { SelectionBullet, SelectionCheckbox } from "./SelectionCheckbox"
 import { GradePill } from "./grade-pill"
@@ -380,7 +381,7 @@ const BookListItem = memo(function BookListItem({
           )}
 
           {isProcessing && (
-            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-amber-400" />
+            <ProcessingIndicator book={book} size={16} className="shrink-0" />
           )}
         </div>
 

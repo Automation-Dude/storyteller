@@ -19,6 +19,7 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./BookDetails/sections/useCoverColors"
+import { ProcessingIndicator } from "./ProcessingIndicator"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
 import { SelectionCheckbox } from "./SelectionCheckbox"
 import { GradePill } from "./grade-pill"
@@ -250,9 +251,11 @@ export const BookCard = memo(function BookCard({
           )}
 
           {isProcessing && (
-            <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
-            </div>
+            <ProcessingIndicator
+              book={book}
+              size={22}
+              className="absolute right-1.5 bottom-1.5 z-10"
+            />
           )}
         </div>
 
