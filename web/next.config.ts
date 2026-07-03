@@ -59,6 +59,7 @@ const nextConfig: import("next").NextConfig = {
   output: "standalone",
   outputFileTracingRoot: resolve(new URL(import.meta.url).pathname, "../.."),
   reactCompiler: true,
+  productionBrowserSourceMaps: true,
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
     authInterrupts: true,
