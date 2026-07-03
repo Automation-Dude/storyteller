@@ -192,6 +192,12 @@ export async function cleanShelfFiltersForDeletedEntity(
 type EB = ExpressionBuilder<DB, "book">
 type FilterExpression = ExpressionWrapper<DB, "book", SqlBool>
 
+// correlated scalar subquery pulling a column from the latest alignment_report
+// for the current book. used throughout isEmpty, comparison, and sort builders.
+function latestReportColumn(column: string) {
+  return sql`(select ${sql.raw(column)} from alignment_report where book_uuid = book.uuid order by created_at desc limit 1)`
+}
+
 export function buildFilterExpression(
   eb: EB,
   node: ShelfFilterNode,
@@ -313,16 +319,16 @@ function buildIsEmptyExpression(
       return eb("book.updatedAt", "is", null)
 
     case "alignmentGrade":
-      return eb("book.alignmentGrade", "is", null)
+      return eb(latestReportColumn("grade"), "is", null)
 
     case "alignmentScore":
-      return eb("book.alignmentScore", "is", null)
+      return eb(latestReportColumn("score"), "is", null)
 
     case "alignmentMissingSentences":
-      return eb("book.alignmentMissingSentences", "is", null)
+      return eb(latestReportColumn("missing_sentences"), "is", null)
 
     case "alignmentMutedChapters":
-      return eb("book.alignmentMutedChapters", "is", null)
+      return eb(latestReportColumn("muted_chapters"), "is", null)
 
     case "alignedAt":
       return eb("book.alignedAt", "is", null)
@@ -568,7 +574,7 @@ function buildComparisonExpression(
   if (field === "alignmentScore") {
     return buildNumericExprComparison(
       eb,
-      sql<number>`book.alignment_score`,
+      latestReportColumn("score") as ReturnType<typeof sql<number>>,
       operator,
       value,
     )
@@ -577,7 +583,7 @@ function buildComparisonExpression(
   if (field === "alignmentMissingSentences") {
     return buildNumericExprComparison(
       eb,
-      sql<number>`book.alignment_missing_sentences`,
+      latestReportColumn("missing_sentences") as ReturnType<typeof sql<number>>,
       operator,
       value,
     )
@@ -586,7 +592,16 @@ function buildComparisonExpression(
   if (field === "alignmentMutedChapters") {
     return buildNumericExprComparison(
       eb,
-      sql<number>`book.alignment_muted_chapters`,
+      latestReportColumn("muted_chapters") as ReturnType<typeof sql<number>>,
+      operator,
+      value,
+    )
+  }
+
+  if (field === "alignmentGrade") {
+    return buildStringExprComparison(
+      eb,
+      latestReportColumn("grade"),
       operator,
       value,
     )
@@ -603,12 +618,7 @@ function buildComparisonExpression(
     case "string":
       return buildStringComparison(
         eb,
-        field as
-          | "title"
-          | "subtitle"
-          | "description"
-          | "language"
-          | "alignmentGrade",
+        field as "title" | "subtitle" | "description" | "language",
         operator,
         value,
       )
@@ -645,7 +655,7 @@ function buildComparisonExpression(
 
 function buildStringComparison(
   eb: EB,
-  field: "title" | "subtitle" | "description" | "language" | "alignmentGrade",
+  field: "title" | "subtitle" | "description" | "language",
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
 ): FilterExpression {
@@ -707,6 +717,64 @@ function buildStringComparison(
         eb.not(
           eb(
             sql`lower(${sql.ref(column)})`,
+            "in",
+            value.map((v) => String(v).toLowerCase()),
+          ),
+        ),
+      ])
+
+    default:
+      return eb.lit(true)
+  }
+}
+
+// string comparison against an arbitrary sql expression (e.g. a correlated
+// subquery) rather than a fixed book column.
+function buildStringExprComparison(
+  eb: EB,
+  expr: ReturnType<typeof sql>,
+  operator: ShelfFilterOperator,
+  value: ShelfFilterValue,
+): FilterExpression {
+  const strValue = String(value)
+
+  switch (operator) {
+    case "is":
+      return eb(sql`lower(${expr})`, "=", strValue.toLowerCase())
+
+    case "isNot":
+      return eb(sql`lower(${expr})`, "!=", strValue.toLowerCase())
+
+    case "contains":
+      return eb(sql`lower(${expr})`, "like", `%${strValue.toLowerCase()}%`)
+
+    case "notContains":
+      return eb.or([
+        eb(expr, "is", null),
+        eb.not(eb(sql`lower(${expr})`, "like", `%${strValue.toLowerCase()}%`)),
+      ])
+
+    case "startsWith":
+      return eb(sql`lower(${expr})`, "like", `${strValue.toLowerCase()}%`)
+
+    case "endsWith":
+      return eb(sql`lower(${expr})`, "like", `%${strValue.toLowerCase()}`)
+
+    case "isAnyOf":
+      if (!Array.isArray(value)) return eb.lit(true)
+      return eb(
+        sql`lower(${expr})`,
+        "in",
+        value.map((v) => String(v).toLowerCase()),
+      )
+
+    case "isNoneOf":
+      if (!Array.isArray(value)) return eb.lit(true)
+      return eb.or([
+        eb(expr, "is", null),
+        eb.not(
+          eb(
+            sql`lower(${expr})`,
             "in",
             value.map((v) => String(v).toLowerCase()),
           ),
@@ -1045,14 +1113,13 @@ export function buildSortExpression(
     case "language":
       return sql`book.language`
     case "alignmentScore":
-      return sql`book.alignment_score`
+      return latestReportColumn("score")
     case "alignmentMissingSentences":
-      return sql`book.alignment_missing_sentences`
+      return latestReportColumn("missing_sentences")
     case "alignmentMutedChapters":
-      return sql`book.alignment_muted_chapters`
+      return latestReportColumn("muted_chapters")
     case "alignmentGrade":
-      // rank best-to-worst so a descending sort surfaces the strongest first.
-      return sql`case book.alignment_grade
+      return sql`case ${latestReportColumn("grade")}
         when 'A+' then 8 when 'A' then 7 when 'A-' then 6
         when 'B' then 5 when 'B-' then 4 when 'C' then 3
         when 'D' then 2 when 'F' then 1 else null end`

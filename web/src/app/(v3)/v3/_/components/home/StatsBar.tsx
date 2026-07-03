@@ -6,7 +6,6 @@ import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { STATUS_READING } from "@/database/statusKinds"
 import { useGetHomeStatsQuery, useListStatusesQuery } from "@/store/api"
 
-
 type Tile = {
   key: string
   value: number

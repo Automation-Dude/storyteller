@@ -36,7 +36,10 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type User } from "@/apiModels"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
-import { useCommon, useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import {
+  useCommon,
+  useTranslation,
+} from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   type UserPreferences,
   UserPreferencesSchema,

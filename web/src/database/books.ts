@@ -636,7 +636,7 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
             ).as("userBookRating"),
           ]
         : []),
-        
+
       jsonObjectFrom(
         eb
           .selectFrom("alignmentReport")

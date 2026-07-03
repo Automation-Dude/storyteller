@@ -139,15 +139,15 @@ function sortValue(
     case "fileSize":
       return book.ebook?.fileSize ?? book.audiobook?.fileSize ?? null
     case "alignmentScore":
-      return book.alignmentScore
+      return book.alignmentSummary?.score ?? null
     case "alignmentGrade":
-      return book.alignmentGrade
-        ? GRADE_RANK[book.alignmentGrade] ?? null
+      return book.alignmentSummary?.grade
+        ? GRADE_RANK[book.alignmentSummary.grade] ?? null
         : null
     case "alignmentMissingSentences":
-      return book.alignmentMissingSentences
+      return book.alignmentSummary?.missingSentences ?? null
     case "alignmentMutedChapters":
-      return book.alignmentMutedChapters
+      return book.alignmentSummary?.mutedChapters ?? null
     case "alignedAt":
       return book.alignedAt
     case "lastRead":

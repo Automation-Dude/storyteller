@@ -163,7 +163,9 @@ export function ReplaceFileDialog({
         void handleSubmit(path, importMode, metadataMode)
       }}
       isSubmitting={isLoading}
-      submitLabel={isAdd ? c.plain("actions.import") : c.plain("actions.replace")}
+      submitLabel={
+        isAdd ? c.plain("actions.import") : c.plain("actions.replace")
+      }
       warnings={warnings}
       error={error}
       labels={{

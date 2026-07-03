@@ -85,9 +85,7 @@ export function CreateStatusDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("createStatus")}</DialogTitle>
-          <DialogDescription>
-            {t("createStatusDescription")}
-          </DialogDescription>
+          <DialogDescription>{t("createStatusDescription")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>

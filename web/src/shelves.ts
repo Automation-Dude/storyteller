@@ -24,7 +24,7 @@ export const SHELF_FILTER_FIELDS = [
   "updatedAt",
   // when the book's read-along alignment last completed (book.alignedAt)
   "alignedAt",
-  // denormalized alignment quality columns on book (see summarizeReport)
+  // alignment quality from the latest alignment_report (see summarizeReport)
   "alignmentGrade",
   "alignmentScore",
   "alignmentMissingSentences",

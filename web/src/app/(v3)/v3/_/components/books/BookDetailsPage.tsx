@@ -168,7 +168,7 @@ function BookDetailsContentInner({
   const [reportMode, setReportMode] = useReportPanel()
 
   // only honor report mode when there is actually a report to show.
-  const showReport = reportMode && !!book.alignmentGrade
+  const showReport = reportMode && !!book.alignmentSummary?.grade
 
   const isControlled = controlledIsEditing !== undefined
   const isEditing = isControlled ? controlledIsEditing : localIsEditing

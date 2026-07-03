@@ -154,22 +154,22 @@ export function ColumnValue({
     case "language":
       return book.language ?? "\u2014"
     case "alignmentScore":
-      return book.alignmentScore != null
-        ? `${Math.round(book.alignmentScore)}%`
+      return book.alignmentSummary?.score != null
+        ? `${Math.round(book.alignmentSummary.score)}%`
         : "\u2014"
     case "alignmentGrade":
-      return book.alignmentGrade ? (
-        <GradePill grade={book.alignmentGrade} />
+      return book.alignmentSummary?.grade ? (
+        <GradePill grade={book.alignmentSummary.grade} />
       ) : (
         "\u2014"
       )
     case "alignmentMissingSentences":
-      return book.alignmentMissingSentences != null
-        ? `${book.alignmentMissingSentences}`
+      return book.alignmentSummary?.missingSentences != null
+        ? `${book.alignmentSummary.missingSentences}`
         : "\u2014"
     case "alignmentMutedChapters":
-      return book.alignmentMutedChapters != null
-        ? `${book.alignmentMutedChapters}`
+      return book.alignmentSummary?.mutedChapters != null
+        ? `${book.alignmentSummary.mutedChapters}`
         : "\u2014"
     case "title":
       return book.title
@@ -424,7 +424,7 @@ const BookListItem = memo(function BookListItem({
         const isClickable =
           !!onColumnClick &&
           (field === "alignmentGrade" || field === "alignmentScore") &&
-          book.alignmentGrade != null
+          book.alignmentSummary?.grade != null
         return (
           <span
             key={field}

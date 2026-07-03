@@ -72,10 +72,7 @@ export async function deleteStatus(uuid: UUID) {
   }
 
   await db.transaction().execute(async (tr) => {
-    await tr
-      .deleteFrom("bookToStatus")
-      .where("statusUuid", "=", uuid)
-      .execute()
+    await tr.deleteFrom("bookToStatus").where("statusUuid", "=", uuid).execute()
 
     await tr.deleteFrom("status").where("uuid", "=", uuid).execute()
   })
