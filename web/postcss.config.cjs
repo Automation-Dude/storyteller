@@ -1,4 +1,4 @@
-const postcssConfig = {
+module.exports = {
   plugins: {
     "@tailwindcss/postcss": {},
     "postcss-preset-mantine": {},
@@ -13,5 +13,3 @@ const postcssConfig = {
     },
   },
 }
-
-export default postcssConfig
