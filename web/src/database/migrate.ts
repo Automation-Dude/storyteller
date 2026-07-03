@@ -65,15 +65,6 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   "95_alignment_reports.sql": (
     await import("./migrations/95_alignment_reports.sql")
   ).default,
-  "96_alignment_summary.sql": (
-    await import("./migrations/96_alignment_summary.sql")
-  ).default,
-  "97_unaligned_audio_transcription.sql": (
-    await import("./migrations/97_unaligned_audio_transcription.sql")
-  ).default,
-  "98_add_alignment_quality_sidebar.sql": (
-    await import("./migrations/98_add_alignment_quality_sidebar.sql")
-  ).default,
 }
 
 async function isFirstStartup() {

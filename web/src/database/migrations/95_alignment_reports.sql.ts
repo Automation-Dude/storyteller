@@ -2,13 +2,34 @@ import { readFile } from "node:fs/promises"
 
 import { sql } from "kysely"
 
-import { getAlignmentReportFilepath } from "@/assets/paths"
-import { type Report, createAlignmentReport } from "@/database/alignmentReports"
+import {
+  getAlignmentReportFilepath,
+  getTranscriptionFilename,
+  getTranscriptionsFilepath,
+} from "@/assets/paths"
+import {
+  type Report,
+  createAlignmentReport,
+  summarizeReport,
+} from "@/database/alignmentReports"
 import { type Book } from "@/database/books"
 import { db } from "@/database/connection"
 import { logger } from "@/logging"
 
+const BOOK_ALIGNMENT_COLUMNS: Array<[name: string, type: string]> = [
+  ["alignment_grade", "TEXT"],
+  ["alignment_score", "REAL"],
+  ["alignment_chapters", "INTEGER"],
+  ["alignment_missing_sentences", "INTEGER"],
+  ["alignment_muted_chapters", "INTEGER"],
+  ["alignment_failed_chapters", "INTEGER"],
+  ["alignment_unaligned_audio", "INTEGER"],
+  ["alignment_report_uuid", "TEXT"],
+]
+
 export default async function migrate() {
+  // 1. schema first: the report table and the denormalized quality columns must
+  // both exist before any backfill touches them.
   await db.transaction().execute(async (trx) => {
     await sql`
       CREATE TABLE IF NOT EXISTS alignment_report (
@@ -27,13 +48,34 @@ export default async function migrate() {
     await sql`
       CREATE INDEX IF NOT EXISTS idx_alignment_report_book ON alignment_report (book_uuid)
     `.execute(trx)
+
+    // sqlite has no ADD COLUMN IF NOT EXISTS, so check what's already there.
+    const columns = await sql<{ name: string }>`
+      PRAGMA table_info (book)
+    `.execute(trx)
+    const existing = new Set(columns.rows.map((r) => r.name))
+    for (const [name, type] of BOOK_ALIGNMENT_COLUMNS) {
+      if (existing.has(name)) continue
+      await sql`
+        ALTER TABLE book ADD COLUMN ${sql.raw(name)} ${sql.raw(type)}
+      `.execute(trx)
+    }
   })
 
+  await backfillReports()
+  await backfillSummaries()
+  await enrichUnalignedAudio()
+  await addSidebarItem()
+}
+
+// find books that have an aligned readaloud but no report row yet, read their
+// on-disk report, and store it. createAlignmentReport also fills the summary
+// columns, so this covers the common case in one pass.
+async function backfillReports() {
   logger.info({
     msg: "Backfilling alignment reports. This could take a second.",
   })
 
-  // now find all existing books, find their reports, and insert them into the table
   const books = await db
     .selectFrom("book")
     .select(["book.uuid", "book.assetDir", "book.title"])
@@ -76,4 +118,140 @@ export default async function migrate() {
       })
     }
   }
+}
+
+async function backfillSummaries() {
+  logger.info({ msg: "Backfilling alignment summaries onto books." })
+
+  // newest first, so the first row seen per book is the latest report.
+  const rows = await db
+    .selectFrom("alignmentReport")
+    .select(["uuid", "bookUuid", "report"])
+    .where("bookUuid", "is not", null)
+    .orderBy("createdAt", "desc")
+    .execute()
+
+  const seen = new Set<string>()
+  let count = 0
+  for (const row of rows) {
+    if (!row.bookUuid || seen.has(row.bookUuid)) continue
+    seen.add(row.bookUuid)
+
+    const report: Report =
+      typeof row.report === "string"
+        ? (JSON.parse(row.report) as Report)
+        : row.report
+    const s = summarizeReport(report)
+
+    await sql`
+      UPDATE book SET
+        alignment_grade = ${s.grade},
+        alignment_score = ${s.score},
+        alignment_chapters = ${s.chapters},
+        alignment_missing_sentences = ${s.missingSentences},
+        alignment_muted_chapters = ${s.mutedChapters},
+        alignment_failed_chapters = ${s.failedChapters},
+        alignment_unaligned_audio = ${s.unalignedAudio},
+        alignment_report_uuid = ${row.uuid}
+      WHERE uuid = ${row.bookUuid}
+    `.execute(db)
+    count++
+  }
+
+  logger.info({ msg: `Backfilled alignment summaries for ${count} books` })
+}
+
+async function enrichUnalignedAudio() {
+  const rows = await db
+    .selectFrom("alignmentReport")
+    .innerJoin("book", "book.uuid", "alignmentReport.bookUuid")
+    .select([
+      "alignmentReport.uuid as reportUuid",
+      "alignmentReport.report as report",
+      "book.uuid as uuid",
+      "book.assetDir as assetDir",
+      "book.title as title",
+    ])
+    .execute()
+
+  let enriched = 0
+  for (const row of rows) {
+    const report: Report =
+      typeof row.report === "string"
+        ? (JSON.parse(row.report) as Report)
+        : row.report
+    if (report.unalignedAudioFiles.length === 0) continue
+
+    let changed = false
+    for (const uaf of report.unalignedAudioFiles) {
+      if (uaf.transcription) continue
+      try {
+        const text = await readFile(
+          getTranscriptionsFilepath(
+            row as unknown as Book,
+            getTranscriptionFilename(uaf.filepath),
+          ),
+          { encoding: "utf-8" },
+        )
+        const parsed = JSON.parse(text) as { transcript?: string }
+        const transcript = parsed.transcript?.trim()
+        if (transcript) {
+          uaf.transcription = { text: transcript.slice(0, 2000) }
+          changed = true
+        }
+      } catch {
+        // transcription is gone; nothing we can do.
+      }
+    }
+
+    if (changed) {
+      await db
+        .updateTable("alignmentReport")
+        .set({ report: JSON.stringify(report) })
+        .where("uuid", "=", row.reportUuid)
+        .execute()
+      enriched++
+    }
+  }
+
+  logger.info({
+    msg: `Enriched unaligned audio transcription for ${enriched} reports`,
+  })
+}
+
+// append the alignment-quality builtin to every user's "library" group. it is
+// permission-gated at render time, so seeding it for everyone is harmless.
+async function addSidebarItem() {
+  await db.transaction().execute(async (trx) => {
+    const mainGroups = await sql<{ uuid: string; userId: string }>`
+      SELECT uuid, user_id as "userId"
+      FROM sidebar_group
+      WHERE name = 'library'
+    `.execute(trx)
+
+    for (const group of mainGroups.rows) {
+      // idempotency: skip users who already have the entry.
+      const existing = await sql<{ uuid: string }>`
+        SELECT uuid FROM sidebar_item
+        WHERE user_id = ${group.userId}
+          AND kind = 'builtin'
+          AND builtin_key = 'alignment-quality'
+      `.execute(trx)
+
+      if (existing.rows.length > 0) continue
+
+      const maxPos = await sql<{ maxPos: number | null }>`
+        SELECT MAX(position) as "maxPos"
+        FROM sidebar_item
+        WHERE group_uuid = ${group.uuid}
+      `.execute(trx)
+
+      const nextPos = (maxPos.rows[0]?.maxPos ?? -1) + 1
+
+      await sql`
+        INSERT INTO sidebar_item (uuid, user_id, group_uuid, kind, builtin_key, position, hidden)
+        VALUES (${crypto.randomUUID()}, ${group.userId}, ${group.uuid}, 'builtin', 'alignment-quality', ${nextPos}, 0)
+      `.execute(trx)
+    }
+  })
 }
