@@ -636,6 +636,21 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
             ).as("userBookRating"),
           ]
         : []),
+        
+      jsonObjectFrom(
+        eb
+          .selectFrom("alignmentReport")
+          .select([
+            "alignmentReport.grade",
+            "alignmentReport.score",
+            "alignmentReport.missingSentences",
+            "alignmentReport.mutedChapters",
+          ])
+          .whereRef("alignmentReport.bookUuid", "=", "book.uuid")
+          .orderBy("alignmentReport.createdAt", "desc")
+          .limit(1),
+      ).as("alignmentSummary"),
+
       jsonObjectFrom(
         eb
           .selectFrom("ebook")

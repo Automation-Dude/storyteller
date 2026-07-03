@@ -33,15 +33,7 @@ CREATE TABLE "book" (
   subtitle TEXT,
   "duration" real,
   "page_count" integer,
-  asset_dir text NOT NULL DEFAULT '',
-  alignment_grade TEXT,
-  alignment_score REAL,
-  alignment_chapters INTEGER,
-  alignment_missing_sentences INTEGER,
-  alignment_muted_chapters INTEGER,
-  alignment_failed_chapters INTEGER,
-  alignment_unaligned_audio INTEGER,
-  alignment_report_uuid TEXT
+  asset_dir text NOT NULL DEFAULT ''
 );
 
 CREATE TRIGGER book_update_trigger AFTER
@@ -819,6 +811,13 @@ CREATE TABLE alignment_report (
   job_uuid TEXT REFERENCES job (uuid) ON DELETE SET NULL,
   book_uuid TEXT REFERENCES book (uuid) ON DELETE CASCADE,
   report TEXT NOT NULL,
+  grade TEXT,
+  score REAL,
+  chapters INTEGER,
+  missing_sentences INTEGER,
+  muted_chapters INTEGER,
+  failed_chapters INTEGER,
+  unaligned_audio INTEGER,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -29,13 +29,20 @@ export interface Account {
 
 export interface AlignmentReport {
   bookUuid: import("@/uuid").UUID | null
+  chapters: number | null
   createdAt: Generated<string>
+  failedChapters: number | null
+  grade: string | null
   jobUuid: import("@/uuid").UUID | null
+  missingSentences: number | null
+  mutedChapters: number | null
   report: ColumnType<
     import("@storyteller-platform/align").Report,
     string,
     string
   >
+  score: number | null
+  unalignedAudio: number | null
   uuid: Generated<import("@/uuid").UUID>
 }
 
@@ -64,14 +71,6 @@ export interface Book {
   alignedAt: string | null
   alignedByStorytellerVersion: string | null
   alignedWith: string | null
-  alignmentChapters: number | null
-  alignmentFailedChapters: number | null
-  alignmentGrade: string | null
-  alignmentMissingSentences: number | null
-  alignmentMutedChapters: number | null
-  alignmentReportUuid: string | null
-  alignmentScore: number | null
-  alignmentUnalignedAudio: number | null
   assetDir: Generated<string>
   createdAt: Generated<string>
   description: string | null

@@ -16,20 +16,7 @@ import { type Book } from "@/database/books"
 import { db } from "@/database/connection"
 import { logger } from "@/logging"
 
-const BOOK_ALIGNMENT_COLUMNS: Array<[name: string, type: string]> = [
-  ["alignment_grade", "TEXT"],
-  ["alignment_score", "REAL"],
-  ["alignment_chapters", "INTEGER"],
-  ["alignment_missing_sentences", "INTEGER"],
-  ["alignment_muted_chapters", "INTEGER"],
-  ["alignment_failed_chapters", "INTEGER"],
-  ["alignment_unaligned_audio", "INTEGER"],
-  ["alignment_report_uuid", "TEXT"],
-]
-
 export default async function migrate() {
-  // 1. schema first: the report table and the denormalized quality columns must
-  // both exist before any backfill touches them.
   await db.transaction().execute(async (trx) => {
     await sql`
       CREATE TABLE IF NOT EXISTS alignment_report (
@@ -37,6 +24,13 @@ export default async function migrate() {
         job_uuid TEXT REFERENCES job (uuid) ON DELETE SET NULL,
         book_uuid TEXT REFERENCES book (uuid) ON DELETE CASCADE,
         report TEXT NOT NULL,
+        grade TEXT,
+        score REAL,
+        chapters INTEGER,
+        missing_sentences INTEGER,
+        muted_chapters INTEGER,
+        failed_chapters INTEGER,
+        unaligned_audio INTEGER,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `.execute(trx)
@@ -48,18 +42,6 @@ export default async function migrate() {
     await sql`
       CREATE INDEX IF NOT EXISTS idx_alignment_report_book ON alignment_report (book_uuid)
     `.execute(trx)
-
-    // sqlite has no ADD COLUMN IF NOT EXISTS, so check what's already there.
-    const columns = await sql<{ name: string }>`
-      PRAGMA table_info (book)
-    `.execute(trx)
-    const existing = new Set(columns.rows.map((r) => r.name))
-    for (const [name, type] of BOOK_ALIGNMENT_COLUMNS) {
-      if (existing.has(name)) continue
-      await sql`
-        ALTER TABLE book ADD COLUMN ${sql.raw(name)} ${sql.raw(type)}
-      `.execute(trx)
-    }
   })
 
   await backfillReports()
@@ -68,9 +50,6 @@ export default async function migrate() {
   await addSidebarItem()
 }
 
-// find books that have an aligned readaloud but no report row yet, read their
-// on-disk report, and store it. createAlignmentReport also fills the summary
-// columns, so this covers the common case in one pass.
 async function backfillReports() {
   logger.info({
     msg: "Backfilling alignment reports. This could take a second.",
@@ -121,22 +100,18 @@ async function backfillReports() {
 }
 
 async function backfillSummaries() {
-  logger.info({ msg: "Backfilling alignment summaries onto books." })
+  logger.info({ msg: "Backfilling alignment summaries onto reports." })
 
-  // newest first, so the first row seen per book is the latest report.
   const rows = await db
     .selectFrom("alignmentReport")
     .select(["uuid", "bookUuid", "report"])
     .where("bookUuid", "is not", null)
+    .where("grade", "is", null)
     .orderBy("createdAt", "desc")
     .execute()
 
-  const seen = new Set<string>()
   let count = 0
   for (const row of rows) {
-    if (!row.bookUuid || seen.has(row.bookUuid)) continue
-    seen.add(row.bookUuid)
-
     const report: Report =
       typeof row.report === "string"
         ? (JSON.parse(row.report) as Report)
@@ -144,21 +119,20 @@ async function backfillSummaries() {
     const s = summarizeReport(report)
 
     await sql`
-      UPDATE book SET
-        alignment_grade = ${s.grade},
-        alignment_score = ${s.score},
-        alignment_chapters = ${s.chapters},
-        alignment_missing_sentences = ${s.missingSentences},
-        alignment_muted_chapters = ${s.mutedChapters},
-        alignment_failed_chapters = ${s.failedChapters},
-        alignment_unaligned_audio = ${s.unalignedAudio},
-        alignment_report_uuid = ${row.uuid}
-      WHERE uuid = ${row.bookUuid}
+      UPDATE alignment_report SET
+        grade = ${s.grade},
+        score = ${s.score},
+        chapters = ${s.chapters},
+        missing_sentences = ${s.missingSentences},
+        muted_chapters = ${s.mutedChapters},
+        failed_chapters = ${s.failedChapters},
+        unaligned_audio = ${s.unalignedAudio}
+      WHERE uuid = ${row.uuid}
     `.execute(db)
     count++
   }
 
-  logger.info({ msg: `Backfilled alignment summaries for ${count} books` })
+  logger.info({ msg: `Backfilled alignment summaries for ${count} reports` })
 }
 
 async function enrichUnalignedAudio() {
@@ -219,8 +193,6 @@ async function enrichUnalignedAudio() {
   })
 }
 
-// append the alignment-quality builtin to every user's "library" group. it is
-// permission-gated at render time, so seeding it for everyone is harmless.
 async function addSidebarItem() {
   await db.transaction().execute(async (trx) => {
     const mainGroups = await sql<{ uuid: string; userId: string }>`
@@ -230,7 +202,6 @@ async function addSidebarItem() {
     `.execute(trx)
 
     for (const group of mainGroups.rows) {
-      // idempotency: skip users who already have the entry.
       const existing = await sql<{ uuid: string }>`
         SELECT uuid FROM sidebar_item
         WHERE user_id = ${group.userId}

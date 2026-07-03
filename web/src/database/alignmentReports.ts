@@ -1,4 +1,4 @@
-import { type Selectable } from "kysely"
+import { type Selectable, sql } from "kysely"
 
 import { type Report } from "@storyteller-platform/align"
 
@@ -25,11 +25,16 @@ export interface AlignmentSummary {
   unalignedAudio: number
 }
 
-// derive a compact quality summary from a raw report. this is a direct port of
-// the standalone book-report analyzer's grading, kept pure so it can run at
-// report-write time and in the backfill migration.
-export function summarizeReport(report: Report): AlignmentSummary {
-  const chapters = report.chapters
+export function summarizeReport(
+  report: Omit<
+    Report,
+    "unalignedChapters" | "audioFiles" | "unalignedAudioFiles"
+  > &
+    Partial<
+      Pick<Report, "unalignedChapters" | "audioFiles" | "unalignedAudioFiles">
+    >,
+): AlignmentSummary {
+  const chapters = report.chapters ?? []
 
   let totalSents = 0
   let totalAligned = 0
@@ -49,12 +54,14 @@ export function summarizeReport(report: Report): AlignmentSummary {
   // muted: chapters with no audio and more than two sentences (short stubs are
   // almost always erroneous and excluded, matching the analyzer).
   const mutedChapters = chapters.filter(
-    (ch) => ch.audioFiles.length === 0 && (ch.chapterSentenceCount || 0) > 2,
+    (ch) =>
+      (ch.audioFiles ?? []).length === 0 && (ch.chapterSentenceCount || 0) > 2,
   ).length
 
   // failed: chapters the aligner could not place at all -- not-found unaligned
   // chapters plus chapters with sentences but zero matches.
-  const notFound = report.unalignedChapters.filter(
+  // older report files may not have these arrays at all
+  const notFound = (report.unalignedChapters ?? []).filter(
     (c) => c.reason === "not-found",
   ).length
   const noMatch = chapters.filter(
@@ -68,7 +75,7 @@ export function summarizeReport(report: Report): AlignmentSummary {
     missingSentences,
     mutedChapters,
     failedChapters: notFound + noMatch,
-    unalignedAudio: report.unalignedAudioFiles.length,
+    unalignedAudio: (report.unalignedAudioFiles ?? []).length,
   }
 }
 
@@ -120,38 +127,25 @@ export async function createAlignmentReport(input: {
   bookUuid: UUID | null
   report: Report
 }): Promise<AlignmentReport> {
-  const row = await db.transaction().execute(async (trx) => {
-    const inserted = await trx
-      .insertInto("alignmentReport")
-      .values({
-        jobUuid: input.jobUuid,
-        bookUuid: input.bookUuid,
-        report: JSON.stringify(input.report),
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow()
+  const s = summarizeReport(input.report)
 
-    // keep the denormalized quality columns on book current (latest wins).
-    if (input.bookUuid) {
-      const s = summarizeReport(input.report)
-      await trx
-        .updateTable("book")
-        .set({
-          alignmentGrade: s.grade,
-          alignmentScore: s.score,
-          alignmentChapters: s.chapters,
-          alignmentMissingSentences: s.missingSentences,
-          alignmentMutedChapters: s.mutedChapters,
-          alignmentFailedChapters: s.failedChapters,
-          alignmentUnalignedAudio: s.unalignedAudio,
-          alignmentReportUuid: inserted.uuid,
-        })
-        .where("uuid", "=", input.bookUuid)
-        .execute()
-    }
+  const row = await db
+    .insertInto("alignmentReport")
+    .values({
+      jobUuid: input.jobUuid,
+      bookUuid: input.bookUuid,
+      report: JSON.stringify(input.report),
+      grade: s.grade,
+      score: s.score,
+      chapters: s.chapters,
+      missingSentences: s.missingSentences,
+      mutedChapters: s.mutedChapters,
+      failedChapters: s.failedChapters,
+      unalignedAudio: s.unalignedAudio,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
 
-    return inserted
-  })
   return parseAlignmentReport(row)
 }
 
@@ -187,30 +181,39 @@ export async function getAlignmentReportForBook(
 }
 
 // counts that back the quality view's grade chips and muted filter, computed in
-// sql so the page never loads the whole catalog to tally facets.
+// sql so the page never loads the whole catalog to tally facets. uses a
+// row_number window to pick the latest report per book.
 export async function getAlignmentFacets(): Promise<AlignmentFacets> {
-  const gradeRows = await db
-    .selectFrom("book")
-    .select(["book.alignmentGrade as grade"])
-    .select((eb) => eb.fn.countAll<number>().as("count"))
-    .where("book.alignmentGrade", "is not", null)
-    .groupBy("book.alignmentGrade")
-    .execute()
+  const gradeResult = await sql<{ grade: string; count: number }>`
+    select grade, count(*) as count
+    from (
+      select grade,
+             row_number() over (partition by book_uuid order by created_at desc) as rn
+      from alignment_report
+      where grade is not null
+    )
+    where rn = 1
+    group by grade
+  `.execute(db)
 
-  const mutedRow = await db
-    .selectFrom("book")
-    .select((eb) => eb.fn.countAll<number>().as("count"))
-    .where("book.alignmentGrade", "is not", null)
-    .where("book.alignmentMutedChapters", ">", 0)
-    .executeTakeFirst()
+  const mutedResult = await sql<{ count: number }>`
+    select count(*) as count
+    from (
+      select muted_chapters,
+             row_number() over (partition by book_uuid order by created_at desc) as rn
+      from alignment_report
+      where grade is not null
+    )
+    where rn = 1 and muted_chapters > 0
+  `.execute(db)
 
   const grades: Record<string, number> = {}
   let total = 0
-  for (const row of gradeRows) {
+  for (const row of gradeResult.rows) {
     if (!row.grade) continue
     grades[row.grade] = row.count
     total += row.count
   }
 
-  return { grades, total, muted: mutedRow?.count ?? 0 }
+  return { grades, total, muted: mutedResult.rows[0]?.count ?? 0 }
 }
