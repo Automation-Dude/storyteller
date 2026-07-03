@@ -1,5 +1,16 @@
 import { z } from "zod"
 
+export const ALIGNMENT_GRADES = [
+  "A+",
+  "A",
+  "A-",
+  "B",
+  "B-",
+  "C",
+  "D",
+  "F",
+] as const
+
 // ---------------------------------------------------------------------------
 // fields + operators
 // ---------------------------------------------------------------------------
@@ -129,9 +140,6 @@ export const ENUM_FIELDS = [
   "mediaType",
 ] as const satisfies readonly ShelfFilterField[]
 
-// the "Format" filter. the first three are broad (has-ebook / has-audiobook /
-// has-aligned-readaloud); the rest are composites mirroring getFormatKey so a
-// user can ask for e.g. "audiobook only" or "ebook+audiobook but not synced".
 export const MEDIA_TYPE_VALUES = [
   "ebook",
   "audiobook",
@@ -139,11 +147,9 @@ export const MEDIA_TYPE_VALUES = [
   "ebook-only",
   "audiobook-only",
   "missing-readaloud",
-  "no-media",
+  "missing-files",
 ] as const
 
-// fields that support isEmpty / isNotEmpty. mediaType, search and
-// ratingDimension are handled separately (ratingDimension carries `dimension`).
 export const EMPTINESS_FIELDS = [
   ...STRING_FIELDS,
   ...NUMBER_FIELDS,
@@ -574,29 +580,13 @@ export const OPERATOR_LABELS: Record<ShelfFilterOperator, string> = {
   isNotEmpty: "is not empty",
 }
 
-// ---------------------------------------------------------------------------
-// field registry
-//
-// one entry per field describing everything the ui needs to know about it:
-// which value control to render, whether it can be sorted, whether it shows in
-// the quick "Add filter" menu, where to fetch its options (facets), display
-// hints, an optional per-condition discriminator (role / format), and the
-// future search-query token. labels are NOT here - they live in the i18n
-// `Fields.label` / `Fields.short` namespaces keyed by `labelKey` - so copy stays
-// in one place. the per-field operator set still comes from
-// getOperatorsForField, and the value type from getFieldType; this registry is
-// the single source for the *ui + sort + serialization* metadata that was
-// previously scattered across BookFilters, use-book-filters, sort.ts and the
-// editor.
-// ---------------------------------------------------------------------------
-
 export type FieldControl =
   | "text"
   | "number-range"
   | "date-range"
   | "duration-range"
   | "facet"
-  | "format-enum"
+  | "enum"
 
 export type FacetSource =
   | "tags"
@@ -612,29 +602,78 @@ export type FieldScale = {
   unit?: "bytes" | "seconds" | "count" | "ratio" | "year"
 }
 
-export type FieldDef = {
-  control: FieldControl
-  // member of the sort menu (the registry is the source of truth for the
-  // sortable set; seriesPosition is the one sort that is not a filter field and
-  // is added in sort.ts).
+export type FieldDefBase = {
   sortable: boolean
-  // member of the quick "Add filter" menu (the advanced editor offers all).
   quick: boolean
-  // facet fields: the list endpoint the generic control fetches options from.
-  source?: FacetSource
-  // numeric / date display hints (slider bounds, year vs full date, unit).
-  scale?: FieldScale
-  // an extra per-condition discriminator the control must collect: creators ->
-  // role, asset numerics -> format.
-  discriminator?: "role" | "format"
-  // the future search-query token (e.g. tag:foo). carried now so the parser /
-  // url codec in a later pass reads it from one place.
   token: string
-  // key under the i18n `Fields.label` / `Fields.short` namespaces.
   labelKey: string
 }
 
-export const FIELD_REGISTRY: Record<ShelfFilterField, FieldDef> = {
+export type FieldDefText = FieldDefBase & {
+  control: "text"
+}
+
+export type FieldDefFacet = FieldDefBase & {
+  control: "facet"
+  source: FacetSource
+  discriminator?: "role"
+}
+
+export type FieldDefEnum = FieldDefBase & {
+  control: "enum"
+  options: string[]
+  discriminator?: "format"
+}
+
+export type FieldDefNumeric = FieldDefBase & {
+  control: "number-range"
+  scale?: FieldScale
+  discriminator?: "role" | "format"
+}
+
+export type FieldDefDate = FieldDefBase & {
+  control: "date-range"
+  scale?: FieldScale
+  discriminator?: "format"
+}
+
+export type FieldDefDuration = FieldDefBase & {
+  control: "duration-range"
+  scale: FieldScale
+  discriminator?: "format"
+}
+
+export type FieldDef =
+  | FieldDefFacet
+  | FieldDefEnum
+  | FieldDefNumeric
+  | FieldDefDate
+  | FieldDefDuration
+  | FieldDefText
+
+// export type FieldDef = {
+//   control: FieldControl
+//   // member of the sort menu (the registry is the source of truth for the
+//   // sortable set; seriesPosition is the one sort that is not a filter field and
+//   // is added in sort.ts).
+//   sortable: boolean
+//   // member of the quick "Add filter" menu (the advanced editor offers all).
+//   quick: boolean
+//   // facet fields: the list endpoint the generic control fetches options from.
+//   source?: FacetSource
+//   // numeric / date display hints (slider bounds, year vs full date, unit).
+//   scale?: FieldScale
+//   // an extra per-condition discriminator the control must collect: creators ->
+//   // role, asset numerics -> format.
+//   discriminator?: "role" | "format"
+//   // the future search-query token (e.g. tag:foo). carried now so the parser /
+//   // url codec in a later pass reads it from one place.
+//   token: string
+//   // key under the i18n `Fields.label` / `Fields.short` namespaces.
+//   labelKey: string
+// }
+
+export const FIELD_REGISTRY = {
   // -- text -----------------------------------------------------------------
   title: {
     control: "text",
@@ -677,13 +716,6 @@ export const FIELD_REGISTRY: Record<ShelfFilterField, FieldDef> = {
     quick: false,
     token: "text",
     labelKey: "search",
-  },
-  alignmentGrade: {
-    control: "text",
-    sortable: true,
-    quick: false,
-    token: "grade",
-    labelKey: "alignmentGrade",
   },
 
   // -- facets / enum --------------------------------------------------------
@@ -729,9 +761,10 @@ export const FIELD_REGISTRY: Record<ShelfFilterField, FieldDef> = {
     labelKey: "creators",
   },
   mediaType: {
-    control: "format-enum",
+    control: "enum",
     sortable: false,
     quick: true,
+    options: [...MEDIA_TYPE_VALUES],
     token: "format",
     labelKey: "mediaType",
   },
@@ -787,6 +820,15 @@ export const FIELD_REGISTRY: Record<ShelfFilterField, FieldDef> = {
     scale: { min: 0, max: 1, step: 0.01, unit: "ratio" },
     token: "progress",
     labelKey: "readingPosition",
+  },
+
+  alignmentGrade: {
+    control: "enum",
+    sortable: true,
+    quick: true,
+    token: "grade",
+    options: [...ALIGNMENT_GRADES],
+    labelKey: "alignmentGrade",
   },
   alignmentScore: {
     control: "number-range",
@@ -850,7 +892,7 @@ export const FIELD_REGISTRY: Record<ShelfFilterField, FieldDef> = {
     token: "read",
     labelKey: "lastRead",
   },
-}
+} as const satisfies Record<ShelfFilterField, FieldDef>
 
 export function getFieldDef(field: ShelfFilterField): FieldDef {
   return FIELD_REGISTRY[field]
@@ -1041,5 +1083,7 @@ export const HomeSectionKind = [
   "recentlyAdded",
   "custom",
 ] as const
+
+export type AlignmentGrade = (typeof ALIGNMENT_GRADES)[number]
 
 export type HomeSectionKind = (typeof HomeSectionKind)[number]

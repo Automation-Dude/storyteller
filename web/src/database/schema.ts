@@ -32,7 +32,7 @@ export interface AlignmentReport {
   chapters: number | null
   createdAt: Generated<string>
   failedChapters: number | null
-  grade: string | null
+  grade: import("@/shelves").AlignmentGrade
   jobUuid: import("@/uuid").UUID | null
   missingSentences: number | null
   mutedChapters: number | null

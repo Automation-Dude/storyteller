@@ -187,6 +187,10 @@
     "sortByCount": "Sort by count",
     "sortByName": "Sort by name"
   },
+  "FacetOverview": {
+    "noResults": "No items match your search",
+    "empty": "No items found"
+  },
   "EntityActions": {
     "mergeInto": "Merge into...",
     "createShelfWith": "Create shelf with selected",
@@ -296,29 +300,6 @@
     "selectStatus": "Select status...",
     "selectMediaType": "Select...",
     "searchMediaTypes": "Search media types...",
-    "fields": {
-      "title": "Title",
-      "subtitle": "Subtitle",
-      "description": "Description",
-      "language": "Language",
-      "publicationDate": "Publication Date",
-      "rating": "Rating (book)",
-      "userRating": "My Rating",
-      "duration": "Duration",
-      "pageCount": "Page Count",
-      "fileSize": "File Size",
-      "status": "Reading Status",
-      "tags": "Tags",
-      "collections": "Collections",
-      "series": "Series",
-      "creators": "Authors / Creators",
-      "mediaType": "Media Type",
-      "createdAt": "Date Added",
-      "updatedAt": "Date Updated",
-      "review": "My Review",
-      "ratingDimension": "Rating Dimension",
-      "search": "Search (any field)"
-    },
     "operators": {
       "is": "is",
       "isNot": "is not",
@@ -358,7 +339,8 @@
       "dates": "Dates",
       "review": "Ratings & Reviews",
       "relations": "Relations",
-      "media": "Media & Size"
+      "media": "Media & Size",
+      "alignment": "Alignment"
     },
     "duplicate": "Duplicate",
     "pickValue": "Pick a value",
@@ -1172,6 +1154,27 @@
         "review": "My Review",
         "ratingDimension": "Rating Dimension",
         "search": "Search (any field)"
+      },
+      "options": {
+        "mediaType": {
+          "ebook": "Has Ebook",
+          "audiobook": "Has Audiobook",
+          "synced": "Has Readaloud",
+          "ebook-only": "Only Ebook",
+          "audiobook-only": "Only Audiobook",
+          "missing-readaloud": "Not Aligned",
+          "missing-files": "Has Missing Files"
+        },
+        "alignmentGrade": {
+          "A+": "A+",
+          "A": "A",
+          "A-": "A-",
+          "B": "B",
+          "B-": "B-",
+          "C": "C",
+          "D": "D",
+          "F": "F"
+        }
       },
       "short": {
         "title": "Title",

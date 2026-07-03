@@ -30,6 +30,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { Input } from "@v3/_/components/ui/input"
@@ -75,6 +76,7 @@ import {
   useListStatusesQuery,
   useListTagsQuery,
 } from "@/store/api"
+import { FieldIcon } from "../books/field-icons"
 
 type FilterPreset = {
   key: string
@@ -761,6 +763,14 @@ const FIELD_GROUPS: {
     key: "media",
     fields: ["mediaType", "duration", "pageCount", "fileSize"],
   },
+  {
+    key: "alignment",
+    fields: [
+      "alignmentScore",
+      "alignmentMissingSentences",
+      "alignmentMutedChapters",
+    ],
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -779,6 +789,7 @@ function ConditionEditor({
   onDuplicate?: () => void
 }) {
   const t = useTranslation("ShelfFilterEditor")
+  const c = useCommon()
   const { ratingDimensions } = useUserPreferences()
 
   const dimensions = ratingDimensions.length
@@ -861,34 +872,32 @@ function ConditionEditor({
                 size="sm"
                 className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
               >
-                {t.plain(`fields.${condition.field}` as "fields.title")}
+                <FieldIcon field={condition.field} className="size-3" />
+                {c(`fields.label.${condition.field}`)}
                 <IconChevronDown className="size-3" />
               </Button>
             }
           />
 
-          <DropdownMenuContent className="w-[300px] md:w-xl">
-            {FIELD_GROUPS.map((group) => (
+          <DropdownMenuContent className="w-fit">
+            {FIELD_GROUPS.map((group, index) => (
               <DropdownMenuGroup key={group.key}>
                 <DropdownMenuLabel>
                   {t.plain(`fieldGroups.${group.key}` as "fieldGroups.text")}
                 </DropdownMenuLabel>
-                <div className="flex flex-wrap gap-1">
-                  {group.fields.map((field) => (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full"
-                      key={field}
-                      onClick={() => {
-                        handleFieldChange(field)
-                      }}
-                    >
-                      {t.plain(`fields.${field}` as "fields.title")}
-                      <IconChevronRight className="size-3" />
-                    </Button>
-                  ))}
-                </div>
+                {group.fields.map((field) => (
+                  <DropdownMenuItem
+                    className="rounded-full"
+                    key={field}
+                    onClick={() => {
+                      handleFieldChange(field)
+                    }}
+                  >
+                    <FieldIcon field={field} className="size-3" />
+                    {c(`fields.label.${field}`)}
+                  </DropdownMenuItem>
+                ))}
+                {index < FIELD_GROUPS.length - 1 && <DropdownMenuSeparator />}
               </DropdownMenuGroup>
             ))}
           </DropdownMenuContent>

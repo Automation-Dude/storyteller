@@ -53,11 +53,9 @@ async function addColumnsToReport() {
 async function backfillSummaries() {
   const rows = await db
     .selectFrom("book")
-    .select(["uuid", "assetDir", "title"])
+    .select(["book.uuid", "book.assetDir", "book.title"])
     .innerJoin("readaloud", "readaloud.bookUuid", "book.uuid")
     .leftJoin("alignmentReport", "alignmentReport.bookUuid", "book.uuid")
-    // .where("readaloud.missing", "=", false)
-    // .where("readaloud.status", "=", "ALIGNED")
     .where("alignmentReport.bookUuid", "is", null)
     .where("grade", "is", null)
     .execute()

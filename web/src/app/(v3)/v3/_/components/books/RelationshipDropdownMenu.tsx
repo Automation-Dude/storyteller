@@ -13,13 +13,15 @@ import {
 } from "@v3/_/components/ui/popover"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { Slider } from "@v3/_/components/ui/slider"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import {
   ASSET_FORMATS,
   type AssetFormat,
   type FieldDef,
+  FieldDefFacet,
+  FieldDefNumeric,
   MEDIA_TYPE_VALUES,
   type ShelfFilterCondition,
   type ShelfFilterField,
@@ -125,9 +127,6 @@ function writeFacet(
   return out
 }
 
-// the tri-state cycle for one item: unselected -> include -> exclude ->
-// unselected. used by both single click and shift-range (each item in the range
-// advances one stage).
 function cycleTriState(
   inc: string[],
   exc: string[],
@@ -138,13 +137,6 @@ function cycleTriState(
   if (exc.includes(uuid)) return { inc, exc: exc.filter((x) => x !== uuid) }
   return { inc: [...inc, uuid], exc }
 }
-
-// ---------------------------------------------------------------------------
-// facet options fetching: one hook for every source. all list hooks are called
-// (rules of hooks) but skipped unless this is the active source and the control
-// is enabled (popover open or already-applied values), preserving the
-// "only fetch when needed" behaviour without a component per entity.
-// ---------------------------------------------------------------------------
 
 function useFacetItems(
   source: FieldDef["source"] | undefined,
@@ -202,7 +194,7 @@ function summarize(
   field: ShelfFilterField,
   conditions: ShelfFilterCondition[],
 ): string {
-  if (def.control === "facet" || def.control === "format-enum") {
+  if (def.control === "facet" || def.control === "enum") {
     const { inc, exc } = readFacet(conditions, facetOperators(field))
     const n = inc.length + exc.length
     return n > 0 ? `(${n})` : ""
@@ -311,6 +303,7 @@ export function FilterEditor({
   onChange: (next: ShelfFilterCondition[]) => void
   enabled: boolean
 }) {
+  const c = useCommon()
   if (def.control === "facet") {
     return (
       <FacetEditor
@@ -322,7 +315,7 @@ export function FilterEditor({
       />
     )
   }
-  if (def.control === "format-enum") {
+  if (def.control === "enum") {
     return (
       <FacetEditor
         field={field}
@@ -330,9 +323,9 @@ export function FilterEditor({
         conditions={conditions}
         onChange={onChange}
         enabled={enabled}
-        staticItems={MEDIA_TYPE_VALUES.map((v) => ({
+        staticItems={def.options.map((v) => ({
           uuid: v,
-          name: FORMAT_VALUE_LABELS[v] ?? v,
+          name: c(`fields.options.${field}.${v}`),
         }))}
       />
     )
@@ -362,10 +355,6 @@ export function FilterEditor({
   )
 }
 
-// ---------------------------------------------------------------------------
-// facet editor (virtualized, tri-state, shift-range, select/deselect all)
-// ---------------------------------------------------------------------------
-
 const ROW_HEIGHT = 32
 
 function FacetEditor({
@@ -377,7 +366,7 @@ function FacetEditor({
   staticItems,
 }: {
   field: ShelfFilterField
-  def: FieldDef
+  def: FieldDefFacet
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
   enabled: boolean
@@ -535,7 +524,7 @@ function FacetEditor({
   )
 }
 
-type ScaleUnit = NonNullable<FieldDef["scale"]>["unit"]
+type ScaleUnit = NonNullable<FieldDefNumeric["scale"]>["unit"]
 
 function unitDisplay(unit: ScaleUnit): {
   to: (raw: number) => number
@@ -610,7 +599,7 @@ function NumberRangeEditor({
   onChange,
 }: {
   field: ShelfFilterField
-  def: FieldDef
+  def: FieldDefNumeric
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
 }) {

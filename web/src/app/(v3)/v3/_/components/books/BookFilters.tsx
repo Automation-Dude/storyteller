@@ -211,7 +211,7 @@ export function BookFilters({
                 </button>
               }
             />
-            <DropdownMenuContent className="max-h-80 w-52 overflow-y-auto">
+            <DropdownMenuContent className="w-52 overflow-y-auto">
               {addableFields.map((field) => (
                 <AddFilterSubmenu
                   key={field}

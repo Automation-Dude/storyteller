@@ -7,12 +7,11 @@ import type { UUID } from "@/uuid"
 
 import { db } from "./connection"
 import { type DB } from "./schema"
+import { AlignmentGrade } from "@/shelves"
 
 export type { Report }
 
 type ChapterReport = Report["chapters"][number]
-
-export type AlignmentGrade = "A+" | "A" | "A-" | "B" | "B-" | "C" | "D" | "F"
 
 export interface AlignmentSummary {
   grade: AlignmentGrade
