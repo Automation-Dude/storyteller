@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Spinner } from "@v3/_/components/ui/spinner"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Settings } from "@/apiModels"
 import { SettingsFormProvider } from "@/app/(v3)/v3/_/components/settings-form/SettingsFormProvider"
@@ -47,36 +48,39 @@ import {
 } from "@/store/api"
 import { RUN_CONFIG_SETTING_KEYS, type RunConfig } from "@/work/runConfig"
 
-// "process with options": capture transcription/audio settings for this run only,
-// pre-filled from the current defaults. optionally also save the edits as the new
-// defaults. requires settingsUpdate (it surfaces the same secret-bearing fields as
-// the settings page); callers gate on that.
+type ProcessRestart = false | "sync" | "transcription" | "full"
+
 export function ProcessRunDialog({
   book,
+  restart = false,
   open,
   onOpenChange,
 }: {
   book: BookWithRelations
+  restart?: ProcessRestart
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const { data: settings } = useGetSettingsQuery(undefined, { skip: !open })
+  const t = useTranslation("Processing")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Process “{book.title}”</DialogTitle>
-          <DialogDescription>
-            These settings apply to this run only, unless you save them as
-            defaults.
-          </DialogDescription>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 sm:max-w-lg">
+        <DialogHeader className="shrink-0 pb-3">
+          <DialogTitle>
+            {book.readaloud
+              ? t("dialogTitleReprocess", { title: book.title })
+              : t("dialogTitle", { title: book.title })}
+          </DialogTitle>
+          <DialogDescription>{t("dialogDescription")}</DialogDescription>
         </DialogHeader>
 
         {settings ? (
           <RunConfigForm
             book={book}
             settings={settings}
+            restart={restart}
             onClose={() => {
               onOpenChange(false)
             }}
@@ -94,10 +98,12 @@ export function ProcessRunDialog({
 function RunConfigForm({
   book,
   settings,
+  restart,
   onClose,
 }: {
   book: BookWithRelations
   settings: Settings
+  restart: ProcessRestart
   onClose: () => void
 }) {
   const form = useForm<Settings>({ defaultValues: settings })
@@ -105,9 +111,9 @@ function RunConfigForm({
   const [language, setLanguage] = useState(book.language ?? "auto")
   const [processBook, { isLoading: isProcessing }] = useProcessBookMutation()
   const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation()
+  const t = useTranslation("Processing")
 
-  async function start(values: Settings, saveAsDefaults?: boolean) {
-    // const values = form.getValues()
+  async function start(values: Settings, saveAsDefaults: boolean) {
     const config: Partial<RunConfig> = {
       language: language === "auto" ? null : language,
     }
@@ -117,18 +123,16 @@ function RunConfigForm({
     }
 
     try {
-      await processBook({ uuid: book.uuid, restart: false, config }).unwrap()
+      await processBook({ uuid: book.uuid, restart, config }).unwrap()
       if (saveAsDefaults) {
         await updateSettings(values).unwrap()
-        toast.success("Saved as defaults and started processing", {
-          dismissible: true,
-        })
+        toast.success(t("toastSavedAndStarted"), { dismissible: true })
       } else {
-        toast.success("Started processing", { dismissible: true })
+        toast.success(t("toastStarted"), { dismissible: true })
       }
       onClose()
     } catch (e) {
-      toast.error("Failed to start processing", {
+      toast.error(t("toastFailed"), {
         description: e instanceof Error ? e.message : "Unknown error",
       })
     }
@@ -139,45 +143,47 @@ function RunConfigForm({
   return (
     <SettingsFormProvider form={form} lockedSettings={new Set()}>
       <form
-        onSubmit={form.handleSubmit(start)}
-        className="h-full max-h-[80vh] overflow-y-auto px-px"
+        onSubmit={form.handleSubmit((values) => start(values, false))}
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <div className="flex flex-col gap-4">
-          <Field>
-            <FieldLabel htmlFor="run-language">Language</FieldLabel>
-            <Select
-              value={language}
-              onValueChange={(v) => {
-                setLanguage(v ?? "auto")
-              }}
-            >
-              <SelectTrigger id="run-language" className="w-full">
-                <SelectValue placeholder="Auto (detect from book)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Auto (detect from book)</SelectItem>
-                {LANGUAGES.map((lang) => (
-                  <SelectItem key={lang} value={lang}>
-                    {lang}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+        <div className="min-h-0 flex-1 overflow-y-auto px-px">
+          <div className="flex flex-col gap-4 py-1">
+            <Field>
+              <FieldLabel htmlFor="run-language">{t("language")}</FieldLabel>
+              <Select
+                value={language}
+                onValueChange={(v) => {
+                  setLanguage(v ?? "auto")
+                }}
+              >
+                <SelectTrigger id="run-language" className="w-full">
+                  <SelectValue placeholder={t("autoLanguage")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">{t("autoLanguage")}</SelectItem>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
 
-          <ProcessingSettingsFields />
+            <ProcessingSettingsFields collapsible />
+          </div>
         </div>
 
-        <DialogFooter className="mt-3">
+        <DialogFooter className="bg-background sticky bottom-0 mt-0 border-t pt-3">
           <ButtonGroup>
             <Button disabled={busy} type="submit">
-              {busy ? "Starting…" : "Start processing"}
+              {busy ? t("starting") : t("start")}
             </Button>
             <ButtonGroupSeparator />
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <Button disabled={busy} aria-label="More start options">
+                  <Button disabled={busy} aria-label={t("moreStartOptions")}>
                     <IconChevronDown className="size-4" />
                   </Button>
                 }
@@ -185,10 +191,10 @@ function RunConfigForm({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() => {
-                    void form.handleSubmit(start)()
+                    void form.handleSubmit((values) => start(values, true))()
                   }}
                 >
-                  Start and save as defaults
+                  {t("saveAsDefaults")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

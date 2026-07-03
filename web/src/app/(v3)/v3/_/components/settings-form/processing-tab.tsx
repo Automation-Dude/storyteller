@@ -1,5 +1,7 @@
 "use client"
 
+import { IconChevronDown } from "@tabler/icons-react"
+import { type ReactNode, useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -11,6 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@v3/_/components/ui/card"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@v3/_/components/ui/collapsible"
 import {
   Field,
   FieldDescription,
@@ -35,6 +42,7 @@ import {
   useConfirmAction,
 } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
+import { cn } from "@/cn"
 import { usePermissions } from "@/hooks/usePermissions"
 import { useClearBooksCacheMutation } from "@/store/api"
 
@@ -54,10 +62,69 @@ export function ProcessingTab() {
   )
 }
 
+// a settings card that can optionally collapse to just its header. used in the
+// per-run "process with options" dialog to keep the dialog compact; the full
+// settings page renders it always-expanded.
+function SettingsCard({
+  collapsible = false,
+  defaultOpen = true,
+  title,
+  description,
+  children,
+}: {
+  collapsible?: boolean
+  defaultOpen?: boolean
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  if (!collapsible) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">{children}</CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger className="w-full cursor-pointer text-left">
+          <CardHeader className="flex-row items-start justify-between gap-2">
+            <div className="grid gap-1.5">
+              <CardTitle>{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </div>
+            <IconChevronDown
+              className={cn(
+                "text-muted-foreground mt-0.5 size-4 shrink-0 stroke-[1.5] transition-transform",
+                open && "rotate-180",
+              )}
+            />
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="space-y-4 pt-4">{children}</CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  )
+}
+
 // the transcription/audio/parallelization settings, reused both in the settings
 // tab and the per-run "process with options" dialog. excludes the readaloud
 // location/cache controls, which are library-level rather than per-run.
-export function ProcessingSettingsFields() {
+export function ProcessingSettingsFields({
+  collapsible = false,
+}: {
+  collapsible?: boolean
+} = {}) {
   const { form } = useSettingsForm()
   const tt = useTranslation(
     "SettingsPage.tabs.processing.sections.transcription",
@@ -118,117 +185,148 @@ export function ProcessingSettingsFields() {
   return (
     <div className="space-y-6">
       <SettingsSection tab="processing" section="transcription">
-        <Card>
-          <CardHeader>
-            <CardTitle>{tt("title")}</CardTitle>
-            <CardDescription>{tt("description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <SettingsFormField
-              name="transcriptionEngine"
-              label={tt("engine")}
-              render={(field, fieldState, isLocked) => (
-                <Select
-                  disabled={isLocked}
-                  aria-invalid={fieldState.invalid}
-                  items={transcriptionEngineOptions}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {transcriptionEngineOptions.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-
-            {transcriptionEngine === "whisper.cpp" && <WhisperSettings />}
-
-            {transcriptionEngine === "whisper-server" && (
-              <WhisperServerSettings />
+        <SettingsCard
+          collapsible={collapsible}
+          defaultOpen
+          title={tt("title")}
+          description={tt("description")}
+        >
+          <SettingsFormField
+            name="transcriptionEngine"
+            label={tt("engine")}
+            render={(field, fieldState, isLocked) => (
+              <Select
+                disabled={isLocked}
+                aria-invalid={fieldState.invalid}
+                items={transcriptionEngineOptions}
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {transcriptionEngineOptions.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
+          />
 
-            {transcriptionEngine === "google-cloud" && <GoogleCloudSettings />}
+          {transcriptionEngine === "whisper.cpp" && <WhisperSettings />}
 
-            {transcriptionEngine === "microsoft-azure" && <AzureSettings />}
+          {transcriptionEngine === "whisper-server" && (
+            <WhisperServerSettings />
+          )}
 
-            {transcriptionEngine === "amazon-transcribe" && <AmazonSettings />}
+          {transcriptionEngine === "google-cloud" && <GoogleCloudSettings />}
 
-            {transcriptionEngine === "openai-cloud" && <OpenAiSettings />}
+          {transcriptionEngine === "microsoft-azure" && <AzureSettings />}
 
-            {transcriptionEngine === "deepgram" && <DeepgramSettings />}
-          </CardContent>
-        </Card>
+          {transcriptionEngine === "amazon-transcribe" && <AmazonSettings />}
+
+          {transcriptionEngine === "openai-cloud" && <OpenAiSettings />}
+
+          {transcriptionEngine === "deepgram" && <DeepgramSettings />}
+        </SettingsCard>
       </SettingsSection>
 
       <SettingsSection tab="processing" section="audio">
-        <Card>
-          <CardHeader>
-            <CardTitle>{ta("title")}</CardTitle>
-            <CardDescription>{ta("description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <SettingsFormField
-              name="maxTrackLength"
-              label={ta("maxTrackLength")}
-              description={ta("maxTrackLengthDescription")}
-              render={(field, fieldState, isLocked) => (
-                <Select
-                  disabled={isLocked}
-                  aria-invalid={fieldState.invalid}
-                  data-disabled={isLocked}
-                  value={String(field.value)}
-                  onValueChange={(value) => {
-                    if (value) {
-                      field.onChange(parseFloat(value))
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {trackLengths.find(({ value }) => value === field.value)
-                        ?.label ?? ta("maxTrackLength2")}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {trackLengths.map(({ value, label }) => (
-                      <SelectItem key={value} value={String(value)}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+        <SettingsCard
+          collapsible={collapsible}
+          defaultOpen={!collapsible}
+          title={ta("title")}
+          description={ta("description")}
+        >
+          <SettingsFormField
+            name="maxTrackLength"
+            label={ta("maxTrackLength")}
+            description={ta("maxTrackLengthDescription")}
+            render={(field, fieldState, isLocked) => (
+              <Select
+                disabled={isLocked}
+                aria-invalid={fieldState.invalid}
+                data-disabled={isLocked}
+                value={String(field.value)}
+                onValueChange={(value) => {
+                  if (value) {
+                    field.onChange(parseFloat(value))
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {trackLengths.find(({ value }) => value === field.value)
+                      ?.label ?? ta("maxTrackLength2")}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {trackLengths.map(({ value, label }) => (
+                    <SelectItem key={value} value={String(value)}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
 
+          <SettingsFormField
+            name="codec"
+            label={ta("codec")}
+            render={(field, fieldState, isLocked) => (
+              <Select
+                disabled={isLocked}
+                aria-invalid={fieldState.invalid}
+                data-disabled={isLocked}
+                value={field.value ?? "default"}
+                onValueChange={(value) => {
+                  field.onChange(value === "default" ? null : value)
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {codecOptions.find(({ value }) => value === field.value)
+                      ?.label ?? ta("codecDefault")}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {codecOptions.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+
+          {codec === "libopus" && (
             <SettingsFormField
-              name="codec"
-              label={ta("codec")}
+              name="bitrate"
+              label={ta("bitrate")}
               render={(field, fieldState, isLocked) => (
                 <Select
                   disabled={isLocked}
                   aria-invalid={fieldState.invalid}
                   data-disabled={isLocked}
-                  value={field.value ?? "default"}
+                  value={field.value ?? ""}
                   onValueChange={(value) => {
-                    field.onChange(value === "default" ? null : value)
+                    field.onChange(value || null)
                   }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue>
-                      {codecOptions.find(({ value }) => value === field.value)
-                        ?.label ?? ta("codecDefault")}
+                      {opusBitrateOptions.find(
+                        ({ value }) => value === field.value,
+                      )?.label ?? ta("bitrateDefault")}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {codecOptions.map(({ value, label }) => (
+                    {opusBitrateOptions.map(({ value, label }) => (
                       <SelectItem key={value} value={value}>
                         {label}
                       </SelectItem>
@@ -237,122 +335,88 @@ export function ProcessingSettingsFields() {
                 </Select>
               )}
             />
+          )}
 
-            {codec === "libopus" && (
-              <SettingsFormField
-                name="bitrate"
-                label={ta("bitrate")}
-                render={(field, fieldState, isLocked) => (
-                  <Select
-                    disabled={isLocked}
-                    aria-invalid={fieldState.invalid}
-                    data-disabled={isLocked}
-                    value={field.value ?? ""}
-                    onValueChange={(value) => {
-                      field.onChange(value || null)
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue>
-                        {opusBitrateOptions.find(
-                          ({ value }) => value === field.value,
-                        )?.label ?? ta("bitrateDefault")}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {opusBitrateOptions.map(({ value, label }) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            )}
-
-            {codec === "libmp3lame" && (
-              <SettingsFormField
-                name="bitrate"
-                label={ta("bitrate")}
-                render={(field, fieldState, isLocked) => (
-                  <Select
-                    disabled={isLocked}
-                    aria-invalid={fieldState.invalid}
-                    data-disabled={isLocked}
-                    value={field.value ?? ""}
-                    onValueChange={(value) => {
-                      field.onChange(value || null)
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue>
-                        {mp3BitrateOptions.find(
-                          ({ value }) => value === field.value,
-                        )?.label ?? ta("mp3BitrateDefault")}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mp3BitrateOptions.map(({ value, label }) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            )}
-          </CardContent>
-        </Card>
+          {codec === "libmp3lame" && (
+            <SettingsFormField
+              name="bitrate"
+              label={ta("bitrate")}
+              render={(field, fieldState, isLocked) => (
+                <Select
+                  disabled={isLocked}
+                  aria-invalid={fieldState.invalid}
+                  data-disabled={isLocked}
+                  value={field.value ?? ""}
+                  onValueChange={(value) => {
+                    field.onChange(value || null)
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      {mp3BitrateOptions.find(
+                        ({ value }) => value === field.value,
+                      )?.label ?? ta("mp3BitrateDefault")}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mp3BitrateOptions.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          )}
+        </SettingsCard>
       </SettingsSection>
 
       <SettingsSection tab="processing" section="parallelization">
-        <Card>
-          <CardHeader>
-            <CardTitle>{tp("title")}</CardTitle>
-            <CardDescription>{tp("description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <SettingsFormField
-              name="parallelTranscodes"
-              label={tp("parallelTranscodes")}
-              description={tp("parallelTranscodesDescription")}
-              render={(field, fieldState, isLocked) => (
-                <Input
-                  id="parallelTranscodes"
-                  type="number"
-                  min={1}
-                  disabled={isLocked}
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(parseInt(e.target.value) || 1)
-                  }}
-                  aria-invalid={fieldState.invalid}
-                />
-              )}
-            />
+        <SettingsCard
+          collapsible={collapsible}
+          defaultOpen={!collapsible}
+          title={tp("title")}
+          description={tp("description")}
+        >
+          <SettingsFormField
+            name="parallelTranscodes"
+            label={tp("parallelTranscodes")}
+            description={tp("parallelTranscodesDescription")}
+            render={(field, fieldState, isLocked) => (
+              <Input
+                id="parallelTranscodes"
+                type="number"
+                min={1}
+                disabled={isLocked}
+                {...field}
+                onChange={(e) => {
+                  field.onChange(parseInt(e.target.value) || 1)
+                }}
+                aria-invalid={fieldState.invalid}
+              />
+            )}
+          />
 
-            <SettingsFormField
-              name="parallelTranscribes"
-              label={tp("parallelTranscribes")}
-              description={tp("parallelTranscribesDescription")}
-              render={(field, fieldState, isLocked) => (
-                <Input
-                  id="parallelTranscribes"
-                  type="number"
-                  min={1}
-                  disabled={isLocked}
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(parseInt(e.target.value) || 1)
-                  }}
-                  aria-invalid={fieldState.invalid}
-                />
-              )}
-            />
-          </CardContent>
-        </Card>
+          <SettingsFormField
+            name="parallelTranscribes"
+            label={tp("parallelTranscribes")}
+            description={tp("parallelTranscribesDescription")}
+            render={(field, fieldState, isLocked) => (
+              <Input
+                id="parallelTranscribes"
+                type="number"
+                min={1}
+                disabled={isLocked}
+                {...field}
+                onChange={(e) => {
+                  field.onChange(parseInt(e.target.value) || 1)
+                }}
+                aria-invalid={fieldState.invalid}
+              />
+            )}
+          />
+        </SettingsCard>
       </SettingsSection>
     </div>
   )

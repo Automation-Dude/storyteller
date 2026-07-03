@@ -1362,5 +1362,91 @@
       "noTranscription": "no transcription on file",
       "heard": "heard"
     }
+  },
+  "Processing": {
+    "menuTitle": "Processing",
+    "startProcessing": "Start processing",
+    "continue": "Continue",
+    "resync": "Re-sync (keep all files)",
+    "fromSync": "From sync step (keep transcriptions)",
+    "fromTranscription": "From transcription step (keep audio)",
+    "fullRestart": "Full restart (delete all cache)",
+    "reprocess": "Reprocess",
+    "deleteCache": "Delete cache files",
+    "dialogTitle": "Process “{title}”",
+    "dialogTitleReprocess": "Reprocess “{title}”",
+    "dialogDescription": "These settings apply to this run only, unless you save them as defaults.",
+    "language": "Language",
+    "autoLanguage": "Auto (detect from book)",
+    "start": "Start processing",
+    "starting": "Starting…",
+    "saveAsDefaults": "Start and save as defaults",
+    "moreStartOptions": "More start options",
+    "toastStarted": "Started processing",
+    "toastSavedAndStarted": "Saved as defaults and started processing",
+    "toastFailed": "Failed to start processing",
+    "stage": {
+      "SPLIT_TRACKS": "Pre-processing audio",
+      "TRANSCRIBE_CHAPTERS": "Transcribing tracks",
+      "SYNC_CHAPTERS": "Aligning chapters"
+    },
+    "viewReport": "View alignment report"
+  },
+  "Queue": {
+    "title": "Processing queue",
+    "subtitle": "Books currently processing or waiting.",
+    "empty": "Nothing is processing right now.",
+    "finishedTitle": "Finished jobs",
+    "searchPlaceholder": "Search by title",
+    "noFinished": "No finished jobs.",
+    "previous": "Previous",
+    "next": "Next",
+    "untitled": "Untitled",
+    "sort": {
+      "recent": "Recently finished",
+      "oldest": "Oldest first",
+      "title": "Title A–Z",
+      "status": "Status"
+    },
+    "status": {
+      "RUNNING": "running",
+      "QUEUED": "queued",
+      "PAUSED": "paused",
+      "ERROR": "error",
+      "DONE": "done",
+      "CANCELED": "canceled"
+    },
+    "detail": {
+      "waiting": "Waiting",
+      "paused": "Paused",
+      "finished": "Finished {time}"
+    },
+    "actions": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "resume": "Resume job",
+      "pause": "Pause job",
+      "cancel": "Cancel job",
+      "alignmentReport": "Alignment report"
+    },
+    "toast": {
+      "processing": "Processing",
+      "paused": "Paused",
+      "queued": "Queued",
+      "manageQueue": "Manage queue",
+      "pause": "Pause",
+      "resume": "Resume",
+      "moreActions": "More actions",
+      "expand": "Expand",
+      "minimize": "Minimize",
+      "dismiss": "Dismiss",
+      "queuedSuffix": "+{count} queued",
+      "ready": "{title} is ready",
+      "open": "Open",
+      "notifyReadyTitle": "Book ready",
+      "notifyReadyBody": "{title} has finished aligning.",
+      "failed": "{title} failed to process",
+      "aBook": "A book"
+    }
   }
 }

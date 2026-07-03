@@ -35,7 +35,7 @@ import { useAppDispatch } from "@/store/appState"
 
 import { BookFormProvider, useBookForm } from "./BookDetails/BookFormProvider"
 import { DeleteBookModal } from "./BookDetails/DeleteBookModal"
-import { TranscriptionStatus } from "./BookDetails/TranscriptionStatus"
+import { ProcessingSection } from "./BookDetails/ProcessingSection"
 import { CollapsibleSection } from "./BookDetails/sections/CollapsibleSection"
 import { ContributorsSection } from "./BookDetails/sections/ContributorsSection"
 import { DescriptionSection } from "./BookDetails/sections/DescriptionSection"
@@ -253,8 +253,12 @@ function BookDetailsContentInner({
                 <ContributorsSection />
 
                 {permissions?.bookProcess &&
-                  ((!book.ebook?.missing && !book.audiobook?.missing) ||
-                    book.readaloud) && <TranscriptionStatus book={book} />}
+                  ((book.ebook &&
+                    !book.ebook.missing &&
+                    book.audiobook &&
+                    !book.audiobook.missing) ||
+                    book.readaloud ||
+                    book.alignedAt) && <ProcessingSection book={book} />}
 
                 <FileSection book={book} assetsDir={assetsDir} />
               </div>

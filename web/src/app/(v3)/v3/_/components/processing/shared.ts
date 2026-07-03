@@ -11,7 +11,7 @@ export type Stage = (typeof STAGE_SEQUENCE)[number]
 export const STAGE_LABELS: Record<Stage, string> = {
   SPLIT_TRACKS: "Pre-processing audio",
   TRANSCRIBE_CHAPTERS: "Transcribing tracks",
-  SYNC_CHAPTERS: "Synchronizing chapters",
+  SYNC_CHAPTERS: "Aligning chapters",
 }
 
 export type ProcessingStatus =

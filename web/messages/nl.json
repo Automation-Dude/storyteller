@@ -1304,5 +1304,91 @@
     },
     "selectedCount": "{count} geselecteerd",
     "outOf": "{count, number} van {total, number}"
+  },
+  "Processing": {
+    "menuTitle": "Verwerken",
+    "startProcessing": "Verwerken starten",
+    "continue": "Doorgaan",
+    "resync": "Opnieuw synchroniseren (alle bestanden behouden)",
+    "fromSync": "Vanaf synchronisatiestap (transcripties behouden)",
+    "fromTranscription": "Vanaf transcriptiestap (audio behouden)",
+    "fullRestart": "Volledig opnieuw (alle cache verwijderen)",
+    "reprocess": "Opnieuw verwerken",
+    "deleteCache": "Cachebestanden verwijderen",
+    "dialogTitle": "“{title}” verwerken",
+    "dialogTitleReprocess": "“{title}” opnieuw verwerken",
+    "dialogDescription": "Deze instellingen gelden alleen voor deze run, tenzij je ze als standaard opslaat.",
+    "language": "Taal",
+    "autoLanguage": "Automatisch (detecteren uit boek)",
+    "start": "Verwerken starten",
+    "starting": "Starten…",
+    "saveAsDefaults": "Starten en als standaard opslaan",
+    "moreStartOptions": "Meer startopties",
+    "toastStarted": "Verwerken gestart",
+    "toastSavedAndStarted": "Als standaard opgeslagen en verwerken gestart",
+    "toastFailed": "Verwerken starten mislukt",
+    "stage": {
+      "SPLIT_TRACKS": "Audio voorbereiden",
+      "TRANSCRIBE_CHAPTERS": "Tracks transcriberen",
+      "SYNC_CHAPTERS": "Hoofdstukken synchroniseren"
+    },
+    "viewReport": "Synchronisatierapport bekijken"
+  },
+  "Queue": {
+    "title": "Verwerkingswachtrij",
+    "subtitle": "Boeken die worden verwerkt of wachten.",
+    "empty": "Er wordt nu niets verwerkt.",
+    "finishedTitle": "Voltooide taken",
+    "searchPlaceholder": "Zoeken op titel",
+    "noFinished": "Geen voltooide taken.",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "untitled": "Zonder titel",
+    "sort": {
+      "recent": "Onlangs voltooid",
+      "oldest": "Oudste eerst",
+      "title": "Titel A–Z",
+      "status": "Status"
+    },
+    "status": {
+      "RUNNING": "bezig",
+      "QUEUED": "in wachtrij",
+      "PAUSED": "gepauzeerd",
+      "ERROR": "fout",
+      "DONE": "klaar",
+      "CANCELED": "geannuleerd"
+    },
+    "detail": {
+      "waiting": "Wachten",
+      "paused": "Gepauzeerd",
+      "finished": "Voltooid {time}"
+    },
+    "actions": {
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "resume": "Taak hervatten",
+      "pause": "Taak pauzeren",
+      "cancel": "Taak annuleren",
+      "alignmentReport": "Synchronisatierapport"
+    },
+    "toast": {
+      "processing": "Verwerken",
+      "paused": "Gepauzeerd",
+      "queued": "In wachtrij",
+      "manageQueue": "Wachtrij beheren",
+      "pause": "Pauzeren",
+      "resume": "Hervatten",
+      "moreActions": "Meer acties",
+      "expand": "Uitklappen",
+      "minimize": "Inklappen",
+      "dismiss": "Sluiten",
+      "queuedSuffix": "+{count} in wachtrij",
+      "ready": "{title} is klaar",
+      "open": "Openen",
+      "notifyReadyTitle": "Boek klaar",
+      "notifyReadyBody": "{title} is klaar met synchroniseren.",
+      "failed": "{title} kon niet worden verwerkt",
+      "aBook": "Een boek"
+    }
   }
 }

@@ -11,7 +11,6 @@ import {
   IconPlayerPlay,
   IconX,
 } from "@tabler/icons-react"
-import { formatDistanceToNow } from "date-fns"
 import { useEffect, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -34,12 +33,17 @@ import {
 
 import { StaticProgressBar } from "@/app/(v3)/v3/_/components/processing/ProgressVisualization"
 import {
-  STAGE_LABELS,
   jobToView,
   overallProgress,
 } from "@/app/(v3)/v3/_/components/processing/shared"
+import { useStageLabels } from "@/app/(v3)/v3/_/components/processing/useStageLabels"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+import {
+  useCommon,
+  useTranslation,
+} from "@/app/(v3)/v3/_/hooks/use-translation"
+import { useFormatRelativeTime } from "@/app/(v3)/v3/_/lib/date"
 import { type PublicJob } from "@/database/jobs"
 import {
   getCoverUrl,
@@ -54,16 +58,18 @@ import { type UUID } from "@/uuid"
 const PAGE_SIZE = 10
 
 // compound sort options fold the order direction into the choice for a simpler ui.
+// labels are resolved from the Queue.sort i18n namespace by key.
 const SORT_OPTIONS = {
-  recent: { sort: "finishedAt", order: "desc", label: "Recently finished" },
-  oldest: { sort: "finishedAt", order: "asc", label: "Oldest first" },
-  title: { sort: "title", order: "asc", label: "Title A–Z" },
-  status: { sort: "status", order: "asc", label: "Status" },
+  recent: { sort: "finishedAt", order: "desc" },
+  oldest: { sort: "finishedAt", order: "asc" },
+  title: { sort: "title", order: "asc" },
+  status: { sort: "status", order: "asc" },
 } as const
 
 type SortKey = keyof typeof SORT_OPTIONS
 
 export function QueueTab() {
+  const t = useTranslation("Queue")
   const { data: activeJobs } = useGetJobsQuery({ type: "active" })
   const [cancelJob] = useCancelJobMutation()
   const [pauseJob] = usePauseJobMutation()
@@ -89,16 +95,12 @@ export function QueueTab() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
         <div>
-          <h2 className="font-serif text-lg font-medium">Processing queue</h2>
-          <p className="text-muted-foreground text-sm">
-            Books currently processing or waiting.
-          </p>
+          <h2 className="font-serif text-lg font-medium">{t("title")}</h2>
+          <p className="text-muted-foreground text-sm">{t("subtitle")}</p>
         </div>
 
         {list.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            Nothing is processing right now.
-          </p>
+          <p className="text-muted-foreground text-sm">{t("empty")}</p>
         ) : (
           <div className="flex flex-col gap-2">
             {list.map((job) => {
@@ -126,6 +128,7 @@ export function QueueTab() {
 }
 
 function FinishedJobs() {
+  const t = useTranslation("Queue")
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("recent")
@@ -161,11 +164,11 @@ function FinishedJobs() {
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="font-serif text-lg font-medium">Finished jobs</h2>
+      <h2 className="font-serif text-lg font-medium">{t("finishedTitle")}</h2>
 
       <div className="flex items-center gap-2">
         <Input
-          placeholder="Search by title"
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value)
@@ -180,14 +183,12 @@ function FinishedJobs() {
           }}
         >
           <SelectTrigger className="h-9 w-44">
-            <SelectValue>
-              {(value: SortKey) => SORT_OPTIONS[value].label}
-            </SelectValue>
+            <SelectValue>{(value: SortKey) => t(`sort.${value}`)}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(SORT_OPTIONS).map(([key, { label }]) => (
+            {Object.keys(SORT_OPTIONS).map((key) => (
               <SelectItem key={key} value={key}>
-                {label}
+                {t(`sort.${key as SortKey}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -195,7 +196,7 @@ function FinishedJobs() {
       </div>
 
       {jobs.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No finished jobs.</p>
+        <p className="text-muted-foreground text-sm">{t("noFinished")}</p>
       ) : (
         <div className="flex flex-col gap-2">
           {jobs.map((job) => (
@@ -215,7 +216,7 @@ function FinishedJobs() {
             }}
           >
             <IconChevronLeft className="size-4" />
-            Previous
+            {t("previous")}
           </Button>
           <Button
             variant="outline"
@@ -225,7 +226,7 @@ function FinishedJobs() {
               setPage((p) => p + 1)
             }}
           >
-            Next
+            {t("next")}
             <IconChevronRight className="size-4" />
           </Button>
         </div>
@@ -244,11 +245,12 @@ const statusStyles: Record<string, string> = {
 }
 
 function StatusBadge({ status }: { status: PublicJob["status"] }) {
+  const t = useTranslation("Queue")
   return (
     <span
       className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${statusStyles[status] ?? "bg-muted text-muted-foreground"}`}
     >
-      {status.toLowerCase()}
+      {t.has(`status.${status}`) ? t(`status.${status}`) : status.toLowerCase()}
     </span>
   )
 }
@@ -270,20 +272,24 @@ function JobItem({
   resumeJob?: (uuid: UUID) => void
   cancelJob?: (uuid: UUID) => void
 }) {
+  const t = useTranslation("Queue")
+  const c = useCommon()
+  const stageLabels = useStageLabels()
+  const relativeTime = useFormatRelativeTime()
   const view = jobToView(job)
   const pct = Math.round(overallProgress(view) * 100)
-  const stageLabel = view.stage ? STAGE_LABELS[view.stage] : null
+  const stageLabel = view.stage ? stageLabels[view.stage] : null
   const isActive = job.status === "RUNNING" || job.status === "PAUSED"
 
   const detail =
     job.status === "RUNNING" && stageLabel
       ? `${stageLabel} · ${pct}%`
       : job.status === "QUEUED"
-        ? "Waiting"
+        ? t("detail.waiting")
         : job.status === "PAUSED"
-          ? "Paused"
+          ? t("detail.paused")
           : job.finishedAt
-            ? `Finished ${formatDistanceToNow(new Date(job.finishedAt), { addSuffix: true })}`
+            ? t("detail.finished", { time: relativeTime(job.finishedAt) })
             : job.status.toLowerCase()
 
   const configSummary = [
@@ -320,7 +326,7 @@ function JobItem({
             href={`/books/${job.bookUuid}`}
             className="hover:text-primary truncate hover:underline"
           >
-            {job.bookTitle ?? "Untitled"}
+            {job.bookTitle ?? t("untitled")}
           </V3Link>
           <StatusBadge status={job.status} />
         </ItemTitle>
@@ -341,8 +347,8 @@ function JobItem({
               variant="ghost"
               size="icon"
               className="size-7"
-              aria-label="Move up"
-              tooltip="Move up"
+              aria-label={t("actions.moveUp")}
+              tooltip={t("actions.moveUp")}
               delay={500}
               disabled={isFirst}
               onClick={() => {
@@ -355,8 +361,8 @@ function JobItem({
               variant="ghost"
               size="icon"
               className="size-7"
-              aria-label="Move down"
-              tooltip="Move down"
+              aria-label={t("actions.moveDown")}
+              tooltip={t("actions.moveDown")}
               delay={500}
               disabled={isLast}
               onClick={() => {
@@ -373,8 +379,8 @@ function JobItem({
             variant="ghost"
             size="icon"
             className="size-7"
-            aria-label="Resume"
-            tooltip="Resume job"
+            aria-label={t("actions.resume")}
+            tooltip={t("actions.resume")}
             onClick={() => {
               resumeJob(job.uuid)
             }}
@@ -386,8 +392,8 @@ function JobItem({
             variant="ghost"
             size="icon"
             className="size-7"
-            aria-label="Pause"
-            tooltip="Pause job"
+            aria-label={t("actions.pause")}
+            tooltip={t("actions.pause")}
             onClick={() => {
               pauseJob(job.uuid)
             }}
@@ -401,8 +407,8 @@ function JobItem({
             variant="ghost-destructive"
             size="icon"
             className="size-7"
-            aria-label="Cancel"
-            tooltip="Cancel job"
+            aria-label={c("actions.cancel")}
+            tooltip={t("actions.cancel")}
             onClick={() => {
               cancelJob(job.uuid)
             }}
@@ -416,8 +422,8 @@ function JobItem({
             variant="ghost"
             size="icon"
             className="size-7"
-            aria-label="View alignment report"
-            tooltip="Alignment report"
+            aria-label={t("actions.alignmentReport")}
+            tooltip={t("actions.alignmentReport")}
             render={<V3Link href={`/books/${job.bookUuid}/alignment`} />}
           >
             <IconFileText className="size-4" />

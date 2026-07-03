@@ -64,7 +64,7 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-import { ProcessingModal } from "./BookDetails/ProcessingModal"
+import { useProcessingRun } from "./BookDetails/useProcessingRun"
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
 import { CreateSeriesDialog } from "./CreateSeriesDialog"
 import { CreateTagDialog } from "./CreateTagDialog"
@@ -200,6 +200,7 @@ export function useBookActionItems({
   onAfterDestructive?: () => void
 }) {
   const t = useTranslation("BookActions")
+  const tp = useTranslation("Processing")
   const c = useCommon()
   const permissions = usePermissions()
   const canUpdate = !!permissions?.bookUpdate
@@ -230,7 +231,9 @@ export function useBookActionItems({
   const [deleteBooks] = useDeleteBooksMutation()
   const [mergeBooks] = useMergeBooksMutation()
 
-  const [processingModalOpen, setProcessingModalOpen] = useState(false)
+  const processingRun = useProcessingRun(
+    mode === "single" ? books[0] : undefined,
+  )
   const [mergeTarget, setMergeTarget] = useState<BookWithRelations | null>(null)
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false)
   const [createSeriesOpen, setCreateSeriesOpen] = useState(false)
@@ -524,8 +527,18 @@ export function useBookActionItems({
 
       {canProcess &&
         (() => {
+          const singleBook = mode === "single" ? books[0] : undefined
+          // to process a book we need both source formats present (backend
+          // rejects otherwise), or an existing readaloud to continue/re-sync.
           const hasProcessable =
-            mode === "bulk" || books.some((b) => b.audiobook || b.ebook)
+            mode === "bulk"
+              ? books.some((b) => b.audiobook || b.ebook)
+              : !!singleBook &&
+                ((!!singleBook.ebook &&
+                  !singleBook.ebook.missing &&
+                  !!singleBook.audiobook &&
+                  !singleBook.audiobook.missing) ||
+                  !!singleBook.readaloud)
 
           if (!hasProcessable) return null
 
@@ -533,29 +546,46 @@ export function useBookActionItems({
             <>
               <DropdownMenuSeparator />
 
-              <DropdownMenuItem
-                onClick={(event) => {
-                  if (mode === "single") {
-                    setProcessingModalOpen(true)
-                  } else {
-                    processAction.confirm(event)
-                  }
-                }}
-              >
-                <IconProgress className="mr-2 h-4 w-4" />
-                {c("states.processing")}
-              </DropdownMenuItem>
-
-              {mode === "bulk" && (
+              {mode === "single" ? (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <IconProgress className="mr-2 h-4 w-4" />
+                    {tp("menuTitle")}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {processingRun.positions.map((position) => (
+                      <DropdownMenuItem
+                        key={position.key}
+                        disabled={position.disabled}
+                        onClick={() => {
+                          processingRun.start(position.restart)
+                        }}
+                      >
+                        {position.icon}
+                        {tp(position.labelKey)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              ) : (
                 <DropdownMenuItem
                   onClick={(event) => {
-                    clearCacheAction.confirm(event)
+                    processAction.confirm(event)
                   }}
                 >
-                  <IconRefresh className="mr-2 h-4 w-4" />
-                  {t("clearCache")}
+                  <IconProgress className="mr-2 h-4 w-4" />
+                  {c("states.processing")}
                 </DropdownMenuItem>
               )}
+
+              <DropdownMenuItem
+                onClick={(event) => {
+                  clearCacheAction.confirm(event)
+                }}
+              >
+                <IconRefresh className="mr-2 h-4 w-4" />
+                {t("clearCache")}
+              </DropdownMenuItem>
             </>
           )
         })()}
@@ -578,7 +608,9 @@ export function useBookActionItems({
             className="text-destructive focus:text-destructive"
           >
             <IconTrash className="mr-2 h-4 w-4" />
-            {deleteAction.isLoading ? c("states.deleting") : c("actions.delete")}
+            {deleteAction.isLoading
+              ? c("states.deleting")
+              : c("actions.delete")}
           </DropdownMenuItem>
         </>
       )}
@@ -616,14 +648,7 @@ export function useBookActionItems({
         </>
       )}
 
-      {mode === "single" && books[0] && (
-        <ProcessingModal
-          book={books[0]}
-          aligned={!!books[0].readaloud?.filepath}
-          open={processingModalOpen}
-          onOpenChange={setProcessingModalOpen}
-        />
-      )}
+      {processingRun.dialog}
     </>
   )
 

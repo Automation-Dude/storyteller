@@ -31,6 +31,7 @@ import {
 } from "@v3/_/components/ui/item"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type PublicJob } from "@/database/jobs"
@@ -43,11 +44,9 @@ import {
 } from "@/store/api"
 
 import { ProgressVisualization } from "./ProgressVisualization"
-import { STAGE_LABELS, jobToView, overallProgress } from "./shared"
+import { jobToView, overallProgress } from "./shared"
+import { useStageLabels } from "./useStageLabels"
 
-// a persistent, minimizable processing indicator. lives in the authenticated app
-// layout so it stays visible while jobs run, across navigation. driven by the jobs
-// query (live via the job event stream). also announces finished runs.
 export function ProcessingToast() {
   const { data: jobs } = useGetJobsQuery(
     { type: "active" },
@@ -60,6 +59,9 @@ export function ProcessingToast() {
   const [minimized, setMinimized] = useState(false)
   const [dismissed, setDismissed] = useState<string | null>(null)
 
+  const t = useTranslation("Queue")
+  const c = useCommon()
+  const stageLabels = useStageLabels()
   const basePath = useVersionBasePath()
   const router = useRouter()
 
@@ -95,12 +97,12 @@ export function ProcessingToast() {
 
   const headline =
     current.status === "PAUSED"
-      ? "Paused"
+      ? t("toast.paused")
       : view.stage
-        ? STAGE_LABELS[view.stage]
+        ? stageLabels[view.stage]
         : current.status === "QUEUED"
-          ? "Queued"
-          : "Processing"
+          ? t("toast.queued")
+          : t("toast.processing")
 
   return (
     <div className="fixed right-4 bottom-4 z-50 w-[320px] max-w-[calc(100vw-2rem)]">
@@ -140,10 +142,10 @@ export function ProcessingToast() {
                 href={`/books/${current.bookUuid}`}
                 className="hover:text-primary truncate hover:underline"
               >
-                {current.bookTitle ?? "Untitled"}
+                {current.bookTitle ?? t("untitled")}
               </V3Link>
             ) : (
-              <span className="truncate">Processing</span>
+              <span className="truncate">{t("toast.processing")}</span>
             )}
           </ItemTitle>
 
@@ -162,7 +164,9 @@ export function ProcessingToast() {
           <div className="flex items-center justify-between gap-0.5">
             <span className="text-muted-foreground text-xs">
               {headline}
-              {queuedCount > 0 ? ` · +${queuedCount} queued` : ""}
+              {queuedCount > 0
+                ? ` · ${t("toast.queuedSuffix", { count: queuedCount.toString() })}`
+                : ""}
             </span>
 
             <div className="flex items-center gap-0.5">
@@ -173,7 +177,7 @@ export function ProcessingToast() {
                       variant="ghost"
                       size="icon"
                       className="size-6"
-                      aria-label="More actions"
+                      aria-label={t("toast.moreActions")}
                     />
                   }
                 >
@@ -184,14 +188,14 @@ export function ProcessingToast() {
                     render={<V3Link href="/settings?tab=queue" />}
                   >
                     <IconListNumbers className="size-4" />
-                    Manage queue
+                    {t("toast.manageQueue")}
                   </DropdownMenuItem>
                   {current.status === "RUNNING" && (
                     <DropdownMenuItem
                       onClick={() => void pauseJob({ uuid: current.uuid })}
                     >
                       <IconPlayerPause className="size-4" />
-                      Pause
+                      {t("toast.pause")}
                     </DropdownMenuItem>
                   )}
                   {current.status === "PAUSED" && (
@@ -199,7 +203,7 @@ export function ProcessingToast() {
                       onClick={() => void resumeJob({ uuid: current.uuid })}
                     >
                       <IconPlayerPlay className="size-4" />
-                      Resume
+                      {t("toast.resume")}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -208,7 +212,7 @@ export function ProcessingToast() {
                     onClick={() => void cancelJob({ uuid: current.uuid })}
                   >
                     <IconX className="size-4" />
-                    Cancel
+                    {c("actions.cancel")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -217,7 +221,7 @@ export function ProcessingToast() {
                 variant="ghost"
                 size="icon"
                 className="size-6"
-                aria-label={minimized ? "Expand" : "Minimize"}
+                aria-label={minimized ? t("toast.expand") : t("toast.minimize")}
                 onClick={() => {
                   setMinimized((m) => !m)
                 }}
@@ -233,7 +237,7 @@ export function ProcessingToast() {
                 variant="ghost"
                 size="icon"
                 className="size-6"
-                aria-label="Dismiss"
+                aria-label={t("toast.dismiss")}
                 onClick={() => {
                   setDismissed(current.uuid)
                 }}
@@ -248,14 +252,12 @@ export function ProcessingToast() {
   )
 }
 
-// announce newly finished jobs once: an in-app toast plus, when the tab is hidden
-// and permission is granted, a web notification. seeds the seen-set on first load so
-// pre-existing history is not announced.
 function useFinishedNotifications(
   finishedJobs: PublicJob[] | undefined,
   basePath: string,
   router: ReturnType<typeof useRouter>,
 ) {
+  const t = useTranslation("Queue")
   const seen = useRef<Set<string>>(new Set())
   const seeded = useRef(false)
 
@@ -272,13 +274,13 @@ function useFinishedNotifications(
       if (seen.current.has(job.uuid)) continue
       seen.current.add(job.uuid)
 
-      const title = job.bookTitle ?? "A book"
+      const title = job.bookTitle ?? t("toast.aBook")
       if (job.status === "DONE") {
         const href = job.bookUuid ? `${basePath}/books/${job.bookUuid}` : null
-        toast.success(`${title} is ready`, {
+        toast.success(t("toast.ready", { title }), {
           ...(href && {
             action: {
-              label: "Open",
+              label: t("toast.open"),
               onClick: () => {
                 router.push(href)
               },
@@ -291,8 +293,14 @@ function useFinishedNotifications(
           typeof document !== "undefined" &&
           document.hidden
         ) {
-          const notification = new Notification("Book ready", {
-            body: `${title} has finished aligning.`,
+          const notification = new Notification(t("toast.notifyReadyTitle"), {
+            body: t("toast.notifyReadyBody", { title }),
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            icon: getCoverUrl(job.bookUuid!, {
+              width: 96,
+              height: 64,
+              updatedAt: job.updatedAt,
+            }),
           })
           if (href) {
             notification.onclick = () => {
@@ -302,10 +310,10 @@ function useFinishedNotifications(
           }
         }
       } else if (job.status === "ERROR") {
-        toast.error(`${title} failed to process`, {
+        toast.error(t("toast.failed", { title }), {
           description: job.error ?? undefined,
         })
       }
     }
-  }, [finishedJobs, basePath, router])
+  }, [finishedJobs, basePath, router, t])
 }

@@ -87,7 +87,9 @@ export const ColorPicker = memo(function ColorPicker({
           <div className="flex items-center gap-2">
             <Input
               value={customColor}
-              onChange={(e) => { setCustomColor(e.target.value); }}
+              onChange={(e) => {
+                setCustomColor(e.target.value)
+              }}
               placeholder="#hex"
               className="h-7 flex-1 text-xs"
               onKeyDown={(e) => {
