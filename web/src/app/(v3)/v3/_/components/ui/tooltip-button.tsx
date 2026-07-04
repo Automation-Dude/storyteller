@@ -5,6 +5,8 @@ import { type VariantProps } from "class-variance-authority"
 
 import { Button, type buttonVariants } from "./button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip"
+import { Hotkey } from "@tanstack/react-hotkeys"
+import { KeyboardShortcut } from "./kbd"
 
 type TooltipButtonProps = React.ComponentProps<typeof Button> &
   VariantProps<typeof buttonVariants> & {
@@ -15,6 +17,7 @@ type TooltipButtonProps = React.ComponentProps<typeof Button> &
     /* required bc you will forget it */
     "aria-label": string
     tooltipClassName?: string
+    shortcut?: Hotkey[]
   }
 
 export function TooltipButton({
@@ -22,6 +25,7 @@ export function TooltipButton({
   tooltipSide,
   tooltipAlign,
   tooltipClassName,
+  shortcut,
   delay,
   ...buttonProps
 }: TooltipButtonProps) {
@@ -34,6 +38,7 @@ export function TooltipButton({
         className={tooltipClassName}
       >
         {tooltip}
+        {shortcut && <KeyboardShortcut shortcut={shortcut} className="ml-2" />}
       </TooltipContent>
     </Tooltip>
   )
