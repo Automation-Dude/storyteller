@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
 import { IAdd } from "./ui/icon"
+import { TooltipButton } from "./ui/tooltip-button"
 
 export function AddBookButton(props: ButtonProps) {
   const t = useTranslation("BooksPage")
@@ -35,10 +36,15 @@ export function AddBookButton(props: ButtonProps) {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="default" size="sm" {...props}>
+            <TooltipButton
+              variant="ghost"
+              size="sm"
+              {...props}
+              tooltip={t("addBook")}
+              aria-label={t("addBook")}
+            >
               <IAdd.base className="size-4" />
-              {t("addBook")}
-            </Button>
+            </TooltipButton>
           }
         />
         <DropdownMenuContent className="w-fit">

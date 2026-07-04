@@ -1,6 +1,6 @@
 "use client"
 
-import { IconLoader2 } from "@tabler/icons-react"
+import { IconBooks, IconLoader2 } from "@tabler/icons-react"
 
 import { HeroSection } from "@v3/_/components/home/HeroSection"
 import { StatsBar } from "@v3/_/components/home/StatsBar"
@@ -9,6 +9,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type HomeSectionWithDetails } from "@/database/shelves"
 import { useListHomeShelvesQuery } from "@/store/api"
+import { TooltipButton } from "../_/components/ui/tooltip-button"
 
 function Section({ section }: { section: HomeSectionWithDetails }) {
   // shelves manage their own px-4 gutter (with scroll bleed); widgets don't, so
@@ -64,5 +65,19 @@ export function HomeSections() {
 }
 
 export function HomeSectionsActions() {
-  return <ShelfManager />
+  const t = useTranslation("HomePage")
+  return (
+    <ShelfManager
+      trigger={
+        <TooltipButton
+          variant="ghost"
+          size="sm"
+          tooltip={t("sections.customize")}
+          aria-label={t("sections.customize")}
+        >
+          <IconBooks className="mr-2 size-4" />
+        </TooltipButton>
+      }
+    />
+  )
 }

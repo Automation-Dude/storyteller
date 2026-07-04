@@ -228,12 +228,8 @@ function LibraryPageInner({
     seed: seedArg.filter ?? null,
     seriesContext: seedArg.series as UUID | undefined,
     collectionContext: seedArg.collection as UUID | undefined,
-    ...(isSeriesSection
-      ? {
-          defaultSortField: "seriesPosition" as const,
-          defaultSortDirection: "asc" as const,
-        }
-      : {}),
+    defaultSortField: section.sort?.field,
+    defaultSortDirection: section.sort?.direction,
   })
 
   const {

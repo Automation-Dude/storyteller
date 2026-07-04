@@ -5,6 +5,7 @@ import {
   type ShelfFilterField,
   type ShelfFilterNode,
 } from "@/shelves"
+import { DisplayField, SortDirection, SortField } from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
 import { type UUID } from "@/uuid"
 
@@ -31,23 +32,28 @@ export type LibraryEntityType =
   | "status"
 
 export type LibrarySectionDef = {
-  // the section identifier, used to fetch its facet list from the server.
+  /* the section identifier, used to fetch its facet list from the server. */
   key: FacetSection
   extractItems: (books: BookWithRelations[]) => LibraryItem[]
   filterBooks: (
     books: BookWithRelations[],
     itemKey: string,
   ) => BookWithRelations[]
-  // build a shelf filter matching a single facet, for "pin as shelf". absent
-  // when the facet can't be expressed as a saved filter (e.g. publication year).
+  /* build a shelf filter matching a single facet, for "pin as shelf". absent
+  when the facet can't be expressed as a saved filter (e.g. publication year). */
   toShelfFilter?: (itemKey: string) => ShelfFilterNode
-  // the filter seeding the "(no author)" / "(no series)" bucket's grid. absent
-  // for sections that have no none bucket (formats).
+  /* the filter seeding the "(no author)" / "(no series)" bucket's grid. absent
+  for sections that have no none bucket (formats). */
   noneFilter?: ShelfFilterNode
-  // when present, the sidebar supports edit/delete/merge for this entity type
+  /* when present, the sidebar supports edit/delete/merge for this entity type */
   entityType?: LibraryEntityType
-  // returns books that have none of this entity (no author, no tag, etc.)
+  /* returns books that have none of this entity (no author, no tag, etc.) */
   filterNone?: (books: BookWithRelations[]) => BookWithRelations[]
+  displayFields?: DisplayField[]
+  sort?: {
+    field: SortField
+    direction: SortDirection
+  }
 }
 
 // an entity facet (series/tag/collection) maps to an array-field "includes" of
@@ -207,6 +213,11 @@ export const librarySections = {
     toShelfFilter: entityFilter("series"),
     noneFilter: emptyFilter("series"),
     entityType: "series" as const,
+    displayFields: ["seriesPosition"],
+    sort: {
+      field: "seriesPosition",
+      direction: "asc",
+    },
   },
   authors: {
     key: "authors" as const,
@@ -273,14 +284,25 @@ export const librarySections = {
   ratings: {
     key: "ratings" as const,
     ...buildScalarSection((book) =>
-      book.rating != null ? String(book.rating.rating) : null,
+      book.userBookRating?.rating != null
+        ? String(book.userBookRating.rating)
+        : null,
     ),
-    toShelfFilter: (itemKey: string): ShelfFilterNode => ({
-      type: "condition",
+    toShelfFilter: (itemKey: string): ShelfFilterNode => {
+      const [min, max] = itemKey.split("-").map(Number)
+
+      return {
+        type: "condition",
+        field: "userRating",
+        operator: "between",
+        value: [min, max],
+      }
+    },
+    displayFields: ["userRating"],
+    sort: {
       field: "userRating",
-      operator: "is",
-      value: Number(itemKey),
-    }),
+      direction: "desc",
+    },
     noneFilter: emptyFilter("userRating"),
   },
   formats: {
