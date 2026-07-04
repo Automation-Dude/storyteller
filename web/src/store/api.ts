@@ -1875,6 +1875,26 @@ export const api = createApi({
         unsubscribe()
       },
     }),
+    getAlignmentEstimate: build.query<
+      { estimateSeconds: number | null; sampleSize: number },
+      {
+        bookUuid: UUID
+        engine: string
+        whisperModel: string | null
+        restart: string | false
+      }
+    >({
+      query: ({ bookUuid, engine, whisperModel, restart }) => {
+        const params = new URLSearchParams()
+        params.set("bookUuid", bookUuid)
+        params.set("engine", engine)
+        if (whisperModel) params.set("whisperModel", whisperModel)
+        if (restart) params.set("restart", restart)
+        return `/jobs/estimate?${params.toString()}`
+      },
+      providesTags: ["Jobs"],
+    }),
+
     cancelJob: build.mutation<void, { uuid: UUID }>({
       query: ({ uuid }) => ({ url: `/jobs/${uuid}`, method: "DELETE" }),
       invalidatesTags: ["Jobs"],
@@ -1974,6 +1994,7 @@ export const {
   useMergeBooksMutation,
   useProcessBookMutation,
   useGetJobsQuery,
+  useGetAlignmentEstimateQuery,
   useGetJobReportQuery,
   useGetBookAlignmentReportQuery,
   useGetAlignmentFacetsQuery,

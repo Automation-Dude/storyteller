@@ -77,6 +77,7 @@
       "job.config": "ColumnType<import(\"@/work/runConfig\").RunConfig, string, string> | null",
       "job.type": "import('@/database/jobs').JobType",
       "job.stage": "\"SPLIT_TRACKS\" | \"TRANSCRIBE_CHAPTERS\" | \"SYNC_CHAPTERS\" | null",
+      "job.stats": "ColumnType<import(\"@/work/jobStats\").JobStats, string, string> | null",
       "job.progress": "Generated<number>",
       "position.book_uuid": "import(\"@/uuid\").UUID",
       "position.user_id": "import(\"@/uuid\").UUID",

@@ -4,6 +4,9 @@ import {
   type RelativeTimeFormatOptions,
   useFormatter,
 } from "next-intl"
+import { useCallback } from "react"
+
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 
 export const DEFAULT_DATE_OPTIONS: DateTimeFormatOptions = {
   dateStyle: "medium",
@@ -59,4 +62,41 @@ export function useFormatList() {
       ...options,
     })
   }
+}
+
+export function useFormatDuration() {
+  const t = useTranslation("Common.Duration")
+
+  return useCallback(
+    (seconds: number, options?: { approximate?: boolean }): string => {
+      const totalMinutes = Math.round(seconds / 60)
+
+      if (totalMinutes < 1) {
+        return t("lessThanAMinute")
+      }
+
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = totalMinutes % 60
+
+      let result: string
+
+      if (hours > 0 && minutes > 0) {
+        result = t("hoursAndMinutes", {
+          hours: String(hours),
+          minutes: String(minutes),
+        })
+      } else if (hours > 0) {
+        result = t("hours", { hours: String(hours) })
+      } else {
+        result = t("minutes", { minutes: String(minutes) })
+      }
+
+      if (options?.approximate) {
+        return t("approximate", { duration: result })
+      }
+
+      return result
+    },
+    [t],
+  )
 }

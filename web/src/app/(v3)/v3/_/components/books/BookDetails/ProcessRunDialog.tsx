@@ -2,7 +2,7 @@
 
 import { IconChevronDown } from "@tabler/icons-react"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
 import { LANGUAGES } from "@storyteller-platform/ghost-story/constants"
@@ -40,8 +40,10 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { type Settings } from "@/apiModels"
 import { SettingsFormProvider } from "@/app/(v3)/v3/_/components/settings-form/SettingsFormProvider"
 import { ProcessingSettingsFields } from "@/app/(v3)/v3/_/components/settings-form/processing-tab"
+import { useFormatDuration } from "@/app/(v3)/v3/_/lib/date"
 import { type BookWithRelations } from "@/database/books"
 import {
+  useGetAlignmentEstimateQuery,
   useGetSettingsQuery,
   useProcessBookMutation,
   useUpdateSettingsMutation,
@@ -112,6 +114,20 @@ function RunConfigForm({
   const [processBook, { isLoading: isProcessing }] = useProcessBookMutation()
   const [updateSettings, { isLoading: isSaving }] = useUpdateSettingsMutation()
   const t = useTranslation("Processing")
+  const formatDuration = useFormatDuration()
+
+  const watchedEngine = useWatch({ control: form.control, name: "transcriptionEngine" })
+  const watchedModel = useWatch({ control: form.control, name: "whisperModel" })
+
+  const { data: estimate } = useGetAlignmentEstimateQuery(
+    {
+      bookUuid: book.uuid,
+      engine: watchedEngine ?? settings.transcriptionEngine,
+      whisperModel: watchedModel ?? settings.whisperModel ?? null,
+      restart: restart || false,
+    },
+    { skip: !book.uuid },
+  )
 
   async function start(values: Settings, saveAsDefaults: boolean) {
     const config: Partial<RunConfig> = {
@@ -173,6 +189,18 @@ function RunConfigForm({
             <ProcessingSettingsFields collapsible />
           </div>
         </div>
+
+        {estimate && (
+          <div className="text-muted-foreground px-px py-2 text-sm">
+            {estimate.estimateSeconds != null
+              ? t("estimatedTime", {
+                  duration: formatDuration(estimate.estimateSeconds, {
+                    approximate: true,
+                  }),
+                })
+              : t("noEstimateHistory")}
+          </div>
+        )}
 
         <DialogFooter className="bg-background sticky bottom-0 mt-0 border-t pt-3">
           <ButtonGroup>

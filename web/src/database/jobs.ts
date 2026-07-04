@@ -3,6 +3,7 @@ import { type Selectable } from "kysely"
 import { JobEvents } from "@/jobEvents"
 import type { UUID } from "@/uuid"
 import type { RestartMode } from "@/work/distributor"
+import type { JobStats } from "@/work/jobStats"
 import {
   type RunConfig,
   type RunConfigSummary,
@@ -66,6 +67,7 @@ export type JobUpdate = Partial<{
   startedAt: string | null
   finishedAt: string | null
   position: number
+  stats: JobStats
 }>
 
 function emit(type: "jobUpdated" | "jobCreated" | "jobDeleted", jobUuid: UUID) {
@@ -184,12 +186,18 @@ export async function getActiveJobForBook(bookUuid: UUID): Promise<Job | null> {
 }
 
 export async function updateJob(uuid: UUID, patch: JobUpdate): Promise<Job> {
+  const { stats, ...rest } = patch
+
   const row = await db
     .updateTable("job")
-    .set(patch)
+    .set({
+      ...rest,
+      ...(stats !== undefined && { stats: JSON.stringify(stats) }),
+    })
     .where("uuid", "=", uuid)
     .returningAll()
     .executeTakeFirstOrThrow()
+
   emit("jobUpdated", row.uuid)
 
   return row
@@ -220,6 +228,30 @@ export async function reorderQueuedJobs(orderedUuids: UUID[]): Promise<void> {
     }
   })
   for (const uuid of orderedUuids) emit("jobUpdated", uuid)
+}
+
+export async function getFinishedJobStats(
+  limit = 100,
+): Promise<{ config: RunConfig; restart: RestartMode; stats: JobStats }[]> {
+  const rows = await db
+    .selectFrom("job")
+    .select(["config", "restart", "stats"])
+    .where("status", "=", "DONE")
+    .where("stats", "is not", null)
+    .orderBy("finishedAt", "desc")
+    .limit(limit)
+    .execute()
+
+  return rows
+    .filter(
+      (row): row is typeof row & { config: RunConfig; stats: JobStats } =>
+        row.config !== null && row.stats !== null,
+    )
+    .map((row) => ({
+      config: row.config,
+      restart: row.restart ?? false,
+      stats: row.stats,
+    }))
 }
 
 export async function deleteJob(uuid: UUID): Promise<void> {

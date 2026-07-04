@@ -1067,6 +1067,8 @@
       "retry": "Opnieuw proberen",
       "createReadaloud": "Creëer <em>readaloud</em>",
       "lastAligned": "Laatst gesynchroniseerd",
+      "alignedIn": "Gesynchroniseerd in",
+      "estimatedRemaining": "{duration} resterend",
       "transcriptionEngine": "Transcriptie engine",
       "storytellerVersion": "<em>Storyteller</em> versie"
     }
@@ -1183,6 +1185,13 @@
       "collection": "{count, plural, one {Verzameling} other {Verzamelingen}}",
       "shelf": "{count, plural, one {Plank} other {Planken}}",
       "file": "{count, plural, one {Bestand} other {Bestanden}}"
+    },
+    "Duration": {
+      "lessThanAMinute": "< 1 min",
+      "minutes": "{minutes} min",
+      "hours": "{hours} u",
+      "hoursAndMinutes": "{hours} u {minutes} min",
+      "approximate": "~{duration}"
     },
     "actions": {
       "save": "Opslaan",
@@ -1330,6 +1339,8 @@
     "toastStarted": "Verwerken gestart",
     "toastSavedAndStarted": "Als standaard opgeslagen en verwerken gestart",
     "toastFailed": "Verwerken starten mislukt",
+    "estimatedTime": "Geschatte tijd: {duration}",
+    "noEstimateHistory": "Niet genoeg geschiedenis om te schatten",
     "stage": {
       "SPLIT_TRACKS": "Audio voorbereiden",
       "TRANSCRIBE_CHAPTERS": "Tracks transcriberen",
@@ -1339,8 +1350,8 @@
   },
   "Queue": {
     "title": "Verwerkingswachtrij",
-    "subtitle": "Boeken die worden verwerkt of wachten.",
-    "empty": "Er wordt nu niets verwerkt.",
+    "subtitle": "{count, number} boeken worden verwerkt of wachten.",
+    "empty": "Er wordt op dit moment niets verwerkt.",
     "finishedTitle": "Voltooide taken",
     "searchPlaceholder": "Zoeken op titel",
     "noFinished": "Geen voltooide taken.",
@@ -1364,7 +1375,9 @@
     "detail": {
       "waiting": "Wachten",
       "paused": "Gepauzeerd",
-      "finished": "Voltooid {time}"
+      "finished": "Voltooid {time}",
+      "runTime": "Duurde {duration}",
+      "remaining": "{duration} resterend"
     },
     "actions": {
       "moveUp": "Omhoog",

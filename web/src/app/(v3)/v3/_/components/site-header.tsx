@@ -20,8 +20,6 @@ export function SiteHeader({
   actions?: ReactNode
   className?: string
 }) {
-  // title-led layout: the last crumb is the page title, everything before it
-  // collapses into a small muted parent trail above it.
   const parents = breadcrumbs.slice(0, -1)
   const current = breadcrumbs.at(-1)
 
@@ -33,7 +31,7 @@ export function SiteHeader({
           className,
         )}
       >
-        <div className="flex w-full min-w-0 items-center gap-3 px-4 lg:px-6">
+        <div className="flex w-full min-w-0 items-center gap-3 px-4">
           {current && (
             <div className="flex min-w-0 flex-col justify-center">
               {parents.length > 0 && (

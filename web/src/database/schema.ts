@@ -256,6 +256,7 @@ export interface Job {
   restart: import("@/work/distributor").RestartMode | null
   stage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS" | null
   startedAt: string | null
+  stats: ColumnType<import("@/work/jobStats").JobStats, string, string> | null
   status: Generated<import("@/database/jobs").JobStatus>
   type: import("@/database/jobs").JobType
   updatedAt: Generated<string>

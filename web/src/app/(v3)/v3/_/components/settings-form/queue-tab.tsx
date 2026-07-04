@@ -43,17 +43,28 @@ import {
   useCommon,
   useTranslation,
 } from "@/app/(v3)/v3/_/hooks/use-translation"
-import { useFormatRelativeTime } from "@/app/(v3)/v3/_/lib/date"
+import {
+  useFormatDate,
+  useFormatDuration,
+  useFormatRelativeTime,
+} from "@/app/(v3)/v3/_/lib/date"
 import { type PublicJob } from "@/database/jobs"
 import {
   getCoverUrl,
   useCancelJobMutation,
+  useGetAlignmentEstimateQuery,
   useGetJobsQuery,
   usePauseJobMutation,
   useReorderJobsMutation,
   useResumeJobMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
+import {
+  parseAsInteger,
+  parseAsString,
+  parseAsStringEnum,
+  useQueryState,
+} from "nuqs"
 
 const PAGE_SIZE = 10
 
@@ -94,10 +105,14 @@ export function QueueTab() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <div>
-          <h2 className="font-serif text-lg font-medium">{t("title")}</h2>
-          <p className="text-muted-foreground text-sm">{t("subtitle")}</p>
-        </div>
+        {list.length > 0 && (
+          <div>
+            <h2 className="font-serif text-lg font-medium">{t("title")}</h2>
+            <p className="text-muted-foreground text-sm">
+              {t("subtitle", { count: list.length })}
+            </p>
+          </div>
+        )}
 
         {list.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t("empty")}</p>
@@ -129,16 +144,24 @@ export function QueueTab() {
 
 function FinishedJobs() {
   const t = useTranslation("Queue")
+  const [debouncedSearch, setDebouncedSearch] = useQueryState(
+    "search",
+    parseAsString.withDefault(""),
+  )
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [sortKey, setSortKey] = useState<SortKey>("recent")
-  const [page, setPage] = useState(0)
+  const [sortKey, setSortKey] = useQueryState(
+    "sort",
+    parseAsStringEnum(Object.keys(SORT_OPTIONS) as SortKey[]).withDefault(
+      "recent",
+    ),
+  )
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(0))
 
   // debounce the search input so we are not refetching on every keystroke.
   useEffect(() => {
     const id = setTimeout(() => {
-      setDebouncedSearch(search)
-      setPage(0)
+      void setDebouncedSearch(search)
+      void setPage(0)
     }, 300)
     return () => {
       clearTimeout(id)
@@ -178,12 +201,16 @@ function FinishedJobs() {
         <Select
           value={sortKey}
           onValueChange={(value) => {
-            setSortKey(value as SortKey)
-            setPage(0)
+            void setSortKey(value as SortKey)
+            void setPage(0)
           }}
+          items={Object.keys(SORT_OPTIONS).map((key) => ({
+            label: t(`sort.${key as SortKey}`),
+            value: key,
+          }))}
         >
-          <SelectTrigger className="h-9 w-44">
-            <SelectValue>{(value: SortKey) => t(`sort.${value}`)}</SelectValue>
+          <SelectTrigger className="h-9! w-44">
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {Object.keys(SORT_OPTIONS).map((key) => (
@@ -212,7 +239,7 @@ function FinishedJobs() {
             size="sm"
             disabled={!hasPrev}
             onClick={() => {
-              setPage((p) => Math.max(p - 1, 0))
+              void setPage((p) => Math.max(p - 1, 0))
             }}
           >
             <IconChevronLeft className="size-4" />
@@ -223,7 +250,7 @@ function FinishedJobs() {
             size="sm"
             disabled={!hasNext}
             onClick={() => {
-              setPage((p) => p + 1)
+              void setPage((p) => p + 1)
             }}
           >
             {t("next")}
@@ -255,6 +282,30 @@ function StatusBadge({ status }: { status: PublicJob["status"] }) {
   )
 }
 
+function useEstimatedRemaining(job: PublicJob) {
+  const isRunning = job.status === "RUNNING"
+  const bookUuid = job.bookUuid ?? ("" as UUID)
+
+  const { data } = useGetAlignmentEstimateQuery(
+    {
+      bookUuid,
+      engine: job.config?.transcriptionEngine ?? "",
+      whisperModel: job.config?.whisperModel ?? null,
+      restart: (job as { restart?: string | false }).restart || false,
+    },
+    { skip: !isRunning || !job.bookUuid || !job.config?.transcriptionEngine },
+  )
+
+  if (!isRunning || !data?.estimateSeconds || !job.startedAt) return null
+
+  const elapsedSeconds = Math.floor(
+    (Date.now() - new Date(job.startedAt).getTime()) / 1000,
+  )
+  const remaining = Math.max(0, data.estimateSeconds - elapsedSeconds)
+
+  return remaining
+}
+
 function JobItem({
   job,
   isFirst,
@@ -276,21 +327,47 @@ function JobItem({
   const c = useCommon()
   const stageLabels = useStageLabels()
   const relativeTime = useFormatRelativeTime()
+  const formatDuration = useFormatDuration()
   const view = jobToView(job)
   const pct = Math.round(overallProgress(view) * 100)
   const stageLabel = view.stage ? stageLabels[view.stage] : null
   const isActive = job.status === "RUNNING" || job.status === "PAUSED"
+  const estimatedRemaining = useEstimatedRemaining(job)
 
+  const runTime = (() => {
+    const stats = (job as { stats?: { totalWallMs: number } | null }).stats
+
+    if (stats?.totalWallMs) {
+      return formatDuration(stats.totalWallMs / 1000)
+    }
+
+    if (job.finishedAt && job.startedAt) {
+      const ms =
+        new Date(job.finishedAt).getTime() - new Date(job.startedAt).getTime()
+      return formatDuration(ms / 1000)
+    }
+
+    return null
+  })()
+
+  const formatDate = useFormatDate()
   const detail =
-    job.status === "RUNNING" && stageLabel
-      ? `${stageLabel} · ${pct}%`
-      : job.status === "QUEUED"
-        ? t("detail.waiting")
-        : job.status === "PAUSED"
-          ? t("detail.paused")
-          : job.finishedAt
-            ? t("detail.finished", { time: relativeTime(job.finishedAt) })
-            : job.status.toLowerCase()
+    job.status === "RUNNING" && stageLabel ? (
+      `${stageLabel} · ${pct}%`
+    ) : job.status === "QUEUED" ? (
+      t("detail.waiting")
+    ) : job.status === "PAUSED" ? (
+      t("detail.paused")
+    ) : job.finishedAt ? (
+      <time
+        title={formatDate(job.finishedAt)}
+        dateTime={formatDate(job.finishedAt)}
+      >
+        {t("detail.finished", { time: relativeTime(job.finishedAt) })}
+      </time>
+    ) : (
+      job.status.toLowerCase()
+    )
 
   const configSummary = [
     job.config?.transcriptionEngine,
@@ -332,6 +409,12 @@ function JobItem({
         </ItemTitle>
         <ItemDescription>
           {detail}
+          {runTime && job.status === "DONE"
+            ? ` · ${t("detail.runTime", { duration: runTime })}`
+            : ""}
+          {estimatedRemaining != null
+            ? ` · ${t("detail.remaining", { duration: formatDuration(estimatedRemaining, { approximate: true }) })}`
+            : ""}
           {configSummary ? ` · ${configSummary}` : ""}
           {job.error ? ` · ${job.error}` : ""}
         </ItemDescription>

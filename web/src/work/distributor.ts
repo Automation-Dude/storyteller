@@ -36,6 +36,7 @@ import { env } from "@/env"
 import { logger } from "@/logging"
 import type { UUID } from "@/uuid"
 
+import type { JobStats } from "./jobStats"
 import { type RunConfig, buildRunConfig } from "./runConfig"
 import { STAGE_ORDER } from "./stages"
 import type processBook from "./worker"
@@ -275,16 +276,16 @@ async function runJob(job: Job): Promise<void> {
   refreshSuppression()
 
   try {
-    await alignmentPiscina.run(
+    const stats = (await alignmentPiscina.run(
       {
         jobUuid: job.uuid,
         bookUuid,
-        restart: job.restart,
+        restart: job.restart ?? false,
         config: job.config,
         port: port1,
       } satisfies Parameters<typeof processBook>[0],
       { transferList: [port1], signal: abortController.signal },
-    )
+    )) as JobStats | undefined
 
     const finished = await getBookOrThrow(bookUuid)
 
@@ -327,6 +328,7 @@ async function runJob(job: Job): Promise<void> {
       status: "DONE",
       progress: 1,
       finishedAt: nowTimestamp(),
+      stats: stats ?? undefined,
     })
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {

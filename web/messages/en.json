@@ -1070,6 +1070,8 @@
       "retry": "Retry",
       "createReadaloud": "Create readaloud",
       "lastAligned": "Last aligned",
+      "alignedIn": "Aligned in",
+      "estimatedRemaining": "{duration} left",
       "transcriptionEngine": "Transcription engine",
       "storytellerVersion": "Storyteller version"
     }
@@ -1093,6 +1095,13 @@
       "collection": "{count, plural, one {Collection} other {Collections}}",
       "shelf": "{count, plural, one {Shelf} other {Shelves}}",
       "file": "{count, plural, one {File} other {Files}}"
+    },
+    "Duration": {
+      "lessThanAMinute": "< 1 min",
+      "minutes": "{minutes} min",
+      "hours": "{hours} h",
+      "hoursAndMinutes": "{hours} h {minutes} min",
+      "approximate": "~{duration}"
     },
     "actions": {
       "save": "Save",
@@ -1388,6 +1397,8 @@
     "toastStarted": "Started processing",
     "toastSavedAndStarted": "Saved as defaults and started processing",
     "toastFailed": "Failed to start processing",
+    "estimatedTime": "Estimated time: {duration}",
+    "noEstimateHistory": "Not enough history to estimate",
     "stage": {
       "SPLIT_TRACKS": "Pre-processing audio",
       "TRANSCRIBE_CHAPTERS": "Transcribing tracks",
@@ -1397,7 +1408,7 @@
   },
   "Queue": {
     "title": "Processing queue",
-    "subtitle": "Books currently processing or waiting.",
+    "subtitle": "{count, number} books currently processing or waiting.",
     "empty": "Nothing is processing right now.",
     "finishedTitle": "Finished jobs",
     "searchPlaceholder": "Search by title",
@@ -1422,7 +1433,9 @@
     "detail": {
       "waiting": "Waiting",
       "paused": "Paused",
-      "finished": "Finished {time}"
+      "finished": "Finished {time}",
+      "runTime": "Took {duration}",
+      "remaining": "{duration} left"
     },
     "actions": {
       "moveUp": "Move up",

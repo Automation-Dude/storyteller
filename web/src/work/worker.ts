@@ -43,6 +43,7 @@ import type { UUID } from "@/uuid"
 import { getCurrentVersion } from "@/versions"
 
 import type { RestartMode } from "./distributor"
+import { type JobStats, buildJobStats } from "./jobStats"
 import type { RunConfig } from "./runConfig"
 
 const STAGES = ["SPLIT_TRACKS", "TRANSCRIBE_CHAPTERS", "SYNC_CHAPTERS"] as const
@@ -65,7 +66,7 @@ export default async function processBook({
   restart: RestartMode
   config: RunConfig | null
   port: MessagePort
-}) {
+}): Promise<JobStats | undefined> {
   const processTiming = createTiming()
   processTiming.setMetadata("bookUuid", bookUuid)
   processTiming.setMetadata("restartMode", restart || "continue")
@@ -231,42 +232,43 @@ export default async function processBook({
       }
 
       if (stage === "SYNC_CHAPTERS") {
-        const markupFilepath = join(
-          tmpdir(),
-          `storyteller-${randomUUID()}`,
-          `${book.uuid}.epub`,
-        )
+        await processTiming.timeAsync("sync", async () => {
+          const markupFilepath = join(
+            tmpdir(),
+            `storyteller-${randomUUID()}`,
+            `${book.uuid}.epub`,
+          )
 
-        // markup and align share this stage, so weight them into one monotonic
-        // 0..1 instead of letting each reset progress to 0 (markup is the short part).
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        await markup(book.ebook!.filepath, markupFilepath, {
-          onProgress: (p) => {
-            onProgress(p * 0.15)
-          },
-          logger,
-        })
-
-        const settings = await getEffectiveSettings()
-        const readaloudFilepath = getReadaloudFilepath(book, settings)
-        const readaloudDirectory = dirname(readaloudFilepath)
-        await mkdir(readaloudDirectory, { recursive: true })
-
-        const reportFilepath = getAlignmentReportFilepath(book)
-        await align(
-          markupFilepath,
-          readaloudFilepath,
-          getTranscriptionsFilepath(book),
-          getProcessedAudioFilepath(book),
-          {
-            granularity: "sentence",
-            reportsPath: reportFilepath,
-            logger,
+          // markup and align share this stage, so weight them into one monotonic
+          // 0..1 instead of letting each reset progress to 0 (markup is the short part).
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          await markup(book.ebook!.filepath, markupFilepath, {
             onProgress: (p) => {
-              onProgress(0.15 + p * 0.85)
+              onProgress(p * 0.15)
             },
-          },
-        )
+            logger,
+          })
+
+          const settings = await getEffectiveSettings()
+          const readaloudFilepath = getReadaloudFilepath(book, settings)
+          const readaloudDirectory = dirname(readaloudFilepath)
+          await mkdir(readaloudDirectory, { recursive: true })
+
+          const reportFilepath = getAlignmentReportFilepath(book)
+          await align(
+            markupFilepath,
+            readaloudFilepath,
+            getTranscriptionsFilepath(book),
+            getProcessedAudioFilepath(book),
+            {
+              granularity: "sentence",
+              reportsPath: reportFilepath,
+              logger,
+              onProgress: (p) => {
+                onProgress(0.15 + p * 0.85)
+              },
+            },
+          )
 
         // persist the alignment report tied to this job before any cache cleanup
         // can remove the on-disk file. best-effort: a missing report should not
@@ -334,6 +336,7 @@ export default async function processBook({
           logger.info("Cleaning up cache files after successful alignment")
           await deleteProcessed(book)
         }
+        })
       }
     } catch (e) {
       logger.error({
@@ -354,15 +357,17 @@ export default async function processBook({
     }
   }
 
+  const summary = processTiming.summary()
+
   const enableTiming = env.STORYTELLER_LOG_LEVEL === "debug"
   if (enableTiming) {
-    logger.info(
-      formatSingleReport(
-        processTiming.summary(),
-        `Process Book: ${book.title}`,
-      ),
-    )
+    logger.info(formatSingleReport(summary, `Process Book: ${book.title}`))
   }
 
   logger.info(`Completed synchronizing book ${bookRefForLog}`)
+
+  return buildJobStats(summary, {
+    audioDurationSeconds: book.audiobook?.duration ?? null,
+    pageCount: book.ebook?.pageCount ?? null,
+  })
 }

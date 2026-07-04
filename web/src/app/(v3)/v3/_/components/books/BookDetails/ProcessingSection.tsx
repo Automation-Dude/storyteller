@@ -25,13 +25,19 @@ import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { useStageLabels } from "@/app/(v3)/v3/_/components/processing/useStageLabels"
-import { useFormatDate, useFormatRelativeTime } from "@/app/(v3)/v3/_/lib/date"
+import {
+  useFormatDate,
+  useFormatDuration,
+  useFormatRelativeTime,
+} from "@/app/(v3)/v3/_/lib/date"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
 import {
   useCancelProcessingMutation,
+  useGetAlignmentEstimateQuery,
   useGetBookAlignmentReportQuery,
+  useGetJobsQuery,
 } from "@/store/api"
 
 import { FilePathRow } from "./FilePathRow"
@@ -101,6 +107,54 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
   const stageLabels = useStageLabels()
 
   const formatDate = useFormatDate()
+  const formatDuration = useFormatDuration()
+
+  const { data: latestFinishedJob } = useGetJobsQuery(
+    { type: "finished", bookUuid: book.uuid, limit: 1 },
+    { skip: readaloudStatus !== "ALIGNED" },
+  )
+
+  const { data: activeJobs } = useGetJobsQuery(
+    { type: "active", bookUuid: book.uuid, limit: 1 },
+    { skip: readaloudStatus !== "PROCESSING" },
+  )
+
+  const activeJob = activeJobs?.[0]
+
+  const { data: estimateData } = useGetAlignmentEstimateQuery(
+    {
+      bookUuid: book.uuid,
+      engine: activeJob?.config?.transcriptionEngine ?? "",
+      whisperModel: activeJob?.config?.whisperModel ?? null,
+      restart: (activeJob as { restart?: string | false } | undefined)?.restart || false,
+    },
+    {
+      skip:
+        readaloudStatus !== "PROCESSING" ||
+        !activeJob?.config?.transcriptionEngine,
+    },
+  )
+
+  const alignedInDuration = (() => {
+    const stats = latestFinishedJob?.[0]?.stats as
+      | { totalWallMs: number }
+      | null
+      | undefined
+
+    if (stats?.totalWallMs) {
+      return formatDuration(stats.totalWallMs / 1000)
+    }
+
+    const job = latestFinishedJob?.[0]
+    if (job?.finishedAt && job.startedAt) {
+      const ms =
+        new Date(job.finishedAt).getTime() - new Date(job.startedAt).getTime()
+      return formatDuration(ms / 1000)
+    }
+
+    return null
+  })()
+
   if (!readaloudStatus && !canCreateReadaloud && !canProcess) {
     return null
   }
@@ -168,6 +222,16 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
               }}
             />
           </div>
+
+          {estimateData?.estimateSeconds != null && (
+            <span className="text-muted-foreground text-xs">
+              {t("estimatedRemaining", {
+                duration: formatDuration(estimateData.estimateSeconds, {
+                  approximate: true,
+                }),
+              })}
+            </span>
+          )}
         </div>
       )}
 
@@ -216,6 +280,13 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
         <FilePathRow
           label={t("lastAligned")}
           filepath={formatDate(book.alignedAt)}
+        />
+      )}
+
+      {alignedInDuration && (
+        <FilePathRow
+          label={t("alignedIn")}
+          filepath={alignedInDuration}
         />
       )}
 
