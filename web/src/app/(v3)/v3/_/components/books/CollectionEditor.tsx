@@ -1,17 +1,20 @@
-import { IconFolder, IconPlus } from "@tabler/icons-react"
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useAddBooksToCollectionsMutation,
   useListCollectionsQuery,
   useRemoveBooksFromCollectionsMutation,
 } from "@/store/api"
+import { usePermission } from "@/hooks/usePermission"
 import { type UUID } from "@/uuid"
 
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
 import { RelationChipEditor } from "./RelationChipEditor"
+import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
+import { IAdd } from "../ui/icon"
+import { TooltipButton } from "../ui/tooltip-button"
 
 type CollectionEditorProps = {
   bookUuid: string
@@ -33,18 +36,11 @@ export function CollectionEditor({
   const [createDialogInitialName, setCreateDialogInitialName] = useState("")
 
   const t = useTranslation("BookDetailsPage.collections")
+  const tActions = useTranslation("BookActions")
   const tLabels = useTranslation("Labels")
-
-  const handleAdd = useCallback(
-    async (collectionUuid: string) => {
-      await addToCollections({
-        collections: [collectionUuid as UUID],
-        books: [bookUuid as UUID],
-      })
-      onUpdate()
-    },
-    [addToCollections, bookUuid, onUpdate],
-  )
+  const c = useCommon()
+  const canUpdate = usePermission("bookUpdate")
+  const canInteract = editMode || canUpdate
 
   const handleRemove = useCallback(
     async (item: { uuid: string }) => {
@@ -57,66 +53,71 @@ export function CollectionEditor({
     [removeFromCollections, bookUuid, onUpdate],
   )
 
-  const handleCreated = useCallback(
-    async (uuid: string) => {
-      await addToCollections({
-        collections: [uuid as UUID],
-        books: [bookUuid as UUID],
-      })
-      onUpdate()
-    },
-    [addToCollections, bookUuid, onUpdate],
-  )
-
-  const collectionItems = collections.map((c) => {
-    const full = allCollections.find((candidate) => candidate.uuid === c.uuid)
+  const collectionItems = collections.map((collection) => {
+    const full = allCollections.find((c) => c.uuid === collection.uuid)
     return {
-      uuid: c.uuid,
-      name: c.name,
-      url: `/collections?item=${c.uuid}`,
+      uuid: collection.uuid,
+      name: collection.name,
+      url: `/collections?item=${collection.uuid}`,
       icon: full?.icon ?? null,
       color: full?.color ?? null,
     }
   })
+
+  const membership = useMemo(
+    () => new Map(collections.map((collection) => [collection.uuid, 1])),
+    [collections],
+  )
 
   return (
     <>
       <CreateCollectionDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onCreated={handleCreated}
         initialName={createDialogInitialName}
+        onCreated={(uuid) => {
+          void addToCollections({
+            collections: [uuid as UUID],
+            books: [bookUuid as UUID],
+          })
+          onUpdate()
+        }}
       />
 
       <RelationChipEditor
         items={collectionItems}
-        allItems={allCollections}
-        icon={IconFolder}
         badgeVariant="secondary"
-        groupName="collections"
+        source="collections"
         editMode={editMode}
-        searchPlaceholder={t("seachOrCreateCollection")}
         emptyText={t("notInAnyCollections")}
-        onSelectItem={(c) => handleAdd(c.uuid)}
         onRemoveItem={handleRemove}
-        renderCreateAction={(search, closePopover) => (
-          <button
-            type="button"
-            aria-label={tLabels("create.withInput", {
-              input: `"${search.trim()}"`,
-            })}
-            onClick={() => {
-              closePopover()
-              setCreateDialogInitialName(search.trim())
+        canInteract={!!canInteract}
+      >
+        {canUpdate && (
+          <RelationEditMenu
+            source="collections"
+            bookUuids={[bookUuid as UUID]}
+            membership={membership}
+            searchPlaceholder={tActions.plain("search")}
+            onCreate={(name) => {
+              setCreateDialogInitialName(name)
               setShowCreateDialog(true)
             }}
-            className="hover:bg-accent text-primary flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-          >
-            <IconPlus className="h-3 w-3" />
-            {tLabels("create.withInput", { input: `"${search.trim()}"` })}
-          </button>
+            createLabel={(s) =>
+              tLabels.plain("create.withInput", { input: `"${s}"` })
+            }
+            trigger={
+              <TooltipButton
+                tooltip={c.plain("actions.add")}
+                aria-label={c.plain("actions.add")}
+                variant="ghost"
+              >
+                <IAdd.base size="sm" className="text-muted-foreground" />
+              </TooltipButton>
+            }
+          />
         )}
-      />
+      </RelationChipEditor>
     </>
   )
 }

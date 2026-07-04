@@ -17,6 +17,7 @@ import {
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { creatorRelators } from "@/components/books/edit/marcRelators"
+import { IAdd } from "../../../ui/icon"
 
 export function ContributorsSection({ className }: { className?: string }) {
   const { book, isEditing } = useBookForm()
@@ -121,7 +122,7 @@ function ContributorsEditor() {
           append({ name: "", role: "" })
         }}
       >
-        <IconPlus className="mr-1 h-3 w-3" />
+        <IAdd.base className="mr-1 h-3 w-3" />
         Add contributor
       </Button>
     </div>

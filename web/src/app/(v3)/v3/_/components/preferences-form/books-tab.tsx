@@ -41,6 +41,7 @@ import {
   PreferencesSection,
   SegmentedControl,
 } from "./shared"
+import { IAdd } from "../ui/icon"
 
 const VIEW_KEYS = ["cover", "spine", "pages", "back"] as const
 const USE_LIBRARY_DEFAULT = "__library_default__"
@@ -334,7 +335,7 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                     appendDimension({ id: uuidv4(), label: "" })
                   }}
                 >
-                  <IconPlus className="mr-1 h-4 w-4" />
+                  <IAdd.base className="mr-1 h-4 w-4" />
                   {t("ratingDimensions.add")}
                 </Button>
               </div>

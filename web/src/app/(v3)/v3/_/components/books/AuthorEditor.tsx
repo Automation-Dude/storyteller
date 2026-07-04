@@ -1,33 +1,117 @@
 import { IconCheck, IconMicrophone, IconUser, IconX } from "@tabler/icons-react"
-import { type ComponentType, useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useWatch } from "react-hook-form"
 
 import { Button } from "@v3/_/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@v3/_/components/ui/dropdown-menu"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
 import { useBookForm } from "./BookDetails/BookFormProvider"
 import { RelationChipEditor } from "./RelationChipEditor"
+import { RelationPickerList } from "./relation-picker/RelationPickerList"
+import { ICheck, IAdd } from "../ui/icon"
+import { TooltipButton } from "../ui/tooltip-button"
+
+// creators are edited through the form's name array (not mutations), and authors
+// vs narrators are separate role-scoped lists, so this reuses the shared list
+// core directly rather than the mutation-based RelationEditMenu.
+function CreatorAddMenu({
+  allItems,
+  values,
+  onToggle,
+  onCreate,
+  searchPlaceholder,
+}: {
+  allItems: { uuid: string; name: string }[]
+  values: string[]
+  onToggle: (name: string) => void
+  onCreate: (name: string) => void
+  searchPlaceholder: string
+}) {
+  const [open, setOpen] = useState(false)
+  const c = useCommon()
+  const tLabels = useTranslation("Labels")
+
+  const applied = useMemo(() => new Set(values), [values])
+  const items = useMemo(
+    () => allItems.map((a) => ({ uuid: a.uuid, name: a.name })),
+    [allItems],
+  )
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger
+        render={
+          <TooltipButton
+            tooltip={c.plain("actions.add")}
+            aria-label={c.plain("actions.add")}
+            variant="ghost"
+          >
+            <IAdd.base size="sm" className="text-muted-foreground" />
+          </TooltipButton>
+        }
+      />
+      <DropdownMenuContent className="w-64 p-1">
+        <RelationPickerList
+          items={items}
+          enabled={open}
+          searchPlaceholder={searchPlaceholder}
+          sort={(a, b) => rank(applied.has(a.name)) - rank(applied.has(b.name))}
+          create={{
+            label: (s) => tLabels.plain("create.withInput", { input: `"${s}"` }),
+            onCreate,
+          }}
+          renderRow={(item, ctx) => {
+            const isApplied = applied.has(item.name)
+            return (
+              <DropdownMenuItem
+                key={ctx.key}
+                closeOnClick={false}
+                onClick={() => {
+                  onToggle(item.name)
+                }}
+                className="flex w-full! items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
+                style={ctx.style}
+              >
+                <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                <span className="flex w-4 shrink-0 items-center justify-center">
+                  {isApplied && <ICheck.base className="text-primary h-4 w-4" />}
+                </span>
+              </DropdownMenuItem>
+            )
+          }}
+        />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function rank(applied: boolean): number {
+  return applied ? 0 : 1
+}
 
 function CreatorChipField({
   field,
   label,
-  icon,
   searchPlaceholder,
   items,
   allItems,
 }: {
   field: "authors" | "narrators"
   label: string
-  icon: ComponentType<{ className?: string }>
   searchPlaceholder: string
   items: { uuid: string; name: string }[]
   allItems: { uuid: string; name: string }[]
 }) {
   const { form, isEditing, editingField, setEditingField, commitField } =
     useBookForm()
-  const t = useTranslation("BookDetailsPage")
   const c = useCommon()
   const values = useWatch({
     control: form.control,
@@ -40,6 +124,14 @@ function CreatorChipField({
     form.setValue(field, next, { shouldDirty: true })
   }
 
+  const toggle = (name: string) => {
+    if (values.includes(name)) {
+      setValues(values.filter((n) => n !== name))
+    } else {
+      setValues([...values, name])
+    }
+  }
+
   return (
     <div className="mt-3">
       <span className="text-muted-foreground mb-1.5 block text-xs font-medium uppercase">
@@ -48,24 +140,25 @@ function CreatorChipField({
 
       <RelationChipEditor
         items={items}
-        allItems={allItems}
-        icon={icon}
         badgeVariant="outline"
-        groupName={field}
+        source="creators"
         editMode
-        searchPlaceholder={searchPlaceholder}
         emptyText=""
-        onSelectItem={(item) => {
-          setValues([...values, item.name])
-        }}
+        canInteract
         onRemoveItem={(item) => {
           setValues(values.filter((name) => name !== item.name))
         }}
-        canCreateInline
-        onCreateInline={(name) => {
-          setValues([...values, name])
-        }}
-      />
+      >
+        <CreatorAddMenu
+          allItems={allItems}
+          values={values}
+          onToggle={toggle}
+          onCreate={(name) => {
+            setValues([...values, name])
+          }}
+          searchPlaceholder={searchPlaceholder}
+        />
+      </RelationChipEditor>
 
       {inline && (
         <div className="mt-2 flex gap-2">
@@ -118,8 +211,7 @@ export function AuthorEditor() {
     <CreatorChipField
       field="authors"
       label={c.plain("fields.label.authors")}
-      icon={IconUser}
-      searchPlaceholder={t("BookDetailsPage.addAuthor")}
+      searchPlaceholder={t.plain("BookDetailsPage.addAuthor")}
       items={authorItems}
       allItems={allAuthors}
     />
@@ -147,9 +239,8 @@ export function NarratorEditor() {
   return (
     <CreatorChipField
       field="narrators"
-      label={t("Labels.narrators")}
-      icon={IconMicrophone}
-      searchPlaceholder={t("BookDetailsPage.addNarrator")}
+      label={t.plain("Labels.narrators")}
+      searchPlaceholder={t.plain("BookDetailsPage.addNarrator")}
       items={narratorItems}
       allItems={allNarrators}
     />

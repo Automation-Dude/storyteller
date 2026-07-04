@@ -1,5 +1,4 @@
-import { IconLibrary } from "@tabler/icons-react"
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -21,12 +20,15 @@ import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useAddBooksToSeriesMutation,
-  useListSeriesQuery,
   useRemoveBooksFromSeriesMutation,
 } from "@/store/api"
+import { usePermission } from "@/hooks/usePermission"
 import { type UUID } from "@/uuid"
 
 import { RelationChipEditor } from "./RelationChipEditor"
+import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
+import { IAdd } from "../ui/icon"
+import { TooltipButton } from "../ui/tooltip-button"
 
 type SeriesWithPosition = {
   uuid: string
@@ -56,12 +58,15 @@ export function SeriesEditor({
   onUpdate,
   editMode = false,
 }: SeriesEditorProps) {
-  const { data: allSeries = [] } = useListSeriesQuery()
   const [addToSeries] = useAddBooksToSeriesMutation()
   const [removeFromSeries] = useRemoveBooksFromSeriesMutation()
 
   const t = useTranslation("BookDetailsPage.series")
+  const tActions = useTranslation("BookActions")
+  const tLabels = useTranslation("Labels")
   const c = useCommon()
+  const canUpdate = usePermission("bookUpdate")
+  const canInteract = editMode || canUpdate
 
   const [pending, setPending] = useState<PendingSeries | null>(null)
   const [position, setPosition] = useState("")
@@ -142,25 +147,21 @@ export function SeriesEditor({
     featured: s.featured,
   }))
 
+  const membership = useMemo(
+    () => new Map(series.map((s) => [s.uuid, 1])),
+    [series],
+  )
+
   return (
     <>
       <RelationChipEditor
         items={seriesItems}
-        allItems={allSeries}
-        icon={IconLibrary}
         badgeVariant="outline"
-        groupName="series"
+        source="series"
         editMode={editMode}
-        searchPlaceholder={t("seachOrCreateSeries")}
         emptyText={t("notInAnySeries")}
-        onSelectItem={(s) => {
-          handlePick(s.name, s.uuid)
-        }}
         onRemoveItem={handleRemove}
-        canCreateInline
-        onCreateInline={(name) => {
-          handlePick(name)
-        }}
+        canInteract={!!canInteract}
         renderBadgeExtra={(s) => {
           if (!editMode && s.position != null) {
             return <span className="text-muted-foreground">#{s.position}</span>
@@ -183,7 +184,37 @@ export function SeriesEditor({
 
           return null
         }}
-      />
+      >
+        {canUpdate && (
+          // series keeps its position dialog: the picker only picks (existing or
+          // new); handlePick opens the position prompt. removal is via the chips.
+          <RelationEditMenu
+            source="series"
+            bookUuids={[bookUuid as UUID]}
+            membership={membership}
+            showApplied={false}
+            searchPlaceholder={tActions.plain("search")}
+            onSelectOverride={(item) => {
+              handlePick(item.name, item.uuid)
+            }}
+            onCreate={(name) => {
+              handlePick(name)
+            }}
+            createLabel={(s) =>
+              tLabels.plain("create.withInput", { input: `"${s}"` })
+            }
+            trigger={
+              <TooltipButton
+                tooltip={c.plain("actions.add")}
+                aria-label={c.plain("actions.add")}
+                variant="ghost"
+              >
+                <IAdd.base size="sm" className="text-muted-foreground" />
+              </TooltipButton>
+            }
+          />
+        )}
+      </RelationChipEditor>
 
       <Dialog
         open={!!pending}

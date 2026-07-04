@@ -1,28 +1,16 @@
 "use client"
 
 import {
-  IconArrowMerge,
   IconBook,
   IconFolder,
-  IconFolderMinus,
   IconLibrary,
-  IconLibraryMinus,
-  IconPlus,
   IconProgress,
   IconRefresh,
   IconReplace,
   IconScan,
-  IconTag,
-  IconTagOff,
   IconTrash,
 } from "@tabler/icons-react"
-import {
-  type MouseEvent,
-  type ReactNode,
-  useCallback,
-  useMemo,
-  useState,
-} from "react"
+import { useCallback, useState } from "react"
 import { toast } from "sonner"
 
 import {
@@ -36,56 +24,30 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
-import { Input } from "@v3/_/components/ui/input"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations, type CreatorRelation } from "@/database/books"
-import { statusDisplayLabel } from "@/database/statusKinds"
 import { usePermissions } from "@/hooks/usePermissions"
 import {
   useAddBooksToCollectionsMutation,
-  useAddBooksToSeriesMutation,
-  useAddTagsToBooksMutation,
   useClearBooksCacheMutation,
   useDeleteBooksMutation,
   useGetCurrentUserQuery,
-  useListCollectionsQuery,
-  useListSeriesQuery,
-  useListStatusesQuery,
-  useListTagsQuery,
   useMergeBooksMutation,
   useProcessBookMutation,
-  useRemoveBooksFromCollectionsMutation,
-  useRemoveBooksFromSeriesMutation,
-  useRemoveTagsFromBooksMutation,
   useScanBooksMutation,
-  useUpdateReadingStatusMutation,
   useUpgradeBookEpubMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
+import { ITag } from "../../ui/icon"
 import { useProcessingRun } from "../BookDetails/useProcessingRun"
 import { CreateCollectionDialog } from "../CreateCollectionDialog"
 import { CreateSeriesDialog } from "../CreateSeriesDialog"
 import { CreateTagDialog } from "../CreateTagDialog"
-import { AddToFacetMenu } from "../AddToFacetMenu"
-import { ITag } from "../../ui/icon"
+import { RelationEditMenu } from "../relation-picker/RelationEditMenu"
 
 type Mode = "single" | "bulk"
-
-// dedupe a list of {uuid,name} relations across all selected books, so the
-// "remove from..." submenus only list relations the selection actually has.
-function dedupeRelations(
-  items: { uuid: string; name: string }[],
-): { uuid: UUID; name: string }[] {
-  const seen = new Map<string, string>()
-  for (const item of items) {
-    if (!seen.has(item.uuid)) seen.set(item.uuid, item.name)
-  }
-  return Array.from(seen, ([uuid, name]) => ({ uuid: uuid as UUID, name }))
-}
-
-type ActionOption = { id: string; name: string }
 
 export function useBookActionItems({
   books,
@@ -108,31 +70,9 @@ export function useBookActionItems({
   const bookUuids = books.map((b) => b.uuid)
   const count = books.length
 
-  const [openCollections, setOpenCollections] = useState(false)
-  const { data: collections = [], isLoading: isLoadingCollections } =
-    useListCollectionsQuery(undefined, { skip: !openCollections })
-  const [openSeries, setOpenSeries] = useState(false)
-  const { data: series = [], isLoading: isLoadingSeries } = useListSeriesQuery(
-    undefined,
-    { skip: !openSeries },
-  )
-  const [openTags, setOpenTags] = useState(false)
-  const { data: tags = [], isLoading: isLoadingTags } = useListTagsQuery(
-    undefined,
-    { skip: !openTags },
-  )
-  const [openStatuses, setOpenStatuses] = useState(false)
-  const { data: statuses = [], isLoading: isLoadingStatuses } =
-    useListStatusesQuery(undefined, { skip: !openStatuses })
   const { data: currentUser } = useGetCurrentUserQuery()
 
   const [addToCollections] = useAddBooksToCollectionsMutation()
-  const [removeFromCollections] = useRemoveBooksFromCollectionsMutation()
-  const [addToSeries] = useAddBooksToSeriesMutation()
-  const [removeFromSeries] = useRemoveBooksFromSeriesMutation()
-  const [addTags] = useAddTagsToBooksMutation()
-  const [removeTags] = useRemoveTagsFromBooksMutation()
-  const [updateReadingStatus] = useUpdateReadingStatusMutation()
   const [scanBooks] = useScanBooksMutation()
   const [processBook] = useProcessBookMutation()
   const [clearCache] = useClearBooksCacheMutation()
@@ -145,31 +85,13 @@ export function useBookActionItems({
   )
   const [mergeTarget, setMergeTarget] = useState<BookWithRelations | null>(null)
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false)
+  const [createCollectionName, setCreateCollectionName] = useState("")
   const [createSeriesOpen, setCreateSeriesOpen] = useState(false)
+  const [createSeriesName, setCreateSeriesName] = useState("")
   const [createTagOpen, setCreateTagOpen] = useState(false)
+  const [createTagName, setCreateTagName] = useState("")
 
-  // relations present on the selection, for the "remove from..." submenus
-  const usedCollections = dedupeRelations(books.flatMap((b) => b.collections))
-  const usedSeries = dedupeRelations(books.flatMap((b) => b.series))
-  const usedTags = dedupeRelations(books.flatMap((b) => b.tags))
   const epubBooks = books.filter((b) => b.ebook)
-
-  // merge needs 2-3 books and no two books sharing a format
-  const formatCounts = books.reduce(
-    (acc, b) => ({
-      ebook: acc.ebook + (b.ebook ? 1 : 0),
-      audiobook: acc.audiobook + (b.audiobook ? 1 : 0),
-      readaloud: acc.readaloud + (b.readaloud ? 1 : 0),
-    }),
-    { ebook: 0, audiobook: 0, readaloud: 0 },
-  )
-  const canMerge =
-    mode === "bulk" &&
-    count >= 2 &&
-    count <= 3 &&
-    formatCounts.ebook <= 1 &&
-    formatCounts.audiobook <= 1 &&
-    formatCounts.readaloud <= 1
 
   const handleScan = useCallback(() => {
     void scanBooks({ bookUuids, force: true })
@@ -280,161 +202,63 @@ export function useBookActionItems({
     variant: "destructive",
   })
 
-  const handleMergeInto = useCallback(
-    (target: BookWithRelations, event: MouseEvent) => {
-      setMergeTarget(target)
-      mergeAction.confirm(event)
-    },
-    [mergeAction],
-  )
-
   const items = (
     <>
-      {/* {canMerge && (
-        <AddToFacetMenu
-        subMenu={true}
-          icon={<IconArrowMerge className="mr-2 h-4 w-4" />}
-          label={t("mergeInto")}
-          options={books.map((book) => ({ id: book.uuid, name: book.title }))}
-          onSelect={(id, event) => {
-            const target = books.find((b) => b.uuid === id)
-            if (target) handleMergeInto(target, event)
-          }}
-        />
-      )} */}
-
       {canUpdate && (
         <>
-          <AddToFacetMenu
-            subMenu={true}
+          <RelationEditMenu
+            subMenu
+            source="collections"
+            books={books}
+            searchPlaceholder={t.plain("search")}
             icon={<IconFolder className="mr-2 h-4 w-4" />}
-            label={t("addToCollection")}
-            options={collections.map((c) => ({ id: c.uuid, name: c.name }))}
-            onOpenChange={setOpenCollections}
-            isLoading={isLoadingCollections}
-            onSelect={(id) => {
-              void addToCollections({
-                collections: [id as UUID],
-                books: bookUuids,
-              })
-            }}
-            createLabel={canCreateCollection ? t("newCollection") : undefined}
-            onCreate={
-              canCreateCollection
-                ? () => {
-                    setCreateCollectionOpen(true)
-                  }
-                : undefined
-            }
+            label={t.plain("editCollections")}
+            {...(canCreateCollection && {
+              onCreate: (name: string) => {
+                setCreateCollectionName(name)
+                setCreateCollectionOpen(true)
+              },
+              createLabel: () => t.plain("newCollection"),
+            })}
           />
 
-          {/* {usedCollections.length > 0 && (
-            <AddToFacetMenu
-              subMenu={true}
-              icon={<IconFolderMinus className="mr-2 h-4 w-4" />}
-              label={t("removeFromCollection")}
-              options={usedCollections.map((c) => ({
-                id: c.uuid,
-                name: c.name,
-              }))}
-              onSelect={(id) => {
-                void removeFromCollections({
-                  collections: [id as UUID],
-                  books: bookUuids,
-                })
-              }}
-            />
-          )} */}
-
-          <AddToFacetMenu
-            subMenu={true}
-            onOpenChange={setOpenSeries}
-            isLoading={isLoadingSeries}
+          <RelationEditMenu
+            subMenu
+            source="series"
+            books={books}
+            searchPlaceholder={t.plain("search")}
             icon={<IconLibrary className="mr-2 h-4 w-4" />}
-            label={t("addToSeries")}
-            options={series.map((s) => ({ id: s.uuid, name: s.name }))}
-            onSelect={(id) => {
-              const target = series.find((s) => s.uuid === id)
-              if (!target) return
-              void addToSeries({
-                series: { uuid: target.uuid, name: target.name },
-                relations: bookUuids.map((bookUuid, index) => ({
-                  bookUuid,
-                  position: index + 1,
-                  featured: false,
-                })),
-              })
-            }}
-            createLabel={t("newSeries")}
-            onCreate={() => {
+            label={t.plain("editSeries")}
+            onCreate={(name) => {
+              setCreateSeriesName(name)
               setCreateSeriesOpen(true)
             }}
+            createLabel={() => t.plain("newSeries")}
           />
 
-          {/* {usedSeries.length > 0 && (
-            <ActionSubmenu
-              icon={<IconLibraryMinus className="mr-2 h-4 w-4" />}
-              label={t("removeFromSeries")}
-              options={usedSeries.map((s) => ({ id: s.uuid, name: s.name }))}
-              onSelect={(id) => {
-                void removeFromSeries({
-                  series: [id as UUID],
-                  books: bookUuids,
-                })
-              }}
-            />
-          )} */}
-
-          <AddToFacetMenu
-            subMenu={true}
-            onOpenChange={setOpenTags}
-            isLoading={isLoadingTags}
+          <RelationEditMenu
+            subMenu
+            source="tags"
+            books={books}
+            searchPlaceholder={t.plain("search")}
             icon={<ITag.add className="mr-2 h-4 w-4" />}
-            label={t("addTag")}
-            options={tags.map((tag) => ({ id: tag.uuid, name: tag.name }))}
-            onSelect={(id) => {
-              const target = tags.find((tag) => tag.uuid === id)
-              if (target)
-                void addTags({ tags: [target.name], books: bookUuids })
-            }}
-            createLabel={t("newTag")}
-            onCreate={() => {
+            label={t.plain("editTags")}
+            onCreate={(name) => {
+              setCreateTagName(name)
               setCreateTagOpen(true)
             }}
+            createLabel={() => t.plain("newTag")}
           />
-
-          {/* {usedTags.length > 0 && (
-            <ActionSubmenu
-              icon={<IconTagOff className="mr-2 h-4 w-4" />}
-              label={t("removeTag")}
-              options={usedTags.map((tag) => ({
-                id: tag.uuid,
-                name: tag.name,
-              }))}
-              onSelect={(id) => {
-                void removeTags({ tags: [id as UUID], books: bookUuids })
-              }}
-            />
-          )} */}
         </>
       )}
 
-      <AddToFacetMenu
-        subMenu={true}
-        onOpenChange={setOpenStatuses}
-        isLoading={isLoadingStatuses}
+      <RelationEditMenu
+        subMenu
+        source="statuses"
+        books={books}
+        searchPlaceholder={t.plain("search")}
         icon={<IconBook className="mr-2 h-4 w-4" />}
-        label={t("setStatus")}
-        options={statuses.map((status) => ({
-          id: status.uuid,
-          name: statusDisplayLabel(status),
-        }))}
-        onSelect={(id) => {
-          void updateReadingStatus({
-            status: id as UUID,
-            books: bookUuids,
-          })
-        }}
+        label={t.plain("setStatus")}
       />
 
       {canUpdate && epubBooks.length > 0 && (
@@ -552,6 +376,7 @@ export function useBookActionItems({
         <CreateCollectionDialog
           open={createCollectionOpen}
           onOpenChange={setCreateCollectionOpen}
+          initialName={createCollectionName}
           onCreated={handleCollectionCreated}
         />
       )}
@@ -561,11 +386,13 @@ export function useBookActionItems({
           <CreateSeriesDialog
             open={createSeriesOpen}
             onOpenChange={setCreateSeriesOpen}
+            initialName={createSeriesName}
             books={bookUuids}
           />
           <CreateTagDialog
             open={createTagOpen}
             onOpenChange={setCreateTagOpen}
+            initialName={createTagName}
             books={bookUuids}
           />
         </>

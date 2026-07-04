@@ -43,6 +43,7 @@ import type { UserPermissionSet } from "@/database/users"
 
 import { LockTooltip, useSettingsForm } from "./SettingsFormProvider"
 import { type SettingsFormForm, SettingsSection, safeUrl } from "./shared"
+import { IAdd } from "../ui/icon"
 
 type Permission = keyof UserPermissionSet
 
@@ -324,7 +325,7 @@ export function AuthTab() {
                 })
               }}
             >
-              <IconPlus className="mr-2 h-4 w-4" />
+              <IAdd.base className="mr-2 h-4 w-4" />
               {t("addProvider")}
             </Button>
 
@@ -800,7 +801,7 @@ function GroupPermissionsField({
           className="self-start"
           onClick={addGroup}
         >
-          <IconPlus className="mr-1.5 h-3.5 w-3.5" />
+          <IAdd.base className="mr-1.5 h-3.5 w-3.5" />
           {t("addGroup")}
         </Button>
 

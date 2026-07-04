@@ -44,6 +44,7 @@ import {
 } from "@/store/api"
 
 import { SettingsSection } from "./shared"
+import { IAdd } from "../ui/icon"
 
 type Permission = keyof UserPermissionSet
 
@@ -411,7 +412,7 @@ function CreateInviteSection({
           setShowForm(true)
         }}
       >
-        <IconPlus className="mr-2 h-4 w-4" />
+        <IAdd.base className="mr-2 h-4 w-4" />
         {t("inviteUser")}
       </Button>
     )

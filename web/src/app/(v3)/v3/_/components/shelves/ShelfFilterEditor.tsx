@@ -64,7 +64,7 @@ import {
   useListStatusesQuery,
   useListTagsQuery,
 } from "@/store/api"
-import { FieldIcon } from "../books/field-icons"
+import { FieldIcon, IAdd } from "../ui/icon"
 import {
   DurationInput,
   FileSizeInput,
@@ -278,7 +278,7 @@ function AddNodeDropdown({
       <DropdownMenuTrigger
         render={
           <Button variant="ghost" size="sm" className="h-7 w-fit gap-1 text-xs">
-            <IconPlus className="size-3" />
+            <IAdd.base className="size-3" />
             {c.plain("actions.add")}
           </Button>
         }
@@ -1193,8 +1193,7 @@ function ConditionValueInput({
     if (isRange) {
       const rangeValue = Array.isArray(value) ? value : [min, defaultMax]
 
-      const rangeStart =
-        typeof rangeValue[0] === "number" ? rangeValue[0] : min
+      const rangeStart = typeof rangeValue[0] === "number" ? rangeValue[0] : min
       const rangeEnd =
         typeof rangeValue[1] === "number" ? rangeValue[1] : defaultMax
 
@@ -1308,4 +1307,3 @@ function ConditionValueInput({
     />
   )
 }
-

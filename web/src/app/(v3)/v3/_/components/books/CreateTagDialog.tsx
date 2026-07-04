@@ -83,7 +83,7 @@ export function CreateTagDialog({
 
         if (books?.length) {
           await addTags({
-            tags: [tag.name],
+            tags: [{ uuid: tag.uuid }],
             books: books as UUID[],
           }).unwrap()
         }

@@ -60,7 +60,7 @@ import {
   type SidebarItemWithGroupDetails,
 } from "@/database/sidebar"
 import { type Status } from "@/database/statuses"
-import { type Tag } from "@/database/tags"
+import { type AddTagInput, type Tag } from "@/database/tags"
 import { type UserBookRating } from "@/database/userRatings"
 import { type UserSettingValue } from "@/database/userSettings"
 import { type UserPermissionSet } from "@/database/users"
@@ -1272,7 +1272,10 @@ export const api = createApi({
       }),
       invalidatesTags: ["Tags"],
     }),
-    addTagsToBooks: build.mutation<void, { tags: string[]; books: UUID[] }>({
+    addTagsToBooks: build.mutation<
+      void,
+      { tags: AddTagInput[]; books: UUID[] }
+    >({
       query: (body) => ({
         url: `/books/tags`,
         method: "POST",

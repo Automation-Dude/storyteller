@@ -46,6 +46,7 @@ import {
   ShelfFilterEditor,
   isFilterValid,
 } from "./ShelfFilterEditor"
+import { IAdd } from "../ui/icon"
 
 const shelfFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -626,7 +627,7 @@ function BookSelector({
                     onAdd(book.uuid)
                   }}
                 >
-                  <IconPlus className="size-3" />
+                  <IAdd.base className="size-3" />
                 </Button>
               }
             />

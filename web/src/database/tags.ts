@@ -1,15 +1,12 @@
-import { type Selectable, type Updateable, sql } from "kysely"
+import { sql, type Selectable } from "kysely"
 
 import { BookEvents } from "@/events"
 import type { UUID } from "@/uuid"
 
-import { getBooks } from "./books"
-import { type ListOptions } from "./collections"
+import { getBooks, TagUpdate } from "./books"
 import { db } from "./connection"
 import type { DB } from "./schema"
 import { cleanShelfFiltersForDeletedEntity } from "./shelfFilter"
-
-export type TagUpdate = Updateable<DB["tag"]>
 
 export type Tag = Selectable<DB["tag"]>
 
@@ -91,8 +88,6 @@ export async function getTagByUuid(tagUuid: UUID, userId?: UUID) {
     .executeTakeFirst()
 }
 
-// find-or-create by name so a standalone create can't produce duplicate tags.
-// books are attached separately via addTagsToBooks.
 export async function createTag(values: {
   name: string
   icon?: string | null
@@ -113,46 +108,67 @@ export async function createTag(values: {
     .executeTakeFirstOrThrow()
 }
 
-export async function addTagsToBooks(bookUuids: UUID[], tagNames: string[]) {
-  await db.transaction().execute(async (tr) => {
-    const existingTags = await tr
-      .selectFrom("tag")
-      .select(["uuid", "name"])
-      .where("name", "in", tagNames)
-      .execute()
+// a tag to attach: either an existing tag by id, or a new/existing tag by name
+// (created with the given icon/color when it doesn't exist yet).
+export type AddTagInput =
+  | { uuid: UUID }
+  | { name: string; icon?: string | null; color?: string | null }
 
-    const newTagNames = tagNames.filter(
-      (tagName) => !existingTags.some((tag) => tag.name === tagName),
+export async function addTagsToBooks(bookUuids: UUID[], tags: AddTagInput[]) {
+  const byId = tags.filter((t): t is { uuid: UUID } => "uuid" in t && !!t.uuid)
+  const byName = tags.filter(
+    (t): t is { name: string; icon?: string | null; color?: string | null } =>
+      "name" in t && !!t.name,
+  )
+
+  // the resolved tag rows we end up attaching, used for the event payload
+  const resolvedTagUuids = await db.transaction().execute(async (tr) => {
+    // resolve name inputs to existing rows, then create whatever is missing
+    const names = byName.map((t) => t.name)
+    const existingByName = names.length
+      ? await tr
+          .selectFrom("tag")
+          .select(["uuid", "name"])
+          .where("name", "in", names)
+          .execute()
+      : []
+
+    const missing = byName.filter(
+      (t) => !existingByName.some((e) => e.name === t.name),
     )
 
-    let newTags: { uuid: UUID; name: string }[] = []
-    if (newTagNames.length) {
-      newTags = await tr
+    let created: { uuid: UUID; name: string }[] = []
+    if (missing.length) {
+      created = await tr
         .insertInto("tag")
-        .values(newTagNames.map((tagName) => ({ name: tagName })))
+        .values(
+          missing.map((t) => ({
+            name: t.name,
+            icon: t.icon ?? null,
+            color: t.color ?? null,
+          })),
+        )
         .returning(["uuid as uuid", "name as name"])
         .execute()
     }
 
-    let existingBookToTags: {
-      tagUuid: UUID
-      bookUuid: UUID
-    }[] = []
-    if (existingTags.length) {
-      existingBookToTags = await tr
-        .selectFrom("bookToTag")
-        .select(["bookToTag.bookUuid", "bookToTag.tagUuid"])
-        .where("bookUuid", "in", bookUuids)
-        .where(
-          "tagUuid",
-          "in",
-          existingTags.map((tag) => tag.uuid),
-        )
-        .execute()
-    }
+    const tagUuids = [
+      ...byId.map((t) => t.uuid),
+      ...existingByName.map((t) => t.uuid),
+      ...created.map((t) => t.uuid),
+    ]
 
-    const newBookToTags = existingTags
-      .flatMap(({ uuid: tagUuid }) =>
+    if (!tagUuids.length) return []
+
+    const existingBookToTags = await tr
+      .selectFrom("bookToTag")
+      .select(["bookToTag.bookUuid", "bookToTag.tagUuid"])
+      .where("bookUuid", "in", bookUuids)
+      .where("tagUuid", "in", tagUuids)
+      .execute()
+
+    const bookToTags = tagUuids
+      .flatMap((tagUuid) =>
         bookUuids.map((bookUuid) => ({ tagUuid, bookUuid })),
       )
       .filter(({ tagUuid, bookUuid }) =>
@@ -162,32 +178,30 @@ export async function addTagsToBooks(bookUuids: UUID[], tagNames: string[]) {
         ),
       )
 
-    const bookToTags = newBookToTags.concat(
-      newTags.flatMap(({ uuid: tagUuid }) =>
-        bookUuids.map((bookUuid) => ({ tagUuid, bookUuid })),
-      ),
-    )
-
     if (bookToTags.length) {
       await tr.insertInto("bookToTag").values(bookToTags).execute()
     }
+
+    return tagUuids
   })
 
-  const tags = await getTags()
+  const allTags = await getTags()
+  const attached = resolvedTagUuids
+    .map((uuid) => allTags.find((t) => t.uuid === uuid))
+    .filter((t) => !!t)
   const books = await getBooks(bookUuids)
 
   books.forEach((book) => {
+    // dedupe against the book's current tags so the optimistic payload doesn't
+    // list the same tag twice
+    const merged = [...book.tags]
+    for (const tag of attached) {
+      if (!merged.some((t) => t.uuid === tag.uuid)) merged.push(tag)
+    }
     BookEvents.emit("message", {
       type: "bookUpdated",
       bookUuid: book.uuid,
-      payload: {
-        tags: [
-          ...book.tags,
-          ...tagNames
-            .map((tagName) => tags.find((t) => t.name === tagName))
-            .filter((t) => !!t),
-        ],
-      },
+      payload: { tags: merged },
     })
   })
 }

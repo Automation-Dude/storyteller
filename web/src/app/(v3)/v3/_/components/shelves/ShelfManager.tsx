@@ -43,6 +43,7 @@ import {
 import { type UUID } from "@/uuid"
 
 import { ShelfEditor } from "./ShelfEditor"
+import { IAdd } from "../ui/icon"
 
 type ShelfManagerProps = {
   className?: string
@@ -283,7 +284,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         onClick={handleCreateNewShelf}
         className="mt-2 w-full"
       >
-        <IconPlus className="mr-2 size-4" />
+        <IAdd.base className="mr-2 size-4" />
         {t("sections.createNewShelf")}
       </Button>
 
@@ -496,7 +497,7 @@ function HiddenShelfItem({
       </div>
 
       <Button variant="outline" size="sm" onClick={onShow} className="h-7">
-        <IconPlus className="mr-1 size-3" />
+        <IAdd.base className="mr-1 size-3" />
         {t("sections.show")}
       </Button>
 

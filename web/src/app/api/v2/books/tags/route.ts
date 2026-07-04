@@ -1,15 +1,20 @@
 import { withHasPermission } from "@/auth/auth"
-import { addTagsToBooks, removeTagsFromBooks } from "@/database/tags"
+import { type AddTagInput, addTagsToBooks, removeTagsFromBooks } from "@/database/tags"
 import { type UUID } from "@/uuid"
 import { queueWritesToFiles } from "@/writeToFiles/fileWriteDistributor"
 
 export const POST = withHasPermission("bookUpdate")(async (request) => {
   const body = (await request.json()) as {
-    tags: string[]
+    // bare strings stay supported for existing clients; internally we send the
+    // richer {uuid} | {name, icon?, color?} shape.
+    tags: (string | AddTagInput)[]
     books: UUID[]
   }
   const { tags, books } = body
-  await addTagsToBooks(books, tags)
+  const normalized: AddTagInput[] = tags.map((t) =>
+    typeof t === "string" ? { name: t } : t,
+  )
+  await addTagsToBooks(books, normalized)
 
   for (const book of books) {
     void queueWritesToFiles(book)

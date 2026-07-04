@@ -41,6 +41,7 @@ import { useRemoveBookAssetMutation } from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
 
 import { CollapsibleSection } from "./CollapsibleSection"
+import { IAdd } from "../../../ui/icon"
 
 type Format = "ebook" | "audiobook" | "readaloud"
 
@@ -249,7 +250,7 @@ export function FileSection({
                   aria-label={t("fileInformation.addFile")}
                   tooltip={t("fileInformation.addFile")}
                 >
-                  <IconPlus className="size-3.5 stroke-[1.5]" />
+                  <IAdd.base className="size-3.5 stroke-[1.5]" />
                 </TooltipButton>
               }
             />

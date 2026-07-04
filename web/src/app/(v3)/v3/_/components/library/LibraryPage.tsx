@@ -99,6 +99,7 @@ import {
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
+import { IAdd } from "../ui/icon"
 
 const SIDEBAR_ROW_HEIGHT = 30
 
@@ -985,7 +986,7 @@ function SidebarPanel({
                   onClick={onCreate}
                   title={createLabel}
                 >
-                  <IconPlus className="h-4 w-4" />
+                  <IAdd.base className="h-4 w-4" />
                 </Button>
               )}
 

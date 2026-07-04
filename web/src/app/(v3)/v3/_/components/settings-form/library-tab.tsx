@@ -90,6 +90,7 @@ import { type UUID } from "@/uuid"
 
 import { SettingsFormField, useSettingsForm } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"
+import { IAdd } from "../ui/icon"
 
 export function LibraryTab() {
   return (
@@ -1141,7 +1142,7 @@ function TabHeader({
 
       {addLabel && onAdd && (
         <Button variant="outline" size="sm" onClick={onAdd}>
-          <IconPlus size={14} className="mr-1" />
+          <IAdd.base size={14} className="mr-1" />
           {addLabel}
         </Button>
       )}

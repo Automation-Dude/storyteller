@@ -18,6 +18,36 @@ function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
   return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
 }
 
+/**
+ * DropdownMenuContent will try to nonnomnom your keydowns to auto highlight a
+ * menu item eg "Add.." when you type "a". This is fucking annoying
+ */
+function DropDownMenuDontEatMyKeydowns({
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      onKeyDown={(e) => {
+        if (
+          e.key !== "Escape" &&
+          e.key !== "Tab" &&
+          e.key !== "ArrowUp" &&
+          e.key !== "ArrowDown"
+        ) {
+          e.stopPropagation()
+        }
+      }}
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+      onPointerDown={(e) => {
+        e.stopPropagation()
+      }}
+      {...props}
+    />
+  )
+}
+
 function DropdownMenuContent({
   align = "start",
   alignOffset = 0,
@@ -263,4 +293,5 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  DropDownMenuDontEatMyKeydowns,
 }

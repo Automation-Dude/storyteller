@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
+import { IAdd } from "./ui/icon"
 
 export function AddBookButton(props: ButtonProps) {
   const t = useTranslation("BooksPage")
@@ -35,7 +36,7 @@ export function AddBookButton(props: ButtonProps) {
         <DropdownMenuTrigger
           render={
             <Button variant="default" size="sm" {...props}>
-              <IconPlus className="size-4" />
+              <IAdd.base className="size-4" />
               {t("addBook")}
             </Button>
           }

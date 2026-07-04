@@ -17,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropDownMenuDontEatMyKeydowns,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -31,7 +32,7 @@ import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
+import { FieldIcon, IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type ShelfFilterField,
   getFieldDef,
@@ -206,7 +207,7 @@ export function BookFilters({
             <DropdownMenuTrigger
               render={
                 <button className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium">
-                  <IconPlus className="h-3 w-3" />
+                  <IAdd.base className="h-3 w-3" />
                   {t("filters.filters")}
                 </button>
               }
@@ -287,17 +288,7 @@ function AddFilterSubmenu({
         {label}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-72 p-0">
-        <div
-          onKeyDown={(e) => {
-            e.stopPropagation()
-          }}
-          onClick={(e) => {
-            e.stopPropagation()
-          }}
-          onPointerDown={(e) => {
-            e.stopPropagation()
-          }}
-        >
+        <DropDownMenuDontEatMyKeydowns>
           <FilterEditor
             field={field}
             def={getFieldDef(field)}
@@ -307,7 +298,7 @@ function AddFilterSubmenu({
             }}
             enabled={open}
           />
-        </div>
+        </DropDownMenuDontEatMyKeydowns>
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   )

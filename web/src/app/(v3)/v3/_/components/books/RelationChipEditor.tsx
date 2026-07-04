@@ -1,26 +1,16 @@
 "use client"
 
-import { IconPlus, IconX } from "@tabler/icons-react"
-import { type ReactNode, useCallback, useMemo, useState } from "react"
+import { IconX } from "@tabler/icons-react"
+import { type ReactNode, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
-import { Input } from "@v3/_/components/ui/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@v3/_/components/ui/popover"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
-
-import { useCoverColors } from "./BookDetails/sections/useCoverColors"
-import { Skeleton } from "@mantine/core"
 
 type RelationItem = {
   uuid: string
@@ -47,31 +37,6 @@ export const RelationGlyph = ({ item }: { item: RelationItem }) => {
     )
   }
   return null
-}
-
-type RelationChipEditorProps<T extends RelationItem> = {
-  isLoading: boolean
-  onOpenChange: (open: boolean) => void
-  items: T[]
-  allItems: RelationItem[]
-
-  icon: React.ComponentType<{ className?: string }>
-  badgeVariant?: "outline" | "secondary"
-  groupName: string
-
-  editMode: boolean
-  searchPlaceholder: string
-  emptyText: string
-
-  onSelectItem: (item: RelationItem) => void | Promise<void>
-  onRemoveItem: (item: T) => void | Promise<void>
-
-  canCreateInline?: boolean
-  onCreateInline?: (name: string) => void | Promise<void>
-
-  renderCreateAction?: (search: string, closePopover: () => void) => ReactNode
-
-  renderBadgeExtra?: (item: T) => ReactNode
 }
 
 const RelationChip = ({
@@ -142,79 +107,36 @@ const RelationChip = ({
   )
 }
 
+type RelationChipEditorProps<T extends RelationItem> = {
+  items: T[]
+  badgeVariant?: "outline" | "secondary"
+  source: "tags" | "collections" | "series" | "creators" | "statuses"
+
+  editMode: boolean
+  emptyText: string
+
+  onRemoveItem: (item: T) => void | Promise<void>
+  renderBadgeExtra?: (item: T) => ReactNode
+  children?: ReactNode
+  canInteract: boolean
+}
+
 export function RelationChipEditor<T extends RelationItem>({
-  isLoading,
-  onOpenChange,
   items,
-  allItems,
-  icon: _Icon,
   badgeVariant = "outline",
-  groupName,
-  editMode,
-  searchPlaceholder,
   emptyText,
-  onSelectItem,
+  source,
   onRemoveItem,
-  canCreateInline = false,
-  onCreateInline,
-  renderCreateAction,
   renderBadgeExtra,
+  children,
+  canInteract,
 }: RelationChipEditorProps<T>) {
-  const isMobile = useIsMobile()
   const tLabels = useTranslation("Labels")
-  const c = useCommon()
-
-  const [search, setSearch] = useState("")
-  const [isOpen, setIsOpen] = useState(false)
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      setIsOpen(open)
-      onOpenChange(open)
-    },
-    [onOpenChange],
-  )
   const [isHovering, setIsHovering] = useState(false)
-
-  // keep interaction alive while popover is open
-  const canInteract = editMode || isOpen || (!isMobile && isHovering)
-
-  const itemUuids = useMemo(
-    () => new Set(items.map((item) => item.uuid)),
-    [items],
-  )
-
-  const filteredItems = useMemo(() => {
-    const term = search.toLowerCase()
-    return allItems.filter(
-      (item) =>
-        !itemUuids.has(item.uuid) && item.name.toLowerCase().includes(term),
-    )
-  }, [allItems, itemUuids, search])
-
-  const showCreateInline =
-    canCreateInline &&
-    search.trim() &&
-    !allItems.some((item) => item.name === search.trim())
-
-  const handleSelect = (item: RelationItem) => {
-    void onSelectItem(item)
-    setSearch("")
-    setIsOpen(false)
-  }
-
-  const handleCreate = () => {
-    if (!onCreateInline || !search.trim()) {
-      return
-    }
-
-    void onCreateInline(search.trim())
-    setSearch("")
-    setIsOpen(false)
-  }
 
   return (
     <div
-      className={cn(`group/${groupName}`, "flex flex-wrap items-center gap-2")}
+      className={cn(`group/${source}`, "flex flex-wrap items-center gap-2")}
       onMouseEnter={() => {
         setIsHovering(true)
       }}
@@ -239,6 +161,8 @@ export function RelationChipEditor<T extends RelationItem>({
       {items.length === 0 && (
         <span className="text-muted-foreground text-sm">{emptyText}</span>
       )}
+
+      {children}
     </div>
   )
 }

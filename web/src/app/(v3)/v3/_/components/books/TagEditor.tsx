@@ -1,16 +1,18 @@
-import { IconTag } from "@tabler/icons-react"
-import { useCallback, useState } from "react"
+import { useCallback, useMemo } from "react"
 
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useAddTagsToBooksMutation,
-  useListTagsQuery,
   useRemoveTagsFromBooksMutation,
 } from "@/store/api"
+import { usePermission } from "@/hooks/usePermission"
 import { type UUID } from "@/uuid"
 
 import { RelationChipEditor } from "./RelationChipEditor"
+import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
+import { IAdd } from "../ui/icon"
+import { TooltipButton } from "../ui/tooltip-button"
 
 type TagEditorProps = {
   bookUuid: string
@@ -25,69 +27,68 @@ export function TagEditor({
   onUpdate,
   editMode = false,
 }: TagEditorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  // only load tags when the popover is open to avoid prefetching tags that are not yet needed
-  const { data: allTags = [], isLoading: isLoadingTags } = useListTagsQuery(
-    undefined,
-    {
-      skip: !isOpen,
-    },
-  )
-  console.log("isLoadingTags", isLoadingTags, "allTags", allTags)
   const [addTags] = useAddTagsToBooksMutation()
   const [removeTags] = useRemoveTagsFromBooksMutation()
 
   const t = useTranslation("BookDetailsPage.tags")
-
-  const handleAdd = useCallback(
-    async (tagName: string) => {
-      await addTags({
-        tags: [tagName],
-        books: [bookUuid as UUID],
-      })
-      onUpdate()
-    },
-    [addTags, bookUuid, onUpdate],
-  )
+  const tActions = useTranslation("BookActions")
+  const tLabels = useTranslation("Labels")
+  const c = useCommon()
+  const canUpdate = usePermission("bookUpdate")
+  const canInteract = editMode || canUpdate
 
   const handleRemove = useCallback(
     async (tag: { uuid: string }) => {
-      await removeTags({
-        tags: [tag.uuid as UUID],
-        books: [bookUuid as UUID],
-      })
+      await removeTags({ tags: [tag.uuid as UUID], books: [bookUuid as UUID] })
       onUpdate()
     },
     [removeTags, bookUuid, onUpdate],
   )
 
-  const tagItems = tags.map((tag) => {
-    const full = allTags.find((candidate) => candidate.uuid === tag.uuid)
-    return {
-      uuid: tag.uuid,
-      name: tag.name,
-      url: `/tags?item=${tag.uuid}`,
-      icon: full?.icon ?? null,
-      color: full?.color ?? null,
-    }
-  })
+  const handleCreate = useCallback(
+    (name: string) => {
+      void addTags({ tags: [{ name }], books: [bookUuid as UUID] })
+      onUpdate()
+    },
+    [addTags, bookUuid, onUpdate],
+  )
+
+  const membership = useMemo(
+    () => new Map(tags.map((tag) => [tag.uuid, 1])),
+    [tags],
+  )
 
   return (
     <RelationChipEditor
-      items={tagItems}
-      allItems={allTags}
-      isLoading={isLoadingTags}
-      onOpenChange={setIsOpen}
-      icon={IconTag}
+      items={tags}
       badgeVariant="outline"
-      groupName="tags"
+      source="tags"
       editMode={editMode}
-      searchPlaceholder={t("seachOrCreateTag")}
       emptyText={t("notInAnyTags")}
-      onSelectItem={(tag) => handleAdd(tag.name)}
       onRemoveItem={handleRemove}
-      canCreateInline
-      onCreateInline={handleAdd}
-    />
+      canInteract={!!canInteract}
+    >
+      {canUpdate && (
+        <RelationEditMenu
+          source="tags"
+          bookUuids={[bookUuid as UUID]}
+          membership={membership}
+          searchPlaceholder={tActions.plain("search")}
+          onCreate={handleCreate}
+          createLabel={(s) =>
+            tLabels.plain("create.withInput", { input: `"${s}"` })
+          }
+          trigger={
+            <TooltipButton
+              tooltip={c.plain("actions.add")}
+              aria-label={c.plain("actions.add")}
+              variant="ghost"
+            >
+              <IAdd.base size="sm" className="text-muted-foreground" />
+            </TooltipButton>
+          }
+        />
+      )}
+    </RelationChipEditor>
   )
 }

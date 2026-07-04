@@ -56,6 +56,7 @@ import {
   BUILTIN_SIDEBAR_MAP,
   type BuiltinSidebarItem,
 } from "./sidebar-items"
+import { IAdd } from "../ui/icon"
 
 type ShelfListItem = {
   uuid: string
@@ -370,7 +371,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
                 className="border-muted-foreground text-muted-foreground hover:text-foreground flex-1 text-xs"
                 onClick={addGroup}
               >
-                <IconPlus className="mr-1 size-3" />
+                <IAdd.base className="mr-1 size-3" />
                 {t("addGroup")}
               </Button>
 
@@ -382,7 +383,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
                   setShelfEditorState("create")
                 }}
               >
-                <IconPlus className="mr-1 size-3" />
+                <IAdd.base className="mr-1 size-3" />
                 {t("createShelf")}
               </Button>
             </div>
@@ -514,7 +515,7 @@ function EditableGroup({
                     type="button"
                     className="text-muted-foreground hover:text-foreground mt-1 ml-5 flex items-center gap-1 text-xs"
                   >
-                    <IconPlus className="size-3" />
+                    <IAdd.base className="size-3" />
                     {t("add")}
                   </button>
                 }

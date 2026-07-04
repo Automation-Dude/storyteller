@@ -48,6 +48,18 @@ module.exports = {
           "error",
           { alias: { "@": "./src" }, aliasForSubpaths: true },
         ],
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: [
+              {
+                name: "@tabler/icons-react",
+                message:
+                  'Import from "@/icons" instead. Only web/src/icons/source.tsx may import from @tabler/icons-react directly.',
+              },
+            ],
+          },
+        ],
         "no-restricted-syntax": [
           "error",
           {

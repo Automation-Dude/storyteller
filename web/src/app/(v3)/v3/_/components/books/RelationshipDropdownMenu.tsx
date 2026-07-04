@@ -1,6 +1,6 @@
 "use client"
 
-import { IconCheck, IconMinus, IconX } from "@tabler/icons-react"
+import { IconX } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useMemo, useRef, useState } from "react"
 
@@ -32,16 +32,13 @@ import {
   getFieldDef,
   getFieldType,
 } from "@/shelves"
-import {
-  useListCollectionsQuery,
-  useListCreatorsQuery,
-  useListSeriesQuery,
-  useListStatusesQuery,
-  useListTagsQuery,
-} from "@/store/api"
 
 import { RelationGlyph } from "./RelationChipEditor"
 import { unitDisplay } from "./filter-ui"
+import {
+  type RelationItem,
+  useRelationItems,
+} from "../../hooks/use-relation-items"
 
 export type FilterControlProps = {
   field: ShelfFilterField
@@ -53,13 +50,6 @@ export type FilterControlProps = {
   locked?: boolean
   // remove this field from the filter entirely (the chip's x).
   onRemove?: () => void
-}
-
-type Item = {
-  uuid: string
-  name: string
-  icon?: string | null
-  color?: string | null
 }
 
 const ASSET_FORMAT_LABELS: Record<AssetFormat, string> = {
@@ -127,53 +117,6 @@ function cycleTriState(
     return { inc: inc.filter((x) => x !== uuid), exc: [...exc, uuid] }
   if (exc.includes(uuid)) return { inc, exc: exc.filter((x) => x !== uuid) }
   return { inc: [...inc, uuid], exc }
-}
-
-export function useFacetItems(
-  source: FieldDefFacet["source"] | undefined,
-  enabled: boolean,
-): { items: Item[]; loading: boolean } {
-  const tags = useListTagsQuery(undefined, {
-    skip: !enabled || source !== "tags",
-  })
-  const collections = useListCollectionsQuery(undefined, {
-    skip: !enabled || source !== "collections",
-  })
-  const series = useListSeriesQuery(undefined, {
-    skip: !enabled || source !== "series",
-  })
-  const creators = useListCreatorsQuery(undefined, {
-    skip: !enabled || source !== "creators",
-  })
-  const statuses = useListStatusesQuery(undefined, {
-    skip: !enabled || source !== "statuses",
-  })
-
-  const active =
-    source === "tags"
-      ? tags
-      : source === "collections"
-        ? collections
-        : source === "series"
-          ? series
-          : source === "creators"
-            ? creators
-            : source === "statuses"
-              ? statuses
-              : undefined
-
-  const items = useMemo<Item[]>(
-    () =>
-      (active?.data ?? []).map((d: Item) => ({
-        uuid: d.uuid,
-        name: d.name,
-        icon: d.icon,
-        color: d.color,
-      })),
-    [active?.data],
-  )
-
-  return { items, loading: !!active?.isLoading }
 }
 
 // ---------------------------------------------------------------------------
@@ -364,10 +307,10 @@ export function FacetEditor({
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
   enabled: boolean
-  staticItems?: Item[]
+  staticItems?: RelationItem[]
 }) {
   const t = useTranslation("BooksPage")
-  const fetched = useFacetItems(
+  const fetched = useRelationItems(
     staticItems ? undefined : (def as FieldDefFacet).source,
     enabled,
   )
@@ -479,9 +422,9 @@ export function FacetEditor({
                   <span className="min-w-0 flex-1 truncate">{item.name}</span>
                   <span className="flex w-4 shrink-0 items-center justify-center">
                     {state === "include" ? (
-                      <ICheck className="text-primary h-4 w-4" />
+                      <ICheck.base className="text-primary h-4 w-4" />
                     ) : state === "exclude" ? (
-                      <IRemove className="text-destructive h-4 w-4" />
+                      <IRemove.base className="text-destructive h-4 w-4" />
                     ) : null}
                   </span>
                 </button>

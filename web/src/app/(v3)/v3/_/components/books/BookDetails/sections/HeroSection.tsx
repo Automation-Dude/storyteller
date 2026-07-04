@@ -59,6 +59,7 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./useCoverColors"
+import { IAdd } from "../../../ui/icon"
 
 const MAX_CREATORS = 5
 
@@ -547,7 +548,7 @@ function QuickAddEmptyFields({
             tooltip={c("actions.add")}
             aria-label={c("actions.add")}
           >
-            <IconPlus className="size-3.5 stroke-[1.5]" />
+            <IAdd.base className="size-3.5 stroke-[1.5]" />
           </TooltipButton>
         }
       />
@@ -556,7 +557,7 @@ function QuickAddEmptyFields({
           <DropdownMenuItem key={chip.key} onClick={chip.onClick}>
             <chip.icon className="size-3.5 stroke-[1.5]" />
             <span className="grow">{chip.label}</span>
-            <IconPlus className="h-3 w-3" />
+            <IAdd.base className="h-3 w-3" />
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

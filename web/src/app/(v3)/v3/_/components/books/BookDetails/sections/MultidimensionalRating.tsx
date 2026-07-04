@@ -32,6 +32,7 @@ import {
   computeRatingAverage,
   formatRating,
 } from "@/database/ratingDimensions"
+import { IAdd } from "../../../ui/icon"
 
 // the chart geometry is hand-tuned around this fixed size so the drag overlay,
 // the polygon, and the labels all line up; resizing it throws that off.
@@ -415,7 +416,7 @@ export function MultidimensionalRating({
                 toggle(d.id)
               }}
             >
-              <IconPlus />
+              <IAdd.base />
               {d.label}
             </Button>
           ))}
