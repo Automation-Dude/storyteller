@@ -212,7 +212,7 @@ export function useBookActionItems({
             books={books}
             searchPlaceholder={t.plain("search")}
             icon={<IconFolder className="mr-2 h-4 w-4" />}
-            label={t.plain("editCollections")}
+            label={t("editCollections")}
             {...(canCreateCollection && {
               onCreate: (name: string) => {
                 setCreateCollectionName(name)

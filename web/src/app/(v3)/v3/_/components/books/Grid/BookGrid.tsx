@@ -11,8 +11,8 @@ import {
   useState,
 } from "react"
 
-import { BookCard } from "@v3/_/components/books/BookCard"
-import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
+import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
+import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
 import {
   DropdownMenu,
@@ -32,8 +32,8 @@ import { type DisplayField, type SortContext } from "@/sort"
 import {
   findScrollParent,
   useBookActionMenu,
-} from "./ActionMenu/useBookActionMenu"
-import { SelectionBullet } from "./SelectionCheckbox"
+} from "../ActionMenu/useBookActionMenu"
+import { SelectionBullet } from "../SelectionCheckbox"
 
 type BookGridProps = {
   books: BookWithRelations[]

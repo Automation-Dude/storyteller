@@ -15,7 +15,7 @@ import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { BookActionsMenu } from "@v3/_/components/books/ActionMenu/BookActionsMenu"
-import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
+import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
@@ -33,22 +33,22 @@ import { usePermissions } from "@/hooks/usePermissions"
 import { api, useGetBookQuery } from "@/store/api"
 import { useAppDispatch } from "@/store/appState"
 
-import { BookFormProvider, useBookForm } from "./BookDetails/BookFormProvider"
-import { DeleteBookModal } from "./BookDetails/DeleteBookModal"
-import { ProcessingSection } from "./BookDetails/ProcessingSection"
-import { CollapsibleSection } from "./BookDetails/sections/CollapsibleSection"
-import { ContributorsSection } from "./BookDetails/sections/ContributorsSection"
-import { DescriptionSection } from "./BookDetails/sections/DescriptionSection"
-import { DetailsSection } from "./BookDetails/sections/DetailsSection"
-import { FileSection } from "./BookDetails/sections/FileSection"
-import { HeroSection } from "./BookDetails/sections/HeroSection"
-import { ReviewSection } from "./BookDetails/sections/ReviewSection"
+import { BookFormProvider, useBookForm } from "./BookFormProvider"
+import { DeleteBookModal } from "./DeleteBookModal"
+import { ProcessingSection } from "./ProcessingSection"
+import { CollapsibleSection } from "./sections/CollapsibleSection"
+import { ContributorsSection } from "./sections/ContributorsSection"
+import { DescriptionSection } from "./sections/DescriptionSection"
+import { DetailsSection } from "./sections/DetailsSection"
+import { FileSection } from "./sections/FileSection"
+import { HeroSection } from "./sections/HeroSection"
+import { ReviewSection } from "./sections/ReviewSection"
 import {
   ensureContrast,
   useColorPreferences,
   useCoverColors,
   useIsDarkMode,
-} from "./BookDetails/sections/useCoverColors"
+} from "./sections/useCoverColors"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.

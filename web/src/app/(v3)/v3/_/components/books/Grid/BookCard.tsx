@@ -12,19 +12,19 @@ import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { type DisplayField, type SortContext } from "@/sort"
 
-import { BookCover, isDualFormat } from "./BookCover"
+import { BookCover, isDualFormat } from "../BookCover"
 import {
   ensureContrast,
   useColorPreferences,
   useCoverColors,
   useIsDarkMode,
-} from "./BookDetails/sections/useCoverColors"
-import { ProcessingIndicator } from "./ProcessingIndicator"
-import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
-import { SelectionCheckbox } from "./SelectionCheckbox"
-import { GradePill } from "./grade-pill"
+} from "../BookDetails/sections/useCoverColors"
+import { ProcessingIndicator } from "../ProcessingIndicator"
+import { ProgressDisplayBar, getReadingProgress } from "../ProgressDisplayBar"
+import { SelectionCheckbox } from "../SelectionCheckbox"
+import { GradePill } from "../grade-pill"
 import { Menu } from "@base-ui/react"
-import { DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { DropdownMenuTrigger } from "../../ui/dropdown-menu"
 
 type BookCardProps = {
   book: BookWithRelations
