@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
-import { BookActionsMenu } from "@v3/_/components/books/BookActionsMenu"
+import { BookActionsMenu } from "@v3/_/components/books/ActionMenu/BookActionsMenu"
 import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"

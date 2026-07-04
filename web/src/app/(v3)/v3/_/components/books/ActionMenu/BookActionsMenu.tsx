@@ -51,7 +51,12 @@ export function BookActionsMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChange={(open, eventDetails) => {
+          console.log("onOpenChange-------------", open)
+          console.log(eventDetails)
+        }}
+      >
         <DropdownMenuTrigger
           render={
             <Button variant="real-ghost" size="icon-sm" className={className}>
@@ -63,7 +68,7 @@ export function BookActionsMenu({
 
         <DropdownMenuContent
           align="end"
-          className="pointer-events-auto z-100 min-w-48"
+          className="pointer-events-auto z-100 w-fit"
         >
           {showOpenFullPage && (
             <DropdownMenuItem

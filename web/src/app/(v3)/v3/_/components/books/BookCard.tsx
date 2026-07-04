@@ -23,6 +23,8 @@ import { ProcessingIndicator } from "./ProcessingIndicator"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
 import { SelectionCheckbox } from "./SelectionCheckbox"
 import { GradePill } from "./grade-pill"
+import { Menu } from "@base-ui/react"
+import { DropdownMenuTrigger } from "../ui/dropdown-menu"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -33,10 +35,10 @@ type BookCardProps = {
   onToggleSelection?: (uuid: string) => void
   onSelectRange?: (uuid: string) => void
   onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
-  isMenuOpen?: boolean
   onClick?: (book: BookWithRelations) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
+  handle?: Menu.Handle<unknown>
 }
 
 function formatDuration(seconds: number): string {
@@ -196,10 +198,10 @@ export const BookCard = memo(function BookCard({
   onToggleSelection,
   onSelectRange,
   onOpenMenu,
-  isMenuOpen = false,
   onClick,
   displayFields = ["authors"],
   displayContext,
+  handle,
 }: BookCardProps) {
   const isMobile = useIsMobile()
 
@@ -297,16 +299,16 @@ export const BookCard = memo(function BookCard({
           </div>
         )}
 
-        {onOpenMenu && (
-          <Button
-            variant="secondary"
+        {onOpenMenu && handle && (
+          <DropdownMenuTrigger
+            handle={handle}
             aria-label="Open menu"
             size="icon"
             className={cn(
               "absolute bottom-2 left-1.5 z-20",
               "flex size-4 items-center justify-center rounded-full text-white transition-colors",
               !isMobile &&
-                !isMenuOpen &&
+                !handle.isOpen &&
                 "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
             )}
             onClick={(e) => {
@@ -315,7 +317,7 @@ export const BookCard = memo(function BookCard({
             }}
           >
             <IconDotsVertical className="size-3.5" />
-          </Button>
+          </DropdownMenuTrigger>
         )}
       </div>
 

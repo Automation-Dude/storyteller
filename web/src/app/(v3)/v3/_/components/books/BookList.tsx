@@ -1,5 +1,6 @@
 "use client"
 
+import { type Menu } from "@base-ui/react"
 import {
   IconChevronDown,
   IconChevronUp,
@@ -10,7 +11,14 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual"
 import Link from "next/link"
 import { useFormatter } from "next-intl"
-import { Fragment, memo, useCallback, useEffect, useRef, useState } from "react"
+import React, {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -18,10 +26,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import {
@@ -29,6 +38,7 @@ import {
   useFormatList,
   useFormatRelativeTime,
 } from "@/app/(v3)/v3/_/lib/date"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -38,6 +48,10 @@ import {
   type SortField,
 } from "@/sort"
 
+import {
+  findScrollParent,
+  useBookActionMenu,
+} from "./ActionMenu/useBookActionMenu"
 import { SecondaryText } from "./BookCard"
 import { BookCover } from "./BookCover"
 import {
@@ -51,7 +65,6 @@ import { ProcessingIndicator } from "./ProcessingIndicator"
 import { ProgressDisplayBar, getReadingProgress } from "./ProgressDisplayBar"
 import { SelectionBullet, SelectionCheckbox } from "./SelectionCheckbox"
 import { GradePill } from "./grade-pill"
-import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
 type BookListProps = {
   books: BookWithRelations[]
@@ -241,6 +254,7 @@ const BookListItem = memo(function BookListItem({
   displayFields = ["authors"],
   displayContext,
   visibleColumns,
+  handle,
 }: {
   book: BookWithRelations
   visibleColumns: { field: DisplayField; label: string }[]
@@ -256,6 +270,7 @@ const BookListItem = memo(function BookListItem({
   onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
+  handle?: Menu.Handle<unknown>
 }) {
   const isMobile = useIsMobile()
 
@@ -461,8 +476,13 @@ const BookListItem = memo(function BookListItem({
           />
         )}
 
-        {onOpenMenu && (
-          <div
+        {onOpenMenu && handle && (
+          <DropdownMenuTrigger
+            handle={handle}
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenMenu(book, e.currentTarget)
+            }}
             className={cn(
               "transition-opacity",
               isMenuOpen && "opacity-100",
@@ -471,18 +491,8 @@ const BookListItem = memo(function BookListItem({
                 "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
             )}
           >
-            <button
-              type="button"
-              className="text-muted-foreground hover:text-foreground flex size-6 items-center justify-center rounded-md transition-colors"
-              id={book.title + book.uuid}
-              onClick={(e) => {
-                e.stopPropagation()
-                onOpenMenu(book, e.currentTarget)
-              }}
-            >
-              <IconDotsVertical className="size-3.5" />
-            </button>
-          </div>
+            <IconDotsVertical className="size-3.5" />
+          </DropdownMenuTrigger>
         )}
       </div>
     </div>
@@ -629,7 +639,7 @@ export function BookList({
 
   const lastVirtualRowIndex = virtualRows.at(-1)?.index
 
-  const t = useTranslation("Common.fields")
+  const c = useCommon()
 
   useEffect(() => {
     if (lastVirtualRowIndex === undefined) return
@@ -673,7 +683,7 @@ export function BookList({
   const translatedVisibleColumns = visibleColumns.map((field) => {
     return {
       field,
-      label: t(`short.${field}`),
+      label: c(`fields.short.${field}`),
     }
   })
 
@@ -736,6 +746,7 @@ export function BookList({
                 <BookListItem
                   book={book}
                   muted={showMuted}
+                  handle={menu.handle}
                   selected={book.uuid === selectedBookUuid}
                   isSelecting={menu.isSelecting}
                   isBookSelected={
@@ -766,14 +777,11 @@ export function BookList({
         </div>
       )}
 
-      <DropdownMenu
-        open={menu.menuOpen}
-        onOpenChange={menu.handleMenuOpenChange}
-      >
+      <DropdownMenu handle={menu.handle}>
         <DropdownMenuContent
           align="end"
-          className="pointer-events-auto z-100 min-w-44"
-          anchor={menu.menuAnchor}
+          className="pointer-events-auto z-100 w-fit"
+          // anchor={menu.menuAnchor}
         >
           {menu.toggleSelection && menu.menuBook && (
             <>
@@ -784,8 +792,8 @@ export function BookList({
               >
                 <SelectionBullet selected={menu.menuBookIsSelected} />
                 {menu.menuBookIsSelected
-                  ? menu.c("actions.deselect")
-                  : menu.c("actions.select")}
+                  ? c("actions.deselect")
+                  : c("actions.select")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>

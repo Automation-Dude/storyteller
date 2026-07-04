@@ -1,7 +1,7 @@
 "use client"
 
 import { IconPlus, IconX } from "@tabler/icons-react"
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useCallback, useMemo, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -20,6 +20,7 @@ import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 
 import { useCoverColors } from "./BookDetails/sections/useCoverColors"
+import { Skeleton } from "@mantine/core"
 
 type RelationItem = {
   uuid: string
@@ -49,6 +50,8 @@ export const RelationGlyph = ({ item }: { item: RelationItem }) => {
 }
 
 type RelationChipEditorProps<T extends RelationItem> = {
+  isLoading: boolean
+  onOpenChange: (open: boolean) => void
   items: T[]
   allItems: RelationItem[]
 
@@ -140,6 +143,8 @@ const RelationChip = ({
 }
 
 export function RelationChipEditor<T extends RelationItem>({
+  isLoading,
+  onOpenChange,
   items,
   allItems,
   icon: _Icon,
@@ -161,6 +166,13 @@ export function RelationChipEditor<T extends RelationItem>({
 
   const [search, setSearch] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open)
+      onOpenChange(open)
+    },
+    [onOpenChange],
+  )
   const [isHovering, setIsHovering] = useState(false)
 
   // keep interaction alive while popover is open
@@ -227,79 +239,6 @@ export function RelationChipEditor<T extends RelationItem>({
       {items.length === 0 && (
         <span className="text-muted-foreground text-sm">{emptyText}</span>
       )}
-
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger
-          render={
-            <TooltipButton
-              variant="ghost"
-              className={cn(
-                "border-border text-muted-foreground/80 h-5 rounded-full border border-dashed text-xs transition-opacity",
-              )}
-              tooltip={c.plain("actions.add")}
-              aria-label={c.plain("actions.add")}
-            >
-              <IconPlus className="h-3 w-3" />
-            </TooltipButton>
-          }
-        />
-
-        <PopoverContent className="w-64 p-2" align="start">
-          <Input
-            placeholder={searchPlaceholder}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-            }}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter" || !search.trim()) {
-                return
-              }
-
-              if (canCreateInline) {
-                handleCreate()
-              }
-            }}
-          />
-
-          <div className="scroll-y flex max-h-48 flex-col gap-0.5">
-            {filteredItems.map((item, idx) => (
-              <button
-                key={`${item.uuid}-${idx}`}
-                type="button"
-                aria-label={tLabels("add.withInput", { input: item.name })}
-                onClick={() => {
-                  handleSelect(item)
-                }}
-                className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
-              >
-                <RelationGlyph item={item} />
-                {item.name}
-              </button>
-            ))}
-
-            {showCreateInline && (
-              <button
-                type="button"
-                aria-label={tLabels("create.withInput", {
-                  input: `"${search.trim()}"`,
-                })}
-                onClick={handleCreate}
-                className="hover:bg-accent text-foreground flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs"
-              >
-                <IconPlus className="h-3 w-3" />
-                {tLabels("create.withInput", {
-                  input: `"${search.trim()}"`,
-                })}
-              </button>
-            )}
-
-            {renderCreateAction?.(search, () => {
-              setIsOpen(false)
-            })}
-          </div>
-        </PopoverContent>
-      </Popover>
     </div>
   )
 }

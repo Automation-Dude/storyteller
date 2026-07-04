@@ -1,5 +1,5 @@
 import { IconTag } from "@tabler/icons-react"
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -25,7 +25,15 @@ export function TagEditor({
   onUpdate,
   editMode = false,
 }: TagEditorProps) {
-  const { data: allTags = [] } = useListTagsQuery()
+  const [isOpen, setIsOpen] = useState(false)
+  // only load tags when the popover is open to avoid prefetching tags that are not yet needed
+  const { data: allTags = [], isLoading: isLoadingTags } = useListTagsQuery(
+    undefined,
+    {
+      skip: !isOpen,
+    },
+  )
+  console.log("isLoadingTags", isLoadingTags, "allTags", allTags)
   const [addTags] = useAddTagsToBooksMutation()
   const [removeTags] = useRemoveTagsFromBooksMutation()
 
@@ -68,6 +76,8 @@ export function TagEditor({
     <RelationChipEditor
       items={tagItems}
       allItems={allTags}
+      isLoading={isLoadingTags}
+      onOpenChange={setIsOpen}
       icon={IconTag}
       badgeVariant="outline"
       groupName="tags"

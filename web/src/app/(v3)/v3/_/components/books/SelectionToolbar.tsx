@@ -22,7 +22,7 @@ import { cn } from "@v3/_/lib/utils"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useListBooksQuery } from "@/store/api"
 
-import { useBookActionItems } from "./BookActionMenuItems"
+import { useBookActionItems } from "./ActionMenu/BookActionMenuItems"
 
 type SelectionToolbarProps = {
   allBookUuids: string[]

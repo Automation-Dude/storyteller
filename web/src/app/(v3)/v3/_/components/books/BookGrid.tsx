@@ -24,12 +24,16 @@ import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
+import { useCommon } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { type DisplayField, type SortContext } from "@/sort"
 
+import {
+  findScrollParent,
+  useBookActionMenu,
+} from "./ActionMenu/useBookActionMenu"
 import { SelectionBullet } from "./SelectionCheckbox"
-import { findScrollParent, useBookActionMenu } from "./useBookActionMenu"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -213,6 +217,8 @@ export function BookGrid({
     }
   })
 
+  const c = useCommon()
+
   if (isLoading) {
     return (
       <div
@@ -284,6 +290,7 @@ export function BookGrid({
                 >
                   {rowBooks.map((book) => (
                     <BookCard
+                      handle={menu.handle}
                       key={book.uuid}
                       book={book}
                       muted={showMuted}
@@ -295,9 +302,6 @@ export function BookGrid({
                       onToggleSelection={menu.toggleSelection}
                       onSelectRange={menu.handleSelectRange}
                       onOpenMenu={menu.handleOpenMenu}
-                      isMenuOpen={
-                        menu.menuOpen && menu.menuBook?.uuid === book.uuid
-                      }
                       onClick={onBookClick}
                       displayFields={displayFields}
                       displayContext={displayContext}
@@ -317,14 +321,10 @@ export function BookGrid({
         </div>
       )}
 
-      <DropdownMenu
-        open={menu.menuOpen}
-        onOpenChange={menu.handleMenuOpenChange}
-      >
+      <DropdownMenu handle={menu.handle}>
         <DropdownMenuContent
           align="end"
           className="pointer-events-auto z-100 min-w-44"
-          anchor={menu.menuAnchor}
         >
           {menu.toggleSelection && menu.menuBook && (
             <>
@@ -335,8 +335,8 @@ export function BookGrid({
               >
                 <SelectionBullet selected={menu.menuBookIsSelected} />
                 {menu.menuBookIsSelected
-                  ? menu.c("actions.deselect")
-                  : menu.c("actions.select")}
+                  ? c("actions.deselect")
+                  : c("actions.select")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>

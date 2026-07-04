@@ -16,15 +16,16 @@ import { Slider } from "@v3/_/components/ui/slider"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { FieldIcon, ICheck, IRemove } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   ASSET_FORMATS,
   type AssetFormat,
   type FieldDef,
-  FieldDefDate,
-  FieldDefDuration,
-  FieldDefEnum,
-  FieldDefFacet,
-  FieldDefNumeric,
+  type FieldDefDate,
+  type FieldDefDuration,
+  type FieldDefEnum,
+  type FieldDefFacet,
+  type FieldDefNumeric,
   type ShelfFilterCondition,
   type ShelfFilterField,
   type ShelfFilterOperator,
@@ -40,7 +41,6 @@ import {
 } from "@/store/api"
 
 import { RelationGlyph } from "./RelationChipEditor"
-import { FieldIcon } from "./field-icons"
 import { unitDisplay } from "./filter-ui"
 
 export type FilterControlProps = {
@@ -129,7 +129,7 @@ function cycleTriState(
   return { inc: [...inc, uuid], exc }
 }
 
-function useFacetItems(
+export function useFacetItems(
   source: FieldDefFacet["source"] | undefined,
   enabled: boolean,
 ): { items: Item[]; loading: boolean } {
@@ -351,7 +351,7 @@ export function FilterEditor({
 
 const ROW_HEIGHT = 32
 
-function FacetEditor({
+export function FacetEditor({
   field,
   def,
   conditions,
@@ -479,9 +479,9 @@ function FacetEditor({
                   <span className="min-w-0 flex-1 truncate">{item.name}</span>
                   <span className="flex w-4 shrink-0 items-center justify-center">
                     {state === "include" ? (
-                      <IconCheck className="text-primary h-4 w-4" />
+                      <ICheck className="text-primary h-4 w-4" />
                     ) : state === "exclude" ? (
-                      <IconMinus className="text-destructive h-4 w-4" />
+                      <IRemove className="text-destructive h-4 w-4" />
                     ) : null}
                   </span>
                 </button>

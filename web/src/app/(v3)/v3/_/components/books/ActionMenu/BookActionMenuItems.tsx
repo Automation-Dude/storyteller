@@ -64,10 +64,12 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-import { useProcessingRun } from "./BookDetails/useProcessingRun"
-import { CreateCollectionDialog } from "./CreateCollectionDialog"
-import { CreateSeriesDialog } from "./CreateSeriesDialog"
-import { CreateTagDialog } from "./CreateTagDialog"
+import { useProcessingRun } from "../BookDetails/useProcessingRun"
+import { CreateCollectionDialog } from "../CreateCollectionDialog"
+import { CreateSeriesDialog } from "../CreateSeriesDialog"
+import { CreateTagDialog } from "../CreateTagDialog"
+import { AddToFacetMenu } from "../AddToFacetMenu"
+import { ITag } from "../../ui/icon"
 
 type Mode = "single" | "bulk"
 
@@ -84,111 +86,6 @@ function dedupeRelations(
 }
 
 type ActionOption = { id: string; name: string }
-
-function ActionSubmenu({
-  icon,
-  label,
-  options,
-  onSelect,
-  createLabel,
-  onCreate,
-}: {
-  icon: ReactNode
-  label: string
-  options: ActionOption[]
-  onSelect: (id: string, event: MouseEvent) => void
-  createLabel?: string
-  onCreate?: () => void
-}) {
-  const t = useTranslation("BookActions")
-  const c = useCommon()
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState("")
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    if (!term) return options
-    return options.filter((option) => option.name.toLowerCase().includes(term))
-  }, [options, search])
-
-  // TODO: this is fukcing jank
-  return (
-    <DropdownMenuSub
-      open={open}
-      onOpenChange={(next, eventDetails) => {
-        if (eventDetails.reason === "trigger-hover") {
-          setOpen(true)
-          return
-        }
-
-        setOpen(next)
-        if (!next) setSearch("")
-      }}
-    >
-      <DropdownMenuSubTrigger>
-        {icon}
-        {label}
-      </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-60 p-1">
-        <div
-          onKeyDown={(e) => {
-            e.stopPropagation()
-          }}
-          onClick={(e) => {
-            e.stopPropagation()
-          }}
-          onPointerDown={(e) => {
-            e.stopPropagation()
-          }}
-        >
-          <Input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-            }}
-            placeholder={t("search")}
-            className="mb-1 h-8"
-          />
-          <div className="scroll-y flex max-h-56 flex-col gap-0.5">
-            {onCreate && createLabel && (
-              <button
-                type="button"
-                onClick={() => {
-                  onCreate()
-                  setOpen(false)
-                }}
-                className="hover:bg-accent text-foreground flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs"
-              >
-                <IconPlus className="h-3.5 w-3.5" />
-                {createLabel}
-              </button>
-            )}
-
-            {filtered.length === 0 ? (
-              <div className="text-muted-foreground px-2 py-1.5 text-xs">
-                {c("empty.noResults")}
-              </div>
-            ) : (
-              filtered.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={(event) => {
-                    onSelect(option.id, event)
-                    setOpen(false)
-                  }}
-                  className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
-                >
-                  {option.name}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      </DropdownMenuSubContent>
-    </DropdownMenuSub>
-  )
-}
 
 export function useBookActionItems({
   books,
@@ -211,10 +108,22 @@ export function useBookActionItems({
   const bookUuids = books.map((b) => b.uuid)
   const count = books.length
 
-  const { data: collections = [] } = useListCollectionsQuery()
-  const { data: series = [] } = useListSeriesQuery()
-  const { data: tags = [] } = useListTagsQuery()
-  const { data: statuses = [] } = useListStatusesQuery()
+  const [openCollections, setOpenCollections] = useState(false)
+  const { data: collections = [], isLoading: isLoadingCollections } =
+    useListCollectionsQuery(undefined, { skip: !openCollections })
+  const [openSeries, setOpenSeries] = useState(false)
+  const { data: series = [], isLoading: isLoadingSeries } = useListSeriesQuery(
+    undefined,
+    { skip: !openSeries },
+  )
+  const [openTags, setOpenTags] = useState(false)
+  const { data: tags = [], isLoading: isLoadingTags } = useListTagsQuery(
+    undefined,
+    { skip: !openTags },
+  )
+  const [openStatuses, setOpenStatuses] = useState(false)
+  const { data: statuses = [], isLoading: isLoadingStatuses } =
+    useListStatusesQuery(undefined, { skip: !openStatuses })
   const { data: currentUser } = useGetCurrentUserQuery()
 
   const [addToCollections] = useAddBooksToCollectionsMutation()
@@ -381,8 +290,9 @@ export function useBookActionItems({
 
   const items = (
     <>
-      {canMerge && (
-        <ActionSubmenu
+      {/* {canMerge && (
+        <AddToFacetMenu
+        subMenu={true}
           icon={<IconArrowMerge className="mr-2 h-4 w-4" />}
           label={t("mergeInto")}
           options={books.map((book) => ({ id: book.uuid, name: book.title }))}
@@ -391,14 +301,17 @@ export function useBookActionItems({
             if (target) handleMergeInto(target, event)
           }}
         />
-      )}
+      )} */}
 
       {canUpdate && (
         <>
-          <ActionSubmenu
+          <AddToFacetMenu
+            subMenu={true}
             icon={<IconFolder className="mr-2 h-4 w-4" />}
             label={t("addToCollection")}
             options={collections.map((c) => ({ id: c.uuid, name: c.name }))}
+            onOpenChange={setOpenCollections}
+            isLoading={isLoadingCollections}
             onSelect={(id) => {
               void addToCollections({
                 collections: [id as UUID],
@@ -415,8 +328,9 @@ export function useBookActionItems({
             }
           />
 
-          {usedCollections.length > 0 && (
-            <ActionSubmenu
+          {/* {usedCollections.length > 0 && (
+            <AddToFacetMenu
+              subMenu={true}
               icon={<IconFolderMinus className="mr-2 h-4 w-4" />}
               label={t("removeFromCollection")}
               options={usedCollections.map((c) => ({
@@ -430,9 +344,12 @@ export function useBookActionItems({
                 })
               }}
             />
-          )}
+          )} */}
 
-          <ActionSubmenu
+          <AddToFacetMenu
+            subMenu={true}
+            onOpenChange={setOpenSeries}
+            isLoading={isLoadingSeries}
             icon={<IconLibrary className="mr-2 h-4 w-4" />}
             label={t("addToSeries")}
             options={series.map((s) => ({ id: s.uuid, name: s.name }))}
@@ -454,7 +371,7 @@ export function useBookActionItems({
             }}
           />
 
-          {usedSeries.length > 0 && (
+          {/* {usedSeries.length > 0 && (
             <ActionSubmenu
               icon={<IconLibraryMinus className="mr-2 h-4 w-4" />}
               label={t("removeFromSeries")}
@@ -466,10 +383,13 @@ export function useBookActionItems({
                 })
               }}
             />
-          )}
+          )} */}
 
-          <ActionSubmenu
-            icon={<IconTag className="mr-2 h-4 w-4" />}
+          <AddToFacetMenu
+            subMenu={true}
+            onOpenChange={setOpenTags}
+            isLoading={isLoadingTags}
+            icon={<ITag.add className="mr-2 h-4 w-4" />}
             label={t("addTag")}
             options={tags.map((tag) => ({ id: tag.uuid, name: tag.name }))}
             onSelect={(id) => {
@@ -483,7 +403,7 @@ export function useBookActionItems({
             }}
           />
 
-          {usedTags.length > 0 && (
+          {/* {usedTags.length > 0 && (
             <ActionSubmenu
               icon={<IconTagOff className="mr-2 h-4 w-4" />}
               label={t("removeTag")}
@@ -495,11 +415,14 @@ export function useBookActionItems({
                 void removeTags({ tags: [id as UUID], books: bookUuids })
               }}
             />
-          )}
+          )} */}
         </>
       )}
 
-      <ActionSubmenu
+      <AddToFacetMenu
+        subMenu={true}
+        onOpenChange={setOpenStatuses}
+        isLoading={isLoadingStatuses}
         icon={<IconBook className="mr-2 h-4 w-4" />}
         label={t("setStatus")}
         options={statuses.map((status) => ({

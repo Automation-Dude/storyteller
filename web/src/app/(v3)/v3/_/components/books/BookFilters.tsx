@@ -31,6 +31,7 @@ import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type ShelfFilterField,
   getFieldDef,
@@ -42,7 +43,6 @@ import { type BookView } from "@/store/slices/uiSettingsSlice"
 import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
 import { SearchInput } from "./SearchInput"
 import { ViewSelector } from "./ViewSelector"
-import { FieldIcon } from "./field-icons"
 
 export type { SortDirection, SortField } from "@/sort"
 

@@ -70,12 +70,7 @@ export const BookDetailsSkeleton = ({ compact }: { compact?: boolean }) => {
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader
-        breadcrumbs={[
-          { label: "Books", url: "/books" },
-          { label: "Loading..." },
-        ]}
-      />
+      <SiteHeader breadcrumbs={[]} />
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-col gap-4">
