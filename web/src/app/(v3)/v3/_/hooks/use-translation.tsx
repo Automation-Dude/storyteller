@@ -7,6 +7,8 @@ import {
   type NestedKeyOf,
   type NestedValueOf,
   type createTranslator,
+  useLocale,
+  useMessages,
   // eslint-disable-next-line no-restricted-syntax
   useTranslations,
 } from "next-intl"
@@ -37,6 +39,25 @@ type NamespacedMessageKeys<
   >
 >
 
+export function MissingMessageFallback({
+  result,
+  key,
+  namespace,
+}: {
+  result: string
+  key: string
+  namespace?: string
+}) {
+  return (
+    <span
+      className="underline decoration-dashed"
+      title={`Missing message: ${namespace ? `${namespace}.` : ""}${key}`}
+    >
+      {result}
+    </span>
+  )
+}
+
 export function useTranslation<
   NestedKey extends NamespaceKeys<Messages, NestedKeyOf<Messages>> = never,
 >(
@@ -60,9 +81,19 @@ export function useTranslation<
     ...args: Parameters<typeof t<TargetKey>>
   ) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    return (t as any).rich(...args, {
+    const result = (t as any).rich(...args, {
       em: (text: string) => <em>{text}</em>,
     })
+
+    if (typeof result === "string" && result.includes("__fallback__")) {
+      const [key, ...rest] = result.split("__fallback__")
+      return (
+        <MissingMessageFallback namespace={namespace} key={key} result={rest} />
+      )
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return result
   }) as unknown as T
 
   return Object.assign(fn, {
