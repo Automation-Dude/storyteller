@@ -370,8 +370,10 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
     value: string
     sub?: string
     tone: MarkTone
+    key: string
   }[] = [
     {
+      key: "score",
       label: t("marks.score"),
       value: summary.score != null ? `${summary.score}%` : "—",
       tone:
@@ -384,6 +386,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
               : "poor",
     },
     {
+      key: "audioAligned",
       label: t("marks.audioAligned"),
       value: audioPct != null ? `${audioPct}%` : "—",
       sub: `${formatTimeHuman(view.alignedAudioDuration)} / ${formatTimeHuman(view.totalAudioDuration)}`,
@@ -397,21 +400,25 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
               : "poor",
     },
     {
+      key: "chapter",
       label: tNouns("chapter", { count: summary.chapters }),
       value: `${summary.chapters}`,
       tone: "muted",
     },
     {
+      key: "missingSentences",
       label: t("marks.missingSentences"),
       value: `${summary.missingSentences}`,
       tone: summary.missingSentences === 0 ? "good" : "moderate",
     },
     {
+      key: "failedChapters",
       label: t("marks.failedChapters"),
       value: `${summary.failedChapters}`,
       tone: summary.failedChapters === 0 ? "muted" : "poor",
     },
     {
+      key: "unalignedAudio",
       label: t("marks.unalignedAudio"),
       value: `${summary.unalignedAudio}`,
       tone: summary.unalignedAudio === 0 ? "muted" : "moderate",
@@ -457,7 +464,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
 
       <div className="bg-border grid grid-cols-3 gap-px border-t @xl/book:grid-cols-6">
         {marks.map((m) => (
-          <div key={m.label} className="bg-card p-3.5">
+          <div key={m.key} className="bg-card p-3.5">
             <div
               className={cn(
                 "font-serif text-xl leading-none font-medium tabular-nums",

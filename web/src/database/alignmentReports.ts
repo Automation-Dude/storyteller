@@ -3,11 +3,11 @@ import { type Selectable, sql } from "kysely"
 import { type Report } from "@storyteller-platform/align"
 
 import { type AlignmentFacets } from "@/alignmentReportView"
+import { type AlignmentGrade } from "@/shelves"
 import type { UUID } from "@/uuid"
 
 import { db } from "./connection"
 import { type DB } from "./schema"
-import { AlignmentGrade } from "@/shelves"
 
 export type { Report }
 
