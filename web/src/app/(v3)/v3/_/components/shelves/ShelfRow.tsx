@@ -3,8 +3,8 @@
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 import { useMemo, useRef } from "react"
 
-import { BookCard } from "@v3/_/components/books/BookCard"
-import { BookCardSkeleton } from "@v3/_/components/books/BookCardSkeleton"
+import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
+import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"

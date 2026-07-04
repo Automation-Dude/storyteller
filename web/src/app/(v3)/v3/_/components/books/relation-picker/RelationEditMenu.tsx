@@ -3,14 +3,15 @@
 import { type ReactElement, type ReactNode, useMemo, useState } from "react"
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropDownMenuDontEatMyKeydowns,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@v3/_/components/ui/popover"
 
 import {
   type MembershipState,
@@ -96,27 +97,25 @@ export function RelationEditMenu({
           </DropdownMenuSubTrigger>
         )}
         <DropdownMenuSubContent className="w-64 p-1">
-          <DropDownMenuDontEatMyKeydowns>
-            {picker}
-          </DropDownMenuDontEatMyKeydowns>
+          {picker}
         </DropdownMenuSubContent>
       </DropdownMenuSub>
     )
   }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen}>
       {triggerProps.trigger ? (
-        <DropdownMenuTrigger render={triggerProps.trigger} />
+        <PopoverTrigger render={triggerProps.trigger} />
       ) : (
-        <DropdownMenuTrigger>
+        <PopoverTrigger>
           {triggerProps.icon}
           {triggerProps.label}
-        </DropdownMenuTrigger>
+        </PopoverTrigger>
       )}
-      <DropdownMenuContent className="w-64 p-1">
-        <DropDownMenuDontEatMyKeydowns>{picker}</DropDownMenuDontEatMyKeydowns>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      <PopoverContent align="start" className="w-64 gap-0 p-1">
+        {picker}
+      </PopoverContent>
+    </Popover>
   )
 }

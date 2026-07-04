@@ -18,36 +18,6 @@ function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
   return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
 }
 
-/**
- * DropdownMenuContent will try to nonnomnom your keydowns to auto highlight a
- * menu item eg "Add.." when you type "a". This is fucking annoying
- */
-function DropDownMenuDontEatMyKeydowns({
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      onKeyDown={(e) => {
-        if (
-          e.key !== "Escape" &&
-          e.key !== "Tab" &&
-          e.key !== "ArrowUp" &&
-          e.key !== "ArrowDown"
-        ) {
-          e.stopPropagation()
-        }
-      }}
-      onClick={(e) => {
-        e.stopPropagation()
-      }}
-      onPointerDown={(e) => {
-        e.stopPropagation()
-      }}
-      {...props}
-    />
-  )
-}
-
 function DropdownMenuContent({
   align = "start",
   alignOffset = 0,
@@ -74,7 +44,7 @@ function DropdownMenuContent({
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 bg-popover text-popover-foreground z-50 max-h-(--available-height) w-fit min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100 outline-none data-closed:overflow-hidden",
+            "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 bg-popover text-popover-foreground z-50 max-h-(--available-height) w-fit min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md p-1 shadow-md ring-1 duration-100 outline-none data-closed:overflow-hidden",
             className,
           )}
           {...props}
@@ -293,5 +263,4 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  DropDownMenuDontEatMyKeydowns,
 }

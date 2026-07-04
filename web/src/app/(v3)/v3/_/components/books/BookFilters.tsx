@@ -10,6 +10,7 @@ import {
   IconPlus,
 } from "@tabler/icons-react"
 import { useMemo, useState } from "react"
+import * as icon from "@/icons"
 
 import { Button } from "@v3/_/components/ui/button"
 import { ButtonGroup } from "@v3/_/components/ui/button-group"
@@ -17,33 +18,27 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropDownMenuDontEatMyKeydowns,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
+import { FilterableMenu } from "@v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
 import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { FieldIcon, IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
-import {
-  type ShelfFilterField,
-  getFieldDef,
-  quickFilterFields,
-} from "@/shelves"
+import { getFieldDef, quickFilterFields } from "@/shelves"
 import { DISPLAY_FIELDS, GENERAL_SORT_FIELDS, type SortField } from "@/sort"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
 
 import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
 import { SearchInput } from "./SearchInput"
 import { ViewSelector } from "./ViewSelector"
+import { useHotkey } from "@tanstack/react-hotkeys"
 
 export type { SortDirection, SortField } from "@/sort"
 
@@ -89,6 +84,37 @@ export function BookFilters({
     removeField,
   } = controller
 
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false)
+  const [viewMenuOpen, setViewMenuOpen] = useState(false)
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
+
+  useHotkey("V", () => {
+    setViewMenuOpen((prev) => {
+      if (!prev) return true
+      return false
+    })
+  })
+
+  useHotkey("F", () => {
+    setFilterMenuOpen((prev) => {
+      if (!prev) return true
+      return false
+    })
+  })
+  useHotkey("S", () => {
+    setSortMenuOpen((prev) => {
+      if (!prev) return true
+      return false
+    })
+  })
+
+  useHotkey("Shift+F", () => {
+    onToggleAdvanced?.()
+  })
+  useHotkey("Alt+Shift+S", () => {
+    onSaveAsShelf?.()
+  })
+
   // fields whose chips are visible: those with active conditions. picking a
   // field from the fan-out menu writes a condition directly, so a chip appears
   // on its own - no separate "pending" state needed.
@@ -107,7 +133,6 @@ export function BookFilters({
 
   const advancedVisible = advancedOpen || isAdvanced
 
-  // TODO: esc doesnt properly close the menu
   return (
     <div
       className={cn(
@@ -133,7 +158,7 @@ export function BookFilters({
             onChange={setSort}
           />
 
-          <DropdownMenu>
+          <DropdownMenu open={viewMenuOpen} onOpenChange={setViewMenuOpen}>
             <DropdownMenuTrigger
               render={
                 <TooltipButton
@@ -203,26 +228,39 @@ export function BookFilters({
         )}
 
         {!isAdvanced && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <button className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium">
-                  <IAdd.base className="h-3 w-3" />
-                  {t("filters.filters")}
-                </button>
-              }
-            />
-            <DropdownMenuContent className="w-52 overflow-y-auto">
-              {addableFields.map((field) => (
-                <AddFilterSubmenu
-                  key={field}
+          <FilterableMenu
+            submenuMode="flyout"
+            open={filterMenuOpen}
+            onOpenChange={setFilterMenuOpen}
+            searchPlaceholder={t("filters.filters")}
+            trigger={
+              <TooltipButton
+                variant="outline"
+                className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium"
+                tooltip={t("filters.filters")}
+                shortcut={["F"]}
+                aria-label={t("filters.filters")}
+              >
+                <icon.Filter />
+              </TooltipButton>
+            }
+            entries={addableFields.map((field) => ({
+              key: field,
+              label: tLabel(getFieldDef(field).labelKey as never),
+              icon: <FieldIcon field={field} className="h-4 w-4" />,
+              submenu: () => (
+                <FilterEditor
                   field={field}
-                  controller={controller}
-                  label={tLabel(getFieldDef(field).labelKey as never)}
+                  def={getFieldDef(field)}
+                  conditions={conditionsForField(field)}
+                  onChange={(next) => {
+                    setConditionsForField(field, next)
+                  }}
+                  enabled
                 />
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              ),
+            }))}
+          />
         )}
         {!isAdvanced &&
           shownFields.map((field) => (
@@ -246,6 +284,7 @@ export function BookFilters({
               aria-label="Toggle advanced filter"
               tooltip="Advanced filter"
               onClick={onToggleAdvanced}
+              shortcut={["Shift+F"]}
             >
               <IconAdjustmentsHorizontal className="h-4 w-4" />
             </TooltipButton>
@@ -256,6 +295,7 @@ export function BookFilters({
               aria-label="Save as shelf"
               tooltip="Save as shelf"
               onClick={onSaveAsShelf}
+              shortcut={["Alt+Shift+S"]}
             >
               <IconBookmarkPlus className="h-4 w-4" />
             </TooltipButton>
@@ -263,44 +303,6 @@ export function BookFilters({
         </div>
       </div>
     </div>
-  )
-}
-
-function AddFilterSubmenu({
-  field,
-  controller,
-  label,
-}: {
-  field: ShelfFilterField
-  controller: BookFiltersController
-  label: string
-}) {
-  const [open, setOpen] = useState(false)
-  return (
-    <DropdownMenuSub
-      open={open}
-      onOpenChange={(newOpen) => {
-        setOpen(newOpen)
-      }}
-    >
-      <DropdownMenuSubTrigger>
-        <FieldIcon field={field} className="mr-2 h-4 w-4" />
-        {label}
-      </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-72 p-0">
-        <DropDownMenuDontEatMyKeydowns>
-          <FilterEditor
-            field={field}
-            def={getFieldDef(field)}
-            conditions={controller.conditionsForField(field)}
-            onChange={(next) => {
-              controller.setConditionsForField(field, next)
-            }}
-            enabled={open}
-          />
-        </DropDownMenuDontEatMyKeydowns>
-      </DropdownMenuSubContent>
-    </DropdownMenuSub>
   )
 }
 

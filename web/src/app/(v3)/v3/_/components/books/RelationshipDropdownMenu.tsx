@@ -1,17 +1,16 @@
 "use client"
 
 import { IconX } from "@tabler/icons-react"
-import { useVirtualizer } from "@tanstack/react-virtual"
-import { useMemo, useRef, useState } from "react"
+import { useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
+import { FilterableList } from "@v3/_/components/ui/filterable-menu"
 import { Input } from "@v3/_/components/ui/input"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@v3/_/components/ui/popover"
-import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { Slider } from "@v3/_/components/ui/slider"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
@@ -292,8 +291,6 @@ export function FilterEditor({
   )
 }
 
-const ROW_HEIGHT = 32
-
 export function FacetEditor({
   field,
   def,
@@ -320,147 +317,86 @@ export function FacetEditor({
   const ops = facetOperators(field)
   const { inc, exc } = readFacet(conditions, ops)
   const role = conditions[0]?.role
-
-  const [search, setSearch] = useState("")
-  const filtered = useMemo(
-    () =>
-      search
-        ? items.filter((i) =>
-            i.name.toLowerCase().includes(search.toLowerCase()),
-          )
-        : items,
-    [items, search],
-  )
-
-  const scrollRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<number | null>(null)
-  const virtualizer = useVirtualizer({
-    count: filtered.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 12,
-  })
 
   const apply = (nextInc: string[], nextExc: string[]) => {
     onChange(writeFacet(field, nextInc, nextExc, ops, role))
-  }
-
-  const clickItem = (index: number, shift: boolean) => {
-    const anchor = anchorRef.current
-    if (shift && anchor != null) {
-      const a = Math.min(anchor, index)
-      const b = Math.max(anchor, index)
-      let ni = inc
-      let ne = exc
-      for (let i = a; i <= b; i++) {
-        const it = filtered[i]
-        if (!it) continue
-        const r = cycleTriState(ni, ne, it.uuid)
-        ni = r.inc
-        ne = r.exc
-      }
-      apply(ni, ne)
-    } else {
-      const it = filtered[index]
-      if (it) {
-        const r = cycleTriState(inc, exc, it.uuid)
-        apply(r.inc, r.exc)
-      }
-    }
-    anchorRef.current = index
   }
 
   const stateOf = (uuid: string): "include" | "exclude" | null =>
     inc.includes(uuid) ? "include" : exc.includes(uuid) ? "exclude" : null
 
   return (
-    <div className="flex flex-col">
-      <div className="p-1.5">
-        <Input
-          autoFocus
-          placeholder={t("filters.search")}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-          }}
-          className="h-8"
-        />
-      </div>
-
-      <div ref={scrollRef} className="max-h-64 overflow-y-auto px-1">
-        {loading ? (
-          <div className="space-y-1 p-1">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-full" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-muted-foreground p-3 text-center text-xs">
-            {t("filters.search")}
-          </div>
-        ) : (
-          <div
-            style={{ height: virtualizer.getTotalSize(), position: "relative" }}
-          >
-            {virtualizer.getVirtualItems().map((row) => {
-              const item = filtered[row.index]
-              if (!item) return null
-              const state = stateOf(item.uuid)
-              return (
-                <button
-                  key={item.uuid}
-                  onClick={(e) => {
-                    clickItem(row.index, e.shiftKey)
-                  }}
-                  className="hover:bg-accent absolute top-0 left-0 flex w-full items-center gap-2 rounded-sm px-2 text-left text-sm"
-                  style={{
-                    height: ROW_HEIGHT,
-                    transform: `translateY(${row.start}px)`,
-                  }}
-                >
-                  <RelationGlyph item={item} />
-                  <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                  <span className="flex w-4 shrink-0 items-center justify-center">
-                    {state === "include" ? (
-                      <ICheck.base className="text-primary h-4 w-4" />
-                    ) : state === "exclude" ? (
-                      <IRemove.base className="text-destructive h-4 w-4" />
-                    ) : null}
-                  </span>
-                </button>
+    <FilterableList<RelationItem>
+      items={items}
+      loading={loading}
+      searchPlaceholder={t("filters.search")}
+      onSelect={(item, event, ctx) => {
+        const anchor = anchorRef.current
+        if (event.shiftKey && anchor != null) {
+          const a = Math.min(anchor, ctx.index)
+          const b = Math.max(anchor, ctx.index)
+          let ni = inc
+          let ne = exc
+          for (let i = a; i <= b; i++) {
+            const it = ctx.items[i]
+            if (!it) continue
+            const r = cycleTriState(ni, ne, it.uuid)
+            ni = r.inc
+            ne = r.exc
+          }
+          apply(ni, ne)
+        } else {
+          const r = cycleTriState(inc, exc, item.uuid)
+          apply(r.inc, r.exc)
+        }
+        anchorRef.current = ctx.index
+      }}
+      renderRow={(item) => {
+        const state = stateOf(item.uuid)
+        return (
+          <>
+            <RelationGlyph item={item} />
+            <span className="min-w-0 flex-1 truncate">{item.name}</span>
+            <span className="flex w-4 shrink-0 items-center justify-center">
+              {state === "include" ? (
+                <ICheck.base className="text-primary h-4 w-4" />
+              ) : state === "exclude" ? (
+                <IRemove.base className="text-destructive h-4 w-4" />
+              ) : null}
+            </span>
+          </>
+        )
+      }}
+      footer={
+        <div className="border-border flex items-center justify-between border-t p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              apply(
+                items.map((i) => i.uuid),
+                [],
               )
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="border-border flex items-center justify-between border-t p-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 text-xs"
-          onClick={() => {
-            apply(
-              filtered.map((i) => i.uuid),
-              [],
-            )
-          }}
-        >
-          Select all
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 text-xs"
-          disabled={!inc.length && !exc.length}
-          onClick={() => {
-            apply([], [])
-          }}
-        >
-          Clear
-        </Button>
-      </div>
-    </div>
+            }}
+          >
+            Select all
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            disabled={!inc.length && !exc.length}
+            onClick={() => {
+              apply([], [])
+            }}
+          >
+            Clear
+          </Button>
+        </div>
+      }
+    />
   )
 }
 

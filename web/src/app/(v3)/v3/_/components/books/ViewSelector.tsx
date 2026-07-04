@@ -4,6 +4,8 @@ import { ButtonGroup } from "@v3/_/components/ui/button-group"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
+import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys"
+import { Kbd, KbdGroup } from "../ui/kbd"
 
 type ViewSelectorProps = {
   value: BookView
@@ -11,6 +13,15 @@ type ViewSelectorProps = {
 }
 
 export function ViewSelector({ value, onChange }: ViewSelectorProps) {
+  useHotkey("Shift+G", () => {
+    if (value === "grid") return
+    onChange("grid")
+  })
+  useHotkey("Shift+L", () => {
+    if (value === "list") return
+    onChange("list")
+  })
+
   return (
     <ButtonGroup className="shrink-0">
       <TooltipButton
@@ -21,7 +32,8 @@ export function ViewSelector({ value, onChange }: ViewSelectorProps) {
         }}
         aria-label="Grid view"
         className="px-2"
-        tooltip="Grid view"
+        tooltip={"Grid view"}
+        shortcut={["Shift+G"]}
         disabled={value === "grid"}
       >
         <IconLayoutGrid className="h-3.5 w-3.5" />
@@ -35,7 +47,8 @@ export function ViewSelector({ value, onChange }: ViewSelectorProps) {
         }}
         aria-label="List view"
         className="px-2"
-        tooltip="List view"
+        tooltip={"List view"}
+        shortcut={["Shift+L"]}
         disabled={value === "list"}
       >
         <IconLayoutList className="h-3.5 w-3.5" />

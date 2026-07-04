@@ -4,11 +4,11 @@ import dynamic from "next/dynamic"
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Drawer } from "vaul-base"
 
-import { BookDetailsSkeleton } from "@v3/_/components/books/BookDetailsSkeleton"
+import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
 import {
   BOOK_GRID_GAP,
   GRID_CARD_WIDTHS,
-} from "@v3/_/components/books/BookGrid"
+} from "@/app/(v3)/v3/_/components/books/Grid/BookGrid"
 import { SiteHeader } from "@v3/_/components/site-header"
 import {
   MAX_PANEL_WIDTH,
@@ -29,7 +29,7 @@ import { type UUID } from "@/uuid"
 
 const DynamicBookDetailsContent = dynamic(
   () =>
-    import("@v3/_/components/books/BookDetailsPage").then(
+    import("@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsPage").then(
       (mod) => mod.BookDetailsContent,
     ),
   {

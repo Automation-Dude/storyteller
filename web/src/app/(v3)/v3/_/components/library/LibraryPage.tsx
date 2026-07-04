@@ -17,7 +17,7 @@ import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
-import { BookList } from "@v3/_/components/books/BookList"
+import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import {
   BookDetailDrawer,
   BookListLayout,

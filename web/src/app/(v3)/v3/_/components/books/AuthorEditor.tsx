@@ -6,7 +6,6 @@ import { Button } from "@v3/_/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
@@ -68,25 +67,19 @@ function CreatorAddMenu({
             label: (s) => tLabels.plain("create.withInput", { input: `"${s}"` }),
             onCreate,
           }}
-          renderRow={(item, ctx) => {
-            const isApplied = applied.has(item.name)
-            return (
-              <DropdownMenuItem
-                key={ctx.key}
-                closeOnClick={false}
-                onClick={() => {
-                  onToggle(item.name)
-                }}
-                className="flex w-full! items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
-                style={ctx.style}
-              >
-                <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                <span className="flex w-4 shrink-0 items-center justify-center">
-                  {isApplied && <ICheck.base className="text-primary h-4 w-4" />}
-                </span>
-              </DropdownMenuItem>
-            )
+          onSelect={(item) => {
+            onToggle(item.name)
           }}
+          renderRow={(item) => (
+            <>
+              <span className="min-w-0 flex-1 truncate">{item.name}</span>
+              <span className="flex w-4 shrink-0 items-center justify-center">
+                {applied.has(item.name) && (
+                  <ICheck.base className="text-primary h-4 w-4" />
+                )}
+              </span>
+            </>
+          )}
         />
       </DropdownMenuContent>
     </DropdownMenu>

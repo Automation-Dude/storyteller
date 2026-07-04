@@ -2,9 +2,6 @@
 
 import { type ReactNode, useMemo } from "react"
 
-import { DropdownMenuItem } from "@v3/_/components/ui/dropdown-menu"
-import { cn } from "@v3/_/lib/utils"
-
 import { ICheck, IRemove } from "../../ui/icon"
 import { RelationGlyph } from "../RelationChipEditor"
 import { RelationPickerList } from "./RelationPickerList"
@@ -132,32 +129,18 @@ export function RelationEditPicker({
             }
           : undefined
       }
-      renderRow={(item, ctx) => {
-        const state = stateOf(item.uuid)
-        return (
-          // you may be tempted to use a DropdownMenuItem here
-          // do not! it will eat keydowns to quickly select items, which doesn't
-          // work w the search box
-          <button
-            key={ctx.key}
-            closeOnClick={false}
-            onClick={(e) => {
-              handleClick(item, state)
-              e.preventDefault()
-            }}
-            className={cn(
-              "flex w-full! items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs",
-            )}
-            style={ctx.style}
-          >
-            <RelationGlyph item={item} />
-            <span className="min-w-0 flex-1 truncate">{item.name}</span>
-            <span className="flex w-4 shrink-0 items-center justify-center">
-              {trailing(state)}
-            </span>
-          </button>
-        )
+      onSelect={(item) => {
+        handleClick(item, stateOf(item.uuid))
       }}
+      renderRow={(item) => (
+        <>
+          <RelationGlyph item={item} />
+          <span className="min-w-0 flex-1 truncate">{item.name}</span>
+          <span className="flex w-4 shrink-0 items-center justify-center">
+            {trailing(stateOf(item.uuid))}
+          </span>
+        </>
+      )}
     />
   )
 }
