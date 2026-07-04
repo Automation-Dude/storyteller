@@ -25,7 +25,6 @@ import {
   FieldDefEnum,
   FieldDefFacet,
   FieldDefNumeric,
-  MEDIA_TYPE_VALUES,
   type ShelfFilterCondition,
   type ShelfFilterField,
   type ShelfFilterOperator,
@@ -42,6 +41,7 @@ import {
 
 import { RelationGlyph } from "./RelationChipEditor"
 import { FieldIcon } from "./field-icons"
+import { unitDisplay } from "./filter-ui"
 
 export type FilterControlProps = {
   field: ShelfFilterField
@@ -60,18 +60,6 @@ type Item = {
   name: string
   icon?: string | null
   color?: string | null
-}
-
-// TODO: remove, localize
-const FORMAT_VALUE_LABELS = {
-  ebook: "Ebook",
-  audiobook: "Audiobook",
-  synced: "Readaloud",
-  "ebook-only": "Ebook only",
-  "audiobook-only": "Audiobook only",
-  "missing-readaloud": "Ebook + audiobook, not synced",
-  "missing-files": "Missing files",
-  "no-media": "No media",
 }
 
 const ASSET_FORMAT_LABELS: Record<AssetFormat, string> = {
@@ -531,41 +519,6 @@ function FacetEditor({
       </div>
     </div>
   )
-}
-
-type ScaleUnit = NonNullable<FieldDefNumeric["scale"]>["unit"]
-
-function unitDisplay(unit: ScaleUnit): {
-  to: (raw: number) => number
-  from: (display: number) => number
-  suffix: string
-  step: number
-} {
-  switch (unit) {
-    case "bytes":
-      return {
-        to: (v) => Math.round(v / 1e6),
-        from: (v) => v * 1e6,
-        suffix: "MB",
-        step: 1,
-      }
-    case "seconds":
-      return {
-        to: (v) => Math.round((v / 3600) * 10) / 10,
-        from: (v) => Math.round(v * 3600),
-        suffix: "h",
-        step: 0.5,
-      }
-    case "ratio":
-      return {
-        to: (v) => Math.round(v * 100),
-        from: (v) => v / 100,
-        suffix: "%",
-        step: 1,
-      }
-    default:
-      return { to: (v) => v, from: (v) => v, suffix: "", step: 1 }
-  }
 }
 
 // read the [lo, hi] bounds (raw units, either may be null) out of the field's

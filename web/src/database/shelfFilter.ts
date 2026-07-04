@@ -7,6 +7,7 @@ import {
 
 import { type Role } from "@/components/books/edit/marcRelators"
 import {
+  ALIGNMENT_GRADES,
   type AssetFormat,
   type ShelfFilter,
   type ShelfFilterCondition,
@@ -1119,10 +1120,12 @@ export function buildSortExpression(
     case "alignmentMutedChapters":
       return latestReportColumn("muted_chapters")
     case "alignmentGrade":
-      return sql`case ${latestReportColumn("grade")}
-        when 'A+' then 8 when 'A' then 7 when 'A-' then 6
-        when 'B' then 5 when 'B-' then 4 when 'C' then 3
-        when 'D' then 2 when 'F' then 1 else null end`
+      return sql`case ${latestReportColumn("grade")} ${sql.join(
+        ALIGNMENT_GRADES.map(
+          (grade, i) => sql`when ${grade} then ${ALIGNMENT_GRADES.length - i}`,
+        ),
+        sql` `,
+      )} else null end`
     case "pageCount":
     case "duration":
     case "fileSize":

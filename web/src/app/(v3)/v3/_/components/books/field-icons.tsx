@@ -34,11 +34,15 @@ import {
 } from "@tabler/icons-react"
 import { type ComponentType } from "react"
 
-// one icon per filter/sort/display field, kept out of FIELD_REGISTRY so the
-// registry stays a plain server-safe data object. keyed loosely by field name
-// (ShelfFilterField plus the display-only "authors" / sort-only "seriesPosition")
-// so every menu - quick filter, sort, show-on-card - shows the same glyph.
-const FIELD_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+import { type ShelfFilterField } from "@/shelves"
+
+type FieldIconKey = ShelfFilterField | "authors" | "seriesPosition"
+
+// separate so we dont need to pass around jsx on the server
+const FIELD_ICONS: Record<
+  FieldIconKey,
+  ComponentType<{ className?: string }>
+> = {
   title: IconHeading,
   subtitle: IconTextCaption,
   description: IconAlignLeft,
@@ -74,7 +78,7 @@ export function FieldIcon({
   field,
   className,
 }: {
-  field: string
+  field: FieldIconKey
   className?: string
 }) {
   const Icon = FIELD_ICONS[field] ?? IconFilter

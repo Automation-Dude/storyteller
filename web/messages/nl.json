@@ -1273,7 +1273,7 @@
           "ebook-only": "Alleen Ebook",
           "audiobook-only": "Alleen Luisterboek",
           "missing-readaloud": "Niet gesynchroniseerd",
-          "missing-files": "Heeft ontbrekende bestanden"
+          "no-media": "Geen media"
         },
         "alignmentGrade": {
           "A+": "A+",

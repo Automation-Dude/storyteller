@@ -13,8 +13,10 @@ import {
 } from "@/database/shelfFilter"
 import {
   FIELD_REGISTRY,
+  MEDIA_TYPE_VALUES,
   type ShelfFilterField,
   type ShelfFilterNode,
+  assertFieldGroupsCoverRegistry,
   createAndBlock,
   createEmptyCondition,
   createNotBlock,
@@ -1032,6 +1034,47 @@ void describe("SORTABLE_FIELDS / registry sync", () => {
       assertSortFieldsMatchRegistry()
     })
   })
+})
+
+void describe("FIELD_GROUPS / registry coverage", () => {
+  void it("covers every ShelfFilterField exactly once", () => {
+    assert.doesNotThrow(() => {
+      assertFieldGroupsCoverRegistry()
+    })
+  })
+})
+
+void describe("MEDIA_TYPE_VALUES / compiler coverage", () => {
+  const userId = "11111111-1111-1111-1111-111111111111" as UUID
+  const testDb = createKyselyDb(new Database(":memory:"))
+
+  const compile = (value: string): string =>
+    testDb
+      .selectFrom("book")
+      .selectAll()
+      .where((eb) =>
+        buildFilterExpression(
+          eb,
+          {
+            type: "and",
+            children: [
+              { type: "condition", field: "mediaType", operator: "is", value },
+            ],
+          },
+          userId,
+        ),
+      )
+      .compile().sql
+
+  // every enum value must compile to a real asset-table predicate. an unhandled
+  // value falls through to `eb.lit(false)` (no asset table referenced), so this
+  // fails if MEDIA_TYPE_VALUES and mediaTypeCondition ever drift apart.
+  for (const value of MEDIA_TYPE_VALUES) {
+    void it(`compiles "${value}" to an asset-table predicate`, () => {
+      const sql = compile(value)
+      assert.match(sql, /ebook|audiobook|readaloud/)
+    })
+  }
 })
 
 void describe("makeBookComparator", () => {

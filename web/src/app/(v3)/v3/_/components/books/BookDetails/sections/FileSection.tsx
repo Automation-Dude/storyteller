@@ -70,8 +70,6 @@ function FormatFileRow({
   const canEdit = usePermission("bookUpdate")
 
   const t = useTranslation("BookDetailsPage")
-  const tUpload = useTranslation("UploadDialog")
-  const tImport = useTranslation("ImportFromServerDialog")
   const tLabels = useTranslation("Labels")
   const c = useCommon()
 
@@ -126,7 +124,9 @@ function FormatFileRow({
         </div>
 
         <div className="text-sm" title={filepath}>
-          <span className="text-muted-foreground">{directory}</span>
+          <span className="text-muted-foreground line-clamp-1">
+            {directory}
+          </span>
           <code className="text-xs font-medium">{filename}</code>
         </div>
 

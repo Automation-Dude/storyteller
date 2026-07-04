@@ -2,7 +2,6 @@
 
 import {
   IconChevronDown,
-  IconChevronRight,
   IconCopy,
   IconGripVertical,
   IconLoader2,
@@ -10,20 +9,9 @@ import {
   IconTrash,
 } from "@tabler/icons-react"
 import { Reorder, motion, useDragControls } from "motion/react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
-import {
-  Combobox,
-  ComboboxChip,
-  ComboboxChips,
-  ComboboxChipsInput,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxValue,
-} from "@v3/_/components/ui/combobox"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +37,7 @@ import { type BookWithRelations } from "@/database/books"
 import { DEFAULT_RATING_DIMENSIONS } from "@/database/ratingDimensions"
 import { statusDisplayLabel } from "@/database/statusKinds"
 import {
-  MEDIA_TYPE_VALUES,
+  FIELD_GROUPS,
   type ShelfFilterAnd,
   type ShelfFilterCondition,
   type ShelfFilterField,
@@ -61,7 +49,7 @@ import {
   createEmptyCondition,
   createNotBlock,
   createOrBlock,
-  getFieldType,
+  getFieldDef,
   getOperatorsForField,
   normalizeRootFilter,
   operatorRequiresArrayValue,
@@ -77,6 +65,12 @@ import {
   useListTagsQuery,
 } from "@/store/api"
 import { FieldIcon } from "../books/field-icons"
+import {
+  DurationInput,
+  FileSizeInput,
+  MultiCombobox,
+  NumericInput,
+} from "../books/filter-ui"
 
 type FilterPreset = {
   key: string
@@ -735,43 +729,9 @@ function NotBlockEditor({
   )
 }
 
-// ---------------------------------------------------------------------------
-// field groups for the picker
-// ---------------------------------------------------------------------------
-
-const FIELD_GROUPS: {
-  key: string
-  fields: ShelfFilterField[]
-}[] = [
-  {
-    key: "text",
-    fields: ["title", "subtitle", "description", "language", "search"],
-  },
-  {
-    key: "dates",
-    fields: ["publicationDate", "createdAt", "updatedAt"],
-  },
-  {
-    key: "review",
-    fields: ["review", "userRating", "ratingDimension"],
-  },
-  {
-    key: "relations",
-    fields: ["status", "tags", "collections", "series", "creators"],
-  },
-  {
-    key: "media",
-    fields: ["mediaType", "duration", "pageCount", "fileSize"],
-  },
-  {
-    key: "alignment",
-    fields: [
-      "alignmentScore",
-      "alignmentMissingSentences",
-      "alignmentMutedChapters",
-    ],
-  },
-]
+// the field picker groups + ordering (FIELD_GROUPS) now live in @/shelves,
+// authored to cover every ShelfFilterField so no field silently drops out of the
+// picker (guarded by assertFieldGroupsCoverRegistry).
 
 // ---------------------------------------------------------------------------
 // condition editor
@@ -797,7 +757,6 @@ function ConditionEditor({
     : DEFAULT_RATING_DIMENSIONS
 
   const operators = getOperatorsForField(condition.field)
-  const fieldType = getFieldType(condition.field)
   const needsValue = operatorRequiresValue(condition.operator)
   const needsArrayValue = operatorRequiresArrayValue(condition.operator)
   const needsRangeValue = operatorRequiresRangeValue(condition.operator)
@@ -843,13 +802,6 @@ function ConditionEditor({
   ) => {
     onChange({ ...condition, value: value ?? undefined })
   }
-
-  const _allFieldItems = FIELD_GROUPS.flatMap((group) =>
-    group.fields.map((field) => ({
-      value: field,
-      label: t.plain(`fields.${field}` as "fields.title"),
-    })),
-  )
 
   const operatorItems = operators.map((op) => ({
     value: op,
@@ -947,7 +899,6 @@ function ConditionEditor({
           <div className="min-w-[140px] flex-1">
             <ConditionValueInput
               field={condition.field}
-              fieldType={fieldType}
               isArray={needsArrayValue}
               isRange={needsRangeValue}
               value={condition.value}
@@ -984,190 +935,15 @@ function ConditionEditor({
 }
 
 // ---------------------------------------------------------------------------
-// numeric input (type=text + inputMode so the field can be cleared properly)
-// ---------------------------------------------------------------------------
-
-function NumericInput({
-  value,
-  onChange,
-  className,
-  placeholder,
-}: {
-  value: number | "" | null | undefined
-  onChange: (value: number) => void
-  className?: string
-  placeholder?: string
-}) {
-  const [focused, setFocused] = useState(false)
-  const [localValue, setLocalValue] = useState("")
-
-  const displayValue = focused
-    ? localValue
-    : value === null || value === undefined || value === ""
-      ? ""
-      : String(value)
-
-  return (
-    <Input
-      type="text"
-      inputMode="decimal"
-      className={className}
-      value={displayValue}
-      onChange={(e) => {
-        const raw = e.target.value
-        setLocalValue(raw)
-
-        const parsed = Number(raw)
-        if (raw !== "" && !isNaN(parsed)) {
-          onChange(parsed)
-        }
-      }}
-      onFocus={() => {
-        const str =
-          value === null || value === undefined || value === ""
-            ? ""
-            : String(value)
-
-        setLocalValue(str)
-        setFocused(true)
-      }}
-      onBlur={() => {
-        setFocused(false)
-      }}
-      placeholder={placeholder}
-    />
-  )
-}
-
-// ---------------------------------------------------------------------------
-// duration input (hours + minutes instead of raw seconds)
-// ---------------------------------------------------------------------------
-
-function DurationInput({
-  value,
-  onChange,
-}: {
-  value: number | undefined | null
-  onChange: (seconds: number) => void
-}) {
-  const t = useTranslation("ShelfFilterEditor")
-  const totalSeconds = typeof value === "number" ? value : 0
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-
-  return (
-    <div className="flex items-center gap-1">
-      <NumericInput
-        className="h-7 w-14 text-xs"
-        value={hours || ""}
-        onChange={(h) => {
-          onChange(h * 3600 + minutes * 60)
-        }}
-        placeholder="0"
-      />
-      <span className="text-muted-foreground text-xs">
-        {t.plain("durationHours")}
-      </span>
-
-      <NumericInput
-        className="h-7 w-14 text-xs"
-        value={minutes || ""}
-        onChange={(m) => {
-          onChange(hours * 3600 + m * 60)
-        }}
-        placeholder="0"
-      />
-      <span className="text-muted-foreground text-xs">
-        {t.plain("durationMinutes")}
-      </span>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// file size input (with unit selector instead of raw bytes)
-// ---------------------------------------------------------------------------
-
-type FileSizeUnit = "bytes" | "kb" | "mb" | "gb"
-
-const FILE_SIZE_MULTIPLIERS: Record<FileSizeUnit, number> = {
-  bytes: 1,
-  kb: 1024,
-  mb: 1048576,
-  gb: 1073741824,
-}
-
-function detectFileSizeUnit(bytes: number): FileSizeUnit {
-  if (bytes >= 1073741824) return "gb"
-  if (bytes >= 1048576) return "mb"
-  if (bytes >= 1024) return "kb"
-  return "bytes"
-}
-
-function FileSizeInput({
-  value,
-  onChange,
-}: {
-  value: number | undefined | null
-  onChange: (bytes: number) => void
-}) {
-  const t = useTranslation("ShelfFilterEditor")
-
-  const [unit, setUnit] = useState<FileSizeUnit>(() =>
-    typeof value === "number" && value > 0 ? detectFileSizeUnit(value) : "mb",
-  )
-
-  const multiplier = FILE_SIZE_MULTIPLIERS[unit]
-
-  const displayValue =
-    typeof value === "number"
-      ? Math.round((value / multiplier) * 100) / 100
-      : ""
-
-  const unitItems = (["bytes", "kb", "mb", "gb"] as const).map((u) => ({
-    value: u,
-    label: t.plain(`fileSizeUnit.${u}` as "fileSizeUnit.mb"),
-  }))
-
-  return (
-    <div className="flex items-center gap-1">
-      <NumericInput
-        className="h-7 w-20 text-xs"
-        value={displayValue}
-        onChange={(n) => {
-          onChange(n * multiplier)
-        }}
-      />
-
-      <Select
-        value={unit}
-        onValueChange={(v) => {
-          setUnit(v as FileSizeUnit)
-        }}
-        items={unitItems}
-      >
-        <SelectTrigger className="h-7 w-16 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {unitItems.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // condition value input
+//
+// dispatches on the field's registry control (getFieldDef(field).control) and
+// reads its scale, so it renders the same primitives the quick-chip editor uses
+// and never hand-classifies a field or invents its own scale.
 // ---------------------------------------------------------------------------
 
 type ConditionValueInputProps = {
   field: ShelfFilterField
-  fieldType: "string" | "number" | "date" | "uuid" | "array" | "enum"
   isArray: boolean
   isRange: boolean
   value:
@@ -1181,53 +957,16 @@ type ConditionValueInputProps = {
   onChange: (value: string | number | (string | number)[] | null) => void
 }
 
-type NumericFieldConfig = {
-  step: number
-  min: number
-  defaultMax: number
-  placeholderKey: string
-  unitKey?: string
-}
-
-function getNumericFieldConfig(field: ShelfFilterField): NumericFieldConfig {
-  switch (field) {
-    case "userRating":
-    case "ratingDimension":
-      return {
-        step: 0.5,
-        min: 0,
-        defaultMax: 5,
-        placeholderKey: "rating",
-      }
-
-    case "pageCount":
-      return {
-        step: 1,
-        min: 0,
-        defaultMax: 1000,
-        placeholderKey: "pageCount",
-        unitKey: "pages",
-      }
-
-    default:
-      return {
-        step: 1,
-        min: 0,
-        defaultMax: 100,
-        placeholderKey: "default",
-      }
-  }
-}
-
 function ConditionValueInput({
   field,
-  fieldType,
   isArray,
   isRange,
   value,
   onChange,
 }: ConditionValueInputProps) {
   const t = useTranslation("ShelfFilterEditor")
+  const c = useCommon()
+  const def = getFieldDef(field)
 
   const { data: tags = [] } = useListTagsQuery()
   const { data: collections = [] } = useListCollectionsQuery()
@@ -1235,9 +974,9 @@ function ConditionValueInput({
   const { data: statuses = [] } = useListStatusesQuery()
   const { data: creators = [] } = useListCreatorsQuery()
 
-  // -- duration: show hours + minutes instead of raw seconds ----------------
+  // -- duration: hours + minutes instead of raw seconds ---------------------
 
-  if (field === "duration") {
+  if (def.control === "duration-range") {
     if (isRange) {
       const rangeValue = Array.isArray(value) ? value : [0, 36000]
 
@@ -1270,9 +1009,9 @@ function ConditionValueInput({
     )
   }
 
-  // -- file size: show with unit selector instead of raw bytes ---------------
+  // -- file size: a numeric field scaled in bytes -> unit selector ----------
 
-  if (field === "fileSize") {
+  if (def.control === "number-range" && def.scale?.unit === "bytes") {
     if (isRange) {
       const rangeValue = Array.isArray(value) ? value : [0, 1073741824]
 
@@ -1307,108 +1046,64 @@ function ConditionValueInput({
     )
   }
 
-  // -- multi-select entity fields -------------------------------------------
+  // -- facet relations + status (options come from def.source) --------------
 
-  if (field === "mediaType") {
-    if (isArray) {
-      const options = MEDIA_TYPE_VALUES.map((v) => ({ value: v, label: v }))
-      const selected = Array.isArray(value) ? (value as string[]) : []
+  if (def.control === "facet") {
+    const selected = Array.isArray(value) ? (value as string[]) : []
 
+    if (def.source === "tags") {
       return (
         <MultiCombobox
-          options={options}
+          options={tags.map((tag) => ({ value: tag.uuid, label: tag.name }))}
           value={selected}
-          onChange={(v) => {
-            onChange(v)
-          }}
-          placeholder={t.plain("searchMediaTypes")}
+          onChange={onChange}
+          placeholder={t.plain("selectTags")}
           emptyText={t.plain("noItemsFound")}
         />
       )
     }
 
-    const mediaTypeItems = MEDIA_TYPE_VALUES.map((v) => ({
-      value: v,
-      label: v,
-    }))
+    if (def.source === "collections") {
+      return (
+        <MultiCombobox
+          options={collections.map((col) => ({
+            value: col.uuid,
+            label: col.name,
+          }))}
+          value={selected}
+          onChange={onChange}
+          placeholder={t.plain("selectCollections")}
+          emptyText={t.plain("noItemsFound")}
+        />
+      )
+    }
 
-    return (
-      <Select
-        value={typeof value === "string" ? value : ""}
-        onValueChange={onChange}
-        items={mediaTypeItems}
-      >
-        <SelectTrigger className="h-7 text-xs">
-          <SelectValue placeholder={t.plain("selectMediaType")} />
-        </SelectTrigger>
-        <SelectContent>
-          {mediaTypeItems.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    )
-  }
+    if (def.source === "series") {
+      return (
+        <MultiCombobox
+          options={series.map((s) => ({ value: s.uuid, label: s.name }))}
+          value={selected}
+          onChange={onChange}
+          placeholder={t.plain("selectSeries")}
+          emptyText={t.plain("noItemsFound")}
+        />
+      )
+    }
 
-  if (field === "tags") {
-    return (
-      <MultiCombobox
-        options={tags.map((tag) => ({ value: tag.uuid, label: tag.name }))}
-        value={Array.isArray(value) ? (value as string[]) : []}
-        onChange={(v) => {
-          onChange(v)
-        }}
-        placeholder={t.plain("selectTags")}
-        emptyText={t.plain("noItemsFound")}
-      />
-    )
-  }
+    if (def.source === "creators") {
+      return (
+        <MultiCombobox
+          options={creators.map((cr) => ({ value: cr.uuid, label: cr.name }))}
+          value={selected}
+          onChange={onChange}
+          placeholder={t.plain("selectCreators")}
+          emptyText={t.plain("noItemsFound")}
+        />
+      )
+    }
 
-  if (field === "collections") {
-    return (
-      <MultiCombobox
-        options={collections.map((c) => ({ value: c.uuid, label: c.name }))}
-        value={Array.isArray(value) ? (value as string[]) : []}
-        onChange={(v) => {
-          onChange(v)
-        }}
-        placeholder={t.plain("selectCollections")}
-        emptyText={t.plain("noItemsFound")}
-      />
-    )
-  }
-
-  if (field === "series") {
-    return (
-      <MultiCombobox
-        options={series.map((s) => ({ value: s.uuid, label: s.name }))}
-        value={Array.isArray(value) ? (value as string[]) : []}
-        onChange={(v) => {
-          onChange(v)
-        }}
-        placeholder={t.plain("selectSeries")}
-        emptyText={t.plain("noItemsFound")}
-      />
-    )
-  }
-
-  if (field === "creators") {
-    return (
-      <MultiCombobox
-        options={creators.map((c) => ({ value: c.uuid, label: c.name }))}
-        value={Array.isArray(value) ? (value as string[]) : []}
-        onChange={(v) => {
-          onChange(v)
-        }}
-        placeholder={t.plain("selectCreators")}
-        emptyText={t.plain("noItemsFound")}
-      />
-    )
-  }
-
-  if (field === "status") {
+    // statuses: a membership operator -> multi-select, is / isNot -> a single
+    // picker.
     if (isArray) {
       return (
         <MultiCombobox
@@ -1416,10 +1111,8 @@ function ConditionValueInput({
             value: s.uuid,
             label: statusDisplayLabel(s),
           }))}
-          value={Array.isArray(value) ? (value as string[]) : []}
-          onChange={(v) => {
-            onChange(v)
-          }}
+          value={selected}
+          onChange={onChange}
           placeholder={t.plain("selectStatuses")}
           emptyText={t.plain("noItemsFound")}
         />
@@ -1449,28 +1142,61 @@ function ConditionValueInput({
     )
   }
 
-  // -- generic numeric fields -----------------------------------------------
+  // -- enum (mediaType, alignmentGrade): options + labels from the registry --
 
-  if (fieldType === "number") {
-    const numericConfig = getNumericFieldConfig(field)
-    const placeholder = t.plain(
-      `numericPlaceholders.${numericConfig.placeholderKey}` as "numericPlaceholders.default",
+  if (def.control === "enum") {
+    const options = def.options.map((v) => ({
+      value: v,
+      label: c.plain(
+        `fields.options.${field}.${v}` as "fields.options.mediaType.ebook",
+      ),
+    }))
+
+    if (isArray) {
+      return (
+        <MultiCombobox
+          options={options}
+          value={Array.isArray(value) ? (value as string[]) : []}
+          onChange={onChange}
+          placeholder={t.plain("searchMediaTypes")}
+          emptyText={t.plain("noItemsFound")}
+        />
+      )
+    }
+
+    return (
+      <Select
+        value={typeof value === "string" ? value : ""}
+        onValueChange={onChange}
+        items={options}
+      >
+        <SelectTrigger className="h-7 text-xs">
+          <SelectValue placeholder={t.plain("selectMediaType")} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     )
-    const unit = numericConfig.unitKey
-      ? t.plain(`units.${numericConfig.unitKey}` as "units.sec")
-      : undefined
+  }
+
+  // -- generic numeric fields: bounds come from the registry scale ----------
+
+  if (def.control === "number-range") {
+    const min = def.scale?.min ?? 0
+    const defaultMax = def.scale?.max ?? 100
 
     if (isRange) {
-      const rangeValue = Array.isArray(value)
-        ? value
-        : [numericConfig.min, numericConfig.defaultMax]
+      const rangeValue = Array.isArray(value) ? value : [min, defaultMax]
 
       const rangeStart =
-        typeof rangeValue[0] === "number" ? rangeValue[0] : numericConfig.min
+        typeof rangeValue[0] === "number" ? rangeValue[0] : min
       const rangeEnd =
-        typeof rangeValue[1] === "number"
-          ? rangeValue[1]
-          : numericConfig.defaultMax
+        typeof rangeValue[1] === "number" ? rangeValue[1] : defaultMax
 
       return (
         <div className="flex items-center gap-2">
@@ -1491,33 +1217,23 @@ function ConditionValueInput({
               onChange([rangeStart, n])
             }}
           />
-
-          {unit && (
-            <span className="text-muted-foreground text-xs">{unit}</span>
-          )}
         </div>
       )
     }
 
     return (
-      <div className="flex items-center gap-1.5">
-        <NumericInput
-          className="h-7 w-20 text-xs"
-          value={typeof value === "number" ? value : ""}
-          onChange={(n) => {
-            onChange(n)
-          }}
-          placeholder={placeholder}
-        />
-
-        {unit && <span className="text-muted-foreground text-xs">{unit}</span>}
-      </div>
+      <NumericInput
+        className="h-7 w-20 text-xs"
+        value={typeof value === "number" ? value : ""}
+        onChange={onChange}
+        placeholder={t.plain("numericPlaceholders.default")}
+      />
     )
   }
 
   // -- date fields ----------------------------------------------------------
 
-  if (fieldType === "date") {
+  if (def.control === "date-range") {
     if (isRange) {
       const rangeValue = Array.isArray(value) ? value : ["", ""]
 
@@ -1558,7 +1274,8 @@ function ConditionValueInput({
     )
   }
 
-  // -- generic array / text fallback ----------------------------------------
+  // -- text fields (title, review, search, ...): a membership operator takes
+  // a comma-separated list, everything else a single value ------------------
 
   if (isArray) {
     const arrayValue = Array.isArray(value) ? value.join(", ") : ""
@@ -1592,60 +1309,3 @@ function ConditionValueInput({
   )
 }
 
-// ---------------------------------------------------------------------------
-// shared multi-select combobox (used for tags, collections, etc.)
-// ---------------------------------------------------------------------------
-
-function MultiCombobox({
-  options,
-  value,
-  onChange,
-  placeholder,
-  emptyText,
-}: {
-  options: Array<{ value: string; label: string }>
-  value: string[]
-  onChange: (value: string[]) => void
-  placeholder: string
-  emptyText: string
-}) {
-  const labelsByValue = useMemo(
-    () => new Map(options.map((o) => [o.value, o.label])),
-    [options],
-  )
-
-  return (
-    <Combobox
-      items={options}
-      multiple
-      value={value}
-      onValueChange={onChange}
-      filter={(itemValue, query) => {
-        const label = labelsByValue.get(itemValue) ?? itemValue
-        return label.toLowerCase().includes(query.toLowerCase())
-      }}
-    >
-      <ComboboxChips className="min-h-7">
-        <ComboboxValue>
-          {options
-            .filter((o) => value.includes(o.value))
-            .map((o) => (
-              <ComboboxChip key={o.value}>{o.label}</ComboboxChip>
-            ))}
-        </ComboboxValue>
-        <ComboboxChipsInput placeholder={placeholder} className="text-xs" />
-      </ComboboxChips>
-
-      <ComboboxContent>
-        <ComboboxEmpty>{emptyText}</ComboboxEmpty>
-        <ComboboxList>
-          {options.map((o) => (
-            <ComboboxItem key={o.value} value={o.value}>
-              {o.label}
-            </ComboboxItem>
-          ))}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  )
-}

@@ -1,6 +1,10 @@
 import { type BookWithRelations } from "@/database/books"
 import { type FacetSection } from "@/database/libraryCounts"
-import { type ShelfFilterField, type ShelfFilterNode } from "@/shelves"
+import {
+  type MediaTypeValue,
+  type ShelfFilterField,
+  type ShelfFilterNode,
+} from "@/shelves"
 import { type ListBooksQueryArg } from "@/store/api"
 import { type UUID } from "@/uuid"
 
@@ -185,7 +189,10 @@ function buildScalarSection(
 // the format facet keys (getFormatKey) map onto the broader Format filter
 // values so a formats-page facet can seed the same server filter as the books
 // page. "readaloud" -> synced (aligned), "audiobook-ebook" -> missing-readaloud.
-const FORMAT_KEY_TO_MEDIA_TYPE: Record<FormatKey, string> = {
+// typed to MediaTypeValue so a facet can only seed a filter value the enum (and
+// therefore the SQL compiler) actually supports - an invalid bridge is a compile
+// error, not a filter that silently matches nothing.
+const FORMAT_KEY_TO_MEDIA_TYPE: Record<FormatKey, MediaTypeValue> = {
   readaloud: "synced",
   "audiobook-ebook": "missing-readaloud",
   "audiobook-only": "audiobook-only",
@@ -327,7 +334,11 @@ export function sectionSeedQueryArg(
   return section.toShelfFilter ? { filter: section.toShelfFilter(itemKey) } : {}
 }
 
-type FormatKey =
+// the exclusive format partition (every book falls in exactly one bucket),
+// distinct from the overlapping MEDIA_TYPE_VALUES predicates. getFormatKey (TS,
+// below) and formatKeyExpr (SQL, libraryCounts.ts) must compute the same buckets;
+// both are typed to this union so the set stays in lockstep.
+export type FormatKey =
   | "readaloud"
   | "audiobook-ebook"
   | "audiobook-only"

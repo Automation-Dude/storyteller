@@ -140,6 +140,11 @@ export const ENUM_FIELDS = [
   "mediaType",
 ] as const satisfies readonly ShelfFilterField[]
 
+// the values buildEnumComparison (database/shelfFilter.ts) knows how to compile;
+// keep this list and that switch in exact lockstep (there is a unit test guarding
+// it) so no filter value is silently dead. these are overlapping predicates (a
+// book can be both "ebook" and "audiobook"), distinct from the exclusive
+// FormatKey partition the library facets use.
 export const MEDIA_TYPE_VALUES = [
   "ebook",
   "audiobook",
@@ -147,8 +152,10 @@ export const MEDIA_TYPE_VALUES = [
   "ebook-only",
   "audiobook-only",
   "missing-readaloud",
-  "missing-files",
+  "no-media",
 ] as const
+
+export type MediaTypeValue = (typeof MEDIA_TYPE_VALUES)[number]
 
 export const EMPTINESS_FIELDS = [
   ...STRING_FIELDS,
@@ -919,6 +926,84 @@ export function registrySortableFields(): ShelfFilterField[] {
   return (Object.keys(FIELD_REGISTRY) as ShelfFilterField[]).filter(
     (f) => FIELD_REGISTRY[f].sortable,
   )
+}
+
+// the advanced-editor field picker's groups + ordering. pure data (labels are
+// resolved by the editor via ShelfFilterEditor.fieldGroups.*); authored to cover
+// EVERY ShelfFilterField so no field can silently drop out of the picker.
+// assertFieldGroupsCoverRegistry (run in tests) fails if a field is missing or
+// listed twice.
+export type FieldGroupKey =
+  | "text"
+  | "dates"
+  | "review"
+  | "relations"
+  | "media"
+  | "alignment"
+
+export const FIELD_GROUPS: {
+  key: FieldGroupKey
+  fields: ShelfFilterField[]
+}[] = [
+  {
+    key: "text",
+    fields: ["title", "subtitle", "description", "language", "search"],
+  },
+  {
+    key: "dates",
+    fields: [
+      "publicationDate",
+      "createdAt",
+      "updatedAt",
+      "alignedAt",
+      "lastRead",
+    ],
+  },
+  {
+    key: "review",
+    fields: ["review", "userRating", "ratingDimension", "readingPosition"],
+  },
+  {
+    key: "relations",
+    fields: ["status", "tags", "collections", "series", "creators"],
+  },
+  {
+    key: "media",
+    fields: ["mediaType", "duration", "pageCount", "fileSize"],
+  },
+  {
+    key: "alignment",
+    fields: [
+      "alignmentGrade",
+      "alignmentScore",
+      "alignmentMissingSentences",
+      "alignmentMutedChapters",
+    ],
+  },
+]
+
+// fails fast if FIELD_GROUPS drifts from SHELF_FILTER_FIELDS (a field missing
+// from every group, or listed in two). called from the unit tests, mirroring
+// assertSortFieldsMatchRegistry in sort.ts.
+export function assertFieldGroupsCoverRegistry(): void {
+  const grouped = FIELD_GROUPS.flatMap((g) => g.fields)
+  const seen = new Set<string>()
+  const duplicated: string[] = []
+  for (const f of grouped) {
+    if (seen.has(f)) duplicated.push(f)
+    seen.add(f)
+  }
+  const missing = SHELF_FILTER_FIELDS.filter((f) => !seen.has(f))
+  const extra = grouped.filter(
+    (f) => !(SHELF_FILTER_FIELDS as readonly string[]).includes(f),
+  )
+  if (missing.length || extra.length || duplicated.length) {
+    throw new Error(
+      `FIELD_GROUPS out of sync with SHELF_FILTER_FIELDS: missing [${missing.join(
+        ", ",
+      )}] extra [${extra.join(", ")}] duplicated [${duplicated.join(", ")}]`,
+    )
+  }
 }
 
 export function getFieldType(

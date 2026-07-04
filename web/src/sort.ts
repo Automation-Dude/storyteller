@@ -5,7 +5,7 @@
 // seriesPosition.
 
 import { type BookWithRelations } from "@/database/books"
-import { registrySortableFields } from "@/shelves"
+import { ALIGNMENT_GRADES, registrySortableFields } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 // kept as an explicit tuple (not derived) so SortField stays a narrow literal
@@ -49,17 +49,12 @@ export function assertSortFieldsMatchRegistry(): void {
 }
 
 // best-to-worst rank so a descending sort surfaces the strongest alignments
-// first, consistent with score. mirrors the analyzer's grade order.
-export const GRADE_RANK: Record<string, number> = {
-  "A+": 8,
-  A: 7,
-  "A-": 6,
-  B: 5,
-  "B-": 4,
-  C: 3,
-  D: 2,
-  F: 1,
-}
+// first, consistent with score. derived from ALIGNMENT_GRADES (which is ordered
+// best-first) so the ordering has a single source: the first grade gets the
+// highest rank, the last gets 1.
+export const GRADE_RANK: Record<string, number> = Object.fromEntries(
+  ALIGNMENT_GRADES.map((grade, i) => [grade, ALIGNMENT_GRADES.length - i]),
+)
 
 export type SortField = (typeof SORTABLE_FIELDS)[number]
 export type SortDirection = "asc" | "desc"
