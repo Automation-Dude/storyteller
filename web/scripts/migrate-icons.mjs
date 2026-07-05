@@ -152,10 +152,10 @@ const ICON_MAP = {
 
 const dryRun = process.argv.includes("--dry-run")
 
-const files = execSync(
-  `rg -l 'from "@tabler/icons-react"' src/app/\\(v3\\)/`,
-  { cwd: process.cwd(), encoding: "utf-8" },
-)
+const files = execSync(`rg -l 'from "@tabler/icons-react"' src/app/\\(v3\\)/`, {
+  cwd: process.cwd(),
+  encoding: "utf-8",
+})
   .trim()
   .split("\n")
   .filter(Boolean)

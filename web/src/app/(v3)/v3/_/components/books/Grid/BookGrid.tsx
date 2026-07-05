@@ -22,7 +22,6 @@ import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
-
 import { ActionEntryList } from "@/app/(v3)/v3/_/components/books/ActionMenu/BookActionMenuItems"
 import {
   findScrollParent,

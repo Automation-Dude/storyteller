@@ -1,9 +1,6 @@
 import type { TimingSummary } from "@storyteller-platform/ghost-story"
 
-export type StageName =
-  | "SPLIT_TRACKS"
-  | "TRANSCRIBE_CHAPTERS"
-  | "SYNC_CHAPTERS"
+export type StageName = "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS"
 
 export interface JobStats {
   audioDurationSeconds: number | null

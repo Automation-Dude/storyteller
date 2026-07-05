@@ -270,72 +270,72 @@ export default async function processBook({
             },
           )
 
-        // persist the alignment report tied to this job before any cache cleanup
-        // can remove the on-disk file. best-effort: a missing report should not
-        // fail the run.
-        try {
-          const reportJson = await readFile(reportFilepath, {
-            encoding: "utf-8",
+          // persist the alignment report tied to this job before any cache cleanup
+          // can remove the on-disk file. best-effort: a missing report should not
+          // fail the run.
+          try {
+            const reportJson = await readFile(reportFilepath, {
+              encoding: "utf-8",
+            })
+            await createAlignmentReport({
+              jobUuid,
+              bookUuid,
+              report: JSON.parse(reportJson) as Report,
+            })
+          } catch (err) {
+            logger.warn({
+              msg: "Failed to persist alignment report",
+              bookUuid,
+              err,
+            })
+          }
+
+          book = await updateBook(null, {
+            readaloud: {
+              filepath: readaloudFilepath,
+              status: "ALIGNED",
+              currentStage: stage,
+              stageProgress: 1,
+              queuePosition: 0,
+              restartPending: null,
+            },
           })
-          await createAlignmentReport({
-            jobUuid,
-            bookUuid,
-            report: JSON.parse(reportJson) as Report,
+
+          book = await updateBook({
+            alignedByStorytellerVersion: getCurrentVersion(),
+            alignedAt: new Date().toISOString().replace(/\.\d+/, ""),
+            alignedWith: formatTranscriptionEngineDetails(settings),
           })
-        } catch (err) {
-          logger.warn({
-            msg: "Failed to persist alignment report",
-            bookUuid,
-            err,
+
+          const extractedCover = await getExtractedCover(book, "audiobook")
+          const audioCover = extractedCover
+            ? new File(
+                [new Uint8Array(extractedCover.data)],
+                extractedCover.filename,
+              )
+            : null
+
+          logger.info(
+            `Writing metadata to aligned readaloud file (title: ${book.title})`,
+          )
+
+          using epub = await Epub.from(readaloudFilepath)
+          await writeMetadataToEpub(book, epub, {
+            includeAlignmentMetadata: true,
+            ...(audioCover && { audioCover }),
           })
-        }
+          logger.info(
+            `Successfully wrote metadata to file (title: ${await epub.getTitle(true)})`,
+          )
 
-        book = await updateBook(null, {
-          readaloud: {
-            filepath: readaloudFilepath,
-            status: "ALIGNED",
-            currentStage: stage,
-            stageProgress: 1,
-            queuePosition: 0,
-            restartPending: null,
-          },
-        })
+          await epub.saveAndClose()
 
-        book = await updateBook({
-          alignedByStorytellerVersion: getCurrentVersion(),
-          alignedAt: new Date().toISOString().replace(/\.\d+/, ""),
-          alignedWith: formatTranscriptionEngineDetails(settings),
-        })
+          const shouldCleanCache = await getSetting("cleanCacheAfterReadaloud")
 
-        const extractedCover = await getExtractedCover(book, "audiobook")
-        const audioCover = extractedCover
-          ? new File(
-              [new Uint8Array(extractedCover.data)],
-              extractedCover.filename,
-            )
-          : null
-
-        logger.info(
-          `Writing metadata to aligned readaloud file (title: ${book.title})`,
-        )
-
-        using epub = await Epub.from(readaloudFilepath)
-        await writeMetadataToEpub(book, epub, {
-          includeAlignmentMetadata: true,
-          ...(audioCover && { audioCover }),
-        })
-        logger.info(
-          `Successfully wrote metadata to file (title: ${await epub.getTitle(true)})`,
-        )
-
-        await epub.saveAndClose()
-
-        const shouldCleanCache = await getSetting("cleanCacheAfterReadaloud")
-
-        if (shouldCleanCache) {
-          logger.info("Cleaning up cache files after successful alignment")
-          await deleteProcessed(book)
-        }
+          if (shouldCleanCache) {
+            logger.info("Cleaning up cache files after successful alignment")
+            await deleteProcessed(book)
+          }
         })
       }
     } catch (e) {

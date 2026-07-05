@@ -23,7 +23,12 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   search: { base: icon.Search },
   alignmentGrade: { base: icon.Certificate },
   status: { base: icon.Progress },
-  tags: { base: icon.Tag, add: icon.TagAdd, remove: icon.TagRemove, filled: icon.TagFilled },
+  tags: {
+    base: icon.Tag,
+    add: icon.TagAdd,
+    remove: icon.TagRemove,
+    filled: icon.TagFilled,
+  },
   collections: { base: icon.Folders },
   series: { base: icon.Books },
   creators: { base: icon.Users },

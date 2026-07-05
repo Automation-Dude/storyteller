@@ -1,5 +1,9 @@
 import { withHasPermission } from "@/auth/auth"
-import { type AddTagInput, addTagsToBooks, removeTagsFromBooks } from "@/database/tags"
+import {
+  type AddTagInput,
+  addTagsToBooks,
+  removeTagsFromBooks,
+} from "@/database/tags"
 import { type UUID } from "@/uuid"
 import { queueWritesToFiles } from "@/writeToFiles/fileWriteDistributor"
 

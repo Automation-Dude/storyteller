@@ -444,7 +444,9 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
       sub: `${formatTimeHuman(view.alignedAudioDuration)} / ${formatTimeHuman(view.totalAudioDuration)}`,
       extra:
         summary.unalignedAudio > 0
-          ? t("marks.excludedClips", { count: summary.unalignedAudio.toString() })
+          ? t("marks.excludedClips", {
+              count: summary.unalignedAudio.toString(),
+            })
           : null,
       tone:
         audioPct == null
@@ -459,7 +461,9 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
       key: "chapters",
       label: tNouns("chapter", { count: summary.chapters }),
       value: `${summary.chapters}`,
-      sub: t("marks.mutedChapters", { count: summary.mutedChapters.toString() }),
+      sub: t("marks.mutedChapters", {
+        count: summary.mutedChapters.toString(),
+      }),
       tone: "muted",
     },
     {
@@ -685,7 +689,10 @@ function ChapterActions({
           <DropdownMenuCheckboxItem
             checked={row.markedOk}
             onClick={() => {
-              editor.setChapter(row.href, row.markedOk ? null : { markedOk: true })
+              editor.setChapter(
+                row.href,
+                row.markedOk ? null : { markedOk: true },
+              )
             }}
           >
             {t("overrides.markOk")}
@@ -861,7 +868,8 @@ function ChapterTable({
                       "hover:bg-muted/40 cursor-pointer border-t",
                       row.original.flagged &&
                         "border-l-moderate-border/80 border-l-2",
-                      (row.original.markedOk || row.original.excludedFromScore) &&
+                      (row.original.markedOk ||
+                        row.original.excludedFromScore) &&
                         "opacity-50",
                     )}
                     onClick={row.getToggleExpandedHandler()}

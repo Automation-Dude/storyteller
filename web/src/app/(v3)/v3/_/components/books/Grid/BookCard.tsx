@@ -7,8 +7,10 @@ import { Fragment, memo, useCallback, useMemo, useState } from "react"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
-
-import { BookCover, isDualFormat } from "@/app/(v3)/v3/_/components/books/BookCover"
+import {
+  BookCover,
+  isDualFormat,
+} from "@/app/(v3)/v3/_/components/books/BookCover"
 import {
   ensureContrast,
   useColorPreferences,
@@ -16,7 +18,10 @@ import {
   useIsDarkMode,
 } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
-import { ProgressDisplayBar, getReadingProgress } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
+import {
+  ProgressDisplayBar,
+  getReadingProgress,
+} from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
 import { Button } from "@/app/(v3)/v3/_/components/ui/button"

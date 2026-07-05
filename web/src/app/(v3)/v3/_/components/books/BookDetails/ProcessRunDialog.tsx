@@ -116,7 +116,10 @@ function RunConfigForm({
   const t = useTranslation("Processing")
   const formatDuration = useFormatDuration()
 
-  const watchedEngine = useWatch({ control: form.control, name: "transcriptionEngine" })
+  const watchedEngine = useWatch({
+    control: form.control,
+    name: "transcriptionEngine",
+  })
   const watchedModel = useWatch({ control: form.control, name: "whisperModel" })
 
   const { data: estimate } = useGetAlignmentEstimateQuery(

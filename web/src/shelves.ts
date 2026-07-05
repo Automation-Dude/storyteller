@@ -860,7 +860,11 @@ export const FIELD_REGISTRY = {
       { min: 0, max: 5 * 1024 * 1024, label: "< 5 MB" },
       { min: 5 * 1024 * 1024, max: 20 * 1024 * 1024, label: "5-20 MB" },
       { min: 20 * 1024 * 1024, max: 100 * 1024 * 1024, label: "20-100 MB" },
-      { min: 100 * 1024 * 1024, max: Number.MAX_SAFE_INTEGER, label: "> 100 MB" },
+      {
+        min: 100 * 1024 * 1024,
+        max: Number.MAX_SAFE_INTEGER,
+        label: "> 100 MB",
+      },
     ],
   },
   readingPosition: {

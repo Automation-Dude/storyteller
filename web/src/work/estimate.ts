@@ -22,7 +22,8 @@ type HistoryRow = { config: RunConfig; restart: RestartMode; stats: JobStats }
 
 function stagesForRestart(restart: RestartMode): StageName[] {
   if (restart === "sync") return ["SYNC_CHAPTERS"]
-  if (restart === "transcription") return ["TRANSCRIBE_CHAPTERS", "SYNC_CHAPTERS"]
+  if (restart === "transcription")
+    return ["TRANSCRIBE_CHAPTERS", "SYNC_CHAPTERS"]
   return ["SPLIT_TRACKS", "TRANSCRIBE_CHAPTERS", "SYNC_CHAPTERS"]
 }
 
@@ -76,7 +77,11 @@ export function estimateAlignment(
 
 export async function getEstimate(
   bookUuid: UUID,
-  options: { engine: string; whisperModel: string | null; restart: RestartMode },
+  options: {
+    engine: string
+    whisperModel: string | null
+    restart: RestartMode
+  },
 ): Promise<EstimateResult> {
   const book = await getBookOrThrow(bookUuid)
   const audioDurationSeconds = book.audiobook?.duration ?? null

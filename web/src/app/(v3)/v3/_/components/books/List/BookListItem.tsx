@@ -1,6 +1,5 @@
 import { Popover } from "@base-ui/react/popover"
-import { Fragment, memo , useCallback } from "react"
-
+import { Fragment, memo, useCallback } from "react"
 
 import { BookCover } from "@/app/(v3)/v3/_/components/books/BookCover"
 import {
@@ -11,7 +10,10 @@ import {
 } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
 import { SecondaryText } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
-import { ProgressDisplayBar, getReadingProgress } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
+import {
+  ProgressDisplayBar,
+  getReadingProgress,
+} from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 
 import { ColumnValue, getColumnWidth } from "./BookListColumns"
@@ -24,7 +26,6 @@ import * as icon from "@/icons"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { type DisplayField, type SortContext } from "@/sort"
-
 
 export const BookListItem = memo(function BookListItem({
   book,

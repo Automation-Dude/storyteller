@@ -35,7 +35,10 @@ export type StyledIcon = ComponentType<StyledIconProps>
 export function styled(Icon: ComponentType<any>): StyledIcon {
   function StyledIcon({ className, size, weight, ...props }: StyledIconProps) {
     return (
-      <Icon {...props} className={cn(iconVariants({ size, weight }), className)} />
+      <Icon
+        {...props}
+        className={cn(iconVariants({ size, weight }), className)}
+      />
     )
   }
 

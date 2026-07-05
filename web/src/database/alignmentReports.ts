@@ -43,7 +43,10 @@ export interface AlignmentOverrides {
 }
 
 // a chapter marked ok or excluded is dropped from the score / grade / counts.
-function chapterExcluded(href: string, overrides?: AlignmentOverrides): boolean {
+function chapterExcluded(
+  href: string,
+  overrides?: AlignmentOverrides,
+): boolean {
   const o = overrides?.chapters?.[href]
   return !!(o?.excludeFromScore || o?.markedOk)
 }

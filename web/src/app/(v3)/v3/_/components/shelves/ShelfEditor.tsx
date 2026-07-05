@@ -539,7 +539,9 @@ export function ShelfEditor({
               {c.plain("actions.cancel")}
             </Button>
             <Button type="submit" disabled={isSaving}>
-              {isSaving && <icon.Loader2 className="mr-2 size-4 animate-spin" />}
+              {isSaving && (
+                <icon.Loader2 className="mr-2 size-4 animate-spin" />
+              )}
               {isEditing ? c.plain("actions.save") : c.plain("actions.create")}
             </Button>
           </DialogFooter>

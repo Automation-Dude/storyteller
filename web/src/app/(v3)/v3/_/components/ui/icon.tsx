@@ -10,7 +10,9 @@ import { type StyledIconProps } from "@/icons/styled"
 
 type LegacyIcon = { base: (props: StyledIconProps) => React.JSX.Element }
 
-function legacy(Icon: (props: StyledIconProps) => React.JSX.Element): LegacyIcon {
+function legacy(
+  Icon: (props: StyledIconProps) => React.JSX.Element,
+): LegacyIcon {
   return { base: Icon }
 }
 

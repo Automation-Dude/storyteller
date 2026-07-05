@@ -64,7 +64,8 @@ function CreatorAddMenu({
           searchPlaceholder={searchPlaceholder}
           sort={(a, b) => rank(applied.has(a.name)) - rank(applied.has(b.name))}
           create={{
-            label: (s) => tLabels.plain("create.withInput", { input: `"${s}"` }),
+            label: (s) =>
+              tLabels.plain("create.withInput", { input: `"${s}"` }),
             onCreate,
           }}
           onSelect={(item) => {

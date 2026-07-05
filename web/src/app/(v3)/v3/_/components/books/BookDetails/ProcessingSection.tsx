@@ -118,7 +118,9 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
       bookUuid: book.uuid,
       engine: activeJob?.config?.transcriptionEngine ?? "",
       whisperModel: activeJob?.config?.whisperModel ?? null,
-      restart: (activeJob as { restart?: string | false } | undefined)?.restart || false,
+      restart:
+        (activeJob as { restart?: string | false } | undefined)?.restart ||
+        false,
     },
     {
       skip:
@@ -276,10 +278,7 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
       )}
 
       {alignedInDuration && (
-        <FilePathRow
-          label={t("alignedIn")}
-          filepath={alignedInDuration}
-        />
+        <FilePathRow label={t("alignedIn")} filepath={alignedInDuration} />
       )}
 
       {book.alignedWith && (
