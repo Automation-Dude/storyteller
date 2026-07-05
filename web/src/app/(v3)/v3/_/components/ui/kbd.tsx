@@ -47,7 +47,7 @@ export function KeyboardShortcut({
           if (MODIFIER_KEYS.has(key as Modifier)) {
             return <HeldKbd key={key} modifier={key as IndividualKey} />
           }
-          return <Kbd key={key}>{key}</Kbd>
+          return <Kbd key={key}>{formatForDisplay(key)}</Kbd>
         })
       })}
     </KbdGroup>
