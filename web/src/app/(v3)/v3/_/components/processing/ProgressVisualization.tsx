@@ -77,7 +77,7 @@ function Segment({ index, view }: { index: number; view: ProcessingView }) {
   // local fill: position of the sweep relative to this segment within the stage.
   const sweep = stageProgress * SEGMENTS
   const local = Math.min(Math.max(sweep - index, 0), 1)
-  const lean = (index % 2 === 0 ? 1 : -1) * MAX_TILT
+  let lean = (index % 2 === 0 ? 1 : -1) * MAX_TILT
 
   let base = "var(--muted)"
   let fillColor = "var(--muted-foreground)"
@@ -113,6 +113,8 @@ function Segment({ index, view }: { index: number; view: ProcessingView }) {
     fill = local
     tiltFactor = 1 - local
   }
+  // give a little more "random" tilt to the segments
+  lean = lean * ((index % 5 || 1) / 4)
 
   const rotation = 90 + lean * tiltFactor
 
