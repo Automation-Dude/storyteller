@@ -10,6 +10,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import * as icon from "@/icons"
+import { useColorPreferences } from "./BookDetails/sections/useCoverColors"
 
 type RelationItem = {
   uuid: string
@@ -68,7 +69,7 @@ const RelationChip = ({
             e.preventDefault()
             onRemoveItem(item)
           }}
-          className="absolute top-[55%] -right-0.5 z-20 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
+          className="absolute top-1/2 -right-0.5 z-20 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
         >
           <icon.Close className="h-3 w-3" />
         </Button>
@@ -131,9 +132,17 @@ export function RelationChipEditor<T extends RelationItem>({
   canInteract,
 }: RelationChipEditorProps<T>) {
   const tLabels = useTranslation("Labels")
+  const { level } = useColorPreferences()
 
   return (
-    <div className={cn(`group/${source}`, "flex flex-wrap items-center gap-2")}>
+    <div
+      className={cn(
+        `group/${source}`,
+        "flex flex-wrap items-center gap-2",
+        level !== "minimal" &&
+          "*:data-[slot=badge]:border-primary *:data-[slot=badge]:text-primary! *:data-[slot=badge]:hover:bg-primary/10 *:data-[slot=badge]:bg-none *:data-[slot=badge]:font-medium!",
+      )}
+    >
       {items.map((item, idx) => (
         <RelationChip
           key={`${item.uuid}-${idx}`}
