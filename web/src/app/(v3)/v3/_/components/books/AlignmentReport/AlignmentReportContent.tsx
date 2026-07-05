@@ -14,6 +14,12 @@ import {
 import { Fragment, useMemo, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@v3/_/components/ui/dropdown-menu"
 import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { Switch } from "@v3/_/components/ui/switch"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -28,8 +34,69 @@ import { Badge } from "@/app/(v3)/v3/_/components/ui/badge"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { useFormatDate, useFormatRelativeTime } from "@/app/(v3)/v3/_/lib/date"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
-import { useGetBookAlignmentReportQuery } from "@/store/api"
+import {
+  type AlignmentChapterOverride,
+  type AlignmentOverrides,
+} from "@/database/alignmentReports"
+import {
+  useGetBookAlignmentReportQuery,
+  useUpdateBookAlignmentOverridesMutation,
+} from "@/store/api"
 import type { UUID } from "@/uuid"
+
+// rebuild the overrides object from the row flags the view carries, so a single
+// toggle can send the full, current set back to the server.
+function overridesFromView(view: BookAlignmentReportView): AlignmentOverrides {
+  const chapters: Record<string, AlignmentChapterOverride> = {}
+  for (const ch of view.chapters) {
+    if (ch.markedOk) chapters[ch.href] = { markedOk: true }
+    else if (ch.excludedFromScore)
+      chapters[ch.href] = { excludeFromScore: true }
+  }
+  const unalignedChapters: Record<string, { intended?: boolean }> = {}
+  for (const uc of view.unalignedChapters) {
+    if (uc.intended) unalignedChapters[uc.href] = { intended: true }
+  }
+  const audioFiles: Record<string, { excluded?: boolean }> = {}
+  for (const uaf of view.unalignedAudioFiles) {
+    if (uaf.excluded) audioFiles[uaf.filepath] = { excluded: true }
+  }
+  return { chapters, unalignedChapters, audioFiles }
+}
+
+function useOverrideEditor(view: BookAlignmentReportView) {
+  const [update] = useUpdateBookAlignmentOverridesMutation()
+  return useMemo(() => {
+    const apply = (next: AlignmentOverrides) => {
+      void update({ uuid: view.bookUuid, overrides: next })
+    }
+    return {
+      setChapter(href: string, patch: AlignmentChapterOverride | null) {
+        const base = overridesFromView(view)
+        const chapters = { ...(base.chapters ?? {}) }
+        if (patch) chapters[href] = patch
+        else delete chapters[href]
+        apply({ ...base, chapters })
+      },
+      toggleIntended(href: string) {
+        const base = overridesFromView(view)
+        const unaligned = { ...(base.unalignedChapters ?? {}) }
+        if (unaligned[href]?.intended) delete unaligned[href]
+        else unaligned[href] = { intended: true }
+        apply({ ...base, unalignedChapters: unaligned })
+      },
+      toggleAudioExcluded(filepath: string) {
+        const base = overridesFromView(view)
+        const audio = { ...(base.audioFiles ?? {}) }
+        if (audio[filepath]?.excluded) delete audio[filepath]
+        else audio[filepath] = { excluded: true }
+        apply({ ...base, audioFiles: audio })
+      },
+    }
+  }, [view, update])
+}
+
+type OverrideEditor = ReturnType<typeof useOverrideEditor>
 
 const TONE_BADGE: Record<FlagTone, string> = {
   poor: "bg-poor-bg text-poor dark:bg-poor-950/40 dark:text-poor-300",
@@ -128,17 +195,22 @@ export function AlignmentReportContent({
         <p className="text-muted-foreground p-4 text-sm">{t("notAvailable")}</p>
       )}
 
-      {data && (
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="flex flex-col gap-7 p-4">
-            <Masthead view={data} />
-            <ChapterTable chapters={data.chapters} />
-            <UnalignedChapters view={data} />
-            <UnalignedAudio view={data} />
-          </div>
-        </ScrollArea>
-      )}
+      {data && <ReportBody view={data} />}
     </div>
+  )
+}
+
+function ReportBody({ view }: { view: BookAlignmentReportView }) {
+  const editor = useOverrideEditor(view)
+  return (
+    <ScrollArea className="min-h-0 flex-1">
+      <div className="flex flex-col gap-7 p-4">
+        <Masthead view={view} />
+        <ChapterTable chapters={view.chapters} editor={editor} />
+        <UnalignedChapters view={view} editor={editor} />
+        <UnalignedAudio view={view} editor={editor} />
+      </div>
+    </ScrollArea>
   )
 }
 
@@ -354,31 +426,26 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
       ? Math.round((view.alignedAudioDuration / view.totalAudioDuration) * 100)
       : null
 
-  const marks: {
+  // three summary boxes: audio inclusion, chapters, sentence alignment. the
+  // letter grade lives in its own tile above; the "score" percentage is shown
+  // only here, clearly labelled as the share of sentences aligned.
+  const boxes: {
+    key: string
     label: string
     value: string
     sub?: string
+    extra?: string | null
     tone: MarkTone
-    key: string
   }[] = [
     {
-      key: "score",
-      label: t("marks.score"),
-      value: summary.score != null ? `${summary.score}%` : "—",
-      tone:
-        summary.score == null
-          ? "muted"
-          : summary.score >= 97
-            ? "good"
-            : summary.score >= 90
-              ? "moderate"
-              : "poor",
-    },
-    {
-      key: "audioAligned",
-      label: t("marks.audioAligned"),
+      key: "audio",
+      label: t("marks.audioIncluded"),
       value: audioPct != null ? `${audioPct}%` : "—",
       sub: `${formatTimeHuman(view.alignedAudioDuration)} / ${formatTimeHuman(view.totalAudioDuration)}`,
+      extra:
+        summary.unalignedAudio > 0
+          ? t("marks.excludedClips", { count: summary.unalignedAudio.toString() })
+          : null,
       tone:
         audioPct == null
           ? "muted"
@@ -389,28 +456,34 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
               : "poor",
     },
     {
-      key: "chapter",
+      key: "chapters",
       label: tNouns("chapter", { count: summary.chapters }),
       value: `${summary.chapters}`,
+      sub: t("marks.mutedChapters", { count: summary.mutedChapters.toString() }),
       tone: "muted",
     },
     {
-      key: "missingSentences",
-      label: t("marks.missingSentences"),
-      value: `${summary.missingSentences}`,
-      tone: summary.missingSentences === 0 ? "good" : "moderate",
-    },
-    {
-      key: "failedChapters",
-      label: t("marks.failedChapters"),
-      value: `${summary.failedChapters}`,
-      tone: summary.failedChapters === 0 ? "muted" : "poor",
-    },
-    {
-      key: "unalignedAudio",
-      label: t("marks.unalignedAudio"),
-      value: `${summary.unalignedAudio}`,
-      tone: summary.unalignedAudio === 0 ? "muted" : "moderate",
+      key: "sentences",
+      label: t("marks.sentencesAligned"),
+      value: summary.score != null ? `${summary.score}%` : "—",
+      sub:
+        view.totalSentences > 0
+          ? `${view.alignedSentences.toLocaleString()} / ${view.totalSentences.toLocaleString()}`
+          : "—",
+      extra:
+        view.significantChapters > 0
+          ? t("marks.significantMisalignment", {
+              count: view.significantChapters.toString(),
+            })
+          : null,
+      tone:
+        summary.score == null
+          ? "muted"
+          : summary.score >= 97
+            ? "good"
+            : summary.score >= 90
+              ? "moderate"
+              : "poor",
     },
   ]
 
@@ -433,9 +506,6 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
           <span className="font-serif text-5xl leading-none font-medium">
             {summary.grade}
           </span>
-          <span className="font-mono text-xs opacity-80">
-            {summary.score != null ? `${summary.score}%` : "—"}
-          </span>
         </div>
         <div className="min-w-[16rem] flex-1">
           <h2 className="font-serif text-2xl leading-tight font-normal">
@@ -451,8 +521,8 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
         </div>
       </div>
 
-      <div className="bg-border grid grid-cols-3 gap-px border-t @xl/book:grid-cols-6">
-        {marks.map((m) => (
+      <div className="bg-border grid grid-cols-1 gap-px border-t @sm/book:grid-cols-3">
+        {boxes.map((m) => (
           <div key={m.key} className="bg-card p-3.5">
             <div
               className={cn(
@@ -470,6 +540,11 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
                 {m.sub}
               </div>
             )}
+            {m.extra && (
+              <div className="text-muted-foreground/70 mt-0.5 text-[10px]">
+                {m.extra}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -481,7 +556,10 @@ function shortHref(href: string): string {
   return (href.split("/").pop() ?? href).replace(/\.[^.]+$/, "")
 }
 
-const getColumns = (t: ReturnType<typeof useTranslation<"AlignmentReport">>) =>
+const getColumns = (
+  t: ReturnType<typeof useTranslation<"AlignmentReport">>,
+  editor: OverrideEditor,
+) =>
   [
     {
       id: "expander",
@@ -553,6 +631,12 @@ const getColumns = (t: ReturnType<typeof useTranslation<"AlignmentReport">>) =>
       header: t("table.columns.notes"),
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
+          {row.original.markedOk && (
+            <FlagBadge tone="good">{t("overrides.ok")}</FlagBadge>
+          )}
+          {row.original.excludedFromScore && (
+            <FlagBadge tone="info">{t("overrides.excluded")}</FlagBadge>
+          )}
           {row.original.flags.map((f) => (
             <FlagBadge key={f.label} tone={f.tone}>
               {f.label}
@@ -561,7 +645,67 @@ const getColumns = (t: ReturnType<typeof useTranslation<"AlignmentReport">>) =>
         </div>
       ),
     },
+    {
+      id: "actions",
+      enableSorting: false,
+      header: () => null,
+      cell: ({ row }) => <ChapterActions row={row.original} editor={editor} />,
+    },
   ] satisfies ColumnDef<ReportChapterRow>[]
+
+function ChapterActions({
+  row,
+  editor,
+}: {
+  row: ReportChapterRow
+  editor: OverrideEditor
+}) {
+  const t = useTranslation("AlignmentReport")
+  return (
+    // stop the row's expand-toggle from firing when using the menu.
+    <div
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+    >
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6"
+              aria-label={t("overrides.menu")}
+            >
+              <icon.Dots className="size-4" />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          <DropdownMenuCheckboxItem
+            checked={row.markedOk}
+            onClick={() => {
+              editor.setChapter(row.href, row.markedOk ? null : { markedOk: true })
+            }}
+          >
+            {t("overrides.markOk")}
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={row.excludedFromScore}
+            onClick={() => {
+              editor.setChapter(
+                row.href,
+                row.excludedFromScore ? null : { excludeFromScore: true },
+              )
+            }}
+          >
+            {t("overrides.excludeFromScore")}
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
 
 function SentenceCell({ row }: { row: ReportChapterRow }) {
   const { alignedSentenceCount: al, chapterSentenceCount: total, delta } = row
@@ -601,7 +745,13 @@ function SentenceCell({ row }: { row: ReportChapterRow }) {
   )
 }
 
-function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
+function ChapterTable({
+  chapters,
+  editor,
+}: {
+  chapters: ReportChapterRow[]
+  editor: OverrideEditor
+}) {
   const [expanded, setExpanded] = useState<ExpandedState>({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [flaggedOnly, setFlaggedOnly] = useState(
@@ -617,7 +767,7 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
   const t = useTranslation("AlignmentReport")
   const tCommon = useTranslation("Common")
 
-  const columns = useMemo(() => getColumns(t), [t])
+  const columns = useMemo(() => getColumns(t, editor), [t, editor])
 
   const table = useReactTable({
     data,
@@ -637,8 +787,7 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
         <h2 className="font-serif text-lg font-normal">
           {tCommon("Nouns.chapter", { count: data.length })}{" "}
           <span className="text-muted-foreground font-mono text-xs">
-            ( {tCommon("outOf", { count: data.length, total: chapters.length })}
-            )
+            ({tCommon("outOf", { count: data.length, total: chapters.length })})
           </span>
         </h2>
         {flaggedCount > 0 && (
@@ -712,6 +861,8 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
                       "hover:bg-muted/40 cursor-pointer border-t",
                       row.original.flagged &&
                         "border-l-moderate-border/80 border-l-2",
+                      (row.original.markedOk || row.original.excludedFromScore) &&
+                        "opacity-50",
                     )}
                     onClick={row.getToggleExpandedHandler()}
                   >
@@ -894,7 +1045,13 @@ const REASON_TONE: Record<string, FlagTone> = {
   "no-text": "info",
 }
 
-function UnalignedChapters({ view }: { view: BookAlignmentReportView }) {
+function UnalignedChapters({
+  view,
+  editor,
+}: {
+  view: BookAlignmentReportView
+  editor: OverrideEditor
+}) {
   const t = useTranslation("AlignmentReport")
   if (view.unalignedChapters.length === 0) return null
   return (
@@ -909,7 +1066,13 @@ function UnalignedChapters({ view }: { view: BookAlignmentReportView }) {
         <table className="w-full text-sm">
           <tbody>
             {view.unalignedChapters.map((uc) => (
-              <tr key={uc.href} className="border-t first:border-t-0">
+              <tr
+                key={uc.href}
+                className={cn(
+                  "border-t first:border-t-0",
+                  uc.intended && "opacity-50",
+                )}
+              >
                 <td className="px-2.5 py-1.5 text-xs">{uc.label}</td>
                 <td className="w-0 px-2.5 py-1.5">
                   <FlagBadge tone={REASON_TONE[uc.reason] ?? "info"}>
@@ -918,6 +1081,20 @@ function UnalignedChapters({ view }: { view: BookAlignmentReportView }) {
                 </td>
                 <td className="text-muted-foreground truncate px-2.5 py-1.5 text-xs italic">
                   {uc.preview ?? "—"}
+                </td>
+                <td className="w-0 px-2.5 py-1.5">
+                  <Button
+                    variant={uc.intended ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      editor.toggleIntended(uc.href)
+                    }}
+                  >
+                    {uc.intended
+                      ? t("overrides.intended")
+                      : t("overrides.markIntended")}
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -928,7 +1105,13 @@ function UnalignedChapters({ view }: { view: BookAlignmentReportView }) {
   )
 }
 
-function UnalignedAudio({ view }: { view: BookAlignmentReportView }) {
+function UnalignedAudio({
+  view,
+  editor,
+}: {
+  view: BookAlignmentReportView
+  editor: OverrideEditor
+}) {
   const t = useTranslation("AlignmentReport")
   if (view.unalignedAudioFiles.length === 0) return null
   return (
@@ -942,14 +1125,34 @@ function UnalignedAudio({ view }: { view: BookAlignmentReportView }) {
       </h2>
       <div className="border-poor-border bg-poor-bg/40 dark:divide-poor-900/40 dark:border-poor-900/50 dark:bg-poor-950/20 divide-y divide-amber-200/70 overflow-hidden border">
         {view.unalignedAudioFiles.map((uaf) => (
-          <div key={uaf.filepath} className="flex flex-col gap-1 px-3 py-2.5">
+          <div
+            key={uaf.filepath}
+            className={cn(
+              "flex flex-col gap-1 px-3 py-2.5",
+              uaf.excluded && "opacity-50",
+            )}
+          >
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-mono text-xs font-medium">
                 {uaf.title ?? shortHref(uaf.filepath)}
               </span>
-              <span className="shrink-0 font-mono text-[11px] text-amber-700 tabular-nums dark:text-amber-400">
-                {uaf.duration ? formatTimeHuman(uaf.duration) : "—"}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="font-mono text-[11px] text-amber-700 tabular-nums dark:text-amber-400">
+                  {uaf.duration ? formatTimeHuman(uaf.duration) : "—"}
+                </span>
+                <Button
+                  variant={uaf.excluded ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    editor.toggleAudioExcluded(uaf.filepath)
+                  }}
+                >
+                  {uaf.excluded
+                    ? t("overrides.clipExcluded")
+                    : t("overrides.excludeClip")}
+                </Button>
+              </div>
             </div>
             {uaf.transcription ? (
               <p className="text-muted-foreground text-xs leading-relaxed">

@@ -6,7 +6,10 @@
 
 import { type Report } from "@storyteller-platform/align"
 
-import { type AlignmentSummary } from "@/database/alignmentReports"
+import {
+  type AlignmentOverrides,
+  type AlignmentSummary,
+} from "@/database/alignmentReports"
 import { type UUID } from "@/uuid"
 
 interface SentenceContext {
@@ -52,6 +55,10 @@ export interface ReportChapterRow {
   lastMatchedSentenceContext: SentenceContext
   transcriptionContext: { before: string; after: string }
   endTranscriptionContext: { before: string; after: string }
+  // user marks (see AlignmentOverrides). markedOk = this chapter is fine as-is;
+  // excludedFromScore = left out of the score/grade math.
+  markedOk: boolean
+  excludedFromScore: boolean
 }
 
 export interface ReportUnalignedChapter {
@@ -59,6 +66,8 @@ export interface ReportUnalignedChapter {
   label: string
   reason: string
   preview: string | null
+  // marked as a deliberate non-match (not counted as a failure).
+  intended: boolean
 }
 
 export interface ReportUnalignedAudio {
@@ -68,6 +77,8 @@ export interface ReportUnalignedAudio {
   // why the audio could not be placed; populated when a transcription is
   // available (see align lib / backfill). null when unknown.
   transcription: string | null
+  // marked as deliberately unplaced (not counted as unaligned).
+  excluded: boolean
 }
 
 export interface AlignmentFacets {
@@ -87,6 +98,14 @@ export interface BookAlignmentReportView {
   summary: AlignmentSummary
   totalAudioDuration: number
   alignedAudioDuration: number
+  // sentence totals across chapters that carry sentence data. score is
+  // alignedSentences / totalSentences; surfaced so the ui can show the raw
+  // counts alongside the percentage without recomputing.
+  totalSentences: number
+  alignedSentences: number
+  // chapters carrying a meaningful number of unmatched sentences (mirrors the
+  // "sig" rule in computeGrade): a count for the sentence summary box.
+  significantChapters: number
   chapters: ReportChapterRow[]
   unalignedChapters: ReportUnalignedChapter[]
   unalignedAudioFiles: ReportUnalignedAudio[]
@@ -160,29 +179,29 @@ function chapterDiagnostics(ch: RawChapter): {
   const aligned = ch.alignedSentenceCount
 
   if (files.length === 0) {
-    flags.push({ label: "no audio", tone: "error" })
+    flags.push({ label: "no audio", tone: "poor" })
   } else if (files.length > 1) {
     if (files[0] && files[0].end < 2) {
-      flags.push({ label: "near-zero clip", tone: "warn" })
+      flags.push({ label: "near-zero clip", tone: "moderate" })
     } else {
       flags.push({ label: "cross-file", tone: "info" })
     }
   } else if (files[0]) {
     const span = files[0].end - files[0].start
     if (Math.abs(span) < 1)
-      flags.push({ label: "near-zero clip", tone: "warn" })
-    else if (span < 0) flags.push({ label: "reversed clip", tone: "error" })
+      flags.push({ label: "near-zero clip", tone: "moderate" })
+    else if (span < 0) flags.push({ label: "reversed clip", tone: "poor" })
   }
 
   if (count > 0 && aligned === 0) {
-    flags.push({ label: "no matches", tone: "error" })
+    flags.push({ label: "no matches", tone: "poor" })
   }
   if (count === 0) flags.push({ label: "empty", tone: "info" })
 
   const badFirst = ch.firstMatchedSentenceId > 0
   const badLast = count > 0 && ch.lastMatchedSentenceId < count - 1
-  if (badFirst) flags.push({ label: "late start", tone: "warn" })
-  if (badLast) flags.push({ label: "early end", tone: "warn" })
+  if (badFirst) flags.push({ label: "late start", tone: "moderate" })
+  if (badLast) flags.push({ label: "early end", tone: "moderate" })
 
   const hard = flags.some((f) => f.tone !== "info")
   const flagged = hard || (count > 0 && count - aligned > 5)
@@ -197,10 +216,12 @@ export function buildReportView(args: {
   jobUuid: UUID | null
   createdAt: string
   summary: AlignmentSummary
+  overrides?: AlignmentOverrides | null
   ebookManifest: ManifestLike | null
   audiobookManifest: ManifestLike | null
 }): BookAlignmentReportView {
   const { report } = args
+  const overrides = args.overrides ?? null
   const audioMeta = audioMetaFromManifest(args.audiobookManifest)
   const chapterTitles = chapterTitlesFromManifest(args.ebookManifest)
 
@@ -256,6 +277,9 @@ export function buildReportView(args: {
       lastMatchedSentenceContext: ch.lastMatchedSentenceContext,
       transcriptionContext: ch.transcriptionContext,
       endTranscriptionContext: ch.endTranscriptionContext,
+      markedOk: overrides?.chapters?.[ch.href]?.markedOk ?? false,
+      excludedFromScore:
+        overrides?.chapters?.[ch.href]?.excludeFromScore ?? false,
     }
   })
 
@@ -270,6 +294,7 @@ export function buildReportView(args: {
         uc.reason === "not-found"
           ? uc.start.replace(/\n/g, " ").trim().slice(0, 160) || null
           : null,
+      intended: overrides?.unalignedChapters?.[uc.href]?.intended ?? false,
     }))
 
   const unalignedAudioFiles: ReportUnalignedAudio[] =
@@ -279,10 +304,24 @@ export function buildReportView(args: {
       return {
         filepath: uaf.filepath,
         title: meta?.title ?? null,
-        duration: meta?.duration ?? durationByFile.get(key) ?? null,
+        // the aligner now embeds the track duration; fall back to the manifest
+        // (and aligned-file map) for reports generated before that landed.
+        duration:
+          uaf.duration ?? meta?.duration ?? durationByFile.get(key) ?? null,
         transcription: uaf.transcription?.text ?? null,
+        excluded: overrides?.audioFiles?.[uaf.filepath]?.excluded ?? false,
       }
     })
+
+  let totalSentences = 0
+  let alignedSentences = 0
+  let significantChapters = 0
+  for (const ch of chapters) {
+    if (ch.coverage == null || ch.markedOk || ch.excludedFromScore) continue
+    totalSentences += ch.chapterSentenceCount
+    alignedSentences += ch.alignedSentenceCount
+    if (ch.delta > 5 && ch.coverage < 0.95) significantChapters += 1
+  }
 
   return {
     bookUuid: args.bookUuid,
@@ -293,6 +332,9 @@ export function buildReportView(args: {
     summary: args.summary,
     totalAudioDuration,
     alignedAudioDuration,
+    totalSentences,
+    alignedSentences,
+    significantChapters,
     chapters,
     unalignedChapters,
     unalignedAudioFiles,

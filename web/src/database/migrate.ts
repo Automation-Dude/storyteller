@@ -173,7 +173,10 @@ export async function migrate() {
 
   const migrationsDir = join(cwd(), "migrations")
   const migrationFiles = await readdir(migrationsDir)
-  migrationFiles.sort()
+  migrationFiles.sort((a, b) =>
+    // otherwise `100_` will run after `10_`
+    a.localeCompare(b, undefined, { numeric: true }),
+  )
 
   for (const migrationFile of migrationFiles.filter(
     (f) => extname(f) === ".sql",

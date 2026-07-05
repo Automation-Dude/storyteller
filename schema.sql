@@ -789,7 +789,8 @@ CREATE TABLE job (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   started_at TEXT,
-  finished_at TEXT
+  finished_at TEXT,
+  stats TEXT
 );
 
 CREATE TRIGGER job_update_trigger AFTER
@@ -818,7 +819,8 @@ CREATE TABLE alignment_report (
   muted_chapters INTEGER,
   failed_chapters INTEGER,
   unaligned_audio INTEGER,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  overrides TEXT
 );
 
 CREATE INDEX idx_alignment_report_job ON alignment_report (job_uuid);

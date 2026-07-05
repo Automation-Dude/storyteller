@@ -1,6 +1,7 @@
-import { type Selectable } from "kysely"
+import { type Selectable, sql } from "kysely"
 
 import { JobEvents } from "@/jobEvents"
+import { type AlignmentGrade } from "@/shelves"
 import type { UUID } from "@/uuid"
 import type { RestartMode } from "@/work/distributor"
 import type { JobStats } from "@/work/jobStats"
@@ -42,13 +43,24 @@ export type Job = JobRow
 export type PublicJob = Omit<Job, "config"> & {
   config: RunConfigSummary | null
   bookTitle: string | null
+  // grade/score of the alignment report this job produced, when it produced one
+  // (surfaced on finished jobs in the queue view). null otherwise.
+  alignmentGrade: AlignmentGrade | null
+  alignmentScore: number | null
 }
 
 export function toPublicJob(
   job: Job,
   bookTitle: string | null = null,
+  alignment?: { grade: AlignmentGrade | null; score: number | null },
 ): PublicJob {
-  return { ...job, config: summarizeRunConfig(job.config), bookTitle }
+  return {
+    ...job,
+    config: summarizeRunConfig(job.config),
+    bookTitle,
+    alignmentGrade: alignment?.grade ?? null,
+    alignmentScore: alignment?.score ?? null,
+  }
 }
 
 export type NewJob = {
@@ -138,6 +150,24 @@ export async function getDisplayJobs(filter?: {
     .leftJoin("book", "book.uuid", "job.bookUuid")
     .selectAll("job")
     .select("book.title as bookTitle")
+    // latest alignment report this job produced, if any (correlated so the join
+    // stays a scalar per job). used to badge finished jobs with their grade.
+    .select((eb) => [
+      eb
+        .selectFrom("alignmentReport")
+        .select("grade")
+        .whereRef("alignmentReport.jobUuid", "=", "job.uuid")
+        .orderBy("createdAt", "desc")
+        .limit(1)
+        .as("alignmentGrade"),
+      eb
+        .selectFrom("alignmentReport")
+        .select("score")
+        .whereRef("alignmentReport.jobUuid", "=", "job.uuid")
+        .orderBy("createdAt", "desc")
+        .limit(1)
+        .as("alignmentScore"),
+    ])
 
   if (filter?.statuses?.length) {
     query = query.where("job.status", "in", filter.statuses)
@@ -157,7 +187,14 @@ export async function getDisplayJobs(filter?: {
   } else if (filter?.sort === "finishedAt") {
     query = query.orderBy("job.finishedAt", order)
   } else {
-    query = query.orderBy("job.position", "asc").orderBy("job.createdAt", "asc")
+    // running (then paused) jobs pin to the top regardless of their queue
+    // position, which can drift above the queued jobs after reorders/completions.
+    query = query
+      .orderBy(
+        sql<number>`case job.status when 'RUNNING' then 0 when 'PAUSED' then 1 else 2 end`,
+      )
+      .orderBy("job.position", "asc")
+      .orderBy("job.createdAt", "asc")
   }
 
   const rows = await query
@@ -167,8 +204,11 @@ export async function getDisplayJobs(filter?: {
     .$if(!!filter?.offset, (qb) => qb.offset(filter!.offset!))
     .execute()
 
-  return rows.map(({ bookTitle, ...row }) =>
-    toPublicJob(row, bookTitle ?? null),
+  return rows.map(({ bookTitle, alignmentGrade, alignmentScore, ...row }) =>
+    toPublicJob(row, bookTitle ?? null, {
+      grade: alignmentGrade ?? null,
+      score: alignmentScore ?? null,
+    }),
   )
 }
 

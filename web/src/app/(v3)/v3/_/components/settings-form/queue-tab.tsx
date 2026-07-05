@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 
+import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
 import { StaticProgressBar } from "@/app/(v3)/v3/_/components/processing/ProgressVisualization"
 import {
   jobToView,
@@ -396,6 +397,19 @@ function JobItem({
             {job.bookTitle ?? t("untitled")}
           </V3Link>
           <StatusBadge status={job.status} />
+          {job.status === "DONE" && job.alignmentGrade && job.bookUuid && (
+            <V3Link
+              href={`/books/${job.bookUuid}/alignment`}
+              className="inline-flex items-center gap-1"
+            >
+              <GradePill grade={job.alignmentGrade} />
+              {job.alignmentScore != null && (
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {job.alignmentScore}%
+                </span>
+              )}
+            </V3Link>
+          )}
         </ItemTitle>
         <ItemDescription>
           {detail}

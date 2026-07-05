@@ -143,8 +143,8 @@ export interface AudioFileReport {
 export interface UnalignedAudioFileReport {
   filepath: string
 
-  // the transcription of this audio file, so an unaligned file is debuggable
-  // (you can see what was said). truncated; optional on older reports.
+  duration?: number | null
+
   transcription?: {
     text: string
   }
@@ -975,6 +975,7 @@ export class Aligner {
         const transcript = this.audiofileTranscripts[audiofile]?.trim()
         this.report.unalignedAudioFiles.push({
           filepath: audiofile,
+          duration: this.audioFileDurations[audiofile] ?? null,
           ...(transcript
             ? { transcription: { text: transcript.slice(0, 2000) } }
             : {}),

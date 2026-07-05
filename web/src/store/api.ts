@@ -13,7 +13,10 @@ import {
   type User,
 } from "@/apiModels"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
-import { type AlignmentReport } from "@/database/alignmentReports"
+import {
+  type AlignmentOverrides,
+  type AlignmentReport,
+} from "@/database/alignmentReports"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
@@ -1941,6 +1944,22 @@ export const api = createApi({
         { type: "BookAlignmentReport", id: uuid },
       ],
     }),
+    updateBookAlignmentOverrides: build.mutation<
+      { ok: boolean },
+      { uuid: UUID; overrides: AlignmentOverrides }
+    >({
+      query: ({ uuid, overrides }) => ({
+        url: `/books/${uuid}/alignment-report`,
+        method: "PATCH",
+        body: overrides,
+      }),
+      // the edit changes the stored grade/counts, so refresh the report plus the
+      // book-derived lists/facets that read them.
+      invalidatesTags: (_result, _error, { uuid }) => [
+        { type: "BookAlignmentReport", id: uuid },
+        "Books",
+      ],
+    }),
     getAlignmentFacets: build.query<AlignmentFacets, void>({
       query: () => `/books/alignment-facets`,
       providesTags: ["Books"],
@@ -2000,6 +2019,7 @@ export const {
   useGetAlignmentEstimateQuery,
   useGetJobReportQuery,
   useGetBookAlignmentReportQuery,
+  useUpdateBookAlignmentOverridesMutation,
   useGetAlignmentFacetsQuery,
   useCancelJobMutation,
   useReorderJobsMutation,

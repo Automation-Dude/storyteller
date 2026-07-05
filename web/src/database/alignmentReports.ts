@@ -24,6 +24,30 @@ export interface AlignmentSummary {
   unalignedAudio: number
 }
 
+// per-chapter mark. markedOk = "this chapter is fine as-is" (intended mismatch);
+// excludeFromScore = leave the chapter out of the score/grade math only.
+export interface AlignmentChapterOverride {
+  excludeFromScore?: boolean
+  markedOk?: boolean
+}
+
+// user edits that adjust how a report is scored/graded. keyed by chapter href /
+// audio filepath. stored as json on the report row; lost on re-align (a re-run
+// writes a fresh report row).
+export interface AlignmentOverrides {
+  chapters?: Record<string, AlignmentChapterOverride>
+  // unaligned chapters deliberately left unmatched (not a failure).
+  unalignedChapters?: Record<string, { intended?: boolean }>
+  // audio clips deliberately not placed (not counted as unaligned).
+  audioFiles?: Record<string, { excluded?: boolean }>
+}
+
+// a chapter marked ok or excluded is dropped from the score / grade / counts.
+function chapterExcluded(href: string, overrides?: AlignmentOverrides): boolean {
+  const o = overrides?.chapters?.[href]
+  return !!(o?.excludeFromScore || o?.markedOk)
+}
+
 export function summarizeReport(
   report: Omit<
     Report,
@@ -32,13 +56,17 @@ export function summarizeReport(
     Partial<
       Pick<Report, "unalignedChapters" | "audioFiles" | "unalignedAudioFiles">
     >,
+  overrides?: AlignmentOverrides | null,
 ): AlignmentSummary {
   const chapters = report.chapters
+  const scored = chapters.filter(
+    (ch) => !chapterExcluded(ch.href, overrides ?? undefined),
+  )
 
   let totalSents = 0
   let totalAligned = 0
   let missingSentences = 0
-  for (const ch of chapters) {
+  for (const ch of scored) {
     const total = ch.chapterSentenceCount || 0
     if (total > 0) {
       const al = ch.alignedSentenceCount
@@ -51,30 +79,43 @@ export function summarizeReport(
     totalSents > 0 ? Math.round((totalAligned / totalSents) * 100) : null
 
   // muted: chapters with no audio and more than two sentences (short stubs are
-  // almost always erroneous and excluded, matching the analyzer).
+  // almost always erroneous and excluded, matching the analyzer). chapters the
+  // user marked ok are no longer flagged.
   const mutedChapters = chapters.filter(
     (ch) =>
-      (ch.audioFiles ?? []).length === 0 && (ch.chapterSentenceCount || 0) > 2,
+      !overrides?.chapters?.[ch.href]?.markedOk &&
+      (ch.audioFiles ?? []).length === 0 &&
+      (ch.chapterSentenceCount || 0) > 2,
   ).length
 
   // failed: chapters the aligner could not place at all -- not-found unaligned
-  // chapters plus chapters with sentences but zero matches.
+  // chapters plus chapters with sentences but zero matches. chapters/unaligned
+  // chapters the user marked ok / intended drop out.
   // older report files may not have these arrays at all
   const notFound = (report.unalignedChapters ?? []).filter(
-    (c) => c.reason === "not-found",
+    (c) =>
+      c.reason === "not-found" &&
+      !overrides?.unalignedChapters?.[c.href]?.intended,
   ).length
   const noMatch = chapters.filter(
-    (ch) => (ch.chapterSentenceCount || 0) > 0 && ch.alignedSentenceCount === 0,
+    (ch) =>
+      !overrides?.chapters?.[ch.href]?.markedOk &&
+      (ch.chapterSentenceCount || 0) > 0 &&
+      ch.alignedSentenceCount === 0,
+  ).length
+
+  const unalignedAudio = (report.unalignedAudioFiles ?? []).filter(
+    (uaf) => !overrides?.audioFiles?.[uaf.filepath]?.excluded,
   ).length
 
   return {
-    grade: computeGrade(score, chapters),
+    grade: computeGrade(score, scored),
     score,
     chapters: chapters.length,
     missingSentences,
     mutedChapters,
     failedChapters: notFound + noMatch,
-    unalignedAudio: (report.unalignedAudioFiles ?? []).length,
+    unalignedAudio,
   }
 }
 
@@ -177,6 +218,40 @@ export async function getAlignmentReportForBook(
     .executeTakeFirst()
 
   return row ?? null
+}
+
+// replace a report's overrides and recompute its persisted summary columns, so
+// the edited grade shows up everywhere it is cached (quality list, facets,
+// sort, the queue badge) without re-parsing the raw report elsewhere.
+export async function updateAlignmentOverrides(
+  reportUuid: UUID,
+  overrides: AlignmentOverrides,
+): Promise<AlignmentReport> {
+  const existing = await db
+    .selectFrom("alignmentReport")
+    .selectAll()
+    .where("uuid", "=", reportUuid)
+    .executeTakeFirstOrThrow()
+
+  const s = summarizeReport(existing.report, overrides)
+
+  const row = await db
+    .updateTable("alignmentReport")
+    .set({
+      overrides: JSON.stringify(overrides),
+      grade: s.grade,
+      score: s.score,
+      chapters: s.chapters,
+      missingSentences: s.missingSentences,
+      mutedChapters: s.mutedChapters,
+      failedChapters: s.failedChapters,
+      unalignedAudio: s.unalignedAudio,
+    })
+    .where("uuid", "=", reportUuid)
+    .returningAll()
+    .executeTakeFirstOrThrow()
+
+  return parseAlignmentReport(row)
 }
 
 // counts that back the quality view's grade chips and muted filter, computed in

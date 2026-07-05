@@ -36,6 +36,7 @@ export interface AlignmentReport {
   jobUuid: import("@/uuid").UUID | null
   missingSentences: number | null
   mutedChapters: number | null
+  overrides: string | null
   report: ColumnType<
     import("@storyteller-platform/align").Report,
     string,
