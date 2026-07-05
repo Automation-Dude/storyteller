@@ -1,10 +1,13 @@
 "use client"
 
-import { IconX } from "@tabler/icons-react"
-import { useRef, useState } from "react"
+import * as icon from "@/icons"
+import { useMemo, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
-import { FilterableList } from "@v3/_/components/ui/filterable-menu"
+import {
+  FilterableList,
+  FilterableMenuItem,
+} from "@v3/_/components/ui/filterable-menu"
 import { Input } from "@v3/_/components/ui/input"
 import {
   Popover,
@@ -38,6 +41,7 @@ import {
   type RelationItem,
   useRelationItems,
 } from "../../hooks/use-relation-items"
+import { RelationPickerList } from "./relation-picker/RelationPickerList"
 
 export type FilterControlProps = {
   field: ShelfFilterField
@@ -207,7 +211,7 @@ export function FilterControl({
               onRemove()
             }}
           >
-            <IconX className="h-3 w-3" />
+            <icon.Close className="h-3 w-3" />
           </button>
         )}
       </span>
@@ -275,6 +279,7 @@ export function FilterEditor({
     return (
       <DateRangeEditor
         field={field}
+        def={def}
         conditions={conditions}
         onChange={onChange}
       />
@@ -317,7 +322,6 @@ export function FacetEditor({
   const ops = facetOperators(field)
   const { inc, exc } = readFacet(conditions, ops)
   const role = conditions[0]?.role
-  const anchorRef = useRef<number | null>(null)
 
   const apply = (nextInc: string[], nextExc: string[]) => {
     onChange(writeFacet(field, nextInc, nextExc, ops, role))
@@ -326,8 +330,47 @@ export function FacetEditor({
   const stateOf = (uuid: string): "include" | "exclude" | null =>
     inc.includes(uuid) ? "include" : exc.includes(uuid) ? "exclude" : null
 
+  const sortedItems = useMemo(() => {
+    return items
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => {
+        const aState = stateOf(a.uuid)
+        const bState = stateOf(b.uuid)
+        if (aState === "include" && bState === "exclude") return -1
+        if (aState === "exclude" && bState === "include") return 1
+        return 0
+      })
+  }, [items, stateOf])
+
   return (
-    <FilterableList<RelationItem>
+    <>
+      <RelationPickerList
+        items={sortedItems}
+        enabled={enabled}
+        virtualized
+        loading={loading}
+        searchPlaceholder={t("filters.search")}
+        onSelect={(item) => {
+          apply(
+            cycleTriState(inc, exc, item.uuid).inc,
+            cycleTriState(inc, exc, item.uuid).exc,
+          )
+        }}
+        renderRow={(item) => (
+          <>
+            <RelationGlyph item={item} />
+            <span className="min-w-0 flex-1 truncate">{item.name}</span>
+            <span className="flex w-4 shrink-0 items-center justify-center">
+              {stateOf(item.uuid) === "include" ? (
+                <ICheck.base className="text-primary h-4 w-4" />
+              ) : stateOf(item.uuid) === "exclude" ? (
+                <IRemove.base className="text-destructive h-4 w-4" />
+              ) : null}
+            </span>
+          </>
+        )}
+      />
+      {/* <FilterableList<RelationItem>
       items={items}
       loading={loading}
       searchPlaceholder={t("filters.search")}
@@ -395,8 +438,9 @@ export function FacetEditor({
             Clear
           </Button>
         </div>
-      }
-    />
+      } */}
+      {/* /> */}
+    </>
   )
 }
 
@@ -444,11 +488,11 @@ function NumberRangeEditor({
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
 }) {
+  const t = useTranslation("BooksPage")
   const u = unitDisplay(def.scale?.unit)
   const { lo, hi } = readRange(conditions)
   const format = conditions.at(0)?.format
 
-  const t = useTranslation("BooksPage")
   const set = (nextLo: number | null, nextHi: number | null, fmt = format) => {
     onChange(writeRange(field, nextLo, nextHi, fmt))
   }
@@ -464,27 +508,17 @@ function NumberRangeEditor({
   const dispLo = lo == null ? "" : String(u.to(lo))
   const dispHi = hi == null ? "" : String(u.to(hi))
 
-  if (def.options) {
-    return (
-      <FilterableList<{ min: number; max: number; label: string }>
-        items={def.options}
-        loading={false}
-        searchPlaceholder={t("filters.search")}
-        onSelect={(item, event, ctx) => {
-          onChange(writeDateRange(field, item.from, item.to))
-        }}
-        renderRow={(item) => {
-          return <div key={item.label}>{item.label}</div>
-        }}
-      />
-    )
-  }
+  const presets = def.options
+  const formatChips: (AssetFormat | "any")[] = [
+    "any",
+    ...(def.formats ?? ASSET_FORMATS),
+  ]
 
-  return (
-    <div className="flex flex-col gap-3 p-3">
+  const controls = (
+    <div className="flex flex-col gap-3">
       {def.discriminator === "format" && (
         <div className="flex flex-wrap gap-1">
-          {(["any", ...ASSET_FORMATS] as const).map((f) => {
+          {formatChips.map((f) => {
             const value = f === "any" ? undefined : f
             const selected = format === value
             return (
@@ -559,6 +593,38 @@ function NumberRangeEditor({
       )}
     </div>
   )
+
+  if (presets && presets.length > 0) {
+    const items = presets.map((p) => ({
+      uuid: p.label,
+      name: p.label,
+      min: p.min,
+      max: p.max,
+    }))
+    return (
+      <FilterableList<(typeof items)[number]>
+        items={items}
+        virtualized={false}
+        searchPlaceholder={t("filters.search")}
+        onSelect={(item) => {
+          console.log("onSelect", item)
+          set(item.min, item.max)
+        }}
+        renderRow={(item) => {
+          const active = lo === item.min && hi === item.max
+          return (
+            <>
+              <span className="min-w-0 flex-1 truncate">{item.name}</span>
+              {active && <ICheck.base className="text-primary h-4 w-4" />}
+            </>
+          )
+        }}
+        footer={<div className="border-t p-3">{controls}</div>}
+      />
+    )
+  }
+
+  return <div className="p-3">{controls}</div>
 }
 
 // ---------------------------------------------------------------------------
@@ -595,34 +661,27 @@ function writeDateRange(
 
 function DateRangeEditor({
   field,
+  def,
   conditions,
   onChange,
 }: {
   field: ShelfFilterField
+  def: FieldDefDate
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
 }) {
+  const t = useTranslation("BooksPage")
   const { from, to } = readDateRange(conditions)
-  const def = getFieldDef(field) as FieldDefNumeric | FieldDefDuration
-  console.log(def)
-  if (def.options) {
-    return (
-      <FilterableList<{ min: number; max: number; label: string }>
-        items={def.options}
-        loading={false}
-        searchPlaceholder={t("filters.search")}
-        onSelect={(item, event, ctx) => {
-          onChange(writeDateRange(field, item.from, item.to))
-        }}
-        renderRow={(item) => {
-          return <div>{item.label}</div>
-        }}
-      />
-    )
+  const presets = def.presets
+
+  const applyPreset = (days: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() - days)
+    onChange(writeDateRange(field, d.toISOString().slice(0, 10), ""))
   }
 
-  return (
-    <div className="flex items-center gap-2 p-3">
+  const controls = (
+    <div className="flex items-center gap-2">
       <Input
         type="date"
         value={from}
@@ -642,6 +701,30 @@ function DateRangeEditor({
       />
     </div>
   )
+
+  if (presets && presets.length > 0) {
+    const items = presets.map((p) => ({
+      uuid: p.label,
+      name: p.label,
+      days: p.days,
+    }))
+    return (
+      <FilterableList<(typeof items)[number]>
+        items={items}
+        virtualized={false}
+        searchPlaceholder={t("filters.search")}
+        onSelect={(item) => {
+          applyPreset(item.days)
+        }}
+        renderRow={(item) => (
+          <span className="min-w-0 flex-1 truncate">{item.name}</span>
+        )}
+        footer={<div className="border-t p-3">{controls}</div>}
+      />
+    )
+  }
+
+  return <div className="p-3">{controls}</div>
 }
 
 function TextEditor({
