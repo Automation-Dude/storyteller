@@ -1,7 +1,7 @@
 "use client"
 
 import { parseAsString, useQueryState } from "nuqs"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
@@ -124,6 +124,43 @@ export default function BookPage({
     [books, selectedBookUuid],
   )
 
+  const selectedIndex = selectedBookUuid
+    ? books.findIndex((b) => b.uuid === selectedBookUuid)
+    : -1
+
+  const NEXT_PREFETCH_MARGIN = 3
+  useEffect(() => {
+    if (selectedIndex < 0) return
+    const remaining = books.length - 1 - selectedIndex
+    if (
+      remaining <= NEXT_PREFETCH_MARGIN &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      void fetchNextPage()
+    }
+  }, [
+    selectedIndex,
+    books.length,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ])
+
+  const goToNext = useMemo(() => {
+    const atEnd = selectedIndex >= books.length - 1
+    if (selectedIndex < 0 || (atEnd && !hasNextPage)) return undefined
+    return () => {
+      const next = bookUuids[selectedIndex + 1]
+      if (next) void setSelectedBookUuid(next)
+    }
+  }, [selectedIndex, books.length, bookUuids, hasNextPage, setSelectedBookUuid])
+
+  const goToPrevious = useMemo(() => {
+    if (selectedIndex <= 0) return undefined
+    return () => void setSelectedBookUuid(bookUuids[selectedIndex - 1]!)
+  }, [selectedIndex, bookUuids, setSelectedBookUuid])
+
   const showMuted =
     isSearching || (isFetching && !isFetchingNextPage && books.length > 0)
 
@@ -166,6 +203,8 @@ export default function BookPage({
         selectedBookUuid={selectedBookUuid}
         selectedBook={selectedBook}
         onClosePanel={handleClosePanel}
+        nextBook={goToNext}
+        previousBook={goToPrevious}
         headerActions={[<AddBookButton key="add-book" />]}
       >
         <BookFilters

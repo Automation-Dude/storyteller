@@ -4,7 +4,7 @@ import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
-import { BookList } from "@v3/_/components/books/BookList"
+import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { PageContent } from "@v3/_/components/ui/page-layout"

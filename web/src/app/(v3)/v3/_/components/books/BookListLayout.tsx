@@ -53,6 +53,9 @@ type BookListLayoutProps = {
   // which seeds the getBook cache from it so the panel needs no extra fetch.
   selectedBook?: BookWithRelations
   onClosePanel: () => void
+  // step through the list from the panel. undefined at the list boundaries.
+  nextBook?: () => void
+  previousBook?: () => void
 }
 
 export function BookListLayout({
@@ -65,6 +68,8 @@ export function BookListLayout({
   selectedBookUuid,
   selectedBook,
   onClosePanel,
+  nextBook,
+  previousBook,
 }: BookListLayoutProps) {
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
@@ -215,6 +220,8 @@ export function BookListLayout({
           selectedBookUuid={selectedBookUuid}
           selectedBook={selectedBook}
           onClose={onClosePanel}
+          nextBook={nextBook}
+          previousBook={previousBook}
         />
       </>
     )
@@ -259,6 +266,8 @@ export function BookListLayout({
               initialBook={selectedBook}
               compact
               onClose={onClosePanel}
+              nextBook={nextBook}
+              previousBook={previousBook}
             />
           )}
         </PagePanel>
@@ -271,10 +280,14 @@ export function BookDetailDrawer({
   selectedBookUuid,
   selectedBook,
   onClose,
+  nextBook,
+  previousBook,
 }: {
   selectedBookUuid: string | null
   selectedBook?: BookWithRelations
   onClose: () => void
+  nextBook?: () => void
+  previousBook?: () => void
 }) {
   return (
     <Drawer.Root
@@ -300,6 +313,8 @@ export function BookDetailDrawer({
               initialBook={selectedBook}
               compact
               onClose={onClose}
+              nextBook={nextBook}
+              previousBook={previousBook}
             />
           )}
         </Drawer.Content>

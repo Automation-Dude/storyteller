@@ -1,6 +1,7 @@
 "use client"
 
 import { type UUID } from "crypto"
+import * as icon from "@/icons"
 
 import {
   IconArrowLeft,
@@ -50,6 +51,7 @@ import {
   useIsDarkMode,
 } from "./sections/useCoverColors"
 import { useHotkey } from "@tanstack/react-hotkeys"
+import { ButtonGroup } from "../../ui/button-group"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -69,6 +71,8 @@ type BookDetailsContentProps = {
   isEditing?: boolean
   onEditingChange?: (isEditing: boolean) => void
   onClose?: () => void
+  nextBook?: () => void
+  previousBook?: () => void
 }
 
 // seed the getBook cache from a row we already have (e.g. the list query) so
@@ -88,6 +92,8 @@ export function BookDetailsContent({
   initialBook,
   compact,
   assetsDir,
+  nextBook,
+  previousBook,
   isEditing,
   onEditingChange,
   onClose,
@@ -145,6 +151,8 @@ export function BookDetailsContent({
       isEditing={isEditing}
       onEditingChange={onEditingChange}
       onClose={onClose}
+      nextBook={nextBook}
+      previousBook={previousBook}
     />
   )
 }
@@ -156,6 +164,8 @@ function BookDetailsContentInner({
   isEditing: controlledIsEditing,
   onEditingChange,
   onClose,
+  nextBook,
+  previousBook,
 }: {
   book: BookWithRelations
   compact: boolean
@@ -163,6 +173,8 @@ function BookDetailsContentInner({
   isEditing: boolean | undefined
   onEditingChange: ((isEditing: boolean) => void) | undefined
   onClose: (() => void) | undefined
+  nextBook?: () => void
+  previousBook?: () => void
 }) {
   const permissions = usePermissions()
   const [localIsEditing, setLocalIsEditing] = useState(false)
@@ -211,7 +223,13 @@ function BookDetailsContentInner({
         style={colorVars}
       >
         {!compact && <BookPageHeader />}
-        {compact && <BookPanelHeader onClose={onClose} />}
+        {compact && (
+          <BookPanelHeader
+            onClose={onClose}
+            nextBook={nextBook}
+            previousBook={previousBook}
+          />
+        )}
         <BookEditBar />
 
         <div className="@container-size scroll-y @container/book h-full flex-1">
@@ -388,7 +406,15 @@ function BookEditBar() {
   )
 }
 
-function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
+function BookPanelHeader({
+  onClose,
+  nextBook,
+  previousBook,
+}: {
+  onClose: (() => void) | undefined
+  nextBook?: () => void
+  previousBook?: () => void
+}) {
   const { book, isEditing, setIsEditing } = useBookForm()
   const { showAccent } = useColorPreferences()
   const { accent } = useCoverColors(book)
@@ -419,6 +445,16 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   useHotkey("E", () => {
     setActionMenuOpen((prev) => !prev)
   })
+  console.log("nextBook", nextBook)
+
+  // the shortcut prop on the buttons only renders the hint; register the real
+  // handlers here. no-op at the list boundaries where the callback is absent.
+  useHotkey("Shift+ArrowRight", () => {
+    nextBook?.()
+  })
+  useHotkey("Shift+ArrowLeft", () => {
+    previousBook?.()
+  })
 
   return (
     <>
@@ -440,6 +476,35 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
             className="size-5 rounded-full"
           />
         </div>
+      )}
+
+      {(nextBook || previousBook) && (
+        <ButtonGroup className="absolute top-2.5 left-3 z-50">
+          {previousBook && (
+            <TooltipButton
+              variant="real-ghost"
+              size="icon-sm"
+              onClick={previousBook}
+              shortcut={["Shift+ArrowLeft"]}
+              aria-label="Previous"
+              tooltip="Previous"
+            >
+              <icon.ArrowLeft className="size-3.5 stroke-[1.5]" />
+            </TooltipButton>
+          )}
+          {nextBook && (
+            <TooltipButton
+              variant="real-ghost"
+              size="icon-sm"
+              onClick={nextBook}
+              tooltip="Next"
+              aria-label="Next"
+              shortcut={["Shift+ArrowRight"]}
+            >
+              <icon.ArrowRight className="size-3.5 stroke-[1.5]" />
+            </TooltipButton>
+          )}
+        </ButtonGroup>
       )}
 
       <div className={cn("absolute top-2.5 right-3 z-50", pill)}>
