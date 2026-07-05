@@ -98,7 +98,6 @@ function CollapsibleDescription({
 
 export function DescriptionSection({ className }: { className?: string }) {
   const t = useTranslation("BookDetailsPage")
-  const tLabels = useTranslation("Labels")
   const c = useCommon()
   const {
     form,
@@ -113,8 +112,6 @@ export function DescriptionSection({ className }: { className?: string }) {
   const active = canEdit && (isEditing || editingField === "description")
   const inlineMode = editingField === "description" && !isEditing
 
-  // measure the read-only block on entering inline edit so the floating chrome
-  // can reserve its footprint and overlay (rather than reflow) the layout.
   const readRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState<{ width: number; height: number } | null>(
     null,

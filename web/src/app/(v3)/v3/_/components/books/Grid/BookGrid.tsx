@@ -1,7 +1,6 @@
 "use client"
 
 import { Popover } from "@base-ui/react/popover"
-import * as icon from "@/icons"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   useCallback,
@@ -36,6 +35,7 @@ import {
 } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
+import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
 
 type BookGridProps = {
@@ -55,9 +55,6 @@ type BookGridProps = {
   displayContext?: SortContext
 }
 
-// preset card widths (px) for the gridCardSize preference. exported so the
-// sidebar/panel can snap their width to values that leave the grid a whole
-// number of columns at the chosen card width (no trailing gap).
 export const GRID_CARD_WIDTHS: Record<GridCardSize, number> = {
   smallest: 130,
   small: 155,

@@ -1,7 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
-import { type StyledIcon } from "@/icons"
 import { motion } from "motion/react"
 import { useState } from "react"
 
@@ -34,15 +32,19 @@ import {
   DurationEdit,
   PageCountEdit,
 } from "@/app/(v3)/v3/_/components/books/BookDetails/MetricEdit"
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { usePermissions } from "@/hooks/usePermissions"
+import { type StyledIcon } from "@/icons"
+import * as icon from "@/icons"
 import {
   getDownloadUrl,
   useDeleteUserBookRatingMutation,
   useSetUserBookRatingMutation,
 } from "@/store/api"
+
 
 import {
   ensureContrast,
@@ -50,7 +52,6 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./useCoverColors"
-import { IAdd } from "../../../ui/icon"
 
 const MAX_CREATORS = 5
 

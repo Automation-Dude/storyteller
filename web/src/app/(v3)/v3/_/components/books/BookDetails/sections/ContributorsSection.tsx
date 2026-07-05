@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Controller, useFieldArray } from "react-hook-form"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
@@ -16,8 +15,9 @@ import {
 } from "@v3/_/components/ui/select"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { creatorRelators } from "@/components/books/edit/marcRelators"
-import { IAdd } from "../../../ui/icon"
+import * as icon from "@/icons"
 
 export function ContributorsSection({ className }: { className?: string }) {
   const { book, isEditing } = useBookForm()

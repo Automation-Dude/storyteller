@@ -1,4 +1,3 @@
-import * as icons from "@/icons"
 import { useState } from "react"
 
 import {
@@ -9,6 +8,7 @@ import {
 
 import { Button } from "@/app/(v3)/v3/_/components/ui/button"
 import { cn } from "@/cn"
+import * as icons from "@/icons"
 
 export function CollapsibleSection({
   title,

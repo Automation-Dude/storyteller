@@ -4,11 +4,6 @@ import dynamic from "next/dynamic"
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Drawer } from "vaul-base"
 
-import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
-import {
-  BOOK_GRID_GAP,
-  GRID_CARD_WIDTHS,
-} from "@/app/(v3)/v3/_/components/books/Grid/BookGrid"
 import { SiteHeader } from "@v3/_/components/site-header"
 import {
   MAX_PANEL_WIDTH,
@@ -22,6 +17,11 @@ import {
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 
+import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
+import {
+  BOOK_GRID_GAP,
+  GRID_CARD_WIDTHS,
+} from "@/app/(v3)/v3/_/components/books/Grid/BookGrid"
 import { type BookWithRelations } from "@/database/books"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"

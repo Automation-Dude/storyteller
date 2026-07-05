@@ -1,11 +1,9 @@
 "use client"
 
-import * as icon from "@/icons"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
-import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { GradePill } from "@v3/_/components/books/grade-pill"
@@ -16,6 +14,8 @@ import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { cn } from "@v3/_/lib/utils"
 
+import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
+import * as icon from "@/icons"
 import { type ShelfFilterCondition, type ShelfFilterNode } from "@/shelves"
 import {
   type DisplayField,

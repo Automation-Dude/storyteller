@@ -1,9 +1,10 @@
-import * as icon from "@/icons"
+import { type Hotkey } from "@tanstack/react-hotkeys"
 
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
-import { KeyboardShortcut } from "../ui/kbd"
-import { Hotkey } from "@tanstack/react-hotkeys"
+
+import { KeyboardShortcut } from "@/app/(v3)/v3/_/components/ui/kbd"
+import * as icon from "@/icons"
 
 export function SearchInput({
   value,
@@ -18,7 +19,7 @@ export function SearchInput({
   placeholder?: string
   className?: string
   shortcut?: Hotkey[]
-} & React.ComponentProps<"input">) {
+} & Omit<React.ComponentProps<"input">, "onChange">) {
   return (
     <div
       className={cn(
@@ -37,7 +38,6 @@ export function SearchInput({
           }
         }}
         onChange={(e) => {
-          console.log("onChange", e.target.value)
           onChange(e.target.value)
         }}
         className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-xs outline-none"

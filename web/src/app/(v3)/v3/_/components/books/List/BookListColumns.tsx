@@ -1,18 +1,21 @@
-import { cn } from "@/cn"
-import { BookWithRelations } from "@/database/books"
-import { DisplayField } from "@/sort"
-import { formatFileSize } from "@/utils/formatFileSize"
-import * as icon from "@/icons"
-// import { formatDuration } from "date-fns"
 import { useFormatter } from "next-intl"
-import { useTranslation } from "../../../hooks/use-translation"
+
+import {
+  type SortDirection,
+  type SortField,
+} from "@/app/(v3)/v3/_/components/books/BookFilters"
+import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   DEFAULT_DATE_OPTIONS,
   useFormatList,
   useFormatRelativeTime,
-} from "../../../lib/date"
-import { SortDirection, SortField } from "../BookFilters"
-import { GradePill } from "../grade-pill"
+} from "@/app/(v3)/v3/_/lib/date"
+import { cn } from "@/cn"
+import { type BookWithRelations } from "@/database/books"
+import * as icon from "@/icons"
+import { type DisplayField } from "@/sort"
+import { formatFileSize } from "@/utils/formatFileSize"
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)

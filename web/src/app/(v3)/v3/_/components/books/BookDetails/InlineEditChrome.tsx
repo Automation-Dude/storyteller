@@ -1,12 +1,12 @@
 "use client"
 
-import * as icon from "@/icons"
 import { type FieldPath } from "react-hook-form"
 
 import { Kbd } from "@v3/_/components/ui/kbd"
 import { useCommon } from "@v3/_/hooks/use-translation"
 
 import { cn } from "@/cn"
+import * as icon from "@/icons"
 
 import { useBookForm } from "./BookFormProvider"
 import { type BookFormValues } from "./schema"

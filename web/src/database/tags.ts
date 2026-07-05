@@ -1,9 +1,9 @@
-import { sql, type Selectable } from "kysely"
+import { type Selectable, sql } from "kysely"
 
 import { BookEvents } from "@/events"
 import type { UUID } from "@/uuid"
 
-import { getBooks, TagUpdate } from "./books"
+import { type TagUpdate, getBooks } from "./books"
 import { db } from "./connection"
 import type { DB } from "./schema"
 import { cleanShelfFiltersForDeletedEntity } from "./shelfFilter"

@@ -1,5 +1,4 @@
 "use client"
-import * as icon from "@/icons"
 // import { useTranslation } from "@v3/_/hooks/use-translation"
 import { type ComponentType, useState } from "react"
 
@@ -18,6 +17,7 @@ import {
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
 import { ConfirmDialog } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import {
   useCommon,
@@ -27,11 +27,12 @@ import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
+import * as icon from "@/icons"
 import { useRemoveBookAssetMutation } from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
 
+
 import { CollapsibleSection } from "./CollapsibleSection"
-import { IAdd } from "../../../ui/icon"
 
 type Format = "ebook" | "audiobook" | "readaloud"
 

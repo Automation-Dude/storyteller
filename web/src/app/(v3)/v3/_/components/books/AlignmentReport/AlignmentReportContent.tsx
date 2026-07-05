@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import {
   type ColumnDef,
   type ExpandedState,
@@ -38,6 +37,7 @@ import {
   type AlignmentChapterOverride,
   type AlignmentOverrides,
 } from "@/database/alignmentReports"
+import * as icon from "@/icons"
 import {
   useGetBookAlignmentReportQuery,
   useUpdateBookAlignmentOverridesMutation,
@@ -73,23 +73,35 @@ function useOverrideEditor(view: BookAlignmentReportView) {
     return {
       setChapter(href: string, patch: AlignmentChapterOverride | null) {
         const base = overridesFromView(view)
-        const chapters = { ...(base.chapters ?? {}) }
-        if (patch) chapters[href] = patch
-        else delete chapters[href]
+        let chapters = { ...(base.chapters ?? {}) }
+        if (patch) {
+          chapters[href] = patch
+        } else {
+          const { [href]: _, ...extracted } = chapters
+          chapters = extracted
+        }
         apply({ ...base, chapters })
       },
       toggleIntended(href: string) {
         const base = overridesFromView(view)
-        const unaligned = { ...(base.unalignedChapters ?? {}) }
-        if (unaligned[href]?.intended) delete unaligned[href]
-        else unaligned[href] = { intended: true }
+        let unaligned = { ...(base.unalignedChapters ?? {}) }
+        if (unaligned[href]?.intended) {
+          const { [href]: _, ...extracted } = unaligned
+          unaligned = extracted
+        } else {
+          unaligned[href] = { intended: true }
+        }
         apply({ ...base, unalignedChapters: unaligned })
       },
       toggleAudioExcluded(filepath: string) {
         const base = overridesFromView(view)
-        const audio = { ...(base.audioFiles ?? {}) }
-        if (audio[filepath]?.excluded) delete audio[filepath]
-        else audio[filepath] = { excluded: true }
+        let audio = { ...(base.audioFiles ?? {}) }
+        if (audio[filepath]?.excluded) {
+          const { [filepath]: _, ...extracted } = audio
+          audio = extracted
+        } else {
+          audio[filepath] = { excluded: true }
+        }
         apply({ ...base, audioFiles: audio })
       },
     }
@@ -213,18 +225,6 @@ function ReportBody({ view }: { view: BookAlignmentReportView }) {
     </ScrollArea>
   )
 }
-
-// soft gradient tinted by grade, so the whole thing feels alive rather than grey.
-// const GRADE_GLOW: Record<string, string> = {
-//   "A+": "from-positive-bg/70 dark:from-positive/500/20",
-//   A: "from-positive-bg/70 dark:from-positive/500/20",
-//   "A-": "from-positive-bg/70 dark:from-positive/500/20",
-//   B: "from-good-bg/70 dark:from-good/500/20",
-//   "B-": "from-good-bg/70 dark:from-good/500/20",
-//   C: "from-moderate-bg/70 dark:from-moderate/500/20",
-//   D: "from-poor-bg/70 dark:from-poor/500/20",
-//   F: "from-poor-bg/70 dark:from-poor/500/20",
-// }
 
 function ReportHeader({
   view,

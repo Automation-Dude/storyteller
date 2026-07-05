@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { type ReactNode } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -25,6 +24,7 @@ import {
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
+import * as icon from "@/icons"
 import {
   useCancelProcessingMutation,
   useGetAlignmentEstimateQuery,

@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Controller, useFieldArray, useWatch } from "react-hook-form"
 import { v4 as uuidv4 } from "uuid"
 
@@ -25,6 +24,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { MultidimensionalRating } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/MultidimensionalRating"
 import { RatingInput } from "@/app/(v3)/v3/_/components/books/RatingInput"
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { statusDisplayLabel } from "@/database/statusKinds"
 import {
   BookDetailDisplays,
@@ -33,7 +33,9 @@ import {
   GridCoverDisplays,
   RatingIcons,
 } from "@/database/userPreferencesTypes"
+import * as icon from "@/icons"
 import { useListStatusesQuery } from "@/store/api"
+
 
 import { DetailDisplayPreview, GridCoverPreview } from "./cover-style-preview"
 import {
@@ -41,7 +43,6 @@ import {
   PreferencesSection,
   SegmentedControl,
 } from "./shared"
-import { IAdd } from "../ui/icon"
 
 const VIEW_KEYS = ["cover", "spine", "pages", "back"] as const
 const USE_LIBRARY_DEFAULT = "__library_default__"

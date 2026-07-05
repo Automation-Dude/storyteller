@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { LanguageEdit } from "@v3/_/components/books/LanguageEdit"
@@ -10,6 +9,7 @@ import { useFormatDate } from "@v3/_/lib/date"
 
 import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
+import * as icon from "@/icons"
 
 import { CollapsibleSection } from "./CollapsibleSection"
 

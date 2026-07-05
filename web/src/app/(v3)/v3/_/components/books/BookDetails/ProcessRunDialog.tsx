@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
@@ -42,6 +41,7 @@ import { SettingsFormProvider } from "@/app/(v3)/v3/_/components/settings-form/S
 import { ProcessingSettingsFields } from "@/app/(v3)/v3/_/components/settings-form/processing-tab"
 import { useFormatDuration } from "@/app/(v3)/v3/_/lib/date"
 import { type BookWithRelations } from "@/database/books"
+import * as icon from "@/icons"
 import {
   useGetAlignmentEstimateQuery,
   useGetSettingsQuery,

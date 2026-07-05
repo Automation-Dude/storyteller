@@ -1,11 +1,10 @@
-import * as icon from "@/icons"
+import { useHotkey } from "@tanstack/react-hotkeys"
 
 import { ButtonGroup } from "@v3/_/components/ui/button-group"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import * as icon from "@/icons"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
-import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys"
-import { Kbd, KbdGroup } from "../ui/kbd"
 
 type ViewSelectorProps = {
   value: BookView

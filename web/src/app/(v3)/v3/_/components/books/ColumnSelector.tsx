@@ -1,4 +1,3 @@
-import * as icon from "@/icons"
 
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -10,6 +9,7 @@ import {
 } from "@/app/(v3)/v3/_/components/ui/dropdown-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
+import * as icon from "@/icons"
 import { type DisplayField, GENERAL_SORT_FIELDS } from "@/sort"
 
 // all general sort fields plus authors are pickable as list columns

@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { type PanInfo, motion, useSpring } from "motion/react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 
@@ -17,6 +16,7 @@ import { type SpineFit, fitSpine } from "@v3/_/lib/spineFit"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookWithRelations } from "@/database/books"
+import * as icon from "@/icons"
 import { getCoverUrl } from "@/store/api"
 
 import { isDualFormat } from "./BookCover"

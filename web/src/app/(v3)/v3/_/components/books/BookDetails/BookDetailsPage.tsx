@@ -1,15 +1,15 @@
 "use client"
 
 import { type UUID } from "crypto"
-import * as icon from "@/icons"
 
+import { useHotkey } from "@tanstack/react-hotkeys"
+import { AnimatePresence, motion } from "motion/react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { BookActionsMenu } from "@v3/_/components/books/ActionMenu/BookActionsMenu"
-import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
 import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
 import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
@@ -20,10 +20,13 @@ import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
+import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
+import { ButtonGroup } from "@/app/(v3)/v3/_/components/ui/button-group"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import { api, useGetBookQuery } from "@/store/api"
 import { useAppDispatch } from "@/store/appState"
 
@@ -43,9 +46,6 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./sections/useCoverColors"
-import { useHotkey } from "@tanstack/react-hotkeys"
-import { ButtonGroup } from "../../ui/button-group"
-import { AnimatePresence, motion } from "motion/react"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -446,10 +446,7 @@ function BookPanelHeader({
   useHotkey("E", () => {
     setActionMenuOpen((prev) => !prev)
   })
-  console.log("nextBook", nextBook)
 
-  // the shortcut prop on the buttons only renders the hint; register the real
-  // handlers here. no-op at the list boundaries where the callback is absent.
   useHotkey("Shift+ArrowRight", () => {
     nextBook?.()
   })

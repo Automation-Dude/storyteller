@@ -1,9 +1,9 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as icon from "@/icons"
+import { useHotkey } from "@tanstack/react-hotkeys"
 import { type Locale } from "next-intl"
-import { parseAsString, useQueryState } from "nuqs"
+import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -12,7 +12,6 @@ import { type z } from "zod"
 import { changeLocaleAction } from "@v3/_/actions/changeLocaleAction"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
-import { Input } from "@v3/_/components/ui/input"
 import {
   PageContent,
   PageHeader,
@@ -26,6 +25,7 @@ import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
 import { type User } from "@/apiModels"
+import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import {
   useCommon,
@@ -36,6 +36,7 @@ import {
   UserPreferencesSchema,
 } from "@/database/userPreferencesTypes"
 import { usePermission } from "@/hooks/usePermission"
+import * as icon from "@/icons"
 import { useUpdateUserSettingsMutation } from "@/store/api"
 
 import { AppearanceTab } from "./appearance-tab"
@@ -44,8 +45,6 @@ import { GeneralTab } from "./general-tab"
 import { ProfileTab } from "./profile-tab"
 import { type IsMatch, SearchContext } from "./shared"
 import { type PreferenceTab, type SectionKeywords, type Tab } from "./tabs"
-import { useHotkey } from "@tanstack/react-hotkeys"
-import { SearchInput } from "../books/SearchInput"
 
 const SIDEBAR_WIDTH = 200
 
@@ -124,9 +123,13 @@ export function PreferencesForm({
 
   const [activeTabRaw, setActiveTab] = useQueryState(
     "tab",
-    parseAsString.withDefault("profile"),
+    parseAsString as SingleParser<Tab>,
   )
-  const activeTab = activeTabRaw as Tab
+
+  const activeTab: Tab | null = isMobile
+    ? activeTabRaw
+    : activeTabRaw ?? "profile"
+  const showMobileSidebar = isMobile && !activeTab
 
   const setActiveTabEvent = useCallback(
     (tab: Tab) => {
@@ -237,9 +240,11 @@ export function PreferencesForm({
     />
   )
 
+  const isFormTab = formTabs.includes(activeTab as PreferenceTab)
+
   const contentArea = (
     <SearchContext.Provider value={{ query: searchQuery, isMatch }}>
-      {formTabs.includes(activeTab) ? (
+      {isFormTab ? (
         <form
           id="preferences-form"
           onSubmit={form.handleSubmit(onSubmit, onInvalid)}
@@ -254,7 +259,7 @@ export function PreferencesForm({
   )
 
   if (isMobile) {
-    if (activeTab) {
+    if (showMobileSidebar) {
       return (
         <div className="flex h-screen flex-col overflow-hidden">
           <PageHeader>
@@ -341,7 +346,7 @@ function PreferencesSidebar({
   canUpdateSettings,
 }: {
   tabs: SidebarTabDef[]
-  activeTab: Tab
+  activeTab: Tab | null
   onTabChange: (tab: Tab) => void
   searchQuery: string
   onSearchChange: (query: string) => void
@@ -426,7 +431,7 @@ function SidebarGroup({
 }: {
   label: string
   tabs: SidebarTabDef[]
-  activeTab: Tab
+  activeTab: Tab | null
   onTabChange: (tab: Tab) => void
 }) {
   return (
@@ -450,7 +455,7 @@ function SidebarTabList({
   onTabChange,
 }: {
   tabs: SidebarTabDef[]
-  activeTab: Tab
+  activeTab: Tab | null
   onTabChange: (tab: Tab) => void
 }) {
   return (

@@ -1,15 +1,16 @@
 "use client"
 
-import * as icon from "@/icons"
 
 import { HeroSection } from "@v3/_/components/home/HeroSection"
 import { StatsBar } from "@v3/_/components/home/StatsBar"
 import { ShelfManager, ShelfRow } from "@v3/_/components/shelves"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type HomeSectionWithDetails } from "@/database/shelves"
+import * as icon from "@/icons"
 import { useListHomeShelvesQuery } from "@/store/api"
-import { TooltipButton } from "../_/components/ui/tooltip-button"
+
 
 function Section({ section }: { section: HomeSectionWithDetails }) {
   // shelves manage their own px-4 gutter (with scroll bleed); widgets don't, so

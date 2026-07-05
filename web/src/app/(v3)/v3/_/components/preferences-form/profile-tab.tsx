@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
@@ -19,6 +18,7 @@ import { Spinner } from "@v3/_/components/ui/spinner"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type User } from "@/apiModels"
+import * as icon from "@/icons"
 
 import { unlinkAccountAction, updateProfileAction } from "./profile-actions"
 

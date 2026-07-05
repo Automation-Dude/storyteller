@@ -1,4 +1,4 @@
-import * as icon from "@/icons"
+import { useHotkey } from "@tanstack/react-hotkeys"
 
 import { ActionTray } from "@v3/_/components/ui/action-tray"
 import { Button } from "@v3/_/components/ui/button"
@@ -12,15 +12,16 @@ import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { FilterableMenu } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import * as icon from "@/icons"
 import { useListBooksQuery } from "@/store/api"
+
 
 import {
   ActionEntryList,
   useBookActionItems,
 } from "./ActionMenu/BookActionMenuItems"
-import { FilterableMenu } from "../ui/filterable-menu"
-import { useHotkey } from "@tanstack/react-hotkeys"
 
 type SelectionToolbarProps = {
   allBookUuids: string[]

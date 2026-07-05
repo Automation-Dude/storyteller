@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
-import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SaveAsShelfDialog } from "@v3/_/components/books/SaveAsShelfDialog"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
@@ -16,6 +15,7 @@ import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { type UserPermissionSet } from "@/database/users"
 import {
   type DisplayField,
@@ -92,6 +92,7 @@ export default function BookPage({
   const displayContext: SortContext = useMemo(() => ({ seriesUuid: null }), [])
   const displayFields = deriveDisplayFields(
     sort.field,
+    effectiveFilter,
     displayContext,
     displayOverrides,
   )
@@ -158,6 +159,7 @@ export default function BookPage({
 
   const goToPrevious = useMemo(() => {
     if (selectedIndex <= 0) return undefined
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return () => void setSelectedBookUuid(bookUuids[selectedIndex - 1]!)
   }, [selectedIndex, bookUuids, setSelectedBookUuid])
 

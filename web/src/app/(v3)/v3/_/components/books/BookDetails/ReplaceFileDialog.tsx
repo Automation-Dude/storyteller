@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useState } from "react"
 
 import { ImportFromServerDialog } from "@v3/_/components/files/ImportFromServerDialog"
@@ -12,6 +11,7 @@ import {
   type MetadataFieldMode,
   defaultMetadataFieldOverrides,
 } from "@/database/settingsTypes"
+import * as icon from "@/icons"
 import { useReplaceBookAssetMutation } from "@/store/api"
 
 type Format = "ebook" | "audiobook" | "readaloud"

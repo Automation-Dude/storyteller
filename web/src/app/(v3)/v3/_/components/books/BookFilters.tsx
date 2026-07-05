@@ -1,8 +1,6 @@
+import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys"
 import { useMemo, useRef, useState } from "react"
-import * as icon from "@/icons"
 
-import { Button } from "@v3/_/components/ui/button"
-import { ButtonGroup } from "@v3/_/components/ui/button-group"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -23,7 +21,8 @@ import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { FieldIcon, IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
+import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
+import * as icon from "@/icons"
 import { getFieldDef, quickFilterFields } from "@/shelves"
 import { DISPLAY_FIELDS, GENERAL_SORT_FIELDS, type SortField } from "@/sort"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
@@ -31,11 +30,6 @@ import { type BookView } from "@/store/slices/uiSettingsSlice"
 import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
 import { SearchInput } from "./SearchInput"
 import { ViewSelector } from "./ViewSelector"
-import {
-  useHotkey,
-  useHotkeys,
-  useHotkeySequences,
-} from "@tanstack/react-hotkeys"
 
 export type { SortDirection, SortField } from "@/sort"
 

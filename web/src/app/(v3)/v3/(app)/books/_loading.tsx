@@ -1,5 +1,6 @@
-import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { SiteHeader } from "@v3/_/components/site-header"
+
+import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 
 export default function BookPageLoading() {
   return (

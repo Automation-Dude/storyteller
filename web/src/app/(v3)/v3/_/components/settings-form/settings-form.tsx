@@ -1,6 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useHotkey } from "@tanstack/react-hotkeys"
 import Link from "next/link"
 import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -10,7 +11,6 @@ import { type z } from "zod"
 
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
-import { Input } from "@v3/_/components/ui/input"
 import {
   PageContent,
   PageHeader,
@@ -25,6 +25,7 @@ import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type Invite, type Settings, type User } from "@/apiModels"
+import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { SettingsSchema } from "@/database/settingsTypes"
 import * as icon from "@/icons"
@@ -53,8 +54,6 @@ import {
 } from "./tabs"
 import { UploadTab } from "./upload-tab"
 import { UsersTab } from "./users-tab"
-import { SearchInput } from "../books/SearchInput"
-import { useHotkey } from "@tanstack/react-hotkeys"
 
 type ErrorPathSegment = string | number
 
@@ -432,7 +431,7 @@ export function SettingsForm({
             aria-label={t("exportSettings")}
             render={
               <Link href="/api/v2/settings" download="storyteller-config.json">
-                <icon.Download size={16} />
+                <icon.Download />
               </Link>
             }
           />

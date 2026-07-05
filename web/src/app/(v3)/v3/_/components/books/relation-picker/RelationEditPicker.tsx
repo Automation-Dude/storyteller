@@ -2,17 +2,17 @@
 
 import { type ReactNode, useMemo } from "react"
 
-import { ICheck, IRemove } from "../../ui/icon"
-import { RelationGlyph } from "../RelationChipEditor"
-import { RelationPickerList } from "./RelationPickerList"
-import { type BookWithRelations } from "@/database/books"
-import { type UUID } from "@/uuid"
-
+import { RelationGlyph } from "@/app/(v3)/v3/_/components/books/RelationChipEditor"
+import { ICheck, IRemove } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type RelationItem,
   type RelationSource,
-} from "../../../hooks/use-relation-items"
-import { useRelationEditActions } from "../../../hooks/use-relation-mutations"
+} from "@/app/(v3)/v3/_/hooks/use-relation-items"
+import { useRelationEditActions } from "@/app/(v3)/v3/_/hooks/use-relation-mutations"
+import { type BookWithRelations } from "@/database/books"
+import { type UUID } from "@/uuid"
+
+import { RelationPickerList } from "./RelationPickerList"
 
 export type MembershipState = "all" | "some" | "none"
 

@@ -8,7 +8,7 @@ import {
   type RelationItem,
   type RelationSource,
   useRelationItems,
-} from "../../../hooks/use-relation-items"
+} from "@/app/(v3)/v3/_/hooks/use-relation-items"
 
 export function RelationPickerList({
   source,

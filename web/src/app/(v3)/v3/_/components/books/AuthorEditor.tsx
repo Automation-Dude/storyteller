@@ -1,4 +1,3 @@
-import * as icon from "@/icons"
 import { useMemo, useState } from "react"
 import { useWatch } from "react-hook-form"
 
@@ -10,17 +9,14 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import * as icon from "@/icons"
 import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
 import { useBookForm } from "./BookDetails/BookFormProvider"
 import { RelationChipEditor } from "./RelationChipEditor"
 import { RelationPickerList } from "./relation-picker/RelationPickerList"
-import { ICheck, IAdd } from "../ui/icon"
-import { TooltipButton } from "../ui/tooltip-button"
 
-// creators are edited through the form's name array (not mutations), and authors
-// vs narrators are separate role-scoped lists, so this reuses the shared list
-// core directly rather than the mutation-based RelationEditMenu.
 function CreatorAddMenu({
   allItems,
   values,
@@ -53,7 +49,7 @@ function CreatorAddMenu({
             aria-label={c.plain("actions.add")}
             variant="ghost"
           >
-            <IAdd.base size="sm" className="text-muted-foreground" />
+            <icon.Plus size="sm" className="text-muted-foreground" />
           </TooltipButton>
         }
       />
@@ -76,7 +72,7 @@ function CreatorAddMenu({
               <span className="min-w-0 flex-1 truncate">{item.name}</span>
               <span className="flex w-4 shrink-0 items-center justify-center">
                 {applied.has(item.name) && (
-                  <ICheck.base className="text-primary h-4 w-4" />
+                  <icon.Check className="text-primary h-4 w-4" />
                 )}
               </span>
             </>

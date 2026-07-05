@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Fragment, type ReactNode, useCallback, useState } from "react"
 import { toast } from "sonner"
 
@@ -10,8 +9,22 @@ import {
 } from "@v3/_/components/ui/confirm-dialog"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
+import { useProcessingRun } from "@/app/(v3)/v3/_/components/books/BookDetails/useProcessingRun"
+import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateCollectionDialog"
+import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSeriesDialog"
+import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
+import {
+  RelationEditPicker,
+  membershipFromBooks,
+} from "@/app/(v3)/v3/_/components/books/relation-picker/RelationEditPicker"
+import {
+  FilterableMenuItem,
+  FilterableMenuSeparator,
+} from "@/app/(v3)/v3/_/components/ui/filterable-menu"
+import { ITag } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type BookWithRelations, type CreatorRelation } from "@/database/books"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import {
   useAddBooksToCollectionsMutation,
   useClearBooksCacheMutation,
@@ -24,19 +37,6 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-import {
-  FilterableMenuItem,
-  FilterableMenuSeparator,
-} from "../../ui/filterable-menu"
-import { ITag } from "../../ui/icon"
-import { useProcessingRun } from "../BookDetails/useProcessingRun"
-import { CreateCollectionDialog } from "../CreateCollectionDialog"
-import { CreateSeriesDialog } from "../CreateSeriesDialog"
-import { CreateTagDialog } from "../CreateTagDialog"
-import {
-  RelationEditPicker,
-  membershipFromBooks,
-} from "../relation-picker/RelationEditPicker"
 
 type Mode = "single" | "bulk"
 

@@ -87,15 +87,18 @@ const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
 
 export function deriveDisplayFields(
   sortField: SortField,
-  filter: ShelfFilterNode,
+  filter?: ShelfFilterNode,
   ctx?: SortContext,
   overrides?: DisplayField[] | null,
 ): DisplayField[] {
   if (overrides) return overrides
   // an explicit, meaningful sort echoes itself (show what you sorted by)
   if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return [sortField]
-  if (filter.type === "condition") {
-    return [filter.field]
+  console.log("filter", filter)
+  if (filter?.type === "condition") {
+    if (DISPLAY_FIELDS.includes(filter.field as DisplayField)) {
+      return [filter.field as DisplayField]
+    }
   }
 
   // otherwise a series context still surfaces position over the authors

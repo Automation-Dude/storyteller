@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -8,6 +7,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useBookForm } from "@/app/(v3)/v3/_/components/books/BookDetails/BookFormProvider"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
+import * as icon from "@/icons"
 import { getDownloadUrl } from "@/store/api"
 
 export function DownloadsSection({ className }: { className?: string }) {

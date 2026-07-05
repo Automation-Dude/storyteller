@@ -14,18 +14,18 @@ import {
 } from "@v3/_/components/ui/popover"
 
 import {
-  type MembershipState,
-  type RelationMembership,
-  RelationEditPicker,
-  membershipFromBooks,
-} from "./RelationEditPicker"
+  type RelationItem,
+  type RelationSource,
+} from "@/app/(v3)/v3/_/hooks/use-relation-items"
 import { type BookWithRelations } from "@/database/books"
 import { type UUID } from "@/uuid"
 
 import {
-  type RelationItem,
-  type RelationSource,
-} from "../../../hooks/use-relation-items"
+  type MembershipState,
+  RelationEditPicker,
+  type RelationMembership,
+  membershipFromBooks,
+} from "./RelationEditPicker"
 
 // dropdown (or submenu) shell around RelationEditPicker: owns open state and
 // drives the picker's lazy fetch (only fetches once opened). Membership is

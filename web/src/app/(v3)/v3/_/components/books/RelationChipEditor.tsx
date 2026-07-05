@@ -1,16 +1,15 @@
 "use client"
 
-import * as icon from "@/icons"
-import { type ReactNode, useState } from "react"
+import { type ReactNode } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
-import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+import * as icon from "@/icons"
 
 type RelationItem = {
   uuid: string
@@ -132,18 +131,9 @@ export function RelationChipEditor<T extends RelationItem>({
   canInteract,
 }: RelationChipEditorProps<T>) {
   const tLabels = useTranslation("Labels")
-  const [isHovering, setIsHovering] = useState(false)
 
   return (
-    <div
-      className={cn(`group/${source}`, "flex flex-wrap items-center gap-2")}
-      onMouseEnter={() => {
-        setIsHovering(true)
-      }}
-      onMouseLeave={() => {
-        setIsHovering(false)
-      }}
-    >
+    <div className={cn(`group/${source}`, "flex flex-wrap items-center gap-2")}>
       {items.map((item, idx) => (
         <RelationChip
           key={`${item.uuid}-${idx}`}

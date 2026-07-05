@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
@@ -20,6 +19,7 @@ import {
   computeRatingAverage,
   formatRating,
 } from "@/database/ratingDimensions"
+import * as icon from "@/icons"
 import {
   useDeleteUserBookRatingMutation,
   useSetUserBookRatingMutation,

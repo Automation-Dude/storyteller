@@ -13,10 +13,9 @@ function getOverallProgress(book: BookWithRelations): number | null {
 
   if (readaloud.status !== "PROCESSING") return null
 
-  const stageOrder = readaloud.currentStage
-    ? STAGE_ORDER[readaloud.currentStage] ?? 0
-    : 0
-  const stageProgress = readaloud.stageProgress ?? 0
+  const stageOrder = STAGE_ORDER[readaloud.currentStage]
+
+  const stageProgress = readaloud.stageProgress
 
   return (stageOrder + stageProgress) / TOTAL_STAGES
 }

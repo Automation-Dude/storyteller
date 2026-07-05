@@ -1,4 +1,3 @@
-import * as icon from "@/icons"
 import { useCallback } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -12,6 +11,7 @@ import {
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { statusDisplayLabel } from "@/database/statusKinds"
+import * as icon from "@/icons"
 import { useListStatusesQuery, useUpdateStatusMutation } from "@/store/api"
 
 import {

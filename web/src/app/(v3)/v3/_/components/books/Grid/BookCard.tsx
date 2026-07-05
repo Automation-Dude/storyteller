@@ -1,6 +1,4 @@
 import { Popover } from "@base-ui/react/popover"
-import * as icon from "@/icons"
-import Link from "next/link"
 import { useFormatter, useLocale } from "next-intl"
 import { Fragment, memo, useCallback, useMemo, useState } from "react"
 
@@ -24,10 +22,11 @@ import {
 } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
-import { Button } from "@/app/(v3)/v3/_/components/ui/button"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
+import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
+import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
 
 type BookCardProps = {
@@ -337,31 +336,31 @@ export const BookCard = memo(function BookCard({
           <p className="text-muted-foreground/80 line-clamp-1 text-xs">
             {visibleAuthors.map((a, index) => (
               <Fragment key={a.uuid}>
-                <Link
+                <V3Link
                   className="hover:text-primary relative z-20 hover:underline"
                   prefetch={false}
-                  href={`/v3/authors?item=${a.uuid}`}
+                  href={`/authors?item=${a.uuid}`}
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
                 >
                   {a.name}
-                </Link>
+                </V3Link>
                 {index < visibleAuthors.length - 1 && ", "}
               </Fragment>
             ))}
             {hiddenAuthorCount > 0 && ` +${hiddenAuthorCount}`}
           </p>
         )}
-        <Link
-          href={`/v3/books/${book.uuid}`}
+        <V3Link
+          href={`/books/${book.uuid}`}
           prefetch={false}
           className={cn(!onClick && "big-link")}
         >
           <h3 className="group-hover:text-primary font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
             {book.title}
           </h3>
-        </Link>
+        </V3Link>
       </div>
     </>
   )

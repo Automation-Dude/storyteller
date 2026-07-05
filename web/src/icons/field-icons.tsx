@@ -58,7 +58,6 @@ export function fieldIcon(
   variant: "base" | "add" | "remove" | "filled" = "base",
 ): ComponentType<StyledIconProps> {
   const def = FIELD_ICONS[field]
-  if (!def) return icon.Filter
 
   const resolved = def[variant]
   if (resolved) return resolved

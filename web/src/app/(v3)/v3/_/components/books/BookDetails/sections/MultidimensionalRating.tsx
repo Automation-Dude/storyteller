@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
@@ -17,6 +16,7 @@ import { Slider } from "@v3/_/components/ui/slider"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   RATING_DIMENSION_MAX,
   RATING_DIMENSION_MIN,
@@ -26,7 +26,7 @@ import {
   computeRatingAverage,
   formatRating,
 } from "@/database/ratingDimensions"
-import { IAdd } from "../../../ui/icon"
+import * as icon from "@/icons"
 
 // the chart geometry is hand-tuned around this fixed size so the drag overlay,
 // the polygon, and the labels all line up; resizing it throws that off.

@@ -1,7 +1,6 @@
 "use client"
 
 import { Popover } from "@base-ui/react/popover"
-import * as icon from "@/icons"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -22,6 +21,7 @@ import {
 import { ColumnSelector } from "@/app/(v3)/v3/_/components/books/ColumnSelector"
 import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import { type BookWithRelations } from "@/database/books"
+import * as icon from "@/icons"
 import {
   type DisplayField,
   type SortContext,

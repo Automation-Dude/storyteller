@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useEffect, useState } from "react"
 import { useWatch } from "react-hook-form"
 import { toast } from "sonner"
@@ -16,6 +15,7 @@ import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import * as icon from "@/icons"
 import { getCoverUrl, useSetUserSettingMutation } from "@/store/api"
 
 import { useBookForm } from "./BookFormProvider"

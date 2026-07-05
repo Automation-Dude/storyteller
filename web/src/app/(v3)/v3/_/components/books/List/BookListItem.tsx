@@ -15,17 +15,16 @@ import {
   getReadingProgress,
 } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
-
-import { ColumnValue, getColumnWidth } from "./BookListColumns"
-
 import { Skeleton } from "@/app/(v3)/v3/_/components/ui/skeleton"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
 import { cn } from "@/cn"
-import * as icon from "@/icons"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
+import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
+
+import { ColumnValue, getColumnWidth } from "./BookListColumns"
 
 export const BookListItem = memo(function BookListItem({
   book,

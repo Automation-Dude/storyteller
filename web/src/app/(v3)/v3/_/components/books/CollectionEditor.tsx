@@ -2,19 +2,20 @@ import { useCallback, useMemo, useState } from "react"
 
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import { usePermission } from "@/hooks/usePermission"
 import {
   useAddBooksToCollectionsMutation,
   useListCollectionsQuery,
   useRemoveBooksFromCollectionsMutation,
 } from "@/store/api"
-import { usePermission } from "@/hooks/usePermission"
 import { type UUID } from "@/uuid"
+
 
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
 import { RelationChipEditor } from "./RelationChipEditor"
 import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
-import { IAdd } from "../ui/icon"
-import { TooltipButton } from "../ui/tooltip-button"
 
 type CollectionEditorProps = {
   bookUuid: string

@@ -1,7 +1,7 @@
 export * from "./source"
-export { FieldIcon, fieldIcon, type FieldIconKey } from "./field-icons"
+export { FieldIcon, type FieldIconKey, fieldIcon } from "./field-icons"
 export {
-  type StyledIconProps,
-  type StyledIcon,
   type IconVariants,
+  type StyledIcon,
+  type StyledIconProps,
 } from "./styled"

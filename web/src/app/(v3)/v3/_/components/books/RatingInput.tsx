@@ -1,4 +1,3 @@
-import * as icon from "@/icons"
 import { useCallback, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -10,6 +9,8 @@ import {
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+
+import * as icon from "@/icons"
 
 type RatingInputProps = {
   value: number | null

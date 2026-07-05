@@ -1,20 +1,21 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
+import { FilterableMenu } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
+import * as icon from "@/icons"
+
 
 import {
   ActionEntryList,
   type BookActionEntry,
   useBookActionItems,
 } from "./BookActionMenuItems"
-import { FilterableMenu } from "../../ui/filterable-menu"
-import { TooltipButton } from "../../ui/tooltip-button"
 
 export function BookActionsMenu({
   book,

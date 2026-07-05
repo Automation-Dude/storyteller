@@ -1,9 +1,9 @@
 import { type Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { BookDetailsContent } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsPage"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
+import { BookDetailsContent } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsPage"
 import { getBook } from "@/database/books"
 import { ASSETS_DIR } from "@/directories"
 import { type UUID } from "@/uuid"

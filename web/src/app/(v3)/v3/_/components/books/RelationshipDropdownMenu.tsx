@@ -1,13 +1,8 @@
 "use client"
 
-import * as icon from "@/icons"
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 
-import { Button } from "@v3/_/components/ui/button"
-import {
-  FilterableList,
-  FilterableMenuItem,
-} from "@v3/_/components/ui/filterable-menu"
+import { FilterableList } from "@v3/_/components/ui/filterable-menu"
 import { Input } from "@v3/_/components/ui/input"
 import {
   Popover,
@@ -19,6 +14,11 @@ import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { FieldIcon, ICheck, IRemove } from "@/app/(v3)/v3/_/components/ui/icon"
+import {
+  type RelationItem,
+  useRelationItems,
+} from "@/app/(v3)/v3/_/hooks/use-relation-items"
+import * as icon from "@/icons"
 import {
   ASSET_FORMATS,
   type AssetFormat,
@@ -37,11 +37,8 @@ import {
 
 import { RelationGlyph } from "./RelationChipEditor"
 import { unitDisplay } from "./filter-ui"
-import {
-  type RelationItem,
-  useRelationItems,
-} from "../../hooks/use-relation-items"
 import { RelationPickerList } from "./relation-picker/RelationPickerList"
+import { Button } from "../ui/button"
 
 export type FilterControlProps = {
   field: ShelfFilterField
@@ -369,77 +366,35 @@ export function FacetEditor({
             </span>
           </>
         )}
-      />
-      {/* <FilterableList<RelationItem>
-      items={items}
-      loading={loading}
-      searchPlaceholder={t("filters.search")}
-      onSelect={(item, event, ctx) => {
-        const anchor = anchorRef.current
-        if (event.shiftKey && anchor != null) {
-          const a = Math.min(anchor, ctx.index)
-          const b = Math.max(anchor, ctx.index)
-          let ni = inc
-          let ne = exc
-          for (let i = a; i <= b; i++) {
-            const it = ctx.items[i]
-            if (!it) continue
-            const r = cycleTriState(ni, ne, it.uuid)
-            ni = r.inc
-            ne = r.exc
-          }
-          apply(ni, ne)
-        } else {
-          const r = cycleTriState(inc, exc, item.uuid)
-          apply(r.inc, r.exc)
+        footer={
+          <div className="border-border flex items-center justify-between border-t p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                apply(
+                  items.map((i) => i.uuid),
+                  [],
+                )
+              }}
+            >
+              Select all
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              disabled={!inc.length && !exc.length}
+              onClick={() => {
+                apply([], [])
+              }}
+            >
+              Clear
+            </Button>
+          </div>
         }
-        anchorRef.current = ctx.index
-      }}
-      renderRow={(item) => {
-        const state = stateOf(item.uuid)
-        return (
-          <>
-            <RelationGlyph item={item} />
-            <span className="min-w-0 flex-1 truncate">{item.name}</span>
-            <span className="flex w-4 shrink-0 items-center justify-center">
-              {state === "include" ? (
-                <ICheck.base className="text-primary h-4 w-4" />
-              ) : state === "exclude" ? (
-                <IRemove.base className="text-destructive h-4 w-4" />
-              ) : null}
-            </span>
-          </>
-        )
-      }}
-      footer={
-        <div className="border-border flex items-center justify-between border-t p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => {
-              apply(
-                items.map((i) => i.uuid),
-                [],
-              )
-            }}
-          >
-            Select all
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            disabled={!inc.length && !exc.length}
-            onClick={() => {
-              apply([], [])
-            }}
-          >
-            Clear
-          </Button>
-        </div>
-      } */}
-      {/* /> */}
+      />
     </>
   )
 }
@@ -607,7 +562,6 @@ function NumberRangeEditor({
         virtualized={false}
         searchPlaceholder={t("filters.search")}
         onSelect={(item) => {
-          console.log("onSelect", item)
           set(item.min, item.max)
         }}
         renderRow={(item) => {
