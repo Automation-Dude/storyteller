@@ -189,7 +189,7 @@ export default function BookPage({
       : undefined
 
   return (
-    <div style={{ "--header-height": "6rem" } as React.CSSProperties}>
+    <div style={{ "--header-height": "4rem" } as React.CSSProperties}>
       <BookListLayout
         headerBreadcrumbs={[
           {
