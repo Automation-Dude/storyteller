@@ -44,6 +44,8 @@ import { GeneralTab } from "./general-tab"
 import { ProfileTab } from "./profile-tab"
 import { type IsMatch, SearchContext } from "./shared"
 import { type PreferenceTab, type SectionKeywords, type Tab } from "./tabs"
+import { useHotkey } from "@tanstack/react-hotkeys"
+import { SearchInput } from "../books/SearchInput"
 
 const SIDEBAR_WIDTH = 200
 
@@ -346,7 +348,16 @@ function PreferencesSidebar({
   canUpdateSettings: boolean
 }) {
   const t = useTranslation("PreferencesPage")
-
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  useHotkey(
+    "/",
+    () => {
+      searchInputRef.current?.focus()
+    },
+    {
+      ignoreInputs: true,
+    },
+  )
   const userSidebarTabs = tabs.filter((tab) => userTabs.includes(tab.value))
   const prefSidebarTabs = tabs.filter((tab) => formTabs.includes(tab.value))
 
@@ -369,30 +380,13 @@ function PreferencesSidebar({
             </p>
 
             <div className="mb-2 px-1">
-              <div className="relative">
-                <icon.Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
-                <Input
-                  type="text"
-                  placeholder={t("searchPreferences")}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    onSearchChange(e.target.value)
-                  }}
-                  className="h-7 pr-7 pl-8 text-xs"
-                />
-
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSearchChange("")
-                    }}
-                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
-                  >
-                    <icon.Close className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
+              <SearchInput
+                ref={searchInputRef}
+                shortcut={["/"]}
+                placeholder={t("searchPreferences")}
+                value={searchQuery}
+                onChange={onSearchChange}
+              />
             </div>
 
             <SidebarTabList

@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as icon from "@/icons"
 import Link from "next/link"
 import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -28,6 +27,7 @@ import { cn } from "@v3/_/lib/utils"
 import { type Invite, type Settings, type User } from "@/apiModels"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { SettingsSchema } from "@/database/settingsTypes"
+import * as icon from "@/icons"
 import {
   useGetMaxUploadChunkSizeQuery,
   useUpdateSettingsMutation,
@@ -53,6 +53,8 @@ import {
 } from "./tabs"
 import { UploadTab } from "./upload-tab"
 import { UsersTab } from "./users-tab"
+import { SearchInput } from "../books/SearchInput"
+import { useHotkey } from "@tanstack/react-hotkeys"
 
 type ErrorPathSegment = string | number
 
@@ -597,6 +599,16 @@ function SettingsSidebar({
   onSearchChange: (query: string) => void
 }) {
   const t = useTranslation("SettingsPage")
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  useHotkey(
+    "/",
+    () => {
+      searchInputRef.current?.focus()
+    },
+    {
+      ignoreInputs: true,
+    },
+  )
 
   const settingsTabs = tabs.filter((tab) =>
     settingsFormTabs.includes(tab.value as SettingsFormTab),
@@ -615,30 +627,13 @@ function SettingsSidebar({
             </p>
 
             <div className="mb-2 px-1">
-              <div className="relative">
-                <icon.Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
-                <Input
-                  type="text"
-                  placeholder={t("searchSettings")}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    onSearchChange(e.target.value)
-                  }}
-                  className="h-7 pr-7 pl-8 text-xs"
-                />
-
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSearchChange("")
-                    }}
-                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
-                  >
-                    <icon.Close className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
+              <SearchInput
+                ref={searchInputRef}
+                shortcut={["/"]}
+                placeholder={t("searchSettings")}
+                value={searchQuery}
+                onChange={onSearchChange}
+              />
             </div>
 
             <SidebarTabList
