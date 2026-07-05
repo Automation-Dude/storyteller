@@ -1,4 +1,4 @@
-import { IconChevronDown } from "@tabler/icons-react"
+import * as icons from "@/icons"
 import { useState } from "react"
 
 import {
@@ -52,7 +52,7 @@ export function CollapsibleSection({
                 setIsOpen((prev) => !prev)
               }}
             >
-              <IconChevronDown
+              <icons.ChevronDown
                 className={cn(
                   "text-muted-foreground size-3.5 stroke-[1.5]",
                   isOpen && "rotate-180",

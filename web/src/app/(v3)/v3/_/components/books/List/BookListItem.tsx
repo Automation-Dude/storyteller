@@ -1,5 +1,4 @@
 import { Popover } from "@base-ui/react/popover"
-import { IconDotsVertical } from "@tabler/icons-react"
 import { Fragment, memo , useCallback } from "react"
 
 
@@ -21,9 +20,9 @@ import { Skeleton } from "@/app/(v3)/v3/_/components/ui/skeleton"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
 import { cn } from "@/cn"
+import * as icon from "@/icons"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
-import { Link } from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
 
 
@@ -283,7 +282,7 @@ export const BookListItem = memo(function BookListItem({
                 "opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
             )}
           >
-            <IconDotsVertical className="size-3.5" />
+            <icon.DotsVertical className="size-3.5" />
           </Popover.Trigger>
         )}
       </div>

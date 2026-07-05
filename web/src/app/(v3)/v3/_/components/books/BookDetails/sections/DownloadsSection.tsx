@@ -1,6 +1,6 @@
 "use client"
 
-import { IconBook, IconDownload, IconHeadphones } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -18,7 +18,7 @@ export function DownloadsSection({ className }: { className?: string }) {
   return (
     <section className={className}>
       <h2 className="section-label mb-4">
-        <IconDownload className="size-3.5 stroke-1" />
+        <icon.Download className="size-3.5 stroke-1" />
         {tLabels("downloads")}
       </h2>
 
@@ -42,7 +42,7 @@ export function DownloadsSection({ className }: { className?: string }) {
             variant="outline"
             render={
               <V3Link href={getDownloadUrl(book.uuid, "ebook")}>
-                <IconBook className="mr-2 h-4 w-4" />
+                <icon.BookAlt className="mr-2 h-4 w-4" />
                 {t("downloads.downloadEbook")}
               </V3Link>
             }
@@ -55,7 +55,7 @@ export function DownloadsSection({ className }: { className?: string }) {
             variant="outline"
             render={
               <V3Link href={getDownloadUrl(book.uuid, "audiobook")}>
-                <IconHeadphones className="mr-2 h-4 w-4" />
+                <icon.Headphones className="mr-2 h-4 w-4" />
                 {t("downloads.downloadAudiobook")}
               </V3Link>
             }

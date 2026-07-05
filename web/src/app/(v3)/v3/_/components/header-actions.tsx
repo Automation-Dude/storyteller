@@ -1,4 +1,4 @@
-import { IconDotsVertical } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -120,7 +120,7 @@ export function HeaderActions({ actions }: HeaderActionsProps) {
           <DropdownMenuTrigger
             render={
               <Button size="sm" variant="outline" className="shrink-0 px-2">
-                <IconDotsVertical className="h-4 w-4" />
+                <icon.DotsVertical className="h-4 w-4" />
               </Button>
             }
           />

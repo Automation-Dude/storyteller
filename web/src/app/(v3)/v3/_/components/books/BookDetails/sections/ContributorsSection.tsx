@@ -1,6 +1,6 @@
 "use client"
 
-import { IconPlus, IconUser, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Controller, useFieldArray } from "react-hook-form"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
@@ -33,7 +33,7 @@ export function ContributorsSection({ className }: { className?: string }) {
   return (
     <section className={className}>
       <h2 className="section-label mb-3">
-        <IconUser className="h-4 w-4" />
+        <icon.User className="h-4 w-4" />
         {tLabels("otherContributors")}
       </h2>
 
@@ -108,7 +108,7 @@ function ContributorsEditor() {
               remove(idx)
             }}
           >
-            <IconX className="h-3 w-3" />
+            <icon.Close className="h-3 w-3" />
           </Button>
         </div>
       ))}

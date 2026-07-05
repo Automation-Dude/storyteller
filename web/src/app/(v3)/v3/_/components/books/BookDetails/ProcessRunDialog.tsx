@@ -1,6 +1,6 @@
 "use client"
 
-import { IconChevronDown } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
@@ -212,7 +212,7 @@ function RunConfigForm({
               <DropdownMenuTrigger
                 render={
                   <Button disabled={busy} aria-label={t("moreStartOptions")}>
-                    <IconChevronDown className="size-4" />
+                    <icon.ChevronDown className="size-4" />
                   </Button>
                 }
               />

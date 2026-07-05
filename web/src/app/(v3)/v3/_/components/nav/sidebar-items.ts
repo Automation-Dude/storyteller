@@ -1,20 +1,5 @@
-import {
-  IconBook2,
-  IconBook,
-  IconBookmark,
-  IconCalendar,
-  IconCircleCheck,
-  IconHome,
-  IconLanguage,
-  IconList,
-  IconMicrophone2,
-  IconReportAnalytics,
-  IconStack2,
-  IconStar,
-  IconTag,
-  IconUser,
-  type TablerIcon,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
+import { type StyledIcon } from "@/icons"
 
 import { type Permission } from "@/database/users"
 
@@ -35,7 +20,7 @@ type LibraryLabelKey =
 type BuiltinBase = {
   key: string
   group: SidebarGroup
-  icon: TablerIcon
+  icon: StyledIcon
   href: string
   // count lookup key in useLibraryCounts; omitted for entries without a badge
   countKey?: string
@@ -55,7 +40,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "home",
     group: "main",
-    icon: IconHome,
+    icon: icon.Home,
     href: "/",
     labelNs: "AppSidebar",
     labelKey: "home",
@@ -63,7 +48,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "books",
     group: "main",
-    icon: IconBook,
+    icon: icon.BookAlt,
     href: "/books",
     labelNs: "AppSidebar",
     labelKey: "books",
@@ -71,7 +56,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "alignment-quality",
     group: "main",
-    icon: IconReportAnalytics,
+    icon: icon.ReportAnalytics,
     href: "/quality",
     permission: "bookProcess",
     labelNs: "AppSidebar",
@@ -80,7 +65,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "series",
     group: "library",
-    icon: IconList,
+    icon: icon.List,
     href: "/series",
     countKey: "series",
     labelNs: "LibraryPage",
@@ -89,7 +74,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "authors",
     group: "library",
-    icon: IconUser,
+    icon: icon.User,
     href: "/authors",
     countKey: "authors",
     labelNs: "LibraryPage",
@@ -98,7 +83,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "narrators",
     group: "library",
-    icon: IconMicrophone2,
+    icon: icon.Microphone2,
     href: "/narrators",
     countKey: "narrators",
     labelNs: "LibraryPage",
@@ -107,7 +92,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "translators",
     group: "library",
-    icon: IconLanguage,
+    icon: icon.Language,
     href: "/translators",
     countKey: "translators",
     labelNs: "LibraryPage",
@@ -116,7 +101,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "tags",
     group: "library",
-    icon: IconTag,
+    icon: icon.Tag,
     href: "/tags",
     countKey: "tags",
     labelNs: "LibraryPage",
@@ -125,7 +110,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "publication-years",
     group: "library",
-    icon: IconCalendar,
+    icon: icon.Calendar,
     href: "/publication-years",
     countKey: "publicationYears",
     labelNs: "LibraryPage",
@@ -134,7 +119,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "ratings",
     group: "library",
-    icon: IconStar,
+    icon: icon.Star,
     href: "/ratings",
     countKey: "ratings",
     labelNs: "LibraryPage",
@@ -143,7 +128,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "statuses",
     group: "library",
-    icon: IconCircleCheck,
+    icon: icon.CircleCheck,
     href: "/statuses",
     countKey: "statuses",
     labelNs: "LibraryPage",
@@ -152,7 +137,7 @@ export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
   {
     key: "formats",
     group: "library",
-    icon: IconStack2,
+    icon: icon.Stack,
     href: "/formats",
     labelNs: "LibraryPage",
     labelKey: "Formats.plain",
@@ -163,5 +148,5 @@ export const BUILTIN_SIDEBAR_MAP: Record<string, BuiltinSidebarItem> =
   Object.fromEntries(BUILTIN_SIDEBAR_ITEMS.map((item) => [item.key, item]))
 
 // icons for entity-backed entries (collections / custom shelves)
-export const COLLECTION_ICON = IconBook2
-export const SHELF_ICON = IconBookmark
+export const COLLECTION_ICON = icon.Book
+export const SHELF_ICON = icon.Bookmark

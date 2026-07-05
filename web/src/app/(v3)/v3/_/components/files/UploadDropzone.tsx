@@ -1,6 +1,6 @@
 "use client"
 
-import { IconFile, IconUpload, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type default as Uppy } from "@uppy/core"
 import useUppyState from "@uppy/react/lib/useUppyState"
 import { useRef, useState } from "react"
@@ -75,7 +75,7 @@ export function UploadDropzone({
           disabled ? "opacity-50" : "hover:border-primary/50 cursor-pointer",
         )}
       >
-        <IconUpload className="text-muted-foreground h-6 w-6" />
+        <icon.Upload className="text-muted-foreground h-6 w-6" />
         <span className="text-sm font-medium">
           Drop files here or click to browse
         </span>
@@ -105,7 +105,7 @@ export function UploadDropzone({
                 className="bg-muted/50 flex items-center gap-2 rounded-md px-3 py-2"
               >
                 <ItemMedia variant="icon">
-                  <IconFile className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <icon.File className="text-muted-foreground h-4 w-4 shrink-0" />
                 </ItemMedia>
                 <ItemContent className="gap-1">
                   <ItemTitle className="truncate text-sm">
@@ -137,7 +137,7 @@ export function UploadDropzone({
                       }}
                       className="text-muted-foreground hover:text-foreground shrink-0"
                     >
-                      <IconX className="h-4 w-4" />
+                      <icon.Close className="h-4 w-4" />
                     </button>
                   </ItemActions>
                 )}

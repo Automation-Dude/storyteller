@@ -1,6 +1,6 @@
 "use client"
 
-import { IconChartRadar, IconPencil, IconStar } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
@@ -236,7 +236,7 @@ export function ReviewSection({ className }: { className?: string }) {
   return (
     <CollapsibleSection
       title={t("review.title")}
-      icon={<IconStar className="size-3.5 stroke-1" />}
+      icon={<icon.Star className="size-3.5 stroke-1" />}
       className={className}
       rightElement={
         <div className="flex items-center">
@@ -255,7 +255,7 @@ export function ReviewSection({ className }: { className?: string }) {
                 currentReview ? c("actions.edit") : t("review.addReview")
               }
             >
-              <IconPencil className="size-3.5 stroke-[1.5]" />
+              <icon.Pencil className="size-3.5 stroke-[1.5]" />
             </TooltipButton>
           )}
           {!hasDimensions && (
@@ -269,7 +269,7 @@ export function ReviewSection({ className }: { className?: string }) {
               tooltip={t("review.addAdvanced")}
               aria-label={t("review.addAdvanced")}
             >
-              <IconChartRadar className="mr-1 h-3.5 w-3.5" />
+              <icon.ChartRadar className="mr-1 h-3.5 w-3.5" />
             </TooltipButton>
           )}
         </div>

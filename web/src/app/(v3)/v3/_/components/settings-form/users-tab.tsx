@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  IconPlus,
-  IconRefresh,
-  IconTrash,
-  IconUsers,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import Link from "next/link"
 import { useCallback, useLayoutEffect, useState } from "react"
 
@@ -122,7 +117,7 @@ export function UsersTab({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <IconUsers className="h-5 w-5" />
+                <icon.Users className="h-5 w-5" />
                 {t("sections.users-list.title")}
               </CardTitle>
               <CardDescription>
@@ -184,7 +179,7 @@ function InviteRow({ invite }: { invite: Invite }) {
               void resendInvite({ inviteKey: invite.inviteKey })
             }}
           >
-            {isResending ? <Spinner /> : <IconRefresh className="h-4 w-4" />}
+            {isResending ? <Spinner /> : <icon.Refresh className="h-4 w-4" />}
           </Button>
         )}
 
@@ -199,7 +194,7 @@ function InviteRow({ invite }: { invite: Invite }) {
               void deleteInvite({ inviteKey: invite.inviteKey })
             }}
           >
-            {isDeleting ? <Spinner /> : <IconTrash className="h-4 w-4" />}
+            {isDeleting ? <Spinner /> : <icon.Trash className="h-4 w-4" />}
           </Button>
         )}
       </div>
@@ -274,7 +269,7 @@ function UserRow({ user }: { user: User }) {
                 void deleteUser({ uuid: user.id })
               }}
             >
-              {isDeleting ? <Spinner /> : <IconTrash className="h-4 w-4" />}
+              {isDeleting ? <Spinner /> : <icon.Trash className="h-4 w-4" />}
             </Button>
           )}
         </div>

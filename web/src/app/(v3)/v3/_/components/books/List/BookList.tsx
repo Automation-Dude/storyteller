@@ -1,7 +1,7 @@
 "use client"
 
 import { Popover } from "@base-ui/react/popover"
-import { IconLoader, IconSearch } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -155,7 +155,7 @@ export function BookList({
   if (!isLoading && books.length === 0) {
     return (
       <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
-        <IconSearch className="h-12 w-12 opacity-40" />
+        <icon.Search className="h-12 w-12 opacity-40" />
         <p className="text-lg font-medium">{emptyMessage}</p>
         {emptySubMessage && <p className="text-sm">{emptySubMessage}</p>}
 
@@ -265,7 +265,7 @@ export function BookList({
 
       {isFetchingNextPage && (
         <div className="text-muted-foreground mt-4 flex items-center justify-center gap-2">
-          <IconLoader className="h-5 w-5 animate-spin" />
+          <icon.Loader className="h-5 w-5 animate-spin" />
           <span>Loading more...</span>
         </div>
       )}

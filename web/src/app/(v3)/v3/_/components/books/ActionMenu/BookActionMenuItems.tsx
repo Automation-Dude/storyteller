@@ -1,15 +1,6 @@
 "use client"
 
-import {
-  IconBook,
-  IconFolder,
-  IconLibrary,
-  IconProgress,
-  IconRefresh,
-  IconReplace,
-  IconScan,
-  IconTrash,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Fragment, type ReactNode, useCallback, useState } from "react"
 import { toast } from "sonner"
 
@@ -252,7 +243,7 @@ export function useBookActionItems({
     entries.push({
       key: "collections",
       label: t.plain("editCollections"),
-      icon: <IconFolder className="size-4" />,
+      icon: <icon.Folder className="size-4" />,
       submenu: () => (
         <RelationEditPicker
           source="collections"
@@ -274,7 +265,7 @@ export function useBookActionItems({
     entries.push({
       key: "series",
       label: t.plain("editSeries"),
-      icon: <IconLibrary className="size-4" />,
+      icon: <icon.Library className="size-4" />,
       submenu: () => (
         <RelationEditPicker
           source="series"
@@ -315,7 +306,7 @@ export function useBookActionItems({
   entries.push({
     key: "statuses",
     label: t.plain("setStatus"),
-    icon: <IconBook className="size-4" />,
+    icon: <icon.BookAlt className="size-4" />,
     submenu: () => (
       <RelationEditPicker
         source="statuses"
@@ -331,7 +322,7 @@ export function useBookActionItems({
     entries.push({
       key: "upgradeEpub",
       label: t.plain("upgradeEpub"),
-      icon: <IconReplace className="size-4" />,
+      icon: <icon.Replace className="size-4" />,
       onSelect: () => {
         upgradeAction.confirm()
       },
@@ -358,7 +349,7 @@ export function useBookActionItems({
           key: "processing",
           separatorBefore: true,
           label: tp.plain("menuTitle"),
-          icon: <IconProgress className="size-4" />,
+          icon: <icon.Progress className="size-4" />,
           submenu: ({ close }) => (
             <div className="flex flex-col">
               {processingRun.positions.map((position) => (
@@ -384,7 +375,7 @@ export function useBookActionItems({
           key: "process",
           separatorBefore: true,
           label: c.plain("states.processing"),
-          icon: <IconProgress className="size-4" />,
+          icon: <icon.Progress className="size-4" />,
           onSelect: () => {
             processAction.confirm()
           },
@@ -394,7 +385,7 @@ export function useBookActionItems({
       entries.push({
         key: "clearCache",
         label: t.plain("clearCache"),
-        icon: <IconRefresh className="size-4" />,
+        icon: <icon.Refresh className="size-4" />,
         onSelect: () => {
           clearCacheAction.confirm()
         },
@@ -406,7 +397,7 @@ export function useBookActionItems({
     entries.push({
       key: "scan",
       label: c.plain("actions.scan"),
-      icon: <IconScan className="size-4" />,
+      icon: <icon.Scan className="size-4" />,
       onSelect: handleScan,
     })
   }
@@ -420,7 +411,7 @@ export function useBookActionItems({
       label: deleteAction.isLoading
         ? c.plain("states.deleting")
         : c.plain("actions.delete"),
-      icon: <IconTrash className="size-4" />,
+      icon: <icon.Trash className="size-4" />,
       onSelect: () => {
         deleteAction.confirm()
       },

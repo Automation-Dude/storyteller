@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { IconEye, IconEyeOff } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -139,7 +139,7 @@ export function LoginForm({
                       setShowPassword(!showPassword)
                     }}
                   >
-                    {showPassword ? <IconEyeOff /> : <IconEye />}
+                    {showPassword ? <icon.EyeOff /> : <icon.Eye />}
                   </InputGroupButton>
                 </InputGroup>
                 {errors.password && (

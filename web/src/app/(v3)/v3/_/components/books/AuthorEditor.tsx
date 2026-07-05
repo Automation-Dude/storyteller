@@ -1,4 +1,4 @@
-import { IconCheck, IconMicrophone, IconUser, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useMemo, useState } from "react"
 import { useWatch } from "react-hook-form"
 
@@ -161,7 +161,7 @@ function CreatorChipField({
               void commitField(field)
             }}
           >
-            <IconCheck className="mr-1 h-3.5 w-3.5" />
+            <icon.Check className="mr-1 h-3.5 w-3.5" />
             {c("actions.save")}
           </Button>
           <Button
@@ -172,7 +172,7 @@ function CreatorChipField({
               setEditingField(null)
             }}
           >
-            <IconX className="mr-1 h-3.5 w-3.5" />
+            <icon.Close className="mr-1 h-3.5 w-3.5" />
             {c("actions.cancel")}
           </Button>
         </div>

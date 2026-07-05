@@ -1,6 +1,6 @@
 "use client"
 
-import { IconCheck } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { cn } from "@v3/_/lib/utils"
 
@@ -44,7 +44,7 @@ function Swatch({
       style={{ background: color }}
     >
       {selected && (
-        <IconCheck className="size-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]" />
+        <icon.Check className="size-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]" />
       )}
     </button>
   )

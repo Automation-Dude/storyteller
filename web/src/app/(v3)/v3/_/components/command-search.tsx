@@ -1,4 +1,4 @@
-import { IconBook, IconHeadphones, IconSearch } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 // import { BookOpen, FileText, Headphones, RefreshCw, Search } from "lucide-react"
@@ -84,7 +84,7 @@ export function CommandSearch() {
           {!debouncedSearch && (
             <CommandEmpty>
               <div className="flex flex-col items-center gap-2 py-4">
-                <IconSearch className="text-muted-foreground h-8 w-8" />
+                <icon.Search className="text-muted-foreground h-8 w-8" />
                 <p>Start typing to search...</p>
                 <p className="text-muted-foreground text-xs">
                   Search by title, author, or book content
@@ -126,10 +126,10 @@ export function CommandSearch() {
                       <IconReadaloud className="h-3.5 w-3.5 text-orange-500" />
                     )}
                     {book.audiobook && !book.readaloud && (
-                      <IconHeadphones className="text-muted-foreground h-3.5 w-3.5" />
+                      <icon.Headphones className="text-muted-foreground h-3.5 w-3.5" />
                     )}
                     {book.ebook && !book.readaloud && (
-                      <IconBook className="text-muted-foreground h-3.5 w-3.5" />
+                      <icon.BookAlt className="text-muted-foreground h-3.5 w-3.5" />
                     )}
                   </div>
                 </CommandItem>

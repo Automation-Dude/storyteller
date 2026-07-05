@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
-import { IconDots } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import * as React from "react"
 
 import { cn } from "@v3/_/lib/utils"
@@ -105,7 +105,7 @@ function BreadcrumbEllipsis({
       )}
       {...props}
     >
-      <IconDots />
+      <icon.Dots />
       <span className="sr-only">More</span>
     </span>
   )

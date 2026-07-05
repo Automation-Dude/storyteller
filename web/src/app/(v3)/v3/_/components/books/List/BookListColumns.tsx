@@ -2,7 +2,7 @@ import { cn } from "@/cn"
 import { BookWithRelations } from "@/database/books"
 import { DisplayField } from "@/sort"
 import { formatFileSize } from "@/utils/formatFileSize"
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react"
+import * as icon from "@/icons"
 // import { formatDuration } from "date-fns"
 import { useFormatter } from "next-intl"
 import { useTranslation } from "../../../hooks/use-translation"
@@ -203,9 +203,9 @@ export function ColumnHeader({
 
       {isActive &&
         (sortDirection === "asc" ? (
-          <IconChevronUp className="size-3 shrink-0" />
+          <icon.ChevronUp className="size-3 shrink-0" />
         ) : (
-          <IconChevronDown className="size-3 shrink-0" />
+          <icon.ChevronDown className="size-3 shrink-0" />
         ))}
     </button>
   )

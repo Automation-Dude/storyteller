@@ -1,6 +1,6 @@
 "use client"
 
-import { IconLayoutSidebar } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Fragment, type ReactNode } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -103,7 +103,7 @@ function MobileSidebarToggle() {
       onClick={sidebar.toggleSidebar}
       className="bg-background/90 fixed bottom-4 left-4 z-30 size-11 rounded-full shadow-lg backdrop-blur md:hidden"
     >
-      <IconLayoutSidebar className="size-4" />
+      <icon.LayoutSidebar className="size-4" />
     </Button>
   )
 }

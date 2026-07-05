@@ -1,16 +1,6 @@
 "use client"
 
-import {
-  IconCheck,
-  IconChevronDown,
-  IconEyeOff,
-  IconGripVertical,
-  IconLoader2,
-  IconPencil,
-  IconPlus,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Reorder, useDragControls } from "motion/react"
 import { useState } from "react"
 
@@ -306,7 +296,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
               title={c("actions.cancel")}
               className="text-muted-foreground hover:text-foreground size-5"
             >
-              <IconX className="size-3.5" />
+              <icon.Close className="size-3.5" />
             </Button>
 
             <Button
@@ -318,9 +308,9 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
               className="text-muted-foreground hover:text-foreground size-5"
             >
               {isSaving ? (
-                <IconLoader2 className="size-3.5 animate-spin" />
+                <icon.Loader2 className="size-3.5 animate-spin" />
               ) : (
-                <IconCheck className="size-3.5" />
+                <icon.Check className="size-3.5" />
               )}
             </Button>
           </div>
@@ -454,7 +444,7 @@ function EditableGroup({
                 type="button"
                 className="text-muted-foreground hover:text-foreground flex size-5 items-center justify-center"
               >
-                <IconChevronDown
+                <icon.ChevronDown
                   className={cn(
                     "size-3 transition-transform",
                     !isOpen && "-rotate-90",
@@ -479,7 +469,7 @@ function EditableGroup({
             className="text-muted-foreground hover:text-destructive hover:bg-muted-foreground size-5"
             title="Remove group"
           >
-            <IconTrash className="size-3" />
+            <icon.Trash className="size-3" />
           </Button>
         </div>
 
@@ -640,7 +630,7 @@ function EditableItem({ item, onRemove, onEdit }: EditableItemProps) {
           setIsDragging(false)
         }}
       >
-        <IconGripVertical className="size-3" />
+        <icon.GripVertical className="size-3" />
       </button>
 
       <span className="flex-1 truncate text-xs">{item.name}</span>
@@ -654,7 +644,7 @@ function EditableItem({ item, onRemove, onEdit }: EditableItemProps) {
           className="text-muted-foreground hover:text-foreground hover:bg-muted-foreground size-4"
           title="Edit"
         >
-          <IconPencil className="size-3" />
+          <icon.Pencil className="size-3" />
         </Button>
       )}
 
@@ -664,7 +654,7 @@ function EditableItem({ item, onRemove, onEdit }: EditableItemProps) {
         className="text-muted-foreground hover:text-destructive flex size-4 shrink-0 items-center justify-center"
         title="Hide"
       >
-        <IconEyeOff className="size-3" />
+        <icon.EyeOff className="size-3" />
       </button>
     </Reorder.Item>
   )

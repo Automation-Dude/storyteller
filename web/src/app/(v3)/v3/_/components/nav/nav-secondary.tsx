@@ -1,6 +1,6 @@
 "use client"
 
-import { type TablerIcon } from "@tabler/icons-react"
+import { type StyledIcon } from "@/icons"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 
@@ -18,7 +18,7 @@ import { useVersionBasePath } from "@v3/_/components/version-context"
 export type NavSecondaryItem =
   | ({
       title: string
-      icon: TablerIcon
+      icon: StyledIcon
       badge?: React.ReactNode
     } & (
       | {

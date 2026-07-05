@@ -1,16 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import {
-  IconArrowLeft,
-  IconBook,
-  IconPalette,
-  IconSearch,
-  IconSettings2,
-  IconSettings,
-  IconUser,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type Locale } from "next-intl"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -113,18 +104,18 @@ export function PreferencesForm({
 
   const allTabs = useMemo<SidebarTabDef[]>(
     () => [
-      { value: "profile", label: t("tabs.profile.title"), icon: IconUser },
+      { value: "profile", label: t("tabs.profile.title"), icon: icon.User },
       {
         value: "general",
         label: t("tabs.general.title"),
-        icon: IconSettings2,
+        icon: icon.Settings2,
       },
       {
         value: "appearance",
         label: t("tabs.appearance.title"),
-        icon: IconPalette,
+        icon: icon.Palette,
       },
-      { value: "books", label: t("tabs.books.title"), icon: IconBook },
+      { value: "books", label: t("tabs.books.title"), icon: icon.BookAlt },
     ],
     [t],
   )
@@ -277,7 +268,7 @@ export function PreferencesForm({
                     size="sm"
                     onClick={() => void setActiveTab(null)}
                   >
-                    <IconArrowLeft className="mr-1 h-4 w-4" />
+                    <icon.ArrowLeft className="mr-1 h-4 w-4" />
                     {c("actions.back")}
                   </Button>
 
@@ -379,7 +370,7 @@ function PreferencesSidebar({
 
             <div className="mb-2 px-1">
               <div className="relative">
-                <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                <icon.Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
                   type="text"
                   placeholder={t("searchPreferences")}
@@ -398,7 +389,7 @@ function PreferencesSidebar({
                     }}
                     className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
                   >
-                    <IconX className="h-3 w-3" />
+                    <icon.Close className="h-3 w-3" />
                   </button>
                 )}
               </div>
@@ -422,7 +413,7 @@ function PreferencesSidebar({
             className="text-muted-foreground hover:text-foreground w-full justify-start gap-2"
             render={
               <V3Link href="/settings?tab=library">
-                <IconSettings className="h-4 w-4" />
+                <icon.Settings className="h-4 w-4" />
                 {t("settingsPage")}
               </V3Link>
             }

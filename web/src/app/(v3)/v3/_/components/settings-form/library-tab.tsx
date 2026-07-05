@@ -1,6 +1,6 @@
 "use client"
 
-import { IconPlus, IconSearch, IconTrash } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useMemo, useState } from "react"
 import { useWatch } from "react-hook-form"
 
@@ -392,7 +392,7 @@ function WatchRuleCard({
           aria-label="Delete rule"
           onClick={onDelete}
         >
-          <IconTrash size={14} className="text-destructive" />
+          <icon.Trash size={14} className="text-destructive" />
         </Button>
       )}
     </div>
@@ -432,7 +432,7 @@ function IgnoreRuleRow({
           aria-label="Delete rule"
           onClick={onDelete}
         >
-          <IconTrash size={14} className="text-destructive" />
+          <icon.Trash size={14} className="text-destructive" />
         </Button>
       )}
     </div>
@@ -1126,7 +1126,7 @@ function TabHeader({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-[200px] flex-1">
-        <IconSearch
+        <icon.Search
           size={14}
           className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 -translate-y-1/2"
         />
@@ -1172,7 +1172,7 @@ function TabHeader({
           disabled={isDeleting}
           onClick={onDeleteSelected}
         >
-          <IconTrash size={14} className="mr-1" />
+          <icon.Trash size={14} className="mr-1" />
           Delete {selectedCount}
         </Button>
       )}

@@ -1,6 +1,6 @@
 "use client"
 
-import { IconVolumeOff } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { parseAsBoolean, parseAsString, useQueryState } from "nuqs"
 import { useMemo, useState } from "react"
 
@@ -138,7 +138,7 @@ export default function QualityPage() {
             onClick={() => void setMuted(muted ? null : true)}
             className="gap-1.5"
           >
-            <IconVolumeOff className="size-4" />
+            <icon.VolumeOff className="size-4" />
             Muted
             {facets && facets.muted > 0 && (
               <span className="text-muted-foreground tabular-nums">

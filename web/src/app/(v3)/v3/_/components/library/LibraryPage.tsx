@@ -1,17 +1,6 @@
 "use client"
 
-import {
-  IconArrowLeft,
-  IconBookmarkPlus,
-  IconDotsVertical,
-  IconEdit,
-  IconLock,
-  IconPlus,
-  IconSearch,
-  IconSortAscending,
-  IconSortDescending,
-  IconTrash,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -615,7 +604,7 @@ function LibraryPageInner({
 
         {filteredBooks.length === 0 && (
           <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
-            <IconSearch className="h-12 w-12 opacity-40" />
+            <icon.Search className="h-12 w-12 opacity-40" />
             <p className="text-lg font-medium">{t("emptyState")}</p>
           </div>
         )}
@@ -653,7 +642,7 @@ function LibraryPageInner({
           <DropdownMenuTrigger
             render={
               <Button variant="ghost" size="icon-sm">
-                <IconDotsVertical className="h-4 w-4" />
+                <icon.DotsVertical className="h-4 w-4" />
               </Button>
             }
           />
@@ -669,7 +658,7 @@ function LibraryPageInner({
                   })
                 }}
               >
-                <IconEdit className="mr-2 h-4 w-4" />
+                <icon.Edit className="mr-2 h-4 w-4" />
                 {c("actions.edit")}
               </DropdownMenuItem>
             )}
@@ -685,7 +674,7 @@ function LibraryPageInner({
                   })
                 }}
               >
-                <IconBookmarkPlus className="mr-2 h-4 w-4" />
+                <icon.BookmarkPlus className="mr-2 h-4 w-4" />
                 {t("pinAsShelf")}
               </DropdownMenuItem>
             )}
@@ -699,7 +688,7 @@ function LibraryPageInner({
                   }}
                   className="text-destructive focus:text-destructive"
                 >
-                  <IconTrash className="mr-2 h-4 w-4" />
+                  <icon.Trash className="mr-2 h-4 w-4" />
                   {c("actions.delete")}
                 </DropdownMenuItem>
               </>
@@ -808,7 +797,7 @@ function MobileBookView({
                 size="sm"
                 onClick={onBack}
               >
-                <IconArrowLeft className="size-3.5 stroke-[1.5]" />
+                <icon.ArrowLeft className="size-3.5 stroke-[1.5]" />
               </TooltipButton>
               {actions}
             </>
@@ -993,9 +982,9 @@ function SidebarPanel({
                 title={sortMode === "name" ? t("sortByCount") : t("sortByName")}
               >
                 {sortMode === "name" ? (
-                  <IconSortAscending className="h-4 w-4" />
+                  <icon.SortAscending className="h-4 w-4" />
                 ) : (
-                  <IconSortDescending className="h-4 w-4" />
+                  <icon.SortDescending className="h-4 w-4" />
                 )}
               </Button>
             </div>
@@ -1032,7 +1021,7 @@ function SidebarPanel({
                   setMenuOpen(false)
                 }}
               >
-                <IconEdit className="mr-2 h-4 w-4" />
+                <icon.Edit className="mr-2 h-4 w-4" />
                 {c("actions.edit")}
               </DropdownMenuItem>
             )}
@@ -1044,7 +1033,7 @@ function SidebarPanel({
                   setMenuOpen(false)
                 }}
               >
-                <IconBookmarkPlus className="mr-2 h-4 w-4" />
+                <icon.BookmarkPlus className="mr-2 h-4 w-4" />
                 {t("pinAsShelf")}
               </DropdownMenuItem>
             )}
@@ -1065,7 +1054,7 @@ function SidebarPanel({
                     }}
                     className="text-destructive focus:text-destructive"
                   >
-                    <IconTrash className="mr-2 h-4 w-4" />
+                    <icon.Trash className="mr-2 h-4 w-4" />
                     {c("actions.delete")}
                   </DropdownMenuItem>
                 </>
@@ -1330,7 +1319,7 @@ function SidebarRow({
         <span className="min-w-0 truncate">{item.name}</span>
 
         {item.kind && isWellKnownStatus(item.kind) && (
-          <IconLock className="text-muted-foreground/60 size-3 shrink-0" />
+          <icon.Lock className="text-muted-foreground/60 size-3 shrink-0" />
         )}
       </button>
 
@@ -1343,7 +1332,7 @@ function SidebarRow({
             }}
             className="text-muted-foreground hover:text-foreground pointer-events-none invisible rounded p-0.5 opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:visible group-hover/item:opacity-100 peer-focus/item:pointer-events-auto peer-focus/item:visible peer-focus/item:opacity-100 focus-visible:opacity-100"
           >
-            <IconDotsVertical className="size-3.5" />
+            <icon.DotsVertical className="size-3.5" />
           </button>
         )}
 

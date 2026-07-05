@@ -1,6 +1,6 @@
 "use client"
 
-import { IconBooks, IconLoader2 } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { HeroSection } from "@v3/_/components/home/HeroSection"
 import { StatsBar } from "@v3/_/components/home/StatsBar"
@@ -39,7 +39,7 @@ export function HomeSections() {
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center py-12">
-        <IconLoader2 className="text-muted-foreground size-6 animate-spin" />
+        <icon.Loader2 className="text-muted-foreground size-6 animate-spin" />
       </div>
     )
   }
@@ -75,7 +75,7 @@ export function HomeSectionsActions() {
           tooltip={t("sections.customize")}
           aria-label={t("sections.customize")}
         >
-          <IconBooks className="mr-2 size-4" />
+          <icon.Books className="mr-2 size-4" />
         </TooltipButton>
       }
     />

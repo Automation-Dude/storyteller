@@ -1,6 +1,7 @@
 "use client"
 
-import { IconChevronRight, IconX, type TablerIcon } from "@tabler/icons-react"
+import * as icon from "@/icons"
+import { type StyledIcon } from "@/icons"
 import { usePathname } from "next/navigation"
 
 import {
@@ -33,7 +34,7 @@ export type NavItem = {
   title: string
   allTitle?: string
   url: string
-  icon?: TablerIcon
+  icon?: StyledIcon
   isCollapsible?: boolean
   subItems?: NavSubItem[]
 }
@@ -128,7 +129,7 @@ function CollapsibleNavItem({
               >
                 {item.icon && <item.icon />}
                 <span>{item.title}</span>
-                <IconChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                <icon.ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
               </SidebarMenuButton>
             }
           />
@@ -177,7 +178,7 @@ function CollapsibleNavItem({
                               }}
                               className="text-sidebar-foreground/50 hover:text-destructive ml-auto opacity-0 transition-opacity group-hover/subitem:opacity-100"
                             >
-                              <IconX className="h-3 w-3" />
+                              <icon.Close className="h-3 w-3" />
                             </button>
                           )}
                         </V3Link>

@@ -1,6 +1,6 @@
 "use client"
 
-import { IconPlus, IconTrash } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Controller, useFieldArray, useWatch } from "react-hook-form"
 import { v4 as uuidv4 } from "uuid"
 
@@ -321,7 +321,7 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                         removeDimension(index)
                       }}
                     >
-                      <IconTrash className="h-4 w-4" />
+                      <icon.Trash className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

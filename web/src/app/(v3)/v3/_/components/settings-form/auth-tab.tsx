@@ -1,6 +1,6 @@
 "use client"
 
-import { IconPlus, IconTrash } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import {
   Controller,
   type FieldError as FormFieldError,
@@ -154,7 +154,7 @@ export function AuthTab() {
                     removeProvider(index)
                   }}
                 >
-                  <IconTrash className="h-4 w-4" />
+                  <icon.Trash className="h-4 w-4" />
                 </Button>
                 <CardContent className="space-y-4">
                   <Controller
@@ -727,7 +727,7 @@ function GroupPermissionsField({
                 removeGroup(groupName)
               }}
             >
-              <IconTrash className="h-3.5 w-3.5" />
+              <icon.Trash className="h-3.5 w-3.5" />
             </Button>
 
             <Field>

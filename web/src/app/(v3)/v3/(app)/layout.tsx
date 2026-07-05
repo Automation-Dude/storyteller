@@ -2,6 +2,7 @@ import { cookies } from "next/headers"
 
 import { AppSidebar } from "@v3/_/components/app-sidebar"
 import { ProcessingToast } from "@v3/_/components/processing/ProcessingToast"
+import { ThemeTweaksPanel } from "@v3/_/components/theme-tweaks/theme-tweaks-panel"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
 import { UserPreferencesProvider } from "@v3/_/components/user-preferences-provider"
 
@@ -64,6 +65,7 @@ export default async function AppLayout({
         />
         <SidebarInset className="overflow-x-hidden">{children}</SidebarInset>
         {user.permissions.bookProcess && <ProcessingToast />}
+        <ThemeTweaksPanel />
       </SidebarProvider>
     </UserPreferencesProvider>
   )

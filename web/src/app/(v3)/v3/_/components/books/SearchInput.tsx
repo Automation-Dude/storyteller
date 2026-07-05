@@ -1,4 +1,4 @@
-import { IconSearch, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
@@ -26,7 +26,7 @@ export function SearchInput({
         className,
       )}
     >
-      <IconSearch className="text-muted-foreground h-4 w-4 shrink-0" />
+      <icon.Search className="text-muted-foreground h-4 w-4 shrink-0" />
       <input
         placeholder={placeholder}
         value={value}
@@ -53,7 +53,7 @@ export function SearchInput({
             onChange("")
           }}
         >
-          <IconX className="h-3.5 w-3.5" />
+          <icon.Close className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>

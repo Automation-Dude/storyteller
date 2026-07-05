@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  IconBookmarkPlus,
-  IconDotsVertical,
-  IconEdit,
-  IconGitMerge,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type MouseEvent, useCallback, useMemo, useState } from "react"
 
 import {
@@ -218,7 +211,7 @@ export function SidebarEntityActions({
           <DropdownMenuTrigger
             render={
               <Button variant="ghost" size="icon-xs">
-                <IconDotsVertical className="size-3.5" />
+                <icon.DotsVertical className="size-3.5" />
               </Button>
             }
           />
@@ -230,7 +223,7 @@ export function SidebarEntityActions({
                   onEdit(singleSelected)
                 }}
               >
-                <IconEdit className="mr-2 h-4 w-4" />
+                <icon.Edit className="mr-2 h-4 w-4" />
                 {c("actions.edit")}
               </DropdownMenuItem>
             )}
@@ -238,7 +231,7 @@ export function SidebarEntityActions({
             {count >= 2 && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
-                  <IconGitMerge className="mr-2 h-4 w-4" />
+                  <icon.GitMerge className="mr-2 h-4 w-4" />
                   {t("mergeInto")}
                 </DropdownMenuSubTrigger>
 
@@ -263,7 +256,7 @@ export function SidebarEntityActions({
                   setShelfEditorOpen(true)
                 }}
               >
-                <IconBookmarkPlus className="mr-2 h-4 w-4" />
+                <icon.BookmarkPlus className="mr-2 h-4 w-4" />
                 {t("createShelfWith")}
               </DropdownMenuItem>
             )}
@@ -279,14 +272,14 @@ export function SidebarEntityActions({
               disabled={isDeleting}
               className="text-destructive focus:text-destructive"
             >
-              <IconTrash className="mr-2 h-4 w-4" />
+              <icon.Trash className="mr-2 h-4 w-4" />
               {isDeleting ? c("states.deleting") : c("actions.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <Button variant="ghost" size="icon-xs" onClick={onStopSelecting}>
-          <IconX className="size-3.5" />
+          <icon.Close className="size-3.5" />
         </Button>
       </ActionTray>
 

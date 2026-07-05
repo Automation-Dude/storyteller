@@ -1,5 +1,5 @@
 import { Popover } from "@base-ui/react/popover"
-import { IconDotsVertical } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import Link from "next/link"
 import { useFormatter, useLocale } from "next-intl"
 import { Fragment, memo, useCallback, useMemo, useState } from "react"
@@ -314,7 +314,7 @@ export const BookCard = memo(function BookCard({
               onOpenMenu(book, e.currentTarget)
             }}
           >
-            <IconDotsVertical className="size-3.5" />
+            <icon.DotsVertical className="size-3.5" />
           </Popover.Trigger>
         )}
       </div>

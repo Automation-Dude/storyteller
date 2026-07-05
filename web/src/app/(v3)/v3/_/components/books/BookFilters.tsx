@@ -1,14 +1,3 @@
-import {
-  IconAdjustmentsHorizontal,
-  IconArrowDown,
-  IconArrowUp,
-  IconBookmarkPlus,
-  IconColumns,
-  IconDots,
-  IconLayoutGrid,
-  IconLayoutList,
-  IconPlus,
-} from "@tabler/icons-react"
 import { useMemo, useRef, useState } from "react"
 import * as icon from "@/icons"
 
@@ -201,7 +190,7 @@ export function BookFilters({
                   className="shrink-0"
                   tooltip="View options"
                 >
-                  <IconColumns className="h-4 w-4" />
+                  <icon.Columns className="h-4 w-4" />
                 </TooltipButton>
               }
             />
@@ -324,7 +313,7 @@ export function BookFilters({
               onClick={onToggleAdvanced}
               shortcut={[advancedHotKey]}
             >
-              <IconAdjustmentsHorizontal className="h-4 w-4" />
+              <icon.AdjustmentsHorizontal className="h-4 w-4" />
             </TooltipButton>
           )}
           {onSaveAsShelf && (
@@ -335,7 +324,7 @@ export function BookFilters({
               onClick={onSaveAsShelf}
               shortcut={[saveAsShelfHotKey]}
             >
-              <IconBookmarkPlus className="h-4 w-4" />
+              <icon.BookmarkPlus className="h-4 w-4" />
             </TooltipButton>
           )}
         </div>
@@ -381,7 +370,7 @@ function CollapsedOptionsMenu({
             aria-label="Sort and view options"
             tooltip="Sort & view"
           >
-            <IconDots className="size-4" />
+            <icon.Dots className="size-4" />
           </TooltipButton>
         }
       />
@@ -397,7 +386,7 @@ function CollapsedOptionsMenu({
                 onBookViewChange("grid")
               }}
             >
-              <IconLayoutGrid className="mr-2 h-4 w-4" />
+              <icon.LayoutGrid className="mr-2 h-4 w-4" />
               Grid
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
@@ -406,7 +395,7 @@ function CollapsedOptionsMenu({
                 onBookViewChange("list")
               }}
             >
-              <IconLayoutList className="mr-2 h-4 w-4" />
+              <icon.LayoutList className="mr-2 h-4 w-4" />
               List
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
@@ -435,9 +424,9 @@ function CollapsedOptionsMenu({
               </span>
               {option.value === sortField &&
                 (sortDirection === "asc" ? (
-                  <IconArrowUp className="h-3 w-3" />
+                  <icon.ArrowUp className="h-3 w-3" />
                 ) : (
-                  <IconArrowDown className="h-3 w-3" />
+                  <icon.ArrowDown className="h-3 w-3" />
                 ))}
             </DropdownMenuItem>
           ))}

@@ -1,15 +1,5 @@
 "use client"
-import {
-  IconAlertTriangle,
-  IconBook,
-  IconFileText,
-  IconHeadphones,
-  IconPlus,
-  IconRefresh,
-  IconServer,
-  IconTrash,
-  IconUpload,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 // import { useTranslation } from "@v3/_/hooks/use-translation"
 import { type ComponentType, useState } from "react"
 
@@ -46,8 +36,8 @@ import { IAdd } from "../../../ui/icon"
 type Format = "ebook" | "audiobook" | "readaloud"
 
 const FORMAT_ICONS: Record<Format, ComponentType<{ className?: string }>> = {
-  ebook: IconBook,
-  audiobook: IconHeadphones,
+  ebook: icon.BookAlt,
+  audiobook: icon.Headphones,
   readaloud: IconReadaloud,
 }
 
@@ -113,7 +103,7 @@ function FormatFileRow({
               variant="destructive"
               className="h-4 gap-0.5 px-1 text-[10px]"
             >
-              <IconAlertTriangle className="h-2.5 w-2.5" />
+              <icon.AlertTriangle className="h-2.5 w-2.5" />
               {tLabels("missing")}
             </Badge>
           )}
@@ -150,7 +140,7 @@ function FormatFileRow({
                   className="text-muted-foreground font-thin"
                   aria-label={`Replace ${format} file`}
                 >
-                  <IconRefresh className="h-3.5 w-3.5 stroke-[1.5]" />
+                  <icon.Refresh className="h-3.5 w-3.5 stroke-[1.5]" />
                 </TooltipButton>
               }
             />
@@ -159,14 +149,14 @@ function FormatFileRow({
                 onClick={onReplaceServer}
                 className="whitespace-nowrap"
               >
-                <IconServer className="mr-2 h-4 w-4" />
+                <icon.Server className="mr-2 h-4 w-4" />
                 {c("actions.import")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onReplaceUpload}
                 className="whitespace-nowrap"
               >
-                <IconUpload className="mr-2 h-4 w-4" />
+                <icon.Upload className="mr-2 h-4 w-4" />
                 {c("actions.upload")}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -180,7 +170,7 @@ function FormatFileRow({
               aria-label={`Remove ${format} from book`}
               onClick={onRemove}
             >
-              <IconTrash className="h-3.5 w-3.5" />
+              <icon.Trash className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
@@ -233,7 +223,7 @@ export function FileSection({
   return (
     <CollapsibleSection
       title={t("fileInformation.title")}
-      icon={<IconFileText className="size-3.5 stroke-1" />}
+      icon={<icon.FileText className="size-3.5 stroke-1" />}
       className={className}
       rightElement={
         canEdit &&
@@ -269,7 +259,7 @@ export function FileSection({
                         setFileDialog({ format: f, mode: "server" })
                       }}
                     >
-                      <IconServer className="mr-2 h-4 w-4" />
+                      <icon.Server className="mr-2 h-4 w-4" />
                       {t("fileInformation.importFromServer")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -277,7 +267,7 @@ export function FileSection({
                         setFileDialog({ format: f, mode: "upload" })
                       }}
                     >
-                      <IconUpload className="mr-2 h-4 w-4" />
+                      <icon.Upload className="mr-2 h-4 w-4" />
                       {t("fileInformation.upload")}
                     </DropdownMenuItem>
                   </DropdownMenuGroup>

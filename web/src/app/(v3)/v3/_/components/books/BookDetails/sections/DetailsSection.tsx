@@ -1,6 +1,6 @@
 "use client"
 
-import { IconBook } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { LanguageEdit } from "@v3/_/components/books/LanguageEdit"
@@ -46,7 +46,7 @@ export function DetailsSection({ className }: { className?: string }) {
   return (
     <CollapsibleSection
       title={tLabels("bookDetails")}
-      icon={<IconBook className="size-3.5 stroke-[1.5]" />}
+      icon={<icon.BookAlt className="size-3.5 stroke-[1.5]" />}
       className={className}
     >
       <div className="grid grid-cols-2 items-start gap-x-4 gap-y-2">

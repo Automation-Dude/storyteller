@@ -1,6 +1,6 @@
 "use client"
 
-import { IconEye, IconEyeOff, IconLoader } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useEffect, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -124,7 +124,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
             setShowBeta(!showBeta)
           }}
         >
-          {showBeta ? <IconEyeOff /> : <IconEye />}
+          {showBeta ? <icon.EyeOff /> : <icon.Eye />}
           {showBeta ? t("hideBetaVersions") : t("showBetaVersions")}
         </Button>
       </div>
@@ -139,7 +139,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
 
       {isFetching && (
         <div className="flex justify-center py-4">
-          <IconLoader className="text-muted-foreground size-5 animate-spin" />
+          <icon.Loader className="text-muted-foreground size-5 animate-spin" />
         </div>
       )}
 

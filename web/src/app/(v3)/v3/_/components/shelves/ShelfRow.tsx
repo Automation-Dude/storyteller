@@ -1,6 +1,6 @@
 "use client"
 
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useMemo, useRef } from "react"
 
 import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
@@ -81,11 +81,11 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
 
         <div className="flex gap-1 opacity-0 transition-opacity group-hover/shelf:opacity-100">
           <Button variant="ghost" size="icon-sm" onClick={scrollLeft}>
-            <IconChevronLeft className="size-4" />
+            <icon.ChevronLeft className="size-4" />
           </Button>
 
           <Button variant="ghost" size="icon-sm" onClick={scrollRight}>
-            <IconChevronRight className="size-4" />
+            <icon.ChevronRight className="size-4" />
           </Button>
         </div>
       </div>

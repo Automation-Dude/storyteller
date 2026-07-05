@@ -1,17 +1,6 @@
 "use client"
 
-import {
-  IconArrowLeft,
-  IconArrowsSort,
-  IconBook2,
-  IconBriefcase,
-  IconChevronRight,
-  IconExternalLink,
-  IconHeadphones,
-  IconSortAscending,
-  IconSortDescending,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import {
   type ColumnDef,
   type ExpandedState,
@@ -111,7 +100,7 @@ export function AlignmentReportContent({
                 aria-label="Back"
                 onClick={onBack}
               >
-                <IconArrowLeft className="size-4" />
+                <icon.ArrowLeft className="size-4" />
               </Button>
             )}
             <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
@@ -126,7 +115,7 @@ export function AlignmentReportContent({
               aria-label="Close"
               onClick={onClose}
             >
-              <IconX className="size-4" />
+              <icon.Close className="size-4" />
             </Button>
           )}
         </header>
@@ -192,7 +181,7 @@ function ReportHeader({
               aria-label="Back to details"
               onClick={onBack}
             >
-              <IconArrowLeft className="size-4" />
+              <icon.ArrowLeft className="size-4" />
             </Button>
           )}
           <div className="flex flex-col">
@@ -216,7 +205,7 @@ function ReportHeader({
             aria-label="Close"
             onClick={onClose}
           >
-            <IconX className="size-4" />
+            <icon.Close className="size-4" />
           </Button>
         )}
 
@@ -225,14 +214,14 @@ function ReportHeader({
             href={`/books/${view.bookUuid}/alignment`}
             className="hover:text-primary inline-flex items-center gap-1 hover:underline"
           >
-            <IconExternalLink className="size-3.5" /> {t("openFullPage")}
+            <icon.ExternalLink className="size-3.5" /> {t("openFullPage")}
           </V3Link>
           {!embedded && (
             <V3Link
               href={`/books/${view.bookUuid}`}
               className="hover:text-primary inline-flex items-center gap-1 hover:underline"
             >
-              <IconBook2 className="size-3.5" /> Book
+              <icon.Book className="size-3.5" /> Book
             </V3Link>
           )}
           {view.jobUuid && (
@@ -240,7 +229,7 @@ function ReportHeader({
               href="/settings?tab=queue"
               className="hover:text-primary inline-flex items-center gap-1 hover:underline"
             >
-              <IconBriefcase className="size-3.5" />{" "}
+              <icon.Briefcase className="size-3.5" />{" "}
               {t("createdByJob", {
                 relativeTime: relativeTime(view.createdAt),
               })}
@@ -499,7 +488,7 @@ const getColumns = (t: ReturnType<typeof useTranslation<"AlignmentReport">>) =>
       enableSorting: false,
       header: () => null,
       cell: ({ row }) => (
-        <IconChevronRight
+        <icon.ChevronRight
           className={cn(
             "text-muted-foreground size-4 transition-transform",
             row.getIsExpanded() && "rotate-90",
@@ -697,11 +686,11 @@ function ChapterTable({ chapters }: { chapters: ReportChapterRow[] }) {
                             )}
                         {sortable &&
                           (sorted?.desc ? (
-                            <IconSortDescending className="size-3" />
+                            <icon.SortDescending className="size-3" />
                           ) : sorted?.desc === false ? (
-                            <IconSortAscending className="size-3" />
+                            <icon.SortAscending className="size-3" />
                           ) : (
-                            <IconArrowsSort className="size-3 opacity-40" />
+                            <icon.ArrowsSort className="size-3 opacity-40" />
                           ))}
                       </span>
                     </th>
@@ -799,7 +788,7 @@ function MatchCard({
       </div>
       <div className="px-3 py-2.5">
         <span className="text-muted-foreground flex items-center gap-1 text-[9px] font-medium tracking-wider uppercase">
-          <IconBook2 className="size-3" /> {tNouns("ebook", { count: 1 })}
+          <icon.Book className="size-3" /> {tNouns("ebook", { count: 1 })}
         </span>
         <p className="mt-1 font-serif text-sm leading-relaxed">
           {ebook.prevSentence && (
@@ -818,7 +807,7 @@ function MatchCard({
       </div>
       <div className="border-t border-dashed px-3 py-2.5">
         <span className="text-muted-foreground flex items-center gap-1 text-[9px] font-medium tracking-wider uppercase">
-          <IconHeadphones className="size-3" />{" "}
+          <icon.Headphones className="size-3" />{" "}
           {tNouns("transcript", { count: 1 })}
         </span>
         <p className="text-muted-foreground mt-1 font-mono text-[11px] leading-relaxed">
@@ -945,7 +934,7 @@ function UnalignedAudio({ view }: { view: BookAlignmentReportView }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-poor dark:text-poor flex items-center gap-1.5 font-serif text-lg font-normal">
-        <IconHeadphones className="size-4" />
+        <icon.Headphones className="size-4" />
         {t("unalignedAudio.title")}{" "}
         <span className="text-muted-foreground font-mono text-xs">
           ({view.unalignedAudioFiles.length})

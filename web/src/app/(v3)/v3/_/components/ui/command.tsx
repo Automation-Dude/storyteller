@@ -1,6 +1,6 @@
 "use client"
 
-import { IconCheck, IconSearch } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Command as CommandPrimitive } from "cmdk"
 import * as React from "react"
 
@@ -79,7 +79,7 @@ function CommandInput({
           {...props}
         />
         <InputGroupAddon>
-          <IconSearch className="size-3.5 shrink-0 opacity-50" />
+          <icon.Search className="size-3.5 shrink-0 opacity-50" />
         </InputGroupAddon>
       </InputGroup>
     </div>
@@ -159,7 +159,7 @@ function CommandItem({
       {...props}
     >
       {children}
-      <IconCheck className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      <icon.Check className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
     </CommandPrimitive.Item>
   )
 }

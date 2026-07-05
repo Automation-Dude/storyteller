@@ -1,17 +1,6 @@
 "use client"
 
-import {
-  IconChevronDown,
-  IconChevronRight,
-  IconChevronUp,
-  IconEyeOff,
-  IconGripVertical,
-  IconLoader2,
-  IconPencil,
-  IconPlus,
-  IconSettings,
-  IconTrash,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Reorder, motion, useDragControls } from "motion/react"
 import { type ReactElement, useState } from "react"
 
@@ -63,7 +52,7 @@ export function ShelfManager({ className, trigger }: ShelfManagerProps) {
         render={
           trigger ?? (
             <Button variant="default" size="sm" className={className}>
-              <IconSettings className="mr-2 size-4" />
+              <icon.Settings className="mr-2 size-4" />
               {t("sections.customize")}
             </Button>
           )
@@ -243,7 +232,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <IconLoader2 className="size-6 animate-spin" />
+        <icon.Loader2 className="size-6 animate-spin" />
       </div>
     )
   }
@@ -300,7 +289,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
                 type="button"
                 className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1 text-sm"
               >
-                <IconChevronRight
+                <icon.ChevronRight
                   className={cn(
                     "size-4 transition-transform",
                     hiddenOpen && "rotate-90",
@@ -355,7 +344,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         </Button>
 
         <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+          {isSaving && <icon.Loader2 className="mr-2 size-4 animate-spin" />}
           {t("sections.save")}
         </Button>
       </DialogFooter>
@@ -412,7 +401,7 @@ function ShelfItem({
           setIsDragging(false)
         }}
       >
-        <IconGripVertical className="text-muted-foreground size-4 shrink-0" />
+        <icon.GripVertical className="text-muted-foreground size-4 shrink-0" />
       </motion.button>
 
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -433,7 +422,7 @@ function ShelfItem({
 
       {onEdit && (
         <Button variant="ghost" size="icon-sm" onClick={onEdit}>
-          <IconPencil className="size-4" />
+          <icon.Pencil className="size-4" />
         </Button>
       )}
 
@@ -445,7 +434,7 @@ function ShelfItem({
         className={cn(!canHide && "invisible")}
         title={t("sections.hideFromHome")}
       >
-        <IconEyeOff className="size-4" />
+        <icon.EyeOff className="size-4" />
       </Button>
 
       <div className="flex flex-col gap-1">
@@ -457,7 +446,7 @@ function ShelfItem({
           }}
           disabled={index === 0}
         >
-          <IconChevronUp className="size-3" />
+          <icon.ChevronUp className="size-3" />
         </Button>
 
         <Button
@@ -468,7 +457,7 @@ function ShelfItem({
           }}
           disabled={index === total - 1}
         >
-          <IconChevronDown className="size-3" />
+          <icon.ChevronDown className="size-3" />
         </Button>
       </div>
     </Reorder.Item>
@@ -509,7 +498,7 @@ function HiddenShelfItem({
           className="text-destructive hover:text-destructive"
           title={t("sections.deletePermanently")}
         >
-          <IconTrash className="size-4" />
+          <icon.Trash className="size-4" />
         </Button>
       )}
     </div>

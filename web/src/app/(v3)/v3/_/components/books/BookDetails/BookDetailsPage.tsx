@@ -3,13 +3,6 @@
 import { type UUID } from "crypto"
 import * as icon from "@/icons"
 
-import {
-  IconArrowLeft,
-  IconCheck,
-  IconFolder,
-  IconTag,
-  IconX,
-} from "@tabler/icons-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
@@ -311,7 +304,7 @@ function BookPageHeader() {
             router.back()
           }}
         >
-          <IconArrowLeft className="h-4 w-4" />
+          <icon.ArrowLeft className="h-4 w-4" />
           <span className="sr-only">Back</span>
         </Button>
       </div>
@@ -388,7 +381,7 @@ function BookEditBar() {
         }}
         disabled={isSaving}
       >
-        <IconX className="size-4" />
+        <icon.Close className="size-4" />
       </TooltipButton>
 
       <TooltipButton
@@ -401,7 +394,7 @@ function BookEditBar() {
         className="bg-primary text-primary-foreground rounded-full hover:opacity-90"
         disabled={isSaving}
       >
-        <IconCheck className="size-4" />
+        <icon.Check className="size-4" />
       </TooltipButton>
     </ActionTray>
   )
@@ -551,7 +544,7 @@ function BookPanelHeader({
             aria-label="Close"
             shortcut={["Escape"]}
           >
-            <IconX className="size-3.5 stroke-[1.5]" />
+            <icon.Close className="size-3.5 stroke-[1.5]" />
           </TooltipButton>
         )}
       </div>
@@ -566,7 +559,7 @@ function TagsSection() {
   return (
     <CollapsibleSection
       title={c("fields.label.tags")}
-      icon={<IconTag className="size-3.5 stroke-[1.5]" />}
+      icon={<icon.Tag className="size-3.5 stroke-[1.5]" />}
     >
       <TagEditor
         bookUuid={book.uuid}
@@ -585,7 +578,7 @@ function CollectionsSection() {
   return (
     <CollapsibleSection
       title={c("fields.label.collections")}
-      icon={<IconFolder className="size-3.5 stroke-[1.5]" />}
+      icon={<icon.Folder className="size-3.5 stroke-[1.5]" />}
     >
       <CollectionEditor
         bookUuid={book.uuid}

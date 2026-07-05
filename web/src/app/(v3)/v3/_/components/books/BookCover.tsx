@@ -1,6 +1,6 @@
 "use client"
 
-import { IconBookFilled, IconHeadphonesFilled } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
@@ -169,12 +169,12 @@ export function FallbackCover({
       }}
     >
       {type === "audiobook" ? (
-        <IconHeadphonesFilled
+        <icon.HeadphonesFilled
           className="h-12 w-12"
           style={{ color: primary.onColor }}
         />
       ) : (
-        <IconBookFilled
+        <icon.BookFilled
           className="h-12 w-12"
           style={{ color: primary.onColor }}
         />

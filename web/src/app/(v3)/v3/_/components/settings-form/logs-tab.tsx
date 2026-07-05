@@ -1,16 +1,6 @@
 "use client"
 
-import {
-  IconArrowDown,
-  IconBug,
-  IconClock,
-  IconHighlight,
-  IconLoader,
-  IconSearch,
-  IconTextWrap,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -252,7 +242,7 @@ export function LogsTab() {
         >
           {isLoading && (
             <div className="flex items-center justify-center py-12">
-              <IconLoader className="size-5 animate-spin text-zinc-500" />
+              <icon.Loader className="size-5 animate-spin text-zinc-500" />
             </div>
           )}
 
@@ -280,7 +270,7 @@ export function LogsTab() {
             onClick={handleScrollToBottom}
             className="absolute right-4 bottom-4 flex items-center gap-1.5 rounded-full bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 shadow-lg transition-colors hover:bg-zinc-700"
           >
-            <IconArrowDown className="size-3.5" />
+            <icon.ArrowDown className="size-3.5" />
             {t("scrollToBottom")}
           </button>
         )}
@@ -385,7 +375,7 @@ function LogsToolbar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-0 flex-1">
-        <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+        <icon.Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
         <Input
           type="text"
           placeholder={t("searchLogs")}
@@ -404,7 +394,7 @@ function LogsToolbar({
             }}
             className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
           >
-            <IconX className="h-3.5 w-3.5" />
+            <icon.Close className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
@@ -455,7 +445,7 @@ function LogsToolbar({
           onClick={onWrapLinesToggle}
           tooltip={t("wrapLines")}
         >
-          <IconTextWrap className="h-4 w-4" />
+          <icon.TextWrap className="h-4 w-4" />
         </TooltipButton>
 
         <TooltipButton
@@ -465,7 +455,7 @@ function LogsToolbar({
           aria-label={t("highlighting")}
           tooltip={t("highlighting")}
         >
-          <IconHighlight className="h-4 w-4" />
+          <icon.Highlight className="h-4 w-4" />
         </TooltipButton>
 
         <TooltipButton
@@ -475,7 +465,7 @@ function LogsToolbar({
           onClick={onHideTimeToggle}
           tooltip={hideTime ? t("showTime") : t("hideTime")}
         >
-          <IconClock className="h-4 w-4" />
+          <icon.Clock className="h-4 w-4" />
         </TooltipButton>
 
         <TooltipButton
@@ -485,7 +475,7 @@ function LogsToolbar({
           onClick={onToggleDebug}
           tooltip={isDebug ? t("disableDebug") : t("enableDebug")}
         >
-          <IconBug className="h-4 w-4" />
+          <icon.Bug className="h-4 w-4" />
         </TooltipButton>
 
         <TooltipButton
@@ -495,7 +485,7 @@ function LogsToolbar({
           aria-label={t("scrollToBottom")}
           tooltip={t("follow")}
         >
-          <IconArrowDown className="h-4 w-4" />
+          <icon.ArrowDown className="h-4 w-4" />
         </TooltipButton>
 
         <TooltipButton
@@ -505,7 +495,7 @@ function LogsToolbar({
           aria-label={t("clearLogs")}
           tooltip={t("clearLogs")}
         >
-          <IconTrash className="h-4 w-4" />
+          <icon.Trash className="h-4 w-4" />
         </TooltipButton>
       </div>
     </div>

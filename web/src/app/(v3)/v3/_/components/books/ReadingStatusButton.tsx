@@ -1,4 +1,4 @@
-import { IconBook, IconChevronDown } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useCallback } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -72,9 +72,9 @@ export function ReadingStatusButton({
               // currentStatus && "border-primary bg-primary/5 text-primary",
             )}
           >
-            <IconBook className="h-4 w-4" />
+            <icon.BookAlt className="h-4 w-4" />
             {currentStatus ? statusDisplayLabel(currentStatus) : "Set Status"}
-            <IconChevronDown className="h-4 w-4" />
+            <icon.ChevronDown className="h-4 w-4" />
           </Button>
         }
       />

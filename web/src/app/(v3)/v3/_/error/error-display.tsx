@@ -1,9 +1,4 @@
-import {
-  IconAlertTriangle,
-  IconArrowLeft,
-  IconBug,
-  IconRefresh,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -152,7 +147,7 @@ function ErrorCard({
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="bg-destructive/10 text-destructive flex size-10 items-center justify-center rounded-full">
-            <IconAlertTriangle className="size-5" />
+            <icon.AlertTriangle className="size-5" />
           </div>
           <div>
             <CardTitle>{title}</CardTitle>
@@ -174,11 +169,11 @@ function ErrorCard({
       )}
       <CardFooter className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={onGoBack}>
-          <IconArrowLeft />
+          <icon.ArrowLeft />
           Go back
         </Button>
         <Button variant="outline" size="sm" onClick={onRefresh}>
-          <IconRefresh />
+          <icon.Refresh />
           Refresh
         </Button>
         <Button
@@ -190,7 +185,7 @@ function ErrorCard({
               target="_blank"
               rel="noopener noreferrer"
             >
-              <IconBug />
+              <icon.Bug />
               Report issue
             </a>
           }

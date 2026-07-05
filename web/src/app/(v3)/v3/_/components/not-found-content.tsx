@@ -1,6 +1,6 @@
 "use client"
 
-import { IconArrowLeft, IconHome } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -30,7 +30,7 @@ export function NotFoundContent() {
             router.back()
           }}
         >
-          <IconArrowLeft className="mr-1 size-4" />
+          <icon.ArrowLeft className="mr-1 size-4" />
           {t("goBack")}
         </Button>
 
@@ -38,7 +38,7 @@ export function NotFoundContent() {
           nativeButton={false}
           render={
             <V3Link href="/">
-              <IconHome className="mr-1 size-4" />
+              <icon.Home className="mr-1 size-4" />
               {t("home")}
             </V3Link>
           }

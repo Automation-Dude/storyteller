@@ -1,6 +1,6 @@
 "use client"
 
-import { IconCheck, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type FieldPath } from "react-hook-form"
 
 import { Kbd } from "@v3/_/components/ui/kbd"
@@ -71,7 +71,7 @@ export function InlineEditChrome({
               disabled={isSaving}
               className="text-muted-foreground hover:text-foreground hover:bg-muted flex size-6 items-center justify-center rounded-full transition-colors disabled:opacity-50"
             >
-              <IconX className="size-4" />
+              <icon.Close className="size-4" />
             </button>
 
             <button
@@ -84,7 +84,7 @@ export function InlineEditChrome({
               disabled={isSaving}
               className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              <IconCheck className="size-4" />
+              <icon.Check className="size-4" />
             </button>
           </div>
         </div>

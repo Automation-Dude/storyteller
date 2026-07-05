@@ -1,6 +1,6 @@
 "use client"
 
-import { IconBook, IconHeadphones, IconPlayerPlay } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useMemo } from "react"
 
 import { Book3D } from "@v3/_/components/books/Book3D"
@@ -20,7 +20,7 @@ import { useListBooksQuery } from "@/store/api"
 type ReadLink = {
   href: string
   labelKey: "readAlong" | "read" | "listen"
-  icon: typeof IconBook
+  icon: typeof icon.BookAlt
 }
 
 function getReadLink(book: BookWithRelations): ReadLink {
@@ -28,20 +28,20 @@ function getReadLink(book: BookWithRelations): ReadLink {
     return {
       href: `/books/${book.uuid}/read?mode=readaloud`,
       labelKey: "readAlong",
-      icon: IconPlayerPlay,
+      icon: icon.PlayerPlay,
     }
   }
   if (book.ebook) {
     return {
       href: `/books/${book.uuid}/read?mode=epub`,
       labelKey: "read",
-      icon: IconBook,
+      icon: icon.BookAlt,
     }
   }
   return {
     href: `/books/${book.uuid}/read?mode=audiobook`,
     labelKey: "listen",
-    icon: IconHeadphones,
+    icon: icon.Headphones,
   }
 }
 

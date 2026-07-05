@@ -1,6 +1,6 @@
 "use client"
 
-import { IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { memo, useState } from "react"
 
 import { cn } from "@v3/_/lib/utils"
@@ -114,7 +114,7 @@ export const ColorPicker = memo(function ColorPicker({
                   setOpen(false)
                 }}
               >
-                <IconX className="size-3" />
+                <icon.Close className="size-3" />
               </Button>
             )}
           </div>

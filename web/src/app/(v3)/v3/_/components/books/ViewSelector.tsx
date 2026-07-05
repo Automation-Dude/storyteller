@@ -1,4 +1,4 @@
-import { IconLayoutGrid, IconLayoutList } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { ButtonGroup } from "@v3/_/components/ui/button-group"
 
@@ -36,7 +36,7 @@ export function ViewSelector({ value, onChange }: ViewSelectorProps) {
         shortcut={["Shift+G"]}
         disabled={value === "grid"}
       >
-        <IconLayoutGrid className="h-3.5 w-3.5" />
+        <icon.LayoutGrid className="h-3.5 w-3.5" />
       </TooltipButton>
 
       <TooltipButton
@@ -51,7 +51,7 @@ export function ViewSelector({ value, onChange }: ViewSelectorProps) {
         shortcut={["Shift+L"]}
         disabled={value === "list"}
       >
-        <IconLayoutList className="h-3.5 w-3.5" />
+        <icon.LayoutList className="h-3.5 w-3.5" />
       </TooltipButton>
     </ButtonGroup>
   )

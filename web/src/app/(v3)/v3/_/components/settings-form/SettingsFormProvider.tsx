@@ -1,6 +1,6 @@
 "use client"
 
-import { IconLock } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { createContext, useContext } from "react"
 import {
   Controller,
@@ -85,7 +85,7 @@ export const LockTooltip = () => {
   return (
     <Tooltip>
       <TooltipTrigger>
-        <IconLock size={14} className="text-amber-500" />
+        <icon.Lock size={14} className="text-amber-500" />
       </TooltipTrigger>
       <TooltipContent>{t("lockedSettingTooltip")}</TooltipContent>
     </Tooltip>

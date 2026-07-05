@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  IconChevronUp,
-  IconDatabase,
-  IconFile,
-  IconFolder,
-  IconHome,
-  IconLoader2,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { matchSorter } from "match-sorter"
 import { lookup } from "mime-types"
 import { useEffect, useMemo, useState } from "react"
@@ -229,7 +221,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
           className,
         )}
       >
-        <IconLoader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <icon.Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     )
   }
@@ -244,7 +236,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
           onClick={handleGoUp}
           aria-label="Go up one folder"
         >
-          <IconChevronUp className="h-3.5 w-3.5" />
+          <icon.ChevronUp className="h-3.5 w-3.5" />
         </Button>
         <Button
           variant="ghost"
@@ -253,7 +245,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
           onClick={handleGoHome}
           aria-label="Go to suggested folder"
         >
-          <IconHome className="h-3.5 w-3.5" />
+          <icon.Home className="h-3.5 w-3.5" />
         </Button>
         <Button
           variant="ghost"
@@ -262,11 +254,11 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
           onClick={handleGoToDataDir}
           aria-label="Go to data directory"
         >
-          <IconDatabase className="h-3.5 w-3.5" />
+          <icon.Database className="h-3.5 w-3.5" />
         </Button>
 
         {actionIsPending && (
-          <IconLoader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
+          <icon.Loader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
         )}
 
         {showSelectButton && (
@@ -309,7 +301,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
                     )
                   }}
                 >
-                  <IconX className="h-3 w-3" />
+                  <icon.Close className="h-3 w-3" />
                 </button>
               </Badge>
             ))}
@@ -377,9 +369,9 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
                 )}
               >
                 {entry.isDirectory ? (
-                  <IconFolder className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <icon.Folder className="text-muted-foreground h-4 w-4 shrink-0" />
                 ) : (
-                  <IconFile className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <icon.File className="text-muted-foreground h-4 w-4 shrink-0" />
                 )}
                 <span className="flex-1 truncate">{entry.name}</span>
                 <span className="text-muted-foreground text-xs">

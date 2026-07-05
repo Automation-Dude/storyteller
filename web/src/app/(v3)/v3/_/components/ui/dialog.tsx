@@ -1,7 +1,7 @@
 "use client"
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
-import { IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import * as React from "react"
 import { Drawer } from "vaul-base"
 
@@ -130,7 +130,7 @@ function DialogContent({
               />
             }
           >
-            <IconX />
+            <icon.Close />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

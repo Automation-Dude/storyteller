@@ -1,4 +1,4 @@
-import { IconColumns3 } from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -49,7 +49,7 @@ export function ColumnSelector({
             tooltip="Show/hide columns"
             aria-label="Fields"
           >
-            <IconColumns3 className="h-3.5 w-3.5" />
+            <icon.Columns3 className="h-3.5 w-3.5" />
           </TooltipButton>
         }
       />

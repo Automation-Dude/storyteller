@@ -1,24 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconBook2,
-  IconDownload,
-  IconFileText,
-  IconHistory,
-  IconListNumbers,
-  IconMail,
-  IconMicrophone,
-  IconRss,
-  IconSearch,
-  IconSettings2,
-  IconShield,
-  IconUpload,
-  IconUsers,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import Link from "next/link"
 import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -303,32 +286,32 @@ export function SettingsForm({
 
   const allTabs = useMemo<SidebarTabDef[]>(
     () => [
-      { value: "library", label: t("tabs.library.title"), icon: IconBook2 },
+      { value: "library", label: t("tabs.library.title"), icon: icon.Book },
       {
         value: "processing",
         label: t("tabs.processing.title"),
-        icon: IconMicrophone,
+        icon: icon.Microphone,
       },
-      { value: "auth", label: t("tabs.auth.title"), icon: IconShield },
-      { value: "upload", label: t("tabs.upload.title"), icon: IconUpload },
-      { value: "email", label: t("tabs.email.title"), icon: IconMail },
-      { value: "opds", label: t("tabs.opds.title"), icon: IconRss },
+      { value: "auth", label: t("tabs.auth.title"), icon: icon.Shield },
+      { value: "upload", label: t("tabs.upload.title"), icon: icon.Upload },
+      { value: "email", label: t("tabs.email.title"), icon: icon.Mail },
+      { value: "opds", label: t("tabs.opds.title"), icon: icon.Rss },
       ...(hasUsers
         ? [
             {
               value: "users" as Tab,
               label: t("tabs.users.title"),
-              icon: IconUsers,
+              icon: icon.Users,
             },
           ]
         : []),
       {
         value: "changelog",
         label: t("tabs.changelog.title"),
-        icon: IconHistory,
+        icon: icon.History,
       },
-      { value: "logs", label: t("tabs.logs.title"), icon: IconFileText },
-      { value: "queue", label: "Queue", icon: IconListNumbers },
+      { value: "logs", label: t("tabs.logs.title"), icon: icon.FileText },
+      { value: "queue", label: "Queue", icon: icon.ListNumbers },
     ],
     [t, hasUsers],
   )
@@ -447,14 +430,14 @@ export function SettingsForm({
             aria-label={t("exportSettings")}
             render={
               <Link href="/api/v2/settings" download="storyteller-config.json">
-                <IconDownload size={16} />
+                <icon.Download size={16} />
               </Link>
             }
           />
 
           {errorCount > 0 && (
             <div className="text-destructive flex items-center gap-1.5 text-sm">
-              <IconAlertCircle className="h-4 w-4" />
+              <icon.AlertCircle className="h-4 w-4" />
               <span>
                 {t("formHasErrors", {
                   count: errorCount,
@@ -532,7 +515,7 @@ export function SettingsForm({
                   size="sm"
                   onClick={() => void setActiveTab(null)}
                 >
-                  <IconArrowLeft className="mr-1 h-4 w-4" />
+                  <icon.ArrowLeft className="mr-1 h-4 w-4" />
                   {c("actions.back")}
                 </Button>
 
@@ -594,7 +577,7 @@ function LockedSettingsBanner({
 }) {
   return (
     <div className="flex items-center gap-2 bg-amber-600/10 p-3 text-xs dark:bg-amber-600/20">
-      <IconAlertCircle className="h-4 w-4 text-amber-500" />
+      <icon.AlertCircle className="h-4 w-4 text-amber-500" />
       <span className="text-amber-500">{t("lockedSettings")}</span>
     </div>
   )
@@ -633,7 +616,7 @@ function SettingsSidebar({
 
             <div className="mb-2 px-1">
               <div className="relative">
-                <IconSearch className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                <icon.Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
                   type="text"
                   placeholder={t("searchSettings")}
@@ -652,7 +635,7 @@ function SettingsSidebar({
                     }}
                     className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
                   >
-                    <IconX className="h-3 w-3" />
+                    <icon.Close className="h-3 w-3" />
                   </button>
                 )}
               </div>
@@ -684,7 +667,7 @@ function SettingsSidebar({
           className="text-muted-foreground hover:text-foreground w-full justify-start gap-2"
           render={
             <V3Link href="/preferences?tab=general">
-              <IconSettings2 className="h-4 w-4" />
+              <icon.Settings2 className="h-4 w-4" />
               {t("preferences")}
             </V3Link>
           }

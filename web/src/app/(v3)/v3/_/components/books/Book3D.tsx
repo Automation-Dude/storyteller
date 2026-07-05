@@ -1,6 +1,6 @@
 "use client"
 
-import { IconArrowsMaximize, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type PanInfo, motion, useSpring } from "motion/react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 
@@ -843,7 +843,7 @@ export function BookFullscreenButton({
         tooltip="View full screen"
         className="bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
       >
-        <IconArrowsMaximize className="size-3.5 stroke-[1.5]" />
+        <icon.ArrowsMaximize className="size-3.5 stroke-[1.5]" />
       </TooltipButton>
 
       <Dialog open={fullscreen} onOpenChange={setFullscreen}>
@@ -863,7 +863,7 @@ export function BookFullscreenButton({
               />
             }
           >
-            <IconX />
+            <icon.Close />
             <span className="sr-only">Close</span>
           </DialogClose>
         </DialogContent>

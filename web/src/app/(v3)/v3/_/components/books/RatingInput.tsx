@@ -1,4 +1,4 @@
-import { IconHeart, IconStar } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useCallback, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -40,9 +40,9 @@ export function RatingInput({
   const [hoverValue, setHoverValue] = useState<number | null>(null)
   const [isOpen, setIsOpen] = useState(false)
 
-  const icon = iconOverride ?? ratingIcon
+  const ratingStyle = iconOverride ?? ratingIcon
 
-  const Icon = icon === "heart" ? IconHeart : IconStar
+  const Icon = ratingStyle === "heart" ? icon.Heart : icon.Star
   const displayValue = hoverValue ?? value ?? 0
 
   // a cover color tints both the fill and the outline; without one we keep the

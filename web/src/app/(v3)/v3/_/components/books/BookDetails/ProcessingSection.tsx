@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  IconAlertTriangle,
-  IconBriefcase,
-  IconCheck,
-  IconExternalLink,
-  IconFileText,
-  IconProgress,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type ReactNode } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -163,13 +155,13 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
     <CollapsibleSection
       name="alignment"
       title={t("title")}
-      icon={<IconProgress className="size-3.5 stroke-[1.5]" />}
+      icon={<icon.Progress className="size-3.5 stroke-[1.5]" />}
       className="mb-3 flex flex-col gap-2"
     >
       {readaloudStatus === "ALIGNED" && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm">
-            <IconCheck className="h-4 w-4 text-green-600" />
+            <icon.Check className="h-4 w-4 text-green-600" />
             <span>{t("aligned")}</span>
           </div>
           {canProcess && (
@@ -190,7 +182,7 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
             size="sm"
             onClick={() => void cancelProcessing({ uuid: book.uuid })}
           >
-            <IconX className="mr-1 h-3 w-3" />
+            <icon.Close className="mr-1 h-3 w-3" />
             {c("actions.cancel")}
           </Button>
         </div>
@@ -209,7 +201,7 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
               size="sm"
               onClick={() => void cancelProcessing({ uuid: book.uuid })}
             >
-              <IconX className="mr-1 h-3 w-3" />
+              <icon.Close className="mr-1 h-3 w-3" />
               {c("actions.cancel")}
             </Button>
           </div>
@@ -238,7 +230,7 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
       {(readaloudStatus === "ERROR" || readaloudStatus === "STOPPED") && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm">
-            <IconAlertTriangle className="text-destructive h-4 w-4" />
+            <icon.AlertTriangle className="text-destructive h-4 w-4" />
             <span>
               {readaloudStatus === "ERROR" ? t("error") : t("stopped")}
             </span>
@@ -390,20 +382,20 @@ function AlignmentReportSummary({ book }: { book: BookWithRelations }) {
           onClick={() => void setReportMode(true)}
           className="hover:text-primary inline-flex items-center gap-1 hover:underline"
         >
-          <IconFileText className="size-3.5" /> {tp("viewReport")}
+          <icon.FileText className="size-3.5" /> {tp("viewReport")}
         </button>
         <V3Link
           href={`/books/${book.uuid}/alignment`}
           className="hover:text-primary inline-flex items-center gap-1 hover:underline"
         >
-          <IconExternalLink className="size-3.5" /> {tr("openFullPage")}
+          <icon.ExternalLink className="size-3.5" /> {tr("openFullPage")}
         </V3Link>
         {data?.jobUuid && (
           <V3Link
             href="/settings?tab=queue"
             className="hover:text-primary inline-flex items-center gap-1 hover:underline"
           >
-            <IconBriefcase className="size-3.5" />{" "}
+            <icon.Briefcase className="size-3.5" />{" "}
             {tr("createdByJob", { relativeTime: relativeTime(data.createdAt) })}
           </V3Link>
         )}

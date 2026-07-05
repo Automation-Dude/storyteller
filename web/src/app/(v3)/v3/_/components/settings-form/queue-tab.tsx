@@ -1,16 +1,6 @@
 "use client"
 
-import {
-  IconBook,
-  IconChevronDown,
-  IconChevronLeft,
-  IconChevronRight,
-  IconChevronUp,
-  IconFileText,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useEffect, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -242,7 +232,7 @@ function FinishedJobs() {
               void setPage((p) => Math.max(p - 1, 0))
             }}
           >
-            <IconChevronLeft className="size-4" />
+            <icon.ChevronLeft className="size-4" />
             {t("previous")}
           </Button>
           <Button
@@ -254,7 +244,7 @@ function FinishedJobs() {
             }}
           >
             {t("next")}
-            <IconChevronRight className="size-4" />
+            <icon.ChevronRight className="size-4" />
           </Button>
         </div>
       )}
@@ -392,7 +382,7 @@ function JobItem({
           />
         ) : (
           <div className="bg-muted flex size-full items-center justify-center">
-            <IconBook className="text-muted-foreground size-4" />
+            <icon.BookAlt className="text-muted-foreground size-4" />
           </div>
         )}
       </ItemMedia>
@@ -438,7 +428,7 @@ function JobItem({
                 move(job, -1)
               }}
             >
-              <IconChevronUp className="size-4" />
+              <icon.ChevronUp className="size-4" />
             </TooltipButton>
             <TooltipButton
               variant="ghost"
@@ -452,7 +442,7 @@ function JobItem({
                 move(job, 1)
               }}
             >
-              <IconChevronDown className="size-4" />
+              <icon.ChevronDown className="size-4" />
             </TooltipButton>
           </>
         )}
@@ -468,7 +458,7 @@ function JobItem({
               resumeJob(job.uuid)
             }}
           >
-            <IconPlayerPlay className="size-4" />
+            <icon.PlayerPlay className="size-4" />
           </TooltipButton>
         ) : pauseJob ? (
           <TooltipButton
@@ -481,7 +471,7 @@ function JobItem({
               pauseJob(job.uuid)
             }}
           >
-            <IconPlayerPause className="size-4" />
+            <icon.PlayerPause className="size-4" />
           </TooltipButton>
         ) : null}
 
@@ -496,7 +486,7 @@ function JobItem({
               cancelJob(job.uuid)
             }}
           >
-            <IconX className="size-4" />
+            <icon.Close className="size-4" />
           </TooltipButton>
         ) : null}
 
@@ -509,7 +499,7 @@ function JobItem({
             tooltip={t("actions.alignmentReport")}
             render={<V3Link href={`/books/${job.bookUuid}/alignment`} />}
           >
-            <IconFileText className="size-4" />
+            <icon.FileText className="size-4" />
           </TooltipButton>
         ) : null}
       </ItemActions>

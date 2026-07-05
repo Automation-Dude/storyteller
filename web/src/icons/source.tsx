@@ -1,0 +1,327 @@
+import {
+  IconAdjustmentsHorizontal,
+  IconAlertCircle,
+  IconAlertOctagon,
+  IconAlertTriangle,
+  IconAlignLeft,
+  IconArrowBack,
+  IconArrowDown,
+  IconArrowLeft,
+  IconArrowMerge,
+  IconArrowRight,
+  IconArrowNarrowLeft,
+  IconArrowsMaximize,
+  IconArrowsSort,
+  IconArrowUp,
+  IconArrowUpRight,
+  IconBook,
+  IconBook2,
+  IconBookFilled,
+  IconBookmark,
+  IconBookmarkPlus,
+  IconBookOff,
+  IconBooks,
+  IconBooksOff,
+  IconBriefcase,
+  IconBug,
+  IconCalendar,
+  IconCalendarCheck,
+  IconCalendarPlus,
+  IconCertificate,
+  IconChartBar,
+  IconChartRadar,
+  IconCheck,
+  IconCheckbox,
+  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronUp,
+  IconCircleCheck,
+  IconClick,
+  IconClock,
+  IconColumns,
+  IconColumns3,
+  IconCopy,
+  IconDatabase,
+  IconDots,
+  IconDotsCircleHorizontal,
+  IconDotsVertical,
+  IconDownload,
+  IconEdit,
+  IconEditOff,
+  IconExternalLink,
+  IconEye,
+  IconEyeOff,
+  IconFile,
+  IconFileArrowRight,
+  IconFileImport,
+  IconFileText,
+  IconFileUpload,
+  IconFilter2,
+  IconFolder,
+  IconFolders,
+  IconGitMerge,
+  IconGripVertical,
+  IconH2,
+  IconHeading,
+  IconHeadphones,
+  IconHeadphonesFilled,
+  IconHeadphonesOff,
+  IconHeart,
+  IconHelpCircle,
+  IconHighlight,
+  IconHistory,
+  IconHome,
+  IconInfoCircle,
+  IconKey,
+  IconLanguage,
+  IconLayoutGrid,
+  IconLayoutList,
+  IconLayoutSidebar,
+  IconLibrary,
+  IconLink,
+  IconLinkOff,
+  IconList,
+  IconListNumbers,
+  IconLoader,
+  IconLoader2,
+  IconLock,
+  IconLogout,
+  IconMail,
+  IconMaximize,
+  IconMicrophone,
+  IconMicrophone2,
+  IconMinimize,
+  IconMinus,
+  IconMoon,
+  IconPalette,
+  IconPencil,
+  IconPin,
+  IconPinFilled,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconPlus,
+  IconPointer,
+  IconProgress,
+  IconProgressX,
+  IconRefresh,
+  IconReload,
+  IconReplace,
+  IconReportAnalytics,
+  IconRotate2,
+  IconRss,
+  IconScan,
+  IconSearch,
+  IconSelector,
+  IconServer,
+  IconSettings,
+  IconSettings2,
+  IconShield,
+  IconSortAscending,
+  IconSortDescending,
+  IconSquare,
+  IconSquareCheck,
+  IconStack2,
+  IconStar,
+  IconSun,
+  IconTag,
+  IconTagFilled,
+  IconTagMinus,
+  IconTagPlus,
+  IconTags,
+  IconTagsOff,
+  IconTextCaption,
+  IconTextWrap,
+  IconTrash,
+  IconTrashX,
+  IconUpload,
+  IconUser,
+  IconUsers,
+  IconVolume,
+  IconVolume3,
+  IconVolumeOff,
+  IconX,
+} from "@tabler/icons-react"
+
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
+
+import { styled } from "./styled"
+
+// actions
+export const Plus = /*#__PURE__*/ styled(IconPlus)
+export const Minus = /*#__PURE__*/ styled(IconMinus)
+export const Close = /*#__PURE__*/ styled(IconX)
+export const Check = /*#__PURE__*/ styled(IconCheck)
+export const Checkbox = /*#__PURE__*/ styled(IconCheckbox)
+export const Trash = /*#__PURE__*/ styled(IconTrash)
+export const TrashX = /*#__PURE__*/ styled(IconTrashX)
+export const Edit = /*#__PURE__*/ styled(IconEdit)
+export const EditOff = /*#__PURE__*/ styled(IconEditOff)
+export const Pencil = /*#__PURE__*/ styled(IconPencil)
+export const Search = /*#__PURE__*/ styled(IconSearch)
+export const Filter = /*#__PURE__*/ styled(IconFilter2)
+export const Download = /*#__PURE__*/ styled(IconDownload)
+export const Upload = /*#__PURE__*/ styled(IconUpload)
+export const Reload = /*#__PURE__*/ styled(IconReload)
+export const Refresh = /*#__PURE__*/ styled(IconRefresh)
+export const Click = /*#__PURE__*/ styled(IconClick)
+export const Link = /*#__PURE__*/ styled(IconLink)
+export const LinkOff = /*#__PURE__*/ styled(IconLinkOff)
+export const Lock = /*#__PURE__*/ styled(IconLock)
+export const Key = /*#__PURE__*/ styled(IconKey)
+export const Pin = /*#__PURE__*/ styled(IconPin)
+export const PinFilled = /*#__PURE__*/ styled(IconPinFilled)
+export const Merge = /*#__PURE__*/ styled(IconArrowMerge)
+export const GitMerge = /*#__PURE__*/ styled(IconGitMerge)
+export const Copy = /*#__PURE__*/ styled(IconCopy)
+export const Replace = /*#__PURE__*/ styled(IconReplace)
+export const Scan = /*#__PURE__*/ styled(IconScan)
+export const Pointer = /*#__PURE__*/ styled(IconPointer)
+export const Logout = /*#__PURE__*/ styled(IconLogout)
+export const ArrowBack = /*#__PURE__*/ styled(IconArrowBack)
+export const Rotate2 = /*#__PURE__*/ styled(IconRotate2)
+
+// navigation
+export const ArrowLeft = /*#__PURE__*/ styled(IconArrowLeft)
+export const ArrowRight = /*#__PURE__*/ styled(IconArrowRight)
+export const ArrowUp = /*#__PURE__*/ styled(IconArrowUp)
+export const ArrowDown = /*#__PURE__*/ styled(IconArrowDown)
+export const ArrowNarrowLeft = /*#__PURE__*/ styled(IconArrowNarrowLeft)
+export const ArrowUpRight = /*#__PURE__*/ styled(IconArrowUpRight)
+export const ChevronDown = /*#__PURE__*/ styled(IconChevronDown)
+export const ChevronLeft = /*#__PURE__*/ styled(IconChevronLeft)
+export const ChevronRight = /*#__PURE__*/ styled(IconChevronRight)
+export const ChevronUp = /*#__PURE__*/ styled(IconChevronUp)
+export const Selector = /*#__PURE__*/ styled(IconSelector)
+export const Home = /*#__PURE__*/ styled(IconHome)
+export const ExternalLink = /*#__PURE__*/ styled(IconExternalLink)
+
+// books & media
+export const Book = /*#__PURE__*/ styled(IconBook2)
+export const BookAlt = /*#__PURE__*/ styled(IconBook)
+export const BookFilled = /*#__PURE__*/ styled(IconBookFilled)
+export const BookOff = /*#__PURE__*/ styled(IconBookOff)
+export const BookmarkPlus = /*#__PURE__*/ styled(IconBookmarkPlus)
+export const Books = /*#__PURE__*/ styled(IconBooks)
+export const BooksOff = /*#__PURE__*/ styled(IconBooksOff)
+export const Bookmark = /*#__PURE__*/ styled(IconBookmark)
+export const Headphones = /*#__PURE__*/ styled(IconHeadphones)
+export const HeadphonesFilled = /*#__PURE__*/ styled(IconHeadphonesFilled)
+export const HeadphonesOff = /*#__PURE__*/ styled(IconHeadphonesOff)
+export const Microphone = /*#__PURE__*/ styled(IconMicrophone)
+export const Microphone2 = /*#__PURE__*/ styled(IconMicrophone2)
+export const PlayerPlay = /*#__PURE__*/ styled(IconPlayerPlay)
+export const PlayerPause = /*#__PURE__*/ styled(IconPlayerPause)
+export const Volume = /*#__PURE__*/ styled(IconVolume)
+export const Volume3 = /*#__PURE__*/ styled(IconVolume3)
+export const VolumeOff = /*#__PURE__*/ styled(IconVolumeOff)
+export const Readaloud = /*#__PURE__*/ styled(IconReadaloud)
+
+// files & data
+export const File = /*#__PURE__*/ styled(IconFile)
+export const FileArrowRight = /*#__PURE__*/ styled(IconFileArrowRight)
+export const FileImport = /*#__PURE__*/ styled(IconFileImport)
+export const FileText = /*#__PURE__*/ styled(IconFileText)
+export const FileUpload = /*#__PURE__*/ styled(IconFileUpload)
+export const Database = /*#__PURE__*/ styled(IconDatabase)
+export const Server = /*#__PURE__*/ styled(IconServer)
+export const Folder = /*#__PURE__*/ styled(IconFolder)
+
+// organization
+export const Tag = /*#__PURE__*/ styled(IconTag)
+export const TagAdd = /*#__PURE__*/ styled(IconTagPlus)
+export const TagRemove = /*#__PURE__*/ styled(IconTagMinus)
+export const TagFilled = /*#__PURE__*/ styled(IconTagFilled)
+export const Tags = /*#__PURE__*/ styled(IconTags)
+export const TagsOff = /*#__PURE__*/ styled(IconTagsOff)
+export const Folders = /*#__PURE__*/ styled(IconFolders)
+export const Library = /*#__PURE__*/ styled(IconLibrary)
+export const Stack = /*#__PURE__*/ styled(IconStack2)
+export const Briefcase = /*#__PURE__*/ styled(IconBriefcase)
+
+// layout & view
+export const LayoutGrid = /*#__PURE__*/ styled(IconLayoutGrid)
+export const LayoutList = /*#__PURE__*/ styled(IconLayoutList)
+export const LayoutSidebar = /*#__PURE__*/ styled(IconLayoutSidebar)
+export const Columns = /*#__PURE__*/ styled(IconColumns)
+export const Columns3 = /*#__PURE__*/ styled(IconColumns3)
+export const List = /*#__PURE__*/ styled(IconList)
+export const ListNumbers = /*#__PURE__*/ styled(IconListNumbers)
+export const Maximize = /*#__PURE__*/ styled(IconMaximize)
+export const ArrowsMaximize = /*#__PURE__*/ styled(IconArrowsMaximize)
+export const Minimize = /*#__PURE__*/ styled(IconMinimize)
+export const AdjustmentsHorizontal = /*#__PURE__*/ styled(
+  IconAdjustmentsHorizontal,
+)
+
+// text & content
+export const AlignLeft = /*#__PURE__*/ styled(IconAlignLeft)
+export const Heading = /*#__PURE__*/ styled(IconHeading)
+export const H2 = /*#__PURE__*/ styled(IconH2)
+export const TextCaption = /*#__PURE__*/ styled(IconTextCaption)
+export const TextWrap = /*#__PURE__*/ styled(IconTextWrap)
+export const Highlight = /*#__PURE__*/ styled(IconHighlight)
+
+// people
+export const User = /*#__PURE__*/ styled(IconUser)
+export const Users = /*#__PURE__*/ styled(IconUsers)
+
+// time & calendar
+export const Calendar = /*#__PURE__*/ styled(IconCalendar)
+export const CalendarCheck = /*#__PURE__*/ styled(IconCalendarCheck)
+export const CalendarPlus = /*#__PURE__*/ styled(IconCalendarPlus)
+export const Clock = /*#__PURE__*/ styled(IconClock)
+export const History = /*#__PURE__*/ styled(IconHistory)
+
+// status & progress
+export const Progress = /*#__PURE__*/ styled(IconProgress)
+export const ProgressX = /*#__PURE__*/ styled(IconProgressX)
+export const Loader = /*#__PURE__*/ styled(IconLoader)
+export const Loader2 = /*#__PURE__*/ styled(IconLoader2)
+export const CircleCheck = /*#__PURE__*/ styled(IconCircleCheck)
+export const AlertTriangle = /*#__PURE__*/ styled(IconAlertTriangle)
+export const AlertCircle = /*#__PURE__*/ styled(IconAlertCircle)
+export const AlertOctagon = /*#__PURE__*/ styled(IconAlertOctagon)
+export const InfoCircle = /*#__PURE__*/ styled(IconInfoCircle)
+export const Bug = /*#__PURE__*/ styled(IconBug)
+
+// charts & analytics
+export const ChartBar = /*#__PURE__*/ styled(IconChartBar)
+export const ChartRadar = /*#__PURE__*/ styled(IconChartRadar)
+export const ReportAnalytics = /*#__PURE__*/ styled(IconReportAnalytics)
+export const Certificate = /*#__PURE__*/ styled(IconCertificate)
+
+// sorting
+export const ArrowsSort = /*#__PURE__*/ styled(IconArrowsSort)
+export const SortAscending = /*#__PURE__*/ styled(IconSortAscending)
+export const SortDescending = /*#__PURE__*/ styled(IconSortDescending)
+
+// settings & preferences
+export const Settings = /*#__PURE__*/ styled(IconSettings)
+export const Settings2 = /*#__PURE__*/ styled(IconSettings2)
+export const Palette = /*#__PURE__*/ styled(IconPalette)
+
+// communication
+export const Mail = /*#__PURE__*/ styled(IconMail)
+export const Rss = /*#__PURE__*/ styled(IconRss)
+
+// security
+export const Shield = /*#__PURE__*/ styled(IconShield)
+
+// selection
+export const Square = /*#__PURE__*/ styled(IconSquare)
+export const SquareCheck = /*#__PURE__*/ styled(IconSquareCheck)
+
+// misc ui
+export const Dots = /*#__PURE__*/ styled(IconDots)
+export const DotsCircle = /*#__PURE__*/ styled(IconDotsCircleHorizontal)
+export const DotsVertical = /*#__PURE__*/ styled(IconDotsVertical)
+export const Eye = /*#__PURE__*/ styled(IconEye)
+export const EyeOff = /*#__PURE__*/ styled(IconEyeOff)
+export const GripVertical = /*#__PURE__*/ styled(IconGripVertical)
+export const Heart = /*#__PURE__*/ styled(IconHeart)
+export const HelpCircle = /*#__PURE__*/ styled(IconHelpCircle)
+export const Language = /*#__PURE__*/ styled(IconLanguage)
+export const Moon = /*#__PURE__*/ styled(IconMoon)
+export const Sun = /*#__PURE__*/ styled(IconSun)
+export const Star = /*#__PURE__*/ styled(IconStar)

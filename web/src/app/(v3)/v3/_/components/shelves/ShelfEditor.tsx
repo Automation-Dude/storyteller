@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { IconLoader2, IconPlus, IconSearch, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
@@ -352,7 +352,7 @@ export function ShelfEditor({
                         }}
                         className="h-6 gap-1 text-xs"
                       >
-                        <IconX className="size-3" />
+                        <icon.Close className="size-3" />
                         {t.plain("clearFilter")}
                       </Button>
                     )}
@@ -405,7 +405,7 @@ export function ShelfEditor({
                           }}
                           className="h-6 gap-1 text-xs"
                         >
-                          <IconX className="size-3" />
+                          <icon.Close className="size-3" />
                           {t.plain("clearSelection")}
                         </Button>
                       </div>
@@ -436,7 +436,7 @@ export function ShelfEditor({
                       }}
                       className="h-6 gap-1 text-xs"
                     >
-                      <IconX className="size-3" />
+                      <icon.Close className="size-3" />
                       {c.plain("actions.reset")}
                     </Button>
                   )}
@@ -539,7 +539,7 @@ export function ShelfEditor({
               {c.plain("actions.cancel")}
             </Button>
             <Button type="submit" disabled={isSaving}>
-              {isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+              {isSaving && <icon.Loader2 className="mr-2 size-4 animate-spin" />}
               {isEditing ? c.plain("actions.save") : c.plain("actions.create")}
             </Button>
           </DialogFooter>
@@ -589,7 +589,7 @@ function BookSelector({
   return (
     <div className="flex flex-col gap-2">
       <div className="relative">
-        <IconSearch className="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2" />
+        <icon.Search className="text-muted-foreground absolute top-1/2 left-2 size-4 -translate-y-1/2" />
         <Input
           value={searchQuery}
           onChange={(e) => {
@@ -602,7 +602,7 @@ function BookSelector({
 
       {isLoading && (
         <div className="flex items-center justify-center py-4">
-          <IconLoader2 className="size-4 animate-spin" />
+          <icon.Loader2 className="size-4 animate-spin" />
         </div>
       )}
 
@@ -655,7 +655,7 @@ function BookSelector({
                       onRemove(book.uuid)
                     }}
                   >
-                    <IconX className="size-3" />
+                    <icon.Close className="size-3" />
                   </Button>
                 }
               />

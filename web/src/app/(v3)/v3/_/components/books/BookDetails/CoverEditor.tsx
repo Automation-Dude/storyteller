@@ -1,6 +1,6 @@
 "use client"
 
-import { IconPencil, IconPin, IconUpload, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useEffect, useState } from "react"
 import { useWatch } from "react-hook-form"
 import { toast } from "sonner"
@@ -93,7 +93,7 @@ function CoverSlot({
           aria-hidden
           className="flex items-center gap-1.5 rounded-md bg-black/55 px-2.5 py-1.5 text-xs font-medium"
         >
-          <IconUpload className="h-4 w-4" />
+          <icon.Upload className="h-4 w-4" />
           {file ? "Replace" : "Upload"}
         </span>
       </label>
@@ -109,7 +109,7 @@ function CoverSlot({
             onFileChange(null)
           }}
         >
-          <IconX className="h-3 w-3" />
+          <icon.Close className="h-3 w-3" />
         </Button>
       )}
     </div>
@@ -159,7 +159,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
         tooltip={t("cover.edit")}
         className="bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
       >
-        <IconPencil className="size-4" />
+        <icon.Pencil className="size-4" />
       </TooltipButton>
     )
 
@@ -205,7 +205,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
                 tooltip={t("cover.setDefaultPosition")}
                 className="bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
               >
-                <IconPin className="size-4" />
+                <icon.Pin className="size-4" />
               </TooltipButton>
             )}
 

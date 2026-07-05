@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  IconArrowUpRight,
-  IconDotsVertical,
-  IconEdit,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
@@ -55,7 +51,7 @@ export function BookActionsMenu({
     leading.push({
       key: "openFullPage",
       label: t.plain("openFullPage"),
-      icon: <IconArrowUpRight className="size-4" />,
+      icon: <icon.ArrowUpRight className="size-4" />,
       onSelect: () => {
         router.push(fullPageHref ?? `/v3/books/${book.uuid}`)
       },
@@ -65,7 +61,7 @@ export function BookActionsMenu({
     leading.push({
       key: "edit",
       label: c.plain("actions.edit"),
-      icon: <IconEdit className="size-4" />,
+      icon: <icon.Edit className="size-4" />,
       onSelect: onEdit,
     })
   }
@@ -87,7 +83,7 @@ export function BookActionsMenu({
             aria-label="Open book actions menu"
             shortcut={["E"]}
           >
-            <IconDotsVertical className="size-3.5 stroke-[1.5]" />
+            <icon.DotsVertical className="size-3.5 stroke-[1.5]" />
             <span className="sr-only">Open book actions menu</span>
           </TooltipButton>
         }

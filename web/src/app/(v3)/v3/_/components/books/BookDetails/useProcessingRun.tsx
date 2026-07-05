@@ -1,6 +1,6 @@
 "use client"
 
-import { IconProgress, IconReload } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type ReactNode, useState } from "react"
 
 import { type BookWithRelations } from "@/database/books"
@@ -41,7 +41,7 @@ export function buildProcessingPositions(
       {
         key: "start",
         labelKey: "startProcessing",
-        icon: <IconProgress className="mr-2 size-4" />,
+        icon: <icon.Progress className="mr-2 size-4" />,
         restart: false,
         disabled: false,
       },
@@ -55,28 +55,28 @@ export function buildProcessingPositions(
     {
       key: "continue",
       labelKey: aligned ? "resync" : "continue",
-      icon: <IconProgress className="mr-2 size-4" />,
+      icon: <icon.Progress className="mr-2 size-4" />,
       restart: false,
       disabled: false,
     },
     {
       key: "sync",
       labelKey: "fromSync",
-      icon: <IconProgress className="mr-2 size-4" />,
+      icon: <icon.Progress className="mr-2 size-4" />,
       restart: "sync",
       disabled: currentStageOrder < 2,
     },
     {
       key: "transcription",
       labelKey: "fromTranscription",
-      icon: <IconReload className="mr-2 size-4" />,
+      icon: <icon.Reload className="mr-2 size-4" />,
       restart: "transcription",
       disabled: currentStageOrder < 1,
     },
     {
       key: "full",
       labelKey: "fullRestart",
-      icon: <IconReload className="mr-2 size-4" />,
+      icon: <icon.Reload className="mr-2 size-4" />,
       restart: "full",
       disabled: false,
     },

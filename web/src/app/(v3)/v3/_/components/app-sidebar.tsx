@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  IconAdjustmentsHorizontal,
-  IconChevronRight,
-  IconDotsVertical,
-  IconEdit,
-  IconEyeOff,
-  IconSearch,
-  IconSettings,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -179,7 +171,7 @@ export function AppSidebar({
             className="flex justify-between gap-2"
           >
             <div className="flex items-center gap-2">
-              <IconSearch />
+              <icon.Search />
               {t("search")}
             </div>
             <KeyboardShortcut shortcut={["Meta+K"]} />
@@ -193,7 +185,7 @@ export function AppSidebar({
           {
             title: t("settings"),
             url: "/settings",
-            icon: IconSettings,
+            icon: icon.Settings,
             badge: hasUpdate ? <UpdateDot /> : undefined,
           },
         ]
@@ -230,7 +222,7 @@ export function AppSidebar({
               }}
               tooltip={t("customize")}
             >
-              <IconAdjustmentsHorizontal className="size-4" />
+              <icon.AdjustmentsHorizontal className="size-4" />
             </SidebarMenuButton>
             <SidebarPinButton />
           </div>
@@ -388,7 +380,7 @@ function SidebarNavGroup({
           nativeButton={false}
           render={
             <SidebarGroupLabel className="section-label after:bg-muted-foreground cursor-pointer font-sans text-xs font-medium opacity-60">
-              <IconChevronRight
+              <icon.ChevronRight
                 className={cn(
                   "mr-1 size-3 transition-transform duration-200",
                   !localCollapsed && "rotate-90",
@@ -515,20 +507,20 @@ function SidebarNavItem({
                     type="button"
                     className="text-muted-foreground/50 hover:text-muted-foreground flex size-5 items-center justify-center rounded"
                   >
-                    <IconDotsVertical className="size-3.5" />
+                    <icon.DotsVertical className="size-3.5" />
                   </button>
                 }
               />
               <DropdownMenuContent side="right" align="start">
                 {onEdit && (
                   <DropdownMenuItem onClick={onEdit}>
-                    <IconEdit className="mr-2 size-4" />
+                    <icon.Edit className="mr-2 size-4" />
                     Edit
                   </DropdownMenuItem>
                 )}
                 {onRemove && (
                   <DropdownMenuItem onClick={onRemove}>
-                    <IconEyeOff className="mr-2 size-4" />
+                    <icon.EyeOff className="mr-2 size-4" />
                     Remove from sidebar
                   </DropdownMenuItem>
                 )}

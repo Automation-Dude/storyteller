@@ -1,15 +1,6 @@
 "use client"
 
-import {
-  IconArrowBack,
-  IconDotsVertical,
-  IconHelpCircle,
-  IconLogout,
-  IconMoon,
-  IconSettings2,
-  IconSun,
-  IconUser,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import Link from "next/link"
 import { useTheme } from "next-themes"
 
@@ -70,7 +61,7 @@ export function NavUser({
                     </span>
                   )}
                 </div>
-                <IconDotsVertical className="size-4 data-[collapsible=icon]:-ml-4!" />
+                <icon.DotsVertical className="size-4 data-[collapsible=icon]:-ml-4!" />
               </SidebarMenuButton>
             }
           />
@@ -104,7 +95,7 @@ export function NavUser({
                     href={`${basePath}/preferences`}
                     className="flex items-center gap-2"
                   >
-                    <IconUser />
+                    <icon.User />
                     {t("account")}
                   </Link>
                 }
@@ -115,7 +106,7 @@ export function NavUser({
                     href={`${basePath}/preferences?tab=general`}
                     className="flex items-center gap-2"
                   >
-                    <IconSettings2 />
+                    <icon.Settings2 />
                     {t("preferences")}
                   </Link>
                 }
@@ -128,7 +119,7 @@ export function NavUser({
                   window.location.href = "/"
                 }}
               >
-                <IconArrowBack />
+                <icon.ArrowBack />
                 {t("switchToClassic")}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -137,7 +128,7 @@ export function NavUser({
                     href="https://storyteller-platform.gitlab.io/storyteller/"
                     className="flex items-center gap-2"
                   >
-                    <IconHelpCircle />
+                    <icon.HelpCircle />
                     {t("documentation")}
                   </Link>
                 }
@@ -145,9 +136,9 @@ export function NavUser({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   {theme === "dark" ? (
-                    <IconMoon className="size-4" />
+                    <icon.Moon className="size-4" />
                   ) : (
-                    <IconSun className="size-4" />
+                    <icon.Sun className="size-4" />
                   )}
                   {t("theme")}
                 </DropdownMenuSubTrigger>
@@ -157,7 +148,7 @@ export function NavUser({
                       setTheme("light")
                     }}
                   >
-                    <IconSun className="size-4" />
+                    <icon.Sun className="size-4" />
                     {t("light")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -165,7 +156,7 @@ export function NavUser({
                       setTheme("dark")
                     }}
                   >
-                    <IconMoon className="size-4" />
+                    <icon.Moon className="size-4" />
                     {t("dark")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -188,7 +179,7 @@ export function NavUser({
                   prefetch={false}
                   className="flex items-center gap-2"
                 >
-                  <IconLogout />
+                  <icon.Logout />
                   {t("logout")}
                 </Link>
               }

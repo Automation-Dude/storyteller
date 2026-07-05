@@ -1,16 +1,7 @@
 "use client"
 
-import {
-  type Icon,
-  IconBook,
-  IconDownload,
-  IconH2,
-  IconHeadphones,
-  IconList,
-  IconMicrophone,
-  IconPlayerPlay,
-  IconPlus,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
+import { type StyledIcon } from "@/icons"
 import { motion } from "motion/react"
 import { useState } from "react"
 
@@ -352,7 +343,7 @@ export function HeroSection({
                     nativeButton={false}
                     render={
                       <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
-                        <IconPlayerPlay className="mr-1 h-4 w-4" />
+                        <icon.PlayerPlay className="mr-1 h-4 w-4" />
                         Read
                       </V3Link>
                     }
@@ -366,7 +357,7 @@ export function HeroSection({
                     nativeButton={false}
                     render={
                       <V3Link href={`/books/${book.uuid}/read?mode=epub`}>
-                        <IconBook className="mr-1 h-4 w-4" />
+                        <icon.BookAlt className="mr-1 h-4 w-4" />
                         Read
                       </V3Link>
                     }
@@ -380,7 +371,7 @@ export function HeroSection({
                     nativeButton={false}
                     render={
                       <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
-                        <IconHeadphones className="mr-1 h-4 w-4" />
+                        <icon.Headphones className="mr-1 h-4 w-4" />
                         Listen
                       </V3Link>
                     }
@@ -402,7 +393,7 @@ export function HeroSection({
                           aria-label={t("downloads.download")}
                           tooltip={t("downloads.download")}
                         >
-                          <IconDownload className="size-3.5 stroke-[1.5]" />
+                          <icon.Download className="size-3.5 stroke-[1.5]" />
                         </TooltipButton>
                       }
                     />
@@ -428,7 +419,7 @@ export function HeroSection({
                               href={getDownloadUrl(book.uuid, "ebook")}
                               download
                             >
-                              <IconBook className="mr-2 h-4 w-4" />
+                              <icon.BookAlt className="mr-2 h-4 w-4" />
                               {t("downloads.downloadEbook")}
                             </a>
                           }
@@ -443,7 +434,7 @@ export function HeroSection({
                               href={getDownloadUrl(book.uuid, "audiobook")}
                               download
                             >
-                              <IconHeadphones className="mr-2 h-4 w-4" />
+                              <icon.Headphones className="mr-2 h-4 w-4" />
                               {t("downloads.downloadAudiobook")}
                               {book.audiobook.missing && (
                                 <span className="text-bad">
@@ -514,26 +505,26 @@ function QuickAddEmptyFields({
     key: string
     label: string
     onClick: () => void
-    icon: Icon
+    icon: StyledIcon
   }[] = []
   if (showSubtitle)
     chips.push({
       key: "subtitle",
-      icon: IconH2,
+      icon: icon.H2,
       label: c("fields.label.subtitle"),
       onClick: onAddSubtitle,
     })
   if (showNarrators)
     chips.push({
       key: "narrators",
-      icon: IconMicrophone,
+      icon: icon.Microphone,
       label: tLabels("narrators"),
       onClick: onAddNarrators,
     })
   if (showSeries)
     chips.push({
       key: "series",
-      icon: IconList,
+      icon: icon.List,
       label: tFields("series"),
       onClick: onAddSeries,
     })

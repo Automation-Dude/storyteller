@@ -1,6 +1,6 @@
 "use client"
 
-import { IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type ReactNode, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -71,7 +71,7 @@ const RelationChip = ({
           }}
           className="absolute top-[55%] -right-0.5 z-20 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
         >
-          <IconX className="h-3 w-3" />
+          <icon.Close className="h-3 w-3" />
         </Button>
       )}
     </>

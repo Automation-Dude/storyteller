@@ -1,6 +1,6 @@
 "use client"
 
-import { IconAlertTriangle } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useState } from "react"
 
 import { ImportFromServerDialog } from "@v3/_/components/files/ImportFromServerDialog"
@@ -133,7 +133,7 @@ export function ReplaceFileDialog({
 
       {sourceInsideAssetDir && (
         <div className="text-destructive flex items-start gap-2 text-xs">
-          <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <icon.AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{t("insideAssetDirWarning")}</span>
         </div>
       )}

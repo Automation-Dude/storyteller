@@ -1,6 +1,6 @@
 "use client"
 
-import { IconLink, IconLinkOff } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
@@ -179,7 +179,7 @@ export function ProfileTab({
                   className="flex items-center justify-between rounded-md border p-3"
                 >
                   <div className="flex items-center gap-2">
-                    <IconLink className="text-muted-foreground h-4 w-4" />
+                    <icon.Link className="text-muted-foreground h-4 w-4" />
                     <span className="text-sm font-medium">
                       {provider?.name ?? account.provider}
                     </span>
@@ -198,7 +198,7 @@ export function ProfileTab({
                         )
                       }}
                     >
-                      <IconLinkOff className="mr-1 h-4 w-4" />
+                      <icon.LinkOff className="mr-1 h-4 w-4" />
                       {t("unlink")}
                     </Button>
                   )}
@@ -213,7 +213,7 @@ export function ProfileTab({
                 method="POST"
               >
                 <Button type="submit" variant="outline" size="sm">
-                  <IconLink className="mr-1 h-4 w-4" />
+                  <icon.Link className="mr-1 h-4 w-4" />
                   {t("linkWith", { provider: provider.name })}
                 </Button>
               </form>

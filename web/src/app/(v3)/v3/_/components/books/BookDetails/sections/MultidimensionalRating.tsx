@@ -1,12 +1,6 @@
 "use client"
 
-import {
-  IconCheck,
-  IconChevronDown,
-  IconPlus,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
@@ -325,7 +319,7 @@ export function MultidimensionalRating({
                     toggle(d.id)
                   }}
                 >
-                  <IconX />
+                  <icon.Close />
                 </Button>
               </div>
             )
@@ -396,7 +390,7 @@ export function MultidimensionalRating({
             className="mt-1"
             onClick={applyChanges}
           >
-            <IconCheck className="mr-1 h-4 w-4" />
+            <icon.Check className="mr-1 h-4 w-4" />
             {t("review.apply")}
           </Button>
         )}
@@ -428,7 +422,7 @@ export function MultidimensionalRating({
         onOpenChange={handleScoresOpen}
       >
         <CollapsibleTrigger className="text-muted-foreground hover:text-foreground mx-auto flex items-center gap-1 text-xs">
-          <IconChevronDown className="h-3.5 w-3.5 transition-transform group-data-open:rotate-180" />
+          <icon.ChevronDown className="h-3.5 w-3.5 transition-transform group-data-open:rotate-180" />
           {t("review.adjustScores")}
         </CollapsibleTrigger>
         <CollapsibleContent>
@@ -479,7 +473,7 @@ export function MultidimensionalRating({
         aria-label={t("review.removeAdvanced")}
         className="text-muted-foreground hover:text-foreground absolute top-0 right-0"
       >
-        <IconTrash />
+        <icon.Trash />
       </Button>
     </div>
   )

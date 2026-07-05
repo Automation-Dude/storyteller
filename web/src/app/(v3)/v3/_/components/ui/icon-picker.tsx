@@ -1,6 +1,6 @@
 "use client"
 
-import { IconSearch, IconX } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Suspense, lazy, memo, useMemo, useState } from "react"
 
 import { ICON_REGISTRY, type IconEntry } from "@/icons/icon-registry"
@@ -63,7 +63,7 @@ export const IconPicker = memo(function IconPicker({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <IconSearch className="text-muted-foreground absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
+              <icon.Search className="text-muted-foreground absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
               <Input
                 value={search}
                 onChange={(e) => {
@@ -84,7 +84,7 @@ export const IconPicker = memo(function IconPicker({
                   setOpen(false)
                 }}
               >
-                <IconX className="size-3" />
+                <icon.Close className="size-3" />
                 <span className="sr-only">Clear icon</span>
               </Button>
             )}

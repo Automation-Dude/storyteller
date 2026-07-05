@@ -1,16 +1,6 @@
 "use client"
 
-import {
-  IconBook,
-  IconChevronDown,
-  IconChevronUp,
-  IconDotsVertical,
-  IconListNumbers,
-  IconLoader2,
-  IconPlayerPause,
-  IconPlayerPlay,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -124,14 +114,14 @@ export function ProcessingToast() {
             />
           ) : (
             <div className="bg-muted flex size-full items-center justify-center">
-              <IconBook className="text-muted-foreground size-4" />
+              <icon.BookAlt className="text-muted-foreground size-4" />
             </div>
           )}
         </ItemMedia>
 
         <ItemContent className="gap-1.5">
           <ItemTitle className="max-w-full">
-            <IconLoader2
+            <icon.Loader2
               className={cn(
                 "text-primary size-3.5 shrink-0",
                 current.status !== "PAUSED" && "animate-spin",
@@ -181,20 +171,20 @@ export function ProcessingToast() {
                     />
                   }
                 >
-                  <IconDotsVertical className="size-3.5" />
+                  <icon.DotsVertical className="size-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="z-50">
                   <DropdownMenuItem
                     render={<V3Link href="/settings?tab=queue" />}
                   >
-                    <IconListNumbers className="size-4" />
+                    <icon.ListNumbers className="size-4" />
                     {t("toast.manageQueue")}
                   </DropdownMenuItem>
                   {current.status === "RUNNING" && (
                     <DropdownMenuItem
                       onClick={() => void pauseJob({ uuid: current.uuid })}
                     >
-                      <IconPlayerPause className="size-4" />
+                      <icon.PlayerPause className="size-4" />
                       {t("toast.pause")}
                     </DropdownMenuItem>
                   )}
@@ -202,7 +192,7 @@ export function ProcessingToast() {
                     <DropdownMenuItem
                       onClick={() => void resumeJob({ uuid: current.uuid })}
                     >
-                      <IconPlayerPlay className="size-4" />
+                      <icon.PlayerPlay className="size-4" />
                       {t("toast.resume")}
                     </DropdownMenuItem>
                   )}
@@ -211,7 +201,7 @@ export function ProcessingToast() {
                     variant="destructive"
                     onClick={() => void cancelJob({ uuid: current.uuid })}
                   >
-                    <IconX className="size-4" />
+                    <icon.Close className="size-4" />
                     {c("actions.cancel")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -227,9 +217,9 @@ export function ProcessingToast() {
                 }}
               >
                 {minimized ? (
-                  <IconChevronUp className="size-3.5" />
+                  <icon.ChevronUp className="size-3.5" />
                 ) : (
-                  <IconChevronDown className="size-3.5" />
+                  <icon.ChevronDown className="size-3.5" />
                 )}
               </Button>
 
@@ -242,7 +232,7 @@ export function ProcessingToast() {
                   setDismissed(current.uuid)
                 }}
               >
-                <IconX className="size-3.5" />
+                <icon.Close className="size-3.5" />
               </Button>
             </div>
           </div>

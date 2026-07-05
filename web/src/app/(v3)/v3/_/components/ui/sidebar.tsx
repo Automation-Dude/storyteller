@@ -2,7 +2,7 @@
 
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
-import { IconLayoutSidebar, IconPin, IconPinFilled } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type VariantProps, cva } from "class-variance-authority"
 import * as React from "react"
 
@@ -375,7 +375,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <IconLayoutSidebar />
+      <icon.LayoutSidebar />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
@@ -409,9 +409,9 @@ function SidebarPinButton({
             {...props}
           >
             {pinned ? (
-              <IconPinFilled className="size-4" />
+              <icon.PinFilled className="size-4" />
             ) : (
-              <IconPin className="size-4" />
+              <icon.Pin className="size-4" />
             )}
             <span className="sr-only">
               {pinned ? "Unpin Sidebar" : "Pin Sidebar"}

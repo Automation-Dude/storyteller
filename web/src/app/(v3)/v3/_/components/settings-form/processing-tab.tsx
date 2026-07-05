@@ -1,6 +1,6 @@
 "use client"
 
-import { IconChevronDown } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { type ReactNode, useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 import { toast } from "sonner"
@@ -101,7 +101,7 @@ function SettingsCard({
               <CardTitle>{title}</CardTitle>
               <CardDescription>{description}</CardDescription>
             </div>
-            <IconChevronDown
+            <icon.ChevronDown
               className={cn(
                 "text-muted-foreground mt-0.5 size-4 shrink-0 stroke-[1.5] transition-transform",
                 open && "rotate-180",

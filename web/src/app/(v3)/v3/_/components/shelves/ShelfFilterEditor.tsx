@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  IconChevronDown,
-  IconCopy,
-  IconGripVertical,
-  IconLoader2,
-  IconPlus,
-  IconTrash,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { Reorder, motion, useDragControls } from "motion/react"
 import { useEffect, useRef } from "react"
 
@@ -337,7 +330,7 @@ export function FilterPreview({
   if (isLoading) {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
-        <IconLoader2 className="size-3 animate-spin" />
+        <icon.Loader2 className="size-3 animate-spin" />
         {t.plain("loadingPreview")}
       </div>
     )
@@ -484,7 +477,7 @@ function DraggableFilterItem({
               controls.start(e)
             }}
           >
-            <IconGripVertical className="size-3" />
+            <icon.GripVertical className="size-3" />
           </motion.button>
         )}
 
@@ -618,12 +611,12 @@ function LogicalBlockEditor({
                 onClick={onDuplicate}
                 title={t.plain("duplicate")}
               >
-                <IconCopy className="size-3" />
+                <icon.Copy className="size-3" />
               </Button>
             )}
 
             <Button variant="ghost" size="icon-xs" onClick={onRemove}>
-              <IconTrash className="size-3" />
+              <icon.Trash className="size-3" />
             </Button>
           </div>
         )}
@@ -707,12 +700,12 @@ function NotBlockEditor({
                 onClick={onDuplicate}
                 title={t.plain("duplicate")}
               >
-                <IconCopy className="size-3" />
+                <icon.Copy className="size-3" />
               </Button>
             )}
 
             <Button variant="ghost" size="icon-xs" onClick={onRemove}>
-              <IconTrash className="size-3" />
+              <icon.Trash className="size-3" />
             </Button>
           </div>
         )}
@@ -826,7 +819,7 @@ function ConditionEditor({
               >
                 <FieldIcon field={condition.field} className="size-3" />
                 {c(`fields.label.${condition.field}`)}
-                <IconChevronDown className="size-3" />
+                <icon.ChevronDown className="size-3" />
               </Button>
             }
           />
@@ -915,12 +908,12 @@ function ConditionEditor({
               onClick={onDuplicate}
               title={t.plain("duplicate")}
             >
-              <IconCopy className="size-3" />
+              <icon.Copy className="size-3" />
             </Button>
           )}
 
           <Button variant="ghost" size="icon-sm" onClick={onRemove}>
-            <IconTrash className="size-3" />
+            <icon.Trash className="size-3" />
           </Button>
         </div>
       </div>

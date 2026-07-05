@@ -1,11 +1,4 @@
-import {
-  IconCheck,
-  IconChevronDown,
-  IconPointer,
-  IconSquare,
-  IconSquareCheck,
-  IconX,
-} from "@tabler/icons-react"
+import * as icon from "@/icons"
 
 import { ActionTray } from "@v3/_/components/ui/action-tray"
 import { Button } from "@v3/_/components/ui/button"
@@ -104,11 +97,11 @@ export function SelectionToolbar({
                   size="sm"
                   className="shrink-0 gap-1.5 rounded-md"
                 >
-                  <IconSquareCheck className="size-3.5 stroke-[1.5]" />
+                  <icon.SquareCheck className="size-3.5 stroke-[1.5]" />
                   <span className="hidden @md:inline">
                     {c("actions.select")}
                   </span>
-                  <IconChevronDown className="size-3 opacity-60" />
+                  <icon.ChevronDown className="size-3 opacity-60" />
                 </Button>
               }
             />
@@ -118,11 +111,11 @@ export function SelectionToolbar({
                   selectAll(allBookUuids)
                 }}
               >
-                <IconCheck className="mr-2 h-4 w-4" />
+                <icon.Check className="mr-2 h-4 w-4" />
                 {t("selectAll")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={selectNone}>
-                <IconSquare className="mr-2 h-4 w-4" />
+                <icon.Square className="mr-2 h-4 w-4" />
                 {t("selectNone")}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -130,7 +123,7 @@ export function SelectionToolbar({
                   invertSelection(allBookUuids)
                 }}
               >
-                <IconSquareCheck className="mr-2 h-4 w-4" />
+                <icon.SquareCheck className="mr-2 h-4 w-4" />
                 {t("invertSelection")}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -148,9 +141,9 @@ export function SelectionToolbar({
                 className="shrink-0 gap-1.5 rounded-md"
                 disabled={!hasSelection}
               >
-                <IconPointer className="size-3.5 stroke-[1.5]" />
+                <icon.Pointer className="size-3.5 stroke-[1.5]" />
                 <span className="hidden @md:inline">{t("actions")}</span>
-                <IconChevronDown className="size-3 opacity-60" />
+                <icon.ChevronDown className="size-3 opacity-60" />
               </Button>
             }
           >
@@ -169,7 +162,7 @@ export function SelectionToolbar({
             className="shrink-0 rounded-full"
             shortcut={["Escape"]}
           >
-            <IconX className="size-4 stroke-[1.5]" />
+            <icon.Close className="size-4 stroke-[1.5]" />
           </TooltipButton>
         </ActionTray>
       </div>

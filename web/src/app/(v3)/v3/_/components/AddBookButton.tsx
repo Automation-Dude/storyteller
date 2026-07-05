@@ -1,7 +1,7 @@
 "use client"
 
 import { type ButtonProps } from "@base-ui/react"
-import { IconFileImport, IconFileUpload, IconPlus } from "@tabler/icons-react"
+import * as icon from "@/icons"
 import { parseAsString, useQueryState } from "nuqs"
 import { useState } from "react"
 
@@ -57,7 +57,7 @@ export function AddBookButton(props: ButtonProps) {
         }
       >
         <FilterableMenuItem
-          icon={<IconFileUpload className="size-4" />}
+          icon={<icon.FileUpload className="size-4" />}
           textValue={t.plain("uploadBook")}
           onSelect={() => {
             setUploadOpen(true)
@@ -66,7 +66,7 @@ export function AddBookButton(props: ButtonProps) {
           {t("uploadBook")}
         </FilterableMenuItem>
         <FilterableMenuItem
-          icon={<IconFileImport className="size-4" />}
+          icon={<icon.FileImport className="size-4" />}
           textValue={t.plain("importBook")}
           onSelect={() => {
             setImportOpen(true)
