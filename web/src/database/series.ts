@@ -74,7 +74,19 @@ export async function addBooksToSeries(
   relations: NewSeriesRelation[],
 ) {
   await db.transaction().execute(async (tr) => {
-    let existing = await tr
+    // resolve the target series by uuid first (an existing series picked from the
+    // list), then by name, and only insert when neither hits. matching by name
+    // alone risked re-inserting with the client-supplied uuid on a near-miss,
+    // which collides with the existing primary key and aborts the whole add.
+    let existing = series.uuid
+      ? await tr
+          .selectFrom("series")
+          .select(["uuid"])
+          .where("uuid", "=", series.uuid)
+          .executeTakeFirst()
+      : undefined
+
+    existing ??= await tr
       .selectFrom("series")
       .select(["uuid"])
       .where("name", "=", series.name)
@@ -108,6 +120,8 @@ export async function addBooksToSeries(
 
     // relations can be empty when creating a standalone series
     if (relations.length) {
+      // a book belongs to a series at most once; ignore rows it already has so
+      // repeated adds don't pile up duplicates (enforced by a unique index)
       await tr
         .insertInto("bookToSeries")
         .values(
@@ -117,6 +131,9 @@ export async function addBooksToSeries(
             position: relation.position,
             featured: relation.featured,
           })),
+        )
+        .onConflict((oc) =>
+          oc.columns(["bookUuid", "seriesUuid"]).doNothing(),
         )
         .execute()
     }
@@ -200,6 +217,7 @@ export async function updateSeries(
             seriesUuid: uuid,
           })),
         )
+        .onConflict((oc) => oc.columns(["bookUuid", "seriesUuid"]).doNothing())
         .returning(["bookToSeries.bookUuid"])
         .execute()
     }
@@ -296,6 +314,7 @@ export async function mergeSeries(targetUuid: UUID, sourceUuids: UUID[]) {
             featured: r.featured,
           })),
         )
+        .onConflict((oc) => oc.columns(["bookUuid", "seriesUuid"]).doNothing())
         .execute()
     }
 

@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useHotkey } from "@tanstack/react-hotkeys"
 import Link from "next/link"
 import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -11,6 +10,15 @@ import { type z } from "zod"
 
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
+import {
+  NavSidebar,
+  NavSidebarBody,
+  NavSidebarFooterLink,
+  NavSidebarGroup,
+  NavSidebarList,
+  NavSidebarSearch,
+  type NavSidebarTab,
+} from "@v3/_/components/ui/nav-sidebar"
 import {
   PageContent,
   PageHeader,
@@ -22,11 +30,8 @@ import { Spinner } from "@v3/_/components/ui/spinner"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
-import { cn } from "@v3/_/lib/utils"
 
 import { type Invite, type Settings, type User } from "@/apiModels"
-import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
-import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { SettingsSchema } from "@/database/settingsTypes"
 import * as icon from "@/icons"
 import {
@@ -175,11 +180,7 @@ function resolveFieldErrors(
 
 const SETTINGS_SIDEBAR_WIDTH = 220
 
-type SidebarTabDef = {
-  value: Tab
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-}
+type SidebarTabDef = NavSidebarTab<Tab>
 
 export function SettingsForm({
   settings,
@@ -598,16 +599,6 @@ function SettingsSidebar({
   onSearchChange: (query: string) => void
 }) {
   const t = useTranslation("SettingsPage")
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  useHotkey(
-    "/",
-    () => {
-      searchInputRef.current?.focus()
-    },
-    {
-      ignoreInputs: true,
-    },
-  )
 
   const settingsTabs = tabs.filter((tab) =>
     settingsFormTabs.includes(tab.value as SettingsFormTab),
@@ -617,115 +608,40 @@ function SettingsSidebar({
   )
 
   return (
-    <div className="scroll-y flex h-full flex-col">
-      <div className="flex flex-col gap-4 px-2 pt-3 pb-3">
+    <NavSidebar>
+      <NavSidebarBody>
         {settingsTabs.length > 0 && (
-          <div>
-            <p className="text-muted-foreground mb-1.5 px-2 text-xs font-medium tracking-wider uppercase">
-              {t("sidebar.settings")}
-            </p>
+          <NavSidebarGroup label={t("sidebar.settings")}>
+            <NavSidebarSearch
+              placeholder={t("searchSettings")}
+              value={searchQuery}
+              onChange={onSearchChange}
+            />
 
-            <div className="mb-2 px-1">
-              <SearchInput
-                ref={searchInputRef}
-                shortcut={["/"]}
-                placeholder={t("searchSettings")}
-                value={searchQuery}
-                onChange={onSearchChange}
-              />
-            </div>
-
-            <SidebarTabList
+            <NavSidebarList
               tabs={settingsTabs}
               activeTab={activeTab}
               onTabChange={onTabChange}
             />
-          </div>
+          </NavSidebarGroup>
         )}
 
         {administrationTabs.length > 0 && (
-          <SidebarGroup
-            label={t("sidebar.administration")}
-            tabs={administrationTabs}
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-          />
+          <NavSidebarGroup label={t("sidebar.administration")}>
+            <NavSidebarList
+              tabs={administrationTabs}
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+            />
+          </NavSidebarGroup>
         )}
-      </div>
+      </NavSidebarBody>
 
-      <div className="border-border mt-auto border-t px-3 py-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          nativeButton={false}
-          className="text-muted-foreground hover:text-foreground w-full justify-start gap-2"
-          render={
-            <V3Link href="/preferences?tab=general">
-              <icon.Settings2 className="h-4 w-4" />
-              {t("preferences")}
-            </V3Link>
-          }
-        />
-      </div>
-    </div>
-  )
-}
-
-function SidebarGroup({
-  label,
-  tabs,
-  activeTab,
-  onTabChange,
-}: {
-  label: string
-  tabs: SidebarTabDef[]
-  activeTab: Tab | null
-  onTabChange: (tab: Tab) => void
-}) {
-  return (
-    <div>
-      <p className="text-muted-foreground mb-1 px-2 text-xs font-medium tracking-wider uppercase">
-        {label}
-      </p>
-
-      <SidebarTabList
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={onTabChange}
+      <NavSidebarFooterLink
+        href="/preferences?tab=general"
+        icon={icon.Settings2}
+        label={t("preferences")}
       />
-    </div>
-  )
-}
-
-function SidebarTabList({
-  tabs,
-  activeTab,
-  onTabChange,
-}: {
-  tabs: SidebarTabDef[]
-  activeTab: Tab | null
-  onTabChange: (tab: Tab) => void
-}) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          type="button"
-          onClick={() => {
-            onTabChange(tab.value)
-          }}
-          className={cn(
-            "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-            activeTab === tab.value
-              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-              : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
-          )}
-        >
-          <tab.icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{tab.label}</span>
-        </button>
-      ))}
-    </div>
+    </NavSidebar>
   )
 }

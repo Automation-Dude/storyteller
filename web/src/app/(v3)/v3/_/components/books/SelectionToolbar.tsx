@@ -17,7 +17,6 @@ import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import * as icon from "@/icons"
 import { useListBooksQuery } from "@/store/api"
 
-
 import {
   ActionEntryList,
   useBookActionItems,
@@ -73,7 +72,7 @@ export function SelectionToolbar({
 
   return (
     <>
-      <div className="@container pointer-events-none sticky -bottom-4 z-40 -mx-6 flex justify-center px-2">
+      <div className="@container pointer-events-none sticky inset-x-0 bottom-0 z-40 flex justify-center px-2">
         <ActionTray
           show={isSelecting}
           className={cn(
@@ -90,6 +89,7 @@ export function SelectionToolbar({
 
           {divider}
 
+          <div className="flex-1" />
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -151,7 +151,6 @@ export function SelectionToolbar({
             <ActionEntryList entries={entries} />
           </FilterableMenu>
 
-          <div className="flex-1" />
           {divider}
 
           <TooltipButton

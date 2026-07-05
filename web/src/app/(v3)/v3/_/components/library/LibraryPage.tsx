@@ -1,12 +1,10 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { BookFilters, BookGrid } from "@v3/_/components/books"
-import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import {
   BookDetailDrawer,
   BookListLayout,
@@ -56,11 +54,18 @@ import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateC
 import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSeriesDialog"
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/EditSeriesDialog"
+import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
+import {
+  SelectionBullet,
+  SelectionCheckbox,
+} from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import { CreateStatusDialog } from "@/app/(v3)/v3/_/components/library/CreateStatusDialog"
 import { Dialog, DialogContent } from "@/app/(v3)/v3/_/components/ui/dialog"
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { isWellKnownStatus } from "@/database/statusKinds"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import { type ShelfFilterNode } from "@/shelves"
 import {
   type DisplayField,
@@ -88,7 +93,6 @@ import {
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
-import { IAdd } from "../ui/icon"
 
 const SIDEBAR_ROW_HEIGHT = 30
 
@@ -1276,7 +1280,7 @@ function SidebarRow({
         isActive
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "hover:bg-sidebar-accent/50",
-        isChecked && "ring-primary/40 ring-1 ring-inset",
+        // isChecked && "ring-primary/40 ring-1 ring-inset",
       )}
     >
       <button
@@ -1337,28 +1341,18 @@ function SidebarRow({
         )}
 
         {canSelect && (
-          <div
+          <SelectionCheckbox
+            showCheckbox={false}
+            checked={isChecked}
+            onSelectRange={onSelectRange}
+            onToggle={onToggle}
+            uuid={item.key}
+            isSelecting={isSelecting}
             className={cn(
-              "pr-.5 flex shrink-0 items-center",
-
-              !isSelecting &&
-                "hidden opacity-0 group-hover/item:block group-hover/item:opacity-100 peer-focus/item:block peer-focus/item:opacity-100",
+              "group-focus-within:visible! group-focus-within:opacity-100! group-hover/item:visible! group-hover/item:opacity-100!",
+              !isSelecting && "invisible",
             )}
-          >
-            <Checkbox
-              checked={isChecked}
-              onClick={(e) => {
-                if (e.shiftKey) {
-                  e.preventDefault()
-                  window.getSelection()?.empty()
-                  onSelectRange(item.key)
-                }
-              }}
-              onCheckedChange={() => {
-                onToggle(item.key)
-              }}
-            />
-          </div>
+          />
         )}
 
         <span

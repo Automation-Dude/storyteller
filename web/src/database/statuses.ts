@@ -109,12 +109,37 @@ export async function updateStatusForBooks(
   bookUuids: UUID[],
   userId: UUID,
 ) {
-  await db
-    .updateTable("bookToStatus")
-    .set({ statusUuid })
-    .where("bookUuid", "in", bookUuids)
-    .where("userId", "=", userId)
-    .execute()
+  if (bookUuids.length === 0) return
+
+  // bookToStatus has no unique (bookUuid, userId) constraint, so upsert by hand:
+  // update the rows that exist and insert one for every book that has none yet.
+  // a plain UPDATE would silently skip books that never got a status row (e.g.
+  // imported while the library had no default status).
+  await db.transaction().execute(async (tr) => {
+    const existing = await tr
+      .selectFrom("bookToStatus")
+      .select("bookUuid")
+      .where("bookUuid", "in", bookUuids)
+      .where("userId", "=", userId)
+      .execute()
+
+    await tr
+      .updateTable("bookToStatus")
+      .set({ statusUuid })
+      .where("bookUuid", "in", bookUuids)
+      .where("userId", "=", userId)
+      .execute()
+
+    const existingBooks = new Set(existing.map((row) => row.bookUuid))
+    const missing = bookUuids.filter((uuid) => !existingBooks.has(uuid))
+
+    if (missing.length > 0) {
+      await tr
+        .insertInto("bookToStatus")
+        .values(missing.map((bookUuid) => ({ bookUuid, statusUuid, userId })))
+        .execute()
+    }
+  })
 
   const status = await getStatus(statusUuid)
 

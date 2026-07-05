@@ -13,11 +13,13 @@ import { useProcessingRun } from "@/app/(v3)/v3/_/components/books/BookDetails/u
 import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateCollectionDialog"
 import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSeriesDialog"
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
+import { DeleteBooksDialog } from "@/app/(v3)/v3/_/components/books/DeleteBooksDialog"
 import {
   RelationEditPicker,
   membershipFromBooks,
 } from "@/app/(v3)/v3/_/components/books/relation-picker/RelationEditPicker"
 import {
+  type ActivationModifiers,
   FilterableMenuItem,
   FilterableMenuSeparator,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
@@ -48,7 +50,7 @@ export type BookActionEntry = {
   label: string
   icon?: ReactNode
   keywords?: string
-  onSelect?: () => void
+  onSelect?: (modifiers?: ActivationModifiers) => void
   submenu?: ReactNode | ((ctx: { close: () => void }) => ReactNode)
   variant?: "destructive"
   separatorBefore?: boolean
@@ -112,7 +114,7 @@ export function useBookActionItems({
   const [processBook] = useProcessBookMutation()
   const [clearCache] = useClearBooksCacheMutation()
   const [upgradeEpub] = useUpgradeBookEpubMutation()
-  const [deleteBooks] = useDeleteBooksMutation()
+  const [deleteBooks, { isLoading: isDeleting }] = useDeleteBooksMutation()
   const [mergeBooks] = useMergeBooksMutation()
 
   const processingRun = useProcessingRun(
@@ -125,6 +127,7 @@ export function useBookActionItems({
   const [createSeriesName, setCreateSeriesName] = useState("")
   const [createTagOpen, setCreateTagOpen] = useState(false)
   const [createTagName, setCreateTagName] = useState("")
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const epubBooks = books.filter((b) => b.ebook)
 
@@ -139,10 +142,14 @@ export function useBookActionItems({
     [addToCollections, bookUuids],
   )
 
-  const handleDelete = useCallback(async () => {
-    await deleteBooks({ books: bookUuids }).unwrap()
-    onAfterDestructive?.()
-  }, [deleteBooks, bookUuids, onAfterDestructive])
+  const handleDelete = useCallback(
+    async (preventReImport: boolean) => {
+      await deleteBooks({ books: bookUuids, preventReImport }).unwrap()
+      setDeleteOpen(false)
+      onAfterDestructive?.()
+    },
+    [deleteBooks, bookUuids, onAfterDestructive],
+  )
 
   const handleClearCache = useCallback(async () => {
     await clearCache({ bookUuids }).unwrap()
@@ -196,14 +203,6 @@ export function useBookActionItems({
 
     onAfterDestructive?.()
   }, [mergeBooks, mergeTarget, currentUser, bookUuids, onAfterDestructive])
-
-  const deleteAction = useConfirmAction({
-    onConfirm: handleDelete,
-    title: t("deleteTitle", { count }),
-    description: t("deleteDescription"),
-    confirmLabel: c("actions.delete"),
-    variant: "destructive",
-  })
 
   const clearCacheAction = useConfirmAction({
     onConfirm: handleClearCache,
@@ -323,8 +322,8 @@ export function useBookActionItems({
       key: "upgradeEpub",
       label: t.plain("upgradeEpub"),
       icon: <icon.Replace className="size-4" />,
-      onSelect: () => {
-        upgradeAction.confirm()
+      onSelect: (modifiers) => {
+        upgradeAction.confirm(modifiers)
       },
     })
   }
@@ -376,8 +375,8 @@ export function useBookActionItems({
           separatorBefore: true,
           label: c.plain("states.processing"),
           icon: <icon.Progress className="size-4" />,
-          onSelect: () => {
-            processAction.confirm()
+          onSelect: (modifiers) => {
+            processAction.confirm(modifiers)
           },
         })
       }
@@ -386,8 +385,8 @@ export function useBookActionItems({
         key: "clearCache",
         label: t.plain("clearCache"),
         icon: <icon.Refresh className="size-4" />,
-        onSelect: () => {
-          clearCacheAction.confirm()
+        onSelect: (modifiers) => {
+          clearCacheAction.confirm(modifiers)
         },
       })
     }
@@ -407,20 +406,32 @@ export function useBookActionItems({
       key: "delete",
       separatorBefore: true,
       variant: "destructive",
-      disabled: deleteAction.isLoading,
-      label: deleteAction.isLoading
+      disabled: isDeleting,
+      label: isDeleting
         ? c.plain("states.deleting")
         : c.plain("actions.delete"),
       icon: <icon.Trash className="size-4" />,
-      onSelect: () => {
-        deleteAction.confirm()
+      onSelect: (modifiers) => {
+        // shift skips the confirm; delete straight away without preventing
+        // re-import (the checkbox default)
+        if (modifiers?.shiftKey) {
+          void handleDelete(false)
+          return
+        }
+        setDeleteOpen(true)
       },
     })
   }
 
   const dialogs = (
     <>
-      <ConfirmDialog {...deleteAction.dialogProps} />
+      <DeleteBooksDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        books={books}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+      />
       <ConfirmDialog {...clearCacheAction.dialogProps} />
       <ConfirmDialog {...processAction.dialogProps} />
       <ConfirmDialog {...upgradeAction.dialogProps} />

@@ -32,7 +32,7 @@ const inputClassName =
   "placeholder:text-muted-foreground flex h-6 text-base w-full rounded-md bg-transparent px-2 md:text-xs outline-none"
 
 const listClassName =
-  "scroll-py-1 max-h-64 scroll-y overscroll-contain px-1 pb-1 after:absolute after:bottom-0 after:left-0 after:h-12 after:w-full after:bg-gradient-to-b after:from-transparent after:to-background"
+  "scroll-py-1 max-h-64 scroll-y overscroll-contain px-1 pb-1"
 
 const rowClassName =
   "data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-md px-2 py-1 text-left text-xs/relaxed outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
@@ -331,19 +331,10 @@ export function FilterableList<T extends FilterableItem>({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Composition menu: a dropdown built on base-ui Popover with our own
-// virtual-focus highlight. base-ui Menu is unusable here because its typeahead
-// (type a letter to jump to an item) can't be disabled and fights a search box,
-// and it exposes no controllable highlight index. So we keep DOM focus on the
-// search input and track the active row purely in React state: the highlight
-// follows typing, arrow keys, and hover, and Enter fires the active row.
-// Submenus are lazy hover-opened nested popovers. For huge, virtualized lists
-// use FilterableList above instead.
-// ---------------------------------------------------------------------------
-
+// lets not be too cutesy, looks nicer if just instant
 const menuPopupClassName =
-  "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 bg-popover text-popover-foreground z-50 max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md p-1 shadow-md ring-1 duration-100 outline-none"
+  // "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2
+  "ring-foreground/10 bg-popover text-popover-foreground z-50 max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md p-1 shadow-md ring-1 duration-100 outline-none"
 
 const menuItemClassName =
   "data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:data-highlighted:bg-destructive/10 dark:data-[variant=destructive]:data-highlighted:bg-destructive/20 data-[variant=destructive]:data-highlighted:text-destructive data-[variant=destructive]:*:[svg]:text-destructive relative flex min-h-7 cursor-default items-center gap-2 rounded-md px-2 py-1 text-xs/relaxed outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
@@ -356,12 +347,16 @@ function itemMatches(query: string, text: string): boolean {
   return q === "" || text.toLowerCase().includes(q)
 }
 
+// modifier keys captured at activation time, so a confirm action can honor
+// shift-to-skip whether the row was clicked or triggered with Enter.
+export type ActivationModifiers = { shiftKey: boolean }
+
 // what a registered row exposes to keyboard navigation. `metaRef` is read at
 // event time (not registration time) so it always reflects the latest closures.
 type FilterableMenuItemMeta = {
   disabled: boolean
   isSubmenu: boolean
-  onActivate: () => void
+  onActivate: (modifiers?: ActivationModifiers) => void
 }
 type FilterableMenuItemEntry = {
   element: HTMLElement
@@ -424,8 +419,8 @@ function useFilterableMenuItem(
     setActive: () => {
       ctx.setActiveId(id)
     },
-    activate: () => {
-      metaRef.current.onActivate()
+    activate: (modifiers?: ActivationModifiers) => {
+      metaRef.current.onActivate(modifiers)
     },
   }
 }
@@ -433,7 +428,7 @@ function useFilterableMenuItem(
 export type FilterableMenuItemProps = {
   children: ReactNode
   icon?: ReactNode
-  onSelect?: () => void
+  onSelect?: (modifiers?: ActivationModifiers) => void
   submenu?: ReactNode | ((ctx: { close: () => void }) => ReactNode)
   // extra text to match when filtering
   keywords?: string
@@ -485,8 +480,8 @@ function FilterableMenuActionItem({
     {
       disabled: !!disabled,
       isSubmenu: false,
-      onActivate: () => {
-        onSelect?.()
+      onActivate: (modifiers) => {
+        onSelect?.(modifiers)
         if (closeOnClick !== false) close()
       },
     },
@@ -505,8 +500,8 @@ function FilterableMenuActionItem({
       onMouseEnter={() => {
         if (!disabled) setActive()
       }}
-      onClick={() => {
-        if (!disabled) activate()
+      onClick={(event) => {
+        if (!disabled) activate({ shiftKey: event.shiftKey })
       }}
     >
       {icon}
@@ -722,7 +717,7 @@ export function FilterableMenuContent({
       // ArrowRight only acts on submenu rows (open the flyout)
       if (event.key === "ArrowRight" && !entry.metaRef.current.isSubmenu) return
       event.preventDefault()
-      entry.metaRef.current.onActivate()
+      entry.metaRef.current.onActivate({ shiftKey: event.shiftKey })
     }
   }
 

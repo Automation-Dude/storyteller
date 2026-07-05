@@ -16,6 +16,7 @@ export function SelectionCheckbox({
   onToggle,
   onSelectRange,
   className,
+  showCheckbox = true,
 }: {
   uuid: string
   checked: boolean
@@ -23,6 +24,7 @@ export function SelectionCheckbox({
   onToggle: (uuid: string) => void
   onSelectRange?: (uuid: string) => void
   className?: string
+  showCheckbox?: boolean
 }) {
   const handleClick = (e: MouseEvent) => {
     e.stopPropagation()
@@ -57,14 +59,15 @@ export function SelectionCheckbox({
         }}
         checked={checked}
         tabIndex={-1}
-        className="hover:border-primary bg-background size-5 cursor-pointer rounded-full border-2 shadow-sm transition-colors data-checked:border-2"
+        className={cn(
+          "hover:border-primary bg-background size-5 cursor-pointer rounded-full border-2 shadow-sm transition-colors data-checked:border-2",
+          !showCheckbox && "[&_svg]:hidden",
+        )}
       />
     </div>
   )
 }
 
-// the round bullet shown next to the select/deselect item in the per-book menu,
-// kept in sync between grid and list.
 export function SelectionBullet({ selected }: { selected: boolean }) {
   return (
     <div

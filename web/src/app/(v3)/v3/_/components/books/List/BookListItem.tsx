@@ -147,6 +147,17 @@ export const BookListItem = memo(function BookListItem({
             disableHover
             onLoadingChange={() => {}}
           />
+
+          {isSynced && (
+            <div
+              className="absolute -top-1 -right-1.5 z-30 flex size-3 shrink-0 items-center justify-center rounded-full"
+              style={{
+                background: showAccent ? cPrimary.solid : "var(--primary)",
+              }}
+            >
+              <IconReadaloud className="size-2.5 text-white" />
+            </div>
+          )}
         </div>
         {progress !== null && progress > 0 && (
           <div className="absolute right-0 bottom-0 left-0">
@@ -174,17 +185,6 @@ export const BookListItem = memo(function BookListItem({
               {book.title}
             </span>
           </V3Link>
-
-          {isSynced && (
-            <div
-              className="flex size-4 shrink-0 items-center justify-center rounded-full"
-              style={{
-                background: showAccent ? cPrimary.solid : "var(--primary)",
-              }}
-            >
-              <IconReadaloud className="size-2.5 text-white" />
-            </div>
-          )}
 
           {isProcessing && (
             <ProcessingIndicator book={book} size={16} className="shrink-0" />
@@ -235,7 +235,7 @@ export const BookListItem = memo(function BookListItem({
           <span
             key={field}
             className={cn(
-              "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums sm:block",
+              "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums @xs/page-content:block",
               isClickable && "hover:text-foreground cursor-pointer",
             )}
             style={{
@@ -264,6 +264,8 @@ export const BookListItem = memo(function BookListItem({
             isSelecting={isSelecting}
             onToggle={onToggleSelection}
             onSelectRange={onSelectRange}
+            // can still access through ellipsis
+            className="hidden @xs/page-content:block"
           />
         )}
 

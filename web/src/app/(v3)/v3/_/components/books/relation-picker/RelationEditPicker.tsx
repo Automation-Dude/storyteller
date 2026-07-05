@@ -45,7 +45,10 @@ export function membershipFromBooks(
 ): RelationMembership {
   const m: RelationMembership = new Map()
   for (const book of books) {
-    for (const uuid of bookRelationUuids(book, source)) {
+    // dedupe within a book: a book counts once toward "all/some/none" even if it
+    // holds the same relation twice, otherwise the count exceeds the book total
+    // and the tri-state never reads as "all"
+    for (const uuid of new Set(bookRelationUuids(book, source))) {
       m.set(uuid, (m.get(uuid) ?? 0) + 1)
     }
   }

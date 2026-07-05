@@ -68,6 +68,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   "96_alignment_summary_on_report.sql": (
     await import("./migrations/96_alignment_summary_on_report.sql")
   ).default,
+  "101_dedupe_book_series.sql": (
+    await import("./migrations/101_dedupe_book_series.sql")
+  ).default,
 }
 
 async function isFirstStartup() {

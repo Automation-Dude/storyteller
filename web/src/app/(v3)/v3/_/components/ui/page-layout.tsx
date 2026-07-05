@@ -83,7 +83,10 @@ function PageContent({
   return (
     <div
       data-slot="page-content"
-      className={cn("scroll-y flex-1", className)}
+      className={cn(
+        "scroll-y @container-size @container/page-content flex-1",
+        className,
+      )}
       {...props}
     >
       {children}

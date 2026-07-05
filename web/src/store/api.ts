@@ -1110,6 +1110,7 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: (_result, _error, { books, collections }) => [
+        "Books",
         ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
         ...collections.map((uuid) => ({
           type: "Collections" as const,
@@ -1127,6 +1128,7 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: (_result, _error, { books, collections }) => [
+        "Books",
         ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
         ...collections.map((uuid) => ({
           type: "Collections" as const,
@@ -1166,6 +1168,7 @@ export const api = createApi({
       }),
       invalidatesTags: (_result, _error, { relations }) => [
         "Series",
+        "Books",
         ...relations.map((r) => ({ type: "Books" as const, id: r.bookUuid })),
       ],
 
@@ -1232,6 +1235,7 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: (_result, _error, { books, series }) => [
+        "Books",
         ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
         ...series.map((uuid) => ({ type: "Series" as const, id: uuid })),
       ],
@@ -1284,8 +1288,12 @@ export const api = createApi({
         method: "POST",
         body,
       }),
+      // broad "Books" so the grid list (providesTags: ["Books"], no per-id tags
+      // and no SSE wiring) refetches too; the id-scoped tags only reach mounted
+      // getBook caches like the open detail panel.
       invalidatesTags: (_result, _error, { books }) => [
         "Tags",
+        "Books",
         ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
       ],
     }),
@@ -1297,6 +1305,7 @@ export const api = createApi({
       }),
       invalidatesTags: (_result, _error, { books, tags }) => [
         "Tags",
+        "Books",
         ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
         ...tags.map((uuid) => ({ type: "Tags" as const, id: uuid })),
       ],
@@ -1414,6 +1423,15 @@ export const api = createApi({
         method: "PUT",
         body,
       }),
+      // broad "Books" so the list refetches (id-scoped tags don't match the
+      // list's general provider), plus per-book detail tags. without this the
+      // status only ever updated via the optimistic SSE event, which fired for
+      // every selected book even ones the server-side update skipped.
+      invalidatesTags: (_result, _error, { books }) => [
+        "Statuses",
+        "Books",
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+      ],
     }),
     getUserBookRating: build.query<UserBookRating | null, { bookUuid: UUID }>({
       query: ({ bookUuid }) => `/books/${bookUuid}/rating`,

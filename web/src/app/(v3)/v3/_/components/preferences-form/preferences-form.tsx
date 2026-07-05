@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useHotkey } from "@tanstack/react-hotkeys"
 import { type Locale } from "next-intl"
 import { type SingleParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -13,20 +12,25 @@ import { changeLocaleAction } from "@v3/_/actions/changeLocaleAction"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Button } from "@v3/_/components/ui/button"
 import {
+  NavSidebar,
+  NavSidebarBody,
+  NavSidebarFooterLink,
+  NavSidebarGroup,
+  NavSidebarList,
+  NavSidebarSearch,
+  type NavSidebarTab,
+} from "@v3/_/components/ui/nav-sidebar"
+import {
   PageContent,
   PageHeader,
   PageLayout,
   PageMain,
   PageSidebar,
 } from "@v3/_/components/ui/page-layout"
-import { ScrollArea } from "@v3/_/components/ui/scroll-area"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
-import { cn } from "@v3/_/lib/utils"
 
 import { type User } from "@/apiModels"
-import { SearchInput } from "@/app/(v3)/v3/_/components/books/SearchInput"
-import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import {
   useCommon,
   useTranslation,
@@ -51,11 +55,7 @@ const SIDEBAR_WIDTH = 200
 const formTabs: Tab[] = ["general", "appearance", "books"]
 const userTabs: Tab[] = ["profile"]
 
-type SidebarTabDef = {
-  value: Tab
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-}
+type SidebarTabDef = NavSidebarTab<Tab>
 
 export function PreferencesForm({
   user,
@@ -353,131 +353,46 @@ function PreferencesSidebar({
   canUpdateSettings: boolean
 }) {
   const t = useTranslation("PreferencesPage")
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  useHotkey(
-    "/",
-    () => {
-      searchInputRef.current?.focus()
-    },
-    {
-      ignoreInputs: true,
-    },
-  )
   const userSidebarTabs = tabs.filter((tab) => userTabs.includes(tab.value))
   const prefSidebarTabs = tabs.filter((tab) => formTabs.includes(tab.value))
 
   return (
-    <ScrollArea className="flex h-full flex-col">
-      <div className="flex flex-col gap-4 px-2 pt-3 pb-3">
+    <NavSidebar>
+      <NavSidebarBody>
         {userSidebarTabs.length > 0 && (
-          <SidebarGroup
-            label={t("sidebar.user")}
-            tabs={userSidebarTabs}
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-          />
+          <NavSidebarGroup label={t("sidebar.user")}>
+            <NavSidebarList
+              tabs={userSidebarTabs}
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+            />
+          </NavSidebarGroup>
         )}
 
         {prefSidebarTabs.length > 0 && (
-          <div>
-            <p className="text-muted-foreground mb-1.5 px-2 text-xs font-medium tracking-wider uppercase">
-              {t("sidebar.preferences")}
-            </p>
+          <NavSidebarGroup label={t("sidebar.preferences")}>
+            <NavSidebarSearch
+              placeholder={t("searchPreferences")}
+              value={searchQuery}
+              onChange={onSearchChange}
+            />
 
-            <div className="mb-2 px-1">
-              <SearchInput
-                ref={searchInputRef}
-                shortcut={["/"]}
-                placeholder={t("searchPreferences")}
-                value={searchQuery}
-                onChange={onSearchChange}
-              />
-            </div>
-
-            <SidebarTabList
+            <NavSidebarList
               tabs={prefSidebarTabs}
               activeTab={activeTab}
               onTabChange={onTabChange}
             />
-          </div>
+          </NavSidebarGroup>
         )}
-      </div>
+      </NavSidebarBody>
 
       {canUpdateSettings && (
-        <div className="border-border mt-auto border-t px-3 py-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            nativeButton={false}
-            className="text-muted-foreground hover:text-foreground w-full justify-start gap-2"
-            render={
-              <V3Link href="/settings?tab=library">
-                <icon.Settings className="h-4 w-4" />
-                {t("settingsPage")}
-              </V3Link>
-            }
-          />
-        </div>
+        <NavSidebarFooterLink
+          href="/settings?tab=library"
+          icon={icon.Settings}
+          label={t("settingsPage")}
+        />
       )}
-    </ScrollArea>
-  )
-}
-
-function SidebarGroup({
-  label,
-  tabs,
-  activeTab,
-  onTabChange,
-}: {
-  label: string
-  tabs: SidebarTabDef[]
-  activeTab: Tab | null
-  onTabChange: (tab: Tab) => void
-}) {
-  return (
-    <div>
-      <p className="text-muted-foreground mb-1 px-2 text-xs font-medium tracking-wider uppercase">
-        {label}
-      </p>
-
-      <SidebarTabList
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={onTabChange}
-      />
-    </div>
-  )
-}
-
-function SidebarTabList({
-  tabs,
-  activeTab,
-  onTabChange,
-}: {
-  tabs: SidebarTabDef[]
-  activeTab: Tab | null
-  onTabChange: (tab: Tab) => void
-}) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          type="button"
-          onClick={() => {
-            onTabChange(tab.value)
-          }}
-          className={cn(
-            "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-            activeTab === tab.value
-              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-              : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
-          )}
-        >
-          <tab.icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{tab.label}</span>
-        </button>
-      ))}
-    </div>
+    </NavSidebar>
   )
 }

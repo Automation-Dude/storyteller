@@ -117,7 +117,18 @@
       "createdAt": "Date added",
       "updatedAt": "Date updated",
       "title": "Title",
-      "publicationDate": "Publication date"
+      "publicationDate": "Publication date",
+      "searchHint": "Search sort options...",
+      "tooltip": "Sort by"
+    },
+    "toggleSort": {
+      "tooltip": "Toggle sort direction"
+    },
+    "displayOptions": {
+      "auto": "Auto",
+      "searchHint": "Search display options...",
+      "hint": "Show on item",
+      "tooltip": "Display options"
     },
     "mediaTypes": {
       "all": "All",

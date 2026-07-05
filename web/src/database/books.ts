@@ -294,6 +294,9 @@ export async function createBook(
             position: series.position,
             featured: series.featured,
           })
+          .onConflict((oc) =>
+            oc.columns(["bookUuid", "seriesUuid"]).doNothing(),
+          )
           .execute()
       }
     }
@@ -1314,6 +1317,9 @@ export async function updateBook(
             position: series.position,
             featured: series.featured,
           })
+          .onConflict((oc) =>
+            oc.columns(["bookUuid", "seriesUuid"]).doNothing(),
+          )
           .execute()
       }
 
