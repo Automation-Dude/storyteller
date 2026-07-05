@@ -1113,6 +1113,9 @@ function SidebarItemList({
   const canSelect = !!entityType && !!itemSelection
   const hasRowActions = !!onOpenItemMenu && !!entityType
 
+  // the visible order, used to resolve shift-click ranges
+  const orderedKeys = useMemo(() => items.map((item) => item.key), [items])
+
   // store unstable callback references so SidebarRow doesn't receive
   // new function identities on every parent re-render
   const callbacksRef = useRef({
@@ -1120,12 +1123,14 @@ function SidebarItemList({
     onHoverItem,
     onOpenItemMenu,
     itemSelection,
+    orderedKeys,
   })
   callbacksRef.current = {
     onItemClick,
     onHoverItem,
     onOpenItemMenu,
     itemSelection,
+    orderedKeys,
   }
 
   const c = useCommon()
@@ -1140,6 +1145,11 @@ function SidebarItemList({
 
   const handleRowToggle = useCallback((key: string) => {
     callbacksRef.current.itemSelection?.toggleItem(key)
+  }, [])
+
+  const handleRowSelectRange = useCallback((key: string) => {
+    const { itemSelection: sel, orderedKeys: keys } = callbacksRef.current
+    sel?.selectRange(key, keys)
   }, [])
 
   const handleRowMenu = useCallback(
@@ -1234,6 +1244,7 @@ function SidebarItemList({
                 onItemClick={handleRowClick}
                 onHover={handleRowHover}
                 onToggle={handleRowToggle}
+                onSelectRange={handleRowSelectRange}
                 onOpenMenu={handleRowMenu}
               />
             </div>
@@ -1254,6 +1265,7 @@ function SidebarRow({
   onItemClick,
   onHover,
   onToggle,
+  onSelectRange,
   onOpenMenu,
 }: {
   item: LibraryItem
@@ -1265,6 +1277,7 @@ function SidebarRow({
   onItemClick: (key: string) => void
   onHover: (key: string) => void
   onToggle: (key: string) => void
+  onSelectRange: (key: string) => void
   onOpenMenu: (item: LibraryItem, anchor: HTMLElement) => void
 }) {
   return (
@@ -1282,7 +1295,13 @@ function SidebarRow({
         onMouseEnter={() => {
           onHover(item.key)
         }}
-        onClick={() => {
+        onClick={(e) => {
+          if (canSelect && e.shiftKey) {
+            window.getSelection()?.empty()
+            onSelectRange(item.key)
+            return
+          }
+
           if (isSelecting && canSelect) {
             onToggle(item.key)
             return
@@ -1339,6 +1358,13 @@ function SidebarRow({
           >
             <Checkbox
               checked={isChecked}
+              onClick={(e) => {
+                if (e.shiftKey) {
+                  e.preventDefault()
+                  window.getSelection()?.empty()
+                  onSelectRange(item.key)
+                }
+              }}
               onCheckedChange={() => {
                 onToggle(item.key)
               }}

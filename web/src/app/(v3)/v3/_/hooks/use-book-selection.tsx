@@ -9,6 +9,8 @@ import {
   useState,
 } from "react"
 
+import { useSelectionState } from "@v3/_/hooks/use-selection-state"
+
 type BookSelectionContextValue = {
   selectedBooks: Set<string>
   isSelecting: boolean
@@ -28,128 +30,39 @@ const BookSelectionContext = createContext<BookSelectionContextValue | null>(
 )
 
 export function BookSelectionProvider({ children }: { children: ReactNode }) {
-  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set())
-  const [isSelecting, setIsSelecting] = useState(false)
-  const [lastSelectedUuid, setLastSelectedUuid] = useState<string | null>(null)
-
-  const toggleSelection = useCallback((uuid: string) => {
-    setLastSelectedUuid(uuid)
-    setSelectedBooks((prev) => {
-      const next = new Set(prev)
-      if (next.has(uuid)) {
-        next.delete(uuid)
-      } else {
-        next.add(uuid)
-      }
-      return next
-    })
-  }, [])
-
-  // toggle the inclusive range between the last-selected card and the target.
-  // if the anchor was a deselect, the range deselects; if a select, it selects.
-  const selectRange = useCallback(
-    (targetUuid: string, orderedUuids: string[]) => {
-      const anchorUuid = lastSelectedUuid
-
-      if (!anchorUuid) {
-        setLastSelectedUuid(targetUuid)
-        setSelectedBooks((prev) => new Set([...prev, targetUuid]))
-        return
-      }
-
-      const anchorIdx = orderedUuids.indexOf(anchorUuid)
-      const targetIdx = orderedUuids.indexOf(targetUuid)
-
-      if (anchorIdx === -1 || targetIdx === -1) {
-        setLastSelectedUuid(targetUuid)
-        setSelectedBooks((prev) => new Set([...prev, targetUuid]))
-        return
-      }
-
-      const from = Math.min(anchorIdx, targetIdx)
-      const to = Math.max(anchorIdx, targetIdx)
-      const rangeUuids = orderedUuids.slice(from, to + 1)
-
-      setLastSelectedUuid(targetUuid)
-      setSelectedBooks((prev) => {
-        // if the anchor book is currently selected, we're extending a selection;
-        // if it was deselected, we're extending a deselection.
-        const anchorIsSelected = prev.has(anchorUuid)
-        const next = new Set(prev)
-
-        for (const uuid of rangeUuids) {
-          if (anchorIsSelected) {
-            next.add(uuid)
-          } else {
-            next.delete(uuid)
-          }
-        }
-
-        return next
-      })
-    },
-    [lastSelectedUuid],
-  )
-
-  const selectAll = useCallback((uuids: string[]) => {
-    setSelectedBooks(new Set(uuids))
-  }, [])
-
-  const selectNone = useCallback(() => {
-    setSelectedBooks(new Set())
-  }, [])
-
-  const invertSelection = useCallback((allUuids: string[]) => {
-    setSelectedBooks(
-      (prev) => new Set(allUuids.filter((uuid) => !prev.has(uuid))),
-    )
-  }, [])
-
-  const isSelected = useCallback(
-    (uuid: string) => selectedBooks.has(uuid),
-    [selectedBooks],
-  )
+  const selection = useSelectionState()
+  // unlike the sidebar, book selection has an explicit mode: startSelecting()
+  // enters it before anything is picked, so the toolbar can show up first.
+  const [isSelectingMode, setIsSelectingMode] = useState(false)
 
   const startSelecting = useCallback(() => {
-    setIsSelecting(true)
+    setIsSelectingMode(true)
   }, [])
 
+  const { reset } = selection
   const stopSelecting = useCallback(() => {
-    setIsSelecting(false)
-    setSelectedBooks(new Set())
-    setLastSelectedUuid(null)
-  }, [])
+    setIsSelectingMode(false)
+    reset()
+  }, [reset])
 
-  // having some selected books counts as selecting
-  const isActuallySelcting = isSelecting || selectedBooks.size > 0
+  // explicit mode OR anything selected counts as selecting
+  const isSelecting = isSelectingMode || selection.selected.size > 0
 
   const value = useMemo(
     () => ({
-      selectedBooks,
-      isSelecting: isActuallySelcting,
-      lastSelectedUuid,
-      toggleSelection,
-      selectRange,
-      selectAll,
-      selectNone,
-      invertSelection,
-      isSelected,
+      selectedBooks: selection.selected,
+      isSelecting,
+      lastSelectedUuid: selection.lastSelectedId,
+      toggleSelection: selection.toggle,
+      selectRange: selection.selectRange,
+      selectAll: selection.selectAll,
+      selectNone: selection.selectNone,
+      invertSelection: selection.invert,
+      isSelected: selection.isSelected,
       startSelecting,
       stopSelecting,
     }),
-    [
-      selectedBooks,
-      isActuallySelcting,
-      lastSelectedUuid,
-      toggleSelection,
-      selectRange,
-      selectAll,
-      selectNone,
-      invertSelection,
-      isSelected,
-      startSelecting,
-      stopSelecting,
-    ],
+    [selection, isSelecting, startSelecting, stopSelecting],
   )
 
   return (

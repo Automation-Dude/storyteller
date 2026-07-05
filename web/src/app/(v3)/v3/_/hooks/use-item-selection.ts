@@ -1,71 +1,39 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useMemo } from "react"
+
+import { useSelectionState } from "@v3/_/hooks/use-selection-state"
 
 export type ItemSelectionState = {
   selectedItems: Set<string>
   isSelecting: boolean
   toggleItem: (key: string) => void
+  selectRange: (targetKey: string, orderedKeys: string[]) => void
   selectAll: (keys: string[]) => void
   selectNone: () => void
   isSelected: (key: string) => boolean
   stopSelecting: () => void
 }
 
+// local sidebar selection. no explicit mode: selecting is simply "anything
+// picked", and stopSelecting just clears. shares its reducer core with book
+// selection so shift-range behaves identically.
 export function useItemSelection(): ItemSelectionState {
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const selection = useSelectionState()
 
-  const toggleItem = useCallback((key: string) => {
-    setSelectedItems((prev) => {
-      const next = new Set(prev)
-
-      if (next.has(key)) {
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-
-      return next
-    })
-  }, [])
-
-  const selectAll = useCallback((keys: string[]) => {
-    setSelectedItems(new Set(keys))
-  }, [])
-
-  const selectNone = useCallback(() => {
-    setSelectedItems(new Set())
-  }, [])
-
-  const isSelected = useCallback(
-    (key: string) => selectedItems.has(key),
-    [selectedItems],
-  )
-
-  const stopSelecting = useCallback(() => {
-    setSelectedItems(new Set())
-  }, [])
-
-  const isSelecting = selectedItems.size > 0
+  const isSelecting = selection.selected.size > 0
 
   return useMemo(
     () => ({
-      selectedItems,
+      selectedItems: selection.selected,
       isSelecting,
-      toggleItem,
-      selectAll,
-      selectNone,
-      isSelected,
-      stopSelecting,
+      toggleItem: selection.toggle,
+      selectRange: selection.selectRange,
+      selectAll: selection.selectAll,
+      selectNone: selection.selectNone,
+      isSelected: selection.isSelected,
+      stopSelecting: selection.reset,
     }),
-    [
-      selectedItems,
-      isSelecting,
-      toggleItem,
-      selectAll,
-      selectNone,
-      isSelected,
-      stopSelecting,
-    ],
+    [selection, isSelecting],
   )
 }
