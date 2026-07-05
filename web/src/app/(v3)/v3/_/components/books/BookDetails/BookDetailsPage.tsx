@@ -436,12 +436,19 @@ function BookPanelHeader({
   const pill =
     "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
 
-  useHotkey("Escape", () => {
-    if (selection?.isSelecting) {
-      return
-    }
-    onClose?.()
-  })
+  useHotkey(
+    "Escape",
+    () => {
+      if (selection?.isSelecting) {
+        return
+      }
+      onClose?.()
+    },
+    {
+      conflictBehavior: "allow",
+      ignoreInputs: true,
+    },
+  )
   useHotkey("E", () => {
     setActionMenuOpen((prev) => !prev)
   })

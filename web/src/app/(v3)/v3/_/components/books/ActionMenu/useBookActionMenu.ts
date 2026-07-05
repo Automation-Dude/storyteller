@@ -1,6 +1,6 @@
 "use client"
 
-import { Menu } from "@base-ui/react"
+import { Popover } from "@base-ui/react/popover"
 import { useCallback, useMemo, useState } from "react"
 
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
@@ -38,7 +38,7 @@ export function useBookActionMenu(books: BookWithRelations[]) {
     [selection, orderedUuids],
   )
 
-  const handle = Menu.createHandle()
+  const handle = Popover.createHandle()
   const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
 
   const handleOpenMenu = useCallback((book: BookWithRelations) => {

@@ -1,5 +1,6 @@
 "use client"
 
+import { Popover } from "@base-ui/react/popover"
 import { IconLoader, IconSearch } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
@@ -11,10 +12,7 @@ import {
   useState,
 } from "react"
 
-import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
-import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
-import { DropdownMenu } from "@v3/_/components/ui/dropdown-menu"
 import {
   FilterableMenuContent,
   FilterableMenuItem,
@@ -24,6 +22,15 @@ import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
+
+import { ActionEntryList } from "@/app/(v3)/v3/_/components/books/ActionMenu/BookActionMenuItems"
+import {
+  findScrollParent,
+  useBookActionMenu,
+} from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
+import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
+import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
+import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import {
   useCommon,
   useTranslation,
@@ -31,13 +38,6 @@ import {
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { type DisplayField, type SortContext } from "@/sort"
-
-import {
-  findScrollParent,
-  useBookActionMenu,
-} from "../ActionMenu/useBookActionMenu"
-import { ActionEntryList } from "../ActionMenu/BookActionMenuItems"
-import { SelectionBullet } from "../SelectionCheckbox"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -326,12 +326,15 @@ export function BookGrid({
         </div>
       )}
 
-      <DropdownMenu handle={menu.handle} highlightItemOnHover={false}>
+      <Popover.Root handle={menu.handle}>
         <FilterableMenuContent
           searchable
           searchPlaceholder={tActions.plain("search")}
           align="end"
           className="pointer-events-auto z-100 min-w-44"
+          onClose={() => {
+            menu.handle.close()
+          }}
         >
           {menu.toggleSelection && menu.menuBook && (
             <>
@@ -356,7 +359,7 @@ export function BookGrid({
 
           <ActionEntryList entries={menu.menuEntries} />
         </FilterableMenuContent>
-      </DropdownMenu>
+      </Popover.Root>
 
       {menu.menuDialogs}
     </>

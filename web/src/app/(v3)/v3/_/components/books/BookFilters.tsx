@@ -26,6 +26,7 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import {
   FilterableMenu,
+  FilterableMenuContent,
   FilterableMenuItem,
 } from "@v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
@@ -63,6 +64,13 @@ type BookFiltersProps = {
   onSaveAsShelf?: () => void
 }
 
+const searchHotKey = "/" as const
+const filterHotKey = "F" as const
+const sortHotKey = "Shift+S" as const
+const viewHotKey = "Shift+V" as const
+const advancedHotKey = "Shift+F" as const
+const saveAsShelfHotKey = "Alt+Shift+S" as const
+
 export function BookFilters({
   controller,
   hasSeriesContext = false,
@@ -99,37 +107,37 @@ export function BookFilters({
 
   useHotkeys([
     {
-      hotkey: "F",
+      hotkey: searchHotKey,
       callback: () => {
         searchRef.current?.focus()
       },
     },
     {
-      hotkey: "Shift+F",
+      hotkey: filterHotKey,
       callback: () => {
         setFilterMenuOpen((prev) => !prev)
       },
     },
     {
-      hotkey: "Shift+S",
+      hotkey: sortHotKey,
       callback: () => {
         setSortMenuOpen((prev) => !prev)
       },
     },
     {
-      hotkey: "Shift+V",
+      hotkey: viewHotKey,
       callback: () => {
         setViewMenuOpen((prev) => !prev)
       },
     },
     {
-      hotkey: "Mod+Shift+F",
+      hotkey: advancedHotKey,
       callback: () => {
         onToggleAdvanced?.()
       },
     },
     {
-      hotkey: "Alt+Shift+S",
+      hotkey: saveAsShelfHotKey,
       callback: () => {
         onSaveAsShelf?.()
       },
@@ -167,7 +175,7 @@ export function BookFilters({
           ref={searchRef}
           value={search}
           onChange={setSearch}
-          shortcut={["F"]}
+          shortcut={[searchHotKey]}
         />
 
         {/* wide container: sort, card display and view sit inline. they share
@@ -263,7 +271,7 @@ export function BookFilters({
                 variant="outline"
                 className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium"
                 tooltip={t("filters.filters")}
-                shortcut={["F"]}
+                shortcut={[filterHotKey]}
                 aria-label={t("filters.filters")}
               >
                 <icon.Filter />
@@ -314,7 +322,7 @@ export function BookFilters({
               aria-label="Toggle advanced filter"
               tooltip="Advanced filter"
               onClick={onToggleAdvanced}
-              shortcut={["Shift+F"]}
+              shortcut={[advancedHotKey]}
             >
               <IconAdjustmentsHorizontal className="h-4 w-4" />
             </TooltipButton>
@@ -325,7 +333,7 @@ export function BookFilters({
               aria-label="Save as shelf"
               tooltip="Save as shelf"
               onClick={onSaveAsShelf}
-              shortcut={["Alt+Shift+S"]}
+              shortcut={[saveAsShelfHotKey]}
             >
               <IconBookmarkPlus className="h-4 w-4" />
             </TooltipButton>
@@ -500,7 +508,7 @@ function SortControl({
             tooltip="Sort by"
             size="icon"
             aria-label="Sort by"
-            shortcut={["Shift+S"]}
+            shortcut={[sortHotKey]}
           >
             <span className="flex items-center gap-1.5">
               <FieldIcon field={field} className="h-3.5 w-3.5" />
@@ -511,22 +519,29 @@ function SortControl({
           </TooltipButton>
         }
       >
-        {options.map((option) => (
-          <FilterableMenuItem
-            key={option.value}
-            icon={<FieldIcon field={option.value} className="size-4" />}
-            textValue={option.label}
-            onSelect={() => {
-              if (option.value === field) {
-                flip()
-              } else {
-                onChange(option.value, "desc")
-              }
-            }}
-          >
-            {option.label}
-          </FilterableMenuItem>
-        ))}
+        <FilterableMenuContent searchable searchPlaceholder="Search">
+          {options.map((option) => (
+            <FilterableMenuItem
+              key={option.value}
+              icon={<FieldIcon field={option.value} className="size-4" />}
+              textValue={option.label}
+              onSelect={() => {
+                if (option.value === field) {
+                  flip()
+                } else {
+                  onChange(option.value, "desc")
+                }
+              }}
+            >
+              {option.label}
+              {option.value === field && (
+                <span className="text-muted-foreground text-xs">
+                  {direction === "asc" ? "↑" : "↓"}
+                </span>
+              )}
+            </FilterableMenuItem>
+          ))}
+        </FilterableMenuContent>
       </FilterableMenu>
       <TooltipButton
         variant="outline"
@@ -534,7 +549,7 @@ function SortControl({
         className="items-center rounded-l-none rounded-r-lg pr-2 pl-1 text-xs font-normal"
         tooltip="Toggle"
         aria-label="Toggle sort direction"
-        shortcut={["S"]}
+        shortcut={[sortHotKey]}
         onClick={flip}
       >
         {direction === "asc" ? (

@@ -1,28 +1,31 @@
-import { cn } from "@/cn"
-import { IconReadaloud } from "@/components/icons/IconReadaloud"
-import { BookWithRelations } from "@/database/books"
-import { Link } from "@/icons"
-import { DisplayField, SortContext } from "@/sort"
+import { Popover } from "@base-ui/react/popover"
 import { IconDotsVertical } from "@tabler/icons-react"
-import { memo } from "react"
-import { Fragment, useCallback } from "react"
-import { useIsMobile } from "../../../hooks/use-mobile"
-import { DropdownMenuTrigger } from "../../ui/dropdown-menu"
-import { BookCover } from "../BookCover"
+import { Fragment, memo , useCallback } from "react"
+
+
+import { BookCover } from "@/app/(v3)/v3/_/components/books/BookCover"
 import {
   ensureContrast,
   useColorPreferences,
   useCoverColors,
   useIsDarkMode,
-} from "../BookDetails/sections/useCoverColors"
-import { SecondaryText } from "../Grid/BookCard"
-import { ProcessingIndicator } from "../ProcessingIndicator"
-import { ProgressDisplayBar, getReadingProgress } from "../ProgressDisplayBar"
-import { SelectionCheckbox } from "../SelectionCheckbox"
+} from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
+import { SecondaryText } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
+import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
+import { ProgressDisplayBar, getReadingProgress } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
+import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
+
 import { ColumnValue, getColumnWidth } from "./BookListColumns"
-import { V3Link } from "../../v3-link"
-import { Skeleton } from "../../ui/skeleton"
-import { Menu } from "@base-ui/react/menu"
+
+import { Skeleton } from "@/app/(v3)/v3/_/components/ui/skeleton"
+import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
+import { cn } from "@/cn"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
+import { type BookWithRelations } from "@/database/books"
+import { Link } from "@/icons"
+import { type DisplayField, type SortContext } from "@/sort"
+
 
 export const BookListItem = memo(function BookListItem({
   book,
@@ -55,7 +58,7 @@ export const BookListItem = memo(function BookListItem({
   onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
-  handle?: Menu.Handle<unknown>
+  handle?: Popover.Handle<unknown>
 }) {
   const isMobile = useIsMobile()
 
@@ -266,7 +269,7 @@ export const BookListItem = memo(function BookListItem({
         )}
 
         {onOpenMenu && handle && (
-          <DropdownMenuTrigger
+          <Popover.Trigger
             handle={handle}
             onClick={(e) => {
               e.stopPropagation()
@@ -281,7 +284,7 @@ export const BookListItem = memo(function BookListItem({
             )}
           >
             <IconDotsVertical className="size-3.5" />
-          </DropdownMenuTrigger>
+          </Popover.Trigger>
         )}
       </div>
     </div>

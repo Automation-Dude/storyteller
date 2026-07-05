@@ -1,36 +1,29 @@
 "use client"
 
 import { Combobox } from "@base-ui/react/combobox"
+import { Popover } from "@base-ui/react/popover"
 import { type Virtualizer, useVirtualizer } from "@tanstack/react-virtual"
 import {
   type ComponentProps,
   type ReactElement,
   type ReactNode,
+  type RefObject,
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useId,
+  useMemo,
   useRef,
   useState,
 } from "react"
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@v3/_/components/ui/dropdown-menu"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { useCommon } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
+import { ChevronRight } from "@/icons"
 
 const ROW_HEIGHT = 32
 const VIRTUALIZE_THRESHOLD = 40
@@ -339,39 +332,105 @@ export function FilterableList<T extends FilterableItem>({
 }
 
 // ---------------------------------------------------------------------------
-// Composition menu: a dropdown built on base-ui Menu (hover-open submenus,
-// hover highlight, roving keyboard, separators, non-searchable labels) with an
-// optional search box that filters items and always shows the full list until
-// you type. For huge, virtualized lists use FilterableList above instead.
+// Composition menu: a dropdown built on base-ui Popover with our own
+// virtual-focus highlight. base-ui Menu is unusable here because its typeahead
+// (type a letter to jump to an item) can't be disabled and fights a search box,
+// and it exposes no controllable highlight index. So we keep DOM focus on the
+// search input and track the active row purely in React state: the highlight
+// follows typing, arrow keys, and hover, and Enter fires the active row.
+// Submenus are lazy hover-opened nested popovers. For huge, virtualized lists
+// use FilterableList above instead.
 // ---------------------------------------------------------------------------
 
-type FilterState = { query: string; searchable: boolean }
-const FilterableMenuContext = createContext<FilterState>({
-  query: "",
-  searchable: false,
-})
+const menuPopupClassName =
+  "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 bg-popover text-popover-foreground z-50 max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md p-1 shadow-md ring-1 duration-100 outline-none"
 
-// item hover highlight lives on CSS :hover instead of base-ui's focus-based
-// highlight (which we disable) so hovering an item never steals focus from the
-// search input.
-const menuItemHover = "hover:bg-accent hover:text-accent-foreground"
+const menuItemClassName =
+  "data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:data-highlighted:bg-destructive/10 dark:data-[variant=destructive]:data-highlighted:bg-destructive/20 data-[variant=destructive]:data-highlighted:text-destructive data-[variant=destructive]:*:[svg]:text-destructive relative flex min-h-7 cursor-default items-center gap-2 rounded-md px-2 py-1 text-xs/relaxed outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
+
+const menuSubTriggerClassName =
+  "data-highlighted:bg-accent data-highlighted:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground flex min-h-7 cursor-default items-center gap-2 rounded-md px-2 py-1 text-xs outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
 
 function itemMatches(query: string, text: string): boolean {
   const q = query.trim().toLowerCase()
   return q === "" || text.toLowerCase().includes(q)
 }
 
-export function FilterableMenuItem({
-  children,
-  icon,
-  onSelect,
-  submenu,
-  keywords,
-  textValue,
-  variant,
-  disabled,
-  closeOnClick,
-}: {
+// what a registered row exposes to keyboard navigation. `metaRef` is read at
+// event time (not registration time) so it always reflects the latest closures.
+type FilterableMenuItemMeta = {
+  disabled: boolean
+  isSubmenu: boolean
+  onActivate: () => void
+}
+type FilterableMenuItemEntry = {
+  element: HTMLElement
+  metaRef: RefObject<FilterableMenuItemMeta>
+}
+
+type FilterableMenuContextValue = {
+  query: string
+  searchable: boolean
+  activeId: string | null
+  setActiveId: (id: string | null) => void
+  register: (id: string, entry: FilterableMenuItemEntry) => void
+  unregister: (id: string) => void
+  close: () => void
+  // the menu's search input, so a closing submenu can return focus to it
+  // instead of the (non-focusable) submenu trigger.
+  searchRef: RefObject<HTMLInputElement | null>
+}
+
+const noop = () => {}
+const FilterableMenuContext = createContext<FilterableMenuContextValue>({
+  query: "",
+  searchable: false,
+  activeId: null,
+  setActiveId: noop,
+  register: noop,
+  unregister: noop,
+  close: noop,
+  searchRef: { current: null },
+})
+
+// registers a row with the enclosing menu for keyboard navigation and reports
+// whether it is the active (highlighted) row. rows that don't match the current
+// query pass `matches: false` and stay out of the registry.
+function useFilterableMenuItem(
+  id: string,
+  matches: boolean,
+  meta: FilterableMenuItemMeta,
+) {
+  const ctx = useContext(FilterableMenuContext)
+  const ref = useRef<HTMLDivElement>(null)
+  const metaRef = useRef(meta)
+  useEffect(() => {
+    metaRef.current = meta
+  })
+
+  const { register, unregister } = ctx
+  useEffect(() => {
+    const element = ref.current
+    if (!matches || !element) return
+    register(id, { element, metaRef })
+    return () => {
+      unregister(id)
+    }
+  }, [id, matches, register, unregister])
+
+  return {
+    ref,
+    active: ctx.activeId === id,
+    setActive: () => {
+      ctx.setActiveId(id)
+    },
+    activate: () => {
+      metaRef.current.onActivate()
+    },
+  }
+}
+
+export type FilterableMenuItemProps = {
   children: ReactNode
   icon?: ReactNode
   onSelect?: () => void
@@ -383,34 +442,76 @@ export function FilterableMenuItem({
   variant?: "default" | "destructive"
   disabled?: boolean
   closeOnClick?: boolean
-}) {
+}
+
+export function FilterableMenuItem(props: FilterableMenuItemProps) {
   const { query } = useContext(FilterableMenuContext)
   const text = `${
-    textValue ?? (typeof children === "string" ? children : "")
-  } ${keywords ?? ""}`
-  if (!itemMatches(query, text)) return null
+    props.textValue ??
+    (typeof props.children === "string" ? props.children : "")
+  } ${props.keywords ?? ""}`
+  const matches = itemMatches(query, text)
 
-  if (submenu !== undefined) {
+  if (props.submenu !== undefined) {
     return (
-      <FilterableMenuSub icon={icon} label={children} disabled={disabled}>
-        {submenu}
+      <FilterableMenuSub
+        icon={props.icon}
+        label={props.children}
+        disabled={props.disabled}
+        matches={matches}
+      >
+        {props.submenu}
       </FilterableMenuSub>
     )
   }
 
-  return (
-    <DropdownMenuItem
-      variant={variant}
-      disabled={disabled}
-      closeOnClick={closeOnClick}
-      className={menuItemHover}
-      onClick={() => {
+  return <FilterableMenuActionItem {...props} matches={matches} />
+}
+
+function FilterableMenuActionItem({
+  children,
+  icon,
+  onSelect,
+  variant,
+  disabled,
+  closeOnClick,
+  matches,
+}: FilterableMenuItemProps & { matches: boolean }) {
+  const id = useId()
+  const { close } = useContext(FilterableMenuContext)
+  const { ref, active, setActive, activate } = useFilterableMenuItem(
+    id,
+    matches,
+    {
+      disabled: !!disabled,
+      isSubmenu: false,
+      onActivate: () => {
         onSelect?.()
+        if (closeOnClick !== false) close()
+      },
+    },
+  )
+
+  if (!matches) return null
+
+  return (
+    <div
+      ref={ref}
+      role="menuitem"
+      data-highlighted={active || undefined}
+      data-disabled={disabled || undefined}
+      data-variant={variant}
+      className={menuItemClassName}
+      onMouseEnter={() => {
+        if (!disabled) setActive()
+      }}
+      onClick={() => {
+        if (!disabled) activate()
       }}
     >
       {icon}
       {children}
-    </DropdownMenuItem>
+    </div>
   )
 }
 
@@ -418,39 +519,84 @@ function FilterableMenuSub({
   icon,
   label,
   disabled,
+  matches,
   children,
 }: {
   icon?: ReactNode
   label: ReactNode
   disabled?: boolean
+  matches: boolean
   children: ReactNode | ((ctx: { close: () => void }) => ReactNode)
 }) {
+  const id = useId()
+  const { searchRef } = useContext(FilterableMenuContext)
   // controlled so the content (often a lazy relation picker) only mounts once
   // the submenu is opened.
   const [open, setOpen] = useState(false)
+  const { ref, active, setActive } = useFilterableMenuItem(id, matches, {
+    disabled: !!disabled,
+    isSubmenu: true,
+    onActivate: () => {
+      setOpen(true)
+    },
+  })
+
+  if (!matches) return null
+
   return (
-    <DropdownMenuSub open={open} onOpenChange={setOpen}>
-      <DropdownMenuSubTrigger disabled={disabled} className={menuItemHover}>
-        {icon}
-        {label}
-      </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-64 p-1">
-        <div
-          onKeyDown={(e) => {
-            if (e.key === "Escape" || e.key === "Tab" || e.key === "Enter")
-              return
-            console.log("keydown", e.key)
-            e.stopPropagation()
-          }}
-          // onMouseDown={(e) => e.stopPropagation()}
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger
+        openOnHover
+        delay={100}
+        closeDelay={150}
+        disabled={disabled}
+        nativeButton={false}
+        render={
+          <div
+            ref={ref}
+            role="menuitem"
+            aria-haspopup="menu"
+            data-highlighted={active || undefined}
+            data-disabled={disabled || undefined}
+            data-open={open || undefined}
+            className={menuSubTriggerClassName}
+            onMouseEnter={() => {
+              if (!disabled) setActive()
+            }}
+          >
+            {icon}
+            {label}
+            <ChevronRight className="ml-auto" />
+          </div>
+        }
+      />
+      <Popover.Portal>
+        <Popover.Positioner
+          className="isolate z-50 outline-none"
+          side="right"
+          align="start"
+          sideOffset={-4}
+          alignOffset={-4}
         >
-          {open &&
-            (typeof children === "function"
-              ? children({ close: () => setOpen(false) })
-              : children)}
-        </div>
-      </DropdownMenuSubContent>
-    </DropdownMenuSub>
+          <Popover.Popup
+            // when the submenu closes with focus inside it (e.g. Escape),
+            // return focus to the main menu's search input rather than the
+            // non-focusable trigger row.
+            finalFocus={searchRef}
+            className={cn(menuPopupClassName, "w-64")}
+          >
+            {open &&
+              (typeof children === "function"
+                ? children({
+                    close: () => {
+                      setOpen(false)
+                    },
+                  })
+                : children)}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }
 
@@ -459,31 +605,26 @@ function FilterableMenuSub({
 export function FilterableMenuLabel({ children }: { children: ReactNode }) {
   const { query } = useContext(FilterableMenuContext)
   if (query.trim()) return null
-  return <DropdownMenuLabel>{children}</DropdownMenuLabel>
+  return (
+    <div className="text-muted-foreground px-2 py-1.5 text-xs">{children}</div>
+  )
 }
 
 export function FilterableMenuSeparator() {
   const { query } = useContext(FilterableMenuContext)
   if (query.trim()) return null
-  return <DropdownMenuSeparator />
+  return <div role="separator" className="bg-border/50 -mx-1 my-1 h-px" />
 }
 
 export function FilterableMenuGroup({ children }: { children: ReactNode }) {
-  return <DropdownMenuGroup>{children}</DropdownMenuGroup>
+  return <div role="group">{children}</div>
 }
 
-function findMenuItem(
-  from: HTMLElement | null,
-): HTMLElement | null | undefined {
-  return from
-    ?.closest("[data-slot=dropdown-menu-content]")
-    ?.querySelector<HTMLElement>("[role=menuitem]:not([data-disabled])")
-}
-
-// the popup body. use standalone inside a `<DropdownMenu handle={...}>` for
-// externally-triggered menus (e.g. book card context menus), or via the
-// `FilterableMenu` wrapper below. The enclosing `DropdownMenu` should set
-// `highlightItemOnHover={false}` (the wrapper does this for you).
+// the popup body. use standalone inside a `<Popover.Root handle={...}>` for
+// externally-triggered menus (e.g. book card context menus, where every card's
+// button shares one handle), or via the `FilterableMenu` wrapper below. When
+// used with a handle, pass `onClose={() => handle.close()}` so item selection
+// can dismiss the menu.
 export function FilterableMenuContent({
   children,
   searchable = false,
@@ -492,6 +633,7 @@ export function FilterableMenuContent({
   side = "bottom",
   sideOffset = 4,
   className,
+  onClose,
 }: {
   children: ReactNode
   searchable?: boolean
@@ -500,61 +642,123 @@ export function FilterableMenuContent({
   side?: "top" | "bottom" | "left" | "right"
   sideOffset?: number
   className?: string
+  onClose?: () => void
 }) {
   const [query, setQuery] = useState("")
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const registryRef = useRef(new Map<string, FilterableMenuItemEntry>())
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // base-ui focuses the first item on open; re-claim focus for the search input
-  // after paint so typing works immediately.
+  const register = useCallback((id: string, entry: FilterableMenuItemEntry) => {
+    registryRef.current.set(id, entry)
+  }, [])
+  const unregister = useCallback((id: string) => {
+    registryRef.current.delete(id)
+  }, [])
+  const close = useCallback(() => {
+    onClose?.()
+  }, [onClose])
+
+  // the visible, enabled rows in document order -- the order arrow keys follow.
+  const orderedIds = useCallback(() => {
+    return [...registryRef.current.entries()]
+      .filter(([, entry]) => !entry.metaRef.current.disabled)
+      .sort(([, a], [, b]) =>
+        a.element.compareDocumentPosition(b.element) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+          ? -1
+          : 1,
+      )
+      .map(([id]) => id)
+  }, [])
+
+  // as the query changes the matching set changes; child register/unregister
+  // effects run before this one, so the registry is current. reset the highlight
+  // to the first match so it always tracks what's typed.
   useEffect(() => {
     if (!searchable) return
-    const id = requestAnimationFrame(() => inputRef.current?.focus())
-    return () => cancelAnimationFrame(id)
-  }, [searchable])
+    setActiveId(orderedIds()[0] ?? null)
+  }, [query, searchable, orderedIds])
+
+  const ctx = useMemo<FilterableMenuContextValue>(
+    () => ({
+      query,
+      searchable,
+      activeId,
+      setActiveId,
+      register,
+      unregister,
+      close,
+      searchRef: inputRef,
+    }),
+    [query, searchable, activeId, register, unregister, close],
+  )
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (
+      event.key === "ArrowDown" ||
+      event.key === "ArrowUp" ||
+      event.key === "Home" ||
+      event.key === "End"
+    ) {
+      const ids = orderedIds()
+      if (ids.length === 0) return
+      event.preventDefault()
+      const current = activeId ? ids.indexOf(activeId) : -1
+      let next: number
+      if (event.key === "Home") next = 0
+      else if (event.key === "End") next = ids.length - 1
+      else if (event.key === "ArrowDown")
+        next = current < ids.length - 1 ? current + 1 : 0
+      else next = current > 0 ? current - 1 : ids.length - 1
+      setActiveId(ids[next] ?? null)
+      return
+    }
+
+    if (event.key === "Enter" || event.key === "ArrowRight") {
+      if (!activeId) return
+      const entry = registryRef.current.get(activeId)
+      if (!entry) return
+      // ArrowRight only acts on submenu rows (open the flyout)
+      if (event.key === "ArrowRight" && !entry.metaRef.current.isSubmenu) return
+      event.preventDefault()
+      entry.metaRef.current.onActivate()
+    }
+  }
 
   return (
-    <DropdownMenuContent
-      align={align}
-      side={side}
-      sideOffset={sideOffset}
-      className={cn("w-64", className)}
-    >
-      <FilterableMenuContext.Provider value={{ query, searchable }}>
-        {searchable && (
-          <div className="mb-1 border-b p-1">
-            <input
-              ref={inputRef}
-              value={query}
-              placeholder={searchPlaceholder}
-              onChange={(event) => {
-                setQuery(event.target.value)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowDown") {
-                  event.preventDefault()
-                  findMenuItem(event.currentTarget)?.focus()
-                  return
-                }
-                if (event.key === "Enter") {
-                  const first = findMenuItem(event.currentTarget)
-                  if (first) {
-                    event.preventDefault()
-                    first.click()
-                  }
-                  return
-                }
-                // keep typing from triggering base-ui's typeahead / nav
-                if (event.key !== "Escape" && event.key !== "Tab") {
-                  event.stopPropagation()
-                }
-              }}
-              className="placeholder:text-muted-foreground h-7 w-full bg-transparent px-2 text-sm outline-none"
-            />
-          </div>
-        )}
-        {children}
-      </FilterableMenuContext.Provider>
-    </DropdownMenuContent>
+    <Popover.Portal>
+      <Popover.Positioner
+        className="isolate z-50 outline-none"
+        align={align}
+        side={side}
+        sideOffset={sideOffset}
+      >
+        <Popover.Popup
+          data-slot="filterable-menu-content"
+          initialFocus={searchable ? inputRef : undefined}
+          className={cn(menuPopupClassName, "w-64", className)}
+          onKeyDown={handleKeyDown}
+        >
+          <FilterableMenuContext.Provider value={ctx}>
+            {searchable && (
+              <div className="mb-1 border-b p-1">
+                <input
+                  ref={inputRef}
+                  value={query}
+                  placeholder={searchPlaceholder}
+                  onChange={(event) => {
+                    setQuery(event.target.value)
+                  }}
+                  className="placeholder:text-muted-foreground h-7 w-full bg-transparent px-2 text-sm outline-none md:h-6 md:text-xs"
+                />
+              </div>
+            )}
+            {children}
+          </FilterableMenuContext.Provider>
+        </Popover.Popup>
+      </Popover.Positioner>
+    </Popover.Portal>
   )
 }
 
@@ -584,16 +788,14 @@ export function FilterableMenu({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const open = openProp ?? uncontrolledOpen
 
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next)
+    if (openProp === undefined) setUncontrolledOpen(next)
+  }
+
   return (
-    <DropdownMenu
-      open={open}
-      highlightItemOnHover={false}
-      onOpenChange={(next) => {
-        onOpenChange?.(next)
-        if (openProp === undefined) setUncontrolledOpen(next)
-      }}
-    >
-      <DropdownMenuTrigger render={trigger} />
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger render={trigger} />
       <FilterableMenuContent
         searchable={searchable}
         searchPlaceholder={searchPlaceholder}
@@ -601,9 +803,12 @@ export function FilterableMenu({
         side={side}
         sideOffset={sideOffset}
         className={contentClassName}
+        onClose={() => {
+          setOpen(false)
+        }}
       >
         {children}
       </FilterableMenuContent>
-    </DropdownMenu>
+    </Popover.Root>
   )
 }

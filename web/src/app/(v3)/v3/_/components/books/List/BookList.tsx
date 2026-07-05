@@ -1,11 +1,12 @@
 "use client"
 
+import { Popover } from "@base-ui/react/popover"
 import { IconLoader, IconSearch } from "@tabler/icons-react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+
 import { Button } from "@v3/_/components/ui/button"
-import { DropdownMenu } from "@v3/_/components/ui/dropdown-menu"
 import {
   FilterableMenuContent,
   FilterableMenuItem,
@@ -14,6 +15,13 @@ import {
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { ActionEntryList } from "@/app/(v3)/v3/_/components/books/ActionMenu/BookActionMenuItems"
+import {
+  findScrollParent,
+  useBookActionMenu,
+} from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
+import { ColumnSelector } from "@/app/(v3)/v3/_/components/books/ColumnSelector"
+import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import { type BookWithRelations } from "@/database/books"
 import {
   type DisplayField,
@@ -22,13 +30,7 @@ import {
   type SortField,
 } from "@/sort"
 
-import {
-  findScrollParent,
-  useBookActionMenu,
-} from "../ActionMenu/useBookActionMenu"
-import { ActionEntryList } from "../ActionMenu/BookActionMenuItems"
-import { ColumnSelector } from "../ColumnSelector"
-import { SelectionBullet } from "../SelectionCheckbox"
+
 import {
   ColumnHeader,
   DEFAULT_COLUMNS,
@@ -268,12 +270,15 @@ export function BookList({
         </div>
       )}
 
-      <DropdownMenu handle={menu.handle} highlightItemOnHover={false}>
+      <Popover.Root handle={menu.handle}>
         <FilterableMenuContent
           searchable
           searchPlaceholder={tActions.plain("search")}
           align="end"
           className="pointer-events-auto z-100 w-fit"
+          onClose={() => {
+            menu.handle.close()
+          }}
         >
           {menu.toggleSelection && menu.menuBook && (
             <>
@@ -298,7 +303,7 @@ export function BookList({
 
           <ActionEntryList entries={menu.menuEntries} />
         </FilterableMenuContent>
-      </DropdownMenu>
+      </Popover.Root>
 
       {menu.menuDialogs}
     </>

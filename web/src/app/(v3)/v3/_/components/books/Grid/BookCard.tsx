@@ -1,3 +1,4 @@
+import { Popover } from "@base-ui/react/popover"
 import { IconDotsVertical } from "@tabler/icons-react"
 import Link from "next/link"
 import { useFormatter, useLocale } from "next-intl"
@@ -6,25 +7,23 @@ import { Fragment, memo, useCallback, useMemo, useState } from "react"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
-import { Button } from "@/app/(v3)/v3/_/components/ui/button"
-import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
-import { IconReadaloud } from "@/components/icons/IconReadaloud"
-import { type BookWithRelations } from "@/database/books"
-import { type DisplayField, type SortContext } from "@/sort"
 
-import { BookCover, isDualFormat } from "../BookCover"
+import { BookCover, isDualFormat } from "@/app/(v3)/v3/_/components/books/BookCover"
 import {
   ensureContrast,
   useColorPreferences,
   useCoverColors,
   useIsDarkMode,
-} from "../BookDetails/sections/useCoverColors"
-import { ProcessingIndicator } from "../ProcessingIndicator"
-import { ProgressDisplayBar, getReadingProgress } from "../ProgressDisplayBar"
-import { SelectionCheckbox } from "../SelectionCheckbox"
-import { GradePill } from "../grade-pill"
-import { Menu } from "@base-ui/react"
-import { DropdownMenuTrigger } from "../../ui/dropdown-menu"
+} from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
+import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
+import { ProgressDisplayBar, getReadingProgress } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
+import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
+import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
+import { Button } from "@/app/(v3)/v3/_/components/ui/button"
+import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
+import { type BookWithRelations } from "@/database/books"
+import { type DisplayField, type SortContext } from "@/sort"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -38,7 +37,7 @@ type BookCardProps = {
   onClick?: (book: BookWithRelations) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
-  handle?: Menu.Handle<unknown>
+  handle?: Popover.Handle<unknown>
 }
 
 function formatDuration(seconds: number): string {
@@ -300,10 +299,9 @@ export const BookCard = memo(function BookCard({
         )}
 
         {onOpenMenu && handle && (
-          <DropdownMenuTrigger
+          <Popover.Trigger
             handle={handle}
             aria-label="Open menu"
-            size="icon"
             className={cn(
               "absolute bottom-2 left-1.5 z-20",
               "flex size-4 items-center justify-center rounded-full text-white transition-colors",
@@ -317,7 +315,7 @@ export const BookCard = memo(function BookCard({
             }}
           >
             <IconDotsVertical className="size-3.5" />
-          </DropdownMenuTrigger>
+          </Popover.Trigger>
         )}
       </div>
 
