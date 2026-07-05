@@ -20,7 +20,7 @@ import {
   useFormatDate,
   useFormatDuration,
   useFormatRelativeTime,
-} from "@/app/(v3)/v3/_/lib/date"
+} from "@/app/(v3)/v3/_/lib/formatters"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"

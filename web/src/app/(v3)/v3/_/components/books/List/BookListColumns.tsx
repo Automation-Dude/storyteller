@@ -8,20 +8,15 @@ import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   DEFAULT_DATE_OPTIONS,
+  useFormatDuration,
   useFormatList,
   useFormatRelativeTime,
-} from "@/app/(v3)/v3/_/lib/date"
+} from "@/app/(v3)/v3/_/lib/formatters"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import { type DisplayField } from "@/sort"
 import { formatFileSize } from "@/utils/formatFileSize"
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.round((seconds % 3600) / 60)
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
 
 export function ColumnValue({
   book,
@@ -33,6 +28,7 @@ export function ColumnValue({
   const formatRelativeTime = useFormatRelativeTime()
   // const formatDate = useFormatDate()
   const formatList = useFormatList()
+  const formatDuration = useFormatDuration()
   const { dateTime } = useFormatter()
 
   switch (field) {

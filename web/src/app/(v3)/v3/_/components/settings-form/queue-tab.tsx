@@ -38,7 +38,7 @@ import {
   useFormatDate,
   useFormatDuration,
   useFormatRelativeTime,
-} from "@/app/(v3)/v3/_/lib/date"
+} from "@/app/(v3)/v3/_/lib/formatters"
 import { type PublicJob } from "@/database/jobs"
 import {
   getCoverUrl,

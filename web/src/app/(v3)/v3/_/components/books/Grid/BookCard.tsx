@@ -3,6 +3,7 @@ import { useFormatter, useLocale } from "next-intl"
 import { Fragment, memo, useCallback, useMemo, useState } from "react"
 
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { useFormatDuration } from "@v3/_/lib/formatters"
 import { cn } from "@v3/_/lib/utils"
 
 import {
@@ -44,12 +45,6 @@ type BookCardProps = {
   handle?: Popover.Handle<unknown>
 }
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.round((seconds % 3600) / 60)
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
-
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   const units = ["KB", "MB", "GB"]
@@ -74,6 +69,7 @@ export function SecondaryText({
   const { dateTime, relativeTime } = useFormatter()
   const { ratingIcon } = useUserPreferences()
   const locale = useLocale()
+  const formatDuration = useFormatDuration()
 
   const none = <span className="text-muted-foreground/80">{"\u2014"}</span>
 

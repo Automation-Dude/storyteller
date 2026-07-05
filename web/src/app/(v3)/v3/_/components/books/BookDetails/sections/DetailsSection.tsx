@@ -5,7 +5,7 @@ import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider
 import { LanguageEdit } from "@v3/_/components/books/LanguageEdit"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
-import { useFormatDate } from "@v3/_/lib/date"
+import { useFormatDate } from "@v3/_/lib/formatters"
 
 import { EditableText } from "@/app/(v3)/v3/_/components/books/BookDetails/EditableText"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"

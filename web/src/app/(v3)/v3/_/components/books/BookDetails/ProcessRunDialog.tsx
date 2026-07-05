@@ -39,7 +39,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { type Settings } from "@/apiModels"
 import { SettingsFormProvider } from "@/app/(v3)/v3/_/components/settings-form/SettingsFormProvider"
 import { ProcessingSettingsFields } from "@/app/(v3)/v3/_/components/settings-form/processing-tab"
-import { useFormatDuration } from "@/app/(v3)/v3/_/lib/date"
+import { useFormatDuration } from "@/app/(v3)/v3/_/lib/formatters"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import {

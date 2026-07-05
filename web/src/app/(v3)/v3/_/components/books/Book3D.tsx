@@ -12,6 +12,7 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
+import { useFormatDuration } from "@v3/_/lib/formatters"
 import { type SpineFit, fitSpine } from "@v3/_/lib/spineFit"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
@@ -90,13 +91,6 @@ const AA_EDGE = { outline: "1px solid transparent" } as const
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
-}
-
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.round((seconds % 3600) / 60)
-  if (hours === 0) return `${minutes}m`
-  return `${hours}h ${minutes}m`
 }
 
 function publicationYear(book: BookWithRelations): number | null {
@@ -193,6 +187,7 @@ function DiscStack({
 function spineLabel(
   book: BookWithRelations,
   info: SpineInfo,
+  formatDuration: (seconds: number) => string,
 ): { left: string; right: string } {
   if (info === "pages") {
     const pages = bookPageCount(book)
@@ -345,7 +340,8 @@ function Slab({
   const half = thickness / 2
   const edgeOffset = (5 * width) / BASE_WIDTH
   const spineText = accent === primary ? primary.onColor : accent.solid
-  const { left, right } = spineLabel(book, spine)
+  const formatDuration = useFormatDuration()
+  const { left, right } = spineLabel(book, spine, formatDuration)
 
   // spine type scales with width so it stays proportional across render sizes
   const titleSize = clamp(

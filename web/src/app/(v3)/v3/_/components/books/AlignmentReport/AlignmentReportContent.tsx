@@ -31,7 +31,7 @@ import type {
 } from "@/alignmentReportView"
 import { Badge } from "@/app/(v3)/v3/_/components/ui/badge"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
-import { useFormatDate, useFormatRelativeTime } from "@/app/(v3)/v3/_/lib/date"
+import { useFormatDate, useFormatRelativeTime } from "@/app/(v3)/v3/_/lib/formatters"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import {
   type AlignmentChapterOverride,
