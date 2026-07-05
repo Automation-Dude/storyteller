@@ -1,6 +1,6 @@
 "use client"
 
-import * as icon from "@/icons"
+import { skipToken } from "@reduxjs/toolkit/query"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -24,10 +24,13 @@ import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { BookCover } from "@/app/(v3)/v3/_/components/books/BookCover"
 import { type PublicJob } from "@/database/jobs"
+import * as icon from "@/icons"
 import {
   getCoverUrl,
   useCancelJobMutation,
+  useGetBookQuery,
   useGetJobsQuery,
   usePauseJobMutation,
   useResumeJobMutation,
@@ -78,6 +81,14 @@ export function ProcessingToast() {
   }, [active.length])
 
   const current = active.find((j) => j.status === "RUNNING") ?? active[0]
+
+  const { data: book } = useGetBookQuery(
+    current?.bookUuid
+      ? {
+          uuid: current.bookUuid,
+        }
+      : skipToken,
+  )
   if (!current) return null
   if (dismissed === current.uuid) return null
 
@@ -102,21 +113,7 @@ export function ProcessingToast() {
         className="bg-popover text-popover-foreground items-start shadow-lg"
       >
         <ItemMedia variant="image" className="h-18! w-10! object-contain!">
-          {current.bookUuid ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={getCoverUrl(current.bookUuid, {
-                width: 96,
-                height: 64,
-                updatedAt: current.updatedAt,
-              })}
-              alt=""
-            />
-          ) : (
-            <div className="bg-muted flex size-full items-center justify-center">
-              <icon.BookAlt className="text-muted-foreground size-4" />
-            </div>
-          )}
+          {book && <BookCover disableHover book={book} width={96} />}
         </ItemMedia>
 
         <ItemContent className="gap-1.5">
