@@ -429,6 +429,8 @@ const formatKeyExpr = sql<string>`
       then 'audiobook-only'
     when exists (select 1 from ebook e where e.book_uuid = book.uuid)
       then 'ebook-only'
+    when exists (select 1 from readaloud r where r.missing = true) or exists (select 1 from audiobook a where a.missing = true) or exists (select 1 from ebook e where e.missing = true)
+      then 'missing-media'
     else 'no-media'
   end
 `
@@ -444,10 +446,6 @@ async function formatFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
-// the count of visible books carrying none of a section's facet ("no author",
-// "no series", ...). role-scoped for the creator sections so the narrators page
-// counts books with no narrator (not books with no creator at all). formats is
-// a total partition (no-media is already a facet), so it has no none bucket.
 const NONE_CREATOR_ROLE: Partial<Record<FacetSection, Role>> = {
   authors: "aut",
   narrators: "nrt",

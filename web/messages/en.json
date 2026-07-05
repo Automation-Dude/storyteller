@@ -967,6 +967,24 @@
     "switchToNew": "Try new interface",
     "preferences": "Preferences"
   },
+  "CommandPalette": {
+    "searchPlaceholder": "Search or run a command...",
+    "empty": "No results",
+    "createCollection": "Create collection",
+    "createShelf": "Create shelf",
+    "organizeHome": "Organize home",
+    "continueReading": "Continue reading {title}",
+    "switchToList": "Switch to list view",
+    "switchToGrid": "Switch to grid view",
+    "bookContext": "Book · {title}",
+    "sectionActions": "Actions",
+    "sectionCommands": "Commands",
+    "sectionGoto": "Go to",
+    "sectionBooks": "Books",
+    "sectionSeries": "Series",
+    "sectionCollections": "Collections",
+    "sectionShelves": "Shelves"
+  },
   "SidebarManager": {
     "customize": "Customize sidebar",
     "title": "Edit sidebar",
@@ -1351,11 +1369,22 @@
       "partManyGaps": "{count} sentences went unmatched."
     },
     "marks": {
-      "score": "Score",
-      "audioAligned": "Audio aligned",
-      "missingSentences": "Missing sentences",
-      "failedChapters": "Failed chapters",
-      "unalignedAudio": "Unaligned audio"
+      "audioIncluded": "Audio included",
+      "excludedClips": "{count} excluded clips",
+      "mutedChapters": "{count} muted",
+      "sentencesAligned": "Sentences aligned",
+      "significantMisalignment": "{count} chapters with significant misalignment"
+    },
+    "overrides": {
+      "menu": "Chapter options",
+      "markOk": "Mark as OK",
+      "ok": "OK",
+      "excludeFromScore": "Exclude from score",
+      "excluded": "Excluded",
+      "markIntended": "Mark intended",
+      "intended": "Intended",
+      "excludeClip": "Exclude clip",
+      "clipExcluded": "Excluded"
     },
     "table": {
       "flaggedOnly": "Flagged only",

@@ -5,7 +5,11 @@
 // seriesPosition.
 
 import { type BookWithRelations } from "@/database/books"
-import { ALIGNMENT_GRADES, registrySortableFields } from "@/shelves"
+import {
+  ALIGNMENT_GRADES,
+  registrySortableFields,
+  ShelfFilterNode,
+} from "@/shelves"
 import { type UUID } from "@/uuid"
 
 // kept as an explicit tuple (not derived) so SortField stays a narrow literal
@@ -74,8 +78,6 @@ export type DisplayField = SortField | "authors"
 
 export const DISPLAY_FIELDS = [...SORTABLE_FIELDS, "authors"] as const
 
-// fields whose value is already the title line or carries no useful secondary
-// signal -> keep showing authors rather than echoing the sort.
 const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
   "createdAt",
   "updatedAt",
@@ -83,17 +85,19 @@ const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
   "language",
 ]
 
-// what each card should show in its secondary line: an explicit override wins,
-// otherwise a series context shows position, a meaningful sort echoes itself,
-// and everything else falls back to authors.
 export function deriveDisplayFields(
   sortField: SortField,
+  filter: ShelfFilterNode,
   ctx?: SortContext,
   overrides?: DisplayField[] | null,
 ): DisplayField[] {
   if (overrides) return overrides
   // an explicit, meaningful sort echoes itself (show what you sorted by)
   if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return [sortField]
+  if (filter.type === "condition") {
+    return [filter.field]
+  }
+
   // otherwise a series context still surfaces position over the authors
   if (ctx?.seriesUuid) return ["seriesPosition"]
   return ["authors"]
@@ -107,8 +111,6 @@ function seriesPositionOf(
   return book.series.find((s) => s.uuid === ctx.seriesUuid)?.position ?? null
 }
 
-// the raw comparable value for a field. strings sort lexically, numbers
-// numerically; null means "no value" and is always sorted last (see compare).
 function sortValue(
   book: BookWithRelations,
   field: SortField,

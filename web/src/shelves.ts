@@ -125,6 +125,16 @@ export const NUMBER_FIELDS = [
 export const ASSET_FORMATS = ["ebook", "audiobook", "readaloud"] as const
 export type AssetFormat = (typeof ASSET_FORMATS)[number]
 
+export type DatePreset = { label: string; days: number }
+
+export const RECENCY_DATE_PRESETS: DatePreset[] = [
+  { label: "Last 24 hours", days: 1 },
+  { label: "Last 7 days", days: 7 },
+  { label: "Last 30 days", days: 30 },
+  { label: "Last 6 months", days: 182 },
+  { label: "Last year", days: 365 },
+]
+
 export const UUID_FIELDS = [
   "status",
 ] as const satisfies readonly ShelfFilterField[]
@@ -636,18 +646,23 @@ export type FieldDefNumeric = FieldDefBase & {
   control: "number-range"
   scale?: FieldScale
   discriminator?: "role" | "format"
+  options?: { min: number; max: number; label: string }[]
+  formats?: AssetFormat[]
 }
 
 export type FieldDefDate = FieldDefBase & {
   control: "date-range"
   scale?: FieldScale
   discriminator?: "format"
+  presets?: DatePreset[]
 }
 
 export type FieldDefDuration = FieldDefBase & {
   control: "duration-range"
   scale: FieldScale
   discriminator?: "format"
+  options?: { min: number; max: number; label: string }[]
+  formats?: AssetFormat[]
 }
 
 export type FieldDef =
@@ -784,6 +799,14 @@ export const FIELD_REGISTRY = {
     scale: { min: 0, max: 5, step: 0.5, unit: "count" },
     token: "rating",
     labelKey: "userRating",
+    options: [
+      { min: 0, max: 0.99, label: "☆☆☆☆☆" },
+      { min: 1, max: 1.99, label: "★☆☆☆☆" },
+      { min: 2, max: 2.99, label: "★★☆☆☆" },
+      { min: 3, max: 3.99, label: "★★★☆☆" },
+      { min: 4, max: 4.99, label: "★★★★☆" },
+      { min: 5, max: 5, label: "★★★★★" },
+    ],
   },
   ratingDimension: {
     control: "number-range",
@@ -798,18 +821,32 @@ export const FIELD_REGISTRY = {
     sortable: true,
     quick: true,
     discriminator: "format",
+    formats: ["ebook", "readaloud"],
     scale: { min: 0, step: 1, unit: "count" },
     token: "pages",
     labelKey: "pageCount",
+    options: [
+      { min: 0, max: 150, label: "< 150" },
+      { min: 150, max: 400, label: "150-400" },
+      { min: 400, max: 800, label: "400-800" },
+      { min: 800, max: Number.MAX_SAFE_INTEGER, label: "> 800" },
+    ],
   },
   duration: {
     control: "duration-range",
     sortable: true,
     quick: true,
     discriminator: "format",
+    formats: ["audiobook", "readaloud"],
     scale: { min: 0, unit: "seconds" },
     token: "duration",
     labelKey: "duration",
+    options: [
+      { min: 0, max: 3 * 3600, label: "< 3h" },
+      { min: 3 * 3600, max: 10 * 3600, label: "3-10h" },
+      { min: 10 * 3600, max: 20 * 3600, label: "10-20h" },
+      { min: 20 * 3600, max: Number.MAX_SAFE_INTEGER, label: "> 20h" },
+    ],
   },
   fileSize: {
     control: "number-range",
@@ -819,6 +856,12 @@ export const FIELD_REGISTRY = {
     scale: { min: 0, step: 500, unit: "bytes" },
     token: "size",
     labelKey: "fileSize",
+    options: [
+      { min: 0, max: 5 * 1024 * 1024, label: "< 5 MB" },
+      { min: 5 * 1024 * 1024, max: 20 * 1024 * 1024, label: "5-20 MB" },
+      { min: 20 * 1024 * 1024, max: 100 * 1024 * 1024, label: "20-100 MB" },
+      { min: 100 * 1024 * 1024, max: Number.MAX_SAFE_INTEGER, label: "> 100 MB" },
+    ],
   },
   readingPosition: {
     control: "number-range",
@@ -827,8 +870,12 @@ export const FIELD_REGISTRY = {
     scale: { min: 0, max: 1, step: 0.01, unit: "ratio" },
     token: "progress",
     labelKey: "readingPosition",
+    options: [
+      { min: 0, max: 0.001, label: "Not started" },
+      { min: 0.001, max: 0.999, label: "In progress" },
+      { min: 0.999, max: 1, label: "Finished" },
+    ],
   },
-
   alignmentGrade: {
     control: "enum",
     sortable: true,
@@ -877,6 +924,7 @@ export const FIELD_REGISTRY = {
     quick: true,
     token: "added",
     labelKey: "createdAt",
+    presets: RECENCY_DATE_PRESETS,
   },
   updatedAt: {
     control: "date-range",
@@ -884,6 +932,7 @@ export const FIELD_REGISTRY = {
     quick: false,
     token: "updated",
     labelKey: "updatedAt",
+    presets: RECENCY_DATE_PRESETS,
   },
   alignedAt: {
     control: "date-range",
@@ -891,6 +940,7 @@ export const FIELD_REGISTRY = {
     quick: true,
     token: "aligned",
     labelKey: "alignedAt",
+    presets: RECENCY_DATE_PRESETS,
   },
   lastRead: {
     control: "date-range",
@@ -898,6 +948,7 @@ export const FIELD_REGISTRY = {
     quick: true,
     token: "read",
     labelKey: "lastRead",
+    presets: RECENCY_DATE_PRESETS,
   },
 } as const satisfies Record<ShelfFilterField, FieldDef>
 
