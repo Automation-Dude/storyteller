@@ -18,6 +18,7 @@ import {
   FilterableMenuSeparator,
 } from "@v3/_/components/ui/filterable-menu"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
+import { useGridNavigation } from "@v3/_/hooks/use-grid-navigation"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
@@ -29,6 +30,12 @@ import {
 import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
 import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
+import {
+  BOOK_COLLECTION_ID,
+  BOOK_DETAIL_PANEL_ID,
+  type BookNavModel,
+  bookItemDomId,
+} from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import {
   useCommon,
   useTranslation,
@@ -53,6 +60,8 @@ type BookGridProps = {
   onBookClick?: (book: BookWithRelations) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
+  // temporary: which keyboard-open model the grid uses (see LibraryPage toggle)
+  navModel?: BookNavModel
 }
 
 export const GRID_CARD_WIDTHS: Record<GridCardSize, number> = {
@@ -82,6 +91,7 @@ export function BookGrid({
   onBookClick,
   displayFields,
   displayContext,
+  navModel = "commit",
 }: BookGridProps) {
   const menu = useBookActionMenu(books)
 
@@ -217,6 +227,61 @@ export function BookGrid({
     }
   })
 
+  // keyboard navigation: focus stays on the grid container, arrows move a
+  // cursor (2d via columnCount), the active card is surfaced via
+  // aria-activedescendant. only wired when the grid is interactive.
+  const navEnabled = !!onBookClick
+
+  const openBookAt = useCallback(
+    (index: number) => {
+      const book = books[index]
+      if (book) onBookClick?.(book)
+    },
+    [books, onBookClick],
+  )
+
+  const focusDetailPanel = useCallback(() => {
+    requestAnimationFrame(() => {
+      document.getElementById(BOOK_DETAIL_PANEL_ID)?.focus()
+    })
+  }, [])
+
+  const nav = useGridNavigation({
+    itemCount: books.length,
+    columns: columnCount || 1,
+    enabled: navEnabled,
+    getItemId: (index) => {
+      const book = books[index]
+      return book ? bookItemDomId(book.uuid) : undefined
+    },
+    scrollToIndex: (index) => {
+      if (columnCount > 0) {
+        rowVirtualizer.scrollToIndex(Math.floor(index / columnCount), {
+          align: "auto",
+        })
+      }
+    },
+    initialIndex: () => {
+      const i = books.findIndex((b) => b.uuid === selectedBookUuid)
+      return i >= 0 ? i : 0
+    },
+    // preview model opens the book as the cursor moves; commit model only
+    // highlights until Enter.
+    onActiveChange:
+      navModel === "preview"
+        ? (index) => {
+            openBookAt(index)
+          }
+        : undefined,
+    onActivate: (index) => {
+      openBookAt(index)
+      focusDetailPanel()
+    },
+  })
+
+  const activeUuid =
+    nav.activeIndex !== null ? books[nav.activeIndex]?.uuid ?? null : null
+
   const c = useCommon()
   const tActions = useTranslation("BookActions")
 
@@ -262,8 +327,11 @@ export function BookGrid({
     <>
       <div
         ref={containerRef}
+        id={BOOK_COLLECTION_ID}
+        aria-label="Books"
+        {...(navEnabled ? nav.containerProps : {})}
         className={cn(
-          "relative w-full transition-opacity duration-200",
+          "relative w-full transition-opacity duration-200 outline-none",
           showMuted && "opacity-60",
         )}
         style={{ height: rowVirtualizer.getTotalSize() }}
@@ -295,6 +363,8 @@ export function BookGrid({
                       key={book.uuid}
                       book={book}
                       muted={showMuted}
+                      keyboardNav={navEnabled}
+                      active={navEnabled && book.uuid === activeUuid}
                       selected={book.uuid === selectedBookUuid}
                       isSelecting={menu.isSelecting}
                       isBookSelected={

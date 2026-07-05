@@ -15,6 +15,7 @@ import {
   getReadingProgress,
 } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
+import { bookItemDomId } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { Skeleton } from "@/app/(v3)/v3/_/components/ui/skeleton"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
@@ -30,6 +31,8 @@ export const BookListItem = memo(function BookListItem({
   book,
   muted = false,
   selected = false,
+  keyboardNav = false,
+  active = false,
   isSelecting = false,
   isBookSelected = false,
   onToggleSelection,
@@ -47,6 +50,10 @@ export const BookListItem = memo(function BookListItem({
   visibleColumns: { field: DisplayField; label: string }[]
   muted?: boolean
   selected?: boolean
+  // roving keyboard cursor: container owns the tab stop, this row is the active
+  // descendant when `active`.
+  keyboardNav?: boolean
+  active?: boolean
   isSelecting?: boolean
   isBookSelected?: boolean
   onToggleSelection?: (uuid: string) => void
@@ -90,6 +97,8 @@ export const BookListItem = memo(function BookListItem({
         "--primary-foreground": cPrimary.onColor,
         "--primary-accent": cAccent.solid,
         "--primary-accent-foreground": cAccent.onColor,
+        "--color-foreground":
+          "color-mix(in srgb, var(--primary) 30%, var(--muted-foreground))",
       } as React.CSSProperties)
     : undefined
 
@@ -117,22 +126,33 @@ export const BookListItem = memo(function BookListItem({
   return (
     <div
       data-book-uuid={book.uuid}
+      {...(keyboardNav && {
+        id: bookItemDomId(book.uuid),
+        "aria-selected": active,
+      })}
       className={cn(
-        "group hover:bg-accent relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md py-px pr-3 pl-px transition-colors",
+        "group hover:bg-primary/10 relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md py-px pr-3 pl-px transition-colors",
         muted && "opacity-50",
-        isBookSelected && "bg-accent ring-primary ring-1 ring-inset",
-        selected &&
-          !isBookSelected &&
-          "bg-primary/5 ring-primary/40 ring-1 ring-inset",
+        isBookSelected &&
+          !selected &&
+          "bg-primary/5 ring-primary/20 ring-1 ring-inset",
+        selected && "bg-primary/8 ring-primary/40 ring-1 ring-inset",
+        // keyboard cursor reads as a focus ring even though dom focus stays on
+        // the container.
+        active && "ring-2 ring-blue-500 outline-none ring-inset",
       )}
       onClick={onClick ? handleClick : undefined}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && onClick) {
-          onClick(book)
-        }
-      }}
+      role={keyboardNav ? "option" : "button"}
+      tabIndex={keyboardNav ? -1 : 0}
+      onKeyDown={
+        keyboardNav
+          ? undefined
+          : (e) => {
+              if ((e.key === "Enter" || e.key === " ") && onClick) {
+                onClick(book)
+              }
+            }
+      }
       style={style}
     >
       {/* cover */}
@@ -191,7 +211,13 @@ export const BookListItem = memo(function BookListItem({
           )}
         </div>
 
-        <div className="text-muted-foreground/80 flex gap-2 truncate text-xs tabular-nums">
+        <div
+          className={cn(
+            "text-muted-foreground flex gap-2 truncate text-xs tabular-nums",
+            "group-hover:text-(--color-foreground)",
+            (selected || isBookSelected) && "text-(--color-foreground)",
+          )}
+        >
           {displayFields.map((field) => (
             <SecondaryText
               key={field}
@@ -203,7 +229,13 @@ export const BookListItem = memo(function BookListItem({
         </div>
 
         {displayFields.includes("authors") && authors.length > 0 && (
-          <p className="text-muted-foreground/80 truncate text-xs">
+          <p
+            className={cn(
+              "text-muted-foreground truncate text-xs",
+              "group-hover:text-(--color-foreground)",
+              (selected || isBookSelected) && "text-(--color-foreground)",
+            )}
+          >
             {authors.map((a, i) => (
               <Fragment key={a.uuid}>
                 <V3Link
@@ -236,6 +268,8 @@ export const BookListItem = memo(function BookListItem({
             key={field}
             className={cn(
               "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums @xs/page-content:block",
+              "group-hover:text-(--color-foreground)",
+              (selected || isBookSelected) && "text-(--color-foreground)!",
               isClickable && "hover:text-foreground cursor-pointer",
             )}
             style={{

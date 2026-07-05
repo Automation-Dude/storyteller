@@ -23,6 +23,7 @@ import {
 } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
+import { bookItemDomId } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
@@ -34,6 +35,10 @@ type BookCardProps = {
   book: BookWithRelations
   muted?: boolean
   selected?: boolean
+  // roving keyboard cursor: container owns the tab stop, this card is the
+  // active descendant when `active`.
+  keyboardNav?: boolean
+  active?: boolean
   isSelecting?: boolean
   isBookSelected?: boolean
   onToggleSelection?: (uuid: string) => void
@@ -192,6 +197,8 @@ export const BookCard = memo(function BookCard({
   book,
   muted = false,
   selected = false,
+  keyboardNav = false,
+  active = false,
   isSelecting = false,
   isBookSelected = false,
   onToggleSelection,
@@ -377,20 +384,28 @@ export const BookCard = memo(function BookCard({
   return (
     <div
       data-book-uuid={book.uuid}
+      {...(keyboardNav && {
+        id: bookItemDomId(book.uuid),
+        role: "option",
+        "aria-selected": active,
+      })}
       className={cn(
         "group relative flex flex-col rounded-lg transition-opacity duration-200",
         muted && "opacity-50",
         selected &&
           !isBookSelected &&
           "ring-primary/40 bg-primary/5 [&_h3]:text-primary ring-2 ring-offset-2",
+        // the keyboard cursor reads as the focus ring even though dom focus
+        // stays on the container.
+        active && "rounded-lg ring-2 ring-blue-500 ring-offset-2 outline-none",
       )}
       style={style}
     >
       <div
         key={book.uuid}
-        role="button"
+        role={keyboardNav ? undefined : "button"}
         onKeyDown={
-          onClick
+          !keyboardNav && onClick
             ? (e: React.KeyboardEvent) => {
                 if (e.key === "Enter" || e.key === " ") {
                   onClick(book)
@@ -398,12 +413,13 @@ export const BookCard = memo(function BookCard({
               }
             : undefined
         }
-        tabIndex={0}
+        tabIndex={keyboardNav ? -1 : 0}
         onClick={onClick ? handleCardClick : undefined}
         className={cn(
           "relative h-full",
           isBookSelected && "ring-primary rounded-lg ring-2",
-          "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
+          !keyboardNav &&
+            "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
         )}
       >
         {cardContent}

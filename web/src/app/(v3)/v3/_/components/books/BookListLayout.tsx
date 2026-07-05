@@ -1,5 +1,6 @@
 "use client"
 
+import { useHotkey } from "@tanstack/react-hotkeys"
 import dynamic from "next/dynamic"
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Drawer } from "vaul-base"
@@ -22,6 +23,10 @@ import {
   BOOK_GRID_GAP,
   GRID_CARD_WIDTHS,
 } from "@/app/(v3)/v3/_/components/books/Grid/BookGrid"
+import {
+  BOOK_COLLECTION_ID,
+  BOOK_DETAIL_PANEL_ID,
+} from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { type BookWithRelations } from "@/database/books"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
@@ -73,6 +78,14 @@ export function BookListLayout({
 }: BookListLayoutProps) {
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
+
+  const focusCollection = useCallback(() => {
+    document.getElementById(BOOK_COLLECTION_ID)?.focus()
+  }, [])
+
+  // "go to books": jump focus straight into the collection from anywhere,
+  // alongside the skip link, so keyboard users never tab in through the chrome.
+  useHotkey("G", focusCollection, { ignoreInputs: true })
 
   const panelWidth = useAppSelector(
     (state) => state.uiSettings.detailPanelWidth,
@@ -200,11 +213,43 @@ export function BookListLayout({
     }
   }, [panelOpen, cardWidth, layoutWidth, snapChromeWidth])
 
+  // let the keyboard user step back out of the panel to the grid. Escape always
+  // returns; plain Left is a bonus that must not fire when the focused control
+  // wants the key itself (text fields, sliders, etc).
+  const handlePanelKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const returnFocus = () => {
+      document.getElementById(BOOK_COLLECTION_ID)?.focus()
+    }
+
+    if (e.key === "Escape") {
+      e.preventDefault()
+      returnFocus()
+      return
+    }
+
+    if (e.key === "ArrowLeft") {
+      const t = e.target as HTMLElement
+      const tag = t.tagName
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        t.isContentEditable ||
+        t.getAttribute("role") === "slider"
+      ) {
+        return
+      }
+      e.preventDefault()
+      returnFocus()
+    }
+  }, [])
+
   if (isMobile) {
     return (
       <>
         <PageLayout>
           <PageMain>
+            <SkipToBooksLink />
             <PageHeader>
               <SiteHeader
                 breadcrumbs={headerBreadcrumbs}
@@ -243,6 +288,7 @@ export function BookListLayout({
         )}
 
         <PageMain>
+          <SkipToBooksLink />
           <PageHeader>
             <SiteHeader
               breadcrumbs={headerBreadcrumbs}
@@ -261,18 +307,46 @@ export function BookListLayout({
           className="border-l"
         >
           {selectedBookUuid && (
-            <DynamicBookDetailsContent
-              uuid={selectedBookUuid as UUID}
-              initialBook={selectedBook}
-              compact
-              onClose={onClosePanel}
-              nextBook={nextBook}
-              previousBook={previousBook}
-            />
+            // focus target so keyboard-opening a book from the grid can move
+            // focus into the panel (and the panel can hand focus back).
+            <div
+              id={BOOK_DETAIL_PANEL_ID}
+              role="region"
+              aria-label="Book details"
+              tabIndex={-1}
+              onKeyDown={handlePanelKeyDown}
+              className="flex h-full w-full flex-col outline-none"
+            >
+              <DynamicBookDetailsContent
+                uuid={selectedBookUuid as UUID}
+                initialBook={selectedBook}
+                compact
+                onClose={onClosePanel}
+                nextBook={nextBook}
+                previousBook={previousBook}
+              />
+            </div>
           )}
         </PagePanel>
       </PageLayout>
     </>
+  )
+}
+
+// standard bypass-blocks affordance: first tab stop on the page reveals a link
+// that drops focus straight into the collection instead of walking the chrome.
+function SkipToBooksLink() {
+  return (
+    <a
+      href={`#${BOOK_COLLECTION_ID}`}
+      onClick={(e) => {
+        e.preventDefault()
+        document.getElementById(BOOK_COLLECTION_ID)?.focus()
+      }}
+      className="bg-background focus:ring-primary sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:border focus:px-3 focus:py-2 focus:text-sm focus:shadow focus:ring-2 focus:outline-none"
+    >
+      Skip to books
+    </a>
   )
 }
 
