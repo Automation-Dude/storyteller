@@ -166,7 +166,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
     // a flat cover that falls back to the user's grid cover-display choice
     if (bookDetailDisplay === "cover") {
       return (
-        <div className="group relative w-fit shrink-0 select-none">
+        <div className="group relative flex min-h-50 w-fit shrink-0 items-center justify-center select-none">
           <div style={{ width: coverWidth }}>
             <BookCover
               book={book}
