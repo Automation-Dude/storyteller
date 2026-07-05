@@ -4,7 +4,7 @@ import { IconVolumeOff } from "@tabler/icons-react"
 import { parseAsBoolean, parseAsString, useQueryState } from "nuqs"
 import { useMemo, useState } from "react"
 
-import { BookList } from "@v3/_/components/books/BookList"
+import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { GradePill } from "@v3/_/components/books/grade-pill"

@@ -2,18 +2,23 @@ import { IconSearch, IconX } from "@tabler/icons-react"
 
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
+import { KeyboardShortcut } from "../ui/kbd"
+import { Hotkey } from "@tanstack/react-hotkeys"
 
 export function SearchInput({
   value,
   onChange,
   placeholder,
   className,
+  shortcut,
+  ...props
 }: {
   value: string
   onChange: (value: string) => void
   placeholder?: string
   className?: string
-}) {
+  shortcut?: Hotkey[]
+} & React.ComponentProps<"input">) {
   return (
     <div
       className={cn(
@@ -25,11 +30,20 @@ export function SearchInput({
       <input
         placeholder={placeholder}
         value={value}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.currentTarget.blur()
+            e.preventDefault()
+          }
+        }}
         onChange={(e) => {
+          console.log("onChange", e.target.value)
           onChange(e.target.value)
         }}
         className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-xs outline-none"
+        {...props}
       />
+      {!value && shortcut && <KeyboardShortcut shortcut={shortcut} />}
       {value && (
         <Button
           variant="ghost"

@@ -14,17 +14,20 @@ import {
 import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
 import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
+import { DropdownMenu } from "@v3/_/components/ui/dropdown-menu"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@v3/_/components/ui/dropdown-menu"
+  FilterableMenuContent,
+  FilterableMenuItem,
+  FilterableMenuSeparator,
+} from "@v3/_/components/ui/filterable-menu"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
-import { useCommon } from "@/app/(v3)/v3/_/hooks/use-translation"
+import {
+  useCommon,
+  useTranslation,
+} from "@/app/(v3)/v3/_/hooks/use-translation"
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { type DisplayField, type SortContext } from "@/sort"
@@ -33,6 +36,7 @@ import {
   findScrollParent,
   useBookActionMenu,
 } from "../ActionMenu/useBookActionMenu"
+import { ActionEntryList } from "../ActionMenu/BookActionMenuItems"
 import { SelectionBullet } from "../SelectionCheckbox"
 
 type BookGridProps = {
@@ -218,6 +222,7 @@ export function BookGrid({
   })
 
   const c = useCommon()
+  const tActions = useTranslation("BookActions")
 
   if (isLoading) {
     return (
@@ -321,29 +326,36 @@ export function BookGrid({
         </div>
       )}
 
-      <DropdownMenu handle={menu.handle}>
-        <DropdownMenuContent
+      <DropdownMenu handle={menu.handle} highlightItemOnHover={false}>
+        <FilterableMenuContent
+          searchable
+          searchPlaceholder={tActions.plain("search")}
           align="end"
           className="pointer-events-auto z-100 min-w-44"
         >
           {menu.toggleSelection && menu.menuBook && (
             <>
-              <DropdownMenuItem
-                onClick={() => {
+              <FilterableMenuItem
+                icon={<SelectionBullet selected={menu.menuBookIsSelected} />}
+                textValue={
+                  menu.menuBookIsSelected
+                    ? c.plain("actions.deselect")
+                    : c.plain("actions.select")
+                }
+                onSelect={() => {
                   menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
                 }}
               >
-                <SelectionBullet selected={menu.menuBookIsSelected} />
                 {menu.menuBookIsSelected
                   ? c("actions.deselect")
                   : c("actions.select")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              </FilterableMenuItem>
+              <FilterableMenuSeparator />
             </>
           )}
 
-          {menu.menuItems}
-        </DropdownMenuContent>
+          <ActionEntryList entries={menu.menuEntries} />
+        </FilterableMenuContent>
       </DropdownMenu>
 
       {menu.menuDialogs}

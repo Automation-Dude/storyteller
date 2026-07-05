@@ -1,7 +1,7 @@
 import { type Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { BookDetailsContent } from "@v3/_/components/books/BookDetailsPage"
+import { BookDetailsContent } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsPage"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
 import { getBook } from "@/database/books"

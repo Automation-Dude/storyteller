@@ -9,7 +9,7 @@ import {
   IconSearch,
   IconSettings,
 } from "@tabler/icons-react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -18,7 +18,7 @@ import {
   type NavSecondaryItem,
 } from "@v3/_/components/nav/nav-secondary"
 import { NavUser } from "@v3/_/components/nav/nav-user"
-import { Kbd, KbdGroup } from "@v3/_/components/ui/kbd"
+import { Kbd, KbdGroup, KeyboardShortcut } from "@v3/_/components/ui/kbd"
 import {
   Sidebar,
   SidebarContent,
@@ -80,6 +80,12 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
 import { DynamicIcon } from "./ui/dynamic-icon"
+import {
+  useHotkey,
+  useHotkeySequence,
+  useKeyHold,
+} from "@tanstack/react-hotkeys"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -176,10 +182,7 @@ export function AppSidebar({
               <IconSearch />
               {t("search")}
             </div>
-            <KbdGroup>
-              <Kbd>⌘</Kbd>
-              <Kbd>K</Kbd>
-            </KbdGroup>
+            <KeyboardShortcut shortcut={["Meta+K"]} />
           </SidebarMenuButton>
         </SidebarMenuItem>
       ),
@@ -337,9 +340,10 @@ function SidebarNavGroup({
       ? t(builtin.labelKey)
       : tLibrary(builtin.labelKey)
 
-  const renderItem = (item: SidebarItemDetail) => (
+  const renderItem = (item: SidebarItemDetail, index: number) => (
     <SidebarNavItem
       key={item.uuid}
+      index={index}
       item={item}
       builtinTitle={builtinTitle}
       libraryCounts={libraryCounts}
@@ -408,12 +412,14 @@ function SidebarNavGroup({
 }
 
 function SidebarNavItem({
+  index,
   item,
   builtinTitle,
   libraryCounts,
   onEdit,
   onRemove,
 }: {
+  index: number
   item: SidebarItemDetail
   builtinTitle: (builtin: BuiltinSidebarItem) => string
   libraryCounts: Record<
@@ -423,11 +429,30 @@ function SidebarNavItem({
   onEdit?: () => void
   onRemove?: () => void
 }) {
+  const isAltHeld = useKeyHold("Alt")
+  const [firstKey, secondKey] = String(index + 1)
+    .padStart(2, "0")
+    .split("")
+
+  const router = useRouter()
+
   const location = usePathname()
   const basePath = useVersionBasePath()
   const normalizedLocation = basePath
     ? location.replace(basePath, "")
     : location
+
+  useHotkeySequence(
+    [`Alt+${firstKey}`, `Alt+${secondKey}`],
+    () => {
+      if (!resolved) return
+      router.push(resolved.url)
+    },
+    {
+      conflictBehavior: "replace",
+      timeout: 1_000,
+    },
+  )
 
   const resolved = resolveItem(item, builtinTitle)
   if (!resolved) return null
@@ -444,26 +469,41 @@ function SidebarNavItem({
 
   const isEntity = item.kind === "shelf" || item.kind === "collection"
 
+  const [tooltipOpen, setTooltipOpen] = useState(false)
+
   return (
     <SidebarMenuItem className="group/navitem">
-      <SidebarMenuButton
-        size="sm"
-        isActive={isActive}
-        render={
-          <V3Link href={resolved.url}>
-            {resolved.customIcon ? (
-              <DynamicIcon
-                iconId={resolved.customIcon}
-                color={resolved.color}
-                className="size-3.5! stroke-[1.5]"
-              />
-            ) : resolved.icon ? (
-              <resolved.icon className="size-3.5! stroke-[1.5]" />
-            ) : null}
-            <span>{resolved.title}</span>
-          </V3Link>
-        }
-      />
+      <Tooltip
+        open={tooltipOpen || isAltHeld}
+        delay={500}
+        onOpenChange={setTooltipOpen}
+      >
+        <TooltipTrigger
+          render={
+            <SidebarMenuButton
+              size="sm"
+              isActive={isActive}
+              render={
+                <V3Link href={resolved.url}>
+                  {resolved.customIcon ? (
+                    <DynamicIcon
+                      iconId={resolved.customIcon}
+                      color={resolved.color}
+                      className="size-3.5! stroke-[1.5]"
+                    />
+                  ) : resolved.icon ? (
+                    <resolved.icon className="size-3.5! stroke-[1.5]" />
+                  ) : null}
+                  <span>{resolved.title}</span>
+                </V3Link>
+              }
+            />
+          }
+        />
+        <TooltipContent side="right">
+          <KeyboardShortcut shortcut={[`Alt+${firstKey}`, secondKey]} />
+        </TooltipContent>
+      </Tooltip>
 
       {isEntity ? (
         <>

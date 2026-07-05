@@ -49,6 +49,7 @@ import {
   useCoverColors,
   useIsDarkMode,
 } from "./sections/useCoverColors"
+import { useHotkey } from "@tanstack/react-hotkeys"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -188,9 +189,6 @@ function BookDetailsContentInner({
   const { showAccent } = useColorPreferences()
   const isDark = useIsDarkMode()
 
-  // cover-derived primary/accent only at "full"; otherwise the theme colors
-  // (incl. a custom accent color) stay in place. nudged for contrast against the
-  // active surface so buttons/accents stay legible in both light and dark mode.
   const cPrimary = ensureContrast(primary, isDark)
   const cAccent = ensureContrast(accent, isDark)
   const colorVars = showAccent
@@ -401,6 +399,8 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
   const isSelected = selection?.isSelected(book.uuid) ?? false
   const showCheckbox = !!selection && (selection.isSelecting || isSelected)
 
+  const [actionMenuOpen, setActionMenuOpen] = useState(false)
+
   const handleToggleSelection = () => {
     if (!selection) return
     if (!selection.isSelecting) selection.startSelecting()
@@ -409,6 +409,16 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
 
   const pill =
     "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
+
+  useHotkey("Escape", () => {
+    if (selection?.isSelecting) {
+      return
+    }
+    onClose?.()
+  })
+  useHotkey("E", () => {
+    setActionMenuOpen((prev) => !prev)
+  })
 
   return (
     <>
@@ -435,6 +445,8 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
       <div className={cn("absolute top-2.5 right-3 z-50", pill)}>
         <BookActionsMenu
           book={book}
+          open={actionMenuOpen}
+          onOpenChange={setActionMenuOpen}
           showOpenFullPage
           onEdit={() => {
             setIsEditing(!isEditing)
@@ -443,9 +455,16 @@ function BookPanelHeader({ onClose }: { onClose: (() => void) | undefined }) {
         />
 
         {onClose && (
-          <Button variant="real-ghost" size="icon-sm" onClick={onClose}>
+          <TooltipButton
+            variant="real-ghost"
+            size="icon-sm"
+            onClick={onClose}
+            tooltip="Close"
+            aria-label="Close"
+            shortcut={["Escape"]}
+          >
             <IconX className="size-3.5 stroke-[1.5]" />
-          </Button>
+          </TooltipButton>
         )}
       </div>
     </>

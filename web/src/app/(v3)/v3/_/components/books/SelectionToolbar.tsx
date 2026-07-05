@@ -22,7 +22,12 @@ import { cn } from "@v3/_/lib/utils"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useListBooksQuery } from "@/store/api"
 
-import { useBookActionItems } from "./ActionMenu/BookActionMenuItems"
+import {
+  ActionEntryList,
+  useBookActionItems,
+} from "./ActionMenu/BookActionMenuItems"
+import { FilterableMenu } from "../ui/filterable-menu"
+import { useHotkey } from "@tanstack/react-hotkeys"
 
 type SelectionToolbarProps = {
   allBookUuids: string[]
@@ -37,6 +42,7 @@ export function SelectionToolbar({
   className,
 }: SelectionToolbarProps) {
   const t = useTranslation("SelectionToolbar")
+  const tActions = useTranslation("BookActions")
   const c = useCommon()
 
   const {
@@ -52,8 +58,17 @@ export function SelectionToolbar({
   const selectedBookObjects = allBooks.filter((book) =>
     selectedBooks.has(book.uuid),
   )
+  useHotkey(
+    "Escape",
+    () => {
+      stopSelecting()
+    },
+    {
+      conflictBehavior: "replace",
+    },
+  )
 
-  const { items, dialogs } = useBookActionItems({
+  const { entries, dialogs } = useBookActionItems({
     books: selectedBookObjects,
     mode: "bulk",
     onAfterDestructive: selectNone,
@@ -64,7 +79,7 @@ export function SelectionToolbar({
 
   return (
     <>
-      <div className="@container pointer-events-none sticky inset-x-0 bottom-0 z-40 flex justify-center px-2">
+      <div className="@container pointer-events-none sticky -bottom-4 z-40 -mx-6 flex justify-center px-2">
         <ActionTray
           show={isSelecting}
           className={cn(
@@ -121,26 +136,28 @@ export function SelectionToolbar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="real-ghost"
-                  size="sm"
-                  className="shrink-0 gap-1.5 rounded-md"
-                  disabled={!hasSelection}
-                >
-                  <IconPointer className="size-3.5 stroke-[1.5]" />
-                  <span className="hidden @md:inline">{t("actions")}</span>
-                  <IconChevronDown className="size-3 opacity-60" />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="start" className="min-w-48">
-              {items}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <FilterableMenu
+            searchable
+            searchPlaceholder={tActions.plain("search")}
+            align="start"
+            contentClassName="min-w-48"
+            trigger={
+              <Button
+                variant="real-ghost"
+                size="sm"
+                className="shrink-0 gap-1.5 rounded-md"
+                disabled={!hasSelection}
+              >
+                <IconPointer className="size-3.5 stroke-[1.5]" />
+                <span className="hidden @md:inline">{t("actions")}</span>
+                <IconChevronDown className="size-3 opacity-60" />
+              </Button>
+            }
+          >
+            <ActionEntryList entries={entries} />
+          </FilterableMenu>
 
+          <div className="flex-1" />
           {divider}
 
           <TooltipButton
@@ -150,6 +167,7 @@ export function SelectionToolbar({
             size="icon-sm"
             onClick={stopSelecting}
             className="shrink-0 rounded-full"
+            shortcut={["Escape"]}
           >
             <IconX className="size-4 stroke-[1.5]" />
           </TooltipButton>

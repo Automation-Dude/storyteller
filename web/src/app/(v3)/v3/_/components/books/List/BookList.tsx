@@ -5,13 +5,13 @@ import { useVirtualizer } from "@tanstack/react-virtual"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
+import { DropdownMenu } from "@v3/_/components/ui/dropdown-menu"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@v3/_/components/ui/dropdown-menu"
-import { useCommon } from "@v3/_/hooks/use-translation"
+  FilterableMenuContent,
+  FilterableMenuItem,
+  FilterableMenuSeparator,
+} from "@v3/_/components/ui/filterable-menu"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
@@ -26,6 +26,7 @@ import {
   findScrollParent,
   useBookActionMenu,
 } from "../ActionMenu/useBookActionMenu"
+import { ActionEntryList } from "../ActionMenu/BookActionMenuItems"
 import { ColumnSelector } from "../ColumnSelector"
 import { SelectionBullet } from "../SelectionCheckbox"
 import {
@@ -129,6 +130,7 @@ export function BookList({
   const lastVirtualRowIndex = virtualRows.at(-1)?.index
 
   const c = useCommon()
+  const tActions = useTranslation("BookActions")
 
   useEffect(() => {
     if (lastVirtualRowIndex === undefined) return
@@ -266,30 +268,36 @@ export function BookList({
         </div>
       )}
 
-      <DropdownMenu handle={menu.handle}>
-        <DropdownMenuContent
+      <DropdownMenu handle={menu.handle} highlightItemOnHover={false}>
+        <FilterableMenuContent
+          searchable
+          searchPlaceholder={tActions.plain("search")}
           align="end"
           className="pointer-events-auto z-100 w-fit"
-          // anchor={menu.menuAnchor}
         >
           {menu.toggleSelection && menu.menuBook && (
             <>
-              <DropdownMenuItem
-                onClick={() => {
+              <FilterableMenuItem
+                icon={<SelectionBullet selected={menu.menuBookIsSelected} />}
+                textValue={
+                  menu.menuBookIsSelected
+                    ? c.plain("actions.deselect")
+                    : c.plain("actions.select")
+                }
+                onSelect={() => {
                   menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
                 }}
               >
-                <SelectionBullet selected={menu.menuBookIsSelected} />
                 {menu.menuBookIsSelected
                   ? c("actions.deselect")
                   : c("actions.select")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              </FilterableMenuItem>
+              <FilterableMenuSeparator />
             </>
           )}
 
-          {menu.menuItems}
-        </DropdownMenuContent>
+          <ActionEntryList entries={menu.menuEntries} />
+        </FilterableMenuContent>
       </DropdownMenu>
 
       {menu.menuDialogs}

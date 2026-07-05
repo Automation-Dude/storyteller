@@ -7,12 +7,9 @@ import {
   type NestedKeyOf,
   type NestedValueOf,
   type createTranslator,
-  useLocale,
-  useMessages,
   // eslint-disable-next-line no-restricted-syntax
   useTranslations,
 } from "next-intl"
-import React from "react"
 
 type IntlMessages = Record<string, any>
 // taken from next-intl

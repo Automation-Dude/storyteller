@@ -45,7 +45,7 @@ export function useBookActionMenu(books: BookWithRelations[]) {
     setMenuBook(book)
   }, [])
 
-  const { items: menuItems, dialogs: menuDialogs } = useBookActionItems({
+  const { entries: menuEntries, dialogs: menuDialogs } = useBookActionItems({
     books: menuBook ? [menuBook] : [],
     mode: "single",
   })
@@ -63,7 +63,7 @@ export function useBookActionMenu(books: BookWithRelations[]) {
     menuBook,
     handle,
     handleOpenMenu,
-    menuItems,
+    menuEntries,
     menuDialogs,
     menuBookIsSelected,
   }

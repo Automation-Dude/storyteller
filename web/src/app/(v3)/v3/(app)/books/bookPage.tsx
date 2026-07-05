@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
-import { BookList } from "@v3/_/components/books/BookList"
+import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
 import { SaveAsShelfDialog } from "@v3/_/components/books/SaveAsShelfDialog"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"

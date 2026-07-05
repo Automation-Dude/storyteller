@@ -17,6 +17,7 @@ import { useDebounce } from "@/app/(v3)/v3/_/hooks/use-debounce"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { api, getCoverUrl } from "@/store/api"
+import { useHotkey } from "@tanstack/react-hotkeys"
 
 // import { useDebounce}
 
@@ -31,6 +32,9 @@ export function CommandSearch() {
     { skip: !debouncedSearch },
   )
 
+  useHotkey("Meta+K", () => {
+    setOpen((prev) => !prev)
+  })
   // const [
   //   triggerContentSearch,
   //   { data: contentData, isFetching: isContentFetching },
@@ -46,20 +50,6 @@ export function CommandSearch() {
 
   const isLoading = isFetching
   const hasNoResults = debouncedSearch && !isLoading && books.length === 0
-
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((open) => !open)
-      }
-    }
-
-    document.addEventListener("keydown", down)
-    return () => {
-      document.removeEventListener("keydown", down)
-    }
-  }, [])
 
   const handleSelectBook = useCallback(
     (book: BookWithRelations) => {

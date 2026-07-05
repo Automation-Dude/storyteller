@@ -5,22 +5,20 @@ import {
   IconDotsVertical,
   IconEdit,
 } from "@tabler/icons-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 
-import { Button } from "@v3/_/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@v3/_/components/ui/dropdown-menu"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
 
-import { useBookActionItems } from "./BookActionMenuItems"
+import {
+  ActionEntryList,
+  type BookActionEntry,
+  useBookActionItems,
+} from "./BookActionMenuItems"
+import { FilterableMenu } from "../../ui/filterable-menu"
+import { TooltipButton } from "../../ui/tooltip-button"
 
 export function BookActionsMenu({
   book,
@@ -29,6 +27,8 @@ export function BookActionsMenu({
   onDeleted,
   fullPageHref,
   className,
+  open,
+  onOpenChange,
 }: {
   book: BookWithRelations
   showOpenFullPage?: boolean
@@ -37,62 +37,63 @@ export function BookActionsMenu({
   onDeleted?: () => void
   fullPageHref?: string
   className?: string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }) {
   const t = useTranslation("BookActions")
   const c = useCommon()
+  const router = useRouter()
   const canEdit = usePermission("bookUpdate")
-  const { items, dialogs } = useBookActionItems({
+  const { entries, dialogs } = useBookActionItems({
     books: [book],
     mode: "single",
     onAfterDestructive: onDeleted,
   })
 
-  const hasTopItems = showOpenFullPage || (!!onEdit && canEdit)
+  const leading: BookActionEntry[] = []
+  if (showOpenFullPage) {
+    leading.push({
+      key: "openFullPage",
+      label: t.plain("openFullPage"),
+      icon: <IconArrowUpRight className="size-4" />,
+      onSelect: () => {
+        router.push(fullPageHref ?? `/v3/books/${book.uuid}`)
+      },
+    })
+  }
+  if (onEdit && canEdit) {
+    leading.push({
+      key: "edit",
+      label: c.plain("actions.edit"),
+      icon: <IconEdit className="size-4" />,
+      onSelect: onEdit,
+    })
+  }
 
   return (
     <>
-      <DropdownMenu
-        onOpenChange={(open, eventDetails) => {
-          console.log("onOpenChange-------------", open)
-          console.log(eventDetails)
-        }}
+      <FilterableMenu
+        open={open}
+        onOpenChange={onOpenChange}
+        align="end"
+        searchable
+        searchPlaceholder={t.plain("search")}
+        trigger={
+          <TooltipButton
+            variant="real-ghost"
+            size="icon-sm"
+            className={className}
+            tooltip="Open actions"
+            aria-label="Open book actions menu"
+            shortcut={["E"]}
+          >
+            <IconDotsVertical className="size-3.5 stroke-[1.5]" />
+            <span className="sr-only">Open book actions menu</span>
+          </TooltipButton>
+        }
       >
-        <DropdownMenuTrigger
-          render={
-            <Button variant="real-ghost" size="icon-sm" className={className}>
-              <IconDotsVertical className="size-3.5 stroke-[1.5]" />
-              <span className="sr-only">Open book actions menu</span>
-            </Button>
-          }
-        />
-
-        <DropdownMenuContent
-          align="end"
-          className="pointer-events-auto z-100 w-fit"
-        >
-          {showOpenFullPage && (
-            <DropdownMenuItem
-              render={
-                <Link href={fullPageHref ?? `/v3/books/${book.uuid}`}>
-                  <IconArrowUpRight className="mr-2 h-4 w-4" />
-                  {t("openFullPage")}
-                </Link>
-              }
-            />
-          )}
-
-          {onEdit && canEdit && (
-            <DropdownMenuItem onClick={onEdit}>
-              <IconEdit className="mr-2 h-4 w-4" />
-              {c("actions.edit")}
-            </DropdownMenuItem>
-          )}
-
-          {hasTopItems && <DropdownMenuSeparator />}
-
-          {items}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <ActionEntryList entries={[...leading, ...entries]} />
+      </FilterableMenu>
 
       {dialogs}
     </>

@@ -9,7 +9,7 @@ import {
   IconLayoutList,
   IconPlus,
 } from "@tabler/icons-react"
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import * as icon from "@/icons"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -24,7 +24,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
-import { FilterableMenu } from "@v3/_/components/ui/filterable-menu"
+import {
+  FilterableMenu,
+  FilterableMenuItem,
+} from "@v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
 import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
@@ -38,7 +41,11 @@ import { type BookView } from "@/store/slices/uiSettingsSlice"
 import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
 import { SearchInput } from "./SearchInput"
 import { ViewSelector } from "./ViewSelector"
-import { useHotkey } from "@tanstack/react-hotkeys"
+import {
+  useHotkey,
+  useHotkeys,
+  useHotkeySequences,
+} from "@tanstack/react-hotkeys"
 
 export type { SortDirection, SortField } from "@/sort"
 
@@ -88,32 +95,46 @@ export function BookFilters({
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
 
-  useHotkey("V", () => {
-    setViewMenuOpen((prev) => {
-      if (!prev) return true
-      return false
-    })
-  })
+  const searchRef = useRef<HTMLInputElement>(null)
 
-  useHotkey("F", () => {
-    setFilterMenuOpen((prev) => {
-      if (!prev) return true
-      return false
-    })
-  })
-  useHotkey("S", () => {
-    setSortMenuOpen((prev) => {
-      if (!prev) return true
-      return false
-    })
-  })
-
-  useHotkey("Shift+F", () => {
-    onToggleAdvanced?.()
-  })
-  useHotkey("Alt+Shift+S", () => {
-    onSaveAsShelf?.()
-  })
+  useHotkeys([
+    {
+      hotkey: "F",
+      callback: () => {
+        searchRef.current?.focus()
+      },
+    },
+    {
+      hotkey: "Shift+F",
+      callback: () => {
+        setFilterMenuOpen((prev) => !prev)
+      },
+    },
+    {
+      hotkey: "Shift+S",
+      callback: () => {
+        setSortMenuOpen((prev) => !prev)
+      },
+    },
+    {
+      hotkey: "Shift+V",
+      callback: () => {
+        setViewMenuOpen((prev) => !prev)
+      },
+    },
+    {
+      hotkey: "Mod+Shift+F",
+      callback: () => {
+        onToggleAdvanced?.()
+      },
+    },
+    {
+      hotkey: "Alt+Shift+S",
+      callback: () => {
+        onSaveAsShelf?.()
+      },
+    },
+  ])
 
   // fields whose chips are visible: those with active conditions. picking a
   // field from the fan-out menu writes a condition directly, so a chip appears
@@ -143,8 +164,10 @@ export function BookFilters({
       <div className="flex items-center gap-2">
         <SearchInput
           placeholder={t("seachBooksPlaceholder")}
+          ref={searchRef}
           value={search}
           onChange={setSearch}
+          shortcut={["F"]}
         />
 
         {/* wide container: sort, card display and view sit inline. they share
@@ -156,6 +179,8 @@ export function BookFilters({
             field={sort.field}
             direction={sort.direction}
             onChange={setSort}
+            onOpenChange={setSortMenuOpen}
+            open={sortMenuOpen}
           />
 
           <DropdownMenu open={viewMenuOpen} onOpenChange={setViewMenuOpen}>
@@ -229,10 +254,10 @@ export function BookFilters({
 
         {!isAdvanced && (
           <FilterableMenu
-            submenuMode="flyout"
             open={filterMenuOpen}
             onOpenChange={setFilterMenuOpen}
-            searchPlaceholder={t("filters.filters")}
+            searchable
+            searchPlaceholder={t.plain("filters.filters")}
             trigger={
               <TooltipButton
                 variant="outline"
@@ -244,23 +269,28 @@ export function BookFilters({
                 <icon.Filter />
               </TooltipButton>
             }
-            entries={addableFields.map((field) => ({
-              key: field,
-              label: tLabel(getFieldDef(field).labelKey as never),
-              icon: <FieldIcon field={field} className="h-4 w-4" />,
-              submenu: () => (
-                <FilterEditor
-                  field={field}
-                  def={getFieldDef(field)}
-                  conditions={conditionsForField(field)}
-                  onChange={(next) => {
-                    setConditionsForField(field, next)
-                  }}
-                  enabled
-                />
-              ),
-            }))}
-          />
+          >
+            {addableFields.map((field) => (
+              <FilterableMenuItem
+                key={field}
+                icon={<FieldIcon field={field} className="size-4" />}
+                textValue={tLabel.plain(getFieldDef(field).labelKey as never)}
+                submenu={
+                  <FilterEditor
+                    field={field}
+                    def={getFieldDef(field)}
+                    conditions={conditionsForField(field)}
+                    onChange={(next) => {
+                      setConditionsForField(field, next)
+                    }}
+                    enabled
+                  />
+                }
+              >
+                {tLabel(getFieldDef(field).labelKey as never)}
+              </FilterableMenuItem>
+            ))}
+          </FilterableMenu>
         )}
         {!isAdvanced &&
           shownFields.map((field) => (
@@ -441,55 +471,52 @@ function SortControl({
   field,
   direction,
   onChange,
+  onOpenChange,
+  open,
 }: {
   options: { value: SortField; label: string }[]
   field: SortField
   direction: "asc" | "desc"
   onChange: (field: SortField, direction: "asc" | "desc") => void
+  onOpenChange: (open: boolean) => void
+  open: boolean
 }) {
-  const [open, setOpen] = useState(false)
   const flip = () => {
     onChange(field, direction === "asc" ? "desc" : "asc")
   }
+  useHotkey("S", () => {
+    flip()
+  })
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <ButtonGroup className="h-full shrink-0 text-sm [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-full!">
-        <DropdownMenuTrigger
-          render={
-            <Button
-              className="justify-between rounded-full text-xs font-normal"
-              variant="outline"
-            >
-              <span className="flex items-center gap-1.5">
-                <FieldIcon field={field} className="h-3.5 w-3.5" />
-                <span className="sr-only">
-                  {options.find((o) => o.value === field)?.label ?? field}
-                </span>
+    <div className="flex items-center">
+      <FilterableMenu
+        open={open}
+        onOpenChange={onOpenChange}
+        trigger={
+          <TooltipButton
+            className="items-center rounded-l-lg rounded-r-none border-r-0 pr-1 pl-2 text-xs font-normal"
+            variant="outline"
+            tooltip="Sort by"
+            size="icon"
+            aria-label="Sort by"
+            shortcut={["Shift+S"]}
+          >
+            <span className="flex items-center gap-1.5">
+              <FieldIcon field={field} className="h-3.5 w-3.5" />
+              <span className="sr-only">
+                {options.find((o) => o.value === field)?.label ?? field}
               </span>
-            </Button>
-          }
-        />
-        <Button
-          variant="outline"
-          onClick={flip}
-          aria-label="Toggle sort direction"
-          className="rounded-r-full!"
-        >
-          {direction === "asc" ? (
-            <IconArrowUp className="h-3 w-3" />
-          ) : (
-            <IconArrowDown className="h-3 w-3" />
-          )}
-        </Button>
-      </ButtonGroup>
-      <DropdownMenuContent className="w-fit">
+            </span>
+          </TooltipButton>
+        }
+      >
         {options.map((option) => (
-          <DropdownMenuItem
+          <FilterableMenuItem
             key={option.value}
-            className="justify-between gap-4"
-            closeOnClick={false}
-            onClick={() => {
+            icon={<FieldIcon field={option.value} className="size-4" />}
+            textValue={option.label}
+            onSelect={() => {
               if (option.value === field) {
                 flip()
               } else {
@@ -497,19 +524,25 @@ function SortControl({
               }
             }}
           >
-            <span className="flex items-center gap-2">
-              <FieldIcon field={option.value} className="h-4 w-4" />
-              {option.label}
-            </span>
-            {option.value === field &&
-              (direction === "asc" ? (
-                <IconArrowUp className="h-3 w-3" />
-              ) : (
-                <IconArrowDown className="h-3 w-3" />
-              ))}
-          </DropdownMenuItem>
+            {option.label}
+          </FilterableMenuItem>
         ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </FilterableMenu>
+      <TooltipButton
+        variant="outline"
+        size="icon"
+        className="items-center rounded-l-none rounded-r-lg pr-2 pl-1 text-xs font-normal"
+        tooltip="Toggle"
+        aria-label="Toggle sort direction"
+        shortcut={["S"]}
+        onClick={flip}
+      >
+        {direction === "asc" ? (
+          <icon.ArrowUp size="sm" />
+        ) : (
+          <icon.ArrowDown size="sm" />
+        )}
+      </TooltipButton>
+    </div>
   )
 }

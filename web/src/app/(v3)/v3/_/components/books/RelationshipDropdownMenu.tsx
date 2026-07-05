@@ -448,6 +448,7 @@ function NumberRangeEditor({
   const { lo, hi } = readRange(conditions)
   const format = conditions.at(0)?.format
 
+  const t = useTranslation("BooksPage")
   const set = (nextLo: number | null, nextHi: number | null, fmt = format) => {
     onChange(writeRange(field, nextLo, nextHi, fmt))
   }
@@ -462,6 +463,22 @@ function NumberRangeEditor({
       : null
   const dispLo = lo == null ? "" : String(u.to(lo))
   const dispHi = hi == null ? "" : String(u.to(hi))
+
+  if (def.options) {
+    return (
+      <FilterableList<{ min: number; max: number; label: string }>
+        items={def.options}
+        loading={false}
+        searchPlaceholder={t("filters.search")}
+        onSelect={(item, event, ctx) => {
+          onChange(writeDateRange(field, item.from, item.to))
+        }}
+        renderRow={(item) => {
+          return <div key={item.label}>{item.label}</div>
+        }}
+      />
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3 p-3">
@@ -586,6 +603,24 @@ function DateRangeEditor({
   onChange: (next: ShelfFilterCondition[]) => void
 }) {
   const { from, to } = readDateRange(conditions)
+  const def = getFieldDef(field) as FieldDefNumeric | FieldDefDuration
+  console.log(def)
+  if (def.options) {
+    return (
+      <FilterableList<{ min: number; max: number; label: string }>
+        items={def.options}
+        loading={false}
+        searchPlaceholder={t("filters.search")}
+        onSelect={(item, event, ctx) => {
+          onChange(writeDateRange(field, item.from, item.to))
+        }}
+        renderRow={(item) => {
+          return <div>{item.label}</div>
+        }}
+      />
+    )
+  }
+
   return (
     <div className="flex items-center gap-2 p-3">
       <Input
