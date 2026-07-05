@@ -52,6 +52,7 @@ import {
 } from "./sections/useCoverColors"
 import { useHotkey } from "@tanstack/react-hotkeys"
 import { ButtonGroup } from "../../ui/button-group"
+import { AnimatePresence, motion } from "motion/react"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -465,28 +466,43 @@ function BookPanelHeader({
 
   return (
     <>
-      {showCheckbox && (
-        <div className={cn("absolute top-3 left-3 z-50 p-1", pill)}>
-          <Checkbox
-            aria-label="Toggle selection"
-            checked={isSelected}
-            style={
-              isSelected && showAccent
-                ? {
-                    background: cAccent.solid,
-                    color: cAccent.onColor,
-                    borderColor: cAccent.solid,
-                  }
-                : undefined
-            }
-            onCheckedChange={handleToggleSelection}
-            className="size-5 rounded-full"
-          />
-        </div>
-      )}
+      <AnimatePresence>
+        {showCheckbox && (
+          <motion.div
+            className={cn("absolute top-4 left-3 z-50 p-1", pill)}
+            initial={{ x: 0, opacity: 0 }}
+            animate={{ x: 3, opacity: 1 }}
+            exit={{ x: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Checkbox
+              aria-label="Toggle selection"
+              checked={isSelected}
+              style={
+                isSelected && showAccent
+                  ? {
+                      background: cAccent.solid,
+                      color: cAccent.onColor,
+                      borderColor: cAccent.solid,
+                    }
+                  : undefined
+              }
+              onCheckedChange={handleToggleSelection}
+              className="size-5 rounded-full"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {(nextBook || previousBook) && (
-        <ButtonGroup className="absolute top-2.5 left-3 z-50">
+        <ButtonGroup
+          className={cn(
+            "absolute top-3 left-3 z-50",
+            "transition-[left]",
+            selection?.isSelecting && "left-12",
+            pill,
+          )}
+        >
           {previousBook && (
             <TooltipButton
               variant="real-ghost"
