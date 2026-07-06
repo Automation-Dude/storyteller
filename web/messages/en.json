@@ -137,8 +137,12 @@
       "readaloud": "Readaloud"
     }
   },
+  "BookList": {
+    "emptyState": "No books found",
+    "emptyStateTryAdjusting": "Try adjusting your search or filters"
+  },
   "LibraryPage": {
-    "emptyState": "Select an item to see its books",
+    "emptyStateSub": "Select an item in the sidebar to see its books",
     "Series": {
       "plain": "Series",
       "by": "By Series",
@@ -1180,6 +1184,7 @@
         "alignmentGrade": "Alignment Grade",
         "alignmentMissingSentences": "Missing Sentences",
         "alignmentMutedChapters": "Muted Chapters",
+        "alignmentMissingChapters": "Missing Chapters",
         "alignedAt": "Date Aligned",
         "lastRead": "Last Read",
         "readingPosition": "Reading Progress",

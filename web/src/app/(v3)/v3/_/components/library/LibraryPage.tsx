@@ -11,6 +11,10 @@ import {
 } from "@v3/_/components/books/BookListLayout"
 import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
+import {
+  BOOK_COLLECTION_ID,
+  type BookNavModel,
+} from "@v3/_/components/books/keyboard-nav"
 import { EditCreatorDialog } from "@v3/_/components/library/EditCreatorDialog"
 import { EditStatusDialog } from "@v3/_/components/library/EditStatusDialog"
 import { EditTagDialog } from "@v3/_/components/library/EditTagDialog"
@@ -95,6 +99,10 @@ import {
 import { type UUID } from "@/uuid"
 
 const SIDEBAR_ROW_HEIGHT = 30
+
+// temporary: lets us compare the two keyboard-open models for the grid/list.
+// throwaway, remove once a model is chosen.
+const NAV_MODEL_STORAGE_KEY = "st-temp-book-nav-model"
 
 function findScrollParent(node: HTMLElement | null): HTMLElement | null {
   let el = node?.parentElement ?? null
@@ -205,6 +213,20 @@ function LibraryPageInner({
   const [sidebarSearch, setSidebarSearch] = useState("")
   const [sidebarSort, setSidebarSort] =
     useState<SidebarSortMode>(defaultSidebarSort)
+
+  // temporary: the keyboard-open model, persisted to localStorage only.
+  const [navModel, setNavModel] = useState<BookNavModel>(() => {
+    if (typeof window === "undefined") return "commit"
+    return window.localStorage.getItem(NAV_MODEL_STORAGE_KEY) === "preview"
+      ? "preview"
+      : "commit"
+  })
+  const handleNavModelChange = useCallback((model: BookNavModel) => {
+    setNavModel(model)
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(NAV_MODEL_STORAGE_KEY, model)
+    }
+  }, [])
 
   const isSeriesSection = section.entityType === "series"
 
@@ -432,6 +454,11 @@ function LibraryPageInner({
   const handleClosePanel = useCallback(() => {
     void setSelectedBookUuid(null)
     void setReportMode(false)
+    // hand focus back to the grid/list so keyboard users aren't dumped at the
+    // top of the document when the panel closes.
+    requestAnimationFrame(() => {
+      document.getElementById(BOOK_COLLECTION_ID)?.focus()
+    })
   }, [setReportMode, setSelectedBookUuid])
 
   const handleBackToList = useCallback(() => {
@@ -568,8 +595,8 @@ function LibraryPageInner({
             showMuted={showMuted}
             emptySubMessage={
               deferredSearch || activeFilterCount > 0
-                ? "Try adjusting your search or filters"
-                : undefined
+                ? undefined
+                : t("emptyStateSub")
             }
             onClearFilters={clearAll}
             hasActiveFilters={activeFilterCount > 0}
@@ -583,6 +610,7 @@ function LibraryPageInner({
             sortField={sort.field}
             sortDirection={sort.direction}
             onSortChange={handleColumnSort}
+            navModel={navModel}
           />
         ) : (
           <BookGrid
@@ -594,8 +622,8 @@ function LibraryPageInner({
             showMuted={showMuted}
             emptySubMessage={
               deferredSearch || activeFilterCount > 0
-                ? "Try adjusting your search or filters"
-                : undefined
+                ? undefined
+                : t("emptyStateSub")
             }
             onClearFilters={clearAll}
             hasActiveFilters={activeFilterCount > 0}
@@ -603,15 +631,16 @@ function LibraryPageInner({
             onBookClick={handleBookClick}
             displayFields={displayFields}
             displayContext={displayContext}
+            navModel={navModel}
           />
         )}
 
-        {filteredBooks.length === 0 && (
+        {/* {filteredBooks.length === 0 && (
           <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
             <icon.Search className="h-12 w-12 opacity-40" />
             <p className="text-lg font-medium">{t("emptyState")}</p>
           </div>
-        )}
+        )} */}
       </PageContent>
       <SelectionToolbar allBookUuids={filteredBookUuids} />
     </>
@@ -641,6 +670,25 @@ function LibraryPageInner({
 
   const headerActions = (
     <>
+      {/* temporary: flip between the two keyboard-open models to compare them */}
+      <div
+        className="flex items-center gap-0.5 rounded-md border p-0.5"
+        title="temp: keyboard nav model"
+      >
+        {(["commit", "preview"] as const).map((model) => (
+          <Button
+            key={model}
+            size="xs"
+            variant={navModel === model ? "default" : "ghost"}
+            onClick={() => {
+              handleNavModelChange(model)
+            }}
+          >
+            {model}
+          </Button>
+        ))}
+      </div>
+
       {selectedItem && selectedItemName && selectedItem !== NONE_KEY ? (
         <DropdownMenu>
           <DropdownMenuTrigger

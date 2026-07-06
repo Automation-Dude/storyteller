@@ -126,8 +126,12 @@
       "readaloud": "<em>Readaloud</em>"
     }
   },
+  "BookList": {
+    "emptyState": "Geen boeken gevonden",
+    "emptyStateTryAdjusting": "Pas je zoekopdracht of filters aan"
+  },
   "LibraryPage": {
-    "emptyState": "Selecteer een item om de bijbehorende boeken te zien",
+    "emptyStateSub": "Selecteer een item in de zijbalk om de bijbehorende boeken te zien",
     "Series": {
       "plain": "Serie",
       "by": "Op Serie",

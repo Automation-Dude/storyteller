@@ -68,8 +68,6 @@ export function BookList({
   hasNextPage,
   fetchNextPage,
   showMuted,
-  emptyMessage = "No books found",
-  emptySubMessage,
   onClearFilters,
   hasActiveFilters,
   selectedBookUuid,
@@ -82,8 +80,14 @@ export function BookList({
   sortField,
   sortDirection,
   onSortChange,
+  navModel = "commit",
+  ...props
 }: BookListProps) {
+  const t = useTranslation("BookList")
   const menu = useBookActionMenu(books)
+
+  const emptyMessage = props.emptyMessage ?? t("emptyStateSub")
+  const emptySubMessage = props.emptySubMessage ?? t("emptyStateTryAdjusting")
 
   // the column headers that get their own column (not title/authors)
   const extraColumns = visibleColumns.filter(

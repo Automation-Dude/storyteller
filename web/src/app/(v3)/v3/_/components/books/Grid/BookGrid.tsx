@@ -83,8 +83,6 @@ export function BookGrid({
   hasNextPage,
   fetchNextPage,
   showMuted,
-  emptyMessage = "No books found",
-  emptySubMessage,
   onClearFilters,
   hasActiveFilters,
   selectedBookUuid,
@@ -92,8 +90,13 @@ export function BookGrid({
   displayFields,
   displayContext,
   navModel = "commit",
+  ...props
 }: BookGridProps) {
+  const t = useTranslation("BookList")
   const menu = useBookActionMenu(books)
+
+  const emptyMessage = props.emptyMessage ?? t("emptyStateSub")
+  const emptySubMessage = props.emptySubMessage ?? t("emptyStateTryAdjusting")
 
   const isMobile = useIsMobile()
   const { gridCardSize } = useUserPreferences()
@@ -387,7 +390,7 @@ export function BookGrid({
 
       {isFetchingNextPage && (
         <div className="text-muted-foreground mt-4 flex items-center justify-center gap-2">
-          <icon.Loader className="h-5 w-5 animate-spin" />
+          <icon.LoaderIOSish className="h-5 w-5 animate-spin" />
           <span>Loading more...</span>
         </div>
       )}
