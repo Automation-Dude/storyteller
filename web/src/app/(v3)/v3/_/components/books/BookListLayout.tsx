@@ -32,6 +32,8 @@ import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
+import { CoverScope, useCoverScope } from "./BookDetails/sections/CoverScope"
+
 const DynamicBookDetailsContent = dynamic(
   () =>
     import("@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsPage").then(
@@ -244,6 +246,8 @@ export function BookListLayout({
     }
   }, [])
 
+  const coverScopeProps = useCoverScope(selectedBook)
+
   if (isMobile) {
     return (
       <>
@@ -271,6 +275,7 @@ export function BookListLayout({
       </>
     )
   }
+  console.log(coverScopeProps)
 
   return (
     <>
@@ -305,6 +310,8 @@ export function BookListLayout({
           onWidthChange={handlePanelWidthChange}
           snapWidth={snapPanelWidth}
           className="border-l"
+          // style={coverScopeProps.style}
+          colors={coverScopeProps}
         >
           {selectedBookUuid && (
             // focus target so keyboard-opening a book from the grid can move
@@ -333,8 +340,7 @@ export function BookListLayout({
   )
 }
 
-// standard bypass-blocks affordance: first tab stop on the page reveals a link
-// that drops focus straight into the collection instead of walking the chrome.
+// a11y skip link
 function SkipToBooksLink() {
   return (
     <a
@@ -350,6 +356,7 @@ function SkipToBooksLink() {
   )
 }
 
+// mobile
 export function BookDetailDrawer({
   selectedBookUuid,
   selectedBook,

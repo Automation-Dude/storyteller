@@ -71,6 +71,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   "101_dedupe_book_series.sql": (
     await import("./migrations/101_dedupe_book_series.sql")
   ).default,
+  "102_book_cover_colors_override.sql": (
+    await import("./migrations/102_book_cover_colors_override.sql")
+  ).default,
 }
 
 async function isFirstStartup() {

@@ -14,10 +14,7 @@ import { statusDisplayLabel } from "@/database/statusKinds"
 import * as icon from "@/icons"
 import { useListStatusesQuery, useUpdateStatusMutation } from "@/store/api"
 
-import {
-  useColorPreferences,
-  useCoverColors,
-} from "./BookDetails/sections/useCoverColors"
+import { useColorPreferences } from "./BookDetails/sections/useCoverColors"
 
 export function ReadingStatusButton({
   book,
@@ -33,7 +30,6 @@ export function ReadingStatusButton({
 
   const currentStatus = book.status
 
-  const coverColors = useCoverColors(book)
   const { showAccent } = useColorPreferences()
 
   const handleStatusChange = useCallback(
@@ -54,23 +50,8 @@ export function ReadingStatusButton({
         render={
           <Button
             variant="outline"
-            style={
-              showAccent
-                ? {
-                    color: coverColors.primary.isDark
-                      ? coverColors.primary.solid
-                      : "black",
-                    borderColor: coverColors.primary.isDark
-                      ? coverColors.primary.solid
-                      : "black",
-                  }
-                : undefined
-            }
             size={size}
-            className={cn(
-              "gap-2",
-              // currentStatus && "border-primary bg-primary/5 text-primary",
-            )}
+            className={cn("gap-2", showAccent && "text-primary border-primary")}
           >
             <icon.BookAlt className="h-4 w-4" />
             {currentStatus ? statusDisplayLabel(currentStatus) : "Set Status"}

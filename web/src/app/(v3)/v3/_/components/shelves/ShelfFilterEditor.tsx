@@ -330,7 +330,7 @@ export function FilterPreview({
   if (isLoading) {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
-        <icon.Loader2 className="size-3 animate-spin" />
+        <icon.Loader className="size-3 animate-spin" />
         {t.plain("loadingPreview")}
       </div>
     )

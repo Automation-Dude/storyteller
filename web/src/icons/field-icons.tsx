@@ -43,6 +43,7 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   alignmentScore: { base: icon.ChartBar },
   alignmentMissingSentences: { base: icon.AlertTriangle },
   alignmentMutedChapters: { base: icon.Volume3 },
+  alignmentMissingChapters: { base: icon.VolumeOff },
   publicationDate: { base: icon.Calendar },
   createdAt: { base: icon.CalendarPlus },
   updatedAt: { base: icon.History },

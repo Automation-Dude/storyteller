@@ -1,6 +1,5 @@
 "use client"
 
-
 import { HeroSection } from "@v3/_/components/home/HeroSection"
 import { StatsBar } from "@v3/_/components/home/StatsBar"
 import { ShelfManager, ShelfRow } from "@v3/_/components/shelves"
@@ -10,7 +9,6 @@ import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type HomeSectionWithDetails } from "@/database/shelves"
 import * as icon from "@/icons"
 import { useListHomeShelvesQuery } from "@/store/api"
-
 
 function Section({ section }: { section: HomeSectionWithDetails }) {
   // shelves manage their own px-4 gutter (with scroll bleed); widgets don't, so
@@ -40,7 +38,7 @@ export function HomeSections() {
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center py-12">
-        <icon.Loader2 className="text-muted-foreground size-6 animate-spin" />
+        <icon.Loader className="text-muted-foreground size-6 animate-spin" />
       </div>
     )
   }

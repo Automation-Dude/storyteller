@@ -7,6 +7,7 @@ import {
   formatForDisplay,
   IndividualKey,
   useHeldKeys,
+  resolveModifier,
 } from "@tanstack/react-hotkeys"
 import React from "react"
 
@@ -44,18 +45,23 @@ export function KeyboardShortcut({
       {shortcut.map((key) => {
         const keys = key.split("+")
         return keys.map((key) => {
-          if (MODIFIER_KEYS.has(key as Modifier)) {
-            return <HeldKbd key={key} modifier={key as IndividualKey} />
-          }
-          return <Kbd key={key}>{formatForDisplay(key)}</Kbd>
+          // console.log("MODIFIER_KEYS", MODIFIER_KEYS)
+          // if (MODIFIER_KEYS.has(key as Modifier)) {
+          //   console.log("modifier", key)
+          //   return <HeldKbd key={key} modifier={key as IndividualKey} />
+          // }
+          return <HeldKbd key={key} modifier={key as IndividualKey} />
+          // return <Kbd key={key}>{formatForDisplay(key)}</Kbd>
         })
       })}
     </KbdGroup>
   )
 }
 
-export function HeldKbd({ modifier }: { modifier: IndividualKey }) {
-  const isHeld = useKeyHold(modifier)
+export function HeldKbd({ modifier }: { modifier: IndividualKey | Modifier }) {
+  const isHeld = useKeyHold(
+    modifier === "Mod" ? resolveModifier(modifier) : modifier,
+  )
 
   return (
     <Kbd className={cn(isHeld && "opacity-50")}>

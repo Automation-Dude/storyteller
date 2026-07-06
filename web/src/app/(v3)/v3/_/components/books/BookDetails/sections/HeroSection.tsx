@@ -45,13 +45,7 @@ import {
   useSetUserBookRatingMutation,
 } from "@/store/api"
 
-
-import {
-  ensureContrast,
-  useColorPreferences,
-  useCoverColors,
-  useIsDarkMode,
-} from "./useCoverColors"
+import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
 
 const MAX_CREATORS = 5
 
@@ -113,12 +107,15 @@ export function HeroSection({
   }
 
   const { primary } = useCoverColors(book)
-  const { tint } = useColorPreferences()
   const isDark = useIsDarkMode()
   const ratingColor = ensureContrast(primary, isDark).solid
 
   return (
-    <div className={cn("relative")} style={{ background: tint(primary, 0.2) }}>
+    <div
+      className={cn(
+        "from-cover-header/80 to-cover-well/80 relative bg-linear-to-t",
+      )}
+    >
       <div
         className={cn(
           "group/hero relative flex flex-col items-center gap-5 px-6 pt-14 pb-5 text-center",
@@ -156,7 +153,7 @@ export function HeroSection({
               <EditableText
                 name="subtitle"
                 as="p"
-                className="text-muted-foreground font-heading text-primary/80 -mt-1 text-sm italic"
+                className="font-heading text-tinted -mt-1 text-sm italic"
                 placeholder={c.plain("fields.label.subtitle")}
               />
             )}
@@ -181,14 +178,14 @@ export function HeroSection({
                     canEdit && "cursor-pointer",
                   )}
                 >
-                  <span className="text-primary/80 font-serif">
+                  <span className="text-tinted font-serif">
                     {t("writtenBy")}
                   </span>
 
                   {visibleAuthors.map((author, idx) => (
                     <span
                       key={author.uuid}
-                      className="hover:text-primary text-foreground font-serif font-medium hover:underline"
+                      className="hover:text-tinted-strong text-foreground font-serif font-medium hover:underline"
                     >
                       {author.name.trim()}
                       {idx < visibleAuthors.length - 1 && <span>,</span>}
@@ -231,14 +228,14 @@ export function HeroSection({
                     canEdit && "cursor-pointer",
                   )}
                 >
-                  <span className="text-primary/60 font-heading italic">
+                  <span className="text-tinted font-heading italic">
                     {t("narratedBy")}
                   </span>
 
                   {visibleNarrators.map((narrator, idx) => (
                     <span
                       key={narrator.uuid}
-                      className="hover:text-primary text-foreground hover:underline"
+                      className="hover:text-tinted-strong text-foreground hover:underline"
                     >
                       {narrator.name.trim()}
                       {idx < visibleNarrators.length - 1 && <span>,</span>}
@@ -272,7 +269,7 @@ export function HeroSection({
               return (
                 <p
                   className={cn(
-                    "text-muted-foreground flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs",
+                    "text-tinted flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs",
                     `@xl/book:justify-start`,
                   )}
                 >
@@ -344,7 +341,7 @@ export function HeroSection({
                     nativeButton={false}
                     render={
                       <V3Link href={`/books/${book.uuid}/read?mode=readaloud`}>
-                        <icon.PlayerPlay className="mr-1 h-4 w-4" />
+                        <icon.Readaloud className="h-4 w-4" />
                         Read
                       </V3Link>
                     }

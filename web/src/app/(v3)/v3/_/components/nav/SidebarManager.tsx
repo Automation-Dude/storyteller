@@ -308,7 +308,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
               className="text-muted-foreground hover:text-foreground size-5"
             >
               {isSaving ? (
-                <icon.Loader2 className="size-3.5 animate-spin" />
+                <icon.Loader className="size-3.5 animate-spin" />
               ) : (
                 <icon.Check className="size-3.5" />
               )}

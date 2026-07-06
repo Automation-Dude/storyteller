@@ -10,12 +10,7 @@ import {
   BookCover,
   isDualFormat,
 } from "@/app/(v3)/v3/_/components/books/BookCover"
-import {
-  ensureContrast,
-  useColorPreferences,
-  useCoverColors,
-  useIsDarkMode,
-} from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
+import { useCoverScope } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
 import {
   ProgressDisplayBar,
@@ -227,32 +222,18 @@ export const BookCard = memo(function BookCard({
   const hiddenAuthorCount = authors.length - visibleAuthors.length
   const progress = getReadingProgress(book)
 
-  const { primary, accent } = useCoverColors(book)
-  const { showTint, showAccent, tint } = useColorPreferences()
-  const isDark = useIsDarkMode()
+  const scope = useCoverScope(book)
 
   const [coverLoading, setCoverLoading] = useState(true)
-
-  const cPrimary = ensureContrast(primary, isDark)
-  const cAccent = ensureContrast(accent, isDark)
-  const style = showAccent
-    ? ({
-        "--primary": cPrimary.solid,
-        "--primary-foreground": cPrimary.onColor,
-        "--primary-accent": cAccent.solid,
-        "--primary-accent-foreground": cAccent.onColor,
-      } as React.CSSProperties)
-    : undefined
 
   const cardContent = (
     <>
       <div className="relative flex aspect-13/16 flex-col items-center justify-center transition-shadow">
         <div
           className={cn(
-            "bg-muted absolute inset-0 flex flex-col-reverse overflow-hidden rounded-lg",
+            "from-cover-well to-cover-well/80 absolute inset-0 flex flex-col-reverse overflow-hidden rounded-lg bg-linear-to-t",
             coverLoading && "animate-pulse",
           )}
-          style={showTint ? { background: tint(primary, 0.36) } : undefined}
         >
           {progress !== null && progress > 0 && (
             <ProgressDisplayBar progress={progress} book={book} />
@@ -270,7 +251,7 @@ export const BookCard = memo(function BookCard({
         <div
           className={cn(
             "absolute inset-0 flex items-center justify-center p-3",
-            hasDualFormat ? "overflow-visible" : "overflow-hidden rounded-lg",
+            hasDualFormat ? "overflow-visible" : "rounded-lg",
           )}
         >
           <BookCover
@@ -294,12 +275,7 @@ export const BookCard = memo(function BookCard({
 
         {isSynced && !isMobile && (
           <div className="absolute top-4.5 right-3">
-            <div
-              className="flex size-5 items-center justify-center rounded-full shadow-md"
-              style={{
-                background: showAccent ? cPrimary.solid : "var(--primary)",
-              }}
-            >
+            <div className="bg-cover-accent flex size-5 items-center justify-center rounded-full shadow-md">
               <IconReadaloud className="size-6 text-white" />
             </div>
           </div>
@@ -340,7 +316,7 @@ export const BookCard = memo(function BookCard({
             {visibleAuthors.map((a, index) => (
               <Fragment key={a.uuid}>
                 <V3Link
-                  className="hover:text-primary relative z-20 hover:underline"
+                  className="hover:text-tinted-strong relative z-20 hover:underline"
                   prefetch={false}
                   href={`/authors?item=${a.uuid}`}
                   onClick={(e) => {
@@ -360,7 +336,7 @@ export const BookCard = memo(function BookCard({
           prefetch={false}
           className={cn(!onClick && "big-link")}
         >
-          <h3 className="group-hover:text-primary font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
+          <h3 className="group-hover:text-tinted-strong font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
             {book.title}
           </h3>
         </V3Link>
@@ -394,12 +370,12 @@ export const BookCard = memo(function BookCard({
         muted && "opacity-50",
         selected &&
           !isBookSelected &&
-          "ring-primary/40 bg-primary/5 [&_h3]:text-primary ring-2 ring-offset-2",
+          "ring-primary/50 bg-tint-strong/20 [&_h3]:text-tinted-strong ring-offset-background ring-2 ring-offset-2",
         // the keyboard cursor reads as the focus ring even though dom focus
         // stays on the container.
         active && "rounded-lg ring-2 ring-blue-500 ring-offset-2 outline-none",
       )}
-      style={style}
+      {...scope}
     >
       <div
         key={book.uuid}
@@ -417,7 +393,7 @@ export const BookCard = memo(function BookCard({
         onClick={onClick ? handleCardClick : undefined}
         className={cn(
           "relative h-full",
-          isBookSelected && "ring-primary rounded-lg ring-2",
+          isBookSelected && "ring-cover rounded-lg ring-2",
           !keyboardNav &&
             "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
         )}

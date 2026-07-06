@@ -24,6 +24,7 @@ import {
 } from "@v3/_/components/ui/tooltip"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+import { TooltipButton } from "./tooltip-button"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -390,39 +391,33 @@ function SidebarPinButton({
   if (isMobile) return null
 
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            data-sidebar="pin"
-            data-slot="sidebar-pin"
-            variant="ghost"
-            size="icon-sm"
-            className={cn(
-              "text-sidebar-primary opacity-0 transition-opacity group-hover/sidebar-wrapper:opacity-100",
-              pinned && "opacity-100",
-              className,
-            )}
-            onClick={() => {
-              setPinned(!pinned)
-            }}
-            {...props}
-          >
-            {pinned ? (
-              <icon.PinFilled className="size-4" />
-            ) : (
-              <icon.Pin className="size-4" />
-            )}
-            <span className="sr-only">
-              {pinned ? "Unpin Sidebar" : "Pin Sidebar"}
-            </span>
-          </Button>
-        }
-      />
-      <TooltipContent side="right">
-        {pinned ? "Unpin sidebar" : "Pin sidebar open"}
-      </TooltipContent>
-    </Tooltip>
+    <TooltipButton
+      data-sidebar="pin"
+      data-slot="sidebar-pin"
+      variant="ghost"
+      size="icon-sm"
+      className={cn(
+        "text-sidebar-primary opacity-0 transition-opacity group-hover/sidebar-wrapper:opacity-100",
+        pinned && "opacity-100",
+        className,
+      )}
+      onClick={() => {
+        setPinned(!pinned)
+      }}
+      {...props}
+      tooltip={pinned ? "Unpin sidebar" : "Pin sidebar open"}
+      aria-label={pinned ? "Unpin Sidebar" : "Pin Sidebar"}
+      shortcut={["Mod+B"]}
+    >
+      {pinned ? (
+        <icon.PinFilled className="size-4" />
+      ) : (
+        <icon.Pin className="size-4" />
+      )}
+      <span className="sr-only">
+        {pinned ? "Unpin Sidebar" : "Pin Sidebar"}
+      </span>
+    </TooltipButton>
   )
 }
 

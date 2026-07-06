@@ -139,7 +139,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
 
       {isFetching && (
         <div className="flex justify-center py-4">
-          <icon.Loader className="text-muted-foreground size-5 animate-spin" />
+          <icon.LoaderIOSish className="text-muted-foreground size-5 animate-spin" />
         </div>
       )}
 

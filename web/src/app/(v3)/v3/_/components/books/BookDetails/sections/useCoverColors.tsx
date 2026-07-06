@@ -27,9 +27,12 @@ export type CoverColors = {
   accent: CoverColor
   // every swatch in source order
   palette: CoverColor[]
+  // false when the book has no extracted colors and primary/accent are the
+  // theme-primary fallback (consumers should stay neutral rather than tint)
+  hasColors: boolean
 }
 
-type CoverType = "ebook" | "audiobook" | "readaloud"
+export type CoverType = "ebook" | "audiobook" | "readaloud"
 
 function luminance(color: JsColor): number {
   return Math.round(color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722)
@@ -69,6 +72,7 @@ const FALLBACK_COLORS: CoverColors = {
   primary: FALLBACK,
   accent: FALLBACK,
   palette: [FALLBACK],
+  hasColors: false,
 }
 
 function resolveColors(
@@ -76,8 +80,10 @@ function resolveColors(
   type?: CoverType,
 ): JsColor[] {
   if (Array.isArray(bookOrColors)) return bookOrColors
+  // a per-format query wants that format's real colors, never the override
   if (type) return bookOrColors[type]?.coverColors ?? []
   return (
+    bookOrColors.coverColorsOverride ??
     bookOrColors.ebook?.coverColors ??
     bookOrColors.audiobook?.coverColors ??
     bookOrColors.readaloud?.coverColors ??
@@ -108,7 +114,7 @@ export function useCoverColors(
       return ratio > 2 && ratio > bestRatio ? candidate : best
     }, primary)
 
-    return { primary, accent, palette: [primary, ...rest] }
+    return { primary, accent, palette: [primary, ...rest], hasColors: true }
   }, [bookOrColors, type])
 }
 
@@ -127,6 +133,9 @@ function clamp8(n: number): number {
 export type ContrastColor = {
   // the (possibly adjusted) color, "rgb(r,g,b)"
   solid: string
+  // the same color as space-separated channels, "r g b", for use in css
+  // rgb(var(--x) / a) and color-mix(rgb(var(--x)) ...) expressions
+  channels: string
   // readable text/icon color to sit on top of solid
   onColor: string
 }
@@ -162,6 +171,7 @@ export function ensureContrast(
 
   return {
     solid: `rgb(${r}, ${g}, ${b})`,
+    channels: `${r} ${g} ${b}`,
     onColor: lum() < 140 ? "#fff" : "#000",
   }
 }

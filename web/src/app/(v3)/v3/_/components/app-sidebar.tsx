@@ -174,7 +174,7 @@ export function AppSidebar({
               <icon.Search />
               {t("search")}
             </div>
-            <KeyboardShortcut shortcut={["Meta+K"]} />
+            <KeyboardShortcut shortcut={["Mod+K"]} />
           </SidebarMenuButton>
         </SidebarMenuItem>
       ),

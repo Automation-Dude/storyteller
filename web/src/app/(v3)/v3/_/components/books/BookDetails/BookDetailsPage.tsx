@@ -40,12 +40,7 @@ import { DetailsSection } from "./sections/DetailsSection"
 import { FileSection } from "./sections/FileSection"
 import { HeroSection } from "./sections/HeroSection"
 import { ReviewSection } from "./sections/ReviewSection"
-import {
-  ensureContrast,
-  useColorPreferences,
-  useCoverColors,
-  useIsDarkMode,
-} from "./sections/useCoverColors"
+import { useCoverScope } from "./sections/CoverScope"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -191,20 +186,7 @@ function BookDetailsContentInner({
     [isControlled, onEditingChange],
   )
 
-  const { primary, accent } = useCoverColors(book)
-  const { showAccent } = useColorPreferences()
-  const isDark = useIsDarkMode()
-
-  const cPrimary = ensureContrast(primary, isDark)
-  const cAccent = ensureContrast(accent, isDark)
-  const colorVars = showAccent
-    ? ({
-        "--primary": cPrimary.solid,
-        "--primary-foreground": cPrimary.onColor,
-        "--accent": cAccent.solid,
-        "--accent-foreground": cAccent.onColor,
-      } as React.CSSProperties)
-    : undefined
+  const scope = useCoverScope(book)
 
   return (
     <BookFormProvider
@@ -212,10 +194,7 @@ function BookDetailsContentInner({
       isEditing={isEditing}
       onEditingChange={handleEditingChange}
     >
-      <article
-        className="bg-background relative h-full w-full"
-        style={colorVars}
-      >
+      <article className="bg-background relative h-full w-full" {...scope}>
         {!compact && <BookPageHeader />}
         {compact && (
           <BookPanelHeader
@@ -284,18 +263,10 @@ function BookDetailsContentInner({
 
 function BookPageHeader() {
   const { book, isEditing, setIsEditing } = useBookForm()
-  const { primary } = useCoverColors(book)
-  const { showTint, showAccent, tint } = useColorPreferences()
   const router = useRouter()
 
   return (
-    <div
-      className="flex h-(--header-height) shrink-0 items-center justify-between gap-2 border-b px-4"
-      style={{
-        backgroundColor: showTint ? tint(primary, 0.5) : undefined,
-        color: showAccent ? primary.onColor : undefined,
-      }}
-    >
+    <div className="bg-cover-header flex h-(--header-height) shrink-0 items-center justify-between gap-2 border-b px-4">
       <div className="flex min-w-0 items-center gap-2">
         <Button
           variant="ghost"
@@ -410,10 +381,6 @@ function BookPanelHeader({
   previousBook?: () => void
 }) {
   const { book, isEditing, setIsEditing } = useBookForm()
-  const { showAccent } = useColorPreferences()
-  const { accent } = useCoverColors(book)
-  const isDark = useIsDarkMode()
-  const cAccent = ensureContrast(accent, isDark)
 
   const selection = useOptionalBookSelection()
   const isSelected = selection?.isSelected(book.uuid) ?? false
@@ -468,17 +435,12 @@ function BookPanelHeader({
             <Checkbox
               aria-label="Toggle selection"
               checked={isSelected}
-              style={
-                isSelected && showAccent
-                  ? {
-                      background: cAccent.solid,
-                      color: cAccent.onColor,
-                      borderColor: cAccent.solid,
-                    }
-                  : undefined
-              }
               onCheckedChange={handleToggleSelection}
-              className="size-5 rounded-full"
+              className={cn(
+                "size-5 rounded-full",
+                isSelected &&
+                  "bg-cover-accent text-cover-accent-foreground border-cover-accent",
+              )}
             />
           </motion.div>
         )}

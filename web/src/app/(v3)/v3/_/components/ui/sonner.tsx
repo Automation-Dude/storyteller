@@ -16,7 +16,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         info: <icon.InfoCircle className="size-4" />,
         warning: <icon.AlertTriangle className="size-4" />,
         error: <icon.AlertOctagon className="size-4" />,
-        loading: <icon.Loader className="size-4 animate-spin" />,
+        loading: <icon.LoaderIOSish className="size-4 animate-spin" />,
       }}
       style={
         {

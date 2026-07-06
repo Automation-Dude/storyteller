@@ -4,10 +4,7 @@ import * as icon from "@/icons"
 import { useMemo } from "react"
 
 import { Book3D } from "@v3/_/components/books/Book3D"
-import {
-  useColorPreferences,
-  useCoverColors,
-} from "@v3/_/components/books/BookDetails/sections/useCoverColors"
+import { useCoverScope } from "@v3/_/components/books/BookDetails/sections/CoverScope"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
@@ -63,8 +60,7 @@ export function HeroSection() {
 
 function Hero({ book }: { book: BookWithRelations }) {
   const t = useTranslation("HomePage")
-  const { primary } = useCoverColors(book)
-  const { showAccent, tint } = useColorPreferences()
+  const scope = useCoverScope(book)
 
   const progress = book.position?.locator.locations?.totalProgression ?? 0
   const duration = book.audiobook?.duration ?? book.readaloud?.duration ?? null
@@ -100,16 +96,8 @@ function Hero({ book }: { book: BookWithRelations }) {
 
   return (
     <section
-      className="relative -mx-4 flex flex-col gap-0"
-      style={
-        {
-          background: tint(primary, 0.06),
-          ...(showAccent && {
-            "--primary": primary.solid,
-            "--primary-foreground": primary.onColor,
-          }),
-        } as React.CSSProperties
-      }
+      className="bg-cover-wash relative -mx-4 flex flex-col gap-0"
+      {...scope}
     >
       <p className="text-muted-foreground mx-6 mt-8 text-xs font-medium tracking-[0.18em] uppercase">
         {t("hero.eyebrow")}
@@ -132,11 +120,8 @@ function Hero({ book }: { book: BookWithRelations }) {
             <div className="flex items-center gap-3">
               <div className="bg-foreground/10 h-1.5 w-48 max-w-full overflow-hidden rounded-full">
                 <div
-                  className="h-full transition-all"
-                  style={{
-                    width: `${Math.round(progress * 100)}%`,
-                    background: showAccent ? primary.solid : "var(--primary)",
-                  }}
+                  className="bg-primary h-full transition-all"
+                  style={{ width: `${Math.round(progress * 100)}%` }}
                 />
               </div>
               <span className="text-muted-foreground text-sm">

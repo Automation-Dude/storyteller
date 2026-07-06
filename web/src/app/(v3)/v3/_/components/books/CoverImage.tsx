@@ -6,8 +6,8 @@ import { type JsColor } from "@storyteller-platform/okmain"
 
 import { cn } from "@/cn"
 
-import { FallbackCover } from "./BookCover"
 import { getBlurhashDataUri } from "./blurhash-data-uri"
+import { FallbackCover } from "./BookCover"
 
 type CoverImageProps = {
   src: string
@@ -91,12 +91,73 @@ export function CoverImage({
   return (
     <div
       className={cn(
-        "relative overflow-hidden",
+        "relative",
         type === "audiobook" ? "aspect-square" : "aspect-2/3",
         className,
+        "rounded-xs",
       )}
       style={backgroundStyle}
     >
+      {/* {type === "ebook" && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(to right,
+                rgba(0,0,0,0.02) 0%,
+                rgba(0,0,0,0.05) 0.75%,
+                rgba(255,255,255,0.5) 1.0%,
+                rgba(255,255,255,0.6) 1.3%,
+                rgba(255,255,255,0.5) 1.4%,
+                rgba(255,255,255,0.3) 1.5%,
+                rgba(255,255,255,0.3) 2.4%,
+                rgba(0,0,0,0.05) 2.7%,
+                rgba(0,0,0,0.05) 3.5%,
+                rgba(255,255,255,0.3) 4%,
+                rgba(255,255,255,0.3) 4.5%,
+                rgba(244,244,244,0.1) 5.4%,
+                rgba(244,244,244,0.1) 99%,
+                rgba(144,144,144,0.2) 100%)`,
+          }}
+        />
+      )}
+      {type === "audiobook" && (
+        <div
+          className="absolute inset-0"
+          style={{
+            width: `calc(100% + 17px)`,
+            insetInlineStart: "-8px",
+            insetBlockStart: "-0px",
+            backgroundImage: `repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 1),
+      rgba(20, 20, 20, 1) 4%,
+      rgba(0, 0, 0, 1)  8%
+    ),
+    linear-gradient(
+      to right,
+      rgb(15, 15, 15) 1px,
+      rgb(31, 31, 31) 2px,
+      rgb(41, 41, 41) 3px,
+      transparent 11%
+    ),
+    linear-gradient(
+      to right,
+      rgb(15, 15, 15),
+      rgb(13, 13, 13) 2%,
+      rgb(0, 0, 0) 10.4%,
+      rgba(255, 255, 255, 0.5) 11%,
+      rgba(255, 255, 255, 0.2) 12%,
+      rgba(236, 254, 253, 0.03) 100%
+    )`,
+            backgroundSize: "10% 100%, 100% 100%, 100% 100%",
+            backgroundRepeat: "no-repeat, no-repeat, no-repeat",
+
+            boxShadow: `inset 1px 2px 2px 1px rgba(230, 255, 255, 0.13),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.2), -4px 2px 20px 0px rgba(0, 0, 0, 0.1),
+      -8px 8px 20px 0 rgba(0, 0, 0, 0.2)`,
+          }}
+        ></div>
+      )} */}
       <img
         ref={imgRef}
         src={src}
@@ -110,6 +171,7 @@ export function CoverImage({
         className={cn(
           "h-full w-full object-cover transition-opacity duration-75",
           loaded ? "opacity-100" : "opacity-0",
+          // type === "audiobook" ? "ml-2" : "",
           imgClassName,
         )}
       />

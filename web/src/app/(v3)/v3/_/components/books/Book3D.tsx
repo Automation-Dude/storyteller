@@ -310,6 +310,10 @@ type SlabProps = {
   front: ReactNode
   primary: CoverColor
   accent: CoverColor
+  // color of the physical body (back + spine). defaults to primary; the single
+  // stage passes the ebook's own color so the back/spine aren't tinted by an
+  // audiobook cover or a manual override.
+  back?: CoverColor
   edge: "paper" | "plastic"
   spine: SpineInfo
   interactive: boolean
@@ -329,6 +333,7 @@ function Slab({
   front,
   primary,
   accent,
+  back,
   edge,
   spine,
   interactive,
@@ -339,7 +344,8 @@ function Slab({
 }: SlabProps) {
   const half = thickness / 2
   const edgeOffset = (5 * width) / BASE_WIDTH
-  const spineText = accent === primary ? primary.onColor : accent.solid
+  const body = back ?? primary
+  const spineText = accent === primary ? body.onColor : accent.solid
   const formatDuration = useFormatDuration()
   const { left, right } = spineLabel(book, spine, formatDuration)
 
@@ -439,7 +445,7 @@ function Slab({
   return (
     <div className="perspective-distant">
       <motion.div
-        className="relative transform-3d"
+        className="relative shadow-lg transform-3d"
         style={{
           width,
           height,
@@ -465,6 +471,69 @@ function Slab({
           }}
         >
           {front}
+          {/* {isAudiobook ? (
+            <div
+              className="absolute inset-0"
+              style={{
+                width: `calc(100% + 17px)`,
+                insetInlineStart: "-8px",
+                insetBlockStart: "-0px",
+                backgroundImage: `repeating-linear-gradient(
+      to right,
+      var(--color-),
+      rgba(20, 20, 20, 1) 4%,
+      var(--color-tint)  8%
+    ),
+    linear-gradient(
+      to right,
+      rgb(15, 15, 15) 1px,
+      rgb(31, 31, 31) 2px,
+      rgb(41, 41, 41) 3px,
+      transparent 11%
+    ),
+    linear-gradient(
+      to right,
+      rgb(15, 15, 15),
+      rgb(13, 13, 13) 2%,
+      rgb(0, 0, 0) 10.4%,
+      rgba(255, 255, 255, 0.5) 11%,
+      rgba(255, 255, 255, 0.2) 12%,
+      rgba(236, 254, 253, 0.03) 100%
+    )`,
+                backgroundSize: "10% 100%, 100% 100%, 100% 100%",
+                backgroundRepeat: "no-repeat, no-repeat, no-repeat",
+
+                boxShadow: `inset 1px 2px 2px 1px rgba(230, 255, 255, 0.13),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.2), -4px 2px 20px 0px rgba(0, 0, 0, 0.1),
+      -8px 8px 20px 0 rgba(0, 0, 0, 0.2)`,
+              }}
+            ></div>
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{
+                // https://varundhawan.com/blog/2022/01/18/skeuomorphic-book-cover-css
+                background: `linear-gradient(to right,
+                rgba(0,0,0,0.02) 0%,
+                rgba(0,0,0,0.05) 0.75%,
+                rgba(255,255,255,0.5) 1.0%,
+                rgba(255,255,255,0.6) 1.3%,
+                rgba(255,255,255,0.5) 1.4%,
+                rgba(255,255,255,0.3) 1.5%,
+                rgba(255,255,255,0.3) 2.4%,
+                rgba(0,0,0,0.05) 2.7%,
+                rgba(0,0,0,0.05) 3.5%,
+                rgba(255,255,255,0.3) 4%,
+                rgba(255,255,255,0.3) 4.5%,
+                rgba(244,244,244,0.1) 5.4%,
+                rgba(244,244,244,0.1) 99%,
+                rgba(144,144,144,0.2) 100%)`,
+                // background: `linear-gradient(to right, rgb(60, 13, 20) 3px, rgba(255, 255, 255, 0.5) 5px, rgba(255, 255, 255, 0.25) 7px, rgba(255, 255, 255, 0.25) 8px, transparent 10px, transparent 12px, transparent 16px, rgba(255, 255, 255, 0.25) 15px, transparent 20px)`,
+                boxShadow:
+                  "0 0 5px -1px black, inset -1px 1px 2px rgba(255, 255, 255, 0.5)",
+              }}
+            ></div>
+          )}*/}
         </div>
 
         {/* back: description */}
@@ -476,7 +545,7 @@ function Slab({
             ...AA_EDGE,
           }}
         >
-          <DescriptionBack book={book} primary={primary} width={width} />
+          <DescriptionBack book={book} primary={body} width={width} />
         </div>
 
         {/* spine */}
@@ -486,7 +555,7 @@ function Slab({
             width: thickness,
             left: -half,
             transform: "rotateY(-90deg)",
-            background: primary.solid,
+            background: body.solid,
             backfaceVisibility: "visible",
             ...AA_EDGE,
           }}
@@ -607,6 +676,11 @@ function SingleBookStage({
   onViewChange?: (view: number) => void
 }) {
   const colors = useCoverColors(book)
+  // the back/spine follow the ebook's own cover, not the resolved primary (which
+  // may be an override or the audiobook cover). falls back to primary when there
+  // are no ebook colors (e.g. audiobook-only).
+  const ebookColors = useCoverColors(book, { type: "ebook" })
+  const bodyColor = ebookColors.hasColors ? ebookColors.primary : colors.primary
   const audiobookOnly = !!book.audiobook && !book.ebook
 
   const height = audiobookOnly ? width : Math.round(width * 1.5)
@@ -623,6 +697,7 @@ function SingleBookStage({
       thickness={thickness}
       primary={colors.primary}
       accent={colors.accent}
+      back={bodyColor}
       edge={audiobookOnly ? "plastic" : "paper"}
       spine={spine}
       interactive

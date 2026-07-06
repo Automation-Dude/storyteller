@@ -40,6 +40,7 @@ export const SHELF_FILTER_FIELDS = [
   "alignmentScore",
   "alignmentMissingSentences",
   "alignmentMutedChapters",
+  "alignmentMissingChapters",
   // per-user reading progress, derived from the position table: lastRead is
   // position.timestamp, readingPosition is the locator's total progression (0-1)
   "lastRead",
@@ -891,7 +892,7 @@ export const FIELD_REGISTRY = {
   alignmentScore: {
     control: "number-range",
     sortable: true,
-    quick: false,
+    quick: true,
     scale: { min: 0, max: 100, unit: "count" },
     token: "score",
     labelKey: "alignmentScore",
@@ -899,7 +900,7 @@ export const FIELD_REGISTRY = {
   alignmentMissingSentences: {
     control: "number-range",
     sortable: true,
-    quick: false,
+    quick: true,
     scale: { min: 0, unit: "count" },
     token: "missing",
     labelKey: "alignmentMissingSentences",
@@ -907,10 +908,25 @@ export const FIELD_REGISTRY = {
   alignmentMutedChapters: {
     control: "number-range",
     sortable: true,
-    quick: false,
+    quick: true,
     scale: { min: 0, unit: "count" },
     token: "muted",
     labelKey: "alignmentMutedChapters",
+  },
+  alignmentMissingChapters: {
+    control: "number-range",
+    sortable: true,
+    quick: true,
+    scale: { min: 0, unit: "count" },
+    options: [
+      { min: 1, label: "≥1" },
+      { min: 0, max: 3, label: "≤2" },
+      { min: 0, max: 6, label: "≤5" },
+      { min: 0, max: 10, label: "≤10" },
+      { min: 11, label: "> 10" },
+    ],
+    token: "missingChapters",
+    labelKey: "alignmentMissingChapters",
   },
 
   // -- dates ----------------------------------------------------------------

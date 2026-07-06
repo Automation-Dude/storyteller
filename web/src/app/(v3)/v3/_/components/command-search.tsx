@@ -32,7 +32,7 @@ export function CommandSearch() {
     { skip: !debouncedSearch },
   )
 
-  useHotkey("Meta+K", () => {
+  useHotkey("Mod+K", () => {
     setOpen((prev) => !prev)
   })
   // const [

@@ -10,6 +10,7 @@ import {
   FilterableMenuItem,
   FilterableMenuSeparator,
 } from "@v3/_/components/ui/filterable-menu"
+import { useGridNavigation } from "@v3/_/hooks/use-grid-navigation"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
@@ -20,6 +21,12 @@ import {
 } from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
 import { ColumnSelector } from "@/app/(v3)/v3/_/components/books/ColumnSelector"
 import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
+import {
+  BOOK_COLLECTION_ID,
+  BOOK_DETAIL_PANEL_ID,
+  type BookNavModel,
+  bookItemDomId,
+} from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import {
@@ -59,6 +66,8 @@ type BookListProps = {
   sortField?: SortField
   sortDirection?: SortDirection
   onSortChange?: (field: SortField, direction: SortDirection) => void
+  // temporary: which keyboard-open model the list uses (see LibraryPage toggle)
+  navModel?: BookNavModel
 }
 
 export function BookList({
@@ -154,6 +163,55 @@ export function BookList({
     fetchNextPage,
   ])
 
+  // keyboard navigation: focus stays on the list container, up/down move a
+  // cursor, the active row is surfaced via aria-activedescendant. only wired
+  // when the list is interactive.
+  const navEnabled = !!onBookClick
+
+  const openBookAt = useCallback(
+    (index: number) => {
+      const book = books[index]
+      if (book) onBookClick?.(book)
+    },
+    [books, onBookClick],
+  )
+
+  const focusDetailPanel = useCallback(() => {
+    requestAnimationFrame(() => {
+      document.getElementById(BOOK_DETAIL_PANEL_ID)?.focus()
+    })
+  }, [])
+
+  const nav = useGridNavigation({
+    itemCount: books.length,
+    columns: 1,
+    enabled: navEnabled,
+    getItemId: (index) => {
+      const book = books[index]
+      return book ? bookItemDomId(book.uuid) : undefined
+    },
+    scrollToIndex: (index) => {
+      rowVirtualizer.scrollToIndex(index, { align: "auto" })
+    },
+    initialIndex: () => {
+      const i = books.findIndex((b) => b.uuid === selectedBookUuid)
+      return i >= 0 ? i : 0
+    },
+    onActiveChange:
+      navModel === "preview"
+        ? (index) => {
+            openBookAt(index)
+          }
+        : undefined,
+    onActivate: (index) => {
+      openBookAt(index)
+      focusDetailPanel()
+    },
+  })
+
+  const activeUuid =
+    nav.activeIndex !== null ? books[nav.activeIndex]?.uuid ?? null : null
+
   if (!isLoading && books.length === 0) {
     return (
       <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
@@ -220,8 +278,11 @@ export function BookList({
       ) : (
         <div
           ref={containerRef}
+          id={BOOK_COLLECTION_ID}
+          aria-label="Books"
+          {...(navEnabled ? nav.containerProps : {})}
           className={cn(
-            "animate-in fade-in-0 relative w-full py-4 transition-opacity duration-300",
+            "animate-in fade-in-0 relative w-full py-4 transition-opacity duration-300 outline-none",
             showMuted && "opacity-60",
           )}
           style={{ height: rowVirtualizer.getTotalSize() }}
@@ -242,6 +303,8 @@ export function BookList({
                   book={book}
                   muted={showMuted}
                   handle={menu.handle}
+                  keyboardNav={navEnabled}
+                  active={navEnabled && book.uuid === activeUuid}
                   selected={book.uuid === selectedBookUuid}
                   isSelecting={menu.isSelecting}
                   isBookSelected={
@@ -267,7 +330,7 @@ export function BookList({
 
       {isFetchingNextPage && (
         <div className="text-muted-foreground mt-4 flex items-center justify-center gap-2">
-          <icon.Loader className="h-5 w-5 animate-spin" />
+          <icon.LoaderIOSish className="h-5 w-5 animate-spin" />
           <span>Loading more...</span>
         </div>
       )}

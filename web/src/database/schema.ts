@@ -73,6 +73,15 @@ export interface Book {
   alignedByStorytellerVersion: string | null
   alignedWith: string | null
   assetDir: Generated<string>
+  // manual override of the cover palette; when set, takes precedence over the
+  // per-format coverColors. index 0 is the primary. null = derive from format.
+  coverColorsOverride:
+    | import("kysely").ColumnType<
+        import("@storyteller-platform/okmain").JsColor[],
+        string,
+        string
+      >
+    | null
   createdAt: Generated<string>
   description: string | null
   duration: number | null

@@ -1,3 +1,4 @@
+import { type JsColor } from "@storyteller-platform/okmain"
 import { NextResponse } from "next/server"
 
 import { type CoverData, type CoverKind, persistCover } from "@/assets/covers"
@@ -99,6 +100,13 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
     )
   }
 
+  // manual cover-palette override. null (or [] normalized to null) clears it back
+  // to the per-format colors ("reread from cover").
+  const coverColorsOverride = getField<JsColor[] | null>(
+    formData,
+    "coverColorsOverride",
+  )
+
   const publicationDate =
     getField<string | null>(formData, "publicationDate") ?? null
 
@@ -185,6 +193,12 @@ export const PUT = withHasPermission<Params>("bookUpdate")(async (
       ...(fields.has("publicationDate") && { publicationDate }),
       ...(fields.has("pageCount") && { pageCount }),
       ...(fields.has("duration") && { duration }),
+      ...(fields.has("coverColorsOverride") && {
+        coverColorsOverride:
+          coverColorsOverride && coverColorsOverride.length > 0
+            ? JSON.stringify(coverColorsOverride)
+            : null,
+      }),
     },
     {
       ...(fields.has("creators") && { creators }),

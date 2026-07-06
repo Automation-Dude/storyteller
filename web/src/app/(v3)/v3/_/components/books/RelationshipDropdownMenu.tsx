@@ -143,7 +143,11 @@ function summarize(
   }
   if (c.operator === "greaterOrEqual" || c.operator === "after")
     return `: ≥ ${fmtBound(def, c.value as number | string)}`
-  return `: ≤ ${fmtBound(def, c.value as number | string)}`
+  if (c.operator === "greaterThan")
+    return `: > ${fmtBound(def, c.value as number | string)}`
+  if (c.operator === "lessOrEqual" || c.operator === "before")
+    return `: ≤ ${fmtBound(def, c.value as number | string)}`
+  return `: < ${fmtBound(def, c.value as number | string)}`
 }
 
 function fmtBound(

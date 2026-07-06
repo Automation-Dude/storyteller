@@ -98,8 +98,10 @@ export function ShelfEditor({
     shelf?.books.map((b) => b.bookUuid) ?? [],
   )
 
-  const [icon, setIcon] = useState<string | null>(shelf?.icon ?? null)
-  const [color, setColor] = useState<string | null>(shelf?.color ?? null)
+  const [shelfIcon, setShelfIcon] = useState<string | null>(shelf?.icon ?? null)
+  const [shelfColor, setShelfColor] = useState<string | null>(
+    shelf?.color ?? null,
+  )
 
   const form = useForm<ShelfFormValues>({
     resolver: zodResolver(shelfFormSchema),
@@ -124,8 +126,8 @@ export function ShelfEditor({
 
       setFilter(shelf.filter ?? null)
       setSelectedBookUuids(shelf.books.map((b) => b.bookUuid))
-      setIcon(shelf.icon ?? null)
-      setColor(shelf.color ?? null)
+      setShelfIcon(shelf.icon ?? null)
+      setShelfColor(shelf.color ?? null)
 
       setSelectionMode(
         shelf.filter !== null
@@ -145,8 +147,8 @@ export function ShelfEditor({
 
       setFilter(initialFilter ?? null)
       setSelectedBookUuids([])
-      setIcon(null)
-      setColor(null)
+      setShelfIcon(null)
+      setShelfColor(null)
       setSelectionMode("filter")
     }
   }, [open, shelf, form, initialFilter, initialName])
@@ -166,8 +168,8 @@ export function ShelfEditor({
         orderDirection: data["orderDirection"],
         limitCount: data["limitCount"],
         books: selectionMode === "manual" ? selectedBookUuids : [],
-        icon,
-        color,
+        icon: shelfIcon,
+        color: shelfColor,
       }
 
       if (isEditing) {
@@ -332,8 +334,12 @@ export function ShelfEditor({
               <div className="flex flex-col gap-1.5">
                 <Label>{t.plain("iconAndColor")}</Label>
                 <div className="flex items-center gap-2">
-                  <IconPicker value={icon} onChange={setIcon} color={color} />
-                  <ColorPicker value={color} onChange={setColor} />
+                  <IconPicker
+                    value={shelfIcon}
+                    onChange={setShelfIcon}
+                    color={shelfColor}
+                  />
+                  <ColorPicker value={shelfColor} onChange={setShelfColor} />
                 </div>
               </div>
 
@@ -539,9 +545,7 @@ export function ShelfEditor({
               {c.plain("actions.cancel")}
             </Button>
             <Button type="submit" disabled={isSaving}>
-              {isSaving && (
-                <icon.Loader2 className="mr-2 size-4 animate-spin" />
-              )}
+              {isSaving && <icon.Loader className="mr-2 size-4 animate-spin" />}
               {isEditing ? c.plain("actions.save") : c.plain("actions.create")}
             </Button>
           </DialogFooter>
@@ -604,7 +608,7 @@ function BookSelector({
 
       {isLoading && (
         <div className="flex items-center justify-center py-4">
-          <icon.Loader2 className="size-4 animate-spin" />
+          <icon.Loader className="size-4 animate-spin" />
         </div>
       )}
 

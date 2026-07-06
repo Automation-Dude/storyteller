@@ -118,7 +118,7 @@ export function ProcessingToast() {
 
         <ItemContent className="gap-1.5">
           <ItemTitle className="max-w-full">
-            <icon.Loader2
+            <icon.Loader
               className={cn(
                 "text-primary size-3.5 shrink-0",
                 current.status !== "PAUSED" && "animate-spin",

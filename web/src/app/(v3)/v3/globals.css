@@ -144,6 +144,20 @@
   --color-poor-border: var(--poor-line);
   --color-highlight: var(--highlight-edge);
   --color-highlight-bg: var(--highlight-wash);
+
+  /* cover-color toolkit: semantic tokens resolved once by CoverScope. see the
+     :root defaults and the [data-cover-*] blocks below. */
+  --color-tinted: var(--tinted-foreground);
+  --color-tinted-strong: var(--tinted-foreground-strong);
+  --color-tint: var(--tint);
+  --color-tint-strong: var(--tint-strong);
+  --color-cover-wash: var(--cover-wash);
+  --color-cover-well: var(--cover-well);
+  --color-cover-header: var(--cover-header);
+  --color-cover: var(--cover-primary);
+  --color-cover-foreground: var(--cover-primary-foreground);
+  --color-cover-accent: var(--cover-accent-color);
+  --color-cover-accent-foreground: var(--cover-accent-foreground);
 }
 
 :root {
@@ -249,6 +263,22 @@
   --highlight-wash: oklch(0.91 0.06 80);
   --highlight-edge: oklch(0.78 0.11 72);
 
+  /* cover-color toolkit neutral defaults. with no CoverScope active every token
+     is neutral, so components use the utility classes unconditionally. these are
+     var-references, so .dark inherits without an override. */
+  --cover-intensity: 1;
+  --cover-wash: transparent; /* faint ambient bg, hero / page */
+  --cover-well: var(--muted); /* medium ambient bg, the well behind a cover */
+  --cover-header: var(--muted); /* stronger ambient header bg */
+  --tint: var(--accent); /* interactive hover surface, neutral gray */
+  --tint-strong: var(--accent); /* selected / active surface */
+  --tinted-foreground: var(--muted-foreground); /* secondary text near a tint */
+  --tinted-foreground-strong: var(--foreground); /* emphasized secondary text */
+  --cover-primary: var(--primary);
+  --cover-primary-foreground: var(--primary-foreground);
+  --cover-accent-color: var(--primary);
+  --cover-accent-foreground: var(--primary-foreground);
+
   /* --sth-orange-50: #fff1e7;
   --sth-orange-100: #fbe2d3;
   --sth-orange-200: #f6c2a5;
@@ -305,6 +335,68 @@
   --sidebar-accent-foreground: oklch(0.92 0.01 60);
   --sidebar-border: oklch(1 0.005 60 / 10%);
   --sidebar-ring: oklch(0.556 0.008 50);
+}
+
+/* cover-color toolkit: CoverScope sets --cover-rgb / --cover-solid-rgb (raw and
+   contrast-adjusted primary channels, "r g b") plus --cover-intensity, and flags
+   data-cover-tint (medium+, ambient tints) and data-cover-accent (full, strong
+   ui coloring). the solid --cover-primary/--cover-accent-color come in as inline
+   style since they need the ensureContrast lightness loop css can't do. mixes
+   fall back to plain alpha where color-mix is unsupported (upgraded below). */
+[data-cover-tint] {
+  --cover-wash: rgb(var(--cover-rgb) / calc(0.08 * var(--cover-intensity)));
+  --cover-well: rgb(var(--cover-rgb) / calc(0.3 * var(--cover-intensity)));
+  --cover-header: rgb(var(--cover-rgb) / calc(0.5 * var(--cover-intensity)));
+  /* decorative / secondary text picks up the cover whenever tints are on, so it
+     stays coherent with the tinted surfaces instead of falling back to primary */
+  --tinted-foreground: rgb(var(--cover-solid-rgb) / 0.75);
+  --tinted-foreground-strong: rgb(var(--cover-solid-rgb));
+}
+[data-cover-accent] {
+  --tint: rgb(var(--cover-solid-rgb) / calc(0.12 * var(--cover-intensity)));
+  --tint-strong: rgb(var(--cover-solid-rgb) / calc(0.2 * var(--cover-intensity)));
+}
+
+@supports (color: color-mix(in oklab, red, blue)) {
+  [data-cover-tint] {
+    --cover-wash: color-mix(
+      in oklab,
+      rgb(var(--cover-rgb)) calc(8% * var(--cover-intensity)),
+      var(--background)
+    );
+    --cover-well: color-mix(
+      in oklab,
+      rgb(var(--cover-rgb)) calc(30% * var(--cover-intensity)),
+      var(--background)
+    );
+    --cover-header: color-mix(
+      in oklab,
+      rgb(var(--cover-rgb)) calc(50% * var(--cover-intensity)),
+      var(--background)
+    );
+    --tinted-foreground: color-mix(
+      in oklab,
+      rgb(var(--cover-solid-rgb)) 40%,
+      var(--muted-foreground)
+    );
+    --tinted-foreground-strong: color-mix(
+      in oklab,
+      rgb(var(--cover-solid-rgb)) 65%,
+      var(--foreground)
+    );
+  }
+  [data-cover-accent] {
+    --tint: color-mix(
+      in oklab,
+      rgb(var(--cover-solid-rgb)) calc(12% * var(--cover-intensity)),
+      var(--background)
+    );
+    --tint-strong: color-mix(
+      in oklab,
+      rgb(var(--cover-solid-rgb)) calc(20% * var(--cover-intensity)),
+      var(--background)
+    );
+  }
 }
 
 /* fonts offered by the theme tweaks panel that aren't loaded via next/font */

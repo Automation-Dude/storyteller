@@ -242,7 +242,7 @@ export function LogsTab() {
         >
           {isLoading && (
             <div className="flex items-center justify-center py-12">
-              <icon.Loader className="size-5 animate-spin text-zinc-500" />
+              <icon.LoaderIOSish className="size-5 animate-spin text-zinc-500" />
             </div>
           )}
 

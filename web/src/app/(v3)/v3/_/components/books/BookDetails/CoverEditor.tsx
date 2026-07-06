@@ -19,6 +19,7 @@ import * as icon from "@/icons"
 import { getCoverUrl, useSetUserSettingMutation } from "@/store/api"
 
 import { useBookForm } from "./BookFormProvider"
+import { CoverColorsEditor } from "./CoverColorsEditor"
 
 // local toggle: flip to "pages" or "duration" to print length info on the
 // spine instead of the author / title
@@ -234,32 +235,36 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   })
 
   return (
-    <div className="flex shrink-0 flex-wrap items-start justify-center gap-4">
-      {canSetEbookCover && (
-        <CoverSlot
-          label={t("cover.uploadEbook")}
-          file={textCover}
-          currentUrl={ebookUrl}
-          width={coverWidth}
-          square={false}
-          onFileChange={(file) => {
-            form.setValue("textCover", file)
-          }}
-        />
-      )}
+    <div className="flex shrink-0 flex-col items-center gap-4">
+      <div className="flex flex-wrap items-start justify-center gap-4">
+        {canSetEbookCover && (
+          <CoverSlot
+            label={t("cover.uploadEbook")}
+            file={textCover}
+            currentUrl={ebookUrl}
+            width={coverWidth}
+            square={false}
+            onFileChange={(file) => {
+              form.setValue("textCover", file)
+            }}
+          />
+        )}
 
-      {canSetAudioCover && (
-        <CoverSlot
-          label={t("cover.uploadAudiobook")}
-          file={audioCover}
-          currentUrl={audioUrl}
-          width={coverWidth}
-          square
-          onFileChange={(file) => {
-            form.setValue("audioCover", file)
-          }}
-        />
-      )}
+        {canSetAudioCover && (
+          <CoverSlot
+            label={t("cover.uploadAudiobook")}
+            file={audioCover}
+            currentUrl={audioUrl}
+            width={coverWidth}
+            square
+            onFileChange={(file) => {
+              form.setValue("audioCover", file)
+            }}
+          />
+        )}
+      </div>
+
+      <CoverColorsEditor book={book} />
     </div>
   )
 }

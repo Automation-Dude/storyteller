@@ -232,7 +232,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <icon.Loader2 className="size-6 animate-spin" />
+        <icon.Loader className="size-6 animate-spin" />
       </div>
     )
   }
@@ -344,7 +344,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         </Button>
 
         <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving && <icon.Loader2 className="mr-2 size-4 animate-spin" />}
+          {isSaving && <icon.Loader className="mr-2 size-4 animate-spin" />}
           {t("sections.save")}
         </Button>
       </DialogFooter>

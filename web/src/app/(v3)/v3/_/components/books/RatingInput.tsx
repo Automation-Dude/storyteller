@@ -105,7 +105,7 @@ export function RatingInput({
             <Icon
               className={cn(
                 sizeClasses[size],
-                "text-muted-foreground/30 transition-colors",
+                "text-tinted/30 transition-colors",
               )}
             />
             {/* filled icon (full or somewhat filled) */}

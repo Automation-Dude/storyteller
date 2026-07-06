@@ -4,6 +4,7 @@ import * as React from "react"
 import { useCallback, useState } from "react"
 
 import { cn } from "@v3/_/lib/utils"
+import { CoverScopeProps } from "../books/BookDetails/sections/CoverScope"
 
 /**
  * composable page layout that supports a full-height side panel
@@ -104,6 +105,7 @@ function PagePanel({
   snapWidth,
   className,
   children,
+  colors,
   ...props
 }: React.ComponentProps<"div"> & {
   open: boolean
@@ -112,11 +114,8 @@ function PagePanel({
   // maps a raw dragged width to the nearest "clean" width (one that makes the
   // book grid fit a whole number of columns). drives the snap preview + commit.
   snapWidth?: (rawWidth: number) => number
+  colors?: CoverScopeProps
 }) {
-  // the panel itself never animates -- it just jumps to its new width. while
-  // dragging we don't touch the panel/grid at all; we only show a preview line
-  // at the width it will snap to, and commit once on release. that keeps the
-  // grid from reflowing on every frame and makes the result predictable.
   const [previewWidth, setPreviewWidth] = useState<number | null>(null)
 
   const clampWidth = useCallback(
@@ -169,12 +168,13 @@ function PagePanel({
         <div
           data-slot="page-panel-resize-handle"
           className="group relative z-30 flex w-0 items-stretch"
+          {...colors}
         >
           <div
             className="absolute top-0 bottom-0 -left-2 w-4 cursor-col-resize"
             onMouseDown={handleResizeStart}
           >
-            <div className="bg-border group-hover:bg-primary/40 mx-auto h-full w-px transition-colors" />
+            <div className="bg-border group-hover:bg-primary/50 mx-auto h-full w-px transition-colors" />
           </div>
         </div>
       )}
@@ -184,15 +184,21 @@ function PagePanel({
         <div
           aria-hidden
           className="bg-primary pointer-events-none fixed inset-y-0 z-40 w-0.5"
-          style={{ right: previewWidth }}
+          {...colors}
+          style={
+            {
+              right: previewWidth,
+              ...colors?.style,
+            } as React.CSSProperties
+          }
         />
       )}
 
       <div
         data-slot="page-panel"
         className={cn("bg-background shrink-0 overflow-hidden", className)}
-        style={{ width }}
         {...props}
+        style={{ width, ...props.style }}
       >
         <div className="flex h-full w-full">{children}</div>
       </div>

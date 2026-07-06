@@ -2,12 +2,7 @@ import { Popover } from "@base-ui/react/popover"
 import { Fragment, memo, useCallback } from "react"
 
 import { BookCover } from "@/app/(v3)/v3/_/components/books/BookCover"
-import {
-  ensureContrast,
-  useColorPreferences,
-  useCoverColors,
-  useIsDarkMode,
-} from "@/app/(v3)/v3/_/components/books/BookDetails/sections/useCoverColors"
+import { useCoverScope } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
 import { SecondaryText } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
 import {
@@ -85,22 +80,7 @@ export const BookListItem = memo(function BookListItem({
 
   // const showAuthors = effectiveSecondary === null
 
-  const { primary, accent } = useCoverColors(book)
-  const { showTint, showAccent, tint } = useColorPreferences()
-  const isDark = useIsDarkMode()
-
-  const cPrimary = ensureContrast(primary, isDark)
-  const cAccent = ensureContrast(accent, isDark)
-  const style = showAccent
-    ? ({
-        "--primary": cPrimary.solid,
-        "--primary-foreground": cPrimary.onColor,
-        "--primary-accent": cAccent.solid,
-        "--primary-accent-foreground": cAccent.onColor,
-        "--color-foreground":
-          "color-mix(in srgb, var(--primary) 30%, var(--muted-foreground))",
-      } as React.CSSProperties)
-    : undefined
+  const scope = useCoverScope(book)
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -131,12 +111,10 @@ export const BookListItem = memo(function BookListItem({
         "aria-selected": active,
       })}
       className={cn(
-        "group hover:bg-primary/10 relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md py-px pr-3 pl-px transition-colors",
+        "group hover:bg-tint relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md py-px pr-3 pl-px transition-colors",
         muted && "opacity-50",
-        isBookSelected &&
-          !selected &&
-          "bg-primary/5 ring-primary/20 ring-1 ring-inset",
-        selected && "bg-primary/8 ring-primary/40 ring-1 ring-inset",
+        isBookSelected && !selected && "bg-tint ring-cover/20 ring-1 ring-inset",
+        selected && "bg-tint-strong ring-cover/40 ring-1 ring-inset",
         // keyboard cursor reads as a focus ring even though dom focus stays on
         // the container.
         active && "ring-2 ring-blue-500 outline-none ring-inset",
@@ -153,13 +131,10 @@ export const BookListItem = memo(function BookListItem({
               }
             }
       }
-      style={style}
+      {...scope}
     >
       {/* cover */}
-      <div
-        className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md"
-        style={showTint ? { background: tint(primary, 0.36) } : undefined}
-      >
+      <div className="bg-cover-well relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
         <div className="relative flex h-12 w-10 items-center justify-center">
           <BookCover
             book={book}
@@ -169,12 +144,7 @@ export const BookListItem = memo(function BookListItem({
           />
 
           {isSynced && (
-            <div
-              className="absolute -top-1 -right-1.5 z-30 flex size-3 shrink-0 items-center justify-center rounded-full"
-              style={{
-                background: showAccent ? cPrimary.solid : "var(--primary)",
-              }}
-            >
+            <div className="bg-cover-accent absolute -top-1 -right-1.5 z-30 flex size-3 shrink-0 items-center justify-center rounded-full">
               <IconReadaloud className="size-2.5 text-white" />
             </div>
           )}
@@ -201,7 +171,7 @@ export const BookListItem = memo(function BookListItem({
               if (onClick) e.preventDefault()
             }}
           >
-            <span className="group-hover:text-primary font-heading truncate text-[0.9375rem]">
+            <span className="group-hover:text-tinted-strong font-heading truncate text-[0.9375rem]">
               {book.title}
             </span>
           </V3Link>
@@ -214,8 +184,8 @@ export const BookListItem = memo(function BookListItem({
         <div
           className={cn(
             "text-muted-foreground flex gap-2 truncate text-xs tabular-nums",
-            "group-hover:text-(--color-foreground)",
-            (selected || isBookSelected) && "text-(--color-foreground)",
+            "group-hover:text-tinted",
+            (selected || isBookSelected) && "text-tinted",
           )}
         >
           {displayFields.map((field) => (
@@ -232,14 +202,14 @@ export const BookListItem = memo(function BookListItem({
           <p
             className={cn(
               "text-muted-foreground truncate text-xs",
-              "group-hover:text-(--color-foreground)",
-              (selected || isBookSelected) && "text-(--color-foreground)",
+              "group-hover:text-tinted",
+              (selected || isBookSelected) && "text-tinted",
             )}
           >
             {authors.map((a, i) => (
               <Fragment key={a.uuid}>
                 <V3Link
-                  className="hover:text-primary hover:underline"
+                  className="hover:text-tinted-strong hover:underline"
                   prefetch={false}
                   href={`/authors?item=${a.uuid}`}
                   onClick={(e) => {
@@ -268,8 +238,8 @@ export const BookListItem = memo(function BookListItem({
             key={field}
             className={cn(
               "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums @xs/page-content:block",
-              "group-hover:text-(--color-foreground)",
-              (selected || isBookSelected) && "text-(--color-foreground)!",
+              "group-hover:text-tinted",
+              (selected || isBookSelected) && "text-tinted!",
               isClickable && "hover:text-foreground cursor-pointer",
             )}
             style={{

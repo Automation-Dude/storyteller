@@ -221,7 +221,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
           className,
         )}
       >
-        <icon.Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <icon.Loader className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     )
   }
@@ -258,7 +258,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
         </Button>
 
         {actionIsPending && (
-          <icon.Loader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
+          <icon.Loader className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
         )}
 
         {showSelectButton && (

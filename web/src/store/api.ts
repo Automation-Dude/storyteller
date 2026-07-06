@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-invalid-void-type */
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 
+import { type JsColor } from "@storyteller-platform/okmain"
+
 import {
   type AlignmentFacets,
   type BookAlignmentReportView,
@@ -661,6 +663,8 @@ export const api = createApi({
           narrators?: string[]
           userBookRating?: UserBookRatingRelation
           description?: string | null
+          // ordered palette; index 0 is primary. null = reread from cover.
+          coverColorsOverride?: JsColor[] | null
         }
         textCover?: File | null
         audioCover?: File | null
@@ -705,6 +709,12 @@ export const api = createApi({
         }
         if (updatedFields.includes("duration")) {
           body.append("duration", JSON.stringify(update.duration))
+        }
+        if (updatedFields.includes("coverColorsOverride")) {
+          body.append(
+            "coverColorsOverride",
+            JSON.stringify(update.coverColorsOverride),
+          )
         }
 
         if (update.tags) {
