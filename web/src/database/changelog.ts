@@ -43,6 +43,7 @@ async function fetchReleasesPage(
 
   const response = await fetch(url, {
     headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(10000),
   })
 
   if (!response.ok) {
