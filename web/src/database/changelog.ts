@@ -1,6 +1,7 @@
 import { logger } from "@/logging"
 
 import { db } from "./connection"
+import { Agent } from "undici"
 
 const GITLAB_PROJECT_ID = "67994333"
 const GITLAB_RELEASES_URL = `https://gitlab.com/api/v4/projects/${GITLAB_PROJECT_ID}/releases`
@@ -12,6 +13,13 @@ const COMPONENT_MAP: Record<ComponentPrefix, string> = {
   "web-v": "web",
   "mobile-v": "mobile",
 }
+
+const timeoutAgent = new Agent({
+  headersTimeout: 10e3,
+  bodyTimeout: 10e3,
+  // connection shouldnt be that long
+  connectTimeout: 30e3,
+})
 
 type GitLabRelease = {
   tag_name: string
@@ -44,6 +52,7 @@ async function fetchReleasesPage(
   const response = await fetch(url, {
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(10000),
+    dispatcher: timeoutAgent,
   })
 
   if (!response.ok) {
