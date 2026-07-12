@@ -16735,6 +16735,7 @@ __metadata:
     esbuild: "npm:^0.28.0"
     eslint: "npm:^8.0.0"
     eslint-plugin-react-compiler: "npm:^19.1.0-rc.2"
+    fast-blurhash: "npm:^1.2.0"
     fb-watchman: "npm:^2.0.2"
     fuse.js: "npm:^7.1.0"
     he: "npm:^1.2.0"
@@ -27741,6 +27742,13 @@ __metadata:
   version: 1.0.0
   resolution: "fast-base64-decode@npm:1.0.0"
   checksum: 10c0/6d8feab513222a463d1cb58d24e04d2e04b0791ac6559861f99543daaa590e2636d040d611b40a50799bfb5c5304265d05e3658b5adf6b841a50ef6bf833d821
+  languageName: node
+  linkType: hard
+
+"fast-blurhash@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "fast-blurhash@npm:1.2.0"
+  checksum: 10c0/e4a4efa6a948a6190a71fe46b522513dce5d2bfbcb5cbd349e9caa67a255d42273b673ae4433f8d2a43e7dac3536aa21f0be56605aac42ae78df88769fef7b4c
   languageName: node
   linkType: hard
 
