@@ -101,6 +101,10 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-base: var(--surface-base);
+  --color-surface-raised: var(--surface-raised);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -149,6 +153,7 @@
      :root defaults and the [data-cover-*] blocks below. */
   --color-tinted: var(--tinted-foreground);
   --color-tinted-strong: var(--tinted-foreground-strong);
+  --color-tinted-subtle: var(--tinted-foreground-subtle);
   --color-tint: var(--tint);
   --color-tint-strong: var(--tint-strong);
   --color-cover-wash: var(--cover-wash);
@@ -196,6 +201,15 @@
   --sidebar-accent-foreground: oklch(0.92 0.01 60);
   --sidebar-border: oklch(0.195 0.016 50);
   --sidebar-ring: oklch(0.709 0.01 56.259);
+  /* nav rail sits on the sunk step of the tone ladder in light mode */
+  /* --sidebar: var(--surface-sunk);
+  --sidebar-foreground: oklch(0.245 0.02 50);
+  --sidebar-primary: oklch(0.64 0.1837 41.72);
+  --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+  --sidebar-accent: oklch(0.912 0.024 72);
+  --sidebar-accent-foreground: oklch(0.216 0.006 56);
+  --sidebar-border: oklch(0.88 0.012 68);
+  --sidebar-ring: oklch(0.709 0.01 56.259); */
 
   --st-orange-50: oklch(0.966 0.02 58.1);
   --st-orange-100: oklch(0.929 0.034 53.1);
@@ -209,36 +223,22 @@
   --st-orange-800: oklch(0.556 0.155 43.9);
   --st-orange-900: oklch(0.502 0.143 44);
 
-  /* Storyteller — Tailwind v4 color palette
-   Extracted from Alignment.html. CSS-first config: drop this into your
-   main stylesheet (after `@import "tailwindcss";`) and the tokens below
-   generate utilities like bg-accent, text-ink-2, border-line, etc. */
-
-  /* ===== brand accent (warm terracotta) ===== */
-  /* --color-accent:        oklch(0.58  0.13  40);
-    --color-accent-deep:   oklch(0.46  0.13  40);
-    --color-accent-soft:   oklch(0.94  0.04  50);
-    --color-accent-softer: oklch(0.97  0.022 60);
-  
-    /* ===== surfaces (warm paper) ===== */
-  /* --color-bg:       oklch(0.975 0.013 78);
-    --color-bg-soft:  oklch(0.962 0.016 76);
-    --color-bg-sunk:  oklch(0.945 0.020 74);
-    --color-paper:    oklch(0.99  0.008 80); */
-
-  /* ===== ink / text ===== */
-  /* --color-ink:    oklch(0.245 0.020 50);
-    --color-ink-2:  oklch(0.40  0.018 50);
-    --color-ink-3:  oklch(0.56  0.015 55); */
-
-  /* ===== hairlines ===== */
-  /* --color-line:   oklch(0.88  0.012 68);
-    --color-line-2: oklch(0.92  0.010 70); */
-
-  /* ===== sidebar (dark) ===== */
-  /* --color-sb-bg:   oklch(0.285 0.024 50);
-    --color-sb-fg:   oklch(0.74  0.016 65);
-    --color-sb-fg-2: oklch(0.93  0.014 70); */
+  /* tone ladder: each layout region is its own surface, small oklch lightness
+     steps, so region boundaries need no borders (one separator per boundary) */
+  --surface-sunk: oklch(0.945 0.02 74); /* nav rail */
+  /* --surface-soft: oklch(0.962 0.016 76); facet sidebar */
+  --surface-soft: var(--color-background);
+  /* --surface-base: oklch(0.975 0.013 78); grid / main content */
+  --surface-base: color-mix(
+    in oklab,
+    var(--color-background) 80%,
+    var(--color-muted)
+  );
+  /* --surface-raised: oklch(0.99 0.008 80); detail panel */
+  --surface-raised: var(--color-background);
+  /* the surface behind the sticky page header: PageMain overrides this to its
+     own tone so the header always matches the panel it sits in */
+  --page-surface: var(--background);
 
   /* ===== earthy grade tones — sage ===== */
   --positive: oklch(0.5 0.075 150);
@@ -274,10 +274,13 @@
   --tint-strong: var(--accent); /* selected / active surface */
   --tinted-foreground: var(--muted-foreground); /* secondary text near a tint */
   --tinted-foreground-strong: var(--foreground); /* emphasized secondary text */
+  --tinted-foreground-subtle: var(--foreground); /* subtle secondary text */
   --cover-primary: var(--primary);
   --cover-primary-foreground: var(--primary-foreground);
   --cover-accent-color: var(--primary);
   --cover-accent-foreground: var(--primary-foreground);
+
+  --cover-background-mix: var(--background);
 
   /* --sth-orange-50: #fff1e7;
   --sth-orange-100: #fbe2d3;
@@ -327,7 +330,13 @@
   --chart-4: oklch(0.553 0.195 38.402);
   --chart-5: oklch(0.47 0.157 37.304);
 
-  --sidebar: oklch(0.22 0.0213 76.13);
+  /* raised means lighter in dark mode too */
+  --surface-sunk: oklch(0.16 0.008 48);
+  --surface-soft: oklch(0.175 0.008 48);
+  --surface-base: oklch(0.19 0.008 48);
+  --surface-raised: oklch(0.215 0.008 50);
+
+  --sidebar: var(--surface-sunk);
   --sidebar-foreground: oklch(0.88 0.01 60);
   --sidebar-primary: oklch(0.705 0.213 47.604);
   --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
@@ -335,14 +344,10 @@
   --sidebar-accent-foreground: oklch(0.92 0.01 60);
   --sidebar-border: oklch(1 0.005 60 / 10%);
   --sidebar-ring: oklch(0.556 0.008 50);
+
+  --cover-background-mix: var(--background);
 }
 
-/* cover-color toolkit: CoverScope sets --cover-rgb / --cover-solid-rgb (raw and
-   contrast-adjusted primary channels, "r g b") plus --cover-intensity, and flags
-   data-cover-tint (medium+, ambient tints) and data-cover-accent (full, strong
-   ui coloring). the solid --cover-primary/--cover-accent-color come in as inline
-   style since they need the ensureContrast lightness loop css can't do. mixes
-   fall back to plain alpha where color-mix is unsupported (upgraded below). */
 [data-cover-tint] {
   --cover-wash: rgb(var(--cover-rgb) / calc(0.08 * var(--cover-intensity)));
   --cover-well: rgb(var(--cover-rgb) / calc(0.3 * var(--cover-intensity)));
@@ -351,28 +356,32 @@
      stays coherent with the tinted surfaces instead of falling back to primary */
   --tinted-foreground: rgb(var(--cover-solid-rgb) / 0.75);
   --tinted-foreground-strong: rgb(var(--cover-solid-rgb));
+  --tinted-foreground-subtle: rgb(var(--cover-solid-rgb) / 0.05);
 }
 [data-cover-accent] {
   --tint: rgb(var(--cover-solid-rgb) / calc(0.12 * var(--cover-intensity)));
-  --tint-strong: rgb(var(--cover-solid-rgb) / calc(0.2 * var(--cover-intensity)));
+  --tint-strong: rgb(
+    var(--cover-solid-rgb) / calc(0.2 * var(--cover-intensity))
+  );
 }
 
 @supports (color: color-mix(in oklab, red, blue)) {
   [data-cover-tint] {
     --cover-wash: color-mix(
       in oklab,
-      rgb(var(--cover-rgb)) calc(8% * var(--cover-intensity)),
-      var(--background)
+      rgb(var(--cover-rgb)) calc(18% * var(--cover-intensity)),
+      var(--cover-background-mix)
     );
     --cover-well: color-mix(
       in oklab,
       rgb(var(--cover-rgb)) calc(30% * var(--cover-intensity)),
-      var(--background)
+      var(--cover-background-mix)
     );
+    /* --cover-well: rgba(var(--cover-rgb)  30%); */
     --cover-header: color-mix(
       in oklab,
       rgb(var(--cover-rgb)) calc(50% * var(--cover-intensity)),
-      var(--background)
+      var(--cover-background-mix)
     );
     --tinted-foreground: color-mix(
       in oklab,
@@ -384,18 +393,75 @@
       rgb(var(--cover-solid-rgb)) 65%,
       var(--foreground)
     );
+    --tinted-foreground-subtle: color-mix(
+      in oklab,
+      rgb(var(--cover-solid-rgb)) 5%,
+      var(--foreground)
+    );
   }
   [data-cover-accent] {
     --tint: color-mix(
       in oklab,
       rgb(var(--cover-solid-rgb)) calc(12% * var(--cover-intensity)),
-      var(--background)
+      var(--cover-background-mix)
     );
     --tint-strong: color-mix(
       in oklab,
       rgb(var(--cover-solid-rgb)) calc(20% * var(--cover-intensity)),
-      var(--background)
+      var(--cover-background-mix)
     );
+  }
+  .dark {
+    [data-cover-tint] {
+      --cover-wash: color-mix(
+        in oklab,
+        rgb(var(--cover-rgb)) calc(60% * var(--cover-intensity)),
+        var(--cover-background-mix)
+      );
+      --cover-well: color-mix(
+        in oklab,
+        rgb(var(--cover-rgb)) calc(70% * var(--cover-intensity)),
+        var(--cover-background-mix)
+      );
+      /* --cover-well: rgba(
+        var(--cover-rgb) / calc(70% * var(--cover-intensity)),
+        var(--cover-background-mix)
+      ); */
+      /* --cover */
+
+      --cover-header: color-mix(
+        in oklab,
+        rgb(var(--cover-rgb)) calc(80% * var(--cover-intensity)),
+        var(--cover-background-mix)
+      );
+      --tinted-foreground: color-mix(
+        in oklab,
+        rgb(var(--cover-solid-rgb)) 40%,
+        var(--muted-foreground)
+      );
+      --tinted-foreground-strong: color-mix(
+        in oklab,
+        rgb(var(--cover-solid-rgb)) 65%,
+        var(--foreground)
+      );
+      --tinted-foreground-subtle: color-mix(
+        in oklab,
+        rgb(var(--cover-solid-rgb)) 5%,
+        var(--foreground)
+      );
+    }
+    [data-cover-accent] {
+      --tint: color-mix(
+        in oklab,
+        rgb(var(--cover-solid-rgb)) calc(12% * var(--cover-intensity)),
+        var(--cover-background-mix)
+      );
+      --tint-strong: color-mix(
+        in oklab,
+        rgb(var(--cover-solid-rgb)) calc(20% * var(--cover-intensity)),
+        var(--cover-background-mix)
+      );
+    }
   }
 }
 

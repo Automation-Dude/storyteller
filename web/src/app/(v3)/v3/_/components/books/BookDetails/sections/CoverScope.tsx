@@ -40,7 +40,7 @@ export function useCoverScope(
   const { primary, accent, hasColors } = useCoverColors(book, {
     type: options?.type,
   })
-  const { level, intensity } = useColorPreferences()
+  const { level, intensity, colorMix } = useColorPreferences()
   const isDark = useIsDarkMode()
   const extraStyle = options?.style
 
@@ -58,6 +58,7 @@ export function useCoverScope(
       "--cover-accent-rgb": channels(accent),
       "--cover-accent-solid-rgb": cAccent.channels,
       "--cover-intensity": intensity,
+      ...(colorMix === "vibrant" ? { "--cover-background-mix": "white" } : {}),
     }
 
     // in full mode override --primary so generic bg-primary / text-primary
@@ -78,7 +79,16 @@ export function useCoverScope(
       ...(showTint ? { "data-cover-tint": "" as const } : {}),
       ...(showAccent ? { "data-cover-accent": "" as const } : {}),
     }
-  }, [primary, accent, hasColors, level, intensity, isDark, extraStyle])
+  }, [
+    primary,
+    accent,
+    hasColors,
+    level,
+    intensity,
+    isDark,
+    extraStyle,
+    colorMix,
+  ])
 }
 
 // wrapper form of useCoverScope for cases where an extra element is fine.

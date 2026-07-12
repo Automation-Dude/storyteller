@@ -11,6 +11,7 @@ import {
 } from "@v3/_/components/ui/card"
 import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
 import { Slider } from "@v3/_/components/ui/slider"
+import { Switch } from "@v3/_/components/ui/switch"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { ColorModes } from "@/database/userPreferencesTypes"
@@ -118,6 +119,33 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
             />
 
             <ColorfulnessPreview level={colorMode} intensity={colorIntensity} />
+          </CardContent>
+        </Card>
+      </PreferencesSection>
+
+      <PreferencesSection tab="appearance" section="motion">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("motion.title")}</CardTitle>
+            <CardDescription>{t("motion.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Controller
+              name="layoutAnimations"
+              control={form.control}
+              render={({ field }) => (
+                <Field orientation="horizontal">
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>{t("motion.label")}</FieldLabel>
+                    <FieldDescription>{t("motion.hint")}</FieldDescription>
+                  </div>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </Field>
+              )}
+            />
           </CardContent>
         </Card>
       </PreferencesSection>

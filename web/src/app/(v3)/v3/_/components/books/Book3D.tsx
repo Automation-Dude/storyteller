@@ -1,7 +1,7 @@
 "use client"
 
 import { type PanInfo, motion, useSpring } from "motion/react"
-import { type ReactNode, useEffect, useRef, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -364,25 +364,35 @@ function Slab({
   const base = useRef({ x: 0, y: 0 })
   const peeking = useRef(false)
 
-  // --- pretext spine fitting (see _/lib/spineFit.ts to remove) ---
-  // measure after mount only, so SSR and first client render agree (no
-  // hydration mismatch); the spine is rotated away on the cover view anyway
-  const [fit, setFit] = useState<SpineFit>({ titleLines: 1, showAuthor: false })
-  useEffect(() => {
-    if (spine !== "title") return
-    setFit(
-      fitSpine({
-        title: right,
-        author: left,
-        length: height - 24,
-        thickness,
-        titleFont: `${titleSize}px ${SPINE_FONT_SERIF}`,
-        authorFont: `${authorSize}px ${SPINE_FONT_SANS}`,
-        titleSize,
-        authorSize,
-      }),
-    )
+  // const [fit, setFit] = useState<SpineFit>({ titleLines: 1, showAuthor: false })
+  const fit = useMemo(() => {
+    if (spine !== "title") return { titleLines: 1, showAuthor: false }
+    return fitSpine({
+      title: right,
+      author: left,
+      length: height - 24,
+      thickness,
+      titleFont: `${titleSize}px ${SPINE_FONT_SERIF}`,
+      authorFont: `${authorSize}px ${SPINE_FONT_SANS}`,
+      titleSize,
+      authorSize,
+    })
   }, [spine, right, left, height, thickness, titleSize, authorSize])
+  // useEffect(() => {
+  //   if (spine !== "title") return
+  //   setFit(
+  //     fitSpine({
+  //       title: right,
+  //       author: left,
+  //       length: height - 24,
+  //       thickness,
+  //       titleFont: `${titleSize}px ${SPINE_FONT_SERIF}`,
+  //       authorFont: `${authorSize}px ${SPINE_FONT_SANS}`,
+  //       titleSize,
+  //       authorSize,
+  //     }),
+  //   )
+  // }, [spine, right, left, height, thickness, titleSize, authorSize])
   // --- end pretext spine fitting ---
 
   const setViewAngles = (next: number) => {

@@ -362,6 +362,7 @@ function LibraryPageInner({
     () => gridData?.pages.flatMap((page) => page) ?? [],
     [gridData?.pages],
   )
+  console.log("filteredBooks", filteredBooks)
 
   const selectedFacet = allItems.find((i) => i.key === selectedItem)
   const selectedItemName = selectedFacet?.name
@@ -385,9 +386,6 @@ function LibraryPageInner({
     [dispatch],
   )
 
-  // switching facets closes the open book panel (the grid is now paginated, so
-  // there's no cheap "first book of the next facet" to jump to). functional
-  // updates keep these callbacks stable so the virtualized sidebar doesn't churn.
   const handleItemClick = useCallback(
     (key: string) => {
       void setSelectedItem((current) => (key === current ? null : key))
@@ -396,11 +394,7 @@ function LibraryPageInner({
     [setSelectedItem, setSelectedBookUuid],
   )
 
-  // warm the grid query for a facet on hover so clicking it feels instant.
-  // subscribe:false caches the first page without leaving a live subscription.
-  // rebuilt from sort + search (not the current queryArg) so hovering a
-  // different facet swaps in that facet's seed; warms the common no-extra-filter
-  // case, which is enough to make the click feel instant.
+  // warm query on hover
   const prefetchDepsRef = useRef({ sort, deferredSearch, section })
   prefetchDepsRef.current = { sort, deferredSearch, section }
   const handleHoverItem = useCallback(

@@ -139,7 +139,7 @@
   },
   "BookList": {
     "emptyState": "No books found",
-    "emptyStateTryAdjusting": "Try adjusting your search or filters"
+    "emptyStateSub": "Try adjusting your search or filters"
   },
   "LibraryPage": {
     "emptyStateSub": "Select an item in the sidebar to see its books",
@@ -866,6 +866,12 @@
               "label": "Color intensity",
               "hint": "How strong the cover-color tints appear."
             }
+          },
+          "motion": {
+            "title": "Motion",
+            "description": "How the library responds to opening and resizing panels.",
+            "label": "Layout animations",
+            "hint": "Slide the detail panel open and glide books to their new spots. When off, panels snap into place instantly."
           }
         }
       },
@@ -1185,6 +1191,7 @@
         "alignmentMissingSentences": "Missing Sentences",
         "alignmentMutedChapters": "Muted Chapters",
         "alignmentMissingChapters": "Missing Chapters",
+        "alignmentUnalignedFiles": "Unaligned Audio Files",
         "alignedAt": "Date Aligned",
         "lastRead": "Last Read",
         "readingPosition": "Reading Progress",
@@ -1237,6 +1244,8 @@
         "alignmentGrade": "Grade",
         "alignmentMissingSentences": "Missing",
         "alignmentMutedChapters": "Muted",
+        "alignmentMissingChapters": "Missing Ch.",
+        "alignmentUnalignedFiles": "Unaligned",
         "alignedAt": "Aligned",
         "lastRead": "Read",
         "readingPosition": "Progress",

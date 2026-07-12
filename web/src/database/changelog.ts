@@ -1,7 +1,8 @@
+import { Agent } from "undici"
+
 import { logger } from "@/logging"
 
 import { db } from "./connection"
-import { Agent } from "undici"
 
 const GITLAB_PROJECT_ID = "67994333"
 const GITLAB_RELEASES_URL = `https://gitlab.com/api/v4/projects/${GITLAB_PROJECT_ID}/releases`
@@ -53,7 +54,7 @@ async function fetchReleasesPage(
     headers: { Accept: "application/json" },
     signal: AbortSignal.timeout(10000),
     dispatcher: timeoutAgent,
-  })
+  } as RequestInit)
 
   if (!response.ok) {
     throw new Error(

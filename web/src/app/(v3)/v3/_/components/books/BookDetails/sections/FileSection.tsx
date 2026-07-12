@@ -31,7 +31,6 @@ import * as icon from "@/icons"
 import { useRemoveBookAssetMutation } from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
 
-
 import { CollapsibleSection } from "./CollapsibleSection"
 
 type Format = "ebook" | "audiobook" | "readaloud"
@@ -125,7 +124,7 @@ function FormatFileRow({
         <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 text-xs">
           {pageCount != null && <span>{pageCount} pages</span>}
           {duration != null && <span>{formatTimeHuman(duration)}</span>}
-          {fileSize && <span>{fileSize}</span>}
+          {!!fileSize && <span>{fileSize}</span>}
         </div>
       </div>
 

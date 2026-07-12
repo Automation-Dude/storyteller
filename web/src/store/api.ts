@@ -77,6 +77,11 @@ import { type RunConfig } from "@/work/runConfig"
 
 import { subscribeToBookEventStream } from "./bookEventsStream"
 import { subscribeToJobEventStream } from "./jobEventsStream"
+import { UserPreferences } from "@/database/userPreferencesTypes"
+
+type SingleUserSettingUpdate = {
+  [K in keyof UserPreferences]: { name: K; value: UserPreferences[K] }
+}[keyof UserPreferences]
 
 // client-side shape of a home section (plain string uuids over the wire)
 type HomeSectionBody = {
@@ -1561,11 +1566,11 @@ export const api = createApi({
         })) ?? ["UserRatings"],
     }),
 
-    getUserSettings: build.query<Record<string, UserSettingValue>, void>({
+    getUserSettings: build.query<UserPreferences, void>({
       query: () => "/user/settings",
       providesTags: ["UserSettings"],
     }),
-    updateUserSettings: build.mutation<void, Record<string, UserSettingValue>>({
+    updateUserSettings: build.mutation<void, Partial<UserPreferences>>({
       query: (body) => ({
         url: "/user/settings",
         method: "PUT",
@@ -1573,10 +1578,7 @@ export const api = createApi({
       }),
       invalidatesTags: ["UserSettings"],
     }),
-    setUserSetting: build.mutation<
-      void,
-      { name: string; value: UserSettingValue }
-    >({
+    setUserSetting: build.mutation<void, SingleUserSettingUpdate>({
       query: ({ name, value }) => ({
         url: `/user/settings`,
         method: "PUT",

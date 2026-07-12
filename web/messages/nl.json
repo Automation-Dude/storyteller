@@ -128,7 +128,7 @@
   },
   "BookList": {
     "emptyState": "Geen boeken gevonden",
-    "emptyStateTryAdjusting": "Pas je zoekopdracht of filters aan"
+    "emptyStateSub": "Pas je zoekopdracht of filters aan"
   },
   "LibraryPage": {
     "emptyStateSub": "Selecteer een item in de zijbalk om de bijbehorende boeken te zien",
@@ -852,6 +852,12 @@
               "label": "Kleurintensiteit",
               "hint": "Hoe sterk de coverkleur-tinten verschijnen."
             }
+          },
+          "motion": {
+            "title": "Beweging",
+            "description": "Hoe de bibliotheek reageert op het openen en vergroten van panelen.",
+            "label": "Lay-outanimaties",
+            "hint": "Schuift het detailpaneel open en laat boeken naar hun nieuwe plek glijden. Uitgeschakeld klikken panelen direct op hun plaats."
           }
         }
       },

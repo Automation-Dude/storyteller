@@ -1,4 +1,4 @@
-import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys"
+import { useHotkeys } from "@tanstack/react-hotkeys"
 import { useMemo, useRef, useState } from "react"
 
 import {
@@ -13,7 +13,6 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import {
   FilterableMenu,
-  FilterableMenuContent,
   FilterableMenuItem,
 } from "@v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
@@ -27,8 +26,10 @@ import { getFieldDef, quickFilterFields } from "@/shelves"
 import { DISPLAY_FIELDS, GENERAL_SORT_FIELDS, type SortField } from "@/sort"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
 
+import { DisplayControl } from "./DisplayControl"
 import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
 import { SearchInput } from "./SearchInput"
+import { SortControl } from "./SortControl"
 import { ViewSelector } from "./ViewSelector"
 
 export type { SortDirection, SortField } from "@/sort"
@@ -49,8 +50,6 @@ type BookFiltersProps = {
 
 const searchHotKey = "/" as const
 const filterHotKey = "F" as const
-const sortHotKey = "Shift+S" as const
-const displayHotKey = "Shift+D" as const
 const advancedHotKey = "Shift+F" as const
 const saveAsShelfHotKey = "Alt+Shift+S" as const
 
@@ -102,18 +101,6 @@ export function BookFilters({
       },
     },
     {
-      hotkey: sortHotKey,
-      callback: () => {
-        setSortMenuOpen((prev) => !prev)
-      },
-    },
-    {
-      hotkey: displayHotKey,
-      callback: () => {
-        setDisplayMenuOpen((prev) => !prev)
-      },
-    },
-    {
       hotkey: advancedHotKey,
       callback: () => {
         onToggleAdvanced?.()
@@ -148,7 +135,7 @@ export function BookFilters({
   return (
     <div
       className={cn(
-        "bg-background @container/filters sticky top-0 z-30 flex flex-col gap-2 border-b px-4 py-3",
+        "bg-surface-base @container/filters sticky top-0 z-30 flex flex-col gap-2 border-b px-4 py-3",
         className,
       )}
     >
@@ -417,159 +404,5 @@ function CollapsedOptionsMenu({
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
-
-function SortControl({
-  options,
-  field,
-  direction,
-  onChange,
-  onOpenChange,
-  open,
-}: {
-  options: { value: SortField; label: string }[]
-  field: SortField
-  direction: "asc" | "desc"
-  onChange: (field: SortField, direction: "asc" | "desc") => void
-  onOpenChange: (open: boolean) => void
-  open: boolean
-}) {
-  const flip = () => {
-    onChange(field, direction === "asc" ? "desc" : "asc")
-  }
-  useHotkey("S", () => {
-    flip()
-  })
-  const t = useTranslation("BooksPage")
-
-  return (
-    <div className="flex items-center">
-      <FilterableMenu
-        open={open}
-        onOpenChange={onOpenChange}
-        trigger={
-          <TooltipButton
-            className="items-center rounded-l-lg rounded-r-none border-r-0 pr-1 pl-2 text-xs font-normal"
-            variant="outline"
-            tooltip={t("sortBy.tooltip")}
-            size="icon"
-            aria-label={t.plain("sortBy.tooltip")}
-            shortcut={[sortHotKey]}
-          >
-            <span className="flex items-center gap-1.5">
-              <FieldIcon field={field} className="h-3.5 w-3.5" />
-              <span className="sr-only">
-                {options.find((o) => o.value === field)?.label ?? field}
-              </span>
-            </span>
-          </TooltipButton>
-        }
-        searchable
-        searchPlaceholder={t.plain("sortBy.searchHint")}
-      >
-        {options.map((option) => (
-          <FilterableMenuItem
-            key={option.value}
-            icon={<FieldIcon field={option.value} className="size-4" />}
-            textValue={option.label}
-            onSelect={() => {
-              if (option.value === field) {
-                flip()
-              } else {
-                onChange(option.value, "desc")
-              }
-            }}
-          >
-            {option.label}
-            {option.value === field && (
-              <span className="text-muted-foreground text-xs">
-                {direction === "asc" ? "↑" : "↓"}
-              </span>
-            )}
-          </FilterableMenuItem>
-        ))}
-      </FilterableMenu>
-      <TooltipButton
-        variant="outline"
-        size="icon"
-        className="items-center rounded-l-none rounded-r-lg pr-2 pl-1 text-xs font-normal"
-        tooltip={t("toggleSort.tooltip")}
-        aria-label={t.plain("toggleSort.tooltip")}
-        shortcut={["S"]}
-        onClick={flip}
-      >
-        {direction === "asc" ? (
-          <icon.ArrowUp size="sm" />
-        ) : (
-          <icon.ArrowDown size="sm" />
-        )}
-      </TooltipButton>
-    </div>
-  )
-}
-
-function DisplayControl({
-  displayOverrides,
-  onDisplayOverridesChange,
-  open,
-  onOpenChange,
-}: {
-  displayOverrides: BookFiltersController["displayOverrides"]
-  onDisplayOverridesChange: BookFiltersController["setDisplayOverrides"]
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const tLabels = useTranslation("Common.fields.label")
-  const t = useTranslation("BooksPage")
-  return (
-    <FilterableMenu
-      open={open}
-      onOpenChange={onOpenChange}
-      trigger={
-        <TooltipButton
-          variant="ghost"
-          size="icon"
-          aria-label={t.plain("displayOptions.tooltip")}
-          className="shrink-0"
-          tooltip={t("displayOptions.tooltip")}
-          shortcut={[displayHotKey]}
-        >
-          <icon.Columns />
-        </TooltipButton>
-      }
-      searchable
-      searchPlaceholder={t.plain("displayOptions.searchHint")}
-    >
-      <span className="text-muted-foreground px-2 text-xs">
-        {t("displayOptions.hint")}
-      </span>
-      <FilterableMenuItem
-        closeOnClick={false}
-        textValue={t.plain("displayOptions.auto")}
-        onSelect={() => {
-          void onDisplayOverridesChange(null)
-        }}
-      >
-        {t("displayOptions.auto")}
-        {displayOverrides === null && <icon.Check className="ml-auto" />}
-      </FilterableMenuItem>
-      {DISPLAY_FIELDS.map((field) => (
-        <FilterableMenuItem
-          key={field}
-          closeOnClick={false}
-          textValue={tLabels(field)}
-          onSelect={() => {
-            void onDisplayOverridesChange([field])
-          }}
-        >
-          <FieldIcon field={field} className="mr-2" />
-          {tLabels(field)}
-          {displayOverrides?.includes(field) && (
-            <icon.Check className="ml-auto" />
-          )}
-        </FilterableMenuItem>
-      ))}
-    </FilterableMenu>
   )
 }

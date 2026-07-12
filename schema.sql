@@ -820,7 +820,8 @@ CREATE TABLE alignment_report (
   failed_chapters INTEGER,
   unaligned_audio INTEGER,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  overrides TEXT
+  overrides TEXT,
+  scoring_version INTEGER
 );
 
 CREATE INDEX idx_alignment_report_job ON alignment_report (job_uuid);

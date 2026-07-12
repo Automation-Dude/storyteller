@@ -187,6 +187,18 @@ function BookDetailsContentInner({
   )
 
   const scope = useCoverScope(book)
+  // return (
+  //   <BookFormProvider book={book} isEditing={isEditing}>
+  //     <div className="relative h-full w-full">
+  //       <BookPanelHeader
+  //         onClose={onClose}
+  //         nextBook={nextBook}
+  //         previousBook={previousBook}
+  //       />
+  //       Book Details
+  //     </div>
+  //   </BookFormProvider>
+  // )
 
   return (
     <BookFormProvider
@@ -194,7 +206,15 @@ function BookDetailsContentInner({
       isEditing={isEditing}
       onEditingChange={handleEditingChange}
     >
-      <article className="bg-background relative h-full w-full" {...scope}>
+      <article
+        className={cn(
+          "relative h-full w-full",
+          // in the side panel the raised surface tone is the background; the
+          // full page keeps the plain app background
+          compact ? "bg-surface-raised" : "bg-background",
+        )}
+        {...scope}
+      >
         {!compact && <BookPageHeader />}
         {compact && (
           <BookPanelHeader
@@ -215,7 +235,7 @@ function BookDetailsContentInner({
           />
           <div
             className={cn(
-              "flex flex-col gap-4",
+              "flex flex-col gap-4 transition-[height]",
               !compact && "mx-auto max-w-5xl",
             )}
           >

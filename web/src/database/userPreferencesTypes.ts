@@ -71,6 +71,10 @@ export const UserPreferencesSchema = z.object({
   // per-user default status assigned to newly added books. null means "use
   // the library default". stored as a status uuid string.
   defaultStatusUuid: z.string().nullable(),
+  // animated detail panel + grid reflow. off (or prefers-reduced-motion)
+  // falls back to instant snapping
+  layoutAnimations: z.boolean(),
+  colorMix: z.enum(["vibrant", "subdued"]),
 })
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>
@@ -81,6 +85,7 @@ export const defaultUserPreferences: UserPreferences = {
   defaultView: "grid",
   colorMode: "full",
   colorIntensity: 1,
+  colorMix: "vibrant",
   gridCoverDisplay: "auto",
   gridCardSize: "medium",
   doubleCoverAlignment: "auto",
@@ -90,6 +95,7 @@ export const defaultUserPreferences: UserPreferences = {
   accentColor: null,
   ratingDimensions: DEFAULT_RATING_DIMENSIONS,
   defaultStatusUuid: null,
+  layoutAnimations: true,
 }
 
 // the old colorMode values, mapped onto the new three-level scale

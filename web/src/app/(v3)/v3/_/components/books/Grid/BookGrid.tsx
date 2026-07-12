@@ -105,7 +105,7 @@ export function BookGrid({
   navModel = "commit",
   ...props
 }: BookGridProps) {
-  const books = rawBooks.slice(0, -1)
+  const books = rawBooks
 
   const t = useTranslation("BookList")
   const menu = useBookActionMenu(books)
