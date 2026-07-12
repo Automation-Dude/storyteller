@@ -15,15 +15,15 @@ import { cn } from "@v3/_/lib/utils"
 import { FilterableMenu } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import * as icon from "@/icons"
-import { useListBooksQuery } from "@/store/api"
 
 import {
   ActionEntryList,
   useBookActionItems,
 } from "./ActionMenu/BookActionMenuItems"
+import { BookWithRelations } from "@/database/books"
 
 type SelectionToolbarProps = {
-  allBookUuids: string[]
+  allBooks: BookWithRelations[]
   className?: string
 }
 
@@ -31,8 +31,8 @@ type SelectionToolbarProps = {
 // whole screen -- it shares the workspace surface. a serif selection count sits
 // left, then the core select / actions menus, then a close affordance.
 export function SelectionToolbar({
-  allBookUuids,
   className,
+  allBooks,
 }: SelectionToolbarProps) {
   const t = useTranslation("SelectionToolbar")
   const tActions = useTranslation("BookActions")
@@ -47,7 +47,7 @@ export function SelectionToolbar({
     stopSelecting,
   } = useBookSelection()
 
-  const { data: allBooks = [] } = useListBooksQuery()
+  // const { data: allBooks = [] } = useListBooksQuery()
   const selectedBookObjects = allBooks.filter((book) =>
     selectedBooks.has(book.uuid),
   )

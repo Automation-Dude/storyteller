@@ -4,7 +4,8 @@ import * as React from "react"
 import { useCallback, useState } from "react"
 
 import { cn } from "@v3/_/lib/utils"
-import { CoverScopeProps } from "../books/BookDetails/sections/CoverScope"
+
+import { type CoverScopeProps } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
 
 /**
  * composable page layout that supports a full-height side panel
@@ -18,7 +19,7 @@ import { CoverScopeProps } from "../books/BookDetails/sections/CoverScope"
  *         ...scrollable content...
  *       </PageContent>
  *     </PageMain>
- *     <PagePanel open={open} width={400} onWidthChange={setWidth}>
+ *     <PagePanel open={open} width={400} panelRef={ref} onResizeStart={...}>
  *       ...panel content...
  *     </PagePanel>
  *   </PageLayout>
@@ -48,7 +49,10 @@ function PageMain({
   return (
     <div
       data-slot="page-main"
-      className={cn("flex min-w-0 flex-1 flex-col overflow-hidden", className)}
+      className={cn(
+        "bg-surface-base flex min-w-0 flex-1 flex-col overflow-hidden [--page-surface:var(--surface-base)]",
+        className,
+      )}
       {...props}
     >
       {children}
@@ -95,14 +99,55 @@ function PageContent({
   )
 }
 
+// invisible hit area straddling a panel edge; the pill only appears on
+// hover/drag so region boundaries stay line-free at rest.
+function ResizeHandle({
+  side,
+  dragging,
+  onPointerDown,
+  ...props
+}: React.ComponentProps<"div"> & {
+  side: "left" | "right"
+  dragging?: boolean
+  onPointerDown: (e: React.PointerEvent) => void
+}) {
+  return (
+    <div
+      data-slot="resize-handle"
+      className="group relative z-30 flex w-0 items-stretch"
+      {...props}
+    >
+      <div
+        className={cn(
+          "absolute top-0 bottom-0 flex w-3.5 cursor-col-resize touch-none items-center justify-center",
+          side === "left" ? "-left-[7px]" : "-right-[7px]",
+        )}
+        data-dragging={dragging || undefined}
+        onPointerDown={onPointerDown}
+      >
+        <div
+          className={cn(
+            "bg-foreground/20 h-11 w-1 rounded-full opacity-0 transition-opacity group-hover:opacity-100",
+            dragging && "bg-primary opacity-100",
+          )}
+        />
+      </div>
+    </div>
+  )
+}
+
 export const MIN_PANEL_WIDTH = 240
 export const MAX_PANEL_WIDTH = 800
+// panel content never squishes below this; while the panel animates it is
+// revealed from the right edge instead of reflowing.
+export const PANEL_CONTENT_MIN_WIDTH = 300
 
 function PagePanel({
   open,
   width,
-  onWidthChange,
-  snapWidth,
+  panelRef,
+  onResizeStart,
+  dragging,
   className,
   children,
   colors,
@@ -110,97 +155,47 @@ function PagePanel({
 }: React.ComponentProps<"div"> & {
   open: boolean
   width: number
-  onWidthChange?: (width: number) => void
-  // maps a raw dragged width to the nearest "clean" width (one that makes the
-  // book grid fit a whole number of columns). drives the snap preview + commit.
-  snapWidth?: (rawWidth: number) => number
+  panelRef?: React.Ref<HTMLDivElement>
+  // pointer-down on the resize handle. width changes are driven externally
+  // (see usePanelWidthDriver) and land on the DOM node via panelRef.
+  onResizeStart?: (e: React.PointerEvent) => void
+  dragging?: boolean
   colors?: CoverScopeProps
 }) {
-  const [previewWidth, setPreviewWidth] = useState<number | null>(null)
-
-  const clampWidth = useCallback(
-    (w: number) => Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, w)),
-    [],
-  )
-
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-
-      const startX = e.clientX
-      const startWidth = width
-      let committed = width
-
-      const abortController = new AbortController()
-      const handleMouseMove = (e: MouseEvent) => {
-        const raw = clampWidth(startWidth + (startX - e.clientX))
-        const snapped = clampWidth(snapWidth ? snapWidth(raw) : raw)
-        committed = snapped
-        setPreviewWidth(snapped)
-      }
-
-      const handleMouseUp = () => {
-        abortController.abort()
-        document.body.style.cursor = ""
-        document.body.style.userSelect = ""
-        setPreviewWidth(null)
-        // single reflow: grid recomputes once, fades to the new column count.
-        onWidthChange?.(committed)
-      }
-
-      document.addEventListener("mousemove", handleMouseMove, {
-        signal: abortController.signal,
-      })
-      document.addEventListener("mouseup", handleMouseUp, {
-        signal: abortController.signal,
-      })
-      document.body.style.cursor = "col-resize"
-      document.body.style.userSelect = "none"
-    },
-    [width, onWidthChange, snapWidth, clampWidth],
-  )
-
   if (!open) return null
 
   return (
     <>
-      {onWidthChange && (
-        <div
-          data-slot="page-panel-resize-handle"
-          className="group relative z-30 flex w-0 items-stretch"
+      {onResizeStart && (
+        <ResizeHandle
+          side="left"
+          {...(dragging !== undefined && { dragging })}
+          onPointerDown={onResizeStart}
           {...colors}
-        >
-          <div
-            className="absolute top-0 bottom-0 -left-2 w-4 cursor-col-resize"
-            onMouseDown={handleResizeStart}
-          >
-            <div className="bg-border group-hover:bg-primary/50 mx-auto h-full w-px transition-colors" />
-          </div>
-        </div>
-      )}
-
-      {/* snap preview: a line at the panel edge it will jump to on release */}
-      {previewWidth !== null && (
-        <div
-          aria-hidden
-          className="bg-primary pointer-events-none fixed inset-y-0 z-40 w-0.5"
-          {...colors}
-          style={
-            {
-              right: previewWidth,
-              ...colors?.style,
-            } as React.CSSProperties
-          }
         />
       )}
 
       <div
+        ref={panelRef}
         data-slot="page-panel"
-        className={cn("bg-background shrink-0 overflow-hidden", className)}
+        className={cn(
+          "bg-surface-raised relative shrink-0 overflow-hidden",
+          className,
+        )}
         {...props}
-        style={{ width, ...props.style }}
+        style={
+          {
+            width,
+            "--panel-content-min": `${PANEL_CONTENT_MIN_WIDTH}px`,
+            ...props.style,
+          } as React.CSSProperties
+        }
       >
-        <div className="flex h-full w-full">{children}</div>
+        {/* right-anchored reveal mask: content keeps its layout while the
+            panel's left edge sweeps open/closed */}
+        <div className="absolute inset-y-0 right-0 flex w-full min-w-(--panel-content-min)">
+          {children}
+        </div>
       </div>
     </>
   )
@@ -225,7 +220,7 @@ function PageSidebar({
   snapWidth?: (rawWidth: number) => number
 }) {
   const sidebarRef = React.useRef<HTMLDivElement>(null)
-  const [previewLeft, setPreviewLeft] = useState<number | null>(null)
+  const [dragging, setDragging] = useState(false)
 
   const clampWidth = useCallback(
     (w: number) => Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, w)),
@@ -233,39 +228,45 @@ function PageSidebar({
   )
 
   const handleResizeStart = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.PointerEvent) => {
       e.preventDefault()
-
-      const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0
+      e.currentTarget.setPointerCapture(e.pointerId)
 
       const startX = e.clientX
       const startWidth = width
       let committed = width
+      setDragging(true)
+      document.body.style.cursor = "col-resize"
+      document.body.style.userSelect = "none"
 
       const abortController = new AbortController()
-      const handleMouseMove = (e: MouseEvent) => {
+      const handlePointerMove = (e: PointerEvent) => {
         const raw = clampWidth(startWidth + (e.clientX - startX))
-        const snapped = clampWidth(snapWidth ? snapWidth(raw) : raw)
-        committed = snapped
-        setPreviewLeft(sidebarLeft + snapped)
+        committed = clampWidth(snapWidth ? snapWidth(raw) : raw)
+        // live width on the DOM only; content reflows as you drag, and the
+        // single commit below keeps per-move persistence writes away
+        if (sidebarRef.current) {
+          sidebarRef.current.style.width = `${committed}px`
+        }
       }
 
-      const handleMouseUp = () => {
+      const handlePointerUp = () => {
         abortController.abort()
+        setDragging(false)
         document.body.style.cursor = ""
         document.body.style.userSelect = ""
-        setPreviewLeft(null)
         onWidthChange?.(committed)
       }
 
-      document.addEventListener("mousemove", handleMouseMove, {
+      document.addEventListener("pointermove", handlePointerMove, {
         signal: abortController.signal,
       })
-      document.addEventListener("mouseup", handleMouseUp, {
+      document.addEventListener("pointerup", handlePointerUp, {
         signal: abortController.signal,
       })
-      document.body.style.cursor = "col-resize"
-      document.body.style.userSelect = "none"
+      document.addEventListener("pointercancel", handlePointerUp, {
+        signal: abortController.signal,
+      })
     },
     [width, onWidthChange, snapWidth, clampWidth],
   )
@@ -276,7 +277,7 @@ function PageSidebar({
         ref={sidebarRef}
         data-slot="page-sidebar"
         className={cn(
-          "bg-background border-border flex h-full shrink-0 flex-col overflow-y-auto border-r",
+          "bg-surface-soft flex h-full shrink-0 flex-col overflow-y-auto",
           className,
         )}
         style={{ width }}
@@ -285,26 +286,12 @@ function PageSidebar({
         <div className="flex h-full w-full flex-col">{children}</div>
       </div>
 
-      {previewLeft !== null && (
-        <div
-          aria-hidden
-          className="bg-primary pointer-events-none fixed inset-y-0 z-40 w-0.5"
-          style={{ left: previewLeft }}
-        />
-      )}
-
       {onWidthChange && (
-        <div
-          data-slot="page-sidebar-resize-handle"
-          className="group relative z-30 flex w-0 items-stretch"
-        >
-          <div
-            className="absolute top-0 -right-2 bottom-0 w-4 cursor-col-resize"
-            onMouseDown={handleResizeStart}
-          >
-            <div className="bg-border group-hover:bg-primary/40 mx-auto h-full w-px transition-colors" />
-          </div>
-        </div>
+        <ResizeHandle
+          side="right"
+          dragging={dragging}
+          onPointerDown={handleResizeStart}
+        />
       )}
     </>
   )

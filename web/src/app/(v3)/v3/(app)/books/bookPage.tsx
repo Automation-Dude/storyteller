@@ -1,7 +1,7 @@
 "use client"
 
-import { parseAsString, useQueryState } from "nuqs"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { parseAsBoolean, parseAsString, useQueryState } from "nuqs"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
@@ -64,7 +64,11 @@ export default function BookPage({
     "book",
     parseAsString,
   )
-  const [, setReportMode] = useReportPanel()
+  // const [, setReportMode] = useReportPanel()
+  const [, setReportMode] = useQueryState(
+    "report",
+    parseAsBoolean.withDefault(false),
+  )
 
   const controller = useBookFilters()
   const {
@@ -90,11 +94,15 @@ export default function BookPage({
 
   // the books page has no single-series context; position is not offered.
   const displayContext: SortContext = useMemo(() => ({ seriesUuid: null }), [])
-  const displayFields = deriveDisplayFields(
-    sort.field,
-    effectiveFilter,
-    displayContext,
-    displayOverrides,
+  const displayFields = useMemo(
+    () =>
+      deriveDisplayFields(
+        sort.field,
+        effectiveFilter,
+        displayContext,
+        displayOverrides,
+      ),
+    [sort.field, effectiveFilter, displayContext, displayOverrides],
   )
 
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -166,13 +174,31 @@ export default function BookPage({
   const showMuted =
     isSearching || (isFetching && !isFetchingNextPage && books.length > 0)
 
-  const handleBookClick = (book: { uuid: string }) => {
-    if (isSelecting) {
-      toggleSelection(book.uuid)
-      return
-    }
-    void setReportMode(false)
-    void setSelectedBookUuid(book.uuid)
+  const handleBookClick = useCallback(
+    (book: { uuid: string }, isSelecting: boolean, isBookSelected: boolean) => {
+      if (isSelecting || isBookSelected) {
+        toggleSelection(book.uuid)
+        return
+      }
+      void setReportMode(false)
+      void setSelectedBookUuid(book.uuid)
+    },
+    [],
+  )
+  const handleBookClickRef = useRef(handleBookClick)
+  const selectedBookUuidRef = useRef(selectedBookUuid)
+  const setReportModeRef = useRef(setReportMode)
+  if (handleBookClickRef.current !== handleBookClick) {
+    console.log("handleBookClickRef updated")
+    handleBookClickRef.current = handleBookClick
+  }
+  if (selectedBookUuidRef.current !== selectedBookUuid) {
+    console.log("selectedBookUuidRef updated")
+    selectedBookUuidRef.current = selectedBookUuid
+  }
+  if (setReportModeRef.current !== setReportMode) {
+    console.log("setReportModeRef updated")
+    setReportModeRef.current = setReportMode
   }
 
   const handleColumnClick = (book: { uuid: string }) => {
@@ -191,100 +217,98 @@ export default function BookPage({
       : undefined
 
   return (
-    <div style={{ "--header-height": "4rem" } as React.CSSProperties}>
-      <BookListLayout
-        headerBreadcrumbs={[
-          {
-            render: (
-              <h1 className="font-heading text-foreground truncate text-3xl font-normal">
-                {t("title")}
-              </h1>
-            ),
-          },
-        ]}
-        selectedBookUuid={selectedBookUuid}
-        selectedBook={selectedBook}
-        onClosePanel={handleClosePanel}
-        nextBook={goToNext}
-        previousBook={goToPrevious}
-        headerActions={[<AddBookButton key="add-book" />]}
-      >
-        <BookFilters
-          controller={controller}
-          bookView={bookView}
-          onBookViewChange={handleBookViewChange}
-          advancedOpen={advancedVisible}
-          onToggleAdvanced={() => {
-            setShowAdvanced((v) => !v)
-          }}
-          onSaveAsShelf={
-            effectiveFilter
-              ? () => {
-                  setSaveDialogOpen(true)
-                }
-              : undefined
-          }
+    <BookListLayout
+      headerBreadcrumbs={[
+        {
+          render: (
+            <h1 className="font-heading text-foreground truncate text-3xl font-normal">
+              {t("title")}
+            </h1>
+          ),
+        },
+      ]}
+      selectedBookUuid={selectedBookUuid}
+      selectedBook={selectedBook}
+      onClosePanel={handleClosePanel}
+      nextBook={goToNext}
+      previousBook={goToPrevious}
+      headerActions={[<AddBookButton key="add-book" />]}
+    >
+      <BookFilters
+        controller={controller}
+        bookView={bookView}
+        onBookViewChange={handleBookViewChange}
+        advancedOpen={advancedVisible}
+        onToggleAdvanced={() => {
+          setShowAdvanced((v) => !v)
+        }}
+        onSaveAsShelf={
+          effectiveFilter
+            ? () => {
+                setSaveDialogOpen(true)
+              }
+            : undefined
+        }
+      />
+
+      {advancedVisible && (
+        <div className="border-border border-b px-4 pt-2 pb-4">
+          <ShelfFilterEditor filter={userFilter} onChange={setUserFilter} />
+        </div>
+      )}
+
+      {effectiveFilter && (
+        <SaveAsShelfDialog
+          open={saveDialogOpen}
+          onOpenChange={setSaveDialogOpen}
+          filter={effectiveFilter}
+          sortField={sort.field}
+          sortDirection={sort.direction}
         />
+      )}
 
-        {advancedVisible && (
-          <div className="border-border border-b px-4 pt-2 pb-4">
-            <ShelfFilterEditor filter={userFilter} onChange={setUserFilter} />
-          </div>
-        )}
-
-        {effectiveFilter && (
-          <SaveAsShelfDialog
-            open={saveDialogOpen}
-            onOpenChange={setSaveDialogOpen}
-            filter={effectiveFilter}
+      <PageContent className="p-6">
+        {bookView === "list" ? (
+          <BookList
+            books={books}
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            fetchNextPage={fetchNextPage}
+            showMuted={showMuted}
+            emptySubMessage={emptySubMessage}
+            onClearFilters={clearAll}
+            hasActiveFilters={activeFilterCount > 0}
+            selectedBookUuid={selectedBookUuid}
+            onBookClick={handleBookClick}
+            onColumnClick={handleColumnClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
+            visibleColumns={listVisibleColumns}
+            onVisibleColumnsChange={handleListColumnsChange}
             sortField={sort.field}
             sortDirection={sort.direction}
+            onSortChange={handleColumnSort}
+          />
+        ) : (
+          <BookGrid
+            books={books}
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            fetchNextPage={fetchNextPage}
+            showMuted={showMuted}
+            emptySubMessage={emptySubMessage}
+            onClearFilters={clearAll}
+            hasActiveFilters={activeFilterCount > 0}
+            selectedBookUuid={selectedBookUuid}
+            onBookClick={handleBookClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
           />
         )}
-
-        <PageContent className="p-4">
-          {bookView === "list" ? (
-            <BookList
-              books={books}
-              isLoading={isLoading}
-              isFetchingNextPage={isFetchingNextPage}
-              hasNextPage={hasNextPage}
-              fetchNextPage={fetchNextPage}
-              showMuted={showMuted}
-              emptySubMessage={emptySubMessage}
-              onClearFilters={clearAll}
-              hasActiveFilters={activeFilterCount > 0}
-              selectedBookUuid={selectedBookUuid}
-              onBookClick={handleBookClick}
-              onColumnClick={handleColumnClick}
-              displayFields={displayFields}
-              displayContext={displayContext}
-              visibleColumns={listVisibleColumns}
-              onVisibleColumnsChange={handleListColumnsChange}
-              sortField={sort.field}
-              sortDirection={sort.direction}
-              onSortChange={handleColumnSort}
-            />
-          ) : (
-            <BookGrid
-              books={books}
-              isLoading={isLoading}
-              isFetchingNextPage={isFetchingNextPage}
-              hasNextPage={hasNextPage}
-              fetchNextPage={fetchNextPage}
-              showMuted={showMuted}
-              emptySubMessage={emptySubMessage}
-              onClearFilters={clearAll}
-              hasActiveFilters={activeFilterCount > 0}
-              selectedBookUuid={selectedBookUuid}
-              onBookClick={handleBookClick}
-              displayFields={displayFields}
-              displayContext={displayContext}
-            />
-          )}
-          <SelectionToolbar allBookUuids={bookUuids} />
-        </PageContent>
-      </BookListLayout>
-    </div>
+        <SelectionToolbar allBooks={books} />
+      </PageContent>
+    </BookListLayout>
   )
 }

@@ -50,7 +50,8 @@ export default async function AppLayout({
         style={
           {
             "--sidebar-width": "calc(var(--spacing) * 56)",
-            "--header-height": "calc(var(--spacing) * 13)",
+            // one shared 56px header line across every panel's header row
+            "--header-height": "calc(var(--spacing) * 14)",
             // "--sidebar-width-icon": "calc(var(--spacing) * 11)",
             ...accentStyle,
           } as React.CSSProperties

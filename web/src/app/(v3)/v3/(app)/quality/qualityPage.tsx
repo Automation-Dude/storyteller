@@ -177,133 +177,131 @@ export default function QualityPage() {
   }
 
   return (
-    <div style={{ "--header-height": "4rem" } as React.CSSProperties}>
-      <BookListLayout
-        headerBreadcrumbs={[
-          {
-            render: (
-              <h1 className="font-heading text-foreground truncate text-3xl font-normal">
-                Alignment quality
-              </h1>
-            ),
-          },
-        ]}
-        selectedBookUuid={selectedBookUuid}
-        selectedBook={selectedBook}
-        onClosePanel={handleClosePanel}
-      >
-        <BookFilters
-          controller={controller}
-          seedLabel="Graded"
-          bookView={bookView}
-          onBookViewChange={handleBookViewChange}
-        />
+    <BookListLayout
+      headerBreadcrumbs={[
+        {
+          render: (
+            <h1 className="font-heading text-foreground truncate text-3xl font-normal">
+              Alignment quality
+            </h1>
+          ),
+        },
+      ]}
+      selectedBookUuid={selectedBookUuid}
+      selectedBook={selectedBook}
+      onClosePanel={handleClosePanel}
+    >
+      <BookFilters
+        controller={controller}
+        seedLabel="Graded"
+        bookView={bookView}
+        onBookViewChange={handleBookViewChange}
+      />
 
-        {/* alignment-specific facet row: grade chips + muted toggle, counts
+      {/* alignment-specific facet row: grade chips + muted toggle, counts
             from the server-side facets. */}
-        <div className="flex flex-wrap items-center gap-1.5 px-4 pt-2">
-          <Button
-            variant={activeGrade ? "ghost" : "secondary"}
-            size="sm"
-            onClick={() => {
-              setGrade(null)
-            }}
-            className="gap-1.5"
-          >
-            All
-            {facets && (
-              <span className="text-muted-foreground tabular-nums">
-                {facets.total}
-              </span>
-            )}
-          </Button>
-          {GRADES.map((g) => {
-            const count = facets?.grades[g] ?? 0
-            return (
-              <button
-                key={g}
-                type="button"
-                disabled={!!facets && count === 0}
-                onClick={() => {
-                  setGrade(activeGrade === g ? null : g)
-                }}
-                className={cn(
-                  "flex items-center gap-1 rounded transition",
-                  activeGrade === g
-                    ? "ring-primary ring-2"
-                    : "opacity-70 hover:opacity-100",
-                  !!facets && count === 0 && "opacity-30",
-                )}
-              >
-                <GradePill grade={g} />
-                <span className="text-muted-foreground pr-1 text-xs tabular-nums">
-                  {count}
-                </span>
-              </button>
-            )
-          })}
-          <Button
-            variant={mutedActive ? "secondary" : "ghost"}
-            size="sm"
-            onClick={toggleMuted}
-            className="ml-2 gap-1.5"
-          >
-            <icon.VolumeOff className="size-4" />
-            Muted
-            {facets && facets.muted > 0 && (
-              <span className="text-muted-foreground tabular-nums">
-                {facets.muted}
-              </span>
-            )}
-          </Button>
-        </div>
-
-        {/* shrink only the list title here, without touching BookListItem. */}
-        <PageContent className="p-4 [&_.font-heading]:text-[0.8125rem]!">
-          {bookView === "list" ? (
-            <BookList
-              books={books}
-              isLoading={isLoading}
-              isFetchingNextPage={isFetchingNextPage}
-              hasNextPage={hasNextPage}
-              fetchNextPage={fetchNextPage}
-              showMuted={showMuted}
-              emptyMessage="No graded books yet"
-              emptySubMessage="Books get a grade after they finish aligning."
-              onClearFilters={clearAll}
-              hasActiveFilters={activeFilterCount > 0}
-              selectedBookUuid={selectedBookUuid}
-              onBookClick={handleBookClick}
-              displayFields={displayFields}
-              displayContext={displayContext}
-              visibleColumns={ALIGNMENT_COLUMNS}
-              sortField={sort.field}
-              sortDirection={sort.direction}
-              onSortChange={(field: SortField, dir: SortDirection) => {
-                setSort(field, dir)
-              }}
-            />
-          ) : (
-            <BookGrid
-              books={books}
-              isLoading={isLoading}
-              isFetchingNextPage={isFetchingNextPage}
-              hasNextPage={hasNextPage}
-              fetchNextPage={fetchNextPage}
-              showMuted={showMuted}
-              emptyMessage="No graded books yet"
-              emptySubMessage="Books get a grade after they finish aligning."
-              onClearFilters={clearAll}
-              hasActiveFilters={activeFilterCount > 0}
-              selectedBookUuid={selectedBookUuid}
-              onBookClick={handleBookClick}
-              displayFields={displayFields}
-              displayContext={displayContext}
-            />
+      <div className="flex flex-wrap items-center gap-1.5 px-4 pt-2">
+        <Button
+          variant={activeGrade ? "ghost" : "secondary"}
+          size="sm"
+          onClick={() => {
+            setGrade(null)
+          }}
+          className="gap-1.5"
+        >
+          All
+          {facets && (
+            <span className="text-muted-foreground tabular-nums">
+              {facets.total}
+            </span>
           )}
-          <SelectionToolbar allBookUuids={bookUuids} />
-        </PageContent>
-      </BookListLayout>
-    </div>
+        </Button>
+        {GRADES.map((g) => {
+          const count = facets?.grades[g] ?? 0
+          return (
+            <button
+              key={g}
+              type="button"
+              disabled={!!facets && count === 0}
+              onClick={() => {
+                setGrade(activeGrade === g ? null : g)
+              }}
+              className={cn(
+                "flex items-center gap-1 rounded transition",
+                activeGrade === g
+                  ? "ring-primary ring-2"
+                  : "opacity-70 hover:opacity-100",
+                !!facets && count === 0 && "opacity-30",
+              )}
+            >
+              <GradePill grade={g} />
+              <span className="text-muted-foreground pr-1 text-xs tabular-nums">
+                {count}
+              </span>
+            </button>
+          )
+        })}
+        <Button
+          variant={mutedActive ? "secondary" : "ghost"}
+          size="sm"
+          onClick={toggleMuted}
+          className="ml-2 gap-1.5"
+        >
+          <icon.VolumeOff className="size-4" />
+          Muted
+          {facets && facets.muted > 0 && (
+            <span className="text-muted-foreground tabular-nums">
+              {facets.muted}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {/* shrink only the list title here, without touching BookListItem. */}
+      <PageContent className="p-6 [&_.font-heading]:text-[0.8125rem]!">
+        {bookView === "list" ? (
+          <BookList
+            books={books}
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            fetchNextPage={fetchNextPage}
+            showMuted={showMuted}
+            emptyMessage="No graded books yet"
+            emptySubMessage="Books get a grade after they finish aligning."
+            onClearFilters={clearAll}
+            hasActiveFilters={activeFilterCount > 0}
+            selectedBookUuid={selectedBookUuid}
+            onBookClick={handleBookClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
+            visibleColumns={ALIGNMENT_COLUMNS}
+            sortField={sort.field}
+            sortDirection={sort.direction}
+            onSortChange={(field: SortField, dir: SortDirection) => {
+              setSort(field, dir)
+            }}
+          />
+        ) : (
+          <BookGrid
+            books={books}
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            fetchNextPage={fetchNextPage}
+            showMuted={showMuted}
+            emptyMessage="No graded books yet"
+            emptySubMessage="Books get a grade after they finish aligning."
+            onClearFilters={clearAll}
+            hasActiveFilters={activeFilterCount > 0}
+            selectedBookUuid={selectedBookUuid}
+            onBookClick={handleBookClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
+          />
+        )}
+        <SelectionToolbar allBookUuids={bookUuids} />
+      </PageContent>
+    </BookListLayout>
   )
 }

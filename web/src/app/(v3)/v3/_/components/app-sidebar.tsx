@@ -445,6 +445,7 @@ function SidebarNavItem({
       timeout: 1_000,
     },
   )
+  const [tooltipOpen, setTooltipOpen] = useState(false)
 
   const resolved = resolveItem(item, builtinTitle)
   if (!resolved) return null
@@ -460,8 +461,6 @@ function SidebarNavItem({
   const isCountLoading = countResult?.isLoading ?? false
 
   const isEntity = item.kind === "shelf" || item.kind === "collection"
-
-  const [tooltipOpen, setTooltipOpen] = useState(false)
 
   return (
     <SidebarMenuItem className="group/navitem">

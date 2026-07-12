@@ -1,15 +1,7 @@
 "use client"
 
 import { Popover } from "@base-ui/react/popover"
-import { useVirtualizer } from "@tanstack/react-virtual"
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { useCallback, useMemo } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -19,14 +11,13 @@ import {
 } from "@v3/_/components/ui/filterable-menu"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useGridNavigation } from "@v3/_/hooks/use-grid-navigation"
+import { useLayoutAnimations } from "@v3/_/hooks/use-layout-animations"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
 import { ActionEntryList } from "@/app/(v3)/v3/_/components/books/ActionMenu/BookActionMenuItems"
-import {
-  findScrollParent,
-  useBookActionMenu,
-} from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
+import { useBookActionMenu } from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
+import { CoverLoadProvider } from "@/app/(v3)/v3/_/components/books/Cover"
 import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
 import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
@@ -36,14 +27,21 @@ import {
   type BookNavModel,
   bookItemDomId,
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
+import { usePanelDragging } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
 import {
   useCommon,
   useTranslation,
 } from "@/app/(v3)/v3/_/hooks/use-translation"
+import {
+  type VirtualGridGeometry,
+  useVirtualGrid,
+} from "@/app/(v3)/v3/_/hooks/use-virtual-grid"
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
+import { Card } from "@/app/(v3)/v3/(app)/test/page"
+import { useQueryState } from "nuqs"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -57,7 +55,11 @@ type BookGridProps = {
   onClearFilters?: () => void
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
-  onBookClick?: (book: BookWithRelations) => void
+  onBookClick?: (
+    book: BookWithRelations,
+    isSelecting: boolean,
+    isBookSelected: boolean,
+  ) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
   // temporary: which keyboard-open model the grid uses (see LibraryPage toggle)
@@ -72,12 +74,23 @@ export const GRID_CARD_WIDTHS: Record<GridCardSize, number> = {
   largest: 270,
 }
 export const BOOK_GRID_GAP = 16 // gap-4
-const GAP = BOOK_GRID_GAP
-const COVER_ASPECT = 16 / 13 // aspect-[13/16]
-const TEXT_BLOCK_HEIGHT = 60 // author + 2-line title + spacing
+const COVER_ASPECT = 16 / 13 // cover box is aspect-13/16 -> height = width * 16/13
+const MOBILE_COLUMNS = 2
+
+// meta height must be known up front (this virtualizer is uniform-cell and
+// doesn't measure rows). estimate it from the fields the card renders: a
+// 2-line title, an authors line when shown, plus one line per extra field.
+function metaHeightFor(fields: DisplayField[]): number {
+  const TOP = 8 // mt-2
+  const TITLE = 38 // 2 lines, leading-tight
+  const LINE = 18 // one text-xs line + gap-0.5
+  const extra = fields.filter((f) => f !== "authors" && f !== "title").length
+  const authorsLine = fields.includes("authors") ? 1 : 0
+  return TOP + TITLE + (extra + authorsLine) * LINE
+}
 
 export function BookGrid({
-  books,
+  books: rawBooks,
   isLoading,
   isFetchingNextPage,
   hasNextPage,
@@ -92,153 +105,77 @@ export function BookGrid({
   navModel = "commit",
   ...props
 }: BookGridProps) {
+  const books = rawBooks.slice(0, -1)
+
   const t = useTranslation("BookList")
   const menu = useBookActionMenu(books)
 
-  const emptyMessage = props.emptyMessage ?? t("emptyStateSub")
-  const emptySubMessage = props.emptySubMessage ?? t("emptyStateTryAdjusting")
+  const emptyMessage = props.emptyMessage ?? t("emptyState")
+  const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")
 
   const isMobile = useIsMobile()
   const { gridCardSize } = useUserPreferences()
   const cardWidth = GRID_CARD_WIDTHS[gridCardSize]
 
-  const observerRef = useRef<ResizeObserver | null>(null)
-  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
-  const [containerWidth, setContainerWidth] = useState(0)
+  // animated mode: fluid 1fr cards + FLIP re-wraps. fallback (reduced motion or
+  // the preference off): fluid cards that reflow instantly (no FLIP).
+  const animate = useLayoutAnimations() && !isMobile
 
-  // callback ref so measurement binds whenever the real grid container mounts.
-  // a plain effect would run once against the loading skeleton (container null)
-  // and never re-bind after data arrives, leaving the grid blank on cold reload.
-  const containerRef = useCallback((node: HTMLDivElement | null) => {
-    observerRef.current?.disconnect()
+  const metaHeight = useMemo(
+    () => metaHeightFor(displayFields ?? ["authors"]),
+    [displayFields],
+  )
 
-    if (!node) {
-      observerRef.current = null
-      return
-    }
+  const geometry = useMemo<VirtualGridGeometry>(
+    () => ({
+      minColumnWidth: cardWidth,
+      gapX: BOOK_GRID_GAP,
+      gapY: BOOK_GRID_GAP,
+      padX: 0,
+      padY: 0,
+      rowHeightForColumnWidth: (w) => w * COVER_ASPECT + metaHeight,
+      ...(isMobile ? { fixedColumns: MOBILE_COLUMNS } : {}),
+    }),
+    [cardWidth, metaHeight, isMobile],
+  )
 
-    setScrollElement(findScrollParent(node))
-    setContainerWidth(node.offsetWidth)
+  // pin the selected card across reflows (panel open, resize, card-size change)
+  const anchorIndex = useMemo(() => {
+    if (!selectedBookUuid) return null
+    const i = books.findIndex((b) => b.uuid === selectedBookUuid)
+    return i >= 0 ? i : null
+  }, [books, selectedBookUuid])
 
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) setContainerWidth(entry.contentRect.width)
-    })
-    observer.observe(node)
-    observerRef.current = observer
-  }, [])
+  // manual panel drag wants immediate column reflow; animated width changes
+  // (panel open/close, sidebar toggle) keep the settle-then-reflow.
+  const panelDragging = usePanelDragging()
 
-  // mobile shows one book per row regardless of width (and has no side panel).
-  const columnCount = useMemo(() => {
-    if (containerWidth === 0) return 0
-    if (isMobile) return 2
-    return Math.max(1, Math.floor((containerWidth + GAP) / (cardWidth + GAP)))
-  }, [containerWidth, isMobile, cardWidth])
-
-  // cards are a fixed width, so row height is constant per column count.
-  const rowHeight = useMemo(() => {
-    const colWidth = isMobile ? containerWidth / 2 || cardWidth : cardWidth
-    return colWidth * COVER_ASPECT + TEXT_BLOCK_HEIGHT + GAP
-  }, [isMobile, containerWidth, cardWidth])
-
-  const rowCount = columnCount > 0 ? Math.ceil(books.length / columnCount) : 0
-
-  const rowVirtualizer = useVirtualizer({
-    count: rowCount,
-    getScrollElement: () => scrollElement,
-    estimateSize: () => rowHeight,
-    overscan: 4,
-    // measure real row heights so variable-length titles never clip or overlap
-    measureElement:
-      typeof window !== "undefined"
-        ? (element) => element.getBoundingClientRect().height
-        : undefined,
-    useFlushSync: false,
-    directDomUpdates: true,
-  })
-
-  const virtualRows = rowVirtualizer.getVirtualItems()
-
-  // drive infinite loading from the virtualizer instead of a sentinel element
-  const lastVirtualRowIndex = virtualRows.at(-1)?.index
-  useEffect(() => {
-    if (lastVirtualRowIndex === undefined) return
-
-    if (
-      lastVirtualRowIndex >= rowCount - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
-      fetchNextPage()
-    }
-  }, [
-    lastVirtualRowIndex,
-    rowCount,
+  const grid = useVirtualGrid({
+    itemCount: books.length,
+    geometry,
+    anchorIndex,
+    animate,
+    flipDuration: 500,
     hasNextPage,
     isFetchingNextPage,
-    fetchNextPage,
-  ])
-
-  // keep the selected book anchored when the grid reflows. opening/resizing the
-  // detail panel changes the column count, which moves every book to a new row;
-  // without this you lose the book you just clicked. instead of animating to it
-  // (slow, janky), we restore the book to the exact viewport offset it had
-  // before the reflow, synchronously, so it snaps in a single frame.
-  const anchorRef = useRef<{ uuid: string; viewportTop: number } | null>(null)
-  const prevColumnCountRef = useRef(columnCount)
-
-  // correction runs first: when the column count changes, move the scroll
-  // position so the selected book keeps the viewport offset captured below.
-  useLayoutEffect(() => {
-    const prevCols = prevColumnCountRef.current
-    prevColumnCountRef.current = columnCount
-
-    if (prevCols === columnCount || columnCount === 0) return
-    if (!scrollElement || !selectedBookUuid) return
-
-    const anchor = anchorRef.current
-    if (!anchor || anchor.uuid !== selectedBookUuid) return
-
-    const index = books.findIndex((b) => b.uuid === selectedBookUuid)
-    if (index < 0) return
-
-    const newRow = Math.floor(index / columnCount)
-    // rows are a near-constant height, so estimate the new row offset directly
-    // rather than waiting for the virtualizer to measure.
-    // eslint-disable-next-line react-compiler/react-compiler -- setting scrollTop on the real scroll node is intentional, not state mutation
-    scrollElement.scrollTop = newRow * rowHeight - anchor.viewportTop
-  }, [columnCount, scrollElement, selectedBookUuid, books, rowHeight])
-
-  // capture runs after: remember where the selected book currently sits in the
-  // viewport so the correction above can restore it on the next reflow.
-  useLayoutEffect(() => {
-    if (!scrollElement || !selectedBookUuid) {
-      anchorRef.current = null
-      return
-    }
-
-    const card = scrollElement.querySelector(
-      `[data-book-uuid="${selectedBookUuid}"]`,
-    )
-    if (!card) return
-
-    const viewTop = scrollElement.getBoundingClientRect().top
-    const cardTop = card.getBoundingClientRect().top
-    anchorRef.current = {
-      uuid: selectedBookUuid,
-      viewportTop: cardTop - viewTop,
-    }
+    onFetchNextPage: fetchNextPage,
+    deferCoverLoads: true,
+    overscanRows: 4,
+    liveResize: panelDragging,
   })
 
-  // keyboard navigation: focus stays on the grid container, arrows move a
-  // cursor (2d via columnCount), the active card is surfaced via
+  // keyboard navigation: focus stays on the grid container, arrows move a cursor
+  // (2d via the live column count), the active card is surfaced via
   // aria-activedescendant. only wired when the grid is interactive.
   const navEnabled = !!onBookClick
+
+  const [, setSelectedBookId] = useQueryState("book")
 
   const openBookAt = useCallback(
     (index: number) => {
       const book = books[index]
-      if (book) onBookClick?.(book)
+      void setSelectedBookId(book?.uuid ?? null)
+      // if (book) onBookClick?.(book)
     },
     [books, onBookClick],
   )
@@ -249,21 +186,16 @@ export function BookGrid({
     })
   }, [])
 
+  const scrollToIndex = grid.scrollToIndex
   const nav = useGridNavigation({
     itemCount: books.length,
-    columns: columnCount || 1,
+    columns: grid.metrics.cols || 1,
     enabled: navEnabled,
     getItemId: (index) => {
       const book = books[index]
       return book ? bookItemDomId(book.uuid) : undefined
     },
-    scrollToIndex: (index) => {
-      if (columnCount > 0) {
-        rowVirtualizer.scrollToIndex(Math.floor(index / columnCount), {
-          align: "auto",
-        })
-      }
-    },
+    scrollToIndex,
     initialIndex: () => {
       const i = books.findIndex((b) => b.uuid === selectedBookUuid)
       return i >= 0 ? i : 0
@@ -326,10 +258,12 @@ export function BookGrid({
     )
   }
 
+  const visible = books.slice(grid.startIndex, grid.endIndex)
+
   return (
     <>
       <div
-        ref={containerRef}
+        ref={grid.sizerRef}
         id={BOOK_COLLECTION_ID}
         aria-label="Books"
         {...(navEnabled ? nav.containerProps : {})}
@@ -337,55 +271,37 @@ export function BookGrid({
           "relative w-full transition-opacity duration-200 outline-none",
           showMuted && "opacity-60",
         )}
-        style={{ height: rowVirtualizer.getTotalSize() }}
+        style={grid.sizerStyle}
       >
-        <div className="animate-in fade-in-0 duration-300">
-          {virtualRows.map((virtualRow) => {
-            const start = virtualRow.index * columnCount
-            const rowBooks = books.slice(start, start + columnCount)
-
-            return (
-              <div
-                key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={rowVirtualizer.measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div
-                  className="grid gap-4 pb-4"
-                  style={{
-                    gridTemplateColumns: isMobile
-                      ? `repeat(${columnCount}, minmax(0, 1fr))`
-                      : `repeat(${columnCount}, ${cardWidth}px)`,
-                  }}
-                >
-                  {rowBooks.map((book) => (
-                    <BookCard
-                      handle={menu.handle}
-                      key={book.uuid}
-                      book={book}
-                      muted={showMuted}
-                      keyboardNav={navEnabled}
-                      active={navEnabled && book.uuid === activeUuid}
-                      selected={book.uuid === selectedBookUuid}
-                      isSelecting={menu.isSelecting}
-                      isBookSelected={
-                        menu.selection?.isSelected(book.uuid) ?? false
-                      }
-                      onToggleSelection={menu.toggleSelection}
-                      onSelectRange={menu.handleSelectRange}
-                      onOpenMenu={menu.handleOpenMenu}
-                      onClick={onBookClick}
-                      displayFields={displayFields}
-                      displayContext={displayContext}
-                    />
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <CoverLoadProvider value={grid.imagesActive}>
+          <div ref={grid.gridRef} style={grid.gridStyle}>
+            {visible.map((book, i) => {
+              const index = grid.startIndex + i
+              return (
+                <BookCard
+                  key={book.uuid}
+                  index={index}
+                  book={book}
+                  coverWidth={cardWidth}
+                  muted={showMuted}
+                  keyboardNav={navEnabled}
+                  active={navEnabled && book.uuid === activeUuid}
+                  selected={book.uuid === selectedBookUuid}
+                  isSelecting={menu.isSelecting}
+                  isBookSelected={
+                    menu.selection?.isSelected(book.uuid) ?? false
+                  }
+                  onToggleSelection={menu.toggleSelection}
+                  onOpenMenu={menu.handleOpenMenu}
+                  onClick={onBookClick}
+                  handle={menu.handle}
+                  displayFields={displayFields}
+                  displayContext={displayContext}
+                />
+              )
+            })}
+          </div>
+        </CoverLoadProvider>
       </div>
 
       {isFetchingNextPage && (

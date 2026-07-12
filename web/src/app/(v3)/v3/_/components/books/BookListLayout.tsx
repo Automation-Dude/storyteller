@@ -2,7 +2,14 @@
 
 import { useHotkey } from "@tanstack/react-hotkeys"
 import dynamic from "next/dynamic"
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { Drawer } from "vaul-base"
 
 import { SiteHeader } from "@v3/_/components/site-header"
@@ -16,7 +23,9 @@ import {
   PageSidebar,
 } from "@v3/_/components/ui/page-layout"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
+import { useLayoutAnimations } from "@v3/_/hooks/use-layout-animations"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { usePanelWidthDriver } from "@v3/_/hooks/use-panel-width-driver"
 
 import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
 import {
@@ -27,12 +36,13 @@ import {
   BOOK_COLLECTION_ID,
   BOOK_DETAIL_PANEL_ID,
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
+import { PanelDraggingProvider } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
 import { type BookWithRelations } from "@/database/books"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
-import { CoverScope, useCoverScope } from "./BookDetails/sections/CoverScope"
+import { useCoverScope } from "./BookDetails/sections/CoverScope"
 
 const DynamicBookDetailsContent = dynamic(
   () =>
@@ -92,8 +102,10 @@ export function BookListLayout({
   const panelWidth = useAppSelector(
     (state) => state.uiSettings.detailPanelWidth,
   )
+  const bookView = useAppSelector((state) => state.uiSettings.bookView)
 
   const panelOpen = !!selectedBookUuid
+  const animate = useLayoutAnimations() && !isMobile
 
   const handlePanelWidthChange = useCallback(
     (width: number) => {
@@ -106,7 +118,7 @@ export function BookListLayout({
   const cardWidth = GRID_CARD_WIDTHS[gridCardSize]
   const pageLayoutRef = useRef<HTMLDivElement>(null)
 
-  const GRID_PADDING = 32 // PageContent p-4 (16px each side)
+  const GRID_PADDING = 48 // PageContent p-6 (24px each side)
 
   // snap a resizable chrome (sidebar or panel) so the grid in the middle holds
   // a whole number of columns at the current card width. returns a width within
@@ -160,9 +172,47 @@ export function BookListLayout({
   // the page sidebar is freely resizable between its min/max -- only the detail
   // panel snaps so the grid keeps whole columns.
 
+  // magnetic drag: pull toward a whole-column width when within reach, so the
+  // grid tends to rest with clean columns without ever jumping there.
+  const magneticTarget = useMemo(() => {
+    if (!animate || bookView !== "grid") return undefined
+    return (raw: number) => {
+      const clean = snapPanelWidth(raw)
+      return Math.abs(clean - raw) < 30 ? clean : raw
+    }
+  }, [animate, bookView, snapPanelWidth])
+
+  const driver = usePanelWidthDriver({
+    open: panelOpen && !isMobile,
+    storedWidth: panelWidth,
+    animate,
+    magneticTarget,
+    snapOnRelease: !animate && bookView === "grid" ? snapPanelWidth : undefined,
+    commit: handlePanelWidthChange,
+  })
+
+  // keep the closing panel's content mounted while it slides shut
+  const lastSelectedRef = useRef<{
+    uuid: string
+    book: BookWithRelations | undefined
+  } | null>(null)
+  useEffect(() => {
+    if (selectedBookUuid) {
+      lastSelectedRef.current = { uuid: selectedBookUuid, book: selectedBook }
+    }
+  }, [selectedBookUuid, selectedBook])
+
+  const shownUuid =
+    selectedBookUuid ??
+    (animate && driver.visible ? lastSelectedRef.current?.uuid ?? null : null)
+  const shownBook = selectedBookUuid
+    ? selectedBook
+    : lastSelectedRef.current?.book
+
   // re-snap the stored panel width so the grid starts with whole columns. runs
   // on mount, when the panel opens/closes, when the card size changes, or when
-  // the layout resizes (window resize, app sidebar toggle).
+  // the layout resizes (window resize, app sidebar toggle). animated mode
+  // skips this: the grid is fluid there, so any width yields full rows.
   const snapRef = useRef({
     panelWidth,
     sidebarWidth,
@@ -196,7 +246,7 @@ export function BookListLayout({
   }, [])
 
   useEffect(() => {
-    if (layoutWidth === 0) return
+    if (layoutWidth === 0 || animate) return
 
     const { panelWidth, sidebarWidth, sidebar, dispatch } = snapRef.current
     const currentSidebar = sidebar ? sidebarWidth ?? 280 : 0
@@ -213,7 +263,7 @@ export function BookListLayout({
         dispatch(uiSettingsSlice.actions.setDetailPanelWidth(snapped))
       }
     }
-  }, [panelOpen, cardWidth, layoutWidth, snapChromeWidth])
+  }, [panelOpen, cardWidth, layoutWidth, snapChromeWidth, animate])
 
   // let the keyboard user step back out of the panel to the grid. Escape always
   // returns; plain Left is a bonus that must not fire when the focused control
@@ -246,7 +296,8 @@ export function BookListLayout({
     }
   }, [])
 
-  const coverScopeProps = useCoverScope(selectedBook)
+  const coverScopeProps = useCoverScope(shownBook)
+  useHotkey("Escape", onClosePanel, { ignoreInputs: true })
 
   if (isMobile) {
     return (
@@ -275,10 +326,9 @@ export function BookListLayout({
       </>
     )
   }
-  console.log(coverScopeProps)
 
   return (
-    <>
+    <PanelDraggingProvider value={driver.dragging}>
       <PageLayout ref={pageLayoutRef}>
         {sidebar && (
           <PageSidebar
@@ -286,7 +336,6 @@ export function BookListLayout({
             {...(onSidebarWidthChange && {
               onWidthChange: onSidebarWidthChange,
             })}
-            className="border-r"
           >
             {sidebar}
           </PageSidebar>
@@ -305,15 +354,14 @@ export function BookListLayout({
         </PageMain>
 
         <PagePanel
-          open={panelOpen}
+          open={driver.visible}
           width={panelWidth}
-          onWidthChange={handlePanelWidthChange}
-          snapWidth={snapPanelWidth}
-          className="border-l"
-          // style={coverScopeProps.style}
+          panelRef={driver.panelRef}
+          onResizeStart={driver.startDrag}
+          dragging={driver.dragging}
           colors={coverScopeProps}
         >
-          {selectedBookUuid && (
+          {shownUuid && (
             // focus target so keyboard-opening a book from the grid can move
             // focus into the panel (and the panel can hand focus back).
             <div
@@ -324,9 +372,10 @@ export function BookListLayout({
               onKeyDown={handlePanelKeyDown}
               className="flex h-full w-full flex-col outline-none"
             >
+              {/* {book} */}
               <DynamicBookDetailsContent
-                uuid={selectedBookUuid as UUID}
-                initialBook={selectedBook}
+                uuid={shownUuid as UUID}
+                initialBook={shownBook}
                 compact
                 onClose={onClosePanel}
                 nextBook={nextBook}
@@ -336,7 +385,7 @@ export function BookListLayout({
           )}
         </PagePanel>
       </PageLayout>
-    </>
+    </PanelDraggingProvider>
   )
 }
 

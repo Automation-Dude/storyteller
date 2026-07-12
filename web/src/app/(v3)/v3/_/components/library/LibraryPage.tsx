@@ -584,7 +584,7 @@ function LibraryPageInner({
         onBookViewChange={handleBookViewChange}
       />
 
-      <PageContent className="p-4">
+      <PageContent className="p-6">
         {bookView === "list" ? (
           <BookList
             books={filteredBooks}
@@ -634,15 +634,8 @@ function LibraryPageInner({
             navModel={navModel}
           />
         )}
-
-        {/* {filteredBooks.length === 0 && (
-          <div className="text-muted-foreground flex h-[50vh] flex-col items-center justify-center gap-2">
-            <icon.Search className="h-12 w-12 opacity-40" />
-            <p className="text-lg font-medium">{t("emptyState")}</p>
-          </div>
-        )} */}
       </PageContent>
-      <SelectionToolbar allBookUuids={filteredBookUuids} />
+      <SelectionToolbar allBooks={filteredBooks} />
     </>
   )
 
@@ -1011,7 +1004,7 @@ function SidebarPanel({
   return (
     <div className="scroll-y relative flex h-full flex-col">
       <div className="flex h-full flex-col">
-        <div className="bg-background sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
+        <div className="bg-surface-soft sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-base">{title}</h2>
 

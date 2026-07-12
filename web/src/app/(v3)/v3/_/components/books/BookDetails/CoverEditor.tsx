@@ -79,7 +79,7 @@ function CoverSlot({
         className="h-full w-full rounded-xs object-cover shadow-sm"
       />
 
-      <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-xs bg-black/20 text-white transition-colors group-hover/slot:bg-black/40">
+      <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-xs text-white transition-colors">
         <input
           type="file"
           accept="image/*"
@@ -99,19 +99,40 @@ function CoverSlot({
         </span>
       </label>
 
+      <div className="absolute top-1.5 right-1.5 z-10 opacity-90">
+        <TooltipButton
+          type="button"
+          variant="secondary"
+          size="icon-sm"
+          tooltip={c("actions.download")}
+          aria-label={c("actions.download")}
+          render={
+            <a
+              href={currentUrl}
+              download={file?.name}
+              target="_self"
+              rel="noopener noreferrer"
+            >
+              <icon.Download className="h-3 w-3" />
+            </a>
+          }
+        />
+      </div>
+
       {file && (
-        <Button
+        <TooltipButton
           type="button"
           variant="secondary"
           size="icon-sm"
           className="absolute top-1.5 right-1.5 z-10 opacity-90"
+          tooltip={c("actions.remove")}
           aria-label={c("actions.remove")}
           onClick={() => {
             onFileChange(null)
           }}
         >
           <icon.Close className="h-3 w-3" />
-        </Button>
+        </TooltipButton>
       )}
     </div>
   )

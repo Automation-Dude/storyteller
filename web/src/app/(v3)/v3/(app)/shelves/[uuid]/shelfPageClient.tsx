@@ -133,7 +133,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
         onBookViewChange={handleBookViewChange}
       />
 
-      <PageContent className="p-4">
+      <PageContent className="p-6">
         {bookView === "list" ? (
           <BookList
             books={books}
@@ -180,7 +180,7 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
           />
         )}
 
-        <SelectionToolbar allBookUuids={bookUuids} />
+        <SelectionToolbar allBooks={books} />
       </PageContent>
     </BookListLayout>
   )

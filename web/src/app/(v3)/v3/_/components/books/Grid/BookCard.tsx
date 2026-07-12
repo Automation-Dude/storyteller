@@ -1,16 +1,13 @@
 import { Popover } from "@base-ui/react/popover"
 import { useFormatter, useLocale } from "next-intl"
-import { Fragment, memo, useCallback, useMemo, useState } from "react"
+import { Fragment, memo, useCallback, useMemo } from "react"
 
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { useFormatDuration } from "@v3/_/lib/formatters"
 import { cn } from "@v3/_/lib/utils"
 
-import {
-  BookCover,
-  isDualFormat,
-} from "@/app/(v3)/v3/_/components/books/BookCover"
 import { useCoverScope } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
+import { Cover, isDual } from "@/app/(v3)/v3/_/components/books/Cover"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
 import {
   ProgressDisplayBar,
@@ -25,9 +22,16 @@ import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
+import { BookCover } from "../BookCover"
 
 type BookCardProps = {
   book: BookWithRelations
+  // absolute item index, surfaced as data-index so the virtualizer's FLIP can
+  // find and animate the card on column-count changes.
+  index?: number
+  // stable fetch-resolution bucket for the cover (rendered card width). kept
+  // stable rather than the live fluid width so fluid resize can't refetch.
+  coverWidth?: number
   muted?: boolean
   selected?: boolean
   // roving keyboard cursor: container owns the tab stop, this card is the
@@ -39,7 +43,11 @@ type BookCardProps = {
   onToggleSelection?: (uuid: string) => void
   onSelectRange?: (uuid: string) => void
   onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
-  onClick?: (book: BookWithRelations) => void
+  onClick?: (
+    book: BookWithRelations,
+    isSelecting: boolean,
+    isBookSelected: boolean,
+  ) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
   handle?: Popover.Handle<unknown>
@@ -190,6 +198,8 @@ export function SecondaryText({
 
 export const BookCard = memo(function BookCard({
   book,
+  index,
+  coverWidth = 180,
   muted = false,
   selected = false,
   keyboardNav = false,
@@ -211,7 +221,7 @@ export const BookCard = memo(function BookCard({
   const isProcessing =
     book.readaloud?.status === "PROCESSING" ||
     book.readaloud?.status === "QUEUED"
-  const hasDualFormat = isDualFormat(book)
+  const hasDualFormat = isDual(book)
 
   const MAX_CARD_AUTHORS = 5
   const authors = book.authors
@@ -224,17 +234,10 @@ export const BookCard = memo(function BookCard({
 
   const scope = useCoverScope(book)
 
-  const [coverLoading, setCoverLoading] = useState(true)
-
   const cardContent = (
     <>
-      <div className="relative flex aspect-13/16 flex-col items-center justify-center transition-shadow">
-        <div
-          className={cn(
-            "from-cover-well to-cover-well/80 absolute inset-0 flex flex-col-reverse overflow-hidden rounded-lg bg-linear-to-t",
-            coverLoading && "animate-pulse",
-          )}
-        >
+      <div className="relative flex aspect-13/16 shrink-0 flex-col items-center justify-center transition-shadow">
+        <div className="from-cover-well to-cover-well/80 absolute inset-0 flex flex-col-reverse overflow-hidden rounded-lg bg-linear-to-t">
           {progress !== null && progress > 0 && (
             <ProgressDisplayBar progress={progress} book={book} />
           )}
@@ -250,16 +253,21 @@ export const BookCard = memo(function BookCard({
 
         <div
           className={cn(
-            "absolute inset-0 flex items-center justify-center p-3",
+            "absolute inset-0 flex items-center justify-center p-2",
             hasDualFormat ? "overflow-visible" : "rounded-lg",
           )}
         >
-          <BookCover
+          <Cover
             book={book}
-            width={300}
-            disableHover={isSelecting}
-            onLoadingChange={setCoverLoading}
+            width={coverWidth}
+            interactive={!isSelecting}
+            className="rounded-lg"
           />
+          {/* <BookCover
+            book={book}
+            width={coverWidth}
+            disableHover={isSelecting}
+          /> */}
         </div>
 
         {onToggleSelection && (
@@ -275,7 +283,7 @@ export const BookCard = memo(function BookCard({
 
         {isSynced && !isMobile && (
           <div className="absolute top-4.5 right-3">
-            <div className="bg-cover-accent flex size-5 items-center justify-center rounded-full shadow-md">
+            <div className="bg-accent flex size-5 items-center justify-center rounded-full shadow-md">
               <IconReadaloud className="size-6 text-white" />
             </div>
           </div>
@@ -302,7 +310,7 @@ export const BookCard = memo(function BookCard({
         )}
       </div>
 
-      <div className="mt-2 flex flex-col gap-0.5 px-1">
+      <div className="mt-2 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden px-1">
         {displayFields.map((field) => (
           <p
             key={field}
@@ -340,6 +348,18 @@ export const BookCard = memo(function BookCard({
             {book.title}
           </h3>
         </V3Link>
+
+        {/* <div className="flex items-center gap-1">
+          {book.ebook?.coverColors?.map((color) => (
+            <div
+              key={color.toString()}
+              className="size-4 rounded-full"
+              style={{
+                backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`,
+              }}
+            />
+          ))}
+        </div> */}
       </div>
     </>
   )
@@ -352,25 +372,26 @@ export const BookCard = memo(function BookCard({
         return
       }
 
-      onClick?.(book)
+      onClick?.(book, isSelecting, isBookSelected)
     },
-    [book, onClick, onSelectRange],
+    [book, onClick, onSelectRange, isSelecting, isBookSelected],
   )
 
   return (
     <div
       data-book-uuid={book.uuid}
+      {...(index !== undefined && { "data-index": index })}
       {...(keyboardNav && {
         id: bookItemDomId(book.uuid),
         role: "option",
         "aria-selected": active,
       })}
       className={cn(
-        "group relative flex flex-col rounded-lg transition-opacity duration-200",
+        "group relative flex h-full min-h-0 flex-col rounded-lg transition-opacity duration-200",
         muted && "opacity-50",
         selected &&
           !isBookSelected &&
-          "ring-primary/50 bg-tint-strong/20 [&_h3]:text-tinted-strong ring-offset-background ring-2 ring-offset-2",
+          "ring-accent/50 bg-tint-strong/20 [&_h3]:text-tinted-strong ring-offset-background ring-2 ring-offset-2",
         // the keyboard cursor reads as the focus ring even though dom focus
         // stays on the container.
         active && "rounded-lg ring-2 ring-blue-500 ring-offset-2 outline-none",
@@ -384,7 +405,7 @@ export const BookCard = memo(function BookCard({
           !keyboardNav && onClick
             ? (e: React.KeyboardEvent) => {
                 if (e.key === "Enter" || e.key === " ") {
-                  onClick(book)
+                  onClick(book, isSelecting, isBookSelected)
                 }
               }
             : undefined
@@ -392,7 +413,7 @@ export const BookCard = memo(function BookCard({
         tabIndex={keyboardNav ? -1 : 0}
         onClick={onClick ? handleCardClick : undefined}
         className={cn(
-          "relative h-full",
+          "relative flex min-h-0 flex-1 flex-col",
           isBookSelected && "ring-cover rounded-lg ring-2",
           !keyboardNav &&
             "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",

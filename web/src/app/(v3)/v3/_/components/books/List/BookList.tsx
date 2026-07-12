@@ -95,8 +95,8 @@ export function BookList({
   const t = useTranslation("BookList")
   const menu = useBookActionMenu(books)
 
-  const emptyMessage = props.emptyMessage ?? t("emptyStateSub")
-  const emptySubMessage = props.emptySubMessage ?? t("emptyStateTryAdjusting")
+  const emptyMessage = props.emptyMessage ?? t("emptyState")
+  const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")
 
   // the column headers that get their own column (not title/authors)
   const extraColumns = visibleColumns.filter(
@@ -243,7 +243,7 @@ export function BookList({
   return (
     <>
       {/* column header row */}
-      <div className="border-border bg-background sticky -top-4 z-10 -mx-4 flex items-center gap-3 border-b px-3 pb-1.5">
+      <div className="border-border bg-surface-base sticky -top-6 z-10 -mx-6 flex items-center gap-3 border-b px-5 pb-1.5">
         {/* spacer for cover + title */}
         <div className="h-px w-10 shrink-0" />
         <div className="min-w-0 flex-1" />
