@@ -13,11 +13,9 @@ import {
   MIN_PANEL_WIDTH,
 } from "@v3/_/components/ui/page-layout"
 
-const OPEN_CLOSE_DURATION = 500
+const OPEN_CLOSE_DURATION = 240
 // close approximation of cubic-bezier(0.22, 1, 0.36, 1)
 const easeOut = (p: number) => 1 - Math.pow(1 - p, 5)
-// how hard the magnetic drag pulls toward a column-boundary width, per frame
-const MAGNET_PULL = 0.32
 
 const clampWidth = (w: number) =>
   Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, w))
@@ -32,9 +30,10 @@ type PanelWidthDriverOptions = {
   // committed width from the store; the width the panel rests at when open
   storedWidth: number
   animate: boolean
-  // maps a dragged width to the eased-toward target (grid view, animated mode).
-  // identity outside the magnetic range.
-  magneticTarget?: ((raw: number) => number) | undefined
+  // whether the open/close transition slides. defaults to `animate`. split out so
+  // the panel can appear instantly while the grid FLIP + magnetic drag (gated by
+  // `animate`) stay on.
+  animateOpenClose?: boolean
   // fallback-mode release snap to a whole-column width (grid view only)
   snapOnRelease?: ((raw: number) => number) | undefined
   commit: (width: number) => void
@@ -50,7 +49,7 @@ export function usePanelWidthDriver({
   open,
   storedWidth,
   animate,
-  magneticTarget,
+  animateOpenClose = animate,
   snapOnRelease,
   commit,
 }: PanelWidthDriverOptions) {
@@ -60,18 +59,22 @@ export function usePanelWidthDriver({
   // stays true while the close animation runs so content remains mounted
   const [visible, setVisible] = useState(open)
   const [dragging, setDragging] = useState(false)
+  // true while the open/close width slide is animating, so the grid can reflow
+  // its columns live during the slide (same as a drag) instead of holding the
+  // count and squeezing until the width settles.
+  const [sliding, setSliding] = useState(false)
 
   const optsRef = useRef({
     storedWidth,
     animate,
-    magneticTarget,
+    animateOpenClose,
     snapOnRelease,
     commit,
   })
   optsRef.current = {
     storedWidth,
     animate,
-    magneticTarget,
+    animateOpenClose,
     snapOnRelease,
     commit,
   }
@@ -94,11 +97,15 @@ export function usePanelWidthDriver({
       cancelAnimationFrame(rafRef.current)
       const from = widthRef.current
       const t0 = performance.now()
+      setSliding(true)
       const tick = (now: number) => {
         const p = Math.min(1, (now - t0) / OPEN_CLOSE_DURATION)
         setDom(from + (to - from) * easeOut(p))
         if (p < 1) rafRef.current = requestAnimationFrame(tick)
-        else done?.()
+        else {
+          setSliding(false)
+          done?.()
+        }
       }
       rafRef.current = requestAnimationFrame(tick)
     },
@@ -110,8 +117,12 @@ export function usePanelWidthDriver({
     if (open === prevOpenRef.current) return
     prevOpenRef.current = open
 
-    const { animate, storedWidth } = optsRef.current
-    if (!animate) {
+    const { animate, animateOpenClose, storedWidth } = optsRef.current
+    // instant when animations are off entirely, or when only the open/close
+    // slide is disabled (grid FLIP + drag still on). in animate mode the driver
+    // owns the width, so the every-commit re-assert above applies it; otherwise
+    // PagePanel renders it from the prop.
+    if (!animate || !animateOpenClose) {
       widthRef.current = open ? storedWidth : 0
       setVisible(open)
       return
@@ -144,35 +155,19 @@ export function usePanelWidthDriver({
       const startX = e.clientX
       const startWidth = widthRef.current
       let raw = startWidth
-      let applied = startWidth
-      let magnetRaf = 0
 
       setDragging(true)
       setBodyDragCursor(true)
 
-      const { magneticTarget } = optsRef.current
-
       const handlePointerMove = (ev: PointerEvent) => {
         raw = clampWidth(startWidth + (startX - ev.clientX))
-        // the magnet loop below applies eased widths; otherwise follow directly
-        if (!magneticTarget) setDom(raw)
-      }
-
-      if (magneticTarget) {
-        const loop = () => {
-          const target = clampWidth(magneticTarget(raw))
-          applied += (target - applied) * MAGNET_PULL
-          if (Math.abs(target - applied) < 0.5) applied = target
-          setDom(applied)
-          magnetRaf = requestAnimationFrame(loop)
-        }
-        magnetRaf = requestAnimationFrame(loop)
+        // pure 1:1 follow; the grid reflows live through its ResizeObserver
+        setDom(raw)
       }
 
       const abortController = new AbortController()
       const handlePointerUp = () => {
         abortController.abort()
-        cancelAnimationFrame(magnetRaf)
         setDragging(false)
         setBodyDragCursor(false)
 
@@ -199,5 +194,5 @@ export function usePanelWidthDriver({
     [setDom],
   )
 
-  return { panelRef, visible, dragging, startDrag }
+  return { panelRef, visible, dragging, sliding, startDrag }
 }

@@ -6,7 +6,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
-  useMemo,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react"
@@ -23,6 +23,7 @@ import {
   PagePanel,
   PageSidebar,
 } from "@v3/_/components/ui/page-layout"
+import { useSidebar } from "@v3/_/components/ui/sidebar"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import {
   CompactHeaderProvider,
@@ -182,29 +183,33 @@ export function BookListLayout({
   )
 
   // the page sidebar is freely resizable between its min/max -- only the detail
-  // panel snaps so the grid keeps whole columns.
-
-  // magnetic drag: pull toward a whole-column width when within reach, so the
-  // grid tends to rest with clean columns without ever jumping there.
-  const magneticTarget = useMemo(() => {
-    if (!animate || bookView !== "grid") return undefined
-    return (raw: number) => {
-      const clean = snapPanelWidth(raw)
-      return Math.abs(clean - raw) < 30 ? clean : raw
-    }
-  }, [animate, bookView, snapPanelWidth])
+  // panel snaps so the grid keeps whole columns (in the non-animated fallback).
 
   const driver = usePanelWidthDriver({
     open: panelOpen && !isMobile,
     storedWidth: panelWidth,
     animate,
-    // the grid FLIP + magnetic drag stay on with `animate`; this only toggles the
-    // open/close slide, so both feels can be compared from the preference.
+    // `animate` keeps the grid FLIP on; this only toggles the open/close slide,
+    // so both feels can be compared from the preference.
     animateOpenClose: animate && animatePanelOpen,
-    magneticTarget,
     snapOnRelease: !animate && bookView === "grid" ? snapPanelWidth : undefined,
     commit: handlePanelWidthChange,
   })
+
+  const { state: sidebarState } = useSidebar()
+  const [sidebarResizing, setSidebarResizing] = useState(false)
+  const prevSidebarState = useRef(sidebarState)
+  useLayoutEffect(() => {
+    if (prevSidebarState.current === sidebarState) return
+    prevSidebarState.current = sidebarState
+    setSidebarResizing(true)
+    const id = setTimeout(() => {
+      setSidebarResizing(false)
+    }, 260)
+    return () => {
+      clearTimeout(id)
+    }
+  }, [sidebarState])
 
   // keep the closing panel's content mounted while it slides shut
   const lastSelectedRef = useRef<{
@@ -345,7 +350,9 @@ export function BookListLayout({
   const hasSearch = search !== undefined && onSearchChange !== undefined
 
   return (
-    <PanelDraggingProvider value={driver.dragging}>
+    <PanelDraggingProvider
+      value={driver.dragging || driver.sliding || sidebarResizing}
+    >
       <CompactHeaderProvider>
         <DesktopLayout
           pageLayoutRef={pageLayoutRef}

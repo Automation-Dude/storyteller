@@ -78,6 +78,7 @@ import {
   useKeyHold,
 } from "@tanstack/react-hotkeys"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+import { useTheme } from "next-themes"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -161,8 +162,38 @@ export function AppSidebar({
 
   const { openSearch } = useCommandSearch()
   const t = useTranslation("AppSidebar")
+  const { theme, setTheme } = useTheme()
 
   const navSecondary: NavSecondaryItem[] = [
+    {
+      onClick: () => {
+        document.cookie = "frontend-version=v2; path=/; max-age=31536000"
+        window.location.href = "/"
+      },
+      icon: icon.ArrowBack,
+      title: t("switchToClassic"),
+      key: "switchToClassic",
+    },
+    {
+      custom: (
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            onClick={() => {
+              setTheme(theme === "dark" ? "light" : "dark")
+            }}
+            className="flex justify-between gap-2"
+          >
+            <icon.Sun
+              className={cn(theme === "dark" ? "hidden" : "block", "size-4")}
+            />
+            <icon.Moon
+              className={cn(theme === "dark" ? "block" : "hidden", "size-4")}
+            />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ),
+      key: "theme",
+    },
     {
       custom: (
         <SidebarMenuItem>

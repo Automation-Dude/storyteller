@@ -23,9 +23,6 @@ export function findScrollParent(node: HTMLElement | null): HTMLElement | null {
 
 export function useBookActionMenu(books: BookWithRelations[]) {
   const selection = useOptionalBookSelection()
-  // single source of truth: the context's isSelecting already folds in
-  // "explicit selection mode OR anything selected", so cards agree with the
-  // toolbar even right after startSelecting() with nothing selected yet.
   const isSelecting = selection?.isSelecting ?? false
   const toggleSelection = selection?.toggleSelection
 
@@ -38,7 +35,7 @@ export function useBookActionMenu(books: BookWithRelations[]) {
     [selection, orderedUuids],
   )
 
-  const handle = Popover.createHandle()
+  const handle = useMemo(() => Popover.createHandle(), [])
   const [menuBook, setMenuBook] = useState<BookWithRelations | null>(null)
 
   const handleOpenMenu = useCallback((book: BookWithRelations) => {

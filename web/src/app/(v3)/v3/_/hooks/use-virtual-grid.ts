@@ -1,6 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
+import { flushSync } from "react-dom"
 
 // A uniform-cell virtual grid. Scroll position lives in a ref and the grid only
 // re-renders when the visible row window changes, so steady scrolling is
@@ -29,6 +36,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 
 const DEFAULT_OVERSCAN_ROWS = 4
 const DEFAULT_FLIP_DURATION = 320
+// FLIP duration while the width is still moving (live drag / panel open-close),
+// capped short so successive breakpoint re-wraps don't stack into visible lag.
+const LIVE_RESIZE_FLIP_DURATION = 540
 const DEFAULT_FLIP_EASING = "cubic-bezier(0.22, 1, 0.36, 1)"
 const DEFAULT_FETCH_AHEAD_ROWS = 3
 const DEFAULT_PAUSE_TAIL_ROWS = 6
@@ -126,25 +136,36 @@ function defaultFindScrollParent(node: HTMLElement | null): HTMLElement | null {
 }
 
 // the natural column count for a width, plus the derived cell metrics.
-function metricsFor(width: number, g: VirtualGridGeometry): Metrics {
+function metricsFor(
+  width: number,
+  g: VirtualGridGeometry,
+  itemCount = Infinity,
+): Metrics {
   const inner = Math.max(0, width - g.padX)
   const cols =
     g.fixedColumns ??
     Math.max(1, Math.floor((inner + g.gapX) / (g.minColumnWidth + g.gapX)))
-  return metricsForColumns(width, g, cols)
+  return metricsForColumns(width, g, cols, itemCount)
 }
 
 // metrics for a GIVEN column count -- used while columns are held frozen during
 // a continuous resize, so the cells fluidly scale (colWidth/rowHeight follow the
 // width) without the column count changing until the width settles.
+//
+// cards fill the width (no slack) EXCEPT when there are fewer items than fill a
+// row (itemCount < cols): then they stay at the preferred width, left-packed,
+// with the slack trailing right, so growing the container never resizes a lone
+// card. once the items span two or more rows the grid fills edge-to-edge again.
 function metricsForColumns(
   width: number,
   g: VirtualGridGeometry,
   cols: number,
+  itemCount = Infinity,
 ): Metrics {
   const inner = Math.max(0, width - g.padX)
   const safeCols = Math.max(1, cols)
-  const colWidth = Math.max(0, (inner - g.gapX * (safeCols - 1)) / safeCols)
+  let colWidth = Math.max(0, (inner - g.gapX * (safeCols - 1)) / safeCols)
+  if (itemCount < safeCols) colWidth = Math.min(colWidth, g.minColumnWidth)
   const rowHeight = g.rowHeightForColumnWidth(colWidth)
   return { cols: safeCols, colWidth, rowHeight, step: rowHeight + g.gapY }
 }
@@ -234,11 +255,15 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
   // column count currently applied to the DOM. held steady during a continuous
   // resize; only the settle pass moves it to the natural count.
   const appliedColsRef = useRef(0)
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  )
   const resizingRef = useRef(false)
   const flipAnims = useRef(new Map<Element, Animation>())
   const scrollRaf = useRef(0)
-  const scrollIdle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const scrollIdle = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  )
   const roRef = useRef<ResizeObserver | null>(null)
 
   // mirror props so the imperative resize/scroll paths read fresh values
@@ -329,11 +354,13 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
     const sizer = sizerElRef.current
     if (!grid || !sizer) return
     const g = geometryRef.current
+    const n = itemCountRef.current
     const cols = appliedColsRef.current || metricsFor(widthRef.current, g).cols
-    const mm = metricsForColumns(widthRef.current, g, cols)
+    const mm = metricsForColumns(widthRef.current, g, cols, n)
+
     // eslint-disable-next-line react-compiler/react-compiler
-    sizer.style.height = `${totalHeightFor(itemCountRef.current, mm, g)}px`
-    grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`
+    sizer.style.height = `${totalHeightFor(n, mm, g)}px`
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${mm.colWidth}px)`
     grid.style.gridAutoRows = `${mm.rowHeight}px`
     grid.style.transform = `translateY(${
       g.padY + rangeRef.current.firstRow * mm.step
@@ -342,31 +369,55 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
 
   // recompute the visible window from the current scroll + metrics; re-render
   // only when it actually changes.
-  const updateRange = useCallback(() => {
-    const scroller = scrollElRef.current
-    if (!scroller) return undefined
-    const g = geometryRef.current
-    const cols = appliedColsRef.current || metricsFor(widthRef.current, g).cols
-    const mm = metricsForColumns(widthRef.current, g, cols)
-    const containerTop = measureContainerTop()
-    containerTopRef.current = containerTop
-    const rc = mm.cols > 0 ? Math.ceil(itemCountRef.current / mm.cols) : 0
-    const desired = computeRange(
-      scrollTopRef.current,
-      scroller.clientHeight,
-      containerTop,
-      mm,
-      g,
-      rc,
-      overscanRef.current,
-    )
-    setRange((prev) =>
-      prev.firstRow === desired.firstRow && prev.lastRow === desired.lastRow
-        ? prev
-        : desired,
-    )
-    return desired
-  }, [measureContainerTop])
+  //
+  // `growOnly` is the per-frame resize path: as cards scale during a held-count
+  // rescale, the exact window drifts a row every frame, and committing each drift
+  // re-renders the whole card set every frame -- that React work
+  // (performWorkUntilDeadline) is the real resize cost, worst on Firefox. In
+  // growOnly mode we keep the current window and only re-render when it must
+  // EXPAND to keep the viewport covered (union with the current range), so a
+  // stable or shrinking window costs zero renders and a widening one can never go
+  // blank. The exact window is restored once, on settle (endResize).
+  const updateRange = useCallback(
+    (growOnly = false) => {
+      const scroller = scrollElRef.current
+      if (!scroller) return undefined
+      const g = geometryRef.current
+      const cols =
+        appliedColsRef.current || metricsFor(widthRef.current, g).cols
+      const mm = metricsForColumns(
+        widthRef.current,
+        g,
+        cols,
+        itemCountRef.current,
+      )
+      const containerTop = measureContainerTop()
+      containerTopRef.current = containerTop
+      const rc = mm.cols > 0 ? Math.ceil(itemCountRef.current / mm.cols) : 0
+      const desired = computeRange(
+        scrollTopRef.current,
+        scroller.clientHeight,
+        containerTop,
+        mm,
+        g,
+        rc,
+        overscanRef.current,
+      )
+      setRange((prev) => {
+        const next = growOnly
+          ? {
+              firstRow: Math.min(prev.firstRow, desired.firstRow),
+              lastRow: Math.max(prev.lastRow, desired.lastRow),
+            }
+          : desired
+        return prev.firstRow === next.firstRow && prev.lastRow === next.lastRow
+          ? prev
+          : next
+      })
+      return desired
+    },
+    [measureContainerTop],
+  )
 
   // FLIP the cards from their old-layout positions to the new (already applied)
   // layout. computed arithmetically, and against the old/new scroll positions
@@ -383,6 +434,13 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
       const grid = gridRef.current
       if (!grid || oldM.cols === 0) return
       const g = geometryRef.current
+      // live reflow (drag, panel open/close): the width is still moving, so a
+      // long catch-up FLIP piles up across breakpoints and reads as lag. use a
+      // short snappy FLIP so each re-wrap resolves before the next. discrete
+      // reflows (window resize) keep the full duration.
+      const duration = liveResizeRef.current
+        ? Math.min(flipDurationRef.current, LIVE_RESIZE_FLIP_DURATION)
+        : flipDurationRef.current
       const nodes = grid.querySelectorAll<HTMLElement>("[data-index]")
       for (const node of nodes) {
         const index = Number(node.dataset["index"])
@@ -398,7 +456,7 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
             { transform: `translate(${dx}px, ${dy}px)` },
             { transform: "translate(0, 0)" },
           ],
-          { duration: flipDurationRef.current, easing: flipEasingRef.current },
+          { duration, easing: flipEasingRef.current },
         )
         flipAnims.current.set(node, anim)
         const done = () => {
@@ -456,7 +514,7 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
       const desired = updateRange()
       if (!desired) return
       const g = geometryRef.current
-      const mm = metricsFor(widthRef.current, g)
+      const mm = metricsFor(widthRef.current, g, itemCountRef.current)
       const rc = mm.cols > 0 ? Math.ceil(itemCountRef.current / mm.cols) : 0
 
       // pause covers only when a next-page fetch is genuinely competing.
@@ -474,7 +532,7 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
       const scroller = scrollElRef.current
       if (!scroller) return
       const g = geometryRef.current
-      const mm = metricsFor(widthRef.current, g)
+      const mm = metricsFor(widthRef.current, g, itemCountRef.current)
       if (mm.cols === 0) return
       const containerTop = measureContainerTop()
       const top = rowTop(Math.floor(index / mm.cols), mm, g, containerTop)
@@ -522,6 +580,9 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
             g,
             containerTop,
           )
+          // read clientHeight and compute the clamp BEFORE writing, so no layout
+          // read follows a style write in this frame (Firefox layout thrash). the
+          // new content height is known arithmetically -- no scrollHeight read.
           // eslint-disable-next-line react-compiler/react-compiler
           sizer.style.height = `${totalHeightFor(itemCountRef.current, newM, g)}px`
           const maxScroll = Math.max(
@@ -538,10 +599,83 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
     [measureContainerTop],
   )
 
-  // reflow the held column count to the natural one for the current width,
-  // pinning the anchor and FLIP-ing the re-wrap. `basisWidth` is the width the
-  // currently-applied (held) layout is scaled to. no-op if the count is already
-  // natural.
+  // change the applied column count ATOMICALLY. the flash was: writing the new
+  // layout imperatively (cols/transform/scrollTop) while the old cell set was
+  // still mounted, before React re-rendered the new window -- for that gap the
+  // old cells sat in the new grid at the wrong offset (and the new scrollTop
+  // pushed them off-screen) -> blank. flushSync commits the new metrics + range
+  // in one synchronous unit, so the layout effect (syncGridStyles) and the new
+  // cells land together in the same frame. this is affordable because it runs
+  // once per settle / breakpoint crossing, NOT per frame.
+  const commitColumns = useCallback(
+    (oldM: Metrics, newM: Metrics) => {
+      const scroller = scrollElRef.current
+      const sizer = sizerElRef.current
+      const g = geometryRef.current
+      const containerTop = measureContainerTop()
+      containerTopRef.current = containerTop
+      const oldScrollTop = scroller?.scrollTop ?? 0
+      let newScrollTop = oldScrollTop
+
+      if (scroller && sizer) {
+        const index = pickAnchorIndex(
+          oldM,
+          g,
+          containerTop,
+          oldScrollTop,
+          scroller.clientHeight,
+          itemCountRef.current,
+          anchorIndexRef.current,
+        )
+        // set the content height now so the scroll clamp reads the new range
+        // eslint-disable-next-line react-compiler/react-compiler
+        sizer.style.height = `${totalHeightFor(itemCountRef.current, newM, g)}px`
+        if (index >= 0) {
+          const offset =
+            rowTop(Math.floor(index / oldM.cols), oldM, g, containerTop) -
+            oldScrollTop
+          const newTop = rowTop(
+            Math.floor(index / newM.cols),
+            newM,
+            g,
+            containerTop,
+          )
+          const maxScroll = Math.max(
+            0,
+            scroller.scrollHeight - scroller.clientHeight,
+          )
+          newScrollTop = Math.max(0, Math.min(maxScroll, newTop - offset))
+        }
+      }
+
+      const clientHeight = scroller?.clientHeight ?? 0
+      const rc = newM.cols > 0 ? Math.ceil(itemCountRef.current / newM.cols) : 0
+      const newRange = computeRange(
+        newScrollTop,
+        clientHeight,
+        containerTop,
+        newM,
+        g,
+        rc,
+        overscanRef.current,
+      )
+
+      flushSync(() => {
+        appliedColsRef.current = newM.cols
+        scrollTopRef.current = newScrollTop
+        setMetricsState(newM)
+        setRange(newRange)
+      })
+      // sizer height is set (layout effect ran inside flushSync); safe to scroll
+      if (scroller) scroller.scrollTop = newScrollTop
+      playFlip(oldM, newM, containerTop, oldScrollTop, newScrollTop)
+    },
+    [measureContainerTop, playFlip],
+  )
+
+  // reflow the held column count to the natural one for the current width. no-op
+  // if the count is already natural (so it is safe to call after a live/immediate
+  // resize that already reflowed).
   const reflowColumns = useCallback(
     (basisWidth: number) => {
       const g = geometryRef.current
@@ -550,30 +684,26 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
       if (applied === 0) return
       const target = metricsFor(width, g).cols
       if (target === applied) return
-      const oldM = metricsForColumns(basisWidth, g, applied)
-      const newM = metricsFor(width, g)
-      const { containerTop, oldScrollTop, newScrollTop } = anchorScroll(
-        oldM,
-        newM,
+      commitColumns(
+        metricsForColumns(basisWidth, g, applied, itemCountRef.current),
+        metricsFor(width, g, itemCountRef.current),
       )
-      appliedColsRef.current = target
-      syncGridStyles()
-      playFlip(oldM, newM, containerTop, oldScrollTop, newScrollTop)
-      setMetricsIfChanged(newM)
-      updateRange()
     },
-    [anchorScroll, syncGridStyles, playFlip, setMetricsIfChanged, updateRange],
+    [commitColumns],
   )
 
-  // the width has gone quiet: restore interactivity, and (for animated changes)
-  // reflow to the natural column count now.
+  // the width has gone quiet: restore interactivity and reflow to the natural
+  // column count (no-op when the live/immediate path already got there).
   const endResize = useCallback(() => {
     resizingRef.current = false
     const grid = gridRef.current
     // eslint-disable-next-line react-compiler/react-compiler
     if (grid) grid.style.pointerEvents = ""
-    if (!liveResizeRef.current) reflowColumns(widthRef.current)
-  }, [reflowColumns])
+    reflowColumns(widthRef.current)
+    // per-frame rescale only grows the window; correct it to the exact window
+    // now that the width is quiet (a reflow already did this if cols changed).
+    updateRange()
+  }, [reflowColumns, updateRange])
 
   const handleResize = useCallback(() => {
     const sizer = sizerElRef.current
@@ -587,7 +717,14 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
       widthRef.current = width
       appliedColsRef.current = metricsFor(width, g).cols
       syncGridStyles()
-      setMetricsIfChanged(metricsForColumns(width, g, appliedColsRef.current))
+      setMetricsIfChanged(
+        metricsForColumns(
+          width,
+          g,
+          appliedColsRef.current,
+          itemCountRef.current,
+        ),
+      )
       updateRange()
       return
     }
@@ -607,49 +744,45 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
       // eslint-disable-next-line react-compiler/react-compiler
       grid.style.pointerEvents = "none"
     }
+    // restore pointer-events (and reflow to natural, if still held) once quiet.
     clearTimeout(settleTimer.current)
     settleTimer.current = setTimeout(endResize, RESIZE_SETTLE_MS)
 
     const applied = appliedColsRef.current || metricsFor(prevWidth, g).cols
     appliedColsRef.current = applied
 
-    if (liveResizeRef.current) {
-      // manual drag: follow the width continuously (reflow at each breakpoint).
-      const target = metricsFor(width, g).cols
-      const oldM = metricsForColumns(prevWidth, g, applied)
-      const newM = metricsForColumns(width, g, target)
+    if (liveResizeRef.current || !animateRef.current) {
+      // manual drag OR non-animated (instant sidebar toggle): follow the width
+      // now -- rescale at the same count, or reflow atomically at a breakpoint.
       widthRef.current = width
-      const anchor = anchorScroll(oldM, newM)
-      appliedColsRef.current = target
-      syncGridStyles()
-      if (target !== applied) {
-        playFlip(
-          oldM,
-          newM,
-          anchor.containerTop,
-          anchor.oldScrollTop,
-          anchor.newScrollTop,
-        )
-        setMetricsIfChanged(newM)
+      const n = itemCountRef.current
+      const target = metricsFor(width, g).cols
+      const oldM = metricsForColumns(prevWidth, g, applied, n)
+      if (target === applied) {
+        anchorScroll(oldM, metricsForColumns(width, g, applied, n))
+        syncGridStyles()
+        updateRange(true)
+      } else {
+        commitColumns(oldM, metricsFor(width, g, n))
       }
-      updateRange()
       return
     }
 
-    // animated: HOLD the column count, rescale + keep the anchor pinned; the
-    // settle pass reflows + FLIPs once the width is quiet.
-    const oldM = metricsForColumns(prevWidth, g, applied)
-    const newM = metricsForColumns(width, g, applied)
+    // animated (panel open/close): HOLD the column count, rescale + keep the
+    // anchor pinned; the settle pass reflows + FLIPs once the width is quiet.
     widthRef.current = width
-    anchorScroll(oldM, newM)
+    anchorScroll(
+      metricsForColumns(prevWidth, g, applied, itemCountRef.current),
+      metricsForColumns(width, g, applied, itemCountRef.current),
+    )
     syncGridStyles()
-    updateRange()
+    updateRange(true)
   }, [
     syncGridStyles,
     updateRange,
     setMetricsIfChanged,
     anchorScroll,
-    playFlip,
+    commitColumns,
     endResize,
   ])
 
@@ -693,6 +826,7 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
           node.clientWidth,
           geometryRef.current,
           appliedColsRef.current,
+          itemCountRef.current,
         ),
       )
       updateRange()
@@ -721,7 +855,12 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
   useLayoutEffect(() => {
     appliedColsRef.current = metricsFor(widthRef.current, geometry).cols
     setMetricsIfChanged(
-      metricsForColumns(widthRef.current, geometry, appliedColsRef.current),
+      metricsForColumns(
+        widthRef.current,
+        geometry,
+        appliedColsRef.current,
+        itemCount,
+      ),
     )
     updateRange()
   }, [itemCount, geometry, updateRange, setMetricsIfChanged])
