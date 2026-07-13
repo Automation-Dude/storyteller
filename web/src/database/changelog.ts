@@ -88,6 +88,7 @@ export async function syncChangelog(): Promise<void> {
   while (true) {
     let releases: GitLabRelease[]
 
+    logger.info("Fetching GitLab releases page %d", page)
     try {
       releases = await fetchReleasesPage(page, perPage)
     } catch (err) {

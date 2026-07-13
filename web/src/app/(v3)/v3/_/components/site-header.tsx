@@ -14,12 +14,10 @@ type Breadcrumb = { label: string; url?: string } | { render: ReactNode }
 export function SiteHeader({
   breadcrumbs,
   actions,
-  compactSearch,
   className,
 }: {
   breadcrumbs: Breadcrumb[]
   actions?: ReactNode
-  compactSearch?: ReactNode
   className?: string
 }) {
   const parents = breadcrumbs.slice(0, -1)
@@ -35,7 +33,7 @@ export function SiteHeader({
       >
         <div className="flex w-full min-w-0 items-center gap-3 px-4">
           {current && (
-            <div className="flex min-w-0 shrink-0 flex-col justify-center">
+            <div className="flex min-w-0 flex-col justify-center">
               {parents.length > 0 && (
                 <div className="text-muted-foreground flex min-w-0 items-center gap-1 text-xs">
                   {parents.map((crumb, idx) => (
@@ -78,14 +76,8 @@ export function SiteHeader({
             </div>
           )}
 
-          {compactSearch && (
-            <div className="flex min-w-0 flex-1 justify-end">
-              {compactSearch}
-            </div>
-          )}
-
           {actions && (
-            <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
+            <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
               {actions}
             </div>
           )}

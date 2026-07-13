@@ -151,6 +151,10 @@ export const internalServerEnvVars = {
     .string()
     .default("fileWriteWorker.mjs")
     .describe("The file write worker to use for the Storyteller instance."),
+  STORYTELLER_SYNC_CHANGELOG: z
+    .stringbool()
+    .default(true)
+    .describe("Whether to sync the changelog from GitLab."),
   SQLITE_NATIVE_BINDING: z
     .string()
     .optional()
@@ -159,8 +163,8 @@ export const internalServerEnvVars = {
     .string()
     .optional()
     .describe("The Git commit tag of the Storyteller instance."),
-  ENABLE_REACT_SCAN: z.coerce
-    .boolean()
+  ENABLE_REACT_SCAN: z
+    .stringbool()
     .optional()
     .describe("Whether to enable React Scan for development."),
   ENABLE_V3_FRONTEND: z.coerce

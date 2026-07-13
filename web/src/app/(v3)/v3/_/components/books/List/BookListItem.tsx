@@ -113,8 +113,10 @@ export const BookListItem = memo(function BookListItem({
       className={cn(
         "group hover:bg-tint relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md py-px pr-3 pl-px transition-colors",
         muted && "opacity-50",
-        isBookSelected && !selected && "bg-tint ring-cover/20 ring-1 ring-inset",
-        selected && "bg-tint-strong ring-cover/40 ring-1 ring-inset",
+        isBookSelected &&
+          !selected &&
+          "bg-tint/50 ring-cover-header ring-1 ring-inset",
+        selected && "bg-tint/70 ring-cover-header ring-1 ring-inset",
         // keyboard cursor reads as a focus ring even though dom focus stays on
         // the container.
         active && "ring-2 ring-blue-500 outline-none ring-inset",
@@ -226,21 +228,27 @@ export const BookListItem = memo(function BookListItem({
       </div>
 
       {/* column values */}
-      {extraColumns.map(({ field, label }) => {
-        // the alignment columns open the report panel rather than the row's
-        // details, when a column-click handler is provided.
+      {extraColumns.map(({ field, label }, index) => {
         const isClickable =
           !!onColumnClick &&
           (field === "alignmentGrade" || field === "alignmentScore") &&
           book.alignmentSummary?.grade != null
+
+        const cols = extraColumns.length
+
         return (
           <span
             key={field}
             className={cn(
-              "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums @xs/page-content:block",
+              "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums",
               "group-hover:text-tinted",
               (selected || isBookSelected) && "text-tinted!",
               isClickable && "hover:text-foreground cursor-pointer",
+              cols > 2 && cols - index > 2
+                ? "@lg/page-content:block"
+                : cols > 1 && cols - index > 1
+                  ? "@md/page-content:block"
+                  : "@sm/page-content:block",
             )}
             style={{
               width: getColumnWidth(field, label),

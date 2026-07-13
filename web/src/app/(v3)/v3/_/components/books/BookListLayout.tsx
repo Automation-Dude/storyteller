@@ -12,7 +12,6 @@ import {
 } from "react"
 import { Drawer } from "vaul-base"
 
-import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { SiteHeader } from "@v3/_/components/site-header"
 import {
   MAX_PANEL_WIDTH,
@@ -25,10 +24,6 @@ import {
 } from "@v3/_/components/ui/page-layout"
 import { useSidebar } from "@v3/_/components/ui/sidebar"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
-import {
-  CompactHeaderProvider,
-  useCompactHeader,
-} from "@v3/_/hooks/use-compact-header"
 import { useLayoutAnimations } from "@v3/_/hooks/use-layout-animations"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { usePanelWidthDriver } from "@v3/_/hooks/use-panel-width-driver"
@@ -69,10 +64,6 @@ type BookListLayoutProps = {
   headerBreadcrumbs: ({ label: string; url?: string } | { render: ReactNode })[]
   headerActions?: ReactNode
 
-  search?: string
-  onSearchChange?: (value: string) => void
-  searchPlaceholder?: string
-
   children: ReactNode
 
   selectedBookUuid: string | null
@@ -91,9 +82,6 @@ export function BookListLayout({
   onSidebarWidthChange,
   headerBreadcrumbs,
   headerActions,
-  search,
-  onSearchChange,
-  searchPlaceholder,
   children,
   selectedBookUuid,
   selectedBook,
@@ -347,152 +335,64 @@ export function BookListLayout({
     )
   }
 
-  const hasSearch = search !== undefined && onSearchChange !== undefined
-
   return (
     <PanelDraggingProvider
       value={driver.dragging || driver.sliding || sidebarResizing}
     >
-      <CompactHeaderProvider>
-        <DesktopLayout
-          pageLayoutRef={pageLayoutRef}
-          sidebar={sidebar}
-          sidebarWidth={sidebarWidth}
-          onSidebarWidthChange={onSidebarWidthChange}
-          headerBreadcrumbs={headerBreadcrumbs}
-          headerActions={headerActions}
-          hasSearch={hasSearch}
-          search={search}
-          onSearchChange={onSearchChange}
-          searchPlaceholder={searchPlaceholder}
-          driver={driver}
-          panelWidth={panelWidth}
-          coverScopeProps={coverScopeProps}
-          shownUuid={shownUuid}
-          shownBook={shownBook}
-          onClosePanel={onClosePanel}
-          nextBook={nextBook}
-          previousBook={previousBook}
-          handlePanelKeyDown={handlePanelKeyDown}
-        >
-          {children}
-        </DesktopLayout>
-      </CompactHeaderProvider>
-    </PanelDraggingProvider>
-  )
-}
-
-function DesktopLayout({
-  pageLayoutRef,
-  sidebar,
-  sidebarWidth,
-  onSidebarWidthChange,
-  headerBreadcrumbs,
-  headerActions,
-  hasSearch,
-  search,
-  onSearchChange,
-  searchPlaceholder,
-  driver,
-  panelWidth,
-  coverScopeProps,
-  shownUuid,
-  shownBook,
-  onClosePanel,
-  nextBook,
-  previousBook,
-  handlePanelKeyDown,
-  children,
-}: {
-  pageLayoutRef: React.RefObject<HTMLDivElement | null>
-  sidebar?: ReactNode
-  sidebarWidth?: number
-  onSidebarWidthChange?: (width: number) => void
-  headerBreadcrumbs: ({ label: string; url?: string } | { render: ReactNode })[]
-  headerActions?: ReactNode
-  hasSearch: boolean
-  search?: string
-  onSearchChange?: (value: string) => void
-  searchPlaceholder?: string
-  driver: ReturnType<typeof usePanelWidthDriver>
-  panelWidth: number
-  coverScopeProps: ReturnType<typeof useCoverScope>
-  shownUuid: string | null
-  shownBook: BookWithRelations | undefined
-  onClosePanel: () => void
-  nextBook?: () => void
-  previousBook?: () => void
-  handlePanelKeyDown: (e: React.KeyboardEvent) => void
-  children: ReactNode
-}) {
-  const { isCompact } = useCompactHeader()
-
-  const compactSearchBar =
-    hasSearch && isCompact && onSearchChange ? (
-      <SearchInput
-        layoutId="book-search-bar"
-        value={search ?? ""}
-        onChange={onSearchChange}
-        placeholder={searchPlaceholder}
-        className="max-w-xs"
-      />
-    ) : undefined
-
-  return (
-    <PageLayout ref={pageLayoutRef}>
-      {sidebar && (
-        <PageSidebar
-          width={sidebarWidth ?? 280}
-          {...(onSidebarWidthChange && {
-            onWidthChange: onSidebarWidthChange,
-          })}
-        >
-          {sidebar}
-        </PageSidebar>
-      )}
-
-      <PageMain>
-        <SkipToBooksLink />
-        <PageHeader>
-          <SiteHeader
-            breadcrumbs={headerBreadcrumbs}
-            actions={headerActions}
-            compactSearch={compactSearchBar}
-          />
-        </PageHeader>
-
-        {children}
-      </PageMain>
-
-      <PagePanel
-        open={driver.visible}
-        width={panelWidth}
-        panelRef={driver.panelRef}
-        onResizeStart={driver.startDrag}
-        dragging={driver.dragging}
-        colors={coverScopeProps}
-      >
-        {shownUuid && (
-          <div
-            id={BOOK_DETAIL_PANEL_ID}
-            role="region"
-            aria-label="Book details"
-            tabIndex={-1}
-            onKeyDown={handlePanelKeyDown}
-            className="flex h-full w-full flex-col outline-none"
+      <PageLayout ref={pageLayoutRef}>
+        {sidebar && (
+          <PageSidebar
+            width={sidebarWidth ?? 280}
+            {...(onSidebarWidthChange && {
+              onWidthChange: onSidebarWidthChange,
+            })}
           >
-            <DynamicBookDetailsContent
-              uuid={shownUuid as UUID}
-              initialBook={shownBook}
-              compact
-              onClose={onClosePanel}
-              nextBook={nextBook}
-              previousBook={previousBook}
-            />
-          </div>
+            {sidebar}
+          </PageSidebar>
         )}
-      </PagePanel>
-    </PageLayout>
+
+        <PageMain>
+          <SkipToBooksLink />
+          <PageHeader>
+            <SiteHeader
+              breadcrumbs={headerBreadcrumbs}
+              actions={headerActions}
+            />
+          </PageHeader>
+
+          {children}
+        </PageMain>
+
+        <PagePanel
+          open={driver.visible}
+          width={panelWidth}
+          panelRef={driver.panelRef}
+          onResizeStart={driver.startDrag}
+          dragging={driver.dragging}
+          colors={coverScopeProps}
+        >
+          {shownUuid && (
+            <div
+              id={BOOK_DETAIL_PANEL_ID}
+              role="region"
+              aria-label="Book details"
+              tabIndex={-1}
+              onKeyDown={handlePanelKeyDown}
+              className="flex h-full w-full flex-col outline-none"
+            >
+              <DynamicBookDetailsContent
+                uuid={shownUuid as UUID}
+                initialBook={shownBook}
+                compact
+                onClose={onClosePanel}
+                nextBook={nextBook}
+                previousBook={previousBook}
+              />
+            </div>
+          )}
+        </PagePanel>
+      </PageLayout>
+    </PanelDraggingProvider>
   )
 }
 

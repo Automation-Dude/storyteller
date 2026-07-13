@@ -242,7 +242,6 @@ export function BookList({
 
   return (
     <>
-      {/* column header row */}
       <div className="border-border bg-surface-base sticky -top-6 z-10 -mx-6 flex items-center gap-3 border-b px-5 pb-1.5">
         {/* spacer for cover + title */}
         <div className="h-px w-10 shrink-0" />

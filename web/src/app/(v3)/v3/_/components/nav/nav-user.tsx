@@ -92,36 +92,15 @@ export function NavUser({
               <DropdownMenuItem
                 render={
                   <Link
-                    href={`${basePath}/preferences`}
-                    className="flex items-center gap-2"
-                  >
-                    <icon.User />
-                    {t("account")}
-                  </Link>
-                }
-              />
-              <DropdownMenuItem
-                render={
-                  <Link
                     href={`${basePath}/preferences?tab=general`}
                     className="flex items-center gap-2"
                   >
                     <icon.Settings2 />
-                    {t("preferences")}
+                    {t("account")}
                   </Link>
                 }
               />
 
-              <DropdownMenuItem
-                onClick={() => {
-                  document.cookie =
-                    "frontend-version=v2; path=/; max-age=31536000"
-                  window.location.href = "/"
-                }}
-              >
-                <icon.ArrowBack />
-                {t("switchToClassic")}
-              </DropdownMenuItem>
               <DropdownMenuItem
                 render={
                   <Link
@@ -133,41 +112,6 @@ export function NavUser({
                   </Link>
                 }
               />
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  {theme === "dark" ? (
-                    <icon.Moon className="size-4" />
-                  ) : (
-                    <icon.Sun className="size-4" />
-                  )}
-                  {t("theme")}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setTheme("light")
-                    }}
-                  >
-                    <icon.Sun className="size-4" />
-                    {t("light")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setTheme("dark")
-                    }}
-                  >
-                    <icon.Moon className="size-4" />
-                    {t("dark")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setTheme("system")
-                    }}
-                  >
-                    {t("system")}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
               <LocaleChanger nested />
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

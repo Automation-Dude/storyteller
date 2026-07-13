@@ -1,3 +1,5 @@
+import { env } from "@/env"
+
 export async function register() {
   if (process.env["NEXT_RUNTIME"] === "edge") {
     return
@@ -19,6 +21,7 @@ export async function register() {
   const { getQueuedBooks } = await import("./database/books")
   const { startProcessing } = await import("./work/distributor")
   const { getReadiumService } = await import("./services/readiumService")
+  const { env } = await import("./env")
 
   logger.debug("Debug logging enabled")
 
@@ -41,15 +44,17 @@ export async function register() {
   }
 
   try {
-    await getWatcher().start()
-    await getScheduler().refresh()
+    // await getWatcher().start()
+    // await getScheduler().refresh()
   } catch (err) {
     logger.error("Failed to initiate library watcher services")
     logger.error(err)
   }
 
   try {
-    await syncChangelog()
+    if (env.STORYTELLER_SYNC_CHANGELOG) {
+      await syncChangelog()
+    }
   } catch (err) {
     logger.error("Failed to sync changelog from GitLab")
     logger.error(err)
@@ -75,4 +80,6 @@ export async function register() {
     logger.error("Failed to restart processing queue")
     logger.error(err)
   }
+
+  logger.info("Starting app")
 }

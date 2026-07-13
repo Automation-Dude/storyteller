@@ -1,24 +1,17 @@
 "use client"
 
 import { parseAsBoolean, parseAsString, useQueryState } from "nuqs"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
-import { DisplayControl } from "@v3/_/components/books/DisplayControl"
-import { DisplayOverflowContent } from "@v3/_/components/books/DisplayOverflowContent"
 import { SaveAsShelfDialog } from "@v3/_/components/books/SaveAsShelfDialog"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
-import { SortControl } from "@v3/_/components/books/SortControl"
-import { SortOverflowContent } from "@v3/_/components/books/SortOverflowContent"
 import { ShelfFilterEditor } from "@v3/_/components/shelves/ShelfFilterEditor"
-import { OverflowToolbar } from "@v3/_/components/ui/overflow-toolbar"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
-import { CompactHeaderSentinel } from "@v3/_/hooks/use-compact-header"
-import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
@@ -66,13 +59,12 @@ export default function BookPage({
     [dispatch],
   )
 
-  const { isSelecting, toggleSelection } = useBookSelection()
+  const { toggleSelection } = useBookSelection()
 
   const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
     "book",
     parseAsString,
   )
-  // const [, setReportMode] = useReportPanel()
   const [, setReportMode] = useQueryState(
     "report",
     parseAsBoolean.withDefault(false),
@@ -93,9 +85,6 @@ export default function BookPage({
     clearAll,
   } = controller
 
-  const [sortMenuOpen, setSortMenuOpen] = useState(false)
-  const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
-
   const handleColumnSort = useCallback(
     (field: SortField, direction: SortDirection) => {
       setSort(field, direction)
@@ -108,7 +97,6 @@ export default function BookPage({
     [tLabel],
   )
 
-  // the books page has no single-series context; position is not offered.
   const displayContext: SortContext = useMemo(() => ({ seriesUuid: null }), [])
   const displayFields = useMemo(
     () =>
@@ -124,8 +112,6 @@ export default function BookPage({
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
 
-  // a tree too complex for the quick chips always shows the builder so it is
-  // never hidden; otherwise the toggle controls it.
   const advancedVisible = showAdvanced || controller.isAdvanced
 
   const {
@@ -135,7 +121,7 @@ export default function BookPage({
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-  } = useListInfiniteBooksInfiniteQuery(queryArg)
+  } = useListInfiniteBooksInfiniteQuery({ ...queryArg, limit: 1000 })
 
   const books = useMemo(
     () => data?.pages.flatMap((page) => page) ?? [],
@@ -156,6 +142,7 @@ export default function BookPage({
   const NEXT_PREFETCH_MARGIN = 3
   useEffect(() => {
     if (selectedIndex < 0) return
+
     const remaining = books.length - 1 - selectedIndex
     if (
       remaining <= NEXT_PREFETCH_MARGIN &&
@@ -201,21 +188,6 @@ export default function BookPage({
     },
     [],
   )
-  const handleBookClickRef = useRef(handleBookClick)
-  const selectedBookUuidRef = useRef(selectedBookUuid)
-  const setReportModeRef = useRef(setReportMode)
-  if (handleBookClickRef.current !== handleBookClick) {
-    console.log("handleBookClickRef updated")
-    handleBookClickRef.current = handleBookClick
-  }
-  if (selectedBookUuidRef.current !== selectedBookUuid) {
-    console.log("selectedBookUuidRef updated")
-    selectedBookUuidRef.current = selectedBookUuid
-  }
-  if (setReportModeRef.current !== setReportMode) {
-    console.log("setReportModeRef updated")
-    setReportModeRef.current = setReportMode
-  }
 
   const handleColumnClick = (book: { uuid: string }) => {
     void setReportMode(true)
@@ -248,65 +220,14 @@ export default function BookPage({
       onClosePanel={handleClosePanel}
       nextBook={goToNext}
       previousBook={goToPrevious}
-      search={controller.search}
-      onSearchChange={controller.setSearch}
-      searchPlaceholder={t.plain("seachBooksPlaceholder")}
-      headerActions={
-        <OverflowToolbar>
-          <OverflowToolbar.Item
-            id="sort"
-            label={t.plain("sortBy.tooltip")}
-            priority={1}
-            overflowContent={
-              <SortOverflowContent
-                options={sortFieldOptions}
-                field={sort.field}
-                direction={sort.direction}
-                onChange={setSort}
-              />
-            }
-          >
-            <SortControl
-              options={sortFieldOptions}
-              field={sort.field}
-              direction={sort.direction}
-              onChange={setSort}
-              onOpenChange={setSortMenuOpen}
-              open={sortMenuOpen}
-            />
-          </OverflowToolbar.Item>
-
-          <OverflowToolbar.Item
-            id="display"
-            label={t.plain("displayOptions.tooltip")}
-            priority={2}
-            overflowContent={
-              <DisplayOverflowContent
-                displayOverrides={displayOverrides}
-                onDisplayOverridesChange={controller.setDisplayOverrides}
-                bookView={bookView}
-                onBookViewChange={handleBookViewChange}
-              />
-            }
-          >
-            <DisplayControl
-              displayOverrides={displayOverrides}
-              onDisplayOverridesChange={controller.setDisplayOverrides}
-              open={displayMenuOpen}
-              onOpenChange={setDisplayMenuOpen}
-              bookView={bookView}
-              onBookViewChange={handleBookViewChange}
-            />
-          </OverflowToolbar.Item>
-
-          <OverflowToolbar.Item id="add-book" label="Add book">
-            <AddBookButton />
-          </OverflowToolbar.Item>
-        </OverflowToolbar>
-      }
+      headerActions={<AddBookButton />}
     >
       <BookFilters
         controller={controller}
+        sortOptions={sortFieldOptions}
+        onSortChange={setSort}
+        bookView={bookView}
+        onBookViewChange={handleBookViewChange}
         advancedOpen={advancedVisible}
         onToggleAdvanced={() => {
           setShowAdvanced((v) => !v)
@@ -318,13 +239,13 @@ export default function BookPage({
               }
             : undefined
         }
-      />
-
-      {advancedVisible && (
-        <div className="border-border border-b px-4 pt-2 pb-4">
-          <ShelfFilterEditor filter={userFilter} onChange={setUserFilter} />
-        </div>
-      )}
+      >
+        {advancedVisible && (
+          <div className="border-border border-t pt-2">
+            <ShelfFilterEditor filter={userFilter} onChange={setUserFilter} />
+          </div>
+        )}
+      </BookFilters>
 
       {effectiveFilter && (
         <SaveAsShelfDialog
@@ -337,7 +258,6 @@ export default function BookPage({
       )}
 
       <PageContent className="p-6">
-        <CompactHeaderSentinel />
         {bookView === "list" ? (
           <BookList
             books={books}

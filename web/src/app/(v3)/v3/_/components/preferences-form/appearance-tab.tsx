@@ -129,7 +129,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
             <CardTitle>{t("motion.title")}</CardTitle>
             <CardDescription>{t("motion.description")}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Controller
               name="layoutAnimations"
               control={form.control}
@@ -138,6 +138,24 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
                   <div className="flex flex-col gap-1">
                     <FieldLabel>{t("motion.label")}</FieldLabel>
                     <FieldDescription>{t("motion.hint")}</FieldDescription>
+                  </div>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </Field>
+              )}
+            />
+            <Controller
+              name="animatePanelOpen"
+              control={form.control}
+              render={({ field }) => (
+                <Field orientation="horizontal">
+                  <div className="flex flex-col gap-1">
+                    <FieldLabel>{t("motion.panelLabel")}</FieldLabel>
+                    <FieldDescription>
+                      {t("motion.panelHint")}
+                    </FieldDescription>
                   </div>
                   <Switch
                     checked={field.value}

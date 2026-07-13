@@ -9,16 +9,9 @@ import {
   BookDetailDrawer,
   BookListLayout,
 } from "@v3/_/components/books/BookListLayout"
-import { DisplayControl } from "@v3/_/components/books/DisplayControl"
-import { DisplayOverflowContent } from "@v3/_/components/books/DisplayOverflowContent"
 import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
-import { SortControl } from "@v3/_/components/books/SortControl"
-import { SortOverflowContent } from "@v3/_/components/books/SortOverflowContent"
-import {
-  BOOK_COLLECTION_ID,
-  type BookNavModel,
-} from "@v3/_/components/books/keyboard-nav"
+import { BOOK_COLLECTION_ID } from "@v3/_/components/books/keyboard-nav"
 import { EditCreatorDialog } from "@v3/_/components/library/EditCreatorDialog"
 import { EditStatusDialog } from "@v3/_/components/library/EditStatusDialog"
 import { EditTagDialog } from "@v3/_/components/library/EditTagDialog"
@@ -45,14 +38,12 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
-import { OverflowToolbar } from "@v3/_/components/ui/overflow-toolbar"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import {
   BookSelectionProvider,
   useBookSelection,
 } from "@v3/_/hooks/use-book-selection"
-import { CompactHeaderSentinel } from "@v3/_/hooks/use-compact-header"
 import { useItemSelection } from "@v3/_/hooks/use-item-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
@@ -106,10 +97,6 @@ import {
 import { type UUID } from "@/uuid"
 
 const SIDEBAR_ROW_HEIGHT = 30
-
-// temporary: lets us compare the two keyboard-open models for the grid/list.
-// throwaway, remove once a model is chosen.
-const NAV_MODEL_STORAGE_KEY = "st-temp-book-nav-model"
 
 function findScrollParent(node: HTMLElement | null): HTMLElement | null {
   let el = node?.parentElement ?? null
@@ -221,20 +208,6 @@ function LibraryPageInner({
   const [sidebarSort, setSidebarSort] =
     useState<SidebarSortMode>(defaultSidebarSort)
 
-  // temporary: the keyboard-open model, persisted to localStorage only.
-  const [navModel, setNavModel] = useState<BookNavModel>(() => {
-    if (typeof window === "undefined") return "commit"
-    return window.localStorage.getItem(NAV_MODEL_STORAGE_KEY) === "preview"
-      ? "preview"
-      : "commit"
-  })
-  const handleNavModelChange = useCallback((model: BookNavModel) => {
-    setNavModel(model)
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(NAV_MODEL_STORAGE_KEY, model)
-    }
-  }, [])
-
   const isSeriesSection = section.entityType === "series"
 
   // the selected facet becomes the locked seed: a filter condition for most
@@ -265,12 +238,11 @@ function LibraryPageInner({
     clearAll,
   } = controller
 
-  const [sortMenuOpen, setSortMenuOpen] = useState(false)
-  const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
-
   const tLabel = useTranslation("Common.fields.label")
 
-  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(() => {
+  const sortFieldOptions = useMemo<
+    { value: SortField; label: string }[]
+  >(() => {
     const fields: SortField[] = isSeriesSection
       ? ["seriesPosition", ...GENERAL_SORT_FIELDS]
       : [...GENERAL_SORT_FIELDS]
@@ -592,10 +564,13 @@ function LibraryPageInner({
         className="pt-1"
         controller={controller}
         seedLabel={selectedItemName}
+        sortOptions={sortFieldOptions}
+        onSortChange={setSort}
+        bookView={bookView}
+        onBookViewChange={handleBookViewChange}
       />
 
       <PageContent className="p-6">
-        <CompactHeaderSentinel />
         {bookView === "list" ? (
           <BookList
             books={filteredBooks}
@@ -621,7 +596,6 @@ function LibraryPageInner({
             sortField={sort.field}
             sortDirection={sort.direction}
             onSortChange={handleColumnSort}
-            navModel={navModel}
           />
         ) : (
           <BookGrid
@@ -642,7 +616,6 @@ function LibraryPageInner({
             onBookClick={handleBookClick}
             displayFields={displayFields}
             displayContext={displayContext}
-            navModel={navModel}
           />
         )}
       </PageContent>
@@ -673,136 +646,67 @@ function LibraryPageInner({
   )
 
   const headerActions = (
-    <OverflowToolbar>
-      <OverflowToolbar.Item
-        id="sort"
-        label="Sort"
-        priority={1}
-        overflowContent={
-          <SortOverflowContent
-            options={sortFieldOptions}
-            field={sort.field}
-            direction={sort.direction}
-            onChange={setSort}
-          />
-        }
-      >
-        <SortControl
-          options={sortFieldOptions}
-          field={sort.field}
-          direction={sort.direction}
-          onChange={setSort}
-          onOpenChange={setSortMenuOpen}
-          open={sortMenuOpen}
-        />
-      </OverflowToolbar.Item>
-
-      <OverflowToolbar.Item
-        id="display"
-        label="Display"
-        priority={2}
-        overflowContent={
-          <DisplayOverflowContent
-            displayOverrides={displayOverrides}
-            onDisplayOverridesChange={controller.setDisplayOverrides}
-            bookView={bookView}
-            onBookViewChange={handleBookViewChange}
-          />
-        }
-      >
-        <DisplayControl
-          displayOverrides={displayOverrides}
-          onDisplayOverridesChange={controller.setDisplayOverrides}
-          open={displayMenuOpen}
-          onOpenChange={setDisplayMenuOpen}
-          bookView={bookView}
-          onBookViewChange={handleBookViewChange}
-        />
-      </OverflowToolbar.Item>
-
-      {/* temporary: flip between the two keyboard-open models to compare them */}
-      <OverflowToolbar.Item id="nav-model" label="Nav model">
-        <div
-          className="flex items-center gap-0.5 rounded-md border p-0.5"
-          title="temp: keyboard nav model"
-        >
-          {(["commit", "preview"] as const).map((model) => (
-            <Button
-              key={model}
-              size="xs"
-              variant={navModel === model ? "default" : "ghost"}
-              onClick={() => {
-                handleNavModelChange(model)
-              }}
-            >
-              {model}
-            </Button>
-          ))}
-        </div>
-      </OverflowToolbar.Item>
-
+    <>
       {selectedItem && selectedItemName && selectedItem !== NONE_KEY && (
-        <OverflowToolbar.Item id="entity-actions" label="Actions">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="ghost" size="icon-sm">
-                  <icon.DotsVertical className="h-4 w-4" />
-                </Button>
-              }
-            />
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon-sm">
+                <icon.DotsVertical className="h-4 w-4" />
+              </Button>
+            }
+          />
 
-            <DropdownMenuContent align="end" className="min-w-40">
-              {entityType && (
+          <DropdownMenuContent align="end" className="min-w-40">
+            {entityType && (
+              <DropdownMenuItem
+                onClick={() => {
+                  handleEditItem({
+                    key: selectedItem,
+                    name: selectedItemName,
+                    bookCount: 0,
+                  })
+                }}
+              >
+                <icon.Edit className="mr-2 h-4 w-4" />
+                {c("actions.edit")}
+              </DropdownMenuItem>
+            )}
+
+            {canPin && (
+              <DropdownMenuItem
+                disabled={isPinning}
+                onClick={() => {
+                  handlePinFacet({
+                    key: selectedItem,
+                    name: selectedItemName,
+                    bookCount: 0,
+                  })
+                }}
+              >
+                <icon.BookmarkPlus className="mr-2 h-4 w-4" />
+                {t("pinAsShelf")}
+              </DropdownMenuItem>
+            )}
+
+            {entityType && !isSelectedCoreStatus && (
+              <>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => {
-                    handleEditItem({
-                      key: selectedItem,
-                      name: selectedItemName,
-                      bookCount: 0,
-                    })
+                  onClick={(event) => {
+                    headerDeleteAction.confirm(event)
                   }}
+                  className="text-destructive focus:text-destructive"
                 >
-                  <icon.Edit className="mr-2 h-4 w-4" />
-                  {c("actions.edit")}
+                  <icon.Trash className="mr-2 h-4 w-4" />
+                  {c("actions.delete")}
                 </DropdownMenuItem>
-              )}
-
-              {canPin && (
-                <DropdownMenuItem
-                  disabled={isPinning}
-                  onClick={() => {
-                    handlePinFacet({
-                      key: selectedItem,
-                      name: selectedItemName,
-                      bookCount: 0,
-                    })
-                  }}
-                >
-                  <icon.BookmarkPlus className="mr-2 h-4 w-4" />
-                  {t("pinAsShelf")}
-                </DropdownMenuItem>
-              )}
-
-              {entityType && !isSelectedCoreStatus && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={(event) => {
-                      headerDeleteAction.confirm(event)
-                    }}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <icon.Trash className="mr-2 h-4 w-4" />
-                    {c("actions.delete")}
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </OverflowToolbar.Item>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
-    </OverflowToolbar>
+    </>
   )
   const editDialog = entityType ? (
     <EntityEditDialog
@@ -814,7 +718,6 @@ function LibraryPageInner({
   ) : null
 
   if (isMobile) {
-    console.log("selectedItem", selectedItem)
     // if (selectedItem && selectedItemName) {
     return (
       <>
@@ -860,8 +763,6 @@ function LibraryPageInner({
         onSidebarWidthChange={handleSidebarWidthChange}
         headerBreadcrumbs={[{ label: selectedItemName ?? title }]}
         headerActions={headerActions}
-        search={controller.search}
-        onSearchChange={controller.setSearch}
         selectedBookUuid={selectedBookUuid}
         selectedBook={selectedBook}
         onClosePanel={handleClosePanel}
@@ -1030,6 +931,19 @@ function SidebarPanel({
   const [menuTarget, setMenuTarget] = useState<LibraryItem | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
 
+  const handleMenuOpen = useCallback((open: boolean) => {
+    console.log("handleMenuOpen", open)
+    // if (open) {
+    //   setMenuOpen(true)
+    //   return
+    // }
+
+    // setMenuOpen(false)
+    // setMenuTarget(null)
+    // setMenuAnchor(null)
+    setMenuOpen(open)
+  }, [])
+
   const handleOpenItemMenu = useCallback(
     (item: LibraryItem, anchor: HTMLElement) => {
       setMenuTarget(item)
@@ -1067,8 +981,8 @@ function SidebarPanel({
   return (
     <div className="scroll-y relative flex h-full flex-col">
       <div className="flex h-full flex-col">
-        <div className="bg-surface-soft sticky top-0 z-10 flex shrink-0 flex-col gap-4 px-3 pt-3 pb-2">
-          <div className="flex items-center justify-between">
+        <div className="bg-surface-soft sticky top-0 z-10 flex shrink-0 flex-col gap-1 px-3 pb-2">
+          <div className="flex h-(--header-height) items-center justify-between">
             <h2 className="font-heading text-base">{title}</h2>
 
             <div className="flex items-center gap-0.5">
@@ -1102,6 +1016,7 @@ function SidebarPanel({
             placeholder={t("search")}
             value={search}
             onChange={onSearchChange}
+            className="h-8! py-[7px]"
           />
         </div>
 
@@ -1114,9 +1029,10 @@ function SidebarPanel({
           entityType={entityType}
           itemSelection={itemSelection}
           onOpenItemMenu={handleOpenItemMenu}
+          menuTarget={menuTarget}
         />
 
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpen}>
           <DropdownMenuContent
             align="end"
             className="min-w-40"
@@ -1196,6 +1112,7 @@ function SidebarItemList({
   entityType,
   itemSelection,
   onOpenItemMenu,
+  menuTarget,
 }: {
   items: LibraryItem[]
   selectedKey: string | null
@@ -1205,6 +1122,7 @@ function SidebarItemList({
   entityType?: LibraryEntityType
   itemSelection?: ReturnType<typeof useItemSelection>
   onOpenItemMenu?: (item: LibraryItem, anchor: HTMLElement) => void
+  menuTarget?: LibraryItem | null
 }) {
   const isSelecting = itemSelection?.isSelecting ?? false
   const canSelect = !!entityType && !!itemSelection
@@ -1221,6 +1139,7 @@ function SidebarItemList({
     onOpenItemMenu,
     itemSelection,
     orderedKeys,
+    menuTarget,
   })
   callbacksRef.current = {
     onItemClick,
@@ -1228,6 +1147,7 @@ function SidebarItemList({
     onOpenItemMenu,
     itemSelection,
     orderedKeys,
+    menuTarget,
   }
 
   const c = useCommon()
@@ -1343,6 +1263,7 @@ function SidebarItemList({
                 onToggle={handleRowToggle}
                 onSelectRange={handleRowSelectRange}
                 onOpenMenu={handleRowMenu}
+                isMenuTarget={menuTarget?.key === item.key}
               />
             </div>
           )
@@ -1359,6 +1280,7 @@ function SidebarRow({
   isSelecting,
   canSelect,
   hasRowActions,
+  isMenuTarget,
   onItemClick,
   onHover,
   onToggle,
@@ -1371,6 +1293,7 @@ function SidebarRow({
   isSelecting: boolean
   canSelect: boolean
   hasRowActions: boolean
+  isMenuTarget: boolean
   onItemClick: (key: string) => void
   onHover: (key: string) => void
   onToggle: (key: string) => void
@@ -1438,7 +1361,10 @@ function SidebarRow({
             onClick={(e) => {
               onOpenMenu(item, e.currentTarget)
             }}
-            className="text-muted-foreground hover:text-foreground pointer-events-none invisible rounded p-0.5 opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:visible group-hover/item:opacity-100 peer-focus/item:pointer-events-auto peer-focus/item:visible peer-focus/item:opacity-100 focus-visible:opacity-100"
+            className={cn(
+              "text-muted-foreground hover:text-foreground pointer-events-none hidden rounded p-0.5 opacity-0 transition-opacity group-hover/item:pointer-events-auto group-hover/item:block group-hover/item:opacity-100 peer-focus/item:pointer-events-auto peer-focus/item:block peer-focus/item:opacity-100 focus-visible:opacity-100",
+              isMenuTarget && "visible block opacity-100",
+            )}
           >
             <icon.DotsVertical className="size-3.5" />
           </button>
@@ -1453,8 +1379,8 @@ function SidebarRow({
             uuid={item.key}
             isSelecting={isSelecting}
             className={cn(
-              "group-focus-within:visible! group-focus-within:opacity-100! group-hover/item:visible! group-hover/item:opacity-100!",
-              !isSelecting && "invisible",
+              "group-focus-within:block! group-focus-within:opacity-100! group-hover/item:block! group-hover/item:opacity-100!",
+              !isSelecting && "hidden",
             )}
           />
         )}

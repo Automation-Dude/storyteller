@@ -285,22 +285,38 @@ function BookPageHeader() {
   const { book, isEditing, setIsEditing } = useBookForm()
   const router = useRouter()
 
+  const [actionMenuOpen, setActionMenuOpen] = useState(false)
+
+  useHotkey("E", () => {
+    setActionMenuOpen((prev) => !prev)
+  })
+
+  useHotkey("Shift+ArrowLeft", () => {
+    router.back()
+  })
+
+  const pill =
+    "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
+
   return (
-    <div className="bg-cover-header flex h-(--header-height) shrink-0 items-center justify-between gap-2 border-b px-4">
+    <div className="absolute top-0 z-20 flex h-(--header-height) w-full shrink-0 items-center justify-between gap-2 border-b px-4">
       <div className="flex min-w-0 items-center gap-2">
-        <Button
+        <TooltipButton
           variant="ghost"
           size="icon-sm"
-          onClick={() => {
-            router.back()
-          }}
+          className={cn(pill)}
+          tooltip="Back"
+          aria-label="Back"
+          onClick={() => router.back()}
+          shortcut={["Shift+ArrowLeft"]}
         >
-          <icon.ArrowLeft className="h-4 w-4" />
-          <span className="sr-only">Back</span>
-        </Button>
+          <icon.ArrowLeft className="size-3.5 stroke-[1.5]" />
+        </TooltipButton>
       </div>
 
       <BookActionsMenu
+        open={actionMenuOpen}
+        onOpenChange={setActionMenuOpen}
         book={book}
         onEdit={() => {
           setIsEditing(!isEditing)
@@ -308,6 +324,7 @@ function BookPageHeader() {
         onDeleted={() => {
           router.back()
         }}
+        className={cn(pill)}
       />
     </div>
   )

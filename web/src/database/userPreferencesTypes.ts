@@ -74,6 +74,10 @@ export const UserPreferencesSchema = z.object({
   // animated detail panel + grid reflow. off (or prefers-reduced-motion)
   // falls back to instant snapping
   layoutAnimations: z.boolean(),
+  // whether the detail panel slides open/shut on card click. off = it appears at
+  // full width immediately (manual drag still animates). independent of the grid
+  // FLIP, so both feels can be compared.
+  animatePanelOpen: z.boolean(),
   colorMix: z.enum(["vibrant", "subdued"]),
 })
 
@@ -96,6 +100,7 @@ export const defaultUserPreferences: UserPreferences = {
   ratingDimensions: DEFAULT_RATING_DIMENSIONS,
   defaultStatusUuid: null,
   layoutAnimations: true,
+  animatePanelOpen: true,
 }
 
 // the old colorMode values, mapped onto the new three-level scale

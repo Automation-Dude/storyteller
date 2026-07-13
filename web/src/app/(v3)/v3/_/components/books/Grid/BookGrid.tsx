@@ -164,10 +164,8 @@ export function BookGrid({
     liveResize: panelDragging,
   })
 
-  // keyboard navigation: focus stays on the grid container, arrows move a cursor
-  // (2d via the live column count), the active card is surfaced via
-  // aria-activedescendant. only wired when the grid is interactive.
-  const navEnabled = !!onBookClick
+  // revisit
+  const navEnabled = false // !!onBookClick
 
   const [, setSelectedBookId] = useQueryState("book")
 

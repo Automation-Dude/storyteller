@@ -156,7 +156,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     }),
   )
 
-  const debouncedSearch = useDebounce(search, 100)
+  const debouncedSearch = useDebounce(search, 200)
   const deferredSearch = useDeferredValue(debouncedSearch)
   const isSearching = debouncedSearch !== deferredSearch
 

@@ -22,7 +22,6 @@ import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
-import { BookCover } from "../BookCover"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -282,9 +281,9 @@ export const BookCard = memo(function BookCard({
         )}
 
         {isSynced && !isMobile && (
-          <div className="absolute top-4.5 right-3">
-            <div className="bg-accent flex size-5 items-center justify-center rounded-full shadow-md">
-              <IconReadaloud className="size-6 text-white" />
+          <div className="absolute top-[7%] right-[6%] aspect-square w-[10%]">
+            <div className="bg-cover-header flex size-full items-center justify-center rounded-full shadow-md">
+              <IconReadaloud className="size-full text-white" />
             </div>
           </div>
         )}
@@ -391,7 +390,8 @@ export const BookCard = memo(function BookCard({
         muted && "opacity-50",
         selected &&
           !isBookSelected &&
-          "ring-accent/50 bg-tint-strong/20 [&_h3]:text-tinted-strong ring-offset-background ring-2 ring-offset-2",
+          "ring-cover-header bg-tint-strong/20 [&_h3]:text-tinted-strong ring-offset-background ring-2 ring-offset-2",
+        isBookSelected && "ring-cover-header rounded-lg ring-2",
         // the keyboard cursor reads as the focus ring even though dom focus
         // stays on the container.
         active && "rounded-lg ring-2 ring-blue-500 ring-offset-2 outline-none",
@@ -414,7 +414,6 @@ export const BookCard = memo(function BookCard({
         onClick={onClick ? handleCardClick : undefined}
         className={cn(
           "relative flex min-h-0 flex-1 flex-col",
-          isBookSelected && "ring-cover rounded-lg ring-2",
           !keyboardNav &&
             "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none",
         )}
