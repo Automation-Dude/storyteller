@@ -28,17 +28,11 @@ import {
   useGetAlignmentFacetsQuery,
   useListInfiniteBooksInfiniteQuery,
 } from "@/store/api"
-import { useAppDispatch, useAppSelector } from "@/store/appState"
-import {
-  type BookView,
-  selectBookView,
-  uiSettingsSlice,
-} from "@/store/slices/uiSettingsSlice"
+import { useAppSelector } from "@/store/appState"
+import { selectBookView } from "@/store/slices/uiSettingsSlice"
 
 const GRADES = ["A+", "A", "A-", "B", "B-", "C", "D", "F"] as const
 
-// the alignment signals shown as sortable columns in the list. click a header
-// to sort by that column, just like the books page.
 const ALIGNMENT_COLUMNS: DisplayField[] = [
   "alignmentGrade",
   "alignmentScore",
@@ -46,7 +40,6 @@ const ALIGNMENT_COLUMNS: DisplayField[] = [
   "alignmentMutedChapters",
 ]
 
-// the locked base filter: only books that carry a grade. layered under whatever
 // the user picks with the facet chips / filter bar.
 const GRADED_SEED: ShelfFilterNode = {
   type: "condition",
@@ -55,15 +48,7 @@ const GRADED_SEED: ShelfFilterNode = {
 }
 
 export default function QualityPage() {
-  const dispatch = useAppDispatch()
   const bookView = useAppSelector(selectBookView)
-
-  const handleBookViewChange = useCallback(
-    (view: BookView) => {
-      dispatch(uiSettingsSlice.actions.setBookView(view))
-    },
-    [dispatch],
-  )
 
   const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
     "book",
@@ -106,7 +91,6 @@ export default function QualityPage() {
     () => data?.pages.flatMap((page) => page) ?? [],
     [data?.pages],
   )
-  const bookUuids = useMemo(() => books.map((b) => b.uuid), [books])
   const selectedBook = useMemo(
     () => books.find((b) => b.uuid === selectedBookUuid),
     [books, selectedBookUuid],
@@ -191,12 +175,7 @@ export default function QualityPage() {
       selectedBook={selectedBook}
       onClosePanel={handleClosePanel}
     >
-      <BookFilters
-        controller={controller}
-        seedLabel="Graded"
-        bookView={bookView}
-        onBookViewChange={handleBookViewChange}
-      />
+      <BookFilters controller={controller} seedLabel="Graded" />
 
       {/* alignment-specific facet row: grade chips + muted toggle, counts
             from the server-side facets. */}
@@ -300,7 +279,7 @@ export default function QualityPage() {
             displayContext={displayContext}
           />
         )}
-        <SelectionToolbar allBookUuids={bookUuids} />
+        <SelectionToolbar allBooks={books} />
       </PageContent>
     </BookListLayout>
   )

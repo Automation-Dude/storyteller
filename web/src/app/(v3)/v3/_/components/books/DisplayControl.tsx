@@ -3,17 +3,17 @@ import { useHotkeys } from "@tanstack/react-hotkeys"
 import {
   FilterableMenu,
   FilterableMenuItem,
+  FilterableMenuSeparator,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
-import { Slider } from "@/app/(v3)/v3/_/components/ui/slider"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
 import { type BookFiltersController } from "@/app/(v3)/v3/_/hooks/use-book-filters"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
-import { cn } from "@/cn"
 import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
 import { DISPLAY_FIELDS } from "@/sort"
 import { useSetUserSettingMutation } from "@/store/api"
+import { type BookView } from "@/store/slices/uiSettingsSlice"
 
 import { useColorPreferences } from "./BookDetails/sections/useCoverColors"
 
@@ -24,17 +24,21 @@ export function DisplayControl({
   onDisplayOverridesChange,
   open,
   onOpenChange,
+  bookView,
+  onBookViewChange,
 }: {
   displayOverrides: BookFiltersController["displayOverrides"]
   onDisplayOverridesChange: BookFiltersController["setDisplayOverrides"]
   open: boolean
   onOpenChange: (open: boolean) => void
+  bookView?: BookView
+  onBookViewChange?: (view: BookView) => void
 }) {
   const tLabels = useTranslation("Common.fields.label")
   const t = useTranslation("BooksPage")
 
   const { gridCoverDisplay, gridCardSize } = useUserPreferences()
-  const [updateSetting, { isLoading: isSaving }] = useSetUserSettingMutation()
+  const [updateSetting] = useSetUserSettingMutation()
   const { colorMix, intensity } = useColorPreferences()
 
   useHotkeys([
@@ -53,7 +57,7 @@ export function DisplayControl({
       trigger={
         <TooltipButton
           variant="ghost"
-          size="icon"
+          size="icon-sm"
           aria-label={t.plain("displayOptions.tooltip")}
           className="shrink-0"
           tooltip={t("displayOptions.tooltip")}
@@ -65,9 +69,47 @@ export function DisplayControl({
       searchable
       searchPlaceholder={t.plain("displayOptions.searchHint")}
     >
-      <span className="text-muted-foreground px-2 text-xs">Vibrancy</span>
+      {/* ---- layout ---- */}
+      {bookView && onBookViewChange && (
+        <>
+          <span className="text-muted-foreground px-2 pt-1 text-xs">
+            Layout
+          </span>
+
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue="Grid"
+            icon={<icon.LayoutGrid className="size-4" />}
+            onSelect={() => {
+              onBookViewChange("grid")
+            }}
+          >
+            Grid
+            {bookView === "grid" && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
+
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue="List"
+            icon={<icon.LayoutList className="size-4" />}
+            onSelect={() => {
+              onBookViewChange("list")
+            }}
+          >
+            List
+            {bookView === "list" && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
+
+          <FilterableMenuSeparator />
+        </>
+      )}
+
+      {/* ---- appearance ---- */}
+      <span className="text-muted-foreground px-2 pt-1 text-xs">
+        Appearance
+      </span>
+
       <FilterableMenuItem
-        key="subdued"
         closeOnClick={false}
         textValue="Subdued"
         onSelect={() => {
@@ -77,8 +119,8 @@ export function DisplayControl({
         Subdued
         {colorMix === "subdued" && <icon.Check className="ml-auto" />}
       </FilterableMenuItem>
+
       <FilterableMenuItem
-        key="vibrant"
         closeOnClick={false}
         textValue="Vibrant"
         onSelect={() => {
@@ -88,120 +130,59 @@ export function DisplayControl({
         Vibrant
         {colorMix === "vibrant" && <icon.Check className="ml-auto" />}
       </FilterableMenuItem>
-      <Slider
-        defaultValue={intensity * 100}
-        thumbAlignment="edge"
-        onValueCommitted={(value) => {
-          void updateSetting({
-            name: "colorIntensity",
-            value: (Array.isArray(value) ? value[0] : value) / 100,
-          })
-        }}
-        className="w-full! flex-1 px-3"
-        min={0}
-        max={100}
-        step={1}
-      />
-      <span className="text-muted-foreground px-2 text-xs">Card</span>
-      <div className="-w-full flex items-center justify-center gap-2">
-        <TooltipButton
-          tooltip="Double cover"
-          variant="ghost"
-          aria-label="Use Double cover when available in the grid"
-          className={cn(gridCoverDisplay === "auto" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCoverDisplay", value: "auto" })
-          }}
-        >
-          <icon.Readaloud size="lg" />
-        </TooltipButton>
-        <TooltipButton
-          tooltip="Ebook cover"
-          variant="ghost"
-          aria-label="Use Ebook cover in the grid"
-          className={cn(gridCoverDisplay === "ebook" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCoverDisplay", value: "ebook" })
-          }}
-        >
-          <icon.Book />
-        </TooltipButton>
-        <TooltipButton
-          tooltip="Audiobook cover"
-          variant="ghost"
-          aria-label="Use Audiobook cover in the grid"
-          className={cn(gridCoverDisplay === "audiobook" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCoverDisplay", value: "audiobook" })
-          }}
-        >
-          <icon.Audiobook />
-        </TooltipButton>
-      </div>
 
-      <span className="text-muted-foreground px-2 text-xs">Card size</span>
-      <div className="-w-full flex items-center justify-center gap-2">
-        <TooltipButton
-          tooltip="Extra Small"
-          variant="ghost"
-          aria-label="Use Extra Small card size in the grid"
-          className={cn(gridCardSize === "smallest" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCardSize", value: "smallest" })
-          }}
-        >
-          XS
-        </TooltipButton>
-        <TooltipButton
-          tooltip="Small"
-          variant="ghost"
-          aria-label="Use Small card size in the grid"
-          className={cn(gridCardSize === "small" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCardSize", value: "small" })
-          }}
-        >
-          S
-        </TooltipButton>
-        <TooltipButton
-          tooltip="Ebook cover"
-          variant="ghost"
-          aria-label="Use Ebook cover in the grid"
-          className={cn(gridCardSize === "medium" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCardSize", value: "medium" })
-          }}
-        >
-          M
-        </TooltipButton>
-        <TooltipButton
-          tooltip="Audiobook cover"
-          variant="ghost"
-          aria-label="Use Audiobook cover in the grid"
-          className={cn(gridCardSize === "large" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCardSize", value: "large" })
-          }}
-        >
-          L
-        </TooltipButton>
-        <TooltipButton
-          tooltip="Extra Large"
-          variant="ghost"
-          aria-label="Use Extra Large card size in the grid"
-          className={cn(gridCardSize === "largest" && "bg-muted")}
-          onClick={() => {
-            void updateSetting({ name: "gridCardSize", value: "largest" })
-          }}
-        >
-          XL
-        </TooltipButton>
-      </div>
-      {/* </div> */}
+      <FilterableMenuItem
+        closeOnClick={false}
+        textValue="Color intensity"
+        submenu={<IntensitySubmenu intensity={intensity} />}
+      >
+        Intensity
+      </FilterableMenuItem>
 
-      <span className="text-muted-foreground px-2 text-xs">
+      <FilterableMenuSeparator />
+
+      {/* ---- card ---- */}
+      <span className="text-muted-foreground px-2 pt-1 text-xs">Card</span>
+
+      <FilterableMenuItem
+        closeOnClick={false}
+        textValue="Cover type"
+        submenu={
+          <CoverTypeSubmenu
+            value={gridCoverDisplay}
+            onChange={(v) => {
+              void updateSetting({ name: "gridCoverDisplay", value: v as typeof gridCoverDisplay })
+            }}
+          />
+        }
+      >
+        <icon.Readaloud className="size-4" />
+        Cover type
+      </FilterableMenuItem>
+
+      <FilterableMenuItem
+        closeOnClick={false}
+        textValue="Card size"
+        submenu={
+          <CardSizeSubmenu
+            value={gridCardSize}
+            onChange={(v) => {
+              void updateSetting({ name: "gridCardSize", value: v as typeof gridCardSize })
+            }}
+          />
+        }
+      >
+        <icon.Maximize className="size-4" />
+        Card size
+      </FilterableMenuItem>
+
+      <FilterableMenuSeparator />
+
+      {/* ---- show on card ---- */}
+      <span className="text-muted-foreground px-2 pt-1 text-xs">
         {t("displayOptions.hint")}
       </span>
+
       <FilterableMenuItem
         closeOnClick={false}
         textValue={t.plain("displayOptions.auto")}
@@ -212,6 +193,7 @@ export function DisplayControl({
         {t("displayOptions.auto")}
         {displayOverrides === null && <icon.Check className="ml-auto" />}
       </FilterableMenuItem>
+
       {DISPLAY_FIELDS.map((field) => (
         <FilterableMenuItem
           key={field}
@@ -229,5 +211,101 @@ export function DisplayControl({
         </FilterableMenuItem>
       ))}
     </FilterableMenu>
+  )
+}
+
+// ---- sub-menus -------------------------------------------------------------
+
+function IntensitySubmenu({ intensity }: { intensity: number }) {
+  const [updateSetting] = useSetUserSettingMutation()
+  const steps = [0, 25, 50, 75, 100]
+  const current = Math.round(intensity * 100)
+
+  return (
+    <>
+      {steps.map((pct) => (
+        <FilterableMenuItem
+          key={pct}
+          closeOnClick={false}
+          textValue={`${pct}%`}
+          onSelect={() => {
+            void updateSetting({
+              name: "colorIntensity",
+              value: pct / 100,
+            })
+          }}
+        >
+          {pct}%
+          {current === pct && <icon.Check className="ml-auto" />}
+        </FilterableMenuItem>
+      ))}
+    </>
+  )
+}
+
+function CoverTypeSubmenu({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (v: string) => void
+}) {
+  const options = [
+    { id: "auto", label: "Double cover", icon: <icon.Readaloud className="size-4" /> },
+    { id: "ebook", label: "Ebook cover", icon: <icon.Book className="size-4" /> },
+    { id: "audiobook", label: "Audiobook cover", icon: <icon.Audiobook className="size-4" /> },
+  ]
+
+  return (
+    <>
+      {options.map((opt) => (
+        <FilterableMenuItem
+          key={opt.id}
+          closeOnClick={false}
+          textValue={opt.label}
+          icon={opt.icon}
+          onSelect={() => {
+            onChange(opt.id)
+          }}
+        >
+          {opt.label}
+          {value === opt.id && <icon.Check className="ml-auto" />}
+        </FilterableMenuItem>
+      ))}
+    </>
+  )
+}
+
+function CardSizeSubmenu({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (v: string) => void
+}) {
+  const options = [
+    { id: "smallest", label: "Extra Small" },
+    { id: "small", label: "Small" },
+    { id: "medium", label: "Medium" },
+    { id: "large", label: "Large" },
+    { id: "largest", label: "Extra Large" },
+  ]
+
+  return (
+    <>
+      {options.map((opt) => (
+        <FilterableMenuItem
+          key={opt.id}
+          closeOnClick={false}
+          textValue={opt.label}
+          onSelect={() => {
+            onChange(opt.id)
+          }}
+        >
+          {opt.label}
+          {value === opt.id && <icon.Check className="ml-auto" />}
+        </FilterableMenuItem>
+      ))}
+    </>
   )
 }

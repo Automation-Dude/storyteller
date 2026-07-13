@@ -25,7 +25,7 @@ function Slider({
         >
           <SliderPrimitive.Indicator
             data-slot="slider-indicator"
-            className="bg-primary absolute h-full rounded-full"
+            className="bg-foreground/25 absolute h-full rounded-full"
           />
           {Array.from({ length: secondThumb ? 2 : 1 }).map((_, index) => (
             <Tooltip key={index}>
@@ -36,7 +36,7 @@ function Slider({
                     data-index={index}
                     index={index}
                     key={index}
-                    className="border-primary bg-background ring-ring/30 block size-4 rounded-full border-2 shadow-sm transition-shadow outline-none focus-visible:ring-2 data-disabled:cursor-not-allowed data-disabled:opacity-50"
+                    className="border-foreground/40 bg-background ring-ring/30 block size-4 rounded-full border-2 shadow-sm transition-shadow outline-none focus-visible:ring-2 data-disabled:cursor-not-allowed data-disabled:opacity-50"
                   />
                 }
               />

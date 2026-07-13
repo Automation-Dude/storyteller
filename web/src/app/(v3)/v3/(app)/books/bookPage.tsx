@@ -6,12 +6,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AddBookButton } from "@v3/_/components/AddBookButton"
 import { BookFilters, BookGrid } from "@v3/_/components/books"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
+import { DisplayControl } from "@v3/_/components/books/DisplayControl"
+import { DisplayOverflowContent } from "@v3/_/components/books/DisplayOverflowContent"
 import { SaveAsShelfDialog } from "@v3/_/components/books/SaveAsShelfDialog"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
+import { SortControl } from "@v3/_/components/books/SortControl"
+import { SortOverflowContent } from "@v3/_/components/books/SortOverflowContent"
 import { ShelfFilterEditor } from "@v3/_/components/shelves/ShelfFilterEditor"
+import { OverflowToolbar } from "@v3/_/components/ui/overflow-toolbar"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
+import { CompactHeaderSentinel } from "@v3/_/hooks/use-compact-header"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -19,6 +25,7 @@ import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { type UserPermissionSet } from "@/database/users"
 import {
   type DisplayField,
+  GENERAL_SORT_FIELDS,
   type SortContext,
   type SortDirection,
   type SortField,
@@ -39,6 +46,7 @@ export default function BookPage({
   permissions: UserPermissionSet
 }) {
   const t = useTranslation("BooksPage")
+  const tLabel = useTranslation("Common.fields.label")
   const dispatch = useAppDispatch()
 
   const bookView = useAppSelector(selectBookView)
@@ -85,11 +93,19 @@ export default function BookPage({
     clearAll,
   } = controller
 
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
+
   const handleColumnSort = useCallback(
     (field: SortField, direction: SortDirection) => {
       setSort(field, direction)
     },
     [setSort],
+  )
+
+  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(
+    () => GENERAL_SORT_FIELDS.map((value) => ({ value, label: tLabel(value) })),
+    [tLabel],
   )
 
   // the books page has no single-series context; position is not offered.
@@ -232,12 +248,65 @@ export default function BookPage({
       onClosePanel={handleClosePanel}
       nextBook={goToNext}
       previousBook={goToPrevious}
-      headerActions={[<AddBookButton key="add-book" />]}
+      search={controller.search}
+      onSearchChange={controller.setSearch}
+      searchPlaceholder={t.plain("seachBooksPlaceholder")}
+      headerActions={
+        <OverflowToolbar>
+          <OverflowToolbar.Item
+            id="sort"
+            label={t.plain("sortBy.tooltip")}
+            priority={1}
+            overflowContent={
+              <SortOverflowContent
+                options={sortFieldOptions}
+                field={sort.field}
+                direction={sort.direction}
+                onChange={setSort}
+              />
+            }
+          >
+            <SortControl
+              options={sortFieldOptions}
+              field={sort.field}
+              direction={sort.direction}
+              onChange={setSort}
+              onOpenChange={setSortMenuOpen}
+              open={sortMenuOpen}
+            />
+          </OverflowToolbar.Item>
+
+          <OverflowToolbar.Item
+            id="display"
+            label={t.plain("displayOptions.tooltip")}
+            priority={2}
+            overflowContent={
+              <DisplayOverflowContent
+                displayOverrides={displayOverrides}
+                onDisplayOverridesChange={controller.setDisplayOverrides}
+                bookView={bookView}
+                onBookViewChange={handleBookViewChange}
+              />
+            }
+          >
+            <DisplayControl
+              displayOverrides={displayOverrides}
+              onDisplayOverridesChange={controller.setDisplayOverrides}
+              open={displayMenuOpen}
+              onOpenChange={setDisplayMenuOpen}
+              bookView={bookView}
+              onBookViewChange={handleBookViewChange}
+            />
+          </OverflowToolbar.Item>
+
+          <OverflowToolbar.Item id="add-book" label="Add book">
+            <AddBookButton />
+          </OverflowToolbar.Item>
+        </OverflowToolbar>
+      }
     >
       <BookFilters
         controller={controller}
-        bookView={bookView}
-        onBookViewChange={handleBookViewChange}
         advancedOpen={advancedVisible}
         onToggleAdvanced={() => {
           setShowAdvanced((v) => !v)
@@ -268,6 +337,7 @@ export default function BookPage({
       )}
 
       <PageContent className="p-6">
+        <CompactHeaderSentinel />
         {bookView === "list" ? (
           <BookList
             books={books}

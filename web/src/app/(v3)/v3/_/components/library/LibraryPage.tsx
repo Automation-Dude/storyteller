@@ -9,8 +9,12 @@ import {
   BookDetailDrawer,
   BookListLayout,
 } from "@v3/_/components/books/BookListLayout"
+import { DisplayControl } from "@v3/_/components/books/DisplayControl"
+import { DisplayOverflowContent } from "@v3/_/components/books/DisplayOverflowContent"
 import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
+import { SortControl } from "@v3/_/components/books/SortControl"
+import { SortOverflowContent } from "@v3/_/components/books/SortOverflowContent"
 import {
   BOOK_COLLECTION_ID,
   type BookNavModel,
@@ -41,12 +45,14 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
+import { OverflowToolbar } from "@v3/_/components/ui/overflow-toolbar"
 import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import {
   BookSelectionProvider,
   useBookSelection,
 } from "@v3/_/hooks/use-book-selection"
+import { CompactHeaderSentinel } from "@v3/_/hooks/use-compact-header"
 import { useItemSelection } from "@v3/_/hooks/use-item-selection"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
@@ -73,6 +79,7 @@ import * as icon from "@/icons"
 import { type ShelfFilterNode } from "@/shelves"
 import {
   type DisplayField,
+  GENERAL_SORT_FIELDS,
   type SortContext,
   type SortDirection,
   type SortField,
@@ -257,6 +264,18 @@ function LibraryPageInner({
     activeFilterCount,
     clearAll,
   } = controller
+
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
+
+  const tLabel = useTranslation("Common.fields.label")
+
+  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(() => {
+    const fields: SortField[] = isSeriesSection
+      ? ["seriesPosition", ...GENERAL_SORT_FIELDS]
+      : [...GENERAL_SORT_FIELDS]
+    return fields.map((value) => ({ value, label: tLabel(value) }))
+  }, [isSeriesSection, tLabel])
 
   const handleColumnSort = useCallback(
     (field: SortField, direction: SortDirection) => {
@@ -573,12 +592,10 @@ function LibraryPageInner({
         className="pt-1"
         controller={controller}
         seedLabel={selectedItemName}
-        hasSeriesContext={!!seriesContextUuid}
-        bookView={bookView}
-        onBookViewChange={handleBookViewChange}
       />
 
       <PageContent className="p-6">
+        <CompactHeaderSentinel />
         {bookView === "list" ? (
           <BookList
             books={filteredBooks}
@@ -656,86 +673,136 @@ function LibraryPageInner({
   )
 
   const headerActions = (
-    <>
-      {/* temporary: flip between the two keyboard-open models to compare them */}
-      <div
-        className="flex items-center gap-0.5 rounded-md border p-0.5"
-        title="temp: keyboard nav model"
-      >
-        {(["commit", "preview"] as const).map((model) => (
-          <Button
-            key={model}
-            size="xs"
-            variant={navModel === model ? "default" : "ghost"}
-            onClick={() => {
-              handleNavModelChange(model)
-            }}
-          >
-            {model}
-          </Button>
-        ))}
-      </div>
-
-      {selectedItem && selectedItemName && selectedItem !== NONE_KEY ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="icon-sm">
-                <icon.DotsVertical className="h-4 w-4" />
-              </Button>
-            }
+    <OverflowToolbar>
+      <OverflowToolbar.Item
+        id="sort"
+        label="Sort"
+        priority={1}
+        overflowContent={
+          <SortOverflowContent
+            options={sortFieldOptions}
+            field={sort.field}
+            direction={sort.direction}
+            onChange={setSort}
           />
+        }
+      >
+        <SortControl
+          options={sortFieldOptions}
+          field={sort.field}
+          direction={sort.direction}
+          onChange={setSort}
+          onOpenChange={setSortMenuOpen}
+          open={sortMenuOpen}
+        />
+      </OverflowToolbar.Item>
 
-          <DropdownMenuContent align="end" className="min-w-40">
-            {entityType && (
-              <DropdownMenuItem
-                onClick={() => {
-                  handleEditItem({
-                    key: selectedItem,
-                    name: selectedItemName,
-                    bookCount: 0,
-                  })
-                }}
-              >
-                <icon.Edit className="mr-2 h-4 w-4" />
-                {c("actions.edit")}
-              </DropdownMenuItem>
-            )}
+      <OverflowToolbar.Item
+        id="display"
+        label="Display"
+        priority={2}
+        overflowContent={
+          <DisplayOverflowContent
+            displayOverrides={displayOverrides}
+            onDisplayOverridesChange={controller.setDisplayOverrides}
+            bookView={bookView}
+            onBookViewChange={handleBookViewChange}
+          />
+        }
+      >
+        <DisplayControl
+          displayOverrides={displayOverrides}
+          onDisplayOverridesChange={controller.setDisplayOverrides}
+          open={displayMenuOpen}
+          onOpenChange={setDisplayMenuOpen}
+          bookView={bookView}
+          onBookViewChange={handleBookViewChange}
+        />
+      </OverflowToolbar.Item>
 
-            {canPin && (
-              <DropdownMenuItem
-                disabled={isPinning}
-                onClick={() => {
-                  handlePinFacet({
-                    key: selectedItem,
-                    name: selectedItemName,
-                    bookCount: 0,
-                  })
-                }}
-              >
-                <icon.BookmarkPlus className="mr-2 h-4 w-4" />
-                {t("pinAsShelf")}
-              </DropdownMenuItem>
-            )}
+      {/* temporary: flip between the two keyboard-open models to compare them */}
+      <OverflowToolbar.Item id="nav-model" label="Nav model">
+        <div
+          className="flex items-center gap-0.5 rounded-md border p-0.5"
+          title="temp: keyboard nav model"
+        >
+          {(["commit", "preview"] as const).map((model) => (
+            <Button
+              key={model}
+              size="xs"
+              variant={navModel === model ? "default" : "ghost"}
+              onClick={() => {
+                handleNavModelChange(model)
+              }}
+            >
+              {model}
+            </Button>
+          ))}
+        </div>
+      </OverflowToolbar.Item>
 
-            {entityType && !isSelectedCoreStatus && (
-              <>
-                <DropdownMenuSeparator />
+      {selectedItem && selectedItemName && selectedItem !== NONE_KEY && (
+        <OverflowToolbar.Item id="entity-actions" label="Actions">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" size="icon-sm">
+                  <icon.DotsVertical className="h-4 w-4" />
+                </Button>
+              }
+            />
+
+            <DropdownMenuContent align="end" className="min-w-40">
+              {entityType && (
                 <DropdownMenuItem
-                  onClick={(event) => {
-                    headerDeleteAction.confirm(event)
+                  onClick={() => {
+                    handleEditItem({
+                      key: selectedItem,
+                      name: selectedItemName,
+                      bookCount: 0,
+                    })
                   }}
-                  className="text-destructive focus:text-destructive"
                 >
-                  <icon.Trash className="mr-2 h-4 w-4" />
-                  {c("actions.delete")}
+                  <icon.Edit className="mr-2 h-4 w-4" />
+                  {c("actions.edit")}
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : undefined}
-    </>
+              )}
+
+              {canPin && (
+                <DropdownMenuItem
+                  disabled={isPinning}
+                  onClick={() => {
+                    handlePinFacet({
+                      key: selectedItem,
+                      name: selectedItemName,
+                      bookCount: 0,
+                    })
+                  }}
+                >
+                  <icon.BookmarkPlus className="mr-2 h-4 w-4" />
+                  {t("pinAsShelf")}
+                </DropdownMenuItem>
+              )}
+
+              {entityType && !isSelectedCoreStatus && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(event) => {
+                      headerDeleteAction.confirm(event)
+                    }}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <icon.Trash className="mr-2 h-4 w-4" />
+                    {c("actions.delete")}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </OverflowToolbar.Item>
+      )}
+    </OverflowToolbar>
   )
   const editDialog = entityType ? (
     <EntityEditDialog
@@ -793,6 +860,8 @@ function LibraryPageInner({
         onSidebarWidthChange={handleSidebarWidthChange}
         headerBreadcrumbs={[{ label: selectedItemName ?? title }]}
         headerActions={headerActions}
+        search={controller.search}
+        onSearchChange={controller.setSearch}
         selectedBookUuid={selectedBookUuid}
         selectedBook={selectedBook}
         onClosePanel={handleClosePanel}
