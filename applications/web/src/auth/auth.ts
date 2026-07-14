@@ -559,7 +559,7 @@ export function withHasPermission<
             // existing OPDS clients), then fall back to a per-device
             // credential so an e-reader can be given library access without
             // holding the account password.
-            let user = await authenticateUser(
+            const user = await authenticateUser(
               basicCreds.username,
               basicCreds.password,
             )

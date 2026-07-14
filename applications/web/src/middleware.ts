@@ -47,6 +47,7 @@ export const config = {
     "/settings",
     "/users",
     "/account",
+    "/set-up-ereader",
     "/init",
   ],
 }

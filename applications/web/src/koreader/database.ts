@@ -30,6 +30,24 @@ export async function createKoreaderUser(
     .executeTakeFirstOrThrow()
 }
 
+/**
+ * Ensure a kosync identity exists for this user with the given key, creating
+ * it or rotating the key on an existing one. kosync is one identity per person
+ * (all their devices converge on the same reading position), so setting up a
+ * new device rotates the shared key and every device re-logs in on next sync.
+ */
+export async function upsertKoreaderUserKey(
+  userId: UUID,
+  username: string,
+  authKey: string,
+) {
+  await db
+    .insertInto("koreaderUser")
+    .values({ userId, username, authKey })
+    .onConflict((oc) => oc.column("username").doUpdateSet({ userId, authKey }))
+    .execute()
+}
+
 export async function getKoreaderProgress(
   koreaderUserUuid: UUID,
   document: string,

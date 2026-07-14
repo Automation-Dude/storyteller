@@ -21,6 +21,25 @@ without losing your place.
 
 :::
 
+## The easy way: Set up my e-reader
+
+If your device is a Kobo, the simplest path is the **Set up my e-reader** page
+in Storyteller. On a computer, using Chrome or Edge:
+
+1. Sign in to Storyteller and open **Set up my e-reader** from the menu.
+2. Plug your Kobo into the computer with its cable and choose **Connect** on the
+   device if asked.
+3. Click **Set up my e-reader** and pick your Kobo when prompted.
+4. Wait for it to finish, then unplug. Your Kobo restarts, and KOReader is
+   installed with your library already loaded and position sync already logged
+   in. You never type a server address or password on the device.
+
+This installs KOReader and writes its configuration for you, using a per-device
+credential rather than your Storyteller password, so a lost device can be
+revoked on its own. It needs the **OPDS feed** and **KOReader sync** enabled in
+settings (below). The rest of this page covers setting a device up by hand, or
+for readers other than a Kobo.
+
 ## Enabling it
 
 1. Open your Storyteller settings and find **KOReader sync settings**.

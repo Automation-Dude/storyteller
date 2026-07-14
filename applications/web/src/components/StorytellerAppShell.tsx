@@ -18,6 +18,7 @@ import {
   IconBook2,
   IconBooks,
   IconDeviceLaptop,
+  IconDeviceTablet,
   IconHome,
   IconLogout,
   IconMoon,
@@ -241,6 +242,16 @@ export function StorytellerAppShell({
                 leftSection={<IconUser />}
                 label="Account"
                 active={pathname === "/accounts"}
+              />
+            ) : null}
+            {permissions?.bookDownload ? (
+              <NavLink
+                onClick={close}
+                component={NextLink}
+                href="/set-up-ereader"
+                leftSection={<IconDeviceTablet />}
+                label="Set up my e-reader"
+                active={pathname === "/set-up-ereader"}
               />
             ) : null}
             {permissions?.userCreate || permissions?.userList ? (

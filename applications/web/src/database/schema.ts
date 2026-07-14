@@ -153,6 +153,17 @@ export interface DeviceAuthorization {
   userCode: string
 }
 
+export interface DeviceCredential {
+  createdAt: Generated<string>
+  label: string
+  lastUsedAt: string | null
+  revokedAt: string | null
+  secretHash: string
+  updatedAt: Generated<string>
+  userId: string
+  uuid: Generated<string>
+}
+
 export interface Ebook {
   bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
@@ -437,6 +448,7 @@ export interface DB {
   collectionToUser: CollectionToUser
   creator: Creator
   deviceAuthorization: DeviceAuthorization
+  deviceCredential: DeviceCredential
   ebook: Ebook
   externalData: ExternalData
   externalSource: ExternalSource

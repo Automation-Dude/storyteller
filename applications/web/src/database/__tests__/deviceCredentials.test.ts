@@ -15,14 +15,20 @@ let userId: UUID
 let otherUserId: UUID
 
 void describe("device credentials", () => {
-  const insertUser = (username: string): UUID =>
-    (
+  const insertUser = (username: string): UUID => {
+    const permission = ctx.sqlite
+      .prepare("INSERT INTO user_permission DEFAULT VALUES RETURNING uuid")
+      .get() as { uuid: UUID }
+    return (
       ctx.sqlite
         .prepare(
-          "INSERT INTO user (id, username, email) VALUES (uuid(), ?, ?) RETURNING id",
+          "INSERT INTO user (user_permission_uuid, username, email) VALUES (?, ?, ?) RETURNING id",
         )
-        .get(username, `${username}@example.com`) as { id: UUID }
+        .get(permission.uuid, username, `${username}@example.com`) as {
+        id: UUID
+      }
     ).id
+  }
 
   before(() => {
     ctx = setupTestDb()
