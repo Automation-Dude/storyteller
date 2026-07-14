@@ -52,7 +52,10 @@ import {
   ComboboxList,
   ComboboxValue,
 } from "@/app/(v3)/v3/_/components/ui/combobox"
-import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import {
+  useCommon,
+  useTranslation,
+} from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   cronExpressionToMinutes,
   minutesToCronExpression,
@@ -91,6 +94,7 @@ import { type UUID } from "@/uuid"
 import { SettingsFormField, useSettingsForm } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"
 import { IAdd } from "../ui/icon"
+import { ServerFileBrowser } from "../files/ServerFileBrowser"
 
 export function LibraryTab() {
   return (
@@ -121,6 +125,7 @@ function LibrarySection() {
               <Input
                 id="libraryName"
                 disabled={isLocked}
+                placeholder="The Library of Babel"
                 {...field}
                 aria-invalid={fieldState.invalid}
               />
@@ -133,6 +138,7 @@ function LibrarySection() {
               <Input
                 id="webUrl"
                 disabled={isLocked}
+                placeholder="https://<your-domain>.com"
                 {...field}
                 aria-invalid={fieldState.invalid}
               />
@@ -205,6 +211,53 @@ function DefaultStatusSection() {
   )
 }
 
+function ServerFileBrowserModal({
+  open,
+  onOpenChange,
+  startPath,
+  onSave,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  startPath?: string
+  onSave: (path: string) => void
+}) {
+  const c = useCommon()
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[70svh] max-h-[70vh] translate-y-0 flex-col sm:top-10 sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{c("actions.selectFolder")}</DialogTitle>
+        </DialogHeader>
+
+        <ServerFileBrowser
+          directoriesOnly
+          startPath={startPath}
+          selectLabel={c("actions.selectFolder")}
+          onSelect={(path) => {
+            onSave(path)
+            onOpenChange(false)
+          }}
+          className="min-h-0 flex-1"
+        />
+
+        <DialogFooter>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onOpenChange(false)
+            }}
+          >
+            {c("actions.cancel")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 const USE_DEFAULT_VALUE = "__default__"
 
 // TODO: internationalize
@@ -227,30 +280,21 @@ function WatchRuleCard({
   importModeOptions: { value: string; label: string }[]
 }) {
   const [updateRule] = useUpdateImportRuleMutation()
-  const [editingPath, setEditingPath] = useState(false)
-  const [editPath, setEditPath] = useState(rule.path)
-  const [editError, setEditError] = useState<string | null>(null)
+  const [browseOpen, setBrowseOpen] = useState(false)
 
   const isConfig = rule.source === "config"
   const t = useTranslation("SettingsPage.tabs.library.sections.autoImport")
 
-  function trySave() {
+  function handlePathSave(newPath: string) {
     const result = validateWatchRulePath({
-      path: editPath,
+      path: newPath,
       existingRules: rules,
       excludeUuid: rule.uuid,
     })
-    if (!result.ok) {
-      const conflictingPath = result.conflictWith
-        ? rules.find((r) => r.uuid === result.conflictWith)?.path
-        : undefined
-      setEditError(watchRuleValidationMessage(result, { conflictingPath }))
-      return
-    }
 
-    setEditError(null)
-    void updateRule({ uuid: rule.uuid, path: editPath })
-    setEditingPath(false)
+    if (!result.ok) return
+
+    void updateRule({ uuid: rule.uuid, path: newPath })
   }
 
   return (
@@ -264,76 +308,29 @@ function WatchRuleCard({
       )}
 
       <div className="min-w-0 flex-1 space-y-2">
-        {editingPath && !isConfig ? (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Input
-                value={editPath}
-                onChange={(e) => {
-                  setEditPath(e.target.value)
-                  if (editError) setEditError(null)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault()
-                    trySave()
-                  }
+        <div className="flex items-center gap-2">
+          {isConfig ? (
+            <span
+              className="text-foreground block max-w-full truncate text-xs"
+              title={rule.path}
+            >
+              {rule.path}
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="text-foreground hover:text-foreground block max-w-full truncate text-left text-xs underline-offset-2 hover:underline"
+              title={rule.path}
+              onClick={() => {
+                setBrowseOpen(true)
+              }}
+            >
+              {rule.path}
+            </button>
+          )}
 
-                  if (e.key === "Escape") {
-                    setEditPath(rule.path)
-                    setEditError(null)
-                    setEditingPath(false)
-                  }
-                }}
-                className="min-w-0 flex-1"
-                aria-invalid={!!editError}
-              />
-
-              <Button variant="outline" size="sm" onClick={trySave}>
-                Save
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setEditPath(rule.path)
-                  setEditError(null)
-                  setEditingPath(false)
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-            {editError && (
-              <p className="text-destructive text-xs">{editError}</p>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            {isConfig ? (
-              <span
-                className="text-foreground block max-w-full truncate text-xs"
-                title={rule.path}
-              >
-                {rule.path}
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="text-foreground hover:text-foreground block max-w-full truncate text-left text-xs underline-offset-2 hover:underline"
-                title={rule.path}
-                onClick={() => {
-                  setEditingPath(true)
-                }}
-              >
-                {rule.path}
-              </button>
-            )}
-
-            {isConfig && <Badge variant="outline">Config</Badge>}
-          </div>
-        )}
+          {isConfig && <Badge variant="outline">Config</Badge>}
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Select
@@ -400,6 +397,15 @@ function WatchRuleCard({
         >
           <icon.Trash size={14} className="text-destructive" />
         </Button>
+      )}
+
+      {browseOpen && (
+        <ServerFileBrowserModal
+          open={browseOpen}
+          onOpenChange={setBrowseOpen}
+          startPath={rule.path}
+          onSave={handlePathSave}
+        />
       )}
     </div>
   )
@@ -567,7 +573,7 @@ function AddRuleDialog({
         onOpenChange(next)
       }}
     >
-      <DialogContent className="max-w-xl">
+      <DialogContent className="flex h-[80svh] max-h-[80vh] translate-y-0 flex-col sm:top-10 sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {kind === "watch" ? t("addWatchRule") : t("addIgnoreRule")}
@@ -579,25 +585,23 @@ function AddRuleDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 px-6 pb-2">
-          <div className="space-y-1.5">
-            <Label>{tl("folder")}</Label>
-            <Input
-              defaultValue={path || "/"}
-              onChange={(e) => {
-                const folder = e.target.value
-                setPath(folder)
-                if (error) setError(null)
-              }}
-            />
-            {path && (
-              <p className="text-muted-foreground text-xs">
-                {tl("selected.withInput", {
-                  input: path,
-                })}
-              </p>
-            )}
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 px-6 pb-2">
+          <ServerFileBrowser
+            directoriesOnly
+            startPath={path || "/"}
+            selectLabel={tl("folder")}
+            onSelect={(folder) => {
+              setPath(folder)
+              if (error) setError(null)
+            }}
+            className="min-h-0 flex-1"
+          />
+
+          {path && (
+            <p className="text-muted-foreground text-xs">
+              {tl("selected.withInput", { input: path })}
+            </p>
+          )}
 
           {kind === "watch" && (
             <>
