@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto"
+
 import { type NextRequest, NextResponse } from "next/server"
 
 import { getSettings } from "@/database/settings"

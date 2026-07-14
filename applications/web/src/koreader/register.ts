@@ -5,7 +5,6 @@ import { getSettings } from "@/database/settings"
 import { upsertKoreaderDocument } from "@/koreader/database"
 import { partialMd5 } from "@/koreader/hash"
 import { logger } from "@/logging"
-import { type UUID } from "@/uuid"
 
 /**
  * KOReader hashes the exact bytes sitting on the device, so the only reliable
@@ -32,9 +31,9 @@ export function registerServedDocument(
       await upsertKoreaderDocument(
         document,
         book.uuid,
-        format === "ebook" ? ((book.ebook?.uuid ?? null) as UUID | null) : null,
+        format === "ebook" ? ((book.ebook?.uuid ?? null)) : null,
         format === "readaloud"
-          ? ((book.readaloud?.uuid ?? null) as UUID | null)
+          ? ((book.readaloud?.uuid ?? null))
           : null,
       )
 
