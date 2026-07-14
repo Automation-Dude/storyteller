@@ -216,6 +216,11 @@ export const SettingsSchema = z.object({
   opdsEnabled: z.boolean().nullable(),
   opdsPageSize: z.number().nullable(),
   opdsFormat: OpdsFormatSchema.nullable(),
+  // KOReader sync settings. KOReader runs on Kobo, jailbroken Kindle,
+  // PocketBook and others; its "progress sync" plugin speaks the kosync
+  // protocol, which Storyteller implements at /kosync.
+  koreaderSyncEnabled: z.boolean().nullable(),
+  koreaderSyncAllowRegistration: z.boolean().nullable(),
   // Scanning settings
   scanCronExpression: z.string().nullable(),
   // Backup settings; optional so setting rows written before these keys
