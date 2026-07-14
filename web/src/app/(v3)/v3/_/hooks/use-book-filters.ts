@@ -11,11 +11,7 @@ import {
   createAndBlock,
   shelfFilterRootSchema,
 } from "@/shelves"
-import {
-  type DisplayField,
-  type SortDirection,
-  type SortField,
-} from "@/sort"
+import { type DisplayField, type SortDirection, type SortField } from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
 import { type UUID } from "@/uuid"
 
@@ -93,9 +89,6 @@ function isConditionNode(node: ShelfFilterNode): node is ShelfFilterCondition {
   return node.type === "condition"
 }
 
-// the quick chips can only represent a flat `and` of conditions. anything else
-// (an or / not / nested block authored in the advanced editor) is shown as a
-// single locked "Advanced" chip.
 function asSimpleAnd(node: ShelfFilterNode): ShelfFilterCondition[] | null {
   if (node.type !== "and") return null
   if (!node.children.every(isConditionNode)) return null
@@ -145,8 +138,6 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   const deferredSearch = useDeferredValue(debouncedSearch)
   const isSearching = debouncedSearch !== deferredSearch
 
-  // the flat condition list the quick chips edit, or null when the tree is too
-  // complex for the chips (advanced mode).
   const simpleConditions = useMemo(() => asSimpleAnd(userFilter), [userFilter])
   const isAdvanced = simpleConditions === null
 
@@ -253,7 +244,6 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     : activeFields.length + (search ? 1 : 0)
 
   return {
-    // filter tree
     userFilter,
     isAdvanced,
     seed: options.seed ?? null,
@@ -263,12 +253,10 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     setConditionsForField,
     removeField,
     setUserFilter,
-    // search / sort / display
     search,
     setSearch,
     sort,
     setSort,
-    // query + status
     queryArg,
     isSearching,
     deferredSearch,

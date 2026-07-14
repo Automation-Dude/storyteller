@@ -2,8 +2,15 @@ import { useHotkeys } from "@tanstack/react-hotkeys"
 
 import {
   FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuGroup,
   FilterableMenuItem,
+  FilterableMenuLabel,
   FilterableMenuSeparator,
+  FilterableMenuSub,
+  FilterableMenuSubContent,
+  FilterableMenuSubTrigger,
+  FilterableMenuTrigger,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
@@ -69,163 +76,177 @@ export function DisplayControl({
   }
 
   return (
-    <FilterableMenu
-      open={open}
-      onOpenChange={onOpenChange}
-      trigger={
-        <TooltipButton
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t.plain("displayOptions.tooltip")}
-          className="shrink-0"
-          tooltip={t("displayOptions.tooltip")}
-          shortcut={[displayHotKey]}
-        >
-          <icon.Columns />
-        </TooltipButton>
-      }
-      searchable
-      searchPlaceholder={t.plain("displayOptions.searchHint")}
-    >
-      {/* ---- layout ---- */}
-      {bookView && onBookViewChange && (
-        <>
-          <span className="text-muted-foreground px-2 pt-1 text-xs">
-            Layout
-          </span>
+    <FilterableMenu open={open} onOpenChange={onOpenChange}>
+      <FilterableMenuTrigger
+        render={
+          <TooltipButton
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t.plain("displayOptions.tooltip")}
+            className="shrink-0"
+            tooltip={t("displayOptions.tooltip")}
+            shortcut={[displayHotKey]}
+          >
+            <icon.Columns />
+          </TooltipButton>
+        }
+      />
+      <FilterableMenuContent
+        searchPlaceholder={t.plain("displayOptions.searchHint")}
+      >
+        {/* ---- layout ---- */}
+        {bookView && onBookViewChange && (
+          <>
+            <FilterableMenuGroup>
+              <FilterableMenuLabel>Layout</FilterableMenuLabel>
+
+              <FilterableMenuItem
+                closeOnClick={false}
+                textValue="Grid"
+                icon={<icon.LayoutGrid className="size-4" />}
+                onSelect={() => {
+                  onBookViewChange("grid")
+                }}
+              >
+                Grid
+                {bookView === "grid" && <icon.Check className="ml-auto" />}
+              </FilterableMenuItem>
+
+              <FilterableMenuItem
+                closeOnClick={false}
+                textValue="List"
+                icon={<icon.LayoutList className="size-4" />}
+                onSelect={() => {
+                  onBookViewChange("list")
+                }}
+              >
+                List
+                {bookView === "list" && <icon.Check className="ml-auto" />}
+              </FilterableMenuItem>
+            </FilterableMenuGroup>
+
+            <FilterableMenuSeparator />
+          </>
+        )}
+
+        {/* ---- appearance ---- */}
+        <FilterableMenuGroup>
+          <FilterableMenuLabel>Appearance</FilterableMenuLabel>
 
           <FilterableMenuItem
             closeOnClick={false}
-            textValue="Grid"
-            icon={<icon.LayoutGrid className="size-4" />}
+            textValue="Subdued"
             onSelect={() => {
-              onBookViewChange("grid")
+              void updateSetting({ name: "colorMix", value: "subdued" })
             }}
           >
-            Grid
-            {bookView === "grid" && <icon.Check className="ml-auto" />}
+            Subdued
+            {colorMix === "subdued" && <icon.Check className="ml-auto" />}
           </FilterableMenuItem>
 
           <FilterableMenuItem
             closeOnClick={false}
-            textValue="List"
-            icon={<icon.LayoutList className="size-4" />}
+            textValue="Vibrant"
             onSelect={() => {
-              onBookViewChange("list")
+              void updateSetting({ name: "colorMix", value: "vibrant" })
             }}
           >
-            List
-            {bookView === "list" && <icon.Check className="ml-auto" />}
+            Vibrant
+            {colorMix === "vibrant" && <icon.Check className="ml-auto" />}
           </FilterableMenuItem>
 
-          <FilterableMenuSeparator />
-        </>
-      )}
+          <FilterableMenuSub>
+            <FilterableMenuSubTrigger textValue="Color intensity">
+              Intensity
+            </FilterableMenuSubTrigger>
+            <FilterableMenuSubContent>
+              <IntensitySubmenu intensity={intensity} />
+            </FilterableMenuSubContent>
+          </FilterableMenuSub>
+        </FilterableMenuGroup>
 
-      {/* ---- appearance ---- */}
-      <span className="text-muted-foreground px-2 pt-1 text-xs">
-        Appearance
-      </span>
+        <FilterableMenuSeparator />
 
-      <FilterableMenuItem
-        closeOnClick={false}
-        textValue="Subdued"
-        onSelect={() => {
-          void updateSetting({ name: "colorMix", value: "subdued" })
-        }}
-      >
-        Subdued
-        {colorMix === "subdued" && <icon.Check className="ml-auto" />}
-      </FilterableMenuItem>
+        {/* ---- card ---- */}
+        <FilterableMenuGroup>
+          <FilterableMenuLabel>Card</FilterableMenuLabel>
 
-      <FilterableMenuItem
-        closeOnClick={false}
-        textValue="Vibrant"
-        onSelect={() => {
-          void updateSetting({ name: "colorMix", value: "vibrant" })
-        }}
-      >
-        Vibrant
-        {colorMix === "vibrant" && <icon.Check className="ml-auto" />}
-      </FilterableMenuItem>
+          <FilterableMenuSub>
+            <FilterableMenuSubTrigger
+              icon={<icon.Readaloud className="size-4" />}
+              textValue="Cover type"
+            >
+              Cover type
+            </FilterableMenuSubTrigger>
+            <FilterableMenuSubContent>
+              <CoverTypeSubmenu
+                value={gridCoverDisplay}
+                onChange={(v) => {
+                  void updateSetting({
+                    name: "gridCoverDisplay",
+                    value: v as typeof gridCoverDisplay,
+                  })
+                }}
+              />
+            </FilterableMenuSubContent>
+          </FilterableMenuSub>
 
-      <FilterableMenuItem
-        closeOnClick={false}
-        textValue="Color intensity"
-        submenu={<IntensitySubmenu intensity={intensity} />}
-      >
-        Intensity
-      </FilterableMenuItem>
+          <FilterableMenuSub>
+            <FilterableMenuSubTrigger
+              icon={<icon.Maximize className="size-4" />}
+              textValue="Card size"
+            >
+              Card size
+            </FilterableMenuSubTrigger>
+            <FilterableMenuSubContent>
+              <CardSizeSubmenu
+                value={gridCardSize}
+                onChange={(v) => {
+                  void updateSetting({
+                    name: "gridCardSize",
+                    value: v as typeof gridCardSize,
+                  })
+                }}
+              />
+            </FilterableMenuSubContent>
+          </FilterableMenuSub>
+        </FilterableMenuGroup>
 
-      <FilterableMenuSeparator />
+        <FilterableMenuSeparator />
 
-      {/* ---- card ---- */}
-      <span className="text-muted-foreground px-2 pt-1 text-xs">Card</span>
+        {/* ---- show on card ---- */}
+        <FilterableMenuGroup>
+          <FilterableMenuLabel>
+            {t.plain("displayOptions.hint")}
+          </FilterableMenuLabel>
 
-      <FilterableMenuItem
-        closeOnClick={false}
-        textValue="Cover type"
-        submenu={
-          <CoverTypeSubmenu
-            value={gridCoverDisplay}
-            onChange={(v) => {
-              void updateSetting({ name: "gridCoverDisplay", value: v as typeof gridCoverDisplay })
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue={t.plain("displayOptions.auto")}
+            onSelect={() => {
+              onDisplayOverridesChange(null)
             }}
-          />
-        }
-      >
-        <icon.Readaloud className="size-4" />
-        Cover type
-      </FilterableMenuItem>
+          >
+            {t("displayOptions.auto")}
+            {displayOverrides === null && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
 
-      <FilterableMenuItem
-        closeOnClick={false}
-        textValue="Card size"
-        submenu={
-          <CardSizeSubmenu
-            value={gridCardSize}
-            onChange={(v) => {
-              void updateSetting({ name: "gridCardSize", value: v as typeof gridCardSize })
-            }}
-          />
-        }
-      >
-        <icon.Maximize className="size-4" />
-        Card size
-      </FilterableMenuItem>
-
-      <FilterableMenuSeparator />
-
-      {/* ---- show on card ---- */}
-      <span className="text-muted-foreground px-2 pt-1 text-xs">
-        {t("displayOptions.hint")}
-      </span>
-
-      <FilterableMenuItem
-        closeOnClick={false}
-        textValue={t.plain("displayOptions.auto")}
-        onSelect={() => {
-          onDisplayOverridesChange(null)
-        }}
-      >
-        {t("displayOptions.auto")}
-        {displayOverrides === null && <icon.Check className="ml-auto" />}
-      </FilterableMenuItem>
-
-      {DISPLAY_FIELDS.map((field) => (
-        <FilterableMenuItem
-          key={field}
-          closeOnClick={false}
-          textValue={tLabels(field)}
-          onSelect={() => {
-            toggleField(field)
-          }}
-        >
-          <FieldIcon field={field} className="mr-2" />
-          {tLabels(field)}
-          {shown.includes(field) && <icon.Check className="ml-auto" />}
-        </FilterableMenuItem>
-      ))}
+          {DISPLAY_FIELDS.map((field) => (
+            <FilterableMenuItem
+              key={field}
+              closeOnClick={false}
+              textValue={tLabels(field)}
+              onSelect={() => {
+                toggleField(field)
+              }}
+            >
+              <FieldIcon field={field} className="mr-2" />
+              {tLabels(field)}
+              {shown.includes(field) && <icon.Check className="ml-auto" />}
+            </FilterableMenuItem>
+          ))}
+        </FilterableMenuGroup>
+      </FilterableMenuContent>
     </FilterableMenu>
   )
 }

@@ -22,6 +22,9 @@ import {
   type ActivationModifiers,
   FilterableMenuItem,
   FilterableMenuSeparator,
+  FilterableMenuSub,
+  FilterableMenuSubContent,
+  FilterableMenuSubTrigger,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { ITag } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type BookWithRelations, type CreatorRelation } from "@/database/books"
@@ -69,17 +72,32 @@ export function ActionEntryList({ entries }: { entries: BookActionEntry[] }) {
       {entries.map((entry) => (
         <Fragment key={entry.key}>
           {entry.separatorBefore && <FilterableMenuSeparator />}
-          <FilterableMenuItem
-            icon={entry.icon}
-            textValue={entry.label}
-            keywords={entry.keywords}
-            variant={entry.variant}
-            disabled={entry.disabled}
-            onSelect={entry.onSelect}
-            submenu={entry.submenu}
-          >
-            {entry.label}
-          </FilterableMenuItem>
+          {entry.submenu ? (
+            <FilterableMenuSub>
+              <FilterableMenuSubTrigger
+                icon={entry.icon}
+                textValue={entry.label}
+                keywords={entry.keywords}
+                disabled={entry.disabled}
+              >
+                {entry.label}
+              </FilterableMenuSubTrigger>
+              <FilterableMenuSubContent>
+                {entry.submenu}
+              </FilterableMenuSubContent>
+            </FilterableMenuSub>
+          ) : (
+            <FilterableMenuItem
+              icon={entry.icon}
+              textValue={entry.label}
+              keywords={entry.keywords}
+              variant={entry.variant}
+              disabled={entry.disabled}
+              onSelect={entry.onSelect}
+            >
+              {entry.label}
+            </FilterableMenuItem>
+          )}
         </Fragment>
       ))}
     </>

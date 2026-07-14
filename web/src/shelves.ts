@@ -416,8 +416,6 @@ export const shelfFilterNodeSchema: z.ZodType<ShelfFilterNode> = z.lazy(() =>
     }),
   ]),
 )
-// the root of a shelf filter is always a logical block (and / or / not); a bare
-// condition is not a valid top-level filter. conditions only live as children.
 
 export const shelfFilterRootSchema = z.discriminatedUnion("type", [
   z.object({
@@ -435,10 +433,6 @@ export const shelfFilterRootSchema = z.discriminatedUnion("type", [
 ])
 
 export const shelfFilterSchema = z.union([shelfFilterRootSchema])
-
-// ---------------------------------------------------------------------------
-// labels + editor helpers
-// ---------------------------------------------------------------------------
 
 export const OPERATOR_LABELS: Record<ShelfFilterOperator, string> = {
   is: "is",
@@ -505,10 +499,6 @@ export function operatorRequiresRangeValue(
   return operator === "between"
 }
 
-// the operator a freshly-added filter on a field should default to. `is` is
-// rarely what you want (slow to fill, often the wrong question); pick the common
-// case instead: contains for text, between for numbers/dates, any-of for
-// relations/enums.
 export function defaultOperatorForField(
   field: ShelfFilterField,
 ): ShelfFilterOperator {

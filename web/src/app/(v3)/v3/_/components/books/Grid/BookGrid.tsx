@@ -1,10 +1,10 @@
 "use client"
 
-import { Popover } from "@base-ui/react/popover"
 import { useCallback, useMemo } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
+  FilterableMenu,
   FilterableMenuContent,
   FilterableMenuItem,
   FilterableMenuSeparator,
@@ -311,7 +311,7 @@ export function BookGrid({
         </div>
       )}
 
-      <Popover.Root handle={menu.handle}>
+      <FilterableMenu handle={menu.handle}>
         <FilterableMenuContent
           searchable
           searchPlaceholder={tActions.plain("search")}
@@ -344,7 +344,7 @@ export function BookGrid({
 
           <ActionEntryList entries={menu.menuEntries} />
         </FilterableMenuContent>
-      </Popover.Root>
+      </FilterableMenu>
 
       {menu.menuDialogs}
     </>

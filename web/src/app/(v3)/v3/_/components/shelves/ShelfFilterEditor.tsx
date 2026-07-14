@@ -2,7 +2,7 @@
 
 import * as icon from "@/icons"
 import { Reorder, motion, useDragControls } from "motion/react"
-import { Fragment, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -63,8 +63,14 @@ import {
   NumericInput,
 } from "../books/filter-ui"
 import { type FieldGroupKey, FIELDS, getFieldDef } from "@/fields"
-import { FilterableMenu, FilterableMenuItem } from "../ui/filterable-menu"
-import { Separator } from "../ui/separator"
+import {
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuGroup,
+  FilterableMenuItem,
+  FilterableMenuLabel,
+  FilterableMenuTrigger,
+} from "../ui/filterable-menu"
 
 // the advanced-editor field picker, derived from the registry so it can never
 // drift out of sync: every field grouped by its own `group`, in this order.
@@ -298,13 +304,6 @@ function AddNodeDropdown({
         }
       />
       <DropdownMenuContent align="start">
-        <DropdownMenuItem
-          onClick={() => {
-            onAdd(createEmptyCondition())
-          }}
-        >
-          {t.plain("condition")}
-        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             onAdd(createAndBlock())
@@ -674,7 +673,23 @@ function LogicalBlockEditor({
         ))}
       </Reorder.Group>
 
-      <div className={cn(!isRoot ? "ml-3 pl-3" : "")}>
+      <div
+        className={cn(!isRoot ? "ml-3 pl-3" : "", "flex items-center gap-1")}
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            handleAddNode({
+              type: "condition",
+              field: "title",
+              operator: "contains",
+            })
+          }
+        >
+          <icon.Plus className="size-3" />
+          Add condition
+        </Button>
         <AddNodeDropdown onAdd={handleAddNode} />
       </div>
     </div>
@@ -819,100 +834,105 @@ function ConditionEditor({
   }))
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col">
       <div
         className={cn(
           "flex flex-wrap items-center gap-1.5 py-1",
           !hasValidValue && needsValue && "opacity-60",
         )}
       >
-        <FilterableMenu
-          searchable
-          trigger={
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
-            >
-              <FieldIcon field={condition.field} className="size-3" />
-              {c(`fields.label.${condition.field}`)}
-              <icon.ChevronDown className="size-3" />
-            </Button>
-          }
-        >
-          {FIELD_GROUPS.map((group, index) => (
-            <Fragment key={group.key}>
-              <span className="text-muted-foreground px-1.5 text-xs font-medium">
-                {t.plain(`fieldGroups.${group.key}` as "fieldGroups.text")}
-              </span>
-              {group.fields.map((field) => (
-                <FilterableMenuItem
-                  key={field}
-                  icon={<FieldIcon field={field} className="size-3" />}
-                  textValue={c(`fields.label.${field}`)}
-                  onSelect={() => {
-                    handleFieldChange(field)
-                  }}
-                >
-                  {c(`fields.label.${field}`)}
-                </FilterableMenuItem>
-              ))}
-              {index < FIELD_GROUPS.length - 1 && <Separator />}
-            </Fragment>
-          ))}
-        </FilterableMenu>
-
-        {condition.field === "ratingDimension" && (
-          <FilterableMenu
-            searchable
-            trigger={
+        <FilterableMenu>
+          <FilterableMenuTrigger
+            render={
               <Button
                 variant="outline"
                 size="sm"
                 className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
               >
+                <FieldIcon field={condition.field} className="size-3" />
+                {c(`fields.label.${condition.field}`)}
                 <icon.ChevronDown className="size-3" />
               </Button>
             }
-          >
-            {dimensions.map((d) => (
-              <FilterableMenuItem
-                key={d.id}
-                textValue={d.label}
-                onSelect={() => {
-                  handleDimensionChange(d.id)
-                }}
-              >
-                {d.label}
-              </FilterableMenuItem>
+          />
+          <FilterableMenuContent>
+            {FIELD_GROUPS.map((group) => (
+              <FilterableMenuGroup key={group.key}>
+                <FilterableMenuLabel>
+                  {t.plain(`fieldGroups.${group.key}` as "fieldGroups.text")}
+                </FilterableMenuLabel>
+                {group.fields.map((field) => (
+                  <FilterableMenuItem
+                    key={field}
+                    icon={<FieldIcon field={field} className="size-3" />}
+                    textValue={c(`fields.label.${field}`)}
+                    onSelect={() => {
+                      handleFieldChange(field)
+                    }}
+                  >
+                    {c(`fields.label.${field}`)}
+                  </FilterableMenuItem>
+                ))}
+              </FilterableMenuGroup>
             ))}
+          </FilterableMenuContent>
+        </FilterableMenu>
+
+        {condition.field === "ratingDimension" && (
+          <FilterableMenu>
+            <FilterableMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
+                >
+                  <icon.ChevronDown className="size-3" />
+                </Button>
+              }
+            />
+            <FilterableMenuContent searchable={false}>
+              {dimensions.map((d) => (
+                <FilterableMenuItem
+                  key={d.id}
+                  textValue={d.label}
+                  onSelect={() => {
+                    handleDimensionChange(d.id)
+                  }}
+                >
+                  {d.label}
+                </FilterableMenuItem>
+              ))}
+            </FilterableMenuContent>
           </FilterableMenu>
         )}
 
-        <FilterableMenu
-          searchable
-          trigger={
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
-            >
-              {t.plain(`operators.${condition.operator}` as "operators.is")}
-              <icon.ChevronDown className="size-3" />
-            </Button>
-          }
-        >
-          {operatorItems.map((item) => (
-            <FilterableMenuItem
-              key={item.value}
-              textValue={item.label}
-              onSelect={() => {
-                handleOperatorChange(item.value as ShelfFilterOperator)
-              }}
-            >
-              {item.label}
-            </FilterableMenuItem>
-          ))}
+        <FilterableMenu>
+          <FilterableMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
+              >
+                {t.plain(`operators.${condition.operator}` as "operators.is")}
+                <icon.ChevronDown className="size-3" />
+              </Button>
+            }
+          />
+          <FilterableMenuContent searchable>
+            {operatorItems.map((item) => (
+              <FilterableMenuItem
+                key={item.value}
+                textValue={item.label}
+                onSelect={() => {
+                  handleOperatorChange(item.value as ShelfFilterOperator)
+                }}
+              >
+                {item.label}
+              </FilterableMenuItem>
+            ))}
+          </FilterableMenuContent>
         </FilterableMenu>
 
         {needsValue && (

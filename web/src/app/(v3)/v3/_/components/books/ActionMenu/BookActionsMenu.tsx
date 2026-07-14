@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation"
 
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
-import { FilterableMenu } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
+import {
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuTrigger,
+} from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
@@ -69,27 +73,25 @@ export function BookActionsMenu({
 
   return (
     <>
-      <FilterableMenu
-        open={open}
-        onOpenChange={onOpenChange}
-        align="end"
-        searchable
-        searchPlaceholder={t.plain("search")}
-        trigger={
-          <TooltipButton
-            variant="real-ghost"
-            size="icon-sm"
-            className={className}
-            tooltip="Open actions"
-            aria-label="Open book actions menu"
-            shortcut={["E"]}
-          >
-            <icon.DotsVertical className="size-3.5 stroke-[1.5]" />
-            <span className="sr-only">Open book actions menu</span>
-          </TooltipButton>
-        }
-      >
-        <ActionEntryList entries={[...leading, ...entries]} />
+      <FilterableMenu open={open} onOpenChange={onOpenChange}>
+        <FilterableMenuTrigger
+          render={
+            <TooltipButton
+              variant="real-ghost"
+              size="icon-sm"
+              className={className}
+              tooltip="Open actions"
+              aria-label="Open book actions menu"
+              shortcut={["E"]}
+            >
+              <icon.DotsVertical className="size-3.5 stroke-[1.5]" />
+              <span className="sr-only">Open book actions menu</span>
+            </TooltipButton>
+          }
+        />
+        <FilterableMenuContent align="end" searchPlaceholder={t.plain("search")}>
+          <ActionEntryList entries={[...leading, ...entries]} />
+        </FilterableMenuContent>
       </FilterableMenu>
 
       {dialogs}

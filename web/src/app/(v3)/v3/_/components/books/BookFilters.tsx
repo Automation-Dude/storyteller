@@ -3,8 +3,13 @@ import { type ReactNode, useMemo, useRef, useState } from "react"
 
 import {
   FilterableMenu,
+  FilterableMenuContent,
   FilterableMenuItem,
   FilterableMenuSeparator,
+  FilterableMenuSub,
+  FilterableMenuSubContent,
+  FilterableMenuSubTrigger,
+  FilterableMenuTrigger,
 } from "@v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
 import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
@@ -240,106 +245,112 @@ function FilterMenu({
   }, [])
 
   return (
-    <FilterableMenu
-      open={open}
-      onOpenChange={onOpenChange}
-      searchable
-      searchPlaceholder={t.plain("filters.filters")}
-      trigger={
-        <TooltipButton
-          variant="outline"
-          className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium"
-          tooltip={t("filters.filters")}
-          shortcut={[filterHotKey]}
-          aria-label={t("filters.filters")}
-        >
-          <icon.Filter />
-        </TooltipButton>
-      }
-    >
-      {Object.entries(groups).flatMap(([group, fields]) =>
-        group !== "alignment" ? (
-          fields.map((field) => (
-            <FilterableMenuItem
-              key={field}
-              icon={<FieldIcon field={field} className="size-4" />}
-              textValue={tLabel.plain(getFieldDef(field).labelKey as never)}
-              submenu={
-                <FilterEditor
-                  field={field}
-                  def={getFieldDef(field)}
-                  conditions={conditionsForField(field)}
-                  onChange={(next) => {
-                    setConditionsForField(field, next)
-                  }}
-                  enabled
-                />
-              }
-            >
-              {tLabel(getFieldDef(field).labelKey as never)}
-            </FilterableMenuItem>
-          ))
-        ) : (
-          <FilterableMenuItem
-            key={group}
-            icon={<icon.AlignLeft className="size-4" />}
-            textValue={tLabel.plain(group)}
-            submenu={fields.map((field) => (
-              <FilterableMenuItem
-                key={field}
-                icon={<FieldIcon field={field} className="size-4" />}
-                textValue={tLabel.plain(getFieldDef(field).labelKey as never)}
-                submenu={
+    <FilterableMenu open={open} onOpenChange={onOpenChange}>
+      <FilterableMenuTrigger
+        render={
+          <TooltipButton
+            variant="outline"
+            className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium"
+            tooltip={t("filters.filters")}
+            shortcut={[filterHotKey]}
+            aria-label={t("filters.filters")}
+          >
+            <icon.Filter />
+          </TooltipButton>
+        }
+      />
+      <FilterableMenuContent searchPlaceholder={t.plain("filters.filters")}>
+        {Object.entries(groups).flatMap(([group, fields]) =>
+          group !== "alignment" ? (
+            fields.map((field) => (
+              <FilterableMenuSub key={field}>
+                <FilterableMenuSubTrigger
+                  icon={<FieldIcon field={field} className="size-4" />}
+                  textValue={tLabel.plain(getFieldDef(field).labelKey as never)}
+                >
+                  {tLabel(getFieldDef(field).labelKey as never)}
+                </FilterableMenuSubTrigger>
+                <FilterableMenuSubContent>
                   <FilterEditor
-                    enabled
                     field={field}
                     def={getFieldDef(field)}
                     conditions={conditionsForField(field)}
                     onChange={(next) => {
                       setConditionsForField(field, next)
                     }}
+                    enabled
                   />
-                }
+                </FilterableMenuSubContent>
+              </FilterableMenuSub>
+            ))
+          ) : (
+            <FilterableMenuSub key={group}>
+              <FilterableMenuSubTrigger
+                icon={<icon.AlignLeft className="size-4" />}
+                textValue={tLabel.plain(group)}
               >
-                {tLabel(getFieldDef(field).labelKey as never)}
+                {tLabel.plain(group)}
+              </FilterableMenuSubTrigger>
+              <FilterableMenuSubContent searchable>
+                {fields.map((field) => (
+                  <FilterableMenuSub key={field}>
+                    <FilterableMenuSubTrigger
+                      icon={<FieldIcon field={field} className="size-4" />}
+                      textValue={tLabel.plain(
+                        getFieldDef(field).labelKey as never,
+                      )}
+                    >
+                      {tLabel(getFieldDef(field).labelKey as never)}
+                    </FilterableMenuSubTrigger>
+                    <FilterableMenuSubContent>
+                      <FilterEditor
+                        enabled
+                        field={field}
+                        def={getFieldDef(field)}
+                        conditions={conditionsForField(field)}
+                        onChange={(next) => {
+                          setConditionsForField(field, next)
+                        }}
+                      />
+                    </FilterableMenuSubContent>
+                  </FilterableMenuSub>
+                ))}
+              </FilterableMenuSubContent>
+            </FilterableMenuSub>
+          ),
+        )}
+
+        {(onToggleAdvanced || onSaveAsShelf) && (
+          <>
+            <FilterableMenuSeparator />
+
+            {onToggleAdvanced && (
+              <FilterableMenuItem
+                textValue="Advanced filter"
+                icon={<icon.AdjustmentsHorizontal className="size-4" />}
+                onSelect={() => {
+                  onToggleAdvanced()
+                }}
+              >
+                Advanced filter
+                {advancedVisible && <icon.Check className="ml-auto" />}
               </FilterableMenuItem>
-            ))}
-          >
-            {tLabel.plain(group)}
-          </FilterableMenuItem>
-        ),
-      )}
+            )}
 
-      {(onToggleAdvanced || onSaveAsShelf) && (
-        <>
-          <FilterableMenuSeparator />
-
-          {onToggleAdvanced && (
-            <FilterableMenuItem
-              textValue="Advanced filter"
-              icon={<icon.AdjustmentsHorizontal className="size-4" />}
-              onSelect={() => {
-                onToggleAdvanced()
-              }}
-            >
-              Advanced filter
-              {advancedVisible && <icon.Check className="ml-auto" />}
-            </FilterableMenuItem>
-          )}
-
-          {onSaveAsShelf && (
-            <FilterableMenuItem
-              textValue="Save as shelf"
-              icon={<icon.BookmarkPlus className="size-4" />}
-              onSelect={() => {
-                onSaveAsShelf()
-              }}
-            >
-              Save as shelf
-            </FilterableMenuItem>
-          )}
-        </>
-      )}
+            {onSaveAsShelf && (
+              <FilterableMenuItem
+                textValue="Save as shelf"
+                icon={<icon.BookmarkPlus className="size-4" />}
+                onSelect={() => {
+                  onSaveAsShelf()
+                }}
+              >
+                Save as shelf
+              </FilterableMenuItem>
+            )}
+          </>
+        )}
+      </FilterableMenuContent>
     </FilterableMenu>
   )
 }

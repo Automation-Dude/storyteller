@@ -18,7 +18,12 @@ import {
 } from "./ui/dropdown-menu"
 import { IAdd } from "./ui/icon"
 import { TooltipButton } from "./ui/tooltip-button"
-import { FilterableMenu, FilterableMenuItem } from "./ui/filterable-menu"
+import {
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuItem,
+  FilterableMenuTrigger,
+} from "./ui/filterable-menu"
 import { useHotkey } from "@tanstack/react-hotkeys"
 
 export function AddBookButton(props: ButtonProps) {
@@ -40,40 +45,41 @@ export function AddBookButton(props: ButtonProps) {
 
   return (
     <>
-      <FilterableMenu
-        open={open}
-        onOpenChange={setOpen}
-        trigger={
-          <TooltipButton
-            variant="ghost"
-            size="sm"
-            {...props}
-            tooltip={t("addBook")}
-            aria-label={t("addBook")}
-            shortcut={["Shift+A"]}
+      <FilterableMenu open={open} onOpenChange={setOpen}>
+        <FilterableMenuTrigger
+          render={
+            <TooltipButton
+              variant="ghost"
+              size="sm"
+              {...props}
+              tooltip={t("addBook")}
+              aria-label={t("addBook")}
+              shortcut={["Shift+A"]}
+            >
+              <IAdd.base className="size-4" />
+            </TooltipButton>
+          }
+        />
+        <FilterableMenuContent searchable={false}>
+          <FilterableMenuItem
+            icon={<icon.FileUpload className="size-4" />}
+            textValue={t.plain("uploadBook")}
+            onSelect={() => {
+              setUploadOpen(true)
+            }}
           >
-            <IAdd.base className="size-4" />
-          </TooltipButton>
-        }
-      >
-        <FilterableMenuItem
-          icon={<icon.FileUpload className="size-4" />}
-          textValue={t.plain("uploadBook")}
-          onSelect={() => {
-            setUploadOpen(true)
-          }}
-        >
-          {t("uploadBook")}
-        </FilterableMenuItem>
-        <FilterableMenuItem
-          icon={<icon.FileImport className="size-4" />}
-          textValue={t.plain("importBook")}
-          onSelect={() => {
-            setImportOpen(true)
-          }}
-        >
-          {t("importBook")}
-        </FilterableMenuItem>
+            {t("uploadBook")}
+          </FilterableMenuItem>
+          <FilterableMenuItem
+            icon={<icon.FileImport className="size-4" />}
+            textValue={t.plain("importBook")}
+            onSelect={() => {
+              setImportOpen(true)
+            }}
+          >
+            {t("importBook")}
+          </FilterableMenuItem>
+        </FilterableMenuContent>
       </FilterableMenu>
 
       <UploadBookDialog

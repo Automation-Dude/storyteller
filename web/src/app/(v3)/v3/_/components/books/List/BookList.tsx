@@ -1,11 +1,11 @@
 "use client"
 
-import { Popover } from "@base-ui/react/popover"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
+  FilterableMenu,
   FilterableMenuContent,
   FilterableMenuItem,
   FilterableMenuSeparator,
@@ -334,7 +334,7 @@ export function BookList({
         </div>
       )}
 
-      <Popover.Root handle={menu.handle}>
+      <FilterableMenu handle={menu.handle}>
         <FilterableMenuContent
           searchable
           searchPlaceholder={tActions.plain("search")}
@@ -367,7 +367,7 @@ export function BookList({
 
           <ActionEntryList entries={menu.menuEntries} />
         </FilterableMenuContent>
-      </Popover.Root>
+      </FilterableMenu>
 
       {menu.menuDialogs}
     </>

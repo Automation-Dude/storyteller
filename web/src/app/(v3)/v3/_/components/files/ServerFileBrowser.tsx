@@ -3,7 +3,7 @@
 import * as icon from "@/icons"
 import { matchSorter } from "match-sorter"
 import { lookup } from "mime-types"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -105,6 +105,7 @@ type ServerFileBrowserBaseProps = {
   directoriesOnly?: boolean
   startPath?: string
   className?: string
+  autoFocus?: boolean
 }
 
 type ServerFileBrowserMultiProps = ServerFileBrowserBaseProps & {
@@ -130,11 +131,17 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
     directoriesOnly = false,
     startPath,
     className,
+    autoFocus = false,
   } = props
 
   const [currentSearchDirectory, setCurrentSearchDirectory] = useState<
     string | null
   >(startPath ?? null)
+  const [focusedIndex, setFocusedIndex] = useState(0)
+
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<Map<number, HTMLButtonElement>>(new Map())
 
   const { paths, isLoading: pathsLoading } = useImportPaths()
 
@@ -165,6 +172,47 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
       { keys: ["name"] },
     )
   }, [filteredEntries, currentSearchDirectory])
+
+  useEffect(() => {
+    setFocusedIndex(0)
+  }, [entries])
+
+  useEffect(() => {
+    if (autoFocus && !pathsLoading) {
+      inputRef.current?.focus()
+    }
+  }, [autoFocus, pathsLoading])
+
+  const scrollToIndex = useCallback((index: number) => {
+    const el = itemRefs.current.get(index)
+    el?.scrollIntoView({ block: "nearest" })
+  }, [])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (entries.length === 0) return
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault()
+      const next = Math.min(focusedIndex + 1, entries.length - 1)
+      setFocusedIndex(next)
+      scrollToIndex(next)
+      return
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault()
+      const next = Math.max(focusedIndex - 1, 0)
+      setFocusedIndex(next)
+      scrollToIndex(next)
+      return
+    }
+
+    if (e.key === "Enter") {
+      e.preventDefault()
+      const entry = entries[focusedIndex]
+      if (entry) handleEntryClick(entry)
+    }
+  }
 
   const handleGoUp = () => {
     if (!currentSearchDirectory) return
@@ -227,8 +275,11 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
   }
 
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col gap-2", className)}>
-      <div className="flex flex-wrap items-center gap-1">
+    <div
+      className={cn("flex min-h-0 flex-1 flex-col gap-2", className)}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="flex items-center gap-1">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -263,7 +314,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
 
         {showSelectButton && (
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             className="ml-auto"
             disabled={actionIsPending}
@@ -279,6 +330,7 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
       </div>
 
       <Input
+        ref={inputRef}
         placeholder="Type a path…"
         value={currentSearchDirectory ?? ""}
         onChange={(event) => {
@@ -343,7 +395,10 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
         </>
       )}
 
-      <div className="min-h-[200px] flex-1 overflow-auto rounded-md border">
+      <div
+        ref={listRef}
+        className="min-h-[200px] flex-1 overflow-auto rounded-md border"
+      >
         {entries.length === 0 && !actionIsPending ? (
           <div className="flex h-full items-center justify-center py-8">
             <span className="text-muted-foreground text-sm">
@@ -351,25 +406,35 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
             </span>
           </div>
         ) : (
-          entries.map((entry) => {
+          entries.map((entry, index) => {
             const isSelected = props.multiple
               ? props.value.some((v) => v.path === entry.path)
               : false
+            const isFocused = index === focusedIndex
 
             return (
               <button
                 key={entry.path}
+                ref={(el) => {
+                  if (el) itemRefs.current.set(index, el)
+                  else itemRefs.current.delete(index)
+                }}
                 type="button"
                 onClick={() => {
+                  setFocusedIndex(index)
                   handleEntryClick(entry)
                 }}
+                onMouseEnter={() => {
+                  setFocusedIndex(index)
+                }}
                 className={cn(
-                  "hover:bg-muted flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm",
-                  isSelected && "bg-muted",
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors",
+                  isFocused && "bg-accent",
+                  isSelected && !isFocused && "bg-muted",
                 )}
               >
                 {entry.isDirectory ? (
-                  <icon.Folder className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <icon.Folder className="text-primary/70 h-4 w-4 shrink-0" />
                 ) : (
                   <icon.File className="text-muted-foreground h-4 w-4 shrink-0" />
                 )}

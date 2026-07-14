@@ -12,7 +12,11 @@ import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { FilterableMenu } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
+import {
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuTrigger,
+} from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import * as icon from "@/icons"
 
@@ -130,25 +134,28 @@ export function SelectionToolbar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <FilterableMenu
-            searchable
-            searchPlaceholder={tActions.plain("search")}
-            align="start"
-            contentClassName="min-w-48"
-            trigger={
-              <Button
-                variant="real-ghost"
-                size="sm"
-                className="shrink-0 gap-1.5 rounded-md"
-                disabled={!hasSelection}
-              >
-                <icon.Pointer className="size-3.5 stroke-[1.5]" />
-                <span className="hidden @md:inline">{t("actions")}</span>
-                <icon.ChevronDown className="size-3 opacity-60" />
-              </Button>
-            }
-          >
-            <ActionEntryList entries={entries} />
+          <FilterableMenu>
+            <FilterableMenuTrigger
+              render={
+                <Button
+                  variant="real-ghost"
+                  size="sm"
+                  className="shrink-0 gap-1.5 rounded-md"
+                  disabled={!hasSelection}
+                >
+                  <icon.Pointer className="size-3.5 stroke-[1.5]" />
+                  <span className="hidden @md:inline">{t("actions")}</span>
+                  <icon.ChevronDown className="size-3 opacity-60" />
+                </Button>
+              }
+            />
+            <FilterableMenuContent
+              searchPlaceholder={tActions.plain("search")}
+              align="start"
+              className="min-w-48"
+            >
+              <ActionEntryList entries={entries} />
+            </FilterableMenuContent>
           </FilterableMenu>
 
           {divider}
