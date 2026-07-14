@@ -987,6 +987,7 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
+    "toggleTheme": "Toggle theme",
     "system": "System",
     "language": "Language",
     "localeChanger": {

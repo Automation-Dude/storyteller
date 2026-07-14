@@ -971,6 +971,7 @@
     "account": "Account",
     "logout": "Uitloggen",
     "theme": "Thema",
+    "toggleTheme": "Thema wisselen",
     "light": "Licht",
     "dark": "Donker",
     "system": "Systeem",

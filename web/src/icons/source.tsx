@@ -15,8 +15,8 @@ import {
   IconArrowUpRight,
   IconArrowsMaximize,
   IconArrowsSort,
-  IconBook2,
   IconBook,
+  IconBook2,
   IconBookFilled,
   IconBookOff,
   IconBookmark,
@@ -40,10 +40,11 @@ import {
   IconCircleCheck,
   IconClick,
   IconClock,
-  IconColumns3,
   IconColumns,
+  IconColumns3,
   IconCopy,
   IconDatabase,
+  IconDeviceLaptop,
   IconDots,
   IconDotsCircleHorizontal,
   IconDotsVertical,
@@ -84,14 +85,14 @@ import {
   IconLinkOff,
   IconList,
   IconListNumbers,
-  IconLoader2,
   IconLoader,
+  IconLoader2,
   IconLock,
   IconLogout,
   IconMail,
   IconMaximize,
-  IconMicrophone2,
   IconMicrophone,
+  IconMicrophone2,
   IconMinimize,
   IconMinus,
   IconMoon,
@@ -115,8 +116,8 @@ import {
   IconSearch,
   IconSelector,
   IconServer,
-  IconSettings2,
   IconSettings,
+  IconSettings2,
   IconShield,
   IconSortAscending,
   IconSortDescending,
@@ -138,8 +139,8 @@ import {
   IconUpload,
   IconUser,
   IconUsers,
-  IconVolume3,
   IconVolume,
+  IconVolume3,
   IconVolumeOff,
   IconX,
 } from "@tabler/icons-react"
@@ -326,5 +327,8 @@ export const Heart = /*#__PURE__*/ styled(IconHeart)
 export const HelpCircle = /*#__PURE__*/ styled(IconHelpCircle)
 export const Language = /*#__PURE__*/ styled(IconLanguage)
 export const Moon = /*#__PURE__*/ styled(IconMoon)
+export const DarkMode = /*#__PURE__*/ styled(IconMoon)
 export const Sun = /*#__PURE__*/ styled(IconSun)
+export const LightMode = /*#__PURE__*/ styled(IconSun)
+export const System = /*#__PURE__*/ styled(IconDeviceLaptop)
 export const Star = /*#__PURE__*/ styled(IconStar)

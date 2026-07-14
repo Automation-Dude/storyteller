@@ -79,6 +79,7 @@ import {
 } from "@tanstack/react-hotkeys"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 import { useTheme } from "next-themes"
+import { TooltipButton } from "./ui/tooltip-button"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -161,8 +162,15 @@ export function AppSidebar({
   }, [hasUpdate, latestVersion])
 
   const { openSearch } = useCommandSearch()
+
   const t = useTranslation("AppSidebar")
   const { theme, setTheme } = useTheme()
+
+  useHotkey("Mod+L", () => {
+    setTheme(
+      theme === "dark" ? "system" : theme === "system" ? "light" : "dark",
+    )
+  })
 
   const navSecondary: NavSecondaryItem[] = [
     {
@@ -177,19 +185,50 @@ export function AppSidebar({
     {
       custom: (
         <SidebarMenuItem>
-          <SidebarMenuButton
-            onClick={() => {
-              setTheme(theme === "dark" ? "light" : "dark")
-            }}
-            className="flex justify-between gap-2"
-          >
-            <icon.Sun
-              className={cn(theme === "dark" ? "hidden" : "block", "size-4")}
+          <Tooltip delay={500}>
+            <TooltipTrigger
+              render={
+                <SidebarMenuButton
+                  onClick={() => {
+                    setTheme(
+                      theme === "dark"
+                        ? "system"
+                        : theme === "system"
+                          ? "light"
+                          : "dark",
+                    )
+                  }}
+                  className="flex gap-2"
+                >
+                  <icon.LightMode
+                    className={cn(
+                      theme !== "light" ? "hidden" : "block",
+                      "size-4",
+                    )}
+                  />
+                  <icon.DarkMode
+                    className={cn(
+                      theme !== "dark" ? "hidden" : "block",
+                      "size-4",
+                    )}
+                  />
+                  <icon.System
+                    className={cn(
+                      theme !== "system" ? "hidden" : "block",
+                      "size-4",
+                    )}
+                  />
+                  <span className="">
+                    {t(theme as "light" | "dark" | "system")}
+                  </span>
+                </SidebarMenuButton>
+              }
             />
-            <icon.Moon
-              className={cn(theme === "dark" ? "block" : "hidden", "size-4")}
-            />
-          </SidebarMenuButton>
+            <TooltipContent side="right">
+              {t("toggleTheme")}
+              <KeyboardShortcut shortcut={["Mod+L"]} />
+            </TooltipContent>
+          </Tooltip>
         </SidebarMenuItem>
       ),
       key: "theme",
