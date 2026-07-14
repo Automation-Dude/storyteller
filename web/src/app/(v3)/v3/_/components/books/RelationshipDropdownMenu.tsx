@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react"
 
-import { FilterableList } from "@v3/_/components/ui/filterable-menu"
-import { Input } from "@v3/_/components/ui/input"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@v3/_/components/ui/popover"
+  FilterableList,
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuTrigger,
+} from "@v3/_/components/ui/filterable-menu"
+import { Input } from "@v3/_/components/ui/input"
 import { Slider } from "@v3/_/components/ui/slider"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
@@ -127,7 +127,7 @@ function summarize(
   if (def.control === "facet" || def.control === "enum") {
     const { inc, exc } = readFacet(conditions, facetOperators(field))
     const n = inc.length + exc.length
-    return n > 0 ? `(${n})` : ""
+    return n > 0 ? ` (${n})` : ""
   }
   const c = conditions[0]
   if (!c) return ""
@@ -181,7 +181,7 @@ export function FilterControl({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <FilterableMenu open={open} onOpenChange={setOpen}>
       <span
         className={cn(
           "inline-flex shrink-0 items-center rounded-full border text-xs font-medium",
@@ -190,7 +190,7 @@ export function FilterControl({
             : "bg-muted text-muted-foreground border-transparent",
         )}
       >
-        <PopoverTrigger
+        <FilterableMenuTrigger
           render={
             <button className="flex cursor-pointer items-center gap-1 py-1 pr-1 pl-2.5">
               <FieldIcon field={field} className="h-3 w-3" />
@@ -212,7 +212,7 @@ export function FilterControl({
           </button>
         )}
       </span>
-      <PopoverContent align="start" className="w-72 p-0">
+      <FilterableMenuContent searchable={false} align="start" className="w-72 p-0">
         <FilterEditor
           field={field}
           def={def}
@@ -220,8 +220,8 @@ export function FilterControl({
           onChange={onChange}
           enabled={open}
         />
-      </PopoverContent>
-    </Popover>
+      </FilterableMenuContent>
+    </FilterableMenu>
   )
 }
 

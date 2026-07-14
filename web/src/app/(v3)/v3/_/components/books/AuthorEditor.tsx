@@ -3,10 +3,10 @@ import { useWatch } from "react-hook-form"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@v3/_/components/ui/dropdown-menu"
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuTrigger,
+} from "@v3/_/components/ui/filterable-menu"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
@@ -41,8 +41,8 @@ function CreatorAddMenu({
   )
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger
+    <FilterableMenu open={open} onOpenChange={setOpen}>
+      <FilterableMenuTrigger
         render={
           <TooltipButton
             tooltip={c.plain("actions.add")}
@@ -53,7 +53,7 @@ function CreatorAddMenu({
           </TooltipButton>
         }
       />
-      <DropdownMenuContent className="w-64 p-1">
+      <FilterableMenuContent searchable={false}>
         <RelationPickerList
           items={items}
           enabled={open}
@@ -78,8 +78,8 @@ function CreatorAddMenu({
             </>
           )}
         />
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </FilterableMenuContent>
+    </FilterableMenu>
   )
 }
 

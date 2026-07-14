@@ -333,7 +333,7 @@ export const FIELD_REGISTRY = {
     sortable: true,
     defaultSort: "asc",
     quick: true,
-    source: "creators",
+    source: "authors",
     discriminator: "role",
     token: "author",
     labelKey: "authors",

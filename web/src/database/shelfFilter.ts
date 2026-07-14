@@ -1377,7 +1377,14 @@ function buildUuidComparison(
 
 function buildArrayComparison(
   eb: EB,
-  field: "tags" | "collections" | "series" | "creators",
+  field:
+    | "tags"
+    | "collections"
+    | "series"
+    | "creators"
+    | "authors"
+    | "narrators"
+    | "translators",
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
   role?: string,
@@ -1393,6 +1400,12 @@ function buildArrayComparison(
       return buildCollectionComparison(eb, operator, uuids)
     case "series":
       return buildSeriesComparison(eb, operator, uuids)
+    case "authors":
+      return buildCreatorComparison(eb, operator, uuids, "aut")
+    case "narrators":
+      return buildCreatorComparison(eb, operator, uuids, "nar")
+    case "translators":
+      return buildCreatorComparison(eb, operator, uuids, "trl")
     case "creators":
       return buildCreatorComparison(eb, operator, uuids, role)
   }

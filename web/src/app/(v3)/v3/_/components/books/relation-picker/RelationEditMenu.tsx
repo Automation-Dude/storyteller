@@ -3,15 +3,10 @@
 import { type ReactElement, type ReactNode, useMemo, useState } from "react"
 
 import {
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from "@v3/_/components/ui/dropdown-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@v3/_/components/ui/popover"
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuTrigger,
+} from "@v3/_/components/ui/filterable-menu"
 
 import {
   type RelationItem,
@@ -27,17 +22,17 @@ import {
   membershipFromBooks,
 } from "./RelationEditPicker"
 
-// dropdown (or submenu) shell around RelationEditPicker: owns open state and
-// drives the picker's lazy fetch (only fetches once opened). Membership is
-// supplied either as a book list (action menu) or as explicit uuids + counts
-// (the inline chip editors, which only hold the current relation, not the book).
+// filterable-menu shell around RelationEditPicker: owns open state and drives the
+// picker's lazy fetch (the content only mounts, so only fetches, once opened).
+// membership is supplied either as a book list (action menu) or as explicit uuids
+// + counts (the inline chip editors, which only hold the current relation, not
+// the book). the picker brings its own search, so the menu content hides its.
 export function RelationEditMenu({
   source,
   books,
   bookUuids: bookUuidsProp,
   membership: membershipProp,
   searchPlaceholder,
-  subMenu = false,
   showApplied,
   onCreate,
   createLabel,
@@ -49,7 +44,6 @@ export function RelationEditMenu({
   bookUuids?: UUID[]
   membership?: RelationMembership
   searchPlaceholder: string
-  subMenu?: boolean
   showApplied?: boolean
   onCreate?: (name: string) => void
   createLabel?: (search: string) => string
@@ -71,51 +65,29 @@ export function RelationEditMenu({
     [membershipProp, books, source],
   )
 
-  const picker = (
-    <RelationEditPicker
-      source={source}
-      bookUuids={bookUuids}
-      membership={membership}
-      enabled={open}
-      searchPlaceholder={searchPlaceholder}
-      showApplied={showApplied}
-      onCreate={onCreate}
-      createLabel={createLabel}
-      onSelectOverride={onSelectOverride}
-    />
-  )
-
-  if (subMenu) {
-    return (
-      <DropdownMenuSub open={open} onOpenChange={setOpen}>
-        {triggerProps.trigger ? (
-          <DropdownMenuSubTrigger render={triggerProps.trigger} />
-        ) : (
-          <DropdownMenuSubTrigger>
-            {triggerProps.icon}
-            {triggerProps.label}
-          </DropdownMenuSubTrigger>
-        )}
-        <DropdownMenuSubContent className="w-64 p-1">
-          {picker}
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
-    )
-  }
-
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <FilterableMenu open={open} onOpenChange={setOpen}>
       {triggerProps.trigger ? (
-        <PopoverTrigger render={triggerProps.trigger} />
+        <FilterableMenuTrigger render={triggerProps.trigger} />
       ) : (
-        <PopoverTrigger>
+        <FilterableMenuTrigger>
           {triggerProps.icon}
           {triggerProps.label}
-        </PopoverTrigger>
+        </FilterableMenuTrigger>
       )}
-      <PopoverContent align="start" className="w-64 gap-0 p-1">
-        {picker}
-      </PopoverContent>
-    </Popover>
+      <FilterableMenuContent searchable={false} align="start">
+        <RelationEditPicker
+          source={source}
+          bookUuids={bookUuids}
+          membership={membership}
+          enabled={open}
+          searchPlaceholder={searchPlaceholder}
+          showApplied={showApplied}
+          onCreate={onCreate}
+          createLabel={createLabel}
+          onSelectOverride={onSelectOverride}
+        />
+      </FilterableMenuContent>
+    </FilterableMenu>
   )
 }
