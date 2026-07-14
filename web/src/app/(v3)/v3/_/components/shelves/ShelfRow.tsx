@@ -99,7 +99,10 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
             key={book.uuid}
             className="w-[150px] shrink-0 snap-mandatory snap-start"
           >
-            <BookCard book={book} displayFields={[displayField ?? "authors"]} />
+            <BookCard
+              book={book}
+              displayFields={[displayField ?? "authors", "title"]}
+            />
           </div>
         ))}
       </div>

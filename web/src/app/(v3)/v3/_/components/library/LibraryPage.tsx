@@ -1399,7 +1399,8 @@ function SidebarRow({
         <span
           className={cn(
             "text-muted-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs tabular-nums",
-            isActive && "bg-sidebar-accent-foreground text-foreground",
+            isActive &&
+              "bg-sidebar-accent-foreground text-foreground dark:text-background",
             isSelecting && "hidden",
             hasRowActions && !isSelecting && "group-hover/item:hidden",
           )}
