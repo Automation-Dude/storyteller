@@ -4,6 +4,7 @@ import { withHasPermission } from "@/auth/auth"
 import { getBook, getBookUuid } from "@/database/books"
 import { db } from "@/database/connection"
 import { env } from "@/env"
+import { canAlign } from "@/work/alignmentStatus"
 import {
   type RestartMode,
   cancelProcessing,
@@ -101,10 +102,7 @@ export const POST = withHasPermission<Params>("bookProcess")(async (
     )
   }
 
-  const ebookMissing = !book.ebook || book.ebook.missing
-  const audiobookMissing = !book.audiobook || book.audiobook.missing
-
-  if (ebookMissing || audiobookMissing) {
+  if (!canAlign(book)) {
     return NextResponse.json(
       {
         message:

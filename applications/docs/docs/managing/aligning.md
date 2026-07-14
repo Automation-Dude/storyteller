@@ -53,6 +53,37 @@ If using the bulk actions method and aligning for the first time, there is no
 difference between the two options as no cached files will have been created
 yet.
 
+### Finding the books that are ready to align
+
+In a large library, most books cannot be aligned: they have an ebook or an
+audiobook, but not both. Rather than hunting for the pairs by eye, use the
+**Alignment** filter in the library toolbar:
+
+- **Ready to align**: has both an ebook and an audiobook, and has never been
+  aligned. These are the books that will actually process, and they are usually
+  a small fraction of a library.
+- **Aligning now**: queued, or being aligned right now.
+- **Alignment failed**: a run that ended in an error, or that was stopped. These
+  can be started again, and are worth reviewing after a server runs out of disk
+  space or is restarted mid-run.
+- **Aligned**: a readaloud has been produced.
+- **Missing a format**: has an ebook or an audiobook but not both, or a file has
+  gone missing from disk. These need the other format supplying before they can
+  be aligned.
+
+Filter to "Ready to align", select the books you want narrated, and use the bulk
+"Begin processing" action to queue them. Storyteller aligns one book at a time,
+so a large selection is a queue rather than a stampede.
+
+:::tip Budget the disk before a big queue
+
+An aligned book embeds the audio, so it costs roughly the size of the audiobook
+again, on top of the working files used while it processes. Filter to "Ready to
+align" to see how many books you actually have, and size the disk before
+queueing them all.
+
+:::
+
 ## Once a book is successfully aligned
 
 - The readaloud book will be preferentially downloaded to mobile devices for
