@@ -153,6 +153,11 @@ function DefaultStatusSection() {
 
   const currentDefault = statuses.find((s) => s.isDefault)
 
+  const statusItems = statuses.map((s) => ({
+    value: s.uuid,
+    label: statusDisplayLabel(s),
+  }))
+
   return (
     <SettingsSection tab="library" section="defaultStatus">
       <Card>
@@ -167,6 +172,7 @@ function DefaultStatusSection() {
 
             <Select
               value={currentDefault?.uuid ?? NONE_STATUS}
+              items={statusItems}
               onValueChange={(v) => {
                 if (v === NONE_STATUS) {
                   if (currentDefault) {
@@ -185,9 +191,9 @@ function DefaultStatusSection() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE_STATUS}>{t("none")}</SelectItem>
-                {statuses.map((status) => (
-                  <SelectItem key={status.uuid} value={status.uuid}>
-                    {statusDisplayLabel(status)}
+                {statusItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
