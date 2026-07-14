@@ -57,6 +57,8 @@ const DEFAULT_SETTINGS: Settings = {
   opdsEnabled: null,
   opdsPageSize: null,
   opdsFormat: null,
+  koreaderSyncEnabled: null,
+  koreaderSyncAllowRegistration: null,
   scanCronExpression: null,
   importMode: "reference",
   epub2ImportStrategy: "backup-and-convert",

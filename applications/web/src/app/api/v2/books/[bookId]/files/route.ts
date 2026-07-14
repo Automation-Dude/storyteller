@@ -27,6 +27,7 @@ import {
   getBookUuid,
   markFormatMissing,
 } from "@/database/books"
+import { registerServedDocument } from "@/koreader/register"
 import { logger } from "@/logging"
 
 type Params = Promise<{
@@ -305,6 +306,10 @@ export const GET = withHasPermission<Params>("bookRead", {
   })
 
   const hash = await computeFileHash(filepath)
+
+  // Remember the KOReader digest of the exact file we serve, so progress
+  // pushed back from an e-reader can be matched to this book.
+  registerServedDocument(book, format, filepath)
 
   const readableStream = Readable.toWeb(readStream)
 
