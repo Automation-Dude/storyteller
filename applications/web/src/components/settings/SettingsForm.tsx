@@ -1175,6 +1175,8 @@ export function SettingsForm({
     opdsEnabled: settings.opdsEnabled,
     opdsPageSize: settings.opdsPageSize,
     opdsFormat: settings.opdsFormat,
+    koreaderSyncEnabled: settings.koreaderSyncEnabled,
+    koreaderSyncAllowRegistration: settings.koreaderSyncAllowRegistration,
     scanCronExpression: settings.scanCronExpression ?? null,
     metadataFieldOverrides: settings.metadataFieldOverrides,
     epub2ImportStrategy: settings.epub2ImportStrategy,
@@ -1210,6 +1212,7 @@ export function SettingsForm({
   const opdsUrl = safeUrl(opdsBase, "/opds")
   const opdsV1Url = safeUrl(opdsBase, "/opds/v1")
   const opdsV2Url = safeUrl(opdsBase, "/opds/v2")
+  const koreaderSyncUrl = safeUrl(opdsBase, "/kosync")
   const authUrlPath = authUrl ?? safeUrl(state.webUrl, "/api/v2/auth")
 
   return (
@@ -2527,6 +2530,59 @@ export function SettingsForm({
               </Text>
             </Stack>
           </Box>
+        </Stack>
+      </Fieldset>
+      <Fieldset legend="KOReader sync settings">
+        <Stack>
+          <Switch
+            label="Enable KOReader sync"
+            description={`Lets KOReader devices (Kobo, jailbroken Kindle, PocketBook and others) sync their reading position with Storyteller. In KOReader, open a book, then choose Tools, Progress sync, Custom sync server, and enter ${koreaderSyncUrl}.`}
+            checked={state.koreaderSyncEnabled ?? false}
+            onChange={(event) => {
+              form.setFieldValue(
+                "koreaderSyncEnabled",
+                event.currentTarget.checked,
+              )
+            }}
+            disabled={isLocked("koreaderSyncEnabled")}
+          />
+          {state.koreaderSyncEnabled && (
+            <>
+              <Switch
+                label="Allow device registration"
+                description="Lets a device register its own KOReader sync account, as long as the username matches an existing Storyteller user. Turn this off once your devices are set up."
+                checked={state.koreaderSyncAllowRegistration ?? true}
+                onChange={(event) => {
+                  form.setFieldValue(
+                    "koreaderSyncAllowRegistration",
+                    event.currentTarget.checked,
+                  )
+                }}
+                disabled={isLocked("koreaderSyncAllowRegistration")}
+              />
+              <Box>
+                <Text size="sm" fw={500}>
+                  Sync server URL
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Enter this as the custom sync server in KOReader&apos;s
+                  Progress sync menu. Register with your Storyteller username;
+                  KOReader hashes the password on the device before sending it.
+                </Text>
+                <Stack gap={4} mt="xs">
+                  <Text size="xs">
+                    <Code>{koreaderSyncUrl}</Code>
+                  </Text>
+                </Stack>
+                <Text size="xs" c="dimmed" mt="xs">
+                  Books downloaded from this server (through the OPDS feed or
+                  the web interface) are matched automatically. A book copied to
+                  the device by other means will still sync between devices, but
+                  will not move the position in the Storyteller apps.
+                </Text>
+              </Box>
+            </>
+          )}
         </Stack>
       </Fieldset>
       <Fieldset
