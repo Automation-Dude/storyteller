@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 
-import { type UUID } from "@/uuid"
 import {
   KOSYNC_ERRORS,
   type KoreaderRequest,
@@ -12,6 +11,7 @@ import {
   upsertKoreaderProgress,
 } from "@/koreader/database"
 import { bridgeProgressToPosition } from "@/koreader/positions"
+import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
 

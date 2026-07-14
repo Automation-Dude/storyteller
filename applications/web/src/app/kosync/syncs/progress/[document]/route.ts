@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 
-import { type UUID } from "@/uuid"
 import { type KoreaderRequest, withKoreaderAuth } from "@/koreader/auth"
 import { getKoreaderProgress } from "@/koreader/database"
+import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
 
