@@ -25,6 +25,7 @@ import Credentials from "next-auth/providers/credentials"
 import { getCookieDomain, getCookieSecure } from "@/cookies"
 import { KyselyAdapter } from "@/database/authAdapter"
 import { db } from "@/database/connection"
+import { verifyDeviceCredential } from "@/database/deviceCredentials"
 import { type DB } from "@/database/schema"
 import { getSettings } from "@/database/settings"
 import { type CustomAuthProvider } from "@/database/settingsTypes"
@@ -554,12 +555,32 @@ export function withHasPermission<
           }
 
           if (basicCreds) {
-            const user = await authenticateUser(
+            // Try the user's real password first (unchanged behavior for
+            // existing OPDS clients), then fall back to a per-device
+            // credential so an e-reader can be given library access without
+            // holding the account password.
+            let user = await authenticateUser(
               basicCreds.username,
               basicCreds.password,
             )
+            let sessionUser = user
 
             if (!user) {
+              const candidate = await getUserByUsernameOrEmail(
+                basicCreds.username,
+              )
+              if (
+                candidate &&
+                (await verifyDeviceCredential(
+                  candidate.id,
+                  basicCreds.password,
+                ))
+              ) {
+                sessionUser = candidate
+              }
+            }
+
+            if (!sessionUser) {
               if (options.on401) {
                 return options.on401(
                   request,
@@ -572,17 +593,22 @@ export function withHasPermission<
               )
             }
 
-            if (!user.permissions?.[permission]) {
+            if (!sessionUser.permissions?.[permission]) {
               return NextResponse.json(
                 { message: "Forbidden" },
                 { status: 403 },
               )
             }
 
-            const token = await createUserToken(
-              basicCreds.username,
-              basicCreds.password,
-            )
+            // A real-password login mints its session the usual way; a device
+            // login mints one directly for the user, since createUserToken
+            // needs the real password.
+            const token = user
+              ? await createUserToken(
+                  basicCreds.username,
+                  basicCreds.password,
+                )
+              : await createSessionTokenForUserId(sessionUser.id)
 
             // opds clients typically don't send Origin header, fall back to request url
             const origin =
