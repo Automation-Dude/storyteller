@@ -6,9 +6,11 @@ import {
 } from "react-native"
 
 import { type BookWithRelations } from "@/database/books"
+import { useBookFilters } from "@/hooks/useBookFilters"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
 
 import { BackButton } from "./BackButton"
+import { BookFilterSort } from "./BookFilterSort"
 import { BookThumbnail } from "./BookThumbnail"
 import { MiniPlayerWidget } from "./MiniPlayerWidget"
 import { Stack } from "./ui/Stack"
@@ -17,12 +19,28 @@ import { Text } from "./ui/text"
 interface Props {
   title: string
   books: BookWithRelations[]
+  // Shelves like "Currently reading" are already a curated order; filtering
+  // them would fight the shelf's own meaning.
+  filterable?: boolean
 }
 
-export function BookGrid({ title, books }: Props) {
+export function BookGrid({ title, books, filterable = true }: Props) {
   const dimensions = useWindowDimensions()
 
   const { isLoading, refetch } = useListAllServerBooks()
+
+  const {
+    filters,
+    setFilters,
+    sort,
+    setSort,
+    facets,
+    filteredBooks,
+    activeCount,
+    clear,
+  } = useBookFilters(books)
+
+  const shownBooks = filterable ? filteredBooks : books
 
   const horizontalPadding = 32
   const gap = 12
@@ -50,9 +68,21 @@ export function BookGrid({ title, books }: Props) {
         </Text>
 
         <Text className="text-muted-foreground mr-4 ml-auto text-sm">
-          {books.length} books
+          {shownBooks.length} books
         </Text>
       </View>
+
+      {filterable && (
+        <BookFilterSort
+          filters={filters}
+          setFilters={setFilters}
+          sort={sort}
+          setSort={setSort}
+          facets={facets}
+          activeCount={activeCount}
+          clear={clear}
+        />
+      )}
 
       <FlatList
         key={numColumns}
@@ -65,7 +95,7 @@ export function BookGrid({ title, books }: Props) {
           />
         }
         className="px-4"
-        data={books}
+        data={shownBooks}
         numColumns={numColumns}
         {...(numColumns > 1 && { columnWrapperStyle: { gap } })}
         renderItem={({ item: book }) => (
@@ -73,6 +103,13 @@ export function BookGrid({ title, books }: Props) {
             <BookThumbnail book={book} width={thumbnailWidth} />
           </View>
         )}
+        ListEmptyComponent={
+          activeCount > 0 ? (
+            <Text className="text-muted-foreground mt-8 text-center text-sm">
+              No books match these filters.
+            </Text>
+          ) : null
+        }
         ListFooterComponent={<View className="h-40 w-full" />}
       />
       <MiniPlayerWidget />
