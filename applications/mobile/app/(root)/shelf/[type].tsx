@@ -118,5 +118,11 @@ export default function ShelfScreen() {
     [filterFn, books],
   )
 
-  return <BookGrid title={title} books={filteredBooks} />
+  // "Next up" and "Currently reading" are curated orders; re-sorting them
+  // would destroy the meaning of the shelf.
+  const filterable = type !== "next-up" && type !== "currently-reading"
+
+  return (
+    <BookGrid title={title} books={filteredBooks} filterable={filterable} />
+  )
 }
