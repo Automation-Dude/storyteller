@@ -17,12 +17,12 @@ import { type UUID } from "@/uuid"
 
 import {
   type MembershipState,
-  RelationEditPicker,
+  RelationEditList,
   type RelationMembership,
   membershipFromBooks,
-} from "./RelationEditPicker"
+} from "./RelationEditList"
 
-// filterable-menu shell around RelationEditPicker: owns open state and drives the
+// filterable-menu shell around RelationEditList: owns open state and drives the
 // picker's lazy fetch (the content only mounts, so only fetches, once opened).
 // membership is supplied either as a book list (action menu) or as explicit uuids
 // + counts (the inline chip editors, which only hold the current relation, not
@@ -75,13 +75,12 @@ export function RelationEditMenu({
           {triggerProps.label}
         </FilterableMenuTrigger>
       )}
-      <FilterableMenuContent searchable={false} align="start">
-        <RelationEditPicker
+      <FilterableMenuContent searchPlaceholder={searchPlaceholder} align="start">
+        <RelationEditList
           source={source}
           bookUuids={bookUuids}
           membership={membership}
           enabled={open}
-          searchPlaceholder={searchPlaceholder}
           showApplied={showApplied}
           onCreate={onCreate}
           createLabel={createLabel}

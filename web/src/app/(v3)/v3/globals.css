@@ -437,7 +437,8 @@
       --tinted-foreground: color-mix(
         in oklab,
         rgb(var(--cover-solid-rgb)) 40%,
-        var(--muted-foreground)
+        var(--muted-foreground),
+        white 30%
       );
       --tinted-foreground-strong: color-mix(
         in oklab,

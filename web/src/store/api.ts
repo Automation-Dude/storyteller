@@ -29,7 +29,7 @@ import {
 } from "@/database/books"
 import { type ChangelogEntry } from "@/database/changelog"
 import { type CollectionWithRelations } from "@/database/collections"
-import { type Creator } from "@/database/creators"
+import { type AddCreatorInput, type Creator } from "@/database/creators"
 import { type HomeStats } from "@/database/homeStats"
 import { type ImportRuleWithCollections } from "@/database/importRules"
 import { type PublicJob } from "@/database/jobs"
@@ -1326,6 +1326,42 @@ export const api = createApi({
         ...tags.map((uuid) => ({ type: "Tags" as const, id: uuid })),
       ],
     }),
+    addCreatorsToBooks: build.mutation<
+      void,
+      { creators: (string | AddCreatorInput)[]; books: UUID[]; role: Role }
+    >({
+      query: (body) => ({
+        url: `/books/creators`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { books }) => [
+        "Creators",
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Books",
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+      ],
+    }),
+    removeCreatorsFromBooks: build.mutation<
+      void,
+      { creators: UUID[]; books: UUID[]; role: Role }
+    >({
+      query: (body) => ({
+        url: "/books/creators",
+        method: "DELETE",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { books }) => [
+        "Creators",
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Books",
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+      ],
+    }),
 
     updateTag: build.mutation<
       Tag,
@@ -2002,6 +2038,8 @@ export const {
   useAddBooksToCollectionsMutation,
   useAddBooksToSeriesMutation,
   useAddTagsToBooksMutation,
+  useAddCreatorsToBooksMutation,
+  useRemoveCreatorsFromBooksMutation,
   useCancelProcessingMutation,
   useGetScanStateQuery,
   useCreateBookMutation,

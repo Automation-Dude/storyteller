@@ -1,5 +1,4 @@
 import { type Insertable, type Selectable, type Updateable } from "kysely"
-import { jsonArrayFrom } from "kysely/helpers/sqlite"
 
 import { type Role } from "@/components/books/edit/marcRelators"
 import { BookEvents } from "@/events"
@@ -135,6 +134,116 @@ export async function deleteCreator(uuid: UUID) {
       })
     })
   }
+}
+
+// a creator to attach: an existing one by uuid, or a new one by name.
+export type AddCreatorInput =
+  | { uuid: UUID }
+  | { name: string; fileAs?: string | null }
+
+// re-read the affected books and emit the fresh creator arrays, so every client
+// reconciles the exact result (mirrors deleteCreator/mergeCreators).
+async function emitBookCreatorUpdates(bookUuids: UUID[]) {
+  if (!bookUuids.length) return
+  const books = await getBooks(bookUuids)
+  books.forEach((book) => {
+    BookEvents.emit("message", {
+      type: "bookUpdated",
+      bookUuid: book.uuid,
+      payload: {
+        authors: book.authors,
+        narrators: book.narrators,
+        creators: book.creators,
+      },
+    })
+  })
+}
+
+// attach one or more creators (existing or new) to a set of books under a role,
+// skipping links that already exist for that (book, creator, role).
+export async function addCreatorsToBooks(
+  bookUuids: UUID[],
+  creators: AddCreatorInput[],
+  role: Role,
+) {
+  await db.transaction().execute(async (tr) => {
+    const byId = creators.filter((c): c is { uuid: UUID } => "uuid" in c)
+    const byName = creators.filter(
+      (c): c is { name: string; fileAs?: string | null } =>
+        "name" in c && !!c.name,
+    )
+
+    const names = byName.map((c) => c.name)
+    const existingByName = names.length
+      ? await tr
+          .selectFrom("creator")
+          .select(["uuid", "name"])
+          .where("name", "in", names)
+          .execute()
+      : []
+
+    const missing = byName.filter(
+      (c) => !existingByName.some((e) => e.name === c.name),
+    )
+
+    let created: { uuid: UUID }[] = []
+    if (missing.length) {
+      created = await tr
+        .insertInto("creator")
+        .values(missing.map((c) => ({ name: c.name, fileAs: c.fileAs ?? c.name })))
+        .returning(["uuid as uuid"])
+        .execute()
+    }
+
+    const creatorUuids = [
+      ...byId.map((c) => c.uuid),
+      ...existingByName.map((c) => c.uuid),
+      ...created.map((c) => c.uuid),
+    ]
+    if (!creatorUuids.length) return
+
+    const existingLinks = await tr
+      .selectFrom("bookToCreator")
+      .select(["bookUuid", "creatorUuid"])
+      .where("bookUuid", "in", bookUuids)
+      .where("creatorUuid", "in", creatorUuids)
+      .where("role", "=", role)
+      .execute()
+
+    const links = creatorUuids
+      .flatMap((creatorUuid) =>
+        bookUuids.map((bookUuid) => ({ creatorUuid, bookUuid, role })),
+      )
+      .filter(({ creatorUuid, bookUuid }) =>
+        existingLinks.every(
+          (l) => l.creatorUuid !== creatorUuid || l.bookUuid !== bookUuid,
+        ),
+      )
+
+    if (links.length) {
+      await tr.insertInto("bookToCreator").values(links).execute()
+    }
+  })
+
+  await emitBookCreatorUpdates(bookUuids)
+}
+
+// detach creators from a set of books for a single role (other roles the same
+// creator holds on those books are left intact).
+export async function removeCreatorsFromBooks(
+  bookUuids: UUID[],
+  creatorUuids: UUID[],
+  role: Role,
+) {
+  if (!creatorUuids.length) return
+  await db
+    .deleteFrom("bookToCreator")
+    .where("bookUuid", "in", bookUuids)
+    .where("creatorUuid", "in", creatorUuids)
+    .where("role", "=", role)
+    .execute()
+
+  await emitBookCreatorUpdates(bookUuids)
 }
 
 export async function mergeCreators(targetUuid: UUID, sourceUuids: UUID[]) {

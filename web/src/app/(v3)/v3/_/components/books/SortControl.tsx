@@ -87,7 +87,7 @@ export function SortControl({
           render={
             <TooltipButton
               className="items-center rounded-l-lg rounded-r-none border-r-0 pr-1 pl-2 text-xs font-normal"
-              variant="outline"
+              variant="ghost"
               tooltip={label}
               aria-label={label}
               shortcut={[sortHotKey]}
@@ -165,7 +165,7 @@ export function SortControl({
         </FilterableMenuContent>
       </FilterableMenu>
       <TooltipButton
-        variant="outline"
+        variant="ghost"
         className="items-center rounded-l-none rounded-r-lg pr-2 pl-1 text-xs font-normal"
         tooltip={t("toggleSort.tooltip")}
         aria-label={t.plain("toggleSort.tooltip")}

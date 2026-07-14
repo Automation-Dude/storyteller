@@ -113,7 +113,7 @@ export function HeroSection({
   return (
     <div
       className={cn(
-        "from-cover-header/80 to-cover-well/80 relative bg-linear-to-t",
+        "from-cover-header/80 to-cover-well/80 dark:from-cover-header/70 dark:to-cover-well/70 relative bg-linear-to-t",
       )}
     >
       <div

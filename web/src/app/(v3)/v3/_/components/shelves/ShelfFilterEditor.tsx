@@ -1,8 +1,7 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Reorder, motion, useDragControls } from "motion/react"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -26,9 +25,33 @@ import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import {
+  DurationInput,
+  FileSizeInput,
+  MultiCombobox,
+  NumericInput,
+} from "@/app/(v3)/v3/_/components/books/filter-ui"
+import { RelationSelectList } from "@/app/(v3)/v3/_/components/books/relation-picker/RelationSelectList"
+import {
+  FilterableMenu,
+  FilterableMenuContent,
+  FilterableMenuGroup,
+  FilterableMenuItem,
+  FilterableMenuLabel,
+  FilterableMenuTrigger,
+} from "@/app/(v3)/v3/_/components/ui/filterable-menu"
+import { FieldIcon, IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
+import { useRelationItems } from "@/app/(v3)/v3/_/hooks/use-relation-items"
 import { type BookWithRelations } from "@/database/books"
 import { DEFAULT_RATING_DIMENSIONS } from "@/database/ratingDimensions"
 import { statusDisplayLabel } from "@/database/statusKinds"
+import {
+  FIELDS,
+  type FacetSource,
+  type FieldGroupKey,
+  getFieldDef,
+} from "@/fields"
+import * as icon from "@/icons"
 import {
   type ShelfFilterAnd,
   type ShelfFilterCondition,
@@ -47,30 +70,8 @@ import {
   operatorRequiresRangeValue,
   operatorRequiresValue,
 } from "@/shelves"
-import {
-  getCoverUrl,
-  useListCollectionsQuery,
-  useListCreatorsQuery,
-  useListSeriesQuery,
-  useListStatusesQuery,
-  useListTagsQuery,
-} from "@/store/api"
-import { FieldIcon, IAdd } from "../ui/icon"
-import {
-  DurationInput,
-  FileSizeInput,
-  MultiCombobox,
-  NumericInput,
-} from "../books/filter-ui"
-import { type FieldGroupKey, FIELDS, getFieldDef } from "@/fields"
-import {
-  FilterableMenu,
-  FilterableMenuContent,
-  FilterableMenuGroup,
-  FilterableMenuItem,
-  FilterableMenuLabel,
-  FilterableMenuTrigger,
-} from "../ui/filterable-menu"
+import { getCoverUrl, useListStatusesQuery } from "@/store/api"
+
 
 // the advanced-editor field picker, derived from the registry so it can never
 // drift out of sync: every field grouped by its own `group`, in this order.
@@ -680,11 +681,11 @@ function LogicalBlockEditor({
           variant="ghost"
           size="sm"
           onClick={() =>
-            handleAddNode({
+            { handleAddNode({
               type: "condition",
               field: "title",
               operator: "contains",
-            })
+            }); }
           }
         >
           <icon.Plus className="size-3" />
@@ -926,7 +927,7 @@ function ConditionEditor({
                 key={item.value}
                 textValue={item.label}
                 onSelect={() => {
-                  handleOperatorChange(item.value as ShelfFilterOperator)
+                  handleOperatorChange(item.value)
                 }}
               >
                 {item.label}
@@ -997,6 +998,61 @@ type ConditionValueInputProps = {
   onChange: (value: string | number | (string | number)[] | null) => void
 }
 
+// multi-select over a facet source, as a chip trigger opening the shared
+// relation list. one place for every relation value picker in the advanced
+// editor, so authors/narrators/etc. can never fall through like they used to.
+function FacetValueMenu({
+  source,
+  value,
+  onChange,
+  placeholder,
+}: {
+  source: FacetSource
+  value: string[]
+  onChange: (value: string[]) => void
+  placeholder: string
+}) {
+  const [open, setOpen] = useState(false)
+  const { items, loading } = useRelationItems(source, true)
+  const selectedNames = items
+    .filter((i) => value.includes(i.uuid))
+    .map((i) => i.name)
+
+  return (
+    <FilterableMenu open={open} onOpenChange={setOpen}>
+      <FilterableMenuTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-input/20 dark:bg-input/30 border-input h-7 w-full justify-between gap-1 rounded-md text-xs font-normal"
+          >
+            <span className="truncate">
+              {selectedNames.length ? selectedNames.join(", ") : placeholder}
+            </span>
+            <icon.ChevronDown className="size-3 shrink-0" />
+          </Button>
+        }
+      />
+      <FilterableMenuContent align="start" className="w-64">
+        <RelationSelectList
+          items={items}
+          loading={loading}
+          enabled={open}
+          stateOf={(item) => (value.includes(item.uuid) ? "primary" : "none")}
+          onSelect={(item) => {
+            onChange(
+              value.includes(item.uuid)
+                ? value.filter((v) => v !== item.uuid)
+                : [...value, item.uuid],
+            )
+          }}
+        />
+      </FilterableMenuContent>
+    </FilterableMenu>
+  )
+}
+
 function ConditionValueInput({
   field,
   isArray,
@@ -1008,11 +1064,7 @@ function ConditionValueInput({
   const c = useCommon()
   const def = getFieldDef(field)
 
-  const { data: tags = [] } = useListTagsQuery()
-  const { data: collections = [] } = useListCollectionsQuery()
-  const { data: series = [] } = useListSeriesQuery()
   const { data: statuses = [] } = useListStatusesQuery()
-  const { data: creators = [] } = useListCreatorsQuery()
 
   // -- duration: hours + minutes instead of raw seconds ---------------------
 
@@ -1091,94 +1143,51 @@ function ConditionValueInput({
   if (def.control === "facet") {
     const selected = Array.isArray(value) ? (value as string[]) : []
 
-    if (def.source === "tags") {
+    // status is / isNot picks a single value: keep the plain select.
+    if (def.source === "statuses" && !isArray) {
       return (
-        <MultiCombobox
-          options={tags.map((tag) => ({ value: tag.uuid, label: tag.name }))}
-          value={selected}
-          onChange={onChange}
-          placeholder={t.plain("selectTags")}
-          emptyText={t.plain("noItemsFound")}
-        />
-      )
-    }
-
-    if (def.source === "collections") {
-      return (
-        <MultiCombobox
-          options={collections.map((col) => ({
-            value: col.uuid,
-            label: col.name,
-          }))}
-          value={selected}
-          onChange={onChange}
-          placeholder={t.plain("selectCollections")}
-          emptyText={t.plain("noItemsFound")}
-        />
-      )
-    }
-
-    if (def.source === "series") {
-      return (
-        <MultiCombobox
-          options={series.map((s) => ({ value: s.uuid, label: s.name }))}
-          value={selected}
-          onChange={onChange}
-          placeholder={t.plain("selectSeries")}
-          emptyText={t.plain("noItemsFound")}
-        />
-      )
-    }
-
-    if (def.source === "creators") {
-      return (
-        <MultiCombobox
-          options={creators.map((cr) => ({ value: cr.uuid, label: cr.name }))}
-          value={selected}
-          onChange={onChange}
-          placeholder={t.plain("selectCreators")}
-          emptyText={t.plain("noItemsFound")}
-        />
-      )
-    }
-
-    // statuses: a membership operator -> multi-select, is / isNot -> a single
-    // picker.
-    if (isArray) {
-      return (
-        <MultiCombobox
-          options={statuses.map((s) => ({
+        <Select
+          value={typeof value === "string" ? value : ""}
+          onValueChange={onChange}
+          items={statuses.map((s) => ({
             value: s.uuid,
             label: statusDisplayLabel(s),
           }))}
-          value={selected}
-          onChange={onChange}
-          placeholder={t.plain("selectStatuses")}
-          emptyText={t.plain("noItemsFound")}
-        />
+        >
+          <SelectTrigger className="h-7 text-xs">
+            <SelectValue placeholder={t.plain("selectStatus")} />
+          </SelectTrigger>
+          <SelectContent>
+            {statuses.map((s) => (
+              <SelectItem key={s.uuid} value={s.uuid}>
+                {statusDisplayLabel(s)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )
     }
 
+    // every other facet (tags/collections/series/status membership + all the
+    // creator roles) is one multi-select over its registry source.
+    const placeholder =
+      def.source === "tags"
+        ? t.plain("selectTags")
+        : def.source === "collections"
+          ? t.plain("selectCollections")
+          : def.source === "series"
+            ? t.plain("selectSeries")
+            : def.source === "statuses"
+              ? t.plain("selectStatuses")
+              : t.plain("selectCreators")
+
     return (
-      <Select
-        value={typeof value === "string" ? value : ""}
-        onValueChange={onChange}
-        items={statuses.map((s) => ({
-          value: s.uuid,
-          label: statusDisplayLabel(s),
-        }))}
-      >
-        <SelectTrigger className="h-7 text-xs">
-          <SelectValue placeholder={t.plain("selectStatus")} />
-        </SelectTrigger>
-        <SelectContent>
-          {statuses.map((s) => (
-            <SelectItem key={s.uuid} value={s.uuid}>
-              {statusDisplayLabel(s)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <FacetValueMenu
+        source={def.source}
+        value={selected}
+        onChange={onChange}
+        placeholder={placeholder}
+      />
     )
   }
 

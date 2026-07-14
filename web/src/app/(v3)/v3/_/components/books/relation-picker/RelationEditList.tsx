@@ -1,9 +1,7 @@
 "use client"
 
-import { type ReactNode, useMemo } from "react"
+import { useMemo } from "react"
 
-import { RelationGlyph } from "@/app/(v3)/v3/_/components/books/RelationChipEditor"
-import { ICheck, IRemove } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type RelationItem,
   type RelationSource,
@@ -12,14 +10,16 @@ import { useRelationEditActions } from "@/app/(v3)/v3/_/hooks/use-relation-mutat
 import { type BookWithRelations } from "@/database/books"
 import { type UUID } from "@/uuid"
 
-import { RelationPickerList } from "./RelationPickerList"
+import { type RelationRowState, RelationSelectList } from "./RelationSelectList"
 
 export type MembershipState = "all" | "some" | "none"
 
 // how many of a set of books currently have each relation, keyed by item uuid.
 export type RelationMembership = Map<string, number>
 
-// the relation uuids a single book currently has for the given source
+// the relation uuids a single book currently has for the given source. creators
+// split by role: authors/narrators are their own arrays; translators live in the
+// `creators` bucket alongside other roles, so they're filtered by role there.
 function bookRelationUuids(
   book: BookWithRelations,
   source: RelationSource,
@@ -33,8 +33,14 @@ function bookRelationUuids(
       return book.series.map((s) => s.uuid)
     case "statuses":
       return book.status ? [book.status.uuid] : []
+    case "authors":
+      return book.authors.map((c) => c.uuid)
+    case "narrators":
+      return book.narrators.map((c) => c.uuid)
+    case "translators":
+      return book.creators.filter((c) => c.role === "trl").map((c) => c.uuid)
     case "creators":
-      return book.creators.map((c) => c.uuid)
+      return book.creators.filter((c) => c.role !== "trl").map((c) => c.uuid)
   }
 }
 
@@ -55,12 +61,21 @@ export function membershipFromBooks(
   return m
 }
 
-export function RelationEditPicker({
+// applied items rank before unapplied ones
+function membershipRowState(state: MembershipState): RelationRowState {
+  if (state === "all") return "primary"
+  if (state === "some") return "secondary"
+  return "none"
+}
+
+// the relation list wired for editing: membership all/some/none across the
+// selected books, add/remove via the source's mutations, and an optional
+// create-new row. wraps the generic RelationSelectList.
+export function RelationEditList({
   source,
   bookUuids,
   membership,
   enabled,
-  searchPlaceholder,
   showApplied = true,
   onCreate,
   createLabel,
@@ -70,7 +85,6 @@ export function RelationEditPicker({
   bookUuids: UUID[]
   membership: RelationMembership
   enabled: boolean
-  searchPlaceholder: string
   // when false, already-applied items are hidden (add-only feel); removal then
   // happens elsewhere, e.g. the inline chips
   showApplied?: boolean
@@ -109,46 +123,29 @@ export function RelationEditPicker({
     }
   }
 
-  const trailing = (state: MembershipState): ReactNode => {
-    if (state === "all") return <ICheck.base className="text-primary h-4 w-4" />
-    if (state === "some")
-      return <IRemove.base className="text-muted-foreground h-4 w-4" />
-    return null
-  }
+  // create attaches a brand-new item: an explicit onCreate (dialog flows), else
+  // the source's own one-step create (e.g. a new author by name).
+  const create =
+    onCreate || actions.createAndAdd
+      ? {
+          label: (s: string) => createLabel?.(s) ?? `Create "${s}"`,
+          onCreate: (s: string) => {
+            if (onCreate) onCreate(s)
+            else actions.createAndAdd?.(bookUuids, s)
+          },
+        }
+      : undefined
 
   return (
-    <RelationPickerList
+    <RelationSelectList
       source={source}
       enabled={enabled}
-      searchPlaceholder={searchPlaceholder}
-      filter={showApplied ? undefined : (i) => stateOf(i.uuid) === "none"}
-      // applied (all/some) float to the top, preserving name order within a group
-      sort={(a, b) => rank(stateOf(a.uuid)) - rank(stateOf(b.uuid))}
-      create={
-        onCreate
-          ? {
-              label: (s) => createLabel?.(s) ?? `Create "${s}"`,
-              onCreate,
-            }
-          : undefined
-      }
+      stateOf={(item) => membershipRowState(stateOf(item.uuid))}
       onSelect={(item) => {
         handleClick(item, stateOf(item.uuid))
       }}
-      renderRow={(item) => (
-        <>
-          <RelationGlyph item={item} />
-          <span className="min-w-0 flex-1 truncate">{item.name}</span>
-          <span className="flex w-4 shrink-0 items-center justify-center">
-            {trailing(stateOf(item.uuid))}
-          </span>
-        </>
-      )}
+      filter={showApplied ? undefined : (i) => stateOf(i.uuid) === "none"}
+      create={create}
     />
   )
-}
-
-// applied items rank before unapplied ones
-function rank(state: MembershipState): number {
-  return state === "none" ? 1 : 0
 }

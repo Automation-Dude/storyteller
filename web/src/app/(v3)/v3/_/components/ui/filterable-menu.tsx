@@ -1,8 +1,7 @@
 "use client"
 
-import { Combobox } from "@base-ui/react/combobox"
 import { Popover } from "@base-ui/react/popover"
-import { type Virtualizer, useVirtualizer } from "@tanstack/react-virtual"
+import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   type ComponentProps,
   type ReactNode,
@@ -25,48 +24,9 @@ import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { ChevronRight } from "@/icons"
 
 const ROW_HEIGHT = 32
-const VIRTUALIZE_THRESHOLD = 40
-
-const inputClassName =
-  "placeholder:text-muted-foreground flex h-6 text-base w-full rounded-md bg-transparent px-2 md:text-xs outline-none"
 
 const listClassName =
   "scroll-py-1 max-h-64 scroll-y overscroll-contain px-1 pb-1"
-
-const rowClassName =
-  "data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-md px-2 py-1 text-left text-xs/relaxed outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
-
-export type FilterableItem = { uuid: string; name: string }
-
-export type FilterableSelectContext<T> = { index: number; items: T[] }
-
-type RowVirtualizer = Virtualizer<HTMLDivElement, Element>
-
-function SearchInput({
-  autoFocus,
-  placeholder,
-}: {
-  autoFocus: boolean
-  placeholder: string
-}) {
-  return (
-    <div className="border-b p-1">
-      <Combobox.Input
-        autoFocus={autoFocus}
-        placeholder={placeholder}
-        className={inputClassName}
-        onKeyDown={(event) => {
-          if (event.key === "Tab" && !event.shiftKey) {
-            event.preventDefault()
-            event.currentTarget.dispatchEvent(
-              new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
-            )
-          }
-        }}
-      />
-    </div>
-  )
-}
 
 function LoadingRows() {
   return (
@@ -81,252 +41,6 @@ function LoadingRows() {
         </div>
       ))}
     </div>
-  )
-}
-
-function Row<T extends FilterableItem>({
-  item,
-  index,
-  items,
-  onSelect,
-  renderRow,
-  style,
-  keepOpen,
-}: {
-  item: T
-  index: number
-  items: T[]
-  onSelect?: (
-    item: T,
-    event: React.MouseEvent,
-    ctx: FilterableSelectContext<T>,
-  ) => void
-  renderRow: (item: T) => ReactNode
-  style?: React.CSSProperties
-  keepOpen: boolean
-}) {
-  return (
-    <Combobox.Item
-      value={item}
-      index={index}
-      style={style}
-      className={rowClassName}
-      onClick={(event) => {
-        if (keepOpen) event.preventDefault()
-        onSelect?.(item, event as unknown as React.MouseEvent, { index, items })
-      }}
-    >
-      {renderRow(item)}
-    </Combobox.Item>
-  )
-}
-
-function Body<T extends FilterableItem>({
-  shouldVirtualize,
-  onSelect,
-  renderRow,
-  keepOpen,
-  virtualizerRef,
-  emptyText,
-}: {
-  shouldVirtualize: boolean
-  onSelect?: (
-    item: T,
-    event: React.MouseEvent,
-    ctx: FilterableSelectContext<T>,
-  ) => void
-  renderRow: (item: T) => ReactNode
-  keepOpen: boolean
-  virtualizerRef: React.MutableRefObject<RowVirtualizer | null>
-  emptyText: string
-}) {
-  const items = Combobox.useFilteredItems<T>()
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  const virtualizer = useVirtualizer({
-    count: items.length,
-    getScrollElement: () =>
-      shouldVirtualize && scrollRef.current?.isConnected
-        ? scrollRef.current
-        : null,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 12,
-  })
-  virtualizerRef.current = shouldVirtualize ? virtualizer : null
-
-  if (items.length === 0) {
-    return (
-      <div className="text-muted-foreground px-2 py-3 text-center text-xs">
-        {emptyText}
-      </div>
-    )
-  }
-
-  if (!shouldVirtualize) {
-    return (
-      <Combobox.List className={listClassName}>
-        {items.map((item, index) => (
-          <Row
-            key={item.uuid}
-            item={item}
-            index={index}
-            items={items}
-            onSelect={onSelect}
-            renderRow={renderRow}
-            keepOpen={keepOpen}
-          />
-        ))}
-      </Combobox.List>
-    )
-  }
-
-  return (
-    <Combobox.List ref={scrollRef} className={listClassName}>
-      <div
-        style={{ height: virtualizer.getTotalSize(), position: "relative" }}
-        key={items.length}
-      >
-        {virtualizer.getVirtualItems().map((row) => {
-          const item = items[row.index]
-          if (!item) return null
-          return (
-            <Row
-              key={item.uuid}
-              item={item}
-              index={row.index}
-              items={items}
-              onSelect={onSelect}
-              renderRow={renderRow}
-              keepOpen={keepOpen}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: ROW_HEIGHT,
-                transform: `translateY(${row.start}px)`,
-              }}
-            />
-          )
-        })}
-      </div>
-    </Combobox.List>
-  )
-}
-
-export type FilterableListProps<T extends FilterableItem> = {
-  items: T[]
-  onSelect?: (
-    item: T,
-    event: React.MouseEvent,
-    ctx: FilterableSelectContext<T>,
-  ) => void
-  renderRow: (item: T) => ReactNode
-  searchPlaceholder: string
-  autoFocusSearch?: boolean
-  virtualized?: boolean
-  loading?: boolean
-  emptyText?: string
-  keepOpen?: boolean
-  create?: {
-    label: (query: string) => string
-    onCreate: (name: string) => void
-  }
-  footer?: ReactNode
-}
-
-export function FilterableList<T extends FilterableItem>({
-  items,
-  onSelect,
-  renderRow,
-  searchPlaceholder,
-  autoFocusSearch = true,
-  virtualized,
-  loading = false,
-  emptyText,
-  keepOpen = true,
-  create,
-  footer,
-}: FilterableListProps<T>) {
-  const c = useCommon()
-  const [query, setQuery] = useState("")
-  const shouldVirtualize = virtualized ?? items.length > VIRTUALIZE_THRESHOLD
-  const virtualizerRef = useRef<RowVirtualizer | null>(null)
-  const resolvedEmpty = emptyText ?? c("empty.noResults")
-
-  const trimmed = query.trim()
-  const showCreate =
-    !!create &&
-    trimmed.length > 0 &&
-    !items.some((i) => i.name.toLowerCase() === trimmed.toLowerCase())
-
-  const onItemHighlighted = useCallback(
-    (
-      _value: T | undefined,
-      details: { index: number; reason: "keyboard" | "pointer" | "none" },
-    ) => {
-      const virtualizer = virtualizerRef.current
-      if (!virtualizer || details.index < 0) return
-      if (details.reason === "pointer") return
-      queueMicrotask(() => {
-        virtualizer.scrollToIndex(details.index, { align: "auto" })
-      })
-    },
-    [],
-  )
-
-  return (
-    <Combobox.Root
-      inline
-      open
-      autoHighlight
-      items={items}
-      virtualized={shouldVirtualize}
-      itemToStringLabel={(item: T) => item.name}
-      onInputValueChange={(value) => {
-        setQuery(value)
-      }}
-      onItemHighlighted={
-        shouldVirtualize
-          ? (onItemHighlighted as ComponentProps<
-              typeof Combobox.Root
-            >["onItemHighlighted"])
-          : undefined
-      }
-    >
-      <SearchInput
-        autoFocus={autoFocusSearch}
-        placeholder={searchPlaceholder}
-      />
-
-      {loading ? (
-        <LoadingRows />
-      ) : (
-        <Body
-          shouldVirtualize={shouldVirtualize}
-          onSelect={onSelect}
-          renderRow={renderRow}
-          keepOpen={keepOpen}
-          virtualizerRef={virtualizerRef}
-          emptyText={resolvedEmpty}
-        />
-      )}
-
-      {showCreate && create && (
-        <button
-          type="button"
-          onClick={() => {
-            create.onCreate(trimmed)
-          }}
-          className="hover:bg-accent text-primary mx-1 mb-1 flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
-        >
-          <IAdd.base className="h-3.5 w-3.5" />
-          {create.label(trimmed)}
-        </button>
-      )}
-
-      {footer}
-    </Combobox.Root>
   )
 }
 
@@ -367,6 +81,14 @@ type FilterableMenuItemEntry = {
   metaRef: RefObject<FilterableMenuItemMeta>
 }
 
+// a virtualized list owns its own index-based navigation (its rows aren't all in
+// the DOM), so it hands the surface these two operations and the surface routes
+// keyboard events to them instead of the DOM registry.
+type MenuNavApi = {
+  move: (to: "up" | "down" | "home" | "end") => void
+  activate: (modifiers?: ActivationModifiers) => void
+}
+
 type FilterableMenuContextValue = {
   query: string
   searchable: boolean
@@ -375,6 +97,8 @@ type FilterableMenuContextValue = {
   register: (id: string, entry: FilterableMenuItemEntry) => void
   unregister: (id: string) => void
   close: () => void
+  // a virtualized list registers here so the surface delegates arrow/enter to it
+  registerNav: (api: MenuNavApi | null) => void
   // the menu's search input, so a closing submenu can return focus to it
   // instead of the (non-focusable) submenu trigger.
   searchRef: RefObject<HTMLInputElement | null>
@@ -389,6 +113,7 @@ const FilterableMenuContext = createContext<FilterableMenuContextValue>({
   register: noop,
   unregister: noop,
   close: noop,
+  registerNav: noop,
   searchRef: { current: null },
 })
 
@@ -476,6 +201,7 @@ function useMenuSurface({
   const [query, setQuery] = useState("")
   const [activeId, setActiveId] = useState<string | null>(null)
   const registryRef = useRef(new Map<string, FilterableMenuItemEntry>())
+  const navRef = useRef<MenuNavApi | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const resetQuery = useCallback(() => {
     setQuery("")
@@ -486,6 +212,9 @@ function useMenuSurface({
   }, [])
   const unregister = useCallback((id: string) => {
     registryRef.current.delete(id)
+  }, [])
+  const registerNav = useCallback((api: MenuNavApi | null) => {
+    navRef.current = api
   }, [])
   const close = useCallback(() => {
     onClose()
@@ -521,18 +250,35 @@ function useMenuSurface({
       register,
       unregister,
       close,
+      registerNav,
       searchRef: inputRef,
     }),
-    [query, searchable, activeId, register, unregister, close],
+    [query, searchable, activeId, register, unregister, close, registerNav],
   )
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
+    const nav = navRef.current
+
     if (
       event.key === "ArrowDown" ||
       event.key === "ArrowUp" ||
       event.key === "Home" ||
       event.key === "End"
     ) {
+      // a virtualized list owns its own nav; otherwise walk the DOM registry.
+      if (nav) {
+        event.preventDefault()
+        nav.move(
+          event.key === "Home"
+            ? "home"
+            : event.key === "End"
+              ? "end"
+              : event.key === "ArrowDown"
+                ? "down"
+                : "up",
+        )
+        return
+      }
       const ids = orderedIds()
       if (ids.length === 0) return
       event.preventDefault()
@@ -569,11 +315,26 @@ function useMenuSurface({
       return
     }
 
-    if (event.key === "Enter" || event.key === inwardKey) {
+    if (event.key === "Enter") {
+      if (nav) {
+        event.preventDefault()
+        nav.activate({ shiftKey: event.shiftKey })
+        return
+      }
+      if (!activeId) return
+      const entry = registryRef.current.get(activeId)
+      if (!entry) return
+      event.preventDefault()
+      entry.metaRef.current.onActivate({ shiftKey: event.shiftKey })
+      return
+    }
+
+    if (event.key === inwardKey) {
+      // a virtualized list has no submenus; let the key move the caret.
+      if (nav) return
       // enter from the search input only when the caret is at the end, so the
       // key still moves it otherwise.
       if (
-        event.key === inwardKey &&
         inInput &&
         !(
           input.selectionStart === input.value.length &&
@@ -585,7 +346,7 @@ function useMenuSurface({
       const entry = registryRef.current.get(activeId)
       if (!entry) return
       // the inward key only acts on submenu rows (open the flyout)
-      if (event.key === inwardKey && !entry.metaRef.current.isSubmenu) return
+      if (!entry.metaRef.current.isSubmenu) return
       event.preventDefault()
       entry.metaRef.current.onActivate({ shiftKey: event.shiftKey })
     }
@@ -1046,5 +807,193 @@ export function FilterableMenuSubContent({
         </Popover.Popup>
       </Popover.Positioner>
     </Popover.Portal>
+  )
+}
+
+// a data-driven, always-virtualized list of rows for inside a menu surface. it
+// reuses the surface's search box (filters by `getText` against the menu query)
+// and delegates keyboard nav to the surface via `registerNav`. use this instead
+// of mapping hundreds of `FilterableMenuItem` children.
+export function VirtualizedFilterableMenuItems<T>({
+  items,
+  getKey,
+  getText,
+  renderRow,
+  onSelect,
+  closeOnSelect = false,
+  create,
+  footer,
+  loading = false,
+  emptyText,
+  estimateSize = ROW_HEIGHT,
+}: {
+  items: T[]
+  getKey: (item: T) => string
+  getText: (item: T) => string
+  renderRow: (item: T) => ReactNode
+  onSelect: (item: T, modifiers: ActivationModifiers) => void
+  // keep the menu open after a selection (multi/tri-state pickers). default: keep
+  closeOnSelect?: boolean
+  // a trailing "create <query>" row, shown when the query has no exact match
+  create?: { label: (query: string) => string; onCreate: (query: string) => void }
+  footer?: ReactNode
+  loading?: boolean
+  emptyText?: string
+  estimateSize?: number
+}) {
+  const c = useCommon()
+  const { query, close, registerNav } = useContext(FilterableMenuContext)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(0)
+
+  // callbacks are read through refs so the filter memo / nav registration stay
+  // stable across renders (parents often pass inline closures).
+  const getTextRef = useRef(getText)
+  getTextRef.current = getText
+
+  const q = query.trim().toLowerCase()
+  const filtered = useMemo(
+    () =>
+      q === ""
+        ? items
+        : items.filter((i) => getTextRef.current(i).toLowerCase().includes(q)),
+    [items, q],
+  )
+
+  const trimmed = query.trim()
+  const showCreate =
+    !!create &&
+    trimmed.length > 0 &&
+    !items.some((i) => getTextRef.current(i).toLowerCase() === q)
+  const createIndex = showCreate ? filtered.length : -1
+  const rowCount = filtered.length + (showCreate ? 1 : 0)
+
+  // track the filtered set changing (query typed) and snap the highlight to top.
+  useEffect(() => {
+    setActive(0)
+  }, [q])
+
+  const virtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => estimateSize,
+    overscan: 12,
+  })
+
+  const activateRef = useRef<(modifiers: ActivationModifiers) => void>(() => {})
+  activateRef.current = (modifiers) => {
+    if (active === createIndex) {
+      create?.onCreate(trimmed)
+    } else {
+      const item = filtered[active]
+      if (!item) return
+      onSelect(item, modifiers)
+    }
+    if (closeOnSelect) close()
+  }
+
+  const moveRef = useRef<(to: "up" | "down" | "home" | "end") => void>(() => {})
+  moveRef.current = (to) => {
+    if (rowCount === 0) return
+    setActive((prev) => {
+      if (to === "home") return 0
+      if (to === "end") return rowCount - 1
+      if (to === "down") return prev < rowCount - 1 ? prev + 1 : 0
+      return prev > 0 ? prev - 1 : rowCount - 1
+    })
+  }
+
+  useEffect(() => {
+    registerNav({
+      move: (to) => {
+        moveRef.current(to)
+      },
+      activate: (modifiers) => {
+        activateRef.current(modifiers ?? { shiftKey: false })
+      },
+    })
+    return () => {
+      registerNav(null)
+    }
+  }, [registerNav])
+
+  // keep the active row (when it's a real item, not the create row) in view.
+  useEffect(() => {
+    if (active < filtered.length) {
+      virtualizer.scrollToIndex(active, { align: "auto" })
+    }
+  }, [active, filtered.length, virtualizer])
+
+  if (loading) return <LoadingRows />
+
+  if (rowCount === 0) {
+    return (
+      <div className="text-muted-foreground px-2 py-3 text-center text-xs">
+        {emptyText ?? c("empty.noResults")}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div ref={scrollRef} className={listClassName}>
+        <div
+          style={{ height: virtualizer.getTotalSize(), position: "relative" }}
+        >
+          {virtualizer.getVirtualItems().map((row) => {
+            const item = filtered[row.index]
+            if (!item) return null
+            return (
+              <div
+                key={getKey(item)}
+                role="menuitem"
+                data-highlighted={row.index === active || undefined}
+                className={menuItemClassName}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: estimateSize,
+                  transform: `translateY(${row.start}px)`,
+                }}
+                onMouseEnter={() => {
+                  setActive(row.index)
+                }}
+                onClick={(event) => {
+                  onSelect(item, { shiftKey: event.shiftKey })
+                  if (closeOnSelect) close()
+                }}
+              >
+                {renderRow(item)}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {create && showCreate && (
+        <button
+          type="button"
+          data-highlighted={active === createIndex || undefined}
+          className={cn(
+            menuItemClassName,
+            "text-primary data-highlighted:bg-accent w-full",
+          )}
+          onMouseEnter={() => {
+            setActive(createIndex)
+          }}
+          onClick={() => {
+            create.onCreate(trimmed)
+            if (closeOnSelect) close()
+          }}
+        >
+          <IAdd.base className="h-3.5 w-3.5" />
+          {create.label(trimmed)}
+        </button>
+      )}
+
+      {footer}
+    </>
   )
 }

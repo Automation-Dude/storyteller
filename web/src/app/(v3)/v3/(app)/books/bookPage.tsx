@@ -217,7 +217,7 @@ export default function BookPage({
       headerBreadcrumbs={[
         {
           render: (
-            <h1 className="font-heading text-foreground truncate text-3xl font-normal">
+            <h1 className="font-heading text-foreground truncate text-2xl font-normal">
               {t("title")}
             </h1>
           ),

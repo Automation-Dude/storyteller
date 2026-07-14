@@ -92,12 +92,14 @@ export function useRelationItems(
               !c.roles?.includes("trl"),
           )
         : rows
-    return list.map((d) => ({
-      uuid: d.uuid,
-      name: d.name,
-      icon: d.icon,
-      color: d.color,
-    }))
+    return list
+      .map((d) => ({
+        uuid: d.uuid,
+        name: d.name,
+        icon: d.icon,
+        color: d.color,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
   }, [data, source])
 
   return { items, loading: !!active?.isLoading }

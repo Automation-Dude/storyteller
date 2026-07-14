@@ -1,11 +1,14 @@
 import { useMemo } from "react"
 
+import { type Role } from "@/components/books/edit/marcRelators"
 import {
   useAddBooksToCollectionsMutation,
   useAddBooksToSeriesMutation,
+  useAddCreatorsToBooksMutation,
   useAddTagsToBooksMutation,
   useRemoveBooksFromCollectionsMutation,
   useRemoveBooksFromSeriesMutation,
+  useRemoveCreatorsFromBooksMutation,
   useRemoveTagsFromBooksMutation,
   useUpdateReadingStatusMutation,
 } from "@/store/api"
@@ -15,10 +18,12 @@ import { type RelationItem, type RelationSource } from "./use-relation-items"
 
 // the add/remove actions for editing a relation across one or more books. status
 // is single-valued (radio): selecting sets it exclusively, there is no remove.
+// `createAndAdd` (when set) attaches a brand-new item by name in one step.
 export type RelationEditActions = {
   add: (bookUuids: UUID[], item: RelationItem) => void
   remove: (bookUuids: UUID[], itemUuid: UUID) => void
   singleSelect: boolean
+  createAndAdd?: (bookUuids: UUID[], name: string) => void
 }
 
 export function useRelationEditActions(
@@ -31,8 +36,25 @@ export function useRelationEditActions(
   const [addToSeries] = useAddBooksToSeriesMutation()
   const [removeFromSeries] = useRemoveBooksFromSeriesMutation()
   const [updateReadingStatus] = useUpdateReadingStatusMutation()
+  const [addCreators] = useAddCreatorsToBooksMutation()
+  const [removeCreators] = useRemoveCreatorsFromBooksMutation()
 
   return useMemo<RelationEditActions>(() => {
+    // authors/narrators/translators are the same bulk creator endpoint under a
+    // fixed MARC role.
+    const creatorRole = (role: Role): RelationEditActions => ({
+      add: (books, item) => {
+        void addCreators({ creators: [{ uuid: item.uuid as UUID }], books, role })
+      },
+      remove: (books, uuid) => {
+        void removeCreators({ creators: [uuid], books, role })
+      },
+      createAndAdd: (books, name) => {
+        void addCreators({ creators: [{ name }], books, role })
+      },
+      singleSelect: false,
+    })
+
     switch (source) {
       case "tags":
         return {
@@ -84,7 +106,13 @@ export function useRelationEditActions(
           },
           singleSelect: true,
         }
-      // creators are filter-only; they are not edited through this picker
+      case "authors":
+        return creatorRole("aut")
+      case "narrators":
+        return creatorRole("nrt")
+      case "translators":
+        return creatorRole("trl")
+      // generic "other creators" need a role chosen per add -> not editable here
       case "creators":
         return {
           add: () => {},
@@ -101,5 +129,7 @@ export function useRelationEditActions(
     addToSeries,
     removeFromSeries,
     updateReadingStatus,
+    addCreators,
+    removeCreators,
   ])
 }

@@ -15,9 +15,9 @@ import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSerie
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { DeleteBooksDialog } from "@/app/(v3)/v3/_/components/books/DeleteBooksDialog"
 import {
-  RelationEditPicker,
+  RelationEditList,
   membershipFromBooks,
-} from "@/app/(v3)/v3/_/components/books/relation-picker/RelationEditPicker"
+} from "@/app/(v3)/v3/_/components/books/relation-picker/RelationEditList"
 import {
   type ActivationModifiers,
   FilterableMenuItem,
@@ -55,6 +55,9 @@ export type BookActionEntry = {
   keywords?: string
   onSelect?: (modifiers?: ActivationModifiers) => void
   submenu?: ReactNode | ((ctx: { close: () => void }) => ReactNode)
+  // submenus holding a relation list want their own search box
+  submenuSearchable?: boolean
+  submenuSearchPlaceholder?: string
   variant?: "destructive"
   separatorBefore?: boolean
   disabled?: boolean
@@ -82,7 +85,10 @@ export function ActionEntryList({ entries }: { entries: BookActionEntry[] }) {
               >
                 {entry.label}
               </FilterableMenuSubTrigger>
-              <FilterableMenuSubContent>
+              <FilterableMenuSubContent
+                searchable={entry.submenuSearchable}
+                searchPlaceholder={entry.submenuSearchPlaceholder}
+              >
                 {entry.submenu}
               </FilterableMenuSubContent>
             </FilterableMenuSub>
@@ -261,13 +267,14 @@ export function useBookActionItems({
       key: "collections",
       label: t.plain("editCollections"),
       icon: <icon.Folder className="size-4" />,
+      submenuSearchable: true,
+      submenuSearchPlaceholder: t.plain("search"),
       submenu: () => (
-        <RelationEditPicker
+        <RelationEditList
           source="collections"
           bookUuids={bookUuids}
           membership={membershipFromBooks(books, "collections")}
           enabled
-          searchPlaceholder={t.plain("search")}
           {...(canCreateCollection && {
             onCreate: (name: string) => {
               setCreateCollectionName(name)
@@ -283,13 +290,14 @@ export function useBookActionItems({
       key: "series",
       label: t.plain("editSeries"),
       icon: <icon.Library className="size-4" />,
+      submenuSearchable: true,
+      submenuSearchPlaceholder: t.plain("search"),
       submenu: () => (
-        <RelationEditPicker
+        <RelationEditList
           source="series"
           bookUuids={bookUuids}
           membership={membershipFromBooks(books, "series")}
           enabled
-          searchPlaceholder={t.plain("search")}
           onCreate={(name) => {
             setCreateSeriesName(name)
             setCreateSeriesOpen(true)
@@ -303,18 +311,70 @@ export function useBookActionItems({
       key: "tags",
       label: t.plain("editTags"),
       icon: <ITag.add className="size-4" />,
+      submenuSearchable: true,
+      submenuSearchPlaceholder: t.plain("search"),
       submenu: () => (
-        <RelationEditPicker
+        <RelationEditList
           source="tags"
           bookUuids={bookUuids}
           membership={membershipFromBooks(books, "tags")}
           enabled
-          searchPlaceholder={t.plain("search")}
           onCreate={(name) => {
             setCreateTagName(name)
             setCreateTagOpen(true)
           }}
           createLabel={() => t.plain("newTag")}
+        />
+      ),
+    })
+
+    entries.push({
+      key: "authors",
+      label: t.plain("editAuthors"),
+      icon: <icon.User className="size-4" />,
+      submenuSearchable: true,
+      submenuSearchPlaceholder: t.plain("search"),
+      submenu: () => (
+        <RelationEditList
+          source="authors"
+          bookUuids={bookUuids}
+          membership={membershipFromBooks(books, "authors")}
+          enabled
+          createLabel={(s) => t.plain("newAuthor", { input: `"${s}"` })}
+        />
+      ),
+    })
+
+    entries.push({
+      key: "narrators",
+      label: t.plain("editNarrators"),
+      icon: <icon.Microphone className="size-4" />,
+      submenuSearchable: true,
+      submenuSearchPlaceholder: t.plain("search"),
+      submenu: () => (
+        <RelationEditList
+          source="narrators"
+          bookUuids={bookUuids}
+          membership={membershipFromBooks(books, "narrators")}
+          enabled
+          createLabel={(s) => t.plain("newNarrator", { input: `"${s}"` })}
+        />
+      ),
+    })
+
+    entries.push({
+      key: "translators",
+      label: t.plain("editTranslators"),
+      icon: <icon.Language className="size-4" />,
+      submenuSearchable: true,
+      submenuSearchPlaceholder: t.plain("search"),
+      submenu: () => (
+        <RelationEditList
+          source="translators"
+          bookUuids={bookUuids}
+          membership={membershipFromBooks(books, "translators")}
+          enabled
+          createLabel={(s) => t.plain("newTranslator", { input: `"${s}"` })}
         />
       ),
     })
@@ -324,13 +384,14 @@ export function useBookActionItems({
     key: "statuses",
     label: t.plain("setStatus"),
     icon: <icon.BookAlt className="size-4" />,
+    submenuSearchable: true,
+    submenuSearchPlaceholder: t.plain("search"),
     submenu: () => (
-      <RelationEditPicker
+      <RelationEditList
         source="statuses"
         bookUuids={bookUuids}
         membership={membershipFromBooks(books, "statuses")}
         enabled
-        searchPlaceholder={t.plain("search")}
       />
     ),
   })

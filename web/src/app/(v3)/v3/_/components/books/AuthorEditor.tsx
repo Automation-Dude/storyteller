@@ -15,7 +15,7 @@ import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
 import { useBookForm } from "./BookDetails/BookFormProvider"
 import { RelationChipEditor } from "./RelationChipEditor"
-import { RelationPickerList } from "./relation-picker/RelationPickerList"
+import { RelationSelectList } from "./relation-picker/RelationSelectList"
 
 function CreatorAddMenu({
   allItems,
@@ -53,38 +53,23 @@ function CreatorAddMenu({
           </TooltipButton>
         }
       />
-      <FilterableMenuContent searchable={false}>
-        <RelationPickerList
+      <FilterableMenuContent searchPlaceholder={searchPlaceholder}>
+        <RelationSelectList
           items={items}
           enabled={open}
-          searchPlaceholder={searchPlaceholder}
-          sort={(a, b) => rank(applied.has(a.name)) - rank(applied.has(b.name))}
+          stateOf={(item) => (applied.has(item.name) ? "primary" : "none")}
+          onSelect={(item) => {
+            onToggle(item.name)
+          }}
           create={{
             label: (s) =>
               tLabels.plain("create.withInput", { input: `"${s}"` }),
             onCreate,
           }}
-          onSelect={(item) => {
-            onToggle(item.name)
-          }}
-          renderRow={(item) => (
-            <>
-              <span className="min-w-0 flex-1 truncate">{item.name}</span>
-              <span className="flex w-4 shrink-0 items-center justify-center">
-                {applied.has(item.name) && (
-                  <icon.Check className="text-primary h-4 w-4" />
-                )}
-              </span>
-            </>
-          )}
         />
       </FilterableMenuContent>
     </FilterableMenu>
   )
-}
-
-function rank(applied: boolean): number {
-  return applied ? 0 : 1
 }
 
 function CreatorChipField({

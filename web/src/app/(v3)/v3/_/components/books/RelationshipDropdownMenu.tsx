@@ -1,11 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 
 import {
-  FilterableList,
   FilterableMenu,
   FilterableMenuContent,
+  FilterableMenuItem,
   FilterableMenuTrigger,
 } from "@v3/_/components/ui/filterable-menu"
 import { Input } from "@v3/_/components/ui/input"
@@ -38,9 +38,11 @@ import {
   type ShelfFilterOperator,
 } from "@/shelves"
 
-import { RelationGlyph } from "./RelationChipEditor"
 import { unitDisplay } from "./filter-ui"
-import { RelationPickerList } from "./relation-picker/RelationPickerList"
+import {
+  type RelationRowState,
+  RelationSelectList,
+} from "./relation-picker/RelationSelectList"
 
 export type FilterControlProps = {
   field: ShelfFilterField
@@ -212,7 +214,11 @@ export function FilterControl({
           </button>
         )}
       </span>
-      <FilterableMenuContent searchable={false} align="start" className="w-72 p-0">
+      <FilterableMenuContent
+        searchable={def.control === "facet" || def.control === "enum"}
+        align="start"
+        className="w-72 p-0"
+      >
         <FilterEditor
           field={field}
           def={def}
@@ -308,7 +314,6 @@ export function FacetEditor({
   enabled: boolean
   staticItems?: RelationItem[]
 }) {
-  const t = useTranslation("BooksPage")
   const fetched = useRelationItems(
     staticItems ? undefined : (def as FieldDefFacet).source,
     enabled,
@@ -324,78 +329,58 @@ export function FacetEditor({
     onChange(writeFacet(field, nextInc, nextExc, ops, role))
   }
 
-  const stateOf = (uuid: string): "include" | "exclude" | null =>
-    inc.includes(uuid) ? "include" : exc.includes(uuid) ? "exclude" : null
-
-  const sortedItems = useMemo(() => {
-    return items
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .sort((a, b) => {
-        const aState = stateOf(a.uuid)
-        const bState = stateOf(b.uuid)
-        if (aState === "include" && bState === "exclude") return -1
-        if (aState === "exclude" && bState === "include") return 1
-        return 0
-      })
-  }, [items, stateOf])
-
   return (
-    <>
-      <RelationPickerList
-        items={sortedItems}
-        enabled={enabled}
-        virtualized
-        loading={loading}
-        searchPlaceholder={t("filters.search")}
-        onSelect={(item) => {
-          apply(
-            cycleTriState(inc, exc, item.uuid).inc,
-            cycleTriState(inc, exc, item.uuid).exc,
-          )
-        }}
-        renderRow={(item) => (
-          <>
-            <RelationGlyph item={item} />
-            <span className="min-w-0 flex-1 truncate">{item.name}</span>
-            <span className="flex w-4 shrink-0 items-center justify-center">
-              {stateOf(item.uuid) === "include" ? (
-                <ICheck.base className="text-primary h-4 w-4" />
-              ) : stateOf(item.uuid) === "exclude" ? (
-                <IRemove.base className="text-destructive h-4 w-4" />
-              ) : null}
-            </span>
-          </>
-        )}
-        footer={
-          <div className="border-border flex items-center justify-between border-t p-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => {
-                apply(
-                  items.map((i) => i.uuid),
-                  [],
-                )
-              }}
-            >
-              Select all
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              disabled={!inc.length && !exc.length}
-              onClick={() => {
-                apply([], [])
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        }
-      />
-    </>
+    <RelationSelectList
+      items={items}
+      loading={loading}
+      enabled={enabled}
+      stateOf={(item): RelationRowState =>
+        inc.includes(item.uuid)
+          ? "primary"
+          : exc.includes(item.uuid)
+            ? "secondary"
+            : "none"
+      }
+      onSelect={(item) => {
+        const next = cycleTriState(inc, exc, item.uuid)
+        apply(next.inc, next.exc)
+      }}
+      renderTrailing={(state) =>
+        state === "primary" ? (
+          <ICheck.base className="text-primary h-4 w-4" />
+        ) : state === "secondary" ? (
+          <IRemove.base className="text-destructive h-4 w-4" />
+        ) : null
+      }
+      footer={
+        <div className="border-border flex items-center justify-between border-t p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              apply(
+                items.map((i) => i.uuid),
+                [],
+              )
+            }}
+          >
+            Select all
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            disabled={!inc.length && !exc.length}
+            onClick={() => {
+              apply([], [])
+            }}
+          >
+            Clear
+          </Button>
+        </div>
+      }
+    />
   )
 }
 
@@ -443,7 +428,6 @@ function NumberRangeEditor({
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
 }) {
-  const t = useTranslation("BooksPage")
   const u = unitDisplay(def.scale?.unit)
   const { lo, hi } = readRange(conditions)
   const format = conditions.at(0)?.format
@@ -550,31 +534,26 @@ function NumberRangeEditor({
   )
 
   if (presets && presets.length > 0) {
-    const items = presets.map((p) => ({
-      uuid: p.label,
-      name: p.label,
-      min: p.min,
-      max: p.max,
-    }))
     return (
-      <FilterableList<(typeof items)[number]>
-        items={items}
-        virtualized={false}
-        searchPlaceholder={t("filters.search")}
-        onSelect={(item) => {
-          set(item.min, item.max)
-        }}
-        renderRow={(item) => {
-          const active = lo === item.min && hi === item.max
+      <>
+        {presets.map((p) => {
+          const active = lo === p.min && hi === p.max
           return (
-            <>
-              <span className="min-w-0 flex-1 truncate">{item.name}</span>
-              {active && <ICheck.base className="text-primary h-4 w-4" />}
-            </>
+            <FilterableMenuItem
+              key={p.label}
+              closeOnClick={false}
+              textValue={p.label}
+              onSelect={() => {
+                set(p.min, p.max)
+              }}
+            >
+              <span className="min-w-0 flex-1 truncate">{p.label}</span>
+              {active && <ICheck.base className="text-primary ml-auto h-4 w-4" />}
+            </FilterableMenuItem>
           )
-        }}
-        footer={<div className="border-t p-3">{controls}</div>}
-      />
+        })}
+        <div className="border-t p-3">{controls}</div>
+      </>
     )
   }
 
@@ -624,7 +603,6 @@ function DateRangeEditor({
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
 }) {
-  const t = useTranslation("BooksPage")
   const { from, to } = readDateRange(conditions)
   const presets = def.presets
 
@@ -657,24 +635,22 @@ function DateRangeEditor({
   )
 
   if (presets && presets.length > 0) {
-    const items = presets.map((p) => ({
-      uuid: p.label,
-      name: p.label,
-      days: p.days,
-    }))
     return (
-      <FilterableList<(typeof items)[number]>
-        items={items}
-        virtualized={false}
-        searchPlaceholder={t("filters.search")}
-        onSelect={(item) => {
-          applyPreset(item.days)
-        }}
-        renderRow={(item) => (
-          <span className="min-w-0 flex-1 truncate">{item.name}</span>
-        )}
-        footer={<div className="border-t p-3">{controls}</div>}
-      />
+      <>
+        {presets.map((p) => (
+          <FilterableMenuItem
+            key={p.label}
+            closeOnClick={false}
+            textValue={p.label}
+            onSelect={() => {
+              applyPreset(p.days)
+            }}
+          >
+            <span className="min-w-0 flex-1 truncate">{p.label}</span>
+          </FilterableMenuItem>
+        ))}
+        <div className="border-t p-3">{controls}</div>
+      </>
     )
   }
 
