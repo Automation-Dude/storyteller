@@ -25,6 +25,7 @@ import {
   useListTagsQuery,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
+import { type AlignmentStatus } from "@/work/alignmentStatus"
 
 interface Props {
   options: FilterSortOptions
@@ -212,6 +213,38 @@ export function FilterSort({
               onChange={(values) => {
                 filters.onStatusesChange(
                   !values.length ? null : (values as UUID[]),
+                )
+              }}
+            />
+            <MultiSelect
+              aria-label="Alignment"
+              placeholder={`Alignment`}
+              data={[
+                {
+                  label: "Ready to align",
+                  value: "ready",
+                },
+                {
+                  label: "Aligning now",
+                  value: "in-progress",
+                },
+                {
+                  label: "Alignment failed",
+                  value: "failed",
+                },
+                {
+                  label: "Aligned",
+                  value: "aligned",
+                },
+                {
+                  label: "Missing a format",
+                  value: "incomplete",
+                },
+              ]}
+              value={filters.alignmentStatuses ?? []}
+              onChange={(values) => {
+                filters.onAlignmentStatusesChange(
+                  !values.length ? null : (values as AlignmentStatus[]),
                 )
               }}
             />

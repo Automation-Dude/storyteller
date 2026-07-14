@@ -10,6 +10,10 @@ import {
 
 import { type BookWithRelations } from "@/database/books"
 import { type UUID } from "@/uuid"
+import {
+  type AlignmentStatus,
+  getAlignmentStatus,
+} from "@/work/alignmentStatus"
 
 export type BookSortKey =
   | "title"
@@ -74,6 +78,8 @@ export interface FilterSortOptions {
   sort: BookSort
   onSortChange: Dispatch<SetStateAction<BookSort>>
   filters: {
+    alignmentStatuses: AlignmentStatus[] | null
+    onAlignmentStatusesChange: (values: AlignmentStatus[] | null) => void
     visible: boolean
     showFilters: () => void
     hideFilters: () => void
@@ -294,6 +300,10 @@ export function useFilterSortedBooks(books: BookWithRelations[]): {
     | BookType[]
     | null
 
+  const alignmentStatuses = (searchParams
+    .get("alignmentStatuses")
+    ?.split(",") ?? null) as AlignmentStatus[] | null
+
   const fileSize = searchParams.get("fileSize")?.split(",").map(Number) ?? null
   const duration = searchParams.get("duration")?.split(",").map(Number) ?? null
   const pageCount =
@@ -304,6 +314,7 @@ export function useFilterSortedBooks(books: BookWithRelations[]): {
     tags ||
     series ||
     bookTypes ||
+    alignmentStatuses ||
     authors ||
     statuses ||
     fileSize ||
@@ -388,6 +399,12 @@ export function useFilterSortedBooks(books: BookWithRelations[]): {
             return false
           }
         }
+        if (
+          alignmentStatuses &&
+          !alignmentStatuses.includes(getAlignmentStatus(book))
+        ) {
+          return false
+        }
         if (!matchesRange(getBookFileSizeMB(book, bookTypes), fileSize))
           return false
         if (!matchesRange(getBookDurationMinutes(book), duration)) return false
@@ -396,6 +413,7 @@ export function useFilterSortedBooks(books: BookWithRelations[]): {
         return true
       }),
     [
+      alignmentStatuses,
       authors,
       bookTypes,
       collections,
@@ -536,6 +554,10 @@ export function useFilterSortedBooks(books: BookWithRelations[]): {
           onBookTypesChange: (values) => {
             setSearchParam("bookTypes", values)
           },
+          alignmentStatuses,
+          onAlignmentStatusesChange: (values) => {
+            setSearchParam("alignmentStatuses", values)
+          },
           fileSize,
           onFileSizeChange: (values) => {
             setSearchParam("fileSize", cleanRangeParam(values))
@@ -551,6 +573,7 @@ export function useFilterSortedBooks(books: BookWithRelations[]): {
           reset: clearSearchParams,
         }),
         [
+          alignmentStatuses,
           authors,
           bookTypes,
           clearSearchParams,
