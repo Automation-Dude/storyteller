@@ -8,9 +8,11 @@ import {
 import { withUniwind } from "uniwind"
 
 import { type BookWithRelations } from "@/database/books"
+import { useBookFilters } from "@/hooks/useBookFilters"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
 
 import { BackButton } from "./BackButton"
+import { BookFilterSort } from "./BookFilterSort"
 import { BookThumbnail } from "./BookThumbnail"
 import { MiniPlayerWidget } from "./MiniPlayerWidget"
 import { Stack } from "./ui/Stack"
@@ -23,12 +25,34 @@ interface Props {
   books: BookWithRelations[]
   header?: ReactNode
   refreshable?: boolean
+  // Shelves like "Currently reading" are already a curated order; filtering
+  // them would fight the shelf's own meaning.
+  filterable?: boolean
 }
 
-export function BookGrid({ title, books, header, refreshable = true }: Props) {
+export function BookGrid({
+  title,
+  books,
+  header,
+  refreshable = true,
+  filterable = true,
+}: Props) {
   const dimensions = useWindowDimensions()
 
   const { isLoading, refetch } = useListAllServerBooks()
+
+  const {
+    filters,
+    setFilters,
+    sort,
+    setSort,
+    facets,
+    filteredBooks,
+    activeCount,
+    clear,
+  } = useBookFilters(books)
+
+  const shownBooks = filterable ? filteredBooks : books
 
   const horizontalPadding = 32
   const gap = 12
@@ -56,18 +80,30 @@ export function BookGrid({ title, books, header, refreshable = true }: Props) {
         </Text>
 
         <Text className="text-muted-foreground mr-4 ml-auto text-sm">
-          {books.length} books
+          {shownBooks.length} books
         </Text>
       </View>
 
       {header}
+
+      {filterable && (
+        <BookFilterSort
+          filters={filters}
+          setFilters={setFilters}
+          sort={sort}
+          setSort={setSort}
+          facets={facets}
+          activeCount={activeCount}
+          clear={clear}
+        />
+      )}
 
       <KeyboardGestureArea style={{ flex: 1 }} enableSwipeToDismiss>
         <BookLegendList
           key={numColumns}
           className="flex-1"
           contentContainerClassName="px-2.5"
-          data={books}
+          data={shownBooks}
           numColumns={numColumns}
           keyExtractor={(book) => book.uuid}
           recycleItems
@@ -92,6 +128,13 @@ export function BookGrid({ title, books, header, refreshable = true }: Props) {
               <BookThumbnail book={book} width={thumbnailWidth} />
             </View>
           )}
+          ListEmptyComponent={
+            activeCount > 0 ? (
+              <Text className="text-muted-foreground mt-8 text-center text-sm">
+                No books match these filters.
+              </Text>
+            ) : null
+          }
           ListFooterComponent={<View className="h-40 w-full" />}
         />
       </KeyboardGestureArea>
