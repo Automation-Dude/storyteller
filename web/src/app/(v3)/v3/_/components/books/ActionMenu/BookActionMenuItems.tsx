@@ -42,7 +42,6 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-
 type Mode = "single" | "bulk"
 
 // action data emitted by the hook. every book-action surface renders it through

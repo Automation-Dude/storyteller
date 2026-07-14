@@ -72,7 +72,6 @@ import {
 } from "@/shelves"
 import { getCoverUrl, useListStatusesQuery } from "@/store/api"
 
-
 // the advanced-editor field picker, derived from the registry so it can never
 // drift out of sync: every field grouped by its own `group`, in this order.
 // `search` is excluded (it has the dedicated search box, not a filter chip).
@@ -680,13 +679,13 @@ function LogicalBlockEditor({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() =>
-            { handleAddNode({
+          onClick={() => {
+            handleAddNode({
               type: "condition",
               field: "title",
               operator: "contains",
-            }); }
-          }
+            })
+          }}
         >
           <icon.Plus className="size-3" />
           Add condition

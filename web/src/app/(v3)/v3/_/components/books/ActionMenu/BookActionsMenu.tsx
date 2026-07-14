@@ -14,7 +14,6 @@ import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
 import * as icon from "@/icons"
 
-
 import {
   ActionEntryList,
   type BookActionEntry,
@@ -89,7 +88,10 @@ export function BookActionsMenu({
             </TooltipButton>
           }
         />
-        <FilterableMenuContent align="end" searchPlaceholder={t.plain("search")}>
+        <FilterableMenuContent
+          align="end"
+          searchPlaceholder={t.plain("search")}
+        >
           <ActionEntryList entries={[...leading, ...entries]} />
         </FilterableMenuContent>
       </FilterableMenu>

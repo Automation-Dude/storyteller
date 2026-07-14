@@ -190,7 +190,9 @@ export async function addCreatorsToBooks(
     if (missing.length) {
       created = await tr
         .insertInto("creator")
-        .values(missing.map((c) => ({ name: c.name, fileAs: c.fileAs ?? c.name })))
+        .values(
+          missing.map((c) => ({ name: c.name, fileAs: c.fileAs ?? c.name })),
+        )
         .returning(["uuid as uuid"])
         .execute()
     }

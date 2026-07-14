@@ -12,7 +12,6 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
 import { RelationChipEditor } from "./RelationChipEditor"
 import { RelationEditMenu } from "./relation-picker/RelationEditMenu"

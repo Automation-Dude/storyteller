@@ -77,7 +77,12 @@ export function useGridNavigation({
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
   // read callbacks at event time so the key handler never needs re-subscribing
-  const cbRef = useRef({ onActivate, onActiveChange, scrollToIndex, initialIndex })
+  const cbRef = useRef({
+    onActivate,
+    onActiveChange,
+    scrollToIndex,
+    initialIndex,
+  })
   cbRef.current = { onActivate, onActiveChange, scrollToIndex, initialIndex }
 
   // clamp when the collection shrinks (facet switch, filter change)
@@ -123,7 +128,9 @@ export function useGridNavigation({
         if (!isNavKey(event.key)) return
         event.preventDefault()
         const init = cbRef.current.initialIndex?.() ?? 0
-        move(event.key === "End" ? itemCount - 1 : event.key === "Home" ? 0 : init)
+        move(
+          event.key === "End" ? itemCount - 1 : event.key === "Home" ? 0 : init,
+        )
         return
       }
 

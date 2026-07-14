@@ -132,9 +132,7 @@ export async function addBooksToSeries(
             featured: relation.featured,
           })),
         )
-        .onConflict((oc) =>
-          oc.columns(["bookUuid", "seriesUuid"]).doNothing(),
-        )
+        .onConflict((oc) => oc.columns(["bookUuid", "seriesUuid"]).doNothing())
         .execute()
     }
   })

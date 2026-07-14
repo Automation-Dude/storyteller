@@ -36,7 +36,6 @@ import {
 import * as icon from "@/icons"
 import { useListStatusesQuery } from "@/store/api"
 
-
 import { DetailDisplayPreview, GridCoverPreview } from "./cover-style-preview"
 import {
   type PreferencesFormType,

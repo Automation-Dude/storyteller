@@ -44,7 +44,11 @@ export function useRelationEditActions(
     // fixed MARC role.
     const creatorRole = (role: Role): RelationEditActions => ({
       add: (books, item) => {
-        void addCreators({ creators: [{ uuid: item.uuid as UUID }], books, role })
+        void addCreators({
+          creators: [{ uuid: item.uuid as UUID }],
+          books,
+          role,
+        })
       },
       remove: (books, uuid) => {
         void removeCreators({ creators: [uuid], books, role })

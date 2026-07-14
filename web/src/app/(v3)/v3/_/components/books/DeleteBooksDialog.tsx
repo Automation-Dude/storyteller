@@ -74,8 +74,8 @@ export function DeleteBooksDialog({
               </>
             ) : (
               <>
-                Are you sure you want to delete these{" "}
-                <strong>{count}</strong> books?
+                Are you sure you want to delete these <strong>{count}</strong>{" "}
+                books?
               </>
             )}
           </p>

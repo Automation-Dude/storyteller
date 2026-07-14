@@ -560,7 +560,10 @@ export async function getShelfBooks(
   // any other stored orderBy is a registry sort field; compile it the same way
   // the shelf page's live sortField does (handles asset / user / alignment
   // fields that aren't plain book columns).
-  query = query.orderBy(buildSortExpression(orderBy, { userId }), orderDirection)
+  query = query.orderBy(
+    buildSortExpression(orderBy, { userId }),
+    orderDirection,
+  )
 
   return await query.execute()
 }

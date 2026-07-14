@@ -16,7 +16,8 @@ import { useUpdateBookMutation } from "@/store/api"
 // hex <-> JsColor; palettes are stored as {r,g,b}, but the native color input
 // and swatch styles speak hex
 function rgbToHex({ r, g, b }: JsColor): string {
-  const h = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0")
+  const h = (n: number) =>
+    Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0")
   return `#${h(r)}${h(g)}${h(b)}`
 }
 
@@ -58,7 +59,11 @@ function formatPalettes(
         label: "Audiobook",
         colors: book.audiobook?.coverColors,
       },
-      { key: "readaloud", label: "Read-along", colors: book.readaloud?.coverColors },
+      {
+        key: "readaloud",
+        label: "Read-along",
+        colors: book.readaloud?.coverColors,
+      },
     ] as const
   )
     .filter((f): f is typeof f & { colors: JsColor[] } => !!f.colors?.length)
@@ -114,8 +119,7 @@ export function CoverColorsEditor({ book }: { book: BookWithRelations }) {
       copy.unshift(picked)
       return copy
     })
-  const add = () =>
-    setDraft((d) => [...d, d[0] ?? { r: 136, g: 136, b: 136 }])
+  const add = () => setDraft((d) => [...d, d[0] ?? { r: 136, g: 136, b: 136 }])
 
   const save = async () => {
     const res = await updateBook({

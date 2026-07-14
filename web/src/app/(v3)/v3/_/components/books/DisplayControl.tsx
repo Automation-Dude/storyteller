@@ -69,9 +69,7 @@ export function DisplayControl({
   const toggleField = (field: DisplayField) => {
     const base = displayOverrides ?? currentFields
     onDisplayOverridesChange(
-      base.includes(field)
-        ? base.filter((f) => f !== field)
-        : [...base, field],
+      base.includes(field) ? base.filter((f) => f !== field) : [...base, field],
     )
   }
 
@@ -272,8 +270,7 @@ function IntensitySubmenu({ intensity }: { intensity: number }) {
             })
           }}
         >
-          {pct}%
-          {current === pct && <icon.Check className="ml-auto" />}
+          {pct}%{current === pct && <icon.Check className="ml-auto" />}
         </FilterableMenuItem>
       ))}
     </>
@@ -288,9 +285,21 @@ function CoverTypeSubmenu({
   onChange: (v: string) => void
 }) {
   const options = [
-    { id: "auto", label: "Double cover", icon: <icon.Readaloud className="size-4" /> },
-    { id: "ebook", label: "Ebook cover", icon: <icon.Book className="size-4" /> },
-    { id: "audiobook", label: "Audiobook cover", icon: <icon.Audiobook className="size-4" /> },
+    {
+      id: "auto",
+      label: "Double cover",
+      icon: <icon.Readaloud className="size-4" />,
+    },
+    {
+      id: "ebook",
+      label: "Ebook cover",
+      icon: <icon.Book className="size-4" />,
+    },
+    {
+      id: "audiobook",
+      label: "Audiobook cover",
+      icon: <icon.Audiobook className="size-4" />,
+    },
   ]
 
   return (

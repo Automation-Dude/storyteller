@@ -12,7 +12,6 @@ import {
   useRelationItems,
 } from "@/app/(v3)/v3/_/hooks/use-relation-items"
 
-
 // a row's selection state, rendered as a trailing icon. what "primary" and
 // "secondary" mean is up to the caller (include/exclude, all/some, selected).
 export type RelationRowState = "primary" | "secondary" | "none"
@@ -50,7 +49,10 @@ export function RelationSelectList({
   onSelect: (item: RelationItem) => void
   renderTrailing?: (state: RelationRowState) => ReactNode
   filter?: (item: RelationItem) => boolean
-  create?: { label: (query: string) => string; onCreate: (query: string) => void }
+  create?: {
+    label: (query: string) => string
+    onCreate: (query: string) => void
+  }
   footer?: ReactNode
   emptyText?: string
 }) {

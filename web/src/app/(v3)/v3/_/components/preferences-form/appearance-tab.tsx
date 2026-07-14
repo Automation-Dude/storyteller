@@ -153,9 +153,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
                 <Field orientation="horizontal">
                   <div className="flex flex-col gap-1">
                     <FieldLabel>{t("motion.panelLabel")}</FieldLabel>
-                    <FieldDescription>
-                      {t("motion.panelHint")}
-                    </FieldDescription>
+                    <FieldDescription>{t("motion.panelHint")}</FieldDescription>
                   </div>
                   <Switch
                     checked={field.value}

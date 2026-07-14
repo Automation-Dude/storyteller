@@ -1,7 +1,6 @@
 import { type VariantProps, cva } from "class-variance-authority"
 import { type ComponentType, type SVGProps } from "react"
 
-
 import { cn } from "@/cn"
 
 export const iconVariants = cva("size-4 shrink-0", {

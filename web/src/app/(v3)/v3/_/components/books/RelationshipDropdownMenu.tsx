@@ -548,7 +548,9 @@ function NumberRangeEditor({
               }}
             >
               <span className="min-w-0 flex-1 truncate">{p.label}</span>
-              {active && <ICheck.base className="text-primary ml-auto h-4 w-4" />}
+              {active && (
+                <ICheck.base className="text-primary ml-auto h-4 w-4" />
+              )}
             </FilterableMenuItem>
           )
         })}

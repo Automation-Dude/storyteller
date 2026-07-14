@@ -305,10 +305,7 @@ function useMenuSurface({
     // exit back to the parent menu (mirror of entering). from the search input
     // only when the caret is already at the start, so the key still moves it.
     if (event.key === outwardKey && onExit) {
-      if (
-        inInput &&
-        !(input.selectionStart === 0 && input.selectionEnd === 0)
-      )
+      if (inInput && !(input.selectionStart === 0 && input.selectionEnd === 0))
         return
       event.preventDefault()
       onExit()
@@ -835,7 +832,10 @@ export function VirtualizedFilterableMenuItems<T>({
   // keep the menu open after a selection (multi/tri-state pickers). default: keep
   closeOnSelect?: boolean
   // a trailing "create <query>" row, shown when the query has no exact match
-  create?: { label: (query: string) => string; onCreate: (query: string) => void }
+  create?: {
+    label: (query: string) => string
+    onCreate: (query: string) => void
+  }
   footer?: ReactNode
   loading?: boolean
   emptyText?: string

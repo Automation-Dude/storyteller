@@ -2,8 +2,15 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { booksQuery } from "@/database/books"
-import { buildFilterExpression, buildSortExpression } from "@/database/shelfFilter"
-import { type ShelfFilter, type ShelfOrderBy, shelfFilterSchema } from "@/shelves"
+import {
+  buildFilterExpression,
+  buildSortExpression,
+} from "@/database/shelfFilter"
+import {
+  type ShelfFilter,
+  type ShelfOrderBy,
+  shelfFilterSchema,
+} from "@/shelves"
 
 export const dynamic = "force-dynamic"
 

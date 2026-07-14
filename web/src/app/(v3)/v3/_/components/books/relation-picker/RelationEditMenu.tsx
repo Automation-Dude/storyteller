@@ -75,7 +75,10 @@ export function RelationEditMenu({
           {triggerProps.label}
         </FilterableMenuTrigger>
       )}
-      <FilterableMenuContent searchPlaceholder={searchPlaceholder} align="start">
+      <FilterableMenuContent
+        searchPlaceholder={searchPlaceholder}
+        align="start"
+      >
         <RelationEditList
           source={source}
           bookUuids={bookUuids}

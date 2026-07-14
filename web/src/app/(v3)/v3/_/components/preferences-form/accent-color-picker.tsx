@@ -4,7 +4,6 @@ import { cn } from "@v3/_/lib/utils"
 
 import * as icon from "@/icons"
 
-
 // the visual for the "default" swatch (null value) — storyteller orange
 const DEFAULT_SWATCH = "#eb722f"
 
