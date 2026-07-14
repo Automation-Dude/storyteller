@@ -13,15 +13,18 @@ import {
 } from "@/database/shelfFilter"
 import {
   FIELD_REGISTRY,
+  FIELDS,
   MEDIA_TYPE_VALUES,
+  getFieldDef,
+  getFieldType,
+} from "@/fields"
+import {
   type ShelfFilterField,
   type ShelfFilterNode,
-  assertFieldGroupsCoverRegistry,
   createAndBlock,
   createEmptyCondition,
   createNotBlock,
   createOrBlock,
-  getFieldType,
   getOperatorsForField,
   isLogicalBlock,
   operatorRequiresArrayValue,
@@ -33,11 +36,7 @@ import {
   shelfFilterOperatorSchema,
   shelfFilterValueSchema,
 } from "@/shelves"
-import {
-  type SortField,
-  assertSortFieldsMatchRegistry,
-  makeBookComparator,
-} from "@/sort"
+import { SORTABLE_FIELDS, type SortField, makeBookComparator } from "@/sort"
 import { type UUID } from "@/uuid"
 
 // ---------------------------------------------------------------------------
@@ -1030,17 +1029,37 @@ void describe("buildSortExpression sql", () => {
 
 void describe("SORTABLE_FIELDS / registry sync", () => {
   void it("stays in sync with FIELD_REGISTRY sortable flags", () => {
-    assert.doesNotThrow(() => {
-      assertSortFieldsMatchRegistry()
-    })
+    const registrySortable = Object.entries(FIELD_REGISTRY)
+      .filter(([, def]) => def.sortable)
+      .map(([field]) => field)
+      .sort()
+    assert.deepEqual([...SORTABLE_FIELDS].sort(), registrySortable)
   })
 })
 
-void describe("FIELD_GROUPS / registry coverage", () => {
-  void it("covers every ShelfFilterField exactly once", () => {
-    assert.doesNotThrow(() => {
-      assertFieldGroupsCoverRegistry()
-    })
+// the advanced-editor field picker (ShelfFilterEditor) groups FIELDS by their
+// registry `group`, iterating this known set of groups. a field whose group
+// isn't one of these would silently drop out of the picker, so guard it here.
+void describe("field picker / registry coverage", () => {
+  const PICKER_GROUPS = new Set([
+    "text",
+    "dates",
+    "review",
+    "relations",
+    "creators",
+    "media",
+    "alignment",
+  ])
+
+  void it("assigns every filterable field (except search) to a shown group", () => {
+    for (const field of FIELDS) {
+      if (field === "search") continue
+      const { group } = getFieldDef(field)
+      assert.ok(
+        PICKER_GROUPS.has(group),
+        `field "${field}" has group "${group}" not rendered by the picker`,
+      )
+    }
   })
 })
 

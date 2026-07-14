@@ -29,6 +29,7 @@ import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
   type BookView,
   selectBookView,
+  selectGridDisplayFields,
   selectListVisibleColumns,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
@@ -44,10 +45,18 @@ export default function BookPage({
 
   const bookView = useAppSelector(selectBookView)
   const listVisibleColumns = useAppSelector(selectListVisibleColumns)
+  const gridDisplayFields = useAppSelector(selectGridDisplayFields)
 
   const handleBookViewChange = useCallback(
     (view: BookView) => {
       dispatch(uiSettingsSlice.actions.setBookView(view))
+    },
+    [dispatch],
+  )
+
+  const handleDisplayFieldsChange = useCallback(
+    (fields: DisplayField[] | null) => {
+      dispatch(uiSettingsSlice.actions.setGridDisplayFields(fields))
     },
     [dispatch],
   )
@@ -78,7 +87,6 @@ export default function BookPage({
     setUserFilter,
     sort,
     setSort,
-    displayOverrides,
     isSearching,
     deferredSearch,
     activeFilterCount,
@@ -104,9 +112,9 @@ export default function BookPage({
         sort.field,
         effectiveFilter,
         displayContext,
-        displayOverrides,
+        gridDisplayFields,
       ),
-    [sort.field, effectiveFilter, displayContext, displayOverrides],
+    [sort.field, effectiveFilter, displayContext, gridDisplayFields],
   )
 
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -226,6 +234,9 @@ export default function BookPage({
         controller={controller}
         sortOptions={sortFieldOptions}
         onSortChange={setSort}
+        displayOverrides={gridDisplayFields}
+        onDisplayOverridesChange={handleDisplayFieldsChange}
+        currentFields={displayFields}
         bookView={bookView}
         onBookViewChange={handleBookViewChange}
         advancedOpen={advancedVisible}

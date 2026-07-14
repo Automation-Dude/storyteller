@@ -1,4 +1,5 @@
 import { useHotkeys } from "@tanstack/react-hotkeys"
+import { useMemo } from "react"
 
 import {
   FilterableMenu,
@@ -6,6 +7,7 @@ import {
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import { type FieldGroupKey, getFieldDef } from "@/fields"
 import * as icon from "@/icons"
 import { FieldIcon } from "@/icons"
 
@@ -48,6 +50,27 @@ export function SortControl({
   ])
   const t = useTranslation("BooksPage")
 
+  const label = options.find((o) => o.value === field)?.label ?? field
+
+  const grouped = useMemo(() => {
+    return options.reduce(
+      (acc, option) => {
+        const fieldDef = getFieldDef(option.value)
+        const group = fieldDef.group
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!acc[group]) {
+          acc[group] = []
+        }
+        acc[group].push({ ...option, defaultSort: fieldDef.defaultSort })
+        return acc
+      },
+      {} as Record<
+        FieldGroupKey,
+        { value: SortField; label: string; defaultSort?: "asc" | "desc" }[]
+      >,
+    )
+  }, [options])
+
   return (
     <div className="flex items-center">
       <FilterableMenu
@@ -57,42 +80,76 @@ export function SortControl({
           <TooltipButton
             className="items-center rounded-l-lg rounded-r-none border-r-0 pr-1 pl-2 text-xs font-normal"
             variant="outline"
-            tooltip={t("sortBy.tooltip")}
-            aria-label={t.plain("sortBy.tooltip")}
+            tooltip={label}
+            aria-label={label}
             shortcut={[sortHotKey]}
           >
             <span className="flex items-center gap-1.5">
               <FieldIcon field={field} className="h-3.5 w-3.5" />
-              <span className="sr-only">
-                {options.find((o) => o.value === field)?.label ?? field}
-              </span>
+              <span className="sr-only">{label}</span>
             </span>
           </TooltipButton>
         }
         searchable
         searchPlaceholder={t.plain("sortBy.searchHint")}
       >
-        {options.map((option) => (
-          <FilterableMenuItem
-            key={option.value}
-            icon={<FieldIcon field={option.value} className="size-4" />}
-            textValue={option.label}
-            onSelect={() => {
-              if (option.value === field) {
-                flip()
-              } else {
-                onChange(option.value, "desc")
-              }
-            }}
-          >
-            {option.label}
-            {option.value === field && (
-              <span className="text-muted-foreground text-xs">
-                {direction === "asc" ? "↑" : "↓"}
-              </span>
-            )}
-          </FilterableMenuItem>
-        ))}
+        {Object.entries(grouped).flatMap(([group, options]) =>
+          group !== "alignment" ? (
+            options.map((option) => (
+              <FilterableMenuItem
+                key={option.value}
+                icon={<FieldIcon field={option.value} className="size-4" />}
+                textValue={option.label}
+                closeOnClick={false}
+                onSelect={() => {
+                  if (option.value === field) {
+                    flip()
+                  } else {
+                    onChange(option.value, option.defaultSort ?? "desc")
+                  }
+                }}
+              >
+                {option.label}
+                {option.value === field && (
+                  <span className="text-muted-foreground text-xs">
+                    {direction === "asc" ? "↑" : "↓"}
+                  </span>
+                )}
+              </FilterableMenuItem>
+            ))
+          ) : (
+            <FilterableMenuItem
+              key={group}
+              icon={<icon.AlignLeft className="size-4" />}
+              textValue={group}
+              submenu={options.map((option) => (
+                <FilterableMenuItem
+                  key={option.value}
+                  icon={<FieldIcon field={option.value} className="size-4" />}
+                  textValue={option.label}
+                  onSelect={() => {
+                    if (option.value === field) {
+                      flip()
+                    } else {
+                      onChange(option.value, option.defaultSort ?? "desc")
+                    }
+                  }}
+                  closeOnClick={false}
+                >
+                  {option.label}
+
+                  {option.value === field && (
+                    <span className="text-muted-foreground text-xs">
+                      {direction === "asc" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </FilterableMenuItem>
+              ))}
+            >
+              group
+            </FilterableMenuItem>
+          ),
+        )}
       </FilterableMenu>
       <TooltipButton
         variant="outline"

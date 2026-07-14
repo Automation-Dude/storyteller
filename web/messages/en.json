@@ -357,6 +357,7 @@
       "dates": "Dates",
       "review": "Ratings & Reviews",
       "relations": "Relations",
+      "creators": "Authors / Creators",
       "media": "Media & Size",
       "alignment": "Alignment"
     },
@@ -871,7 +872,9 @@
             "title": "Motion",
             "description": "How the library responds to opening and resizing panels.",
             "label": "Layout animations",
-            "hint": "Slide the detail panel open and glide books to their new spots. When off, panels snap into place instantly."
+            "hint": "Slide the detail panel open and glide books to their new spots. When off, panels snap into place instantly.",
+            "panelLabel": "Slide the detail panel open",
+            "panelHint": "Animate the detail panel opening when you click a book. When off, it appears at full width instantly (dragging the edge still animates)."
           }
         }
       },
@@ -973,7 +976,7 @@
     "settings": "Settings",
     "customize": "Customize sidebar",
     "documentation": "Documentation",
-    "account": "Account",
+    "account": "Account & Preferences",
     "logout": "Logout",
     "theme": "Theme",
     "light": "Light",
@@ -985,8 +988,7 @@
       "nl": "Dutch"
     },
     "switchToClassic": "Switch to classic UI",
-    "switchToNew": "Try new interface",
-    "preferences": "Preferences"
+    "switchToNew": "Try new interface"
   },
   "CommandPalette": {
     "searchPlaceholder": "Search or run a command...",
@@ -1165,7 +1167,8 @@
       "remove": "Remove",
       "select": "Select",
       "deselect": "Deselect",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "selectFolder": "Select folder"
     },
     "states": {
       "saving": "Saving...",
@@ -1206,7 +1209,10 @@
         "mediaType": "Format",
         "review": "My Review",
         "ratingDimension": "Rating Dimension",
-        "search": "Search (any field)"
+        "search": "Search (any field)",
+        "narrators": "Narrators",
+        "translators": "Translators",
+        "alignment": "Alignment"
       },
       "options": {
         "mediaType": {

@@ -13,8 +13,13 @@ import { cn } from "@v3/_/lib/utils"
 
 import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
 import * as icon from "@/icons"
-import { getFieldDef, quickFilterFields } from "@/shelves"
-import { type SortField } from "@/sort"
+import {
+  FieldGroupKey,
+  getFieldDef,
+  QUICK_FILTER_FIELDS,
+  QuickFilterField,
+} from "@/fields"
+import { type DisplayField, type SortField } from "@/sort"
 
 import { DisplayControl } from "./DisplayControl"
 import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
@@ -30,6 +35,12 @@ type BookFiltersProps = {
 
   sortOptions: { value: SortField; label: string }[]
   onSortChange: (field: SortField, direction: "asc" | "desc") => void
+
+  // display fields shown below covers. overrides null = auto; currentFields is
+  // the resolved set (auto or manual) so the menu can seed a toggle from it.
+  displayOverrides: DisplayField[] | null
+  onDisplayOverridesChange: (fields: DisplayField[] | null) => void
+  currentFields: DisplayField[]
 
   bookView?: import("@/store/slices/uiSettingsSlice").BookView
   onBookViewChange?: (
@@ -54,6 +65,9 @@ export function BookFilters({
   className,
   sortOptions,
   onSortChange,
+  displayOverrides,
+  onDisplayOverridesChange,
+  currentFields,
   bookView,
   onBookViewChange,
   advancedOpen = false,
@@ -72,8 +86,6 @@ export function BookFilters({
     conditionsForField,
     setConditionsForField,
     removeField,
-    displayOverrides,
-    setDisplayOverrides,
   } = controller
 
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
@@ -109,7 +121,7 @@ export function BookFilters({
   ])
 
   const shownFields = activeFields
-  const addableFields = useMemo(() => quickFilterFields(), [])
+
   const advancedVisible = advancedOpen || isAdvanced
 
   const hasChips = !!seedLabel || shownFields.length > 0
@@ -135,7 +147,6 @@ export function BookFilters({
           <FilterMenu
             open={filterMenuOpen}
             onOpenChange={setFilterMenuOpen}
-            addableFields={addableFields}
             conditionsForField={conditionsForField}
             setConditionsForField={setConditionsForField}
             advancedVisible={advancedVisible}
@@ -155,7 +166,8 @@ export function BookFilters({
 
         <DisplayControl
           displayOverrides={displayOverrides}
-          onDisplayOverridesChange={setDisplayOverrides}
+          onDisplayOverridesChange={onDisplayOverridesChange}
+          currentFields={currentFields}
           open={displayMenuOpen}
           onOpenChange={setDisplayMenuOpen}
           bookView={bookView}
@@ -196,7 +208,6 @@ export function BookFilters({
 function FilterMenu({
   open,
   onOpenChange,
-  addableFields,
   conditionsForField,
   setConditionsForField,
   advancedVisible,
@@ -205,7 +216,6 @@ function FilterMenu({
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  addableFields: ReturnType<typeof quickFilterFields>
   conditionsForField: BookFiltersController["conditionsForField"]
   setConditionsForField: BookFiltersController["setConditionsForField"]
   advancedVisible: boolean
@@ -214,6 +224,20 @@ function FilterMenu({
 }) {
   const t = useTranslation("BooksPage")
   const tLabel = useTranslation("Common.fields.label")
+
+  const groups = useMemo(() => {
+    return QUICK_FILTER_FIELDS.reduce(
+      (acc, field) => {
+        const group = getFieldDef(field).group
+        if (!acc[group]) {
+          acc[group] = []
+        }
+        acc[group].push(field)
+        return acc
+      },
+      {} as Record<FieldGroupKey, QuickFilterField[]>,
+    )
+  }, [])
 
   return (
     <FilterableMenu
@@ -233,26 +257,58 @@ function FilterMenu({
         </TooltipButton>
       }
     >
-      {addableFields.map((field) => (
-        <FilterableMenuItem
-          key={field}
-          icon={<FieldIcon field={field} className="size-4" />}
-          textValue={tLabel.plain(getFieldDef(field).labelKey as never)}
-          submenu={
-            <FilterEditor
-              field={field}
-              def={getFieldDef(field)}
-              conditions={conditionsForField(field)}
-              onChange={(next) => {
-                setConditionsForField(field, next)
-              }}
-              enabled
-            />
-          }
-        >
-          {tLabel(getFieldDef(field).labelKey as never)}
-        </FilterableMenuItem>
-      ))}
+      {Object.entries(groups).flatMap(([group, fields]) =>
+        group !== "alignment" ? (
+          fields.map((field) => (
+            <FilterableMenuItem
+              key={field}
+              icon={<FieldIcon field={field} className="size-4" />}
+              textValue={tLabel.plain(getFieldDef(field).labelKey as never)}
+              submenu={
+                <FilterEditor
+                  field={field}
+                  def={getFieldDef(field)}
+                  conditions={conditionsForField(field)}
+                  onChange={(next) => {
+                    setConditionsForField(field, next)
+                  }}
+                  enabled
+                />
+              }
+            >
+              {tLabel(getFieldDef(field).labelKey as never)}
+            </FilterableMenuItem>
+          ))
+        ) : (
+          <FilterableMenuItem
+            key={group}
+            icon={<icon.AlignLeft className="size-4" />}
+            textValue={tLabel.plain(group)}
+            submenu={fields.map((field) => (
+              <FilterableMenuItem
+                key={field}
+                icon={<FieldIcon field={field} className="size-4" />}
+                textValue={tLabel.plain(getFieldDef(field).labelKey as never)}
+                submenu={
+                  <FilterEditor
+                    enabled
+                    field={field}
+                    def={getFieldDef(field)}
+                    conditions={conditionsForField(field)}
+                    onChange={(next) => {
+                      setConditionsForField(field, next)
+                    }}
+                  />
+                }
+              >
+                {tLabel(getFieldDef(field).labelKey as never)}
+              </FilterableMenuItem>
+            ))}
+          >
+            {tLabel.plain(group)}
+          </FilterableMenuItem>
+        ),
+      )}
 
       {(onToggleAdvanced || onSaveAsShelf) && (
         <>

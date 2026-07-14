@@ -188,6 +188,9 @@ export function SecondaryText({
       ) : (
         none
       )
+    case "alignmentMissingChapters":
+      // not carried in alignmentSummary (no client column); shows as none.
+      return none
     default: {
       const _exhaustive: never = field
       return null
@@ -209,7 +212,7 @@ export const BookCard = memo(function BookCard({
   onSelectRange,
   onOpenMenu,
   onClick,
-  displayFields = ["authors"],
+  displayFields = ["authors", "title"],
   displayContext,
   handle,
 }: BookCardProps) {
@@ -310,55 +313,60 @@ export const BookCard = memo(function BookCard({
       </div>
 
       <div className="mt-2 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden px-1">
-        {displayFields.map((field) => (
-          <p
-            key={field}
-            className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums"
-          >
-            <SecondaryText book={book} field={field} ctx={displayContext} />
-          </p>
-        ))}
-        {displayFields.includes("authors") && authors.length > 0 && (
-          <p className="text-muted-foreground/80 line-clamp-1 text-xs">
-            {visibleAuthors.map((a, index) => (
-              <Fragment key={a.uuid}>
-                <V3Link
-                  className="hover:text-tinted-strong relative z-20 hover:underline"
-                  prefetch={false}
-                  href={`/authors?item=${a.uuid}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                >
-                  {a.name}
-                </V3Link>
-                {index < visibleAuthors.length - 1 && ", "}
-              </Fragment>
-            ))}
-            {hiddenAuthorCount > 0 && ` +${hiddenAuthorCount}`}
-          </p>
-        )}
-        <V3Link
-          href={`/books/${book.uuid}`}
-          prefetch={false}
-          className={cn(!onClick && "big-link")}
-        >
-          <h3 className="group-hover:text-tinted-strong font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
-            {book.title}
-          </h3>
-        </V3Link>
+        {displayFields.map((field) => {
+          // title and authors get their own rich (linked) markup; every other
+          // field renders through SecondaryText. rendered in selection order.
+          if (field === "title") {
+            return (
+              <V3Link
+                key="title"
+                href={`/books/${book.uuid}`}
+                prefetch={false}
+                className={cn(!onClick && "big-link")}
+              >
+                <h3 className="group-hover:text-tinted-strong font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
+                  {book.title}
+                </h3>
+              </V3Link>
+            )
+          }
 
-        {/* <div className="flex items-center gap-1">
-          {book.ebook?.coverColors?.map((color) => (
-            <div
-              key={color.toString()}
-              className="size-4 rounded-full"
-              style={{
-                backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`,
-              }}
-            />
-          ))}
-        </div> */}
+          if (field === "authors") {
+            if (authors.length === 0) return null
+            return (
+              <p
+                key="authors"
+                className="text-muted-foreground/80 line-clamp-1 text-xs"
+              >
+                {visibleAuthors.map((a, index) => (
+                  <Fragment key={a.uuid}>
+                    <V3Link
+                      className="hover:text-tinted-strong relative z-20 hover:underline"
+                      prefetch={false}
+                      href={`/authors?item=${a.uuid}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                      }}
+                    >
+                      {a.name}
+                    </V3Link>
+                    {index < visibleAuthors.length - 1 && ", "}
+                  </Fragment>
+                ))}
+                {hiddenAuthorCount > 0 && ` +${hiddenAuthorCount}`}
+              </p>
+            )
+          }
+
+          return (
+            <p
+              key={field}
+              className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums"
+            >
+              <SecondaryText book={book} field={field} ctx={displayContext} />
+            </p>
+          )
+        })}
       </div>
     </>
   )

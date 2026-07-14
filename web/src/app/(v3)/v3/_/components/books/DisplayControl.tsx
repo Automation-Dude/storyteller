@@ -7,11 +7,10 @@ import {
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
-import { type BookFiltersController } from "@/app/(v3)/v3/_/hooks/use-book-filters"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
-import { DISPLAY_FIELDS } from "@/sort"
+import { DISPLAY_FIELDS, type DisplayField } from "@/sort"
 import { useSetUserSettingMutation } from "@/store/api"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
 
@@ -22,13 +21,19 @@ const displayHotKey = "Shift+D"
 export function DisplayControl({
   displayOverrides,
   onDisplayOverridesChange,
+  currentFields,
   open,
   onOpenChange,
   bookView,
   onBookViewChange,
 }: {
-  displayOverrides: BookFiltersController["displayOverrides"]
-  onDisplayOverridesChange: BookFiltersController["setDisplayOverrides"]
+  // null = auto (derived from sort/filter); an explicit array is the user's own
+  // choice (an empty array shows nothing under the cover).
+  displayOverrides: DisplayField[] | null
+  onDisplayOverridesChange: (fields: DisplayField[] | null) => void
+  // the fields actually being shown right now (the resolved auto/manual set), so
+  // toggling out of auto starts from what the user already sees.
+  currentFields: DisplayField[]
   open: boolean
   onOpenChange: (open: boolean) => void
   bookView?: BookView
@@ -49,6 +54,19 @@ export function DisplayControl({
       },
     },
   ])
+
+  // the set the checkmarks reflect: the explicit selection, or (in auto mode)
+  // whatever auto currently resolves to.
+  const shown = displayOverrides ?? currentFields
+
+  const toggleField = (field: DisplayField) => {
+    const base = displayOverrides ?? currentFields
+    onDisplayOverridesChange(
+      base.includes(field)
+        ? base.filter((f) => f !== field)
+        : [...base, field],
+    )
+  }
 
   return (
     <FilterableMenu
@@ -187,7 +205,7 @@ export function DisplayControl({
         closeOnClick={false}
         textValue={t.plain("displayOptions.auto")}
         onSelect={() => {
-          void onDisplayOverridesChange(null)
+          onDisplayOverridesChange(null)
         }}
       >
         {t("displayOptions.auto")}
@@ -200,14 +218,12 @@ export function DisplayControl({
           closeOnClick={false}
           textValue={tLabels(field)}
           onSelect={() => {
-            void onDisplayOverridesChange([field])
+            toggleField(field)
           }}
         >
           <FieldIcon field={field} className="mr-2" />
           {tLabels(field)}
-          {displayOverrides?.includes(field) && (
-            <icon.Check className="ml-auto" />
-          )}
+          {shown.includes(field) && <icon.Check className="ml-auto" />}
         </FilterableMenuItem>
       ))}
     </FilterableMenu>

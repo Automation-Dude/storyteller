@@ -12,7 +12,8 @@ import { type UUID } from "@/uuid"
 
 // re-exported so the api layer + components can import the shelf vocabulary from
 // the db module they already use.
-export { HomeSectionKind, ShelfOrderBy } from "@/shelves"
+export { HomeSectionKind, SHELF_ORDER_BY_FIELDS } from "@/shelves"
+export type { ShelfOrderBy } from "@/shelves"
 
 import { type BookWithRelations, booksQuery } from "./books"
 import { db } from "./connection"
@@ -532,23 +533,34 @@ export async function getShelfBooks(
     return await query.execute()
   }
 
-  const orderBy = opts?.orderBy ?? shelfOrderBy ?? "createdAt"
+  const rawOrderBy = opts?.orderBy ?? shelfOrderBy ?? "createdAt"
+  // legacy shelves stored the removed aggregate "rating"; it now maps to the
+  // user's own rating (mirrors the shelf-filter condition preprocess).
+  const orderBy: ShelfOrderBy =
+    (rawOrderBy as string) === "rating" ? "userRating" : rawOrderBy
 
-  if (orderBy === "position" && hasManualBooks) {
-    query = query.orderBy(
-      (eb) =>
-        eb
-          .case()
-          .when("book.uuid", "in", manualBookUuids)
-          .then(0)
-          .else(1)
-          .end(),
-      "asc",
-    )
+  if (orderBy === "position") {
+    if (hasManualBooks) {
+      query = query.orderBy(
+        (eb) =>
+          eb
+            .case()
+            .when("book.uuid", "in", manualBookUuids)
+            .then(0)
+            .else(1)
+            .end(),
+        "asc",
+      )
+    }
+    // manual "position" falls back to createdAt for the secondary/global order.
+    query = query.orderBy("book.createdAt", orderDirection)
+    return await query.execute()
   }
 
-  const dbOrderBy = orderBy === "position" ? "createdAt" : orderBy
-  query = query.orderBy(`book.${dbOrderBy}`, orderDirection)
+  // any other stored orderBy is a registry sort field; compile it the same way
+  // the shelf page's live sortField does (handles asset / user / alignment
+  // fields that aren't plain book columns).
+  query = query.orderBy(buildSortExpression(orderBy, { userId }), orderDirection)
 
   return await query.execute()
 }

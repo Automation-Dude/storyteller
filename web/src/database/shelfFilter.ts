@@ -6,16 +6,14 @@ import {
 } from "kysely"
 
 import { type Role } from "@/components/books/edit/marcRelators"
+import { ALIGNMENT_GRADES, type AssetFormat, getFieldType } from "@/fields"
 import {
-  ALIGNMENT_GRADES,
-  type AssetFormat,
   type ShelfFilter,
   type ShelfFilterCondition,
   type ShelfFilterField,
   type ShelfFilterNode,
   type ShelfFilterOperator,
   type ShelfFilterValue,
-  getFieldType,
 } from "@/shelves"
 import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
@@ -331,6 +329,9 @@ function buildIsEmptyExpression(
     case "alignmentMutedChapters":
       return eb(latestReportColumn("muted_chapters"), "is", null)
 
+    case "alignmentMissingChapters":
+      return eb(latestReportColumn("missing_chapters"), "is", null)
+
     case "alignedAt":
       return eb("book.alignedAt", "is", null)
 
@@ -546,6 +547,10 @@ function buildIsEmptyExpression(
           ),
         ),
       ])
+
+    default: {
+      const _exhaustive: never = field
+    }
   }
 }
 
@@ -1088,17 +1093,13 @@ export function buildBookSearchExpression(
   ])
 }
 
-// the order-by expression for a sortable field. raw sql so it bypasses the
-// camelCase plugin (hence snake_case columns); userRating and seriesPosition are
-// correlated scalar subqueries scoped to the user / context series. interpolated
-// values (${...}) are bound parameters, not string-concatenated sql.
 export function buildSortExpression(
   field: SortField,
   ctx?: { userId?: UUID; seriesContext?: UUID | null },
 ) {
   switch (field) {
     case "title":
-      return sql`book.title`
+      return sql`book.title collate nocase`
     case "createdAt":
       return sql`book.created_at`
     case "updatedAt":
@@ -1112,13 +1113,15 @@ export function buildSortExpression(
         ? sql`(select updated_at from position where book_uuid = book.uuid and user_id = ${ctx.userId} limit 1)`
         : sql`(select updated_at from position where book_uuid = book.uuid limit 1)`
     case "language":
-      return sql`book.language`
+      return sql`book.language collate nocase`
     case "alignmentScore":
       return latestReportColumn("score")
     case "alignmentMissingSentences":
       return latestReportColumn("missing_sentences")
     case "alignmentMutedChapters":
       return latestReportColumn("muted_chapters")
+    case "alignmentMissingChapters":
+      return latestReportColumn("missing_chapters")
     case "alignmentGrade":
       return sql`case ${latestReportColumn("grade")} ${sql.join(
         ALIGNMENT_GRADES.map(
@@ -1130,6 +1133,8 @@ export function buildSortExpression(
     case "duration":
     case "fileSize":
       return assetNumericExpr(field)
+    case "authors":
+      return sql`(select creator.name from book_to_creator inner join creator on book_to_creator.creator_uuid = creator.uuid where book_to_creator.book_uuid = book.uuid and book_to_creator.role = 'aut' limit 1) collate nocase`
     case "userRating":
       return ctx?.userId
         ? sql`(select rating from user_book_rating where book_uuid = book.uuid and user_id = ${ctx.userId} limit 1)`
@@ -1138,17 +1143,13 @@ export function buildSortExpression(
       return ctx?.seriesContext
         ? sql`(select position from book_to_series where book_uuid = book.uuid and series_uuid = ${ctx.seriesContext} limit 1)`
         : sql`null`
+    default: {
+      const _exhaustive: never = field
+      return sql.lit(true)
+    }
   }
 }
 
-// resolves the effective value for pageCount, duration, and fileSize by looking
-// at the asset tables with appropriate fallback logic:
-//
-// - pageCount: ebook page count, fallback to readaloud, fallback to book
-// - duration: audiobook duration, fallback to readaloud, fallback to book
-// - fileSize: max across ebook, audiobook, and readaloud (not ideal since
-//   ideally you'd filter by a specific format, but good enough until we add
-//   per-format filtering)
 function assetNumericExpr(
   field: "fileSize" | "duration" | "pageCount",
 ): ReturnType<typeof sql<number>> {

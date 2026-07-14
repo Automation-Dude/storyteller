@@ -14,12 +14,20 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { type BookWithRelations } from "@/database/books"
-import { type DisplayField, type SortDirection, type SortField } from "@/sort"
+import {
+  type DisplayField,
+  GENERAL_SORT_FIELDS,
+  type SortContext,
+  type SortDirection,
+  type SortField,
+  deriveDisplayFields,
+} from "@/sort"
 import { useListShelfBooksQuery, useListUserShelvesQuery } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
   type BookView,
   selectBookView,
+  selectGridDisplayFields,
   selectListVisibleColumns,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
@@ -28,17 +36,31 @@ import { type UUID } from "@/uuid"
 
 export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
   const t = useTranslation("ShelfPage")
+  const tLabel = useTranslation("Common.fields.label")
   const dispatch = useAppDispatch()
   const { isSelecting, toggleSelection } = useBookSelection()
 
   const bookView = useAppSelector(selectBookView)
   const listVisibleColumns = useAppSelector(selectListVisibleColumns)
+  const gridDisplayFields = useAppSelector(selectGridDisplayFields)
 
   const handleBookViewChange = useCallback(
     (view: BookView) => {
       dispatch(uiSettingsSlice.actions.setBookView(view))
     },
     [dispatch],
+  )
+
+  const handleDisplayFieldsChange = useCallback(
+    (fields: DisplayField[] | null) => {
+      dispatch(uiSettingsSlice.actions.setGridDisplayFields(fields))
+    },
+    [dispatch],
+  )
+
+  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(
+    () => GENERAL_SORT_FIELDS.map((value) => ({ value, label: tLabel(value) })),
+    [tLabel],
   )
 
   const handleListColumnsChange = useCallback(
@@ -89,6 +111,18 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     [setSort],
   )
 
+  const displayContext: SortContext = useMemo(() => ({ seriesUuid: null }), [])
+  const displayFields = useMemo(
+    () =>
+      deriveDisplayFields(
+        sort.field,
+        effectiveFilter,
+        displayContext,
+        gridDisplayFields,
+      ),
+    [sort.field, effectiveFilter, displayContext, gridDisplayFields],
+  )
+
   const bookUuids = useMemo(() => books.map((b) => b.uuid), [books])
 
   const selectedBook = useMemo(
@@ -129,6 +163,11 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
       <BookFilters
         className="pt-1"
         controller={controller}
+        sortOptions={sortFieldOptions}
+        onSortChange={setSort}
+        displayOverrides={gridDisplayFields}
+        onDisplayOverridesChange={handleDisplayFieldsChange}
+        currentFields={displayFields}
         bookView={bookView}
         onBookViewChange={handleBookViewChange}
       />
@@ -153,6 +192,8 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
             selectedBookUuid={selectedBookUuid}
             onBookClick={handleBookClick}
             onColumnClick={handleColumnClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
             visibleColumns={listVisibleColumns}
             onVisibleColumnsChange={handleListColumnsChange}
             sortField={sort.field}
@@ -177,6 +218,8 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
             hasActiveFilters={activeFilterCount > 0}
             selectedBookUuid={selectedBookUuid}
             onBookClick={handleBookClick}
+            displayFields={displayFields}
+            displayContext={displayContext}
           />
         )}
 

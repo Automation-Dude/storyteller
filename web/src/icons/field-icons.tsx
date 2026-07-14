@@ -32,6 +32,8 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   collections: { base: icon.Folders },
   series: { base: icon.Books },
   creators: { base: icon.Users },
+  narrators: { base: icon.Microphone },
+  translators: { base: icon.Language },
   authors: { base: icon.User },
   mediaType: { base: icon.BookAlt },
   userRating: { base: icon.Star },

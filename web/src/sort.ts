@@ -1,74 +1,34 @@
-// shared sort vocabulary for book lists. server (getBooks / buildSortExpression)
-// and client (filterBooksClientSide) both import this so the set of sortable
-// fields and the ordering semantics stay in one place. SortField is a subset of
-// the filterable field vocabulary in shelves.ts plus the context-only
-// seriesPosition.
-
 import { type BookWithRelations } from "@/database/books"
-import {
-  ALIGNMENT_GRADES,
-  registrySortableFields,
-  ShelfFilterNode,
-} from "@/shelves"
+import { ALIGNMENT_GRADES, FIELD_REGISTRY } from "@/fields"
+import { type ShelfFilterNode } from "@/shelves"
 import { type UUID } from "@/uuid"
 
-// kept as an explicit tuple (not derived) so SortField stays a narrow literal
-// union the sort switches below + buildSortExpression can exhaustively cover.
-// the field registry in shelves.ts is the conceptual source of truth; the
-// assertSortFieldsMatchRegistry guard (run in tests) keeps the two in sync.
-export const SORTABLE_FIELDS = [
-  "title",
-  "createdAt",
-  "updatedAt",
-  "publicationDate",
-  "userRating",
-  "pageCount",
-  "duration",
-  "fileSize",
-  "language",
-  "alignedAt",
-  "lastRead",
-  "alignmentScore",
-  "alignmentGrade",
-  "alignmentMissingSentences",
-  "alignmentMutedChapters",
-  "seriesPosition",
-] as const
+import { type AcceptedKeys } from "./app/(v3)/v3/_/lib/mapping"
 
-// fails fast if a field's `sortable` flag in FIELD_REGISTRY drifts from the
-// tuple above (seriesPosition is the one allowed extra - it is not a filter
-// field). called from the unit tests.
-export function assertSortFieldsMatchRegistry(): void {
-  const fromTuple = new Set<string>(
-    SORTABLE_FIELDS.filter((f) => f !== "seriesPosition"),
-  )
-  const fromRegistry = new Set<string>(registrySortableFields())
-  const missing = [...fromRegistry].filter((f) => !fromTuple.has(f))
-  const extra = [...fromTuple].filter((f) => !fromRegistry.has(f))
-  if (missing.length || extra.length) {
-    throw new Error(
-      `SORTABLE_FIELDS out of sync with FIELD_REGISTRY: missing [${missing.join(", ")}] extra [${extra.join(", ")}]`,
-    )
-  }
-}
+// the registry-backed sortable fields. seriesPosition is a virtual,
+// context-scoped sort field (series page / active series filter) that isn't in
+// the registry, so it's unioned in separately below.
+export type RegistrySortField = AcceptedKeys<
+  typeof FIELD_REGISTRY,
+  { sortable: true }
+>
+export type SortField = RegistrySortField | "seriesPosition"
 
-// best-to-worst rank so a descending sort surfaces the strongest alignments
-// first, consistent with score. derived from ALIGNMENT_GRADES (which is ordered
-// best-first) so the ordering has a single source: the first grade gets the
-// highest rank, the last gets 1.
+export const SORTABLE_FIELDS = Object.entries(FIELD_REGISTRY)
+  .filter(([_f, p]) => p.sortable)
+  .map(([f]) => f) as RegistrySortField[]
+
 export const GRADE_RANK: Record<string, number> = Object.fromEntries(
   ALIGNMENT_GRADES.map((grade, i) => [grade, ALIGNMENT_GRADES.length - i]),
 )
 
-export type SortField = (typeof SORTABLE_FIELDS)[number]
 export type SortDirection = "asc" | "desc"
 export type BookSort = { field: SortField; direction: SortDirection }[]
 
 // seriesPosition is only meaningful inside a series context (series page or an
-// active series filter); everything else is a general-purpose sort.
-export const GENERAL_SORT_FIELDS = SORTABLE_FIELDS.filter(
-  (f) => f !== "seriesPosition",
-)
+// active series filter) and isn't registry-backed, so SORTABLE_FIELDS (registry
+// only) is already the general-purpose set.
+export const GENERAL_SORT_FIELDS: RegistrySortField[] = SORTABLE_FIELDS
 
 export type SortContext = { seriesUuid?: UUID | null }
 
@@ -85,25 +45,39 @@ const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
   "language",
 ]
 
+// the auto-mode secondary field: echo a meaningful sort, else a filtered field,
+// else series position or the authors. title is added on top by the caller.
+function deriveAutoSecondary(
+  sortField: SortField,
+  filter?: ShelfFilterNode,
+  ctx?: SortContext,
+): DisplayField {
+  // an explicit, meaningful sort echoes itself (show what you sorted by)
+  if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return sortField
+  if (filter?.type === "condition") {
+    if ((DISPLAY_FIELDS as readonly string[]).includes(filter.field)) {
+      return filter.field as DisplayField
+    }
+  }
+
+  // otherwise a series context still surfaces position over the authors
+  if (ctx?.seriesUuid) return "seriesPosition"
+  return "authors"
+}
+
 export function deriveDisplayFields(
   sortField: SortField,
   filter?: ShelfFilterNode,
   ctx?: SortContext,
   overrides?: DisplayField[] | null,
 ): DisplayField[] {
+  // an explicit selection (including an empty set = show nothing) wins verbatim.
   if (overrides) return overrides
-  // an explicit, meaningful sort echoes itself (show what you sorted by)
-  if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return [sortField]
-  console.log("filter", filter)
-  if (filter?.type === "condition") {
-    if (DISPLAY_FIELDS.includes(filter.field as DisplayField)) {
-      return [filter.field as DisplayField]
-    }
-  }
 
-  // otherwise a series context still surfaces position over the authors
-  if (ctx?.seriesUuid) return ["seriesPosition"]
-  return ["authors"]
+  // auto mode: the derived secondary field above the title (the card's heading
+  // sits at the bottom), matching the historical single-field layout.
+  const secondary = deriveAutoSecondary(sortField, filter, ctx)
+  return secondary === "title" ? ["title"] : [secondary, "title"]
 }
 
 function seriesPositionOf(
@@ -138,6 +112,8 @@ function sortValue(
       return book.audiobook?.duration ?? book.duration
     case "fileSize":
       return book.ebook?.fileSize ?? book.audiobook?.fileSize ?? null
+    case "authors":
+      return book.authors.map((a) => a.name).join(", ")
     case "alignmentScore":
       return book.alignmentSummary?.score ?? null
     case "alignmentGrade":
@@ -148,6 +124,10 @@ function sortValue(
       return book.alignmentSummary?.missingSentences ?? null
     case "alignmentMutedChapters":
       return book.alignmentSummary?.mutedChapters ?? null
+    case "alignmentMissingChapters":
+      // no client-side data source (not selected into alignmentSummary), so it
+      // can't participate in client-side comparison; server sort still applies.
+      return null
     case "alignedAt":
       return book.alignedAt
     case "lastRead":

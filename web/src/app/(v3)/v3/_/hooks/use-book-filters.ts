@@ -1,12 +1,6 @@
 "use client"
 
-import {
-  createParser,
-  parseAsArrayOf,
-  parseAsString,
-  parseAsStringLiteral,
-  useQueryState,
-} from "nuqs"
+import { createParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useDeferredValue, useMemo } from "react"
 
 import {
@@ -18,7 +12,6 @@ import {
   shelfFilterRootSchema,
 } from "@/shelves"
 import {
-  DISPLAY_FIELDS,
   type DisplayField,
   type SortDirection,
   type SortField,
@@ -148,14 +141,6 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
       direction: options.defaultSortDirection ?? "desc",
     }),
   )
-  const [displayOverrides, setDisplayOverrides] = useQueryState(
-    "display",
-    parseAsArrayOf(parseAsStringLiteral(DISPLAY_FIELDS)).withOptions({
-      shallow: true,
-      history: "replace",
-    }),
-  )
-
   const debouncedSearch = useDebounce(search, 200)
   const deferredSearch = useDeferredValue(debouncedSearch)
   const isSearching = debouncedSearch !== deferredSearch
@@ -283,8 +268,6 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     setSearch,
     sort,
     setSort,
-    displayOverrides,
-    setDisplayOverrides,
     // query + status
     queryArg,
     isSearching,

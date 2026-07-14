@@ -91,6 +91,7 @@ import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
   type BookView,
   selectBookView,
+  selectGridDisplayFields,
   selectListVisibleColumns,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
@@ -172,10 +173,18 @@ function LibraryPageInner({
 
   const bookView = useAppSelector(selectBookView)
   const listVisibleColumns = useAppSelector(selectListVisibleColumns)
+  const gridDisplayFields = useAppSelector(selectGridDisplayFields)
 
   const handleBookViewChange = useCallback(
     (view: BookView) => {
       dispatch(uiSettingsSlice.actions.setBookView(view))
+    },
+    [dispatch],
+  )
+
+  const handleDisplayFieldsChange = useCallback(
+    (fields: DisplayField[] | null) => {
+      dispatch(uiSettingsSlice.actions.setGridDisplayFields(fields))
     },
     [dispatch],
   )
@@ -229,9 +238,9 @@ function LibraryPageInner({
 
   const {
     queryArg,
+    effectiveFilter,
     sort,
     setSort,
-    displayOverrides,
     isSearching,
     deferredSearch,
     activeFilterCount,
@@ -268,8 +277,9 @@ function LibraryPageInner({
 
   const displayFields = deriveDisplayFields(
     sort.field,
+    effectiveFilter,
     displayContext,
-    displayOverrides,
+    gridDisplayFields,
   )
 
   // the server returns the facet list; the client only relabels the synthetic
@@ -566,6 +576,9 @@ function LibraryPageInner({
         seedLabel={selectedItemName}
         sortOptions={sortFieldOptions}
         onSortChange={setSort}
+        displayOverrides={gridDisplayFields}
+        onDisplayOverridesChange={handleDisplayFieldsChange}
+        currentFields={displayFields}
         bookView={bookView}
         onBookViewChange={handleBookViewChange}
       />
@@ -932,16 +945,14 @@ function SidebarPanel({
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
 
   const handleMenuOpen = useCallback((open: boolean) => {
-    console.log("handleMenuOpen", open)
-    // if (open) {
-    //   setMenuOpen(true)
-    //   return
-    // }
+    if (open) {
+      setMenuOpen(true)
+      return
+    }
 
-    // setMenuOpen(false)
-    // setMenuTarget(null)
-    // setMenuAnchor(null)
-    setMenuOpen(open)
+    setMenuOpen(false)
+    setMenuTarget(null)
+    setMenuAnchor(null)
   }, [])
 
   const handleOpenItemMenu = useCallback(

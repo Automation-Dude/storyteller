@@ -1,12 +1,20 @@
 "use client"
 
 import { Select as SelectPrimitive } from "@base-ui/react/select"
-import * as icon from "@/icons"
 import * as React from "react"
 
 import { cn } from "@v3/_/lib/utils"
 
-const Select = SelectPrimitive.Root
+import * as icon from "@/icons"
+
+function Select<Value, Mulitple extends boolean | undefined = false>(
+  props: SelectPrimitive.Root.Props<Value, Mulitple> & {
+    // always require you to pass items
+    items: { value: string; label: string }[]
+  },
+) {
+  return <SelectPrimitive.Root {...props} />
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

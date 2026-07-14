@@ -1,4 +1,5 @@
 import { type Insertable, type Selectable, type Updateable } from "kysely"
+import { jsonArrayFrom } from "kysely/helpers/sqlite"
 
 import { type Role } from "@/components/books/edit/marcRelators"
 import { BookEvents } from "@/events"
@@ -13,9 +14,36 @@ export type Creator = Selectable<DB["creator"]>
 export type NewCreator = Insertable<DB["creator"]>
 export type CreatorUpdate = Updateable<DB["creator"]>
 
-export async function getCreators(userId?: UUID, role?: Role) {
+// (
+//   select coalesce(json_group_array(json_object(
+//     'pet_id', "agg"."pet_id",
+//     'name', "agg"."name"
+//   )), '[]') from (
+//     select "pet"."id" as "pet_id", "pet"."name"
+//     from "pet"
+//     where "pet"."owner_id" = "person"."id"
+//     order by "pet"."name"
+//   ) as "agg"
+// ) as "pets"
+
+export async function getCreators(
+  userId?: UUID,
+  role?: Role,
+): Promise<(Creator & { roles?: Role[] })[]> {
   return db
     .selectFrom("creator")
+    .$if(!role, (qb) =>
+      qb
+        .innerJoin(
+          "bookToCreator as bookToCreatorAgg",
+          "bookToCreatorAgg.creatorUuid",
+          "creator.uuid",
+        )
+        .select((eb) =>
+          eb.fn("json_group_array", ["bookToCreatorAgg.role"]).as("roles"),
+        )
+        .whereRef("bookToCreatorAgg.creatorUuid", "=", "creator.uuid"),
+    )
     .$if(!!role, (qb) =>
       qb
         .innerJoin(

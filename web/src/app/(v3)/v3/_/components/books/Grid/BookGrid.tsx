@@ -79,14 +79,16 @@ const MOBILE_COLUMNS = 2
 
 // meta height must be known up front (this virtualizer is uniform-cell and
 // doesn't measure rows). estimate it from the fields the card renders: a
-// 2-line title, an authors line when shown, plus one line per extra field.
+// 2-line title when shown, an authors line when shown, plus one line per other
+// field. title is now part of the selectable field set, so it's counted only
+// when present (an empty set renders nothing but the top margin).
 function metaHeightFor(fields: DisplayField[]): number {
   const TOP = 8 // mt-2
   const TITLE = 38 // 2 lines, leading-tight
   const LINE = 18 // one text-xs line + gap-0.5
-  const extra = fields.filter((f) => f !== "authors" && f !== "title").length
-  const authorsLine = fields.includes("authors") ? 1 : 0
-  return TOP + TITLE + (extra + authorsLine) * LINE
+  const titleHeight = fields.includes("title") ? TITLE : 0
+  const otherLines = fields.filter((f) => f !== "title").length
+  return TOP + titleHeight + otherLines * LINE
 }
 
 export function BookGrid({

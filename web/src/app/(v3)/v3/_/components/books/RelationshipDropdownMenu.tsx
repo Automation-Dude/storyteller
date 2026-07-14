@@ -13,12 +13,12 @@ import { Slider } from "@v3/_/components/ui/slider"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { Button } from "@/app/(v3)/v3/_/components/ui/button"
 import { FieldIcon, ICheck, IRemove } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type RelationItem,
   useRelationItems,
 } from "@/app/(v3)/v3/_/hooks/use-relation-items"
-import * as icon from "@/icons"
 import {
   ASSET_FORMATS,
   type AssetFormat,
@@ -28,27 +28,25 @@ import {
   type FieldDefEnum,
   type FieldDefFacet,
   type FieldDefNumeric,
+  getFieldDef,
+  getFieldType,
+} from "@/fields"
+import * as icon from "@/icons"
+import {
   type ShelfFilterCondition,
   type ShelfFilterField,
   type ShelfFilterOperator,
-  getFieldDef,
-  getFieldType,
 } from "@/shelves"
 
 import { RelationGlyph } from "./RelationChipEditor"
 import { unitDisplay } from "./filter-ui"
 import { RelationPickerList } from "./relation-picker/RelationPickerList"
-import { Button } from "../ui/button"
 
 export type FilterControlProps = {
   field: ShelfFilterField
-  // all top-level conditions currently targeting this field (the hook owns the
-  // tree and slices it by field).
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
-  // a locked seed (e.g. "series is Dune" on a series page) renders read-only.
   locked?: boolean
-  // remove this field from the filter entirely (the chip's x).
   onRemove?: () => void
 }
 
@@ -62,8 +60,6 @@ function facetOperators(field: ShelfFilterField): {
   inc: ShelfFilterOperator
   exc: ShelfFilterOperator
 } {
-  // array relations use includes/excludes; uuid (status) and enum (format) use
-  // the any-of / none-of pair.
   return getFieldType(field) === "array"
     ? { inc: "includes", exc: "excludes" }
     : { inc: "isAnyOf", exc: "isNoneOf" }

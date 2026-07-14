@@ -773,9 +773,6 @@ export async function getAlignedReadaloudBooks(userId?: UUID) {
     .innerJoin("readaloud", "readaloud.bookUuid", "book.uuid")
     .where("readaloud.filepath", "is not", null)
     .orderBy("readaloud.createdAt", "desc")
-    // Fallback to auto-incrementing rowid
-    // to break ties in createdAt (which can happen
-    // for migrated books)
     .orderBy(sql`book.rowid`, "desc")
     .execute()
 }
@@ -817,12 +814,7 @@ export type GetBooksOptions = {
   offset?: number
   orderBy?: SortField
   orderDirection?: "asc" | "desc"
-  // multi-key sort spec; takes precedence over orderBy/orderDirection. the ui
-  // currently emits a single key, but the db layer carries a spec so it can add
-  // a context default (series page -> position) and a stable tiebreaker.
   sort?: BookSort
-  // ad-hoc filter tree (the same shape shelves use), compiled by
-  // buildFilterExpression. orthogonal to the convenience filters below.
   filter?: ShelfFilter
   search?: string
   collection?: UUID
@@ -945,9 +937,6 @@ export async function getBooks(
     .$if(!!opts?.limit, (qb) => qb.limit(opts?.limit ?? 10))
     .$if(!!opts?.offset, (qb) => qb.offset(opts?.offset ?? 0))
 
-  // resolve the sort spec: explicit sort wins, else fall back to the single
-  // orderBy/orderDirection pair. absent both, we leave the query unordered (as
-  // before) so callers relying on natural order are unaffected.
   const sort: BookSort =
     opts?.sort ??
     (opts?.orderBy
@@ -963,9 +952,9 @@ export async function getBooks(
 
   // stable tiebreaker so equal sort keys (and unsupported context fields that
   // collapse to null) keep a deterministic order
-  if (sort.length > 0 && sort[sort.length - 1]?.field !== "createdAt") {
-    query = query.orderBy(sql`book.created_at`, "desc")
-  }
+  // if (sort.length > 0 && sort[sort.length - 1]?.field !== "createdAt") {
+  //   query = query.orderBy(sql`book.created_at`, "desc")
+  // }
 
   return await query.execute()
 }

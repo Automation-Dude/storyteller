@@ -18,6 +18,9 @@ export type UISettings = {
   librarySidebarWidth: number
   bookView: BookView
   listVisibleColumns: DisplayField[]
+  // the fields shown below a grid cover. null = auto (derived from sort/filter);
+  // an explicit array (possibly empty = show nothing) is the user's own choice.
+  gridDisplayFields: DisplayField[] | null
   logDisplay: LogDisplayPrefs
 }
 
@@ -44,6 +47,7 @@ const defaults: UISettings = {
   librarySidebarWidth: 280,
   bookView: "grid",
   listVisibleColumns: defaultListVisibleColumns,
+  gridDisplayFields: null,
   logDisplay: defaultLogDisplay,
 }
 
@@ -152,6 +156,14 @@ export const uiSettingsSlice = createSlice({
       saveToCookie(state)
     },
 
+    setGridDisplayFields: (
+      state,
+      action: PayloadAction<DisplayField[] | null>,
+    ) => {
+      state.gridDisplayFields = action.payload
+      saveToCookie(state)
+    },
+
     setLogDisplayPrefs: (
       state,
       action: PayloadAction<Partial<LogDisplayPrefs>>,
@@ -175,6 +187,9 @@ export const selectBookView = (state: { uiSettings: UISettings }) =>
 
 export const selectListVisibleColumns = (state: { uiSettings: UISettings }) =>
   state.uiSettings.listVisibleColumns
+
+export const selectGridDisplayFields = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.gridDisplayFields
 
 export const selectLogDisplayPrefs = (state: { uiSettings: UISettings }) =>
   state.uiSettings.logDisplay

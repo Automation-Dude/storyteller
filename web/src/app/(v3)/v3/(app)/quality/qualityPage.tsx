@@ -15,10 +15,12 @@ import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { cn } from "@v3/_/lib/utils"
 
 import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import * as icon from "@/icons"
 import { type ShelfFilterCondition, type ShelfFilterNode } from "@/shelves"
 import {
   type DisplayField,
+  GENERAL_SORT_FIELDS,
   type SortContext,
   type SortDirection,
   type SortField,
@@ -28,8 +30,12 @@ import {
   useGetAlignmentFacetsQuery,
   useListInfiniteBooksInfiniteQuery,
 } from "@/store/api"
-import { useAppSelector } from "@/store/appState"
-import { selectBookView } from "@/store/slices/uiSettingsSlice"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import {
+  selectBookView,
+  selectGridDisplayFields,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
 
 const GRADES = ["A+", "A", "A-", "B", "B-", "C", "D", "F"] as const
 
@@ -48,7 +54,22 @@ const GRADED_SEED: ShelfFilterNode = {
 }
 
 export default function QualityPage() {
+  const dispatch = useAppDispatch()
+  const tLabel = useTranslation("Common.fields.label")
   const bookView = useAppSelector(selectBookView)
+  const gridDisplayFields = useAppSelector(selectGridDisplayFields)
+
+  const handleDisplayFieldsChange = useCallback(
+    (fields: DisplayField[] | null) => {
+      dispatch(uiSettingsSlice.actions.setGridDisplayFields(fields))
+    },
+    [dispatch],
+  )
+
+  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(
+    () => GENERAL_SORT_FIELDS.map((value) => ({ value, label: tLabel(value) })),
+    [tLabel],
+  )
 
   const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
     "book",
@@ -70,7 +91,6 @@ export default function QualityPage() {
     conditionsForField,
     setConditionsForField,
     removeField,
-    displayOverrides,
     isSearching,
     activeFilterCount,
     clearAll,
@@ -140,7 +160,7 @@ export default function QualityPage() {
     sort.field,
     userFilter,
     displayContext,
-    displayOverrides,
+    gridDisplayFields,
   )
 
   const showMuted =
@@ -175,7 +195,15 @@ export default function QualityPage() {
       selectedBook={selectedBook}
       onClosePanel={handleClosePanel}
     >
-      <BookFilters controller={controller} seedLabel="Graded" />
+      <BookFilters
+        controller={controller}
+        seedLabel="Graded"
+        sortOptions={sortFieldOptions}
+        onSortChange={setSort}
+        displayOverrides={gridDisplayFields}
+        onDisplayOverridesChange={handleDisplayFieldsChange}
+        currentFields={displayFields}
+      />
 
       {/* alignment-specific facet row: grade chips + muted toggle, counts
             from the server-side facets. */}

@@ -346,6 +346,7 @@
       "dates": "Datums",
       "review": "Beoordelingen & Recensies",
       "relations": "Relaties",
+      "creators": "Auteurs / Makers",
       "media": "Media & Grootte",
       "alignment": "Synchronisatie"
     },
@@ -857,7 +858,9 @@
             "title": "Beweging",
             "description": "Hoe de bibliotheek reageert op het openen en vergroten van panelen.",
             "label": "Lay-outanimaties",
-            "hint": "Schuift het detailpaneel open en laat boeken naar hun nieuwe plek glijden. Uitgeschakeld klikken panelen direct op hun plaats."
+            "hint": "Schuift het detailpaneel open en laat boeken naar hun nieuwe plek glijden. Uitgeschakeld klikken panelen direct op hun plaats.",
+            "panelLabel": "Detailpaneel openschuiven",
+            "panelHint": "Animeer het openen van het detailpaneel wanneer je op een boek klikt. Uitgeschakeld verschijnt het direct op volle breedte (aan de rand slepen animeert nog steeds)."
           }
         }
       },
@@ -1226,7 +1229,8 @@
       "remove": "Verwijderen",
       "select": "Selecteren",
       "deselect": "Deselecteren",
-      "confirm": "Bevestigen"
+      "confirm": "Bevestigen",
+      "selectFolder": "Selecteer map"
     },
     "states": {
       "saving": "Opslaan...",

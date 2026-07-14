@@ -32,7 +32,12 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfWithBooks } from "@/database/shelves"
-import { type ShelfFilterNode, ShelfOrderBy } from "@/shelves"
+import {
+  type ShelfFilterNode,
+  type ShelfOrderBy,
+  SHELF_ORDER_BY_FIELDS,
+} from "@/shelves"
+import { SORTABLE_FIELDS } from "@/sort"
 import {
   getCoverUrl,
   useCreateUserShelfMutation,
@@ -51,7 +56,7 @@ import { IAdd } from "../ui/icon"
 const shelfFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  orderBy: z.enum(ShelfOrderBy),
+  orderBy: z.enum(SHELF_ORDER_BY_FIELDS),
   orderDirection: z.enum(["asc", "desc"]),
   limitCount: z.number().nullable(),
 })
@@ -263,14 +268,14 @@ export function ShelfEditor({
   const hasNonDefaultSort =
     orderBy !== "createdAt" || orderDirection !== "desc" || limitCount !== null
 
+  // the full registry sort vocabulary (same as the books-page SortControl),
+  // labelled from the shared Common.fields.label bundle.
   const orderByOptions = useMemo(() => {
-    return (
-      ["createdAt", "updatedAt", "title", "publicationDate", "rating"] as const
-    ).map((key) => ({
+    return SORTABLE_FIELDS.map((key) => ({
       value: key,
-      label: t.plain(`orderBy.${key}` as "orderBy.createdAt"),
+      label: c.plain(`fields.label.${key}` as "fields.label.title"),
     })) satisfies { value: ShelfOrderBy; label: string }[]
-  }, [t])
+  }, [c])
 
   const orderDirectionOptions = useMemo(() => {
     return (["desc", "asc"] as const).map((key) => ({

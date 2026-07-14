@@ -66,6 +66,7 @@ import {
 } from "@/database/sidebar"
 import { type Status } from "@/database/statuses"
 import { type AddTagInput, type Tag } from "@/database/tags"
+import { type UserPreferences } from "@/database/userPreferencesTypes"
 import { type UserBookRating } from "@/database/userRatings"
 import { type UserSettingValue } from "@/database/userSettings"
 import { type UserPermissionSet } from "@/database/users"
@@ -77,7 +78,7 @@ import { type RunConfig } from "@/work/runConfig"
 
 import { subscribeToBookEventStream } from "./bookEventsStream"
 import { subscribeToJobEventStream } from "./jobEventsStream"
-import { UserPreferences } from "@/database/userPreferencesTypes"
+import { Role } from "@/components/books/edit/marcRelators"
 
 type SingleUserSettingUpdate = {
   [K in keyof UserPreferences]: { name: K; value: UserPreferences[K] }
@@ -1005,7 +1006,7 @@ export const api = createApi({
       }),
       invalidatesTags: ["Statuses"],
     }),
-    listCreators: build.query<Creator[], void>({
+    listCreators: build.query<(Creator & { roles: Role[] })[], void>({
       query: () => "/creators",
       providesTags: (creators) =>
         creators?.map((creator) => ({

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { booksQuery } from "@/database/books"
-import { buildFilterExpression } from "@/database/shelfFilter"
-import { type ShelfFilter, shelfFilterSchema } from "@/shelves"
+import { buildFilterExpression, buildSortExpression } from "@/database/shelfFilter"
+import { type ShelfFilter, type ShelfOrderBy, shelfFilterSchema } from "@/shelves"
 
 export const dynamic = "force-dynamic"
 
@@ -12,7 +12,7 @@ export const POST = withHasPermission("bookList")(async (request) => {
 
   const body = (await request.json()) as {
     filter: ShelfFilter | null
-    orderBy?: "createdAt" | "updatedAt" | "title" | "publicationDate"
+    orderBy?: ShelfOrderBy
     orderDirection?: "asc" | "desc"
     limit?: number
   }
@@ -43,7 +43,15 @@ export const POST = withHasPermission("bookList")(async (request) => {
 
   const orderBy = body.orderBy ?? "createdAt"
   const orderDirection = body.orderDirection ?? "desc"
-  query = query.orderBy(`book.${orderBy}`, orderDirection)
+  // "position" has no meaning without a shelf's manual list; fall back to
+  // createdAt. every other value is a registry sort field.
+  query =
+    orderBy === "position"
+      ? query.orderBy("book.createdAt", orderDirection)
+      : query.orderBy(
+          buildSortExpression(orderBy, { userId: user.id }),
+          orderDirection,
+        )
 
   const books = await query.execute()
 

@@ -1,11 +1,14 @@
 import { useMemo } from "react"
 
 import {
+  useListAuthorsQuery,
   useListCollectionsQuery,
   useListCreatorsQuery,
+  useListNarratorsQuery,
   useListSeriesQuery,
   useListStatusesQuery,
   useListTagsQuery,
+  useListTranslatorsQuery,
 } from "@/store/api"
 
 // a "relation" is one of the many-to-many, per-table things a book can have
@@ -14,7 +17,10 @@ export type RelationSource =
   | "tags"
   | "collections"
   | "series"
+  | "authors"
   | "creators"
+  | "narrators"
+  | "translators"
   | "statuses"
 
 export type RelationItem = {
@@ -39,9 +45,38 @@ export function useRelationItems(
   const series = useListSeriesQuery(undefined, {
     skip: !enabled || source !== "series",
   })
-  const creators = useListCreatorsQuery(undefined, {
-    skip: !enabled || source !== "creators",
+  const allCreators = useListCreatorsQuery(undefined, {
+    skip:
+      !enabled ||
+      (source !== "creators" &&
+        source !== "authors" &&
+        source !== "narrators" &&
+        source !== "translators"),
   })
+  const authors = {
+    data: allCreators.data?.filter((c) => c.roles.includes("aut")),
+    isLoading: allCreators.isLoading,
+  }
+  console.log("aa", allCreators.data)
+  const narrators = {
+    data: allCreators.data?.filter((c) => c.roles.includes("nrt")),
+    isLoading: allCreators.isLoading,
+  }
+
+  const translators = {
+    data: allCreators.data?.filter((c) => c.roles.includes("trl")),
+    isLoading: allCreators.isLoading,
+  }
+  const creators = {
+    data: allCreators.data?.filter(
+      (c) =>
+        !c.roles.includes("aut") &&
+        !c.roles.includes("nrt") &&
+        !c.roles.includes("trl"),
+    ),
+    isLoading: allCreators.isLoading,
+  }
+
   const statuses = useListStatusesQuery(undefined, {
     skip: !enabled || source !== "statuses",
   })
@@ -55,9 +90,15 @@ export function useRelationItems(
           ? series
           : source === "creators"
             ? creators
-            : source === "statuses"
-              ? statuses
-              : undefined
+            : source === "authors"
+              ? authors
+              : source === "narrators"
+                ? narrators
+                : source === "translators"
+                  ? translators
+                  : source === "statuses"
+                    ? statuses
+                    : undefined
 
   const items = useMemo<RelationItem[]>(
     () =>

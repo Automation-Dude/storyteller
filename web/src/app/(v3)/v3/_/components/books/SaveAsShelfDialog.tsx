@@ -13,18 +13,14 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { Input } from "@v3/_/components/ui/input"
 
-import { type ShelfFilterNode, ShelfOrderBy } from "@/shelves"
+import { type ShelfFilterNode, type ShelfOrderBy } from "@/shelves"
 import { type SortField } from "@/sort"
 import { useCreateUserShelfMutation } from "@/store/api"
 
-// the saved shelf can only carry an order the shelf model understands; map the
-// broader sort vocabulary down (seriesPosition -> position) and fall back to
-// createdAt for fields shelves don't persist yet.
-function toShelfOrderBy(field: SortField): (typeof ShelfOrderBy)[number] {
-  if (field === "seriesPosition") return "position"
-  return (ShelfOrderBy as readonly string[]).includes(field)
-    ? (field as (typeof ShelfOrderBy)[number])
-    : "createdAt"
+// a shelf persists any registry sort field; only seriesPosition (context-scoped,
+// not registry-backed) maps down to the manual "position" ordering.
+function toShelfOrderBy(field: SortField): ShelfOrderBy {
+  return field === "seriesPosition" ? "position" : field
 }
 
 type SaveAsShelfDialogProps = {
