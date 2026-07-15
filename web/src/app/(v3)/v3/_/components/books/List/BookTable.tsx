@@ -322,7 +322,7 @@ export function BookTable({
     )
   }
 
-  // right-click on a data column header
+  // click ellipsis button on a data column header
   const [headerMenu, setHeaderMenu] = useState<{
     field: DisplayField
     anchor: { getBoundingClientRect: () => DOMRect }
@@ -371,6 +371,12 @@ export function BookTable({
     directDomUpdates: true,
   })
 
+  useEffect(() => {
+    // super cringe but forces a height update for both the table and the virtualizer
+    rowVirtualizer.measure()
+    table.setState((state) => ({ ...state }))
+  }, [showThumbnail])
+
   const virtualRows = rowVirtualizer.getVirtualItems()
   const lastVirtualRowIndex = virtualRows.at(-1)?.index
 
@@ -418,11 +424,6 @@ export function BookTable({
 
   return (
     <>
-      {/* a raw <table> (not the ui Table wrapper): its overflow-x-auto
-          container would trap the sticky header. grid display keeps header and
-          virtualized body cells on one shared column template. the template
-          lives in a css variable so per-frame resize updates restyle one node
-          instead of re-rendering every row. */}
       <table
         ref={tableRef}
         className="grid w-full caption-bottom text-xs"
@@ -506,8 +507,6 @@ export function BookTable({
                   ))}
               </button>
 
-              {/* the title track is flexible until dragged; the drag is manual
-                  because tanstack only sizes fixed-width columns */}
               <div
                 role="separator"
                 aria-orientation="vertical"
@@ -593,6 +592,10 @@ export function BookTable({
 
               const isBookSelected =
                 menu.selection?.isSelected(book.uuid) ?? false
+
+              if (virtualRow.index === 2) {
+                console.log(virtualRow.start, showThumbnail)
+              }
 
               return (
                 <TableRow
@@ -920,10 +923,7 @@ function BookTableHeader({
       value={field}
       dragListener={false}
       dragControls={dragControls}
-      // "position" animates reordered columns sliding sideways without also
-      // animating their size (the default layout mode scales the text). while
-      // a resize drag is live even position shifts must track the pointer
-      // instantly, so the layout transition drops to zero duration
+      // prevents motion from animating other things than position, like width which will squish
       layout="position"
       transition={resizing ? { layout: { duration: 0 } } : undefined}
       onDragStart={() => {
@@ -932,9 +932,6 @@ function BookTableHeader({
       }}
       onDragEnd={() => {
         setDragActive(false)
-      }}
-      onContextMenu={(e: React.MouseEvent) => {
-        onHeaderContextMenu(field, e)
       }}
       aria-sort={
         isActive
@@ -985,6 +982,18 @@ function BookTableHeader({
           {labelContent}
         </span>
       )}
+      <button
+        type="button"
+        className="text-muted-foreground hover:text-foreground h-full w-3 opacity-100 transition-opacity outline-none group-hover:opacity-100 md:opacity-0"
+        aria-label={`Resize ${label} column`}
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          onHeaderContextMenu(field, e)
+        }}
+      >
+        <icon.DotsVertical className="size-3 shrink-0" />
+      </button>
 
       {/* resize handle on the column's right edge: dragging right widens and
           the edge follows the pointer (slack lives in the spacer track).
