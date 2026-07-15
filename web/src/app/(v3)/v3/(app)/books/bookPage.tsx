@@ -1,6 +1,6 @@
 "use client"
 
-import { parseAsBoolean, parseAsString, useQueryState } from "nuqs"
+import { parseAsBoolean, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo } from "react"
 
 import { AddBookButton } from "@v3/_/components/AddBookButton"
@@ -13,6 +13,7 @@ import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import { type UserPermissionSet } from "@/database/users"
 import {
   type DisplayField,
@@ -49,10 +50,7 @@ export default function BookPage({
 
   const { toggleSelection } = useBookSelection()
 
-  const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
-    "book",
-    parseAsString,
-  )
+  const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
   const [, setReportMode] = useQueryState(
     "report",
     parseAsBoolean.withDefault(false),

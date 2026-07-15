@@ -62,8 +62,6 @@ import {
 import {
   type SidebarGroupInput,
   type SidebarGroupWithItems,
-  type SidebarItemKind,
-  type SidebarItemWithGroupDetails,
 } from "@/database/sidebar"
 import { type Status } from "@/database/statuses"
 import { type AddTagInput, type Tag } from "@/database/tags"
@@ -90,15 +88,6 @@ type HomeSectionBody = {
   kind: HomeSectionKind
   enabled?: boolean
   config?: unknown
-}
-
-// client-side shape of a sidebar item (plain string uuids over the wire)
-type SidebarItemBody = {
-  kind: SidebarItemKind
-  builtinKey?: string | null
-  collectionUuid?: string | null
-  shelfUuid?: string | null
-  hidden?: boolean
 }
 
 type SidebarGroupBody = SidebarGroupInput
@@ -1176,7 +1165,7 @@ export const api = createApi({
           ...(!isPublic && { users }),
         },
       }),
-      invalidatesTags: ["Collections"],
+      invalidatesTags: ["Collections", "Sidebar"],
     }),
     addBooksToSeries: build.mutation<
       void,
@@ -1722,25 +1711,8 @@ export const api = createApi({
       invalidatesTags: ["HomeShelves"],
     }),
 
-    listSidebar: build.query<SidebarItemWithGroupDetails[], void>({
-      query: () => "/sidebar",
-      providesTags: ["Sidebar"],
-    }),
-
-    setSidebar: build.mutation<
-      SidebarItemWithGroupDetails[],
-      SidebarItemBody[]
-    >({
-      query: (body) => ({
-        url: "/sidebar",
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["Sidebar"],
-    }),
-
     listSidebarGroups: build.query<SidebarGroupWithItems[], void>({
-      query: () => "/sidebar-groups",
+      query: () => "/sidebar",
       providesTags: ["Sidebar"],
     }),
 
@@ -1749,20 +1721,8 @@ export const api = createApi({
       SidebarGroupBody[]
     >({
       query: (body) => ({
-        url: "/sidebar-groups",
+        url: "/sidebar",
         method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["Sidebar"],
-    }),
-
-    toggleSidebarGroupCollapsed: build.mutation<
-      void,
-      { groupUuid: string; collapsed: boolean }
-    >({
-      query: (body) => ({
-        url: "/sidebar-groups",
-        method: "PATCH",
         body,
       }),
       invalidatesTags: ["Sidebar"],
@@ -2138,11 +2098,8 @@ export const {
   useSetHomeShelvesMutation,
   useAddHomeShelfMutation,
   useRemoveHomeShelfMutation,
-  useListSidebarQuery,
-  useSetSidebarMutation,
   useListSidebarGroupsQuery,
   useSetSidebarGroupsMutation,
-  useToggleSidebarGroupCollapsedMutation,
   useListUserShelvesQuery,
   useCreateUserShelfMutation,
   useUpdateUserShelfMutation,

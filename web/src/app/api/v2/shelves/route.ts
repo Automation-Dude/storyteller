@@ -58,5 +58,7 @@ export const POST = withHasPermission("bookList")(async (request) => {
     body.books,
   )
 
+  // the sidebar picks the new shelf up via ensureSidebarDefaults on its next
+  // read (the client invalidates the Sidebar tag after this mutation)
   return NextResponse.json(shelf)
 })

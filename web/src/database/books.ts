@@ -829,6 +829,8 @@ export async function getBooks(
   userId?: UUID,
   opts?: GetBooksOptions,
 ) {
+  console.log("getBooks", bookUuids, userId, opts)
+
   let query = booksQuery(userId, opts)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .$if(!!bookUuids, (qb) => qb.where("book.uuid", "in", bookUuids!))

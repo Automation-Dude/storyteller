@@ -568,9 +568,12 @@ export function BookTable({
 
         {isLoading ? (
           <TableBody className="grid gap-1 py-2">
-            {Array.from({ length: 12 }).map((_, i) => (
+            {Array.from({ length: 25 }).map((_, i) => (
               <TableRow key={i} className="border-0">
-                <TableCell className="bg-muted/40 block h-8 animate-pulse rounded p-0" />
+                <TableCell
+                  className="bg-muted/40 block h-8 animate-pulse rounded p-0"
+                  style={{ height: rowHeight }}
+                />
               </TableRow>
             ))}
           </TableBody>

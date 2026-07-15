@@ -90,11 +90,6 @@ export default async function RootLayout({
       className={`${fraunces.variable} ${ibmPlexSans.variable} ${trySerif.variable} antialiased`}
     >
       <head>
-        {/* apply locally-saved theme tweaks before paint to avoid a flash;
-            mirrors the storage shape in theme-tweaks/tweaks-store.ts */}
-        <Script id="theme-tweaks-init" strategy="beforeInteractive">
-          {`(function(){try{var raw=localStorage.getItem("st-theme-tweaks");if(!raw)return;var s=JSON.parse(raw);var el=document.documentElement;function apply(m){if(!m)return;for(var k in m){if(m[k])el.style.setProperty(k,m[k]);}}apply(s.colors);apply(s.fonts);}catch(e){}})();`}
-        </Script>
         {env.NODE_ENV === "development" && env.ENABLE_REACT_SCAN && (
           <Script
             src="//unpkg.com/react-scan/dist/auto.global.js"
@@ -113,7 +108,9 @@ export default async function RootLayout({
                     attribute="class"
                     defaultTheme="system"
                     enableSystem
-                    disableTransitionOnChange
+                    themes={["light", "dark", "system"]}
+                    // forcedTheme={initialUISettings?.theme ?? "system"}
+                    // disableTransitionOnChange
                   >
                     <NuqsAdapter>
                       {children}

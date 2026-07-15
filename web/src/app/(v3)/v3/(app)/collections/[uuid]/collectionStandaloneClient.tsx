@@ -25,7 +25,11 @@ import {
   type SortField,
   deriveDisplayFields,
 } from "@/sort"
-import { useListShelfBooksQuery, useListUserShelvesQuery } from "@/store/api"
+import {
+  useListBooksQuery,
+  useListCollectionsQuery,
+  useListInfiniteBooksInfiniteQuery,
+} from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
   selectGridDisplayFields,
@@ -33,10 +37,13 @@ import {
 } from "@/store/slices/uiSettingsSlice"
 import { extractEmojiIcon } from "@/strings"
 import { type UUID } from "@/uuid"
-import { useBookInSidePanel } from "../../../_/hooks/use-open-book"
 
-export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
-  const t = useTranslation("ShelfPage")
+export function CollectionStandalonePage({
+  collectionUuid,
+}: {
+  collectionUuid: UUID
+}) {
+  const t = useTranslation("CollectionPage")
   const tLabel = useTranslation("Common.fields.label")
   const dispatch = useAppDispatch()
   const { isSelecting, toggleSelection } = useBookSelection()
@@ -55,18 +62,22 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     [tLabel],
   )
 
-  const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
+  const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
+    "book",
+    parseAsString,
+  )
   const [, setReportMode] = useReportPanel()
 
-  const { data: shelves = [] } = useListUserShelvesQuery()
+  const { data: collections = [] } = useListCollectionsQuery()
+  const collection = collections.find((c) => c.uuid === collectionUuid)
 
-  const shelf = shelves.find((s) => s.uuid === shelfUuid)
-  const shelfName = shelf
-    ? extractEmojiIcon(shelf.name).label || shelf.name
-    : "Shelf"
+  const collectionName = collection
+    ? extractEmojiIcon(collection.name).label || collection.name
+    : "Collection"
 
-  const controller = useBookFilters()
+  const controller = useBookFilters({ collectionContext: collectionUuid })
   const {
+    queryArg,
     effectiveFilter,
     sort,
     setSort,
@@ -76,15 +87,10 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     clearAll,
   } = controller
 
-  // the shelf's own books (manual + saved filter) with the page's quick /
-  // advanced filter + search + sort applied server-side.
-  const { data: books = [], isLoading } = useListShelfBooksQuery({
-    shelfUuid,
-    sortField: sort.field,
-    orderDirection: sort.direction,
-    ...(deferredSearch ? { search: deferredSearch } : {}),
-    ...(effectiveFilter ? { filter: effectiveFilter } : {}),
-  })
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useListInfiniteBooksInfiniteQuery({
+      ...queryArg,
+    })
 
   const handleColumnSort = useCallback(
     (field: SortField, direction: SortDirection) => {
@@ -112,12 +118,9 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     ],
   )
 
-  const bookUuids = useMemo(() => books.map((b) => b.uuid), [books])
+  const books = data?.pages.flatMap((page) => page) ?? []
 
-  const selectedBook = useMemo(
-    () => books.find((b) => b.uuid === selectedBookUuid),
-    [books, selectedBookUuid],
-  )
+  const selectedBook = books.find((b) => b.uuid === selectedBookUuid)
 
   const showMuted = isSearching
 
@@ -131,7 +134,6 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
     void setSelectedBookUuid(book.uuid)
   }
 
-  // alignment grade/score cell opens the panel straight into the report.
   const handleColumnClick = (book: BookWithRelations) => {
     void setReportMode(true)
     void setSelectedBookUuid(book.uuid)
@@ -145,17 +147,17 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
   return (
     <BookListLayout
       headerBreadcrumbs={[
-        { label: t("breadcrumb"), url: "/shelves" },
-        { label: shelfName },
+        { label: t("breadcrumb"), url: "/collections" },
+        { label: collectionName },
       ]}
       headerActions={
         <Button
           variant="ghost"
           size="sm"
           render={
-            <V3Link href={`/shelves?item=${shelfUuid}`}>
+            <V3Link href={`/collections?item=${collectionUuid}`}>
               <icon.ArrowRight className="mr-1 size-3.5" />
-              {t("goToAllShelves")}
+              {t("goToAllCollections")}
             </V3Link>
           }
         />
@@ -164,6 +166,11 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
       selectedBook={selectedBook}
       onClosePanel={handleClosePanel}
     >
+      {collection?.description && (
+        <p className="text-muted-foreground max-w-md px-4 text-sm">
+          {collection.description}
+        </p>
+      )}
       <BookFilters
         className="pt-1"
         controller={controller}
@@ -178,11 +185,11 @@ export function ShelfPageClient({ shelfUuid }: { shelfUuid: UUID }) {
         <BooksView
           books={books}
           isLoading={isLoading}
-          isFetchingNextPage={false}
-          hasNextPage={false}
-          fetchNextPage={() => {}}
+          isFetchingNextPage={isFetchingNextPage}
+          hasNextPage={hasNextPage}
+          fetchNextPage={fetchNextPage}
           showMuted={showMuted}
-          emptyMessage={t.plain("emptyShelf")}
+          emptyMessage={t.plain("emptyCollection")}
           emptySubMessage={
             deferredSearch || activeFilterCount > 0
               ? t.plain("adjustFilters")

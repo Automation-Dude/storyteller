@@ -1,6 +1,24 @@
 "use client"
 
-import { Reorder, useDragControls } from "motion/react"
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  closestCorners,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { useState } from "react"
 
 import { ShelfEditor } from "@v3/_/components/shelves/ShelfEditor"
@@ -13,9 +31,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { Input } from "@v3/_/components/ui/input"
@@ -30,24 +46,20 @@ import { cn } from "@v3/_/lib/utils"
 import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type ShelfWithBooks } from "@/database/shelves"
 import {
+  type SidebarGroupKind,
   type SidebarGroupWithItems,
   type SidebarItemKind,
 } from "@/database/sidebar"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
+import { builtinGroupFor } from "@/sidebar-builtins"
 import {
-  useListCollectionsQuery,
   useListUserShelvesQuery,
   useSetSidebarGroupsMutation,
 } from "@/store/api"
 import { extractEmojiIcon } from "@/strings"
 
-
-import {
-  BUILTIN_SIDEBAR_ITEMS,
-  BUILTIN_SIDEBAR_MAP,
-  type BuiltinSidebarItem,
-} from "./sidebar-items"
+import { BUILTIN_SIDEBAR_MAP, type BuiltinSidebarItem } from "./sidebar-items"
 
 type ShelfListItem = {
   uuid: string
@@ -70,9 +82,18 @@ type LocalItem = {
 type LocalGroup = {
   id: string
   name: string
-  collapsed: boolean
+  kind: SidebarGroupKind
   items: LocalItem[]
 }
+
+// items live either in a group (visible) or in the hidden pool; hiding never
+// deletes the underlying row, so ensureSidebarDefaults won't resurrect them
+type ManagerState = {
+  groups: LocalGroup[]
+  hidden: LocalItem[]
+}
+
+const HIDDEN_CONTAINER_ID = "__hidden__"
 
 function cleanName(name: string | null | undefined): string {
   return extractEmojiIcon(name ?? "").label || (name ?? "")
@@ -90,15 +111,14 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
   const c = useCommon()
   const permissions = usePermissions()
 
-  const { data: collections = [] } = useListCollectionsQuery()
+  const [setSidebarGroups, { isLoading: isSaving }] =
+    useSetSidebarGroupsMutation()
 
   // kysely inference loses selectAll fields; the API response has all shelf columns
   const { data: rawShelves = [] } = useListUserShelvesQuery()
   const userShelves = rawShelves as unknown as Array<
     ShelfListItem & ShelfWithBooks
   >
-  const [setSidebarGroups, { isLoading: isSaving }] =
-    useSetSidebarGroupsMutation()
 
   // "create" means open the editor in create mode; a uuid string means edit that shelf
   const [shelfEditorState, setShelfEditorState] = useState<string | null>(null)
@@ -108,133 +128,242 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
       ? tApp(builtin.labelKey)
       : tLibrary(builtin.labelKey)
 
-  const [localGroups, setLocalGroups] = useState<LocalGroup[]>(() =>
-    groups.map((g) => ({
+  const toLocalItem = (
+    item: SidebarGroupWithItems["items"][number],
+  ): LocalItem => {
+    if (item.kind === "builtin" && item.builtinKey) {
+      const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
+      return {
+        id: `builtin:${item.builtinKey}`,
+        kind: "builtin",
+        builtinKey: item.builtinKey,
+        collectionUuid: null,
+        shelfUuid: null,
+        name: builtin ? builtinTitle(builtin) : item.builtinKey,
+        icon: null,
+        color: null,
+      }
+    }
+
+    if (item.kind === "collection") {
+      return {
+        id: `collection:${item.collectionUuid}`,
+        kind: "collection",
+        builtinKey: null,
+        collectionUuid: item.collectionUuid,
+        shelfUuid: null,
+        name: cleanName(item.name),
+        icon: item.icon ?? null,
+        color: item.color ?? null,
+      }
+    }
+
+    return {
+      id: `shelf:${item.shelfUuid}`,
+      kind: "shelf",
+      builtinKey: null,
+      collectionUuid: null,
+      shelfUuid: item.shelfUuid,
+      name: cleanName(item.name),
+      icon: item.icon ?? null,
+      color: item.color ?? null,
+    }
+  }
+
+  const [state, setState] = useState<ManagerState>(() => ({
+    groups: groups.map((g) => ({
       id: g.uuid,
       name: g.name,
-      collapsed: g.collapsed,
-      items: g.items.map((item) => {
-        if (item.kind === "builtin" && item.builtinKey) {
-          const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
-          return {
-            id: `builtin:${item.builtinKey}`,
-            kind: "builtin" as const,
-            builtinKey: item.builtinKey,
-            collectionUuid: null,
-            shelfUuid: null,
-            name: builtin ? builtinTitle(builtin) : item.builtinKey,
-            icon: null,
-            color: null,
-          }
-        }
-
-        if (item.kind === "collection") {
-          return {
-            id: `collection:${item.collectionUuid}`,
-            kind: "collection" as const,
-            builtinKey: null,
-            collectionUuid: item.collectionUuid,
-            shelfUuid: null,
-            name: cleanName(item.name),
-            icon: item.icon ?? null,
-            color: item.color ?? null,
-          }
-        }
-
-        return {
-          id: `shelf:${item.shelfUuid}`,
-          kind: "shelf" as const,
-          builtinKey: null,
-          collectionUuid: null,
-          shelfUuid: item.shelfUuid,
-          name: cleanName(item.name),
-          icon: item.icon ?? null,
-          color: item.color ?? null,
-        }
-      }),
+      kind: g.kind,
+      items: g.items.filter((i) => !i.hidden).map(toLocalItem),
     })),
+    hidden: groups.flatMap((g) =>
+      g.items.filter((i) => i.hidden).map(toLocalItem),
+    ),
+  }))
+
+  const [activeItem, setActiveItem] = useState<LocalItem | null>(null)
+
+  // permission-gated builtins stay in the payload untouched but are never
+  // shown to a user who can't access them
+  const canSee = (item: LocalItem) => {
+    if (item.kind !== "builtin" || !item.builtinKey) return true
+    const builtin = BUILTIN_SIDEBAR_MAP[item.builtinKey]
+    return !builtin?.permission || !!permissions?.[builtin.permission]
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   )
 
-  const allShownItems = localGroups.flatMap((g) => g.items)
-  const shownBuiltinKeys = allShownItems
-    .filter((i) => i.kind === "builtin")
-    .map((i) => i.builtinKey)
-  const shownCollectionUuids = allShownItems
-    .filter((i) => i.kind === "collection")
-    .map((i) => i.collectionUuid)
-  const shownShelfUuids = allShownItems
-    .filter((i) => i.kind === "shelf")
-    .map((i) => i.shelfUuid)
+  const findContainer = (s: ManagerState, id: string): string | null => {
+    if (id === HIDDEN_CONTAINER_ID) return HIDDEN_CONTAINER_ID
+    if (s.groups.some((g) => g.id === id)) return id
+    if (s.hidden.some((i) => i.id === id)) return HIDDEN_CONTAINER_ID
+    return s.groups.find((g) => g.items.some((i) => i.id === id))?.id ?? null
+  }
 
-  const availableBuiltins = BUILTIN_SIDEBAR_ITEMS.filter(
-    (b) =>
-      !shownBuiltinKeys.includes(b.key) &&
-      // do not offer permission-gated entries the user cannot access.
-      (!b.permission || !!permissions?.[b.permission]),
-  )
-  const availableCollections = collections.filter(
-    (c) => !shownCollectionUuids.includes(c.uuid),
-  )
-  const availableShelves = userShelves.filter(
-    (s) => !shownShelfUuids.includes(s.uuid),
-  )
+  const findItem = (s: ManagerState, id: string): LocalItem | null =>
+    s.hidden.find((i) => i.id === id) ??
+    s.groups.flatMap((g) => g.items).find((i) => i.id === id) ??
+    null
 
-  const hasAvailable =
-    availableBuiltins.length > 0 ||
-    availableCollections.length > 0 ||
-    availableShelves.length > 0
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveItem(findItem(state, String(event.active.id)))
+  }
 
-  const updateGroup = (
-    groupId: string,
-    updater: (g: LocalGroup) => LocalGroup,
-  ) => {
-    setLocalGroups((prev) =>
-      prev.map((g) => (g.id === groupId ? updater(g) : g)),
+  // cross-container preview: moving between groups (or in/out of the hidden
+  // pool) happens live while dragging; onDragEnd only settles ordering
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event
+    if (!over) return
+    const activeId = String(active.id)
+    const overId = String(over.id)
+
+    setState((prev) => {
+      const from = findContainer(prev, activeId)
+      const to = findContainer(prev, overId)
+      if (!from || !to || from === to) return prev
+
+      const item = findItem(prev, activeId)
+      if (!item) return prev
+
+      const withoutItem: ManagerState = {
+        groups: prev.groups.map((g) => ({
+          ...g,
+          items: g.items.filter((i) => i.id !== activeId),
+        })),
+        hidden: prev.hidden.filter((i) => i.id !== activeId),
+      }
+
+      if (to === HIDDEN_CONTAINER_ID) {
+        return {
+          ...withoutItem,
+          hidden: [...withoutItem.hidden, item],
+        }
+      }
+
+      return {
+        ...withoutItem,
+        groups: withoutItem.groups.map((g) => {
+          if (g.id !== to) return g
+          const overIndex = g.items.findIndex((i) => i.id === overId)
+          const insertAt = overIndex >= 0 ? overIndex : g.items.length
+          const items = [...g.items]
+          items.splice(insertAt, 0, item)
+          return { ...g, items }
+        }),
+      }
+    })
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveItem(null)
+    if (!over) return
+    const activeId = String(active.id)
+    const overId = String(over.id)
+
+    setState((prev) => {
+      const container = findContainer(prev, activeId)
+      if (!container || container !== findContainer(prev, overId)) return prev
+      if (container === HIDDEN_CONTAINER_ID) return prev
+
+      return {
+        ...prev,
+        groups: prev.groups.map((g) => {
+          if (g.id !== container) return g
+          const oldIndex = g.items.findIndex((i) => i.id === activeId)
+          const newIndex = g.items.findIndex((i) => i.id === overId)
+          if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return g
+          return { ...g, items: arrayMove(g.items, oldIndex, newIndex) }
+        }),
+      }
+    })
+  }
+
+  const hideItem = (itemId: string) => {
+    setState((prev) => {
+      const item = findItem(prev, itemId)
+      if (!item) return prev
+      return {
+        groups: prev.groups.map((g) => ({
+          ...g,
+          items: g.items.filter((i) => i.id !== itemId),
+        })),
+        hidden: [...prev.hidden, item],
+      }
+    })
+  }
+
+  // restored items land at the end of their default group
+  const defaultGroupFor = (s: ManagerState, item: LocalItem) => {
+    const kind: SidebarGroupKind =
+      item.kind === "collection"
+        ? "collections"
+        : item.kind === "shelf"
+          ? "shelves"
+          : builtinGroupFor(item.builtinKey ?? "") ?? "library"
+
+    return (
+      s.groups.find((g) => g.kind === kind) ?? s.groups[s.groups.length - 1]
     )
   }
 
-  const removeItem = (groupId: string, itemId: string) => {
-    updateGroup(groupId, (g) => ({
-      ...g,
-      items: g.items.filter((i) => i.id !== itemId),
+  const restoreItem = (itemId: string) => {
+    setState((prev) => {
+      const item = prev.hidden.find((i) => i.id === itemId)
+      if (!item) return prev
+      const target = defaultGroupFor(prev, item)
+      if (!target) return prev
+      return {
+        groups: prev.groups.map((g) =>
+          g.id === target.id ? { ...g, items: [...g.items, item] } : g,
+        ),
+        hidden: prev.hidden.filter((i) => i.id !== itemId),
+      }
+    })
+  }
+
+  const renameGroup = (groupId: string, name: string) => {
+    setState((prev) => ({
+      ...prev,
+      groups: prev.groups.map((g) => (g.id === groupId ? { ...g, name } : g)),
     }))
   }
 
-  const addItem = (groupId: string, item: LocalItem) => {
-    updateGroup(groupId, (g) => ({
-      ...g,
-      items: [...g.items, item],
-    }))
-  }
-
-  const updateItem = (groupId: string, item: LocalItem) => {
-    updateGroup(groupId, (g) => ({
-      ...g,
-      items: g.items.map((i) => (i.id === item.id ? item : i)),
-    }))
+  // only custom groups can be removed; their items move to the hidden pool so
+  // nothing is lost
+  const removeGroup = (groupId: string) => {
+    setState((prev) => {
+      const group = prev.groups.find((g) => g.id === groupId)
+      if (!group || group.kind) return prev
+      return {
+        groups: prev.groups.filter((g) => g.id !== groupId),
+        hidden: [...prev.hidden, ...group.items],
+      }
+    })
   }
 
   const addGroup = () => {
-    setLocalGroups((prev) => [
+    setState((prev) => ({
       ...prev,
-      {
-        id: `new:${crypto.randomUUID()}`,
-        name: "New Section",
-        collapsed: false,
-        items: [],
-      },
-    ])
-  }
-
-  const removeGroup = (groupId: string) => {
-    setLocalGroups((prev) => prev.filter((g) => g.id !== groupId))
+      groups: [
+        ...prev.groups,
+        {
+          id: `new:${crypto.randomUUID()}`,
+          name: t("newSection"),
+          kind: null,
+          items: [],
+        },
+      ],
+    }))
   }
 
   const handleShelfSaved = (rawSaved: ShelfWithBooks) => {
     // kysely inference loses fields; cast to access runtime properties
     const saved = rawSaved as unknown as ShelfListItem
 
-    const isCreating = shelfEditorState === "create"
     const itemPayload: LocalItem = {
       id: `shelf:${saved.uuid}`,
       kind: "shelf",
@@ -246,39 +375,69 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
       color: saved.color ?? null,
     }
 
-    if (isCreating) {
-      const lastGroup = localGroups[localGroups.length - 1]
-      if (!lastGroup) return
-      addItem(lastGroup.id, itemPayload)
-    } else {
-      for (const g of localGroups) {
-        const existing = g.items.find((i) => i.shelfUuid === saved.uuid)
-        if (existing) {
-          updateItem(g.id, itemPayload)
-          break
+    setState((prev) => {
+      const existsIn = findContainer(prev, itemPayload.id)
+      if (existsIn) {
+        // edited: refresh name/icon in place
+        return {
+          groups: prev.groups.map((g) => ({
+            ...g,
+            items: g.items.map((i) =>
+              i.id === itemPayload.id ? itemPayload : i,
+            ),
+          })),
+          hidden: prev.hidden.map((i) =>
+            i.id === itemPayload.id ? itemPayload : i,
+          ),
         }
       }
-    }
+
+      const target = defaultGroupFor(prev, itemPayload)
+      if (!target) return prev
+      return {
+        ...prev,
+        groups: prev.groups.map((g) =>
+          g.id === target.id ? { ...g, items: [...g.items, itemPayload] } : g,
+        ),
+      }
+    })
   }
 
   const handleSave = async () => {
-    await setSidebarGroups(
-      localGroups.map((g) => ({
-        uuid: g.id.startsWith("new:") ? undefined : g.id,
-        name: g.name,
-        collapsed: g.collapsed,
-        items: g.items.map((i) => ({
-          kind: i.kind,
-          builtinKey: i.kind === "builtin" ? i.builtinKey : undefined,
-          collectionUuid:
-            i.kind === "collection" ? i.collectionUuid : undefined,
-          shelfUuid: i.kind === "shelf" ? i.shelfUuid : undefined,
-        })),
+    const payload = state.groups.map((g) => ({
+      uuid: g.id.startsWith("new:") ? undefined : g.id,
+      name: g.name,
+      kind: g.kind ?? undefined,
+      items: g.items.map((i) => ({
+        kind: i.kind,
+        builtinKey: i.kind === "builtin" ? i.builtinKey : undefined,
+        collectionUuid: i.kind === "collection" ? i.collectionUuid : undefined,
+        shelfUuid: i.kind === "shelf" ? i.shelfUuid : undefined,
+        hidden: false,
       })),
-    ).unwrap()
+    }))
+
+    // hidden items ride along in their default group, flagged hidden so the
+    // reconciler knows the user said no
+    for (const item of state.hidden) {
+      const target = defaultGroupFor(state, item)
+      const group = payload.find((g) => g.uuid === target?.id) ?? payload[0]
+      group?.items.push({
+        kind: item.kind,
+        builtinKey: item.kind === "builtin" ? item.builtinKey : undefined,
+        collectionUuid:
+          item.kind === "collection" ? item.collectionUuid : undefined,
+        shelfUuid: item.kind === "shelf" ? item.shelfUuid : undefined,
+        hidden: true,
+      })
+    }
+
+    await setSidebarGroups(payload).unwrap()
 
     onClose()
   }
+
+  const visibleHidden = state.hidden.filter(canSee)
 
   return (
     <>
@@ -295,7 +454,6 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
               onClick={onClose}
               disabled={isSaving}
               title={c("actions.cancel")}
-              className="text-muted-foreground hover:text-foreground size-5"
             >
               <icon.Close className="size-3.5" />
             </Button>
@@ -306,7 +464,6 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
               onClick={handleSave}
               disabled={isSaving}
               title={c("actions.done")}
-              className="text-muted-foreground hover:text-foreground size-5"
             >
               {isSaving ? (
                 <icon.Loader className="size-3.5 animate-spin" />
@@ -318,67 +475,88 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
         </SidebarGroupLabel>
 
         <SidebarGroupContent>
-          <div className="flex flex-col gap-3 px-1">
-            {localGroups.map((group) => (
-              <EditableGroup
-                key={group.id}
-                group={group}
-                onRename={(name) => {
-                  updateGroup(group.id, (g) => ({ ...g, name }))
-                }}
-                onRemoveGroup={() => {
-                  removeGroup(group.id)
-                }}
-                onRemoveItem={(itemId) => {
-                  removeItem(group.id, itemId)
-                }}
-                onReorderItems={(items) => {
-                  updateGroup(group.id, (g) => ({ ...g, items }))
-                }}
-                showAdd={hasAvailable}
-                availableBuiltins={availableBuiltins}
-                availableCollections={availableCollections}
-                availableShelves={availableShelves}
-                onAddItem={(item) => {
-                  addItem(group.id, item)
-                }}
-                builtinTitle={builtinTitle}
-                t={t as unknown as (key: string) => string}
-                canEditItem={(item) => {
-                  return item.kind === "shelf" && item.shelfUuid !== null
-                }}
-                onEditItem={(item) => {
-                  if (item.kind === "shelf" && item.shelfUuid) {
-                    setShelfEditorState(item.shelfUuid)
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => {
+              setActiveItem(null)
+            }}
+          >
+            <div className="flex flex-col gap-3 px-1">
+              {state.groups.map((group) => (
+                <EditableGroup
+                  key={group.id}
+                  group={group}
+                  items={group.items.filter(canSee)}
+                  onRename={(name) => {
+                    renameGroup(group.id, name)
+                  }}
+                  onRemoveGroup={
+                    group.kind
+                      ? undefined
+                      : () => {
+                          removeGroup(group.id)
+                        }
                   }
-                }}
+                  onHideItem={hideItem}
+                  onEditItem={(item) => {
+                    if (item.kind === "shelf" && item.shelfUuid) {
+                      setShelfEditorState(item.shelfUuid)
+                    }
+                  }}
+                  t={t as unknown as (key: string) => string}
+                />
+              ))}
+
+              <HiddenPool
+                items={visibleHidden}
+                onRestoreItem={restoreItem}
+                t={t as unknown as (key: string) => string}
               />
-            ))}
 
-            <div className="flex flex-col gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-muted-foreground text-muted-foreground hover:text-foreground flex-1 text-xs"
-                onClick={addGroup}
-              >
-                <IAdd.base className="mr-1 size-3" />
-                {t("addGroup")}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground text-xs"
+                    >
+                      <IAdd.base className="mr-1 size-3" />
+                      {t("add")}
+                    </Button>
+                  }
+                />
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-muted-foreground text-muted-foreground hover:text-foreground flex-1 text-xs"
-                onClick={() => {
-                  setShelfEditorState("create")
-                }}
-              >
-                <IAdd.base className="mr-1 size-3" />
-                {t("createShelf")}
-              </Button>
+                <DropdownMenuContent side="top" align="start">
+                  <DropdownMenuItem onClick={addGroup}>
+                    <icon.List className="mr-2 size-4" />
+                    {t("addGroup")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setShelfEditorState("create")
+                    }}
+                  >
+                    <icon.Bookmark className="mr-2 size-4" />
+                    {t("createShelf")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </div>
+
+            <DragOverlay>
+              {activeItem ? (
+                <div className="bg-sidebar-accent text-sidebar-accent-foreground flex items-center gap-1.5 rounded px-1 py-1.5 shadow-md">
+                  <icon.GripVertical className="text-muted-foreground size-3.5" />
+                  <span className="truncate text-xs">{activeItem.name}</span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </SidebarGroupContent>
       </SidebarGroup>
 
@@ -402,38 +580,25 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
 
 type EditableGroupProps = {
   group: LocalGroup
+  items: LocalItem[]
   onRename: (name: string) => void
-  onRemoveGroup: () => void
-  onRemoveItem: (itemId: string) => void
+  onRemoveGroup?: () => void
+  onHideItem: (itemId: string) => void
   onEditItem: (item: LocalItem) => void
-  onReorderItems: (items: LocalItem[]) => void
-  showAdd: boolean
-  availableBuiltins: BuiltinSidebarItem[]
-  availableCollections: Array<{ uuid: string; name: string }>
-  availableShelves: ShelfListItem[]
-  onAddItem: (item: LocalItem) => void
-  builtinTitle: (b: BuiltinSidebarItem) => string
   t: (key: string) => string
-  canEditItem: (item: LocalItem) => boolean
 }
 
 function EditableGroup({
   group,
+  items,
   onRename,
   onRemoveGroup,
-  onRemoveItem,
+  onHideItem,
   onEditItem,
-  onReorderItems,
-  showAdd,
-  availableBuiltins,
-  availableCollections,
-  availableShelves,
-  onAddItem,
-  builtinTitle,
   t,
-  canEditItem,
 }: EditableGroupProps) {
   const [isOpen, setIsOpen] = useState(true)
+  const { setNodeRef } = useDroppable({ id: group.id })
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -441,9 +606,10 @@ function EditableGroup({
         <div className="flex items-center gap-1">
           <CollapsibleTrigger
             render={
-              <button
-                type="button"
-                className="text-muted-foreground hover:text-foreground flex size-5 items-center justify-center"
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="text-muted-foreground size-5"
               >
                 <icon.ChevronDown
                   className={cn(
@@ -451,7 +617,7 @@ function EditableGroup({
                     !isOpen && "-rotate-90",
                   )}
                 />
-              </button>
+              </Button>
             }
           />
 
@@ -463,175 +629,149 @@ function EditableGroup({
             className="h-6 flex-1 border-none bg-transparent px-1 text-xs font-medium shadow-none focus-visible:ring-1"
           />
 
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={onRemoveGroup}
-            className="text-muted-foreground hover:text-destructive hover:bg-muted-foreground size-5"
-            title="Remove group"
-          >
-            <icon.Trash className="size-3" />
-          </Button>
+          {onRemoveGroup && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={onRemoveGroup}
+              className="text-muted-foreground hover:text-destructive size-5"
+              title={t("removeSection")}
+            >
+              <icon.Trash className="size-3" />
+            </Button>
+          )}
         </div>
 
         <CollapsibleContent>
-          <Reorder.Group
-            values={group.items}
-            onReorder={onReorderItems}
-            className="flex flex-col gap-0.5"
+          <SortableContext
+            items={items.map((i) => i.id)}
+            strategy={verticalListSortingStrategy}
           >
-            {group.items.map((item) => (
-              <EditableItem
-                key={item.id}
-                item={item}
-                onRemove={() => {
-                  onRemoveItem(item.id)
-                }}
-                onEdit={
-                  canEditItem(item)
-                    ? () => {
-                        onEditItem(item)
-                      }
-                    : undefined
-                }
-              />
-            ))}
-          </Reorder.Group>
-
-          {showAdd && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-foreground mt-1 ml-5 flex items-center gap-1 text-xs"
-                  >
-                    <IAdd.base className="size-3" />
-                    {t("add")}
-                  </button>
-                }
-              />
-
-              <DropdownMenuContent side="bottom" align="start">
-                {availableBuiltins.length > 0 && (
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>Pages</DropdownMenuLabel>
-                    {availableBuiltins.map((b) => (
-                      <DropdownMenuItem
-                        key={b.key}
-                        onClick={() => {
-                          onAddItem({
-                            id: `builtin:${b.key}`,
-                            kind: "builtin",
-                            builtinKey: b.key,
-                            collectionUuid: null,
-                            shelfUuid: null,
-                            name: builtinTitle(b),
-                            icon: null,
-                            color: null,
-                          })
-                        }}
-                      >
-                        {builtinTitle(b)}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuGroup>
-                )}
-
-                {availableCollections.length > 0 && (
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>{t("collection")}</DropdownMenuLabel>
-                    {availableCollections.map((c) => (
-                      <DropdownMenuItem
-                        key={c.uuid}
-                        onClick={() => {
-                          onAddItem({
-                            id: `collection:${c.uuid}`,
-                            kind: "collection",
-                            builtinKey: null,
-                            collectionUuid: c.uuid,
-                            shelfUuid: null,
-                            name: cleanName(c.name),
-                            icon: null,
-                            color: null,
-                          })
-                        }}
-                      >
-                        {cleanName(c.name)}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuGroup>
-                )}
-
-                {availableShelves.length > 0 && (
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>{t("shelf")}</DropdownMenuLabel>
-                    {availableShelves.map((s) => (
-                      <DropdownMenuItem
-                        key={s.uuid}
-                        onClick={() => {
-                          onAddItem({
-                            id: `shelf:${s.uuid}`,
-                            kind: "shelf",
-                            builtinKey: null,
-                            collectionUuid: null,
-                            shelfUuid: s.uuid,
-                            name: cleanName(s.name),
-                            icon: s.icon ?? null,
-                            color: s.color ?? null,
-                          })
-                        }}
-                      >
-                        {cleanName(s.name)}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuGroup>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+            <ul
+              ref={setNodeRef}
+              className="flex min-h-6 flex-col gap-0.5 rounded"
+            >
+              {items.map((item) => (
+                <EditableItem
+                  key={item.id}
+                  item={item}
+                  onHide={() => {
+                    onHideItem(item.id)
+                  }}
+                  onEdit={
+                    item.kind === "shelf" && item.shelfUuid
+                      ? () => {
+                          onEditItem(item)
+                        }
+                      : undefined
+                  }
+                  t={t}
+                />
+              ))}
+            </ul>
+          </SortableContext>
         </CollapsibleContent>
       </div>
     </Collapsible>
   )
 }
 
-type EditableItemProps = {
-  item: LocalItem
-  onRemove: () => void
-  onEdit?: () => void
-}
-
-function EditableItem({ item, onRemove, onEdit }: EditableItemProps) {
-  const controls = useDragControls()
-  const [isDragging, setIsDragging] = useState(false)
+function HiddenPool({
+  items,
+  onRestoreItem,
+  t,
+}: {
+  items: LocalItem[]
+  onRestoreItem: (itemId: string) => void
+  t: (key: string) => string
+}) {
+  const { setNodeRef } = useDroppable({ id: HIDDEN_CONTAINER_ID })
 
   return (
-    <Reorder.Item
-      value={item}
+    <div className="flex flex-col gap-1">
+      <span className="text-muted-foreground px-1 text-[10px] font-medium tracking-[0.14em] uppercase">
+        {t("hidden")}
+      </span>
+
+      <SortableContext
+        items={items.map((i) => i.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <ul
+          ref={setNodeRef}
+          className={cn(
+            "border-sidebar-border flex min-h-8 flex-col gap-0.5 rounded border border-dashed p-0.5",
+            items.length === 0 && "items-center justify-center",
+          )}
+        >
+          {items.length === 0 && (
+            <span className="text-muted-foreground/60 text-[10px]">
+              {t("hiddenEmpty")}
+            </span>
+          )}
+          {items.map((item) => (
+            <EditableItem
+              key={item.id}
+              item={item}
+              hidden
+              onRestore={() => {
+                onRestoreItem(item.id)
+              }}
+              t={t}
+            />
+          ))}
+        </ul>
+      </SortableContext>
+    </div>
+  )
+}
+
+type EditableItemProps = {
+  item: LocalItem
+  hidden?: boolean
+  onHide?: () => void
+  onRestore?: () => void
+  onEdit?: () => void
+  t: (key: string) => string
+}
+
+function EditableItem({
+  item,
+  hidden = false,
+  onHide,
+  onRestore,
+  onEdit,
+  t,
+}: EditableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id })
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
       className={cn(
-        "flex items-center gap-1 rounded px-0.5 py-0.5",
-        isDragging && "bg-muted-foreground cursor-grabbing!",
+        "flex items-center gap-1 rounded px-0.5 py-1.5",
+        isDragging && "bg-sidebar-accent opacity-50",
+        hidden && "opacity-60",
       )}
-      dragControls={controls}
-      dragListener={false}
     >
       <button
         type="button"
-        className={cn(
-          "text-muted-foreground flex size-4 shrink-0 items-center justify-center hover:cursor-grab",
-          isDragging && "cursor-grabbing!",
-        )}
-        onPointerDown={(e) => {
-          e.preventDefault()
-          setIsDragging(true)
-          controls.start(e)
-        }}
-        onPointerUp={() => {
-          setIsDragging(false)
-        }}
+        {...attributes}
+        {...listeners}
+        className="text-muted-foreground hover:text-foreground flex h-6 w-5 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
       >
-        <icon.GripVertical className="size-3" />
+        <icon.GripVertical className="size-3.5" />
       </button>
 
       <span className="flex-1 truncate text-xs">{item.name}</span>
@@ -642,21 +782,38 @@ function EditableItem({ item, onRemove, onEdit }: EditableItemProps) {
           variant="ghost"
           size="icon-xs"
           onClick={onEdit}
-          className="text-muted-foreground hover:text-foreground hover:bg-muted-foreground size-4"
-          title="Edit"
+          className="text-muted-foreground size-5"
+          title={t("editItem")}
         >
           <icon.Pencil className="size-3" />
         </Button>
       )}
 
-      <button
-        type="button"
-        onClick={onRemove}
-        className="text-muted-foreground hover:text-destructive flex size-4 shrink-0 items-center justify-center"
-        title="Hide"
-      >
-        <icon.EyeOff className="size-3" />
-      </button>
-    </Reorder.Item>
+      {onHide && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={onHide}
+          className="text-muted-foreground size-5"
+          title={t("hideFromSidebar")}
+        >
+          <icon.EyeOff className="size-3" />
+        </Button>
+      )}
+
+      {onRestore && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={onRestore}
+          className="text-muted-foreground size-5"
+          title={t("showInSidebar")}
+        >
+          <icon.Eye className="size-3" />
+        </Button>
+      )}
+    </li>
   )
 }

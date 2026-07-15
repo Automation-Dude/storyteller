@@ -297,6 +297,18 @@
   },
   "ShelfPage": {
     "emptyShelf": "Deze plank is leeg",
+    "adjustFilters": "Probeer je zoekterm of filters aan te passen",
+    "goToAllShelves": "Alle planken"
+  },
+  "ShelvesPage": {
+    "title": "Planken",
+    "emptyShelf": "Deze plank is leeg",
+    "adjustFilters": "Probeer je zoekterm of filters aan te passen",
+    "selectAShelf": "Selecteer een plank om de boeken te bekijken"
+  },
+  "CollectionPage": {
+    "goToAllCollections": "Alle verzamelingen",
+    "emptyCollection": "Deze verzameling is leeg",
     "adjustFilters": "Probeer je zoekterm of filters aan te passen"
   },
   "ShelfFilterEditor": {
@@ -994,15 +1006,30 @@
     },
     "switchToClassic": "Terug naar klassieke UI",
     "switchToNew": "Nieuwe interface proberen",
-    "preferences": "Voorkeuren"
+    "preferences": "Voorkeuren",
+    "hideCollections": "Alle verzamelingen verbergen",
+    "hideShelves": "Alle planken verbergen",
+    "createNewCollection": "Nieuwe verzameling aanmaken",
+    "createNewShelf": "Nieuwe plank aanmaken",
+    "editItem": "Bewerken",
+    "removeFromSidebar": "Verwijderen uit zijbalk",
+    "seeAllCollections": "Alle verzamelingen bekijken",
+    "seeAllShelves": "Alle planken bekijken"
   },
   "SidebarManager": {
+    "add": "Toevoegen",
     "customize": "Zijbalk aanpassen",
     "title": "Zijbalk bewerken",
     "description": "Items herordenen, verbergen wat je niet gebruikt, en verzamelingen of planken toevoegen.",
     "available": "Aan zijbalk toevoegen",
-    "addGroup": "Sectie toevoegen",
+    "addGroup": "Nieuwe sectie",
+    "newSection": "Nieuwe sectie",
+    "removeSection": "Sectie verwijderen",
     "hideFromSidebar": "Verbergen uit zijbalk",
+    "showInSidebar": "Tonen in zijbalk",
+    "editItem": "Bewerken",
+    "hidden": "Verborgen",
+    "hiddenEmpty": "Sleep items hierheen om ze te verbergen",
     "collection": "Verzameling",
     "shelf": "Plank",
     "createShelf": "Nieuwe plank",

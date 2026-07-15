@@ -125,7 +125,7 @@ export function DescriptionSection({ className }: { className?: string }) {
   return (
     <CollapsibleSection
       title={c("fields.label.description")}
-      name={"description"}
+      sectionKey="description"
       className={className}
     >
       {active ? (

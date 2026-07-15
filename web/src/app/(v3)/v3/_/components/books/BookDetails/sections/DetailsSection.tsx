@@ -45,6 +45,7 @@ export function DetailsSection({ className }: { className?: string }) {
   return (
     <CollapsibleSection
       title={tLabels("bookDetails")}
+      sectionKey="details"
       icon={<icon.BookAlt className="size-3.5 stroke-[1.5]" />}
       className={className}
     >

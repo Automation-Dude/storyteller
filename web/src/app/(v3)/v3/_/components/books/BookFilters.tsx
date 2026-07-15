@@ -155,8 +155,9 @@ export function BookFilters({
 
   return (
     <div
+      // DONT MAKE FLEX CONTAINER THE SEARCH INPUT WILL NOT BE THE CORRECT HEIGHT IT WILL HAUNT YOU
       className={cn(
-        "bg-surface-base sticky top-0 z-30 flex flex-col gap-2 px-4 pb-3",
+        "bg-surface-base sticky top-0 z-30 space-y-2 px-4 pb-3",
         className,
       )}
     >

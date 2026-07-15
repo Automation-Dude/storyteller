@@ -555,6 +555,7 @@ function TagsSection() {
   return (
     <CollapsibleSection
       title={c("fields.label.tags")}
+      sectionKey="tags"
       icon={<icon.Tag className="size-3.5 stroke-[1.5]" />}
     >
       <TagEditor
@@ -574,6 +575,7 @@ function CollectionsSection() {
   return (
     <CollapsibleSection
       title={c("fields.label.collections")}
+      sectionKey="collections"
       icon={<icon.Folder className="size-3.5 stroke-[1.5]" />}
     >
       <CollectionEditor

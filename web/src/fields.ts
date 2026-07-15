@@ -108,9 +108,6 @@ export const ALIGNMENT_GRADES = [
   "F",
 ] as const
 
-// the asset a format-scoped numeric (fileSize / duration / pageCount) targets.
-// absent = the cross-format fallback (assetNumericExpr coalesce). mirrors the
-// `role` discriminator on creator conditions.
 export const ASSET_FORMATS = ["ebook", "audiobook", "readaloud"] as const
 export type AssetFormat = (typeof ASSET_FORMATS)[number]
 

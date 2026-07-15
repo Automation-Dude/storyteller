@@ -1,9 +1,13 @@
 import { type Permission } from "@/database/users"
 import * as icon from "@/icons"
 import { type StyledIcon } from "@/icons"
+import {
+  SIDEBAR_BUILTINS,
+  type SidebarBuiltinGroup,
+  type SidebarBuiltinKey,
+} from "@/sidebar-builtins"
 
-
-export type SidebarGroup = "main" | "library"
+export type SidebarGroup = SidebarBuiltinGroup
 
 type AppSidebarLabelKey = "home" | "books" | "alignmentQuality"
 type LibraryLabelKey =
@@ -17,9 +21,7 @@ type LibraryLabelKey =
   | "Status.plain"
   | "Formats.plain"
 
-type BuiltinBase = {
-  key: string
-  group: SidebarGroup
+type BuiltinMetaBase = {
   icon: StyledIcon
   href: string
   // count lookup key in useLibraryCounts; omitted for entries without a badge
@@ -28,121 +30,111 @@ type BuiltinBase = {
   permission?: Permission
 }
 
-// presentation metadata for a builtin nav entry. the DB stores only the stable
-// `key`; everything else (icon, href, label, count) is resolved from here. the
-// labelNs discriminant keeps labelKey precise so the matching translator
-// validates it without casts.
-export type BuiltinSidebarItem =
-  | (BuiltinBase & { labelNs: "AppSidebar"; labelKey: AppSidebarLabelKey })
-  | (BuiltinBase & { labelNs: "LibraryPage"; labelKey: LibraryLabelKey })
+// presentation metadata for a builtin nav entry. the canonical key list and
+// default grouping/order live in src/sidebar-builtins.ts; this map must cover
+// exactly those keys (enforced by the Record type). the labelNs discriminant
+// keeps labelKey precise so the matching translator validates it without
+// casts.
+type BuiltinMeta =
+  | (BuiltinMetaBase & { labelNs: "AppSidebar"; labelKey: AppSidebarLabelKey })
+  | (BuiltinMetaBase & { labelNs: "LibraryPage"; labelKey: LibraryLabelKey })
 
-export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = [
-  {
-    key: "home",
-    group: "main",
+export type BuiltinSidebarItem = BuiltinMeta & {
+  key: string
+  group: SidebarGroup
+}
+
+const BUILTIN_META: Record<SidebarBuiltinKey, BuiltinMeta> = {
+  home: {
     icon: icon.Home,
     href: "/",
     labelNs: "AppSidebar",
     labelKey: "home",
   },
-  {
-    key: "books",
-    group: "main",
+  books: {
     icon: icon.BookAlt,
     href: "/books",
     labelNs: "AppSidebar",
     labelKey: "books",
   },
-  {
-    key: "alignment-quality",
-    group: "main",
+  "alignment-quality": {
     icon: icon.ReportAnalytics,
     href: "/quality",
     permission: "bookProcess",
     labelNs: "AppSidebar",
     labelKey: "alignmentQuality",
   },
-  {
-    key: "series",
-    group: "library",
+  series: {
     icon: icon.List,
     href: "/series",
     countKey: "series",
     labelNs: "LibraryPage",
     labelKey: "Series.plain",
   },
-  {
-    key: "authors",
-    group: "library",
+  authors: {
     icon: icon.User,
     href: "/authors",
     countKey: "authors",
     labelNs: "LibraryPage",
     labelKey: "Authors.plain",
   },
-  {
-    key: "narrators",
-    group: "library",
+  narrators: {
     icon: icon.Microphone2,
     href: "/narrators",
     countKey: "narrators",
     labelNs: "LibraryPage",
     labelKey: "Narrators.plain",
   },
-  {
-    key: "translators",
-    group: "library",
+  translators: {
     icon: icon.Language,
     href: "/translators",
     countKey: "translators",
     labelNs: "LibraryPage",
     labelKey: "Translators.plain",
   },
-  {
-    key: "tags",
-    group: "library",
+  tags: {
     icon: icon.Tag,
     href: "/tags",
     countKey: "tags",
     labelNs: "LibraryPage",
     labelKey: "Tags.plain",
   },
-  {
-    key: "publication-years",
-    group: "library",
+  "publication-years": {
     icon: icon.Calendar,
     href: "/publication-years",
     countKey: "publicationYears",
     labelNs: "LibraryPage",
     labelKey: "PublicationYear.plain",
   },
-  {
-    key: "ratings",
-    group: "library",
+  ratings: {
     icon: icon.Star,
     href: "/ratings",
     countKey: "ratings",
     labelNs: "LibraryPage",
     labelKey: "Rating.plain",
   },
-  {
-    key: "statuses",
-    group: "library",
+  statuses: {
     icon: icon.CircleCheck,
     href: "/statuses",
     countKey: "statuses",
     labelNs: "LibraryPage",
     labelKey: "Status.plain",
   },
-  {
-    key: "formats",
-    group: "library",
+  formats: {
     icon: icon.Stack,
     href: "/formats",
     labelNs: "LibraryPage",
     labelKey: "Formats.plain",
   },
-]
+}
+
+export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = SIDEBAR_BUILTINS.map(
+  (b) => ({
+    key: b.key,
+    group: b.group,
+    ...BUILTIN_META[b.key],
+  }),
+)
 
 export const BUILTIN_SIDEBAR_MAP: Record<string, BuiltinSidebarItem> =
   Object.fromEntries(BUILTIN_SIDEBAR_ITEMS.map((item) => [item.key, item]))

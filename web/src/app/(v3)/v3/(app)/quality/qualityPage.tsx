@@ -1,6 +1,5 @@
 "use client"
 
-import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 
 import { BookFilters } from "@v3/_/components/books"
@@ -35,6 +34,7 @@ import {
   selectGridDisplayFields,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
+import { useBookInSidePanel } from "../../_/hooks/use-open-book"
 
 const GRADES = ["A+", "A", "A-", "B", "B-", "C", "D", "F"] as const
 
@@ -62,10 +62,7 @@ export default function QualityPage() {
     [tLabel],
   )
 
-  const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
-    "book",
-    parseAsString,
-  )
+  const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
   const [, setReportMode] = useReportPanel()
   const { isSelecting, toggleSelection } = useBookSelection()
 

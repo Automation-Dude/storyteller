@@ -7,9 +7,6 @@ import { type UUID } from "@/uuid"
 import { db } from "./connection"
 import { buildFilterExpression } from "./shelfFilter"
 
-// one entry in a library section's facet list (a series, an author, a tag, a
-// publication year, ...). `bookCount` is the number of visible books carrying
-// that facet, computed in SQL so the sidebar never loads the whole catalog.
 export type LibraryFacet = {
   key: string
   name: string
@@ -21,8 +18,6 @@ export type LibraryFacet = {
   kind?: string
 }
 
-// library sections whose facet list + per-facet book counts are computed
-// server-side. mirrors the keys in librarySections (library-sections.ts).
 export const FACET_SECTIONS = [
   "series",
   "authors",
@@ -42,13 +37,8 @@ export function isFacetSection(value: string): value is FacetSection {
   return (FACET_SECTIONS as readonly string[]).includes(value)
 }
 
-// the synthetic facet key for the "(no author)" / "(no series)" / ... bucket.
-// kept in sync with NONE_KEY in library-sections.ts (the client supplies the
-// human label; the server only computes the count).
 export const NONE_FACET_KEY = "__none__"
 
-// counts that back the library sidebar badges. computed entirely in SQL so the
-// client never has to fetch full entity lists (or every book) just to count.
 export type LibraryCounts = {
   series: number
   authors: number
@@ -63,11 +53,8 @@ export type LibraryCounts = {
   shelves: Record<string, number>
 }
 
-// the set of books a user may see: their own listed collections, public
-// collections, or books in no collection. mirrors the visibility clause in
-// booksQuery / the entity getters so the counts match the lists they badge.
-function visibleBooks(userId: UUID) {
-  return db
+function visibleBooks(userId: UUID, dab = db) {
+  return dab
     .selectFrom("book")
     .leftJoin("bookToCollection", "bookToCollection.bookUuid", "book.uuid")
     .leftJoin(
@@ -111,6 +98,8 @@ async function countSmartShelf(userId: UUID, filter: ShelfFilter) {
 }
 
 export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
+  const allP = visibleBooks(userId)
+
   const seriesP = visibleBooks(userId)
     .innerJoin("bookToSeries", "bookToSeries.bookUuid", "book.uuid")
     .select((eb) =>
@@ -135,8 +124,6 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     )
     .executeTakeFirst()
 
-  // status + rating live on per-user join tables, so they're already scoped to
-  // this user and need no collection-visibility join.
   const statusesP = db
     .selectFrom("bookToStatus")
     .where("bookToStatus.userId", "=", userId)
@@ -174,8 +161,6 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     .groupBy("shelfBook.shelfUuid")
     .execute()
 
-  // smart shelves resolve via their filter, so each needs its own count query.
-  // there are only a handful of shelves, so this stays cheap.
   const smartShelvesP = db
     .selectFrom("shelf")
     .select(["shelf.uuid", "shelf.filter"])
@@ -184,6 +169,7 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     .execute()
 
   const [
+    all,
     series,
     authors,
     narrators,
@@ -196,6 +182,7 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     manualShelfRows,
     smartShelves,
   ] = await Promise.all([
+    allP,
     seriesP,
     countCreatorsByRole(userId, "aut"),
     countCreatorsByRole(userId, "nrt"),
@@ -217,8 +204,6 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
 
   const smartCounts = await Promise.all(
     smartShelves.map(async (shelf) => {
-      // the column is stored as a json string; the schema types the select as
-      // the parsed shape, so parse defensively in case either form shows up.
       const raw = shelf.filter as unknown
       const filter = (
         typeof raw === "string" ? JSON.parse(raw) : raw
@@ -376,35 +361,35 @@ async function ratingFacets(userId: UUID): Promise<LibraryFacet[]> {
     .select((eb) => [
       eb
         .case()
-        .when("userBookRating.rating", "<", 1)
-        .then("0-0.99")
-        .when("userBookRating.rating", "<", 2)
-        .then("1-1.99")
-        .when("userBookRating.rating", "<", 3)
-        .then("2-2.99")
-        .when("userBookRating.rating", "<", 4)
-        .then("3-3.99")
-        .when("userBookRating.rating", "<", 5)
-        .then("4-4.99")
-        .when("userBookRating.rating", "=", 5)
-        .then("5-5")
+        .when("userBookRating.rating", "<", 0.49)
+        .then("0-0.49")
+        .when("userBookRating.rating", "<", 1.49)
+        .then("0.5-1.49")
+        .when("userBookRating.rating", "<", 2.49)
+        .then("1.5-2.49")
+        .when("userBookRating.rating", "<", 2.99)
+        .then("2.5-3.49")
+        .when("userBookRating.rating", "<", 3.49)
+        .then("3.5-4.49")
+        .when("userBookRating.rating", "<", 4.99)
+        .then("4.5-5")
         .else("no-rating")
         .end()
         .as("key"),
 
       eb
         .case()
-        .when("userBookRating.rating", "<", 1)
+        .when("userBookRating.rating", "<", 0.49)
         .then("☆☆☆☆☆")
-        .when("userBookRating.rating", "<", 2)
+        .when("userBookRating.rating", "<", 1.49)
         .then("★☆☆☆☆")
-        .when("userBookRating.rating", "<", 3)
+        .when("userBookRating.rating", "<", 2.49)
         .then("★★☆☆☆")
-        .when("userBookRating.rating", "<", 4)
+        .when("userBookRating.rating", "<", 3.49)
         .then("★★★☆☆")
-        .when("userBookRating.rating", "<", 5)
+        .when("userBookRating.rating", "<", 4.49)
         .then("★★★★☆")
-        .when("userBookRating.rating", "=", 5)
+        .when("userBookRating.rating", "<", 5)
         .then("★★★★★")
         .else("no-rating")
         .end()

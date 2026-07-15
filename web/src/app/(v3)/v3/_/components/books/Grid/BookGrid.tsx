@@ -46,6 +46,7 @@ import {
   selectGridCardSize,
   selectGridSpacing,
 } from "@/store/slices/uiSettingsSlice"
+import { useBookInSidePanel } from "../../../hooks/use-open-book"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -178,15 +179,15 @@ export function BookGrid({
   // revisit
   const navEnabled = false // !!onBookClick
 
-  const [, setSelectedBookId] = useQueryState("book")
+  const { setSelectedBookUuid } = useBookInSidePanel()
 
   const openBookAt = useCallback(
     (index: number) => {
       const book = books[index]
-      void setSelectedBookId(book?.uuid ?? null)
+      void setSelectedBookUuid(book?.uuid ?? null)
       // if (book) onBookClick?.(book)
     },
-    [books, onBookClick],
+    [books, setSelectedBookUuid],
   )
 
   const focusDetailPanel = useCallback(() => {

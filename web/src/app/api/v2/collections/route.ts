@@ -33,5 +33,7 @@ export const POST = withHasPermission("collectionCreate")(async (request) => {
     users: [...(users ?? []), request.auth.user.id],
   })
 
+  // the sidebar picks the new collection up via ensureSidebarDefaults on its
+  // next read (the client invalidates the Sidebar tag after this mutation)
   return NextResponse.json(created)
 })

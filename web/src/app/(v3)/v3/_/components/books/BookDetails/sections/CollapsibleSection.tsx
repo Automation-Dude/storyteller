@@ -9,9 +9,15 @@ import {
 import { Button } from "@/app/(v3)/v3/_/components/ui/button"
 import { cn } from "@/cn"
 import * as icons from "@/icons"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import {
+  selectCollapsedDetailSections,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
 
 export function CollapsibleSection({
   title,
+  sectionKey,
   icon,
   children,
   defaultOpen = true,
@@ -19,18 +25,35 @@ export function CollapsibleSection({
   rightElement,
 }: {
   title: string
-  // optional stable key for the section; currently unused but kept so callers
-  // can label sections without a type error
-  name?: string
+  sectionKey?: string
   icon?: React.ReactNode
   children: React.ReactNode
   defaultOpen?: boolean
   className?: string
   rightElement?: React.ReactNode
 }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen)
+  const dispatch = useAppDispatch()
+  const collapsedSections = useAppSelector(selectCollapsedDetailSections)
+
+  const persisted = sectionKey ? collapsedSections[sectionKey] : undefined
+  const [localOpen, setLocalOpen] = useState(defaultOpen)
+  const isOpen = persisted !== undefined ? !persisted : localOpen
+
+  const handleOpenChange = (open: boolean) => {
+    if (sectionKey) {
+      dispatch(
+        uiSettingsSlice.actions.toggleDetailSection({
+          sectionKey,
+          collapsed: !open,
+        }),
+      )
+    } else {
+      setLocalOpen(open)
+    }
+  }
+
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
       <div className="group/section">
         <div className="relative mb-3 flex items-center gap-3">
           <CollapsibleTrigger
@@ -49,7 +72,7 @@ export function CollapsibleSection({
               size="icon-xs"
               aria-hidden="true"
               onClick={() => {
-                setIsOpen((prev) => !prev)
+                handleOpenChange(!isOpen)
               }}
             >
               <icons.ChevronDown

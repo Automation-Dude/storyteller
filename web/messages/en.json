@@ -307,7 +307,21 @@
     "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone."
   },
   "ShelfPage": {
+    "breadcrumb": "Shelves",
     "emptyShelf": "This shelf is empty",
+    "adjustFilters": "Try adjusting your search or filters",
+    "goToAllShelves": "All shelves"
+  },
+  "ShelvesPage": {
+    "title": "Shelves",
+    "emptyShelf": "This shelf is empty",
+    "adjustFilters": "Try adjusting your search or filters",
+    "selectAShelf": "Select a shelf to view its books"
+  },
+  "CollectionPage": {
+    "breadcrumb": "Collections",
+    "goToAllCollections": "All collections",
+    "emptyCollection": "This collection is empty",
     "adjustFilters": "Try adjusting your search or filters"
   },
   "ShelfFilterEditor": {
@@ -1007,7 +1021,15 @@
       "nl": "Dutch"
     },
     "switchToClassic": "Switch to classic UI",
-    "switchToNew": "Try new interface"
+    "switchToNew": "Try new interface",
+    "hideCollections": "Hide all collections",
+    "hideShelves": "Hide all shelves",
+    "createNewCollection": "Create new collection",
+    "createNewShelf": "Create new shelf",
+    "editItem": "Edit",
+    "removeFromSidebar": "Remove from sidebar",
+    "seeAllCollections": "See all collections",
+    "seeAllShelves": "See all shelves"
   },
   "CommandPalette": {
     "searchPlaceholder": "Search or run a command...",
@@ -1028,12 +1050,19 @@
     "sectionShelves": "Shelves"
   },
   "SidebarManager": {
+    "add": "Add",
     "customize": "Customize sidebar",
     "title": "Edit sidebar",
     "description": "Reorder items, hide what you don't use, and add collections or shelves.",
     "available": "Add to sidebar",
-    "addGroup": "Add section",
+    "addGroup": "New section",
+    "newSection": "New section",
+    "removeSection": "Remove section",
     "hideFromSidebar": "Hide from sidebar",
+    "showInSidebar": "Show in sidebar",
+    "editItem": "Edit",
+    "hidden": "Hidden",
+    "hiddenEmpty": "Drag items here to hide them",
     "collection": "Collection",
     "shelf": "Shelf",
     "createShelf": "New shelf",

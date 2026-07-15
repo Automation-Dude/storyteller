@@ -93,6 +93,9 @@ import {
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
+import { V3Link } from "../v3-link"
+import { usePathname } from "next/navigation"
+import { useBookInSidePanel } from "../../hooks/use-open-book"
 
 const SIDEBAR_ROW_HEIGHT = 30
 
@@ -181,17 +184,12 @@ function LibraryPageInner({
     (state) => state.uiSettings.librarySidebarWidth,
   )
 
-  // the sidebar facet list + per-facet counts, computed in SQL (never loads the
-  // whole catalog).
   const { data: facets, isLoading: facetsLoading } = useGetSectionFacetsQuery({
     section: section.key,
   })
 
   const [selectedItem, setSelectedItem] = useQueryState("item", parseAsString)
-  const [selectedBookUuid, setSelectedBookUuid] = useQueryState(
-    "book",
-    parseAsString,
-  )
+  const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
   const [, setReportMode] = useReportPanel()
 
   const [sidebarSearch, setSidebarSearch] = useState("")
@@ -200,15 +198,12 @@ function LibraryPageInner({
 
   const isSeriesSection = section.entityType === "series"
 
-  // the selected facet becomes the locked seed: a filter condition for most
-  // sections, or a native series / collection sort-context arg (so getBooks can
-  // resolve series-position ordering and reuse its membership filters).
+  // selected facet becomes seed filter
   const seedArg = useMemo<ListBooksQueryArg>(
     () => (selectedItem ? sectionSeedQueryArg(section, selectedItem) : {}),
     [section, selectedItem],
   )
 
-  // series pages default to ordering by position (overridable in the sort menu).
   const controller = useBookFilters({
     seed: seedArg.filter ?? null,
     seriesContext: seedArg.series as UUID | undefined,
@@ -349,13 +344,6 @@ function LibraryPageInner({
   const selectedFacet = allItems.find((i) => i.key === selectedItem)
   const selectedItemName = selectedFacet?.name
 
-  const filteredBookUuids = useMemo(
-    () => filteredBooks.map((book) => book.uuid),
-    [filteredBooks],
-  )
-
-  // the detail panel fetches by uuid; this only seeds its cache when the book is
-  // already on a loaded page (deep links still resolve via the fetch).
   const selectedBook = useMemo(
     () => filteredBooks.find((b) => b.uuid === selectedBookUuid),
     [filteredBooks, selectedBookUuid],
@@ -371,9 +359,8 @@ function LibraryPageInner({
   const handleItemClick = useCallback(
     (key: string) => {
       void setSelectedItem((current) => (key === current ? null : key))
-      void setSelectedBookUuid(null)
     },
-    [setSelectedItem, setSelectedBookUuid],
+    [setSelectedItem],
   )
 
   // warm query on hover
@@ -552,7 +539,6 @@ function LibraryPageInner({
   const booksContent = (
     <>
       <BookFilters
-        className="pt-1"
         controller={controller}
         seedLabel={selectedItemName}
         sortOptions={sortFieldOptions}
@@ -946,114 +932,115 @@ function SidebarPanel({
 
   return (
     <div className="scroll-y relative flex h-full flex-col">
-      <div className="flex h-full flex-col">
-        <div className="bg-surface-soft sticky top-0 z-10 flex shrink-0 flex-col gap-1 px-3 pb-2">
-          <div className="flex h-(--header-height) items-center justify-between">
-            <h2 className="font-heading text-base">{title}</h2>
+      {/* <div className="flex h-full flex-col"> */}
+      {/* DONT MAKE FLEX CONTAINER THE SEARCH INPUT WILL NOT BE THE CORRECT HEIGHT IT WILL HAUNT YOU */}
+      <div className="bg-surface-soft sticky top-0 z-10 shrink-0 flex-col px-3 pb-2">
+        <div className="flex h-(--header-height) items-center justify-between">
+          <h2 className="font-heading text-base">{title}</h2>
 
-            <div className="flex items-center gap-0.5">
-              {onCreate && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={onCreate}
-                  title={createLabel}
-                >
-                  <IAdd.base className="h-4 w-4" />
-                </Button>
-              )}
-
+          <div className="flex items-center gap-0.5">
+            {onCreate && (
               <Button
                 variant="ghost"
                 size="icon-sm"
-                onClick={toggleSort}
-                title={sortMode === "name" ? t("sortByCount") : t("sortByName")}
+                onClick={onCreate}
+                title={createLabel}
               >
-                {sortMode === "name" ? (
-                  <icon.SortAscending className="h-4 w-4" />
-                ) : (
-                  <icon.SortDescending className="h-4 w-4" />
-                )}
+                <IAdd.base className="h-4 w-4" />
               </Button>
-            </div>
-          </div>
+            )}
 
-          <SearchInput
-            placeholder={t("search")}
-            value={search}
-            onChange={onSearchChange}
-            className="h-8! py-[7px]"
-          />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleSort}
+              title={sortMode === "name" ? t("sortByCount") : t("sortByName")}
+            >
+              {sortMode === "name" ? (
+                <icon.SortAscending className="h-4 w-4" />
+              ) : (
+                <icon.SortDescending className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
 
-        <SidebarItemList
-          items={items}
-          selectedKey={selectedKey}
-          onItemClick={onItemClick}
-          onHoverItem={onHoverItem}
-          isLoading={isLoading}
-          entityType={entityType}
-          itemSelection={itemSelection}
-          onOpenItemMenu={handleOpenItemMenu}
-          menuTarget={menuTarget}
+        <SearchInput
+          placeholder={t("search")}
+          value={search}
+          onChange={onSearchChange}
+          className="h-8! shrink-0 grow"
         />
-
-        <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpen}>
-          <DropdownMenuContent
-            align="end"
-            className="min-w-40"
-            anchor={menuAnchor}
-          >
-            {onEditItem && menuTarget && (
-              <DropdownMenuItem
-                onClick={() => {
-                  onEditItem(menuTarget)
-                  setMenuOpen(false)
-                }}
-              >
-                <icon.Edit className="mr-2 h-4 w-4" />
-                {c("actions.edit")}
-              </DropdownMenuItem>
-            )}
-
-            {onPinItem && menuTarget && (
-              <DropdownMenuItem
-                onClick={() => {
-                  onPinItem(menuTarget)
-                  setMenuOpen(false)
-                }}
-              >
-                <icon.BookmarkPlus className="mr-2 h-4 w-4" />
-                {t("pinAsShelf")}
-              </DropdownMenuItem>
-            )}
-
-            {entityType &&
-              menuTarget &&
-              !(
-                entityType === "status" &&
-                menuTarget.kind &&
-                isWellKnownStatus(menuTarget.kind)
-              ) && (
-                <>
-                  {(onEditItem || onPinItem) && <DropdownMenuSeparator />}
-                  <DropdownMenuItem
-                    onClick={(event) => {
-                      rowDeleteAction.confirm(event)
-                      setMenuOpen(false)
-                    }}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <icon.Trash className="mr-2 h-4 w-4" />
-                    {c("actions.delete")}
-                  </DropdownMenuItem>
-                </>
-              )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <ConfirmDialog {...rowDeleteAction.dialogProps} />
       </div>
+
+      <SidebarItemList
+        items={items}
+        selectedKey={selectedKey}
+        onItemClick={onItemClick}
+        onHoverItem={onHoverItem}
+        isLoading={isLoading}
+        entityType={entityType}
+        itemSelection={itemSelection}
+        onOpenItemMenu={handleOpenItemMenu}
+        menuTarget={menuTarget}
+      />
+
+      <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpen}>
+        <DropdownMenuContent
+          align="end"
+          className="min-w-40"
+          anchor={menuAnchor}
+        >
+          {onEditItem && menuTarget && (
+            <DropdownMenuItem
+              onClick={() => {
+                onEditItem(menuTarget)
+                setMenuOpen(false)
+              }}
+            >
+              <icon.Edit className="mr-2 h-4 w-4" />
+              {c("actions.edit")}
+            </DropdownMenuItem>
+          )}
+
+          {onPinItem && menuTarget && (
+            <DropdownMenuItem
+              onClick={() => {
+                onPinItem(menuTarget)
+                setMenuOpen(false)
+              }}
+            >
+              <icon.BookmarkPlus className="mr-2 h-4 w-4" />
+              {t("pinAsShelf")}
+            </DropdownMenuItem>
+          )}
+
+          {entityType &&
+            menuTarget &&
+            !(
+              entityType === "status" &&
+              menuTarget.kind &&
+              isWellKnownStatus(menuTarget.kind)
+            ) && (
+              <>
+                {(onEditItem || onPinItem) && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    rowDeleteAction.confirm(event)
+                    setMenuOpen(false)
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <icon.Trash className="mr-2 h-4 w-4" />
+                  {c("actions.delete")}
+                </DropdownMenuItem>
+              </>
+            )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ConfirmDialog {...rowDeleteAction.dialogProps} />
+      {/* </div> */}
 
       {entityType && entityType !== "status" && itemSelection && (
         <SidebarEntityActions
@@ -1266,6 +1253,12 @@ function SidebarRow({
   onSelectRange: (key: string) => void
   onOpenMenu: (item: LibraryItem, anchor: HTMLElement) => void
 }) {
+  const pathname = usePathname()
+  const firstPathSegment = pathname.split("/")[1]
+  const { selectedBookUuid } = useBookInSidePanel()
+
+  if (!firstPathSegment) return null
+
   return (
     <div
       className={cn(
@@ -1276,8 +1269,8 @@ function SidebarRow({
         // isChecked && "ring-primary/40 ring-1 ring-inset",
       )}
     >
-      <button
-        type="button"
+      <V3Link
+        href={`/${firstPathSegment}?item=${item.key}${selectedBookUuid ? `&book=${selectedBookUuid}` : ""}`}
         onMouseEnter={() => {
           onHover(item.key)
         }}
@@ -1318,7 +1311,7 @@ function SidebarRow({
         {item.kind && isWellKnownStatus(item.kind) && (
           <icon.Lock className="text-muted-foreground/60 size-3 shrink-0" />
         )}
-      </button>
+      </V3Link>
 
       <div className="flex shrink-0 items-center gap-1 pr-2">
         {hasRowActions && !isSelecting && (

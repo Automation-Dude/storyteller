@@ -16,6 +16,12 @@ import { type ListBooksQueryArg } from "@/store/api"
 import { type UUID } from "@/uuid"
 
 import { useDebounce } from "./use-debounce"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import {
+  selectDefaultSort,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
+import { usePathname } from "next/navigation"
 
 // ---------------------------------------------------------------------------
 // the single owner of a book list's filter + sort + display, backed by the url.
@@ -119,6 +125,15 @@ function replaceFieldConditions(
 }
 
 export function useBookFilters(options: UseBookFiltersOptions = {}) {
+  const pathName = usePathname()
+  const currentPage = pathName.split("/").pop()
+  const defaultSort = useAppSelector((state) =>
+    selectDefaultSort(state, currentPage, {
+      field: options.defaultSortField ?? "createdAt",
+      direction: options.defaultSortDirection ?? "desc",
+    }),
+  )
+
   const [userFilter, setUserFilterRaw] = useQueryState("f", filterParser)
   const [search, setSearchRaw] = useQueryState(
     "search",
@@ -130,8 +145,8 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   const [sort, setSortRaw] = useQueryState(
     "sort",
     sortParser.withDefault({
-      field: options.defaultSortField ?? "createdAt",
-      direction: options.defaultSortDirection ?? "desc",
+      field: defaultSort.field,
+      direction: defaultSort.direction,
     }),
   )
   const debouncedSearch = useDebounce(search, 200)
@@ -194,11 +209,22 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     [setSearchRaw],
   )
 
+  const dispatch = useAppDispatch()
   const setSort = useCallback(
     (field: SortField, direction: SortDirection) => {
+      // get the current page, dont want to depend on usePathname tho
       void setSortRaw({ field, direction })
+      const currentPage = window.location.pathname.split("/").pop()
+      if (currentPage && currentPage !== "shelves") {
+        void dispatch(
+          uiSettingsSlice.actions.setDefaultSort({
+            page: currentPage,
+            sort: { field, direction },
+          }),
+        )
+      }
     },
-    [setSortRaw],
+    [setSortRaw, dispatch],
   )
 
   const clearAll = useCallback(() => {

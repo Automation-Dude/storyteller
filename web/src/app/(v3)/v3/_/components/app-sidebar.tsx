@@ -6,7 +6,6 @@ import {
   useKeyHold,
 } from "@tanstack/react-hotkeys"
 import { usePathname, useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -15,25 +14,29 @@ import {
   type NavSecondaryItem,
 } from "@v3/_/components/nav/nav-secondary"
 import { NavUser } from "@v3/_/components/nav/nav-user"
-import { Kbd, KbdGroup, KeyboardShortcut } from "@v3/_/components/ui/kbd"
+import { KeyboardShortcut } from "@v3/_/components/ui/kbd"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarPinButton,
+  useSidebar,
 } from "@v3/_/components/ui/sidebar"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
+import { useTheme } from "@v3/_/hooks/use-theme"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import type { User } from "@/apiModels"
@@ -48,14 +51,21 @@ import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
 import {
   useGetLatestVersionQuery,
+  useListCollectionsQuery,
   useListSidebarGroupsQuery,
   useListUserShelvesQuery,
   useSetSidebarGroupsMutation,
-  useToggleSidebarGroupCollapsedMutation,
 } from "@/store/api"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import {
+  selectCollapsedSidebarGroups,
+  selectTheme,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
 import { extractEmojiIcon } from "@/strings"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
+import { CreateCollectionDialog } from "./books/CreateCollectionDialog"
 import { CommandSearch, useCommandSearch } from "./command-search"
 import { SidebarManager } from "./nav/SidebarManager"
 import {
@@ -79,7 +89,6 @@ import {
 } from "./ui/dropdown-menu"
 import { DynamicIcon } from "./ui/dynamic-icon"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { TooltipButton } from "./ui/tooltip-button"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -109,8 +118,40 @@ export function AppSidebar({
   const basePath = useVersionBasePath()
   const [editMode, setEditMode] = useState(false)
   const [editingShelfUuid, setEditingShelfUuid] = useState<string | null>(null)
+  const [creatingCollection, setCreatingCollection] = useState(false)
+  const [creatingShelf, setCreatingShelf] = useState(false)
   const [setSidebarGroupsMut] = useSetSidebarGroupsMutation()
   const canAccessSettings = usePermission("settingsUpdate")
+  const { pinned } = useSidebar()
+
+  // editing only makes sense while the sidebar stays open
+  useEffect(() => {
+    if (!pinned) setEditMode(false)
+  }, [pinned])
+
+  // items are hidden, never deleted: a row marked hidden records "the user
+  // said no", which stops ensureSidebarDefaults from resurrecting the item
+  const hideWhere = (
+    predicate: (
+      item: SidebarItemDetail,
+      group: SidebarGroupWithItems,
+    ) => boolean,
+  ) => {
+    const updated = sidebarGroups.map((g) => ({
+      uuid: g.uuid,
+      name: g.name,
+      kind: g.kind,
+      items: g.items.map((i) => ({
+        kind: i.kind,
+        builtinKey: i.builtinKey,
+        collectionUuid: i.collectionUuid,
+        shelfUuid: i.shelfUuid,
+        hidden: predicate(i, g) ? true : i.hidden,
+      })),
+    }))
+
+    void setSidebarGroupsMut(updated)
+  }
 
   const { data: latestVersionData } = useGetLatestVersionQuery(
     {
@@ -164,9 +205,10 @@ export function AppSidebar({
   const { openSearch } = useCommandSearch()
 
   const t = useTranslation("AppSidebar")
-  const { theme, setTheme } = useTheme()
+  const theme = useAppSelector(selectTheme)
+  const { setTheme } = useTheme()
 
-  useHotkey("Mod+L", () => {
+  useHotkey("Mod+M", () => {
     setTheme(
       theme === "dark" ? "system" : theme === "system" ? "light" : "dark",
     )
@@ -188,39 +230,13 @@ export function AppSidebar({
           <Tooltip delay={500}>
             <TooltipTrigger
               render={
-                <SidebarMenuButton
-                  onClick={() => {
-                    setTheme(
-                      theme === "dark"
-                        ? "system"
-                        : theme === "system"
-                          ? "light"
-                          : "dark",
-                    )
-                  }}
-                  className="flex gap-2"
-                >
+                <SidebarMenuButton className="flex gap-2">
                   <icon.LightMode
-                    className={cn(
-                      theme !== "light" ? "hidden" : "block",
-                      "size-4",
-                    )}
+                    className={cn("block dark:hidden", "size-4")}
                   />
                   <icon.DarkMode
-                    className={cn(
-                      theme !== "dark" ? "hidden" : "block",
-                      "size-4",
-                    )}
+                    className={cn("hidden dark:block", "size-4")}
                   />
-                  <icon.System
-                    className={cn(
-                      theme !== "system" ? "hidden" : "block",
-                      "size-4",
-                    )}
-                  />
-                  <span className="">
-                    {t(theme as "light" | "dark" | "system")}
-                  </span>
                 </SidebarMenuButton>
               }
             />
@@ -316,25 +332,23 @@ export function AppSidebar({
                   onEditShelf={(uuid) => {
                     setEditingShelfUuid(uuid)
                   }}
-                  onRemoveItem={(itemUuid) => {
-                    const updated = sidebarGroups.map((g) => ({
-                      uuid: g.uuid,
-                      name: g.name,
-                      collapsed: g.collapsed,
-                      items: g.items
-                        .filter((i) => i.uuid !== itemUuid)
-                        .map((i) => ({
-                          kind: i.kind,
-                          builtinKey: i.builtinKey,
-                          collectionUuid: i.collectionUuid as
-                            | string
-                            | undefined,
-                          shelfUuid: i.shelfUuid as string | undefined,
-                          hidden: i.hidden,
-                        })),
-                    }))
-                    void setSidebarGroupsMut(updated)
+                  onHideItem={(itemUuid) => {
+                    hideWhere((i) => i.uuid === itemUuid)
                   }}
+                  onHideAll={() => {
+                    hideWhere((_, g) => g.uuid === group.uuid)
+                  }}
+                  onCreateNew={
+                    group.kind === "collections"
+                      ? () => {
+                          setCreatingCollection(true)
+                        }
+                      : group.kind === "shelves"
+                        ? () => {
+                            setCreatingShelf(true)
+                          }
+                        : undefined
+                  }
                 />
               ))}
               <NavSecondary items={navSecondary} className="mt-auto" />
@@ -359,6 +373,20 @@ export function AppSidebar({
           setEditingShelfUuid(null)
         }}
       />
+
+      <ShelfEditor
+        open={creatingShelf}
+        onOpenChange={(open) => {
+          if (!open) setCreatingShelf(false)
+        }}
+        shelf={null}
+      />
+
+      <CreateCollectionDialog
+        open={creatingCollection}
+        onOpenChange={setCreatingCollection}
+      />
+
       <CommandSearch />
     </>
   )
@@ -368,7 +396,9 @@ function SidebarNavGroup({
   group,
   libraryCounts,
   onEditShelf,
-  onRemoveItem,
+  onHideItem,
+  onHideAll,
+  onCreateNew,
 }: {
   group: SidebarGroupWithItems
   libraryCounts: Record<
@@ -376,13 +406,23 @@ function SidebarNavGroup({
     { count: number | undefined; isLoading: boolean }
   >
   onEditShelf: (shelfUuid: string) => void
-  onRemoveItem: (itemUuid: string) => void
+  onHideItem: (itemUuid: string) => void
+  onHideAll: () => void
+  // present only for the special collections/shelves groups, which also get
+  // the header count badge and the hide-all/create/see-all menu
+  onCreateNew?: () => void
 }) {
   const t = useTranslation("AppSidebar")
   const tLibrary = useTranslation("LibraryPage")
   const permissions = usePermissions()
-  const [toggleCollapsed] = useToggleSidebarGroupCollapsedMutation()
-  const [localCollapsed, setLocalCollapsed] = useState(group.collapsed)
+  const router = useRouter()
+  const dispatch = useAppDispatch()
+  const collapsedGroups = useAppSelector(selectCollapsedSidebarGroups)
+  const isCollapsed = collapsedGroups[group.uuid] ?? false
+
+  // header count for the special groups; RTK dedupes these across groups
+  const { data: collections = [] } = useListCollectionsQuery()
+  const { data: rawShelves = [] } = useListUserShelvesQuery()
 
   const visibleItems = group.items.filter((item) => {
     if (item.hidden) return false
@@ -417,15 +457,13 @@ function SidebarNavGroup({
           : undefined
       }
       onRemove={() => {
-        onRemoveItem(item.uuid)
+        onHideItem(item.uuid)
       }}
     />
   )
 
   // "Main" group renders without a collapsible header
-  const isMainGroup = group.name === "Main"
-
-  if (isMainGroup) {
+  if (group.kind === "main") {
     return (
       <SidebarGroup>
         <SidebarGroupContent>
@@ -437,29 +475,100 @@ function SidebarNavGroup({
     )
   }
 
+  const isCollectionGroup = group.kind === "collections"
+  const isSpecial = isCollectionGroup || group.kind === "shelves"
+  const totalCount = isSpecial
+    ? isCollectionGroup
+      ? collections.length
+      : rawShelves.length
+    : null
+
   return (
     <Collapsible
-      open={!localCollapsed}
+      open={!isCollapsed}
       onOpenChange={(open) => {
-        setLocalCollapsed(!open)
-        void toggleCollapsed({ groupUuid: group.uuid, collapsed: !open })
+        dispatch(
+          uiSettingsSlice.actions.toggleSidebarGroupCollapsed({
+            groupId: group.uuid,
+            collapsed: !open,
+          }),
+        )
       }}
     >
       <SidebarGroup>
-        <CollapsibleTrigger
-          nativeButton={false}
-          render={
-            <SidebarGroupLabel className="section-label after:bg-muted-foreground cursor-pointer font-sans text-xs font-medium opacity-60">
-              <icon.ChevronRight
-                className={cn(
-                  "mr-1 size-3 transition-transform duration-200",
-                  !localCollapsed && "rotate-90",
+        <div className="group/group-header relative">
+          <CollapsibleTrigger
+            nativeButton={false}
+            render={
+              <SidebarGroupLabel className="w-full cursor-pointer gap-1.5 pr-1 font-sans">
+                <icon.ChevronRight
+                  className={cn(
+                    "text-muted-foreground size-3 shrink-0 transition-transform duration-200",
+                    !isCollapsed && "rotate-90",
+                  )}
+                />
+                <span className="text-[11px] font-medium tracking-[0.12em] uppercase opacity-70">
+                  {group.name}
+                </span>
+                <span
+                  aria-hidden
+                  className={cn(
+                    "bg-muted-foreground/60 h-px min-w-3 flex-1",
+                    totalCount == null && "mr-3",
+                  )}
+                />
+                {totalCount != null && (
+                  <span className="text-muted-foreground flex h-5 min-w-5 items-center justify-center text-[12px] tabular-nums transition-opacity group-hover/group-header:opacity-0 group-has-data-popup-open/group-header:opacity-0">
+                    {totalCount}
+                  </span>
                 )}
+              </SidebarGroupLabel>
+            }
+          />
+
+          {isSpecial && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarGroupAction className="top-1.5 right-1 opacity-0 transition-opacity group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 data-popup-open:opacity-100">
+                    <icon.DotsVertical className="size-3.5" />
+                  </SidebarGroupAction>
+                }
               />
-              {group.name[0].toUpperCase() + group.name.slice(1)}
-            </SidebarGroupLabel>
-          }
-        />
+
+              <DropdownMenuContent side="right" align="start">
+                <DropdownMenuItem onClick={onHideAll}>
+                  <icon.EyeOff className="mr-2 size-4" />
+                  {isCollectionGroup ? t("hideCollections") : t("hideShelves")}
+                </DropdownMenuItem>
+
+                {onCreateNew && (
+                  <DropdownMenuItem onClick={onCreateNew}>
+                    <icon.Plus className="mr-2 size-4" />
+                    {isCollectionGroup
+                      ? t("createNewCollection")
+                      : t("createNewShelf")}
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    router.push(
+                      isCollectionGroup
+                        ? "/collections?item=_none"
+                        : "/shelves?item=_none",
+                    )
+                  }}
+                >
+                  <icon.ArrowRight className="mr-2 size-4" />
+                  {isCollectionGroup
+                    ? t("seeAllCollections")
+                    : t("seeAllShelves")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         <CollapsibleContent>
           <SidebarGroupContent>
@@ -491,6 +600,7 @@ function SidebarNavItem({
   onEdit?: () => void
   onRemove?: () => void
 }) {
+  const t = useTranslation("AppSidebar")
   const isAltHeld = useKeyHold("Alt")
   const [firstKey, secondKey] = String(index + 1)
     .padStart(2, "0")
@@ -533,7 +643,7 @@ function SidebarNavItem({
   const isEntity = item.kind === "shelf" || item.kind === "collection"
 
   return (
-    <SidebarMenuItem className="group/navitem">
+    <SidebarMenuItem>
       <Tooltip
         open={tooltipOpen || isAltHeld}
         delay={500}
@@ -568,36 +678,31 @@ function SidebarNavItem({
 
       {isEntity ? (
         <>
-          <SidebarMenuBadge className="peer/ellipsis pointer-events-auto hidden group-hover/navitem:flex has-data-popup-open:flex">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button
-                    type="button"
-                    className="text-muted-foreground/50 hover:text-muted-foreground flex size-5 items-center justify-center rounded"
-                  >
-                    <icon.DotsVertical className="size-3.5" />
-                  </button>
-                }
-              />
-              <DropdownMenuContent side="right" align="start">
-                {onEdit && (
-                  <DropdownMenuItem onClick={onEdit}>
-                    <icon.Edit className="mr-2 size-4" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {onRemove && (
-                  <DropdownMenuItem onClick={onRemove}>
-                    <icon.EyeOff className="mr-2 size-4" />
-                    Remove from sidebar
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuBadge>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <SidebarMenuAction showOnHover className="peer/item-action">
+                  <icon.DotsVertical className="size-3.5" />
+                </SidebarMenuAction>
+              }
+            />
+            <DropdownMenuContent side="right" align="start">
+              {onEdit && (
+                <DropdownMenuItem onClick={onEdit}>
+                  <icon.Edit className="mr-2 size-4" />
+                  {t("editItem")}
+                </DropdownMenuItem>
+              )}
+              {onRemove && (
+                <DropdownMenuItem onClick={onRemove}>
+                  <icon.EyeOff className="mr-2 size-4" />
+                  {t("removeFromSidebar")}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <SidebarMenuBadge className="group-hover/navitem:hidden peer-has-data-popup-open/ellipsis:hidden">
+          <SidebarMenuBadge className="group-focus-within/menu-item:opacity-0 group-hover/menu-item:opacity-0 peer-data-popup-open/item-action:opacity-0">
             {count != null ? (
               count
             ) : isCountLoading ? (
@@ -679,7 +784,7 @@ function resolveItem(
   if (item.kind === "collection") {
     return {
       title: extractEmojiIcon(item.name ?? "").label || (item.name ?? ""),
-      url: `/collections?item=${item.collectionUuid}`,
+      url: `/collections/${item.collectionUuid}`,
       icon: item.icon ? null : COLLECTION_ICON,
       customIcon: item.icon,
       color: item.color,

@@ -389,8 +389,8 @@ export interface ShelfFilterReference {
 }
 
 export interface SidebarGroup {
-  collapsed: Generated<number>
   createdAt: Generated<string>
+  kind: "collections" | "shelves" | "main" | "library" | null
   name: string
   position: number
   updatedAt: Generated<string>

@@ -27,6 +27,7 @@ import {
 } from "./ui/filterable-menu"
 import { IAdd } from "./ui/icon"
 import { TooltipButton } from "./ui/tooltip-button"
+import { useBookInSidePanel } from "../hooks/use-open-book";
 
 
 export function AddBookButton(props: ButtonProps) {
@@ -37,7 +38,7 @@ export function AddBookButton(props: ButtonProps) {
     setOpen((prev) => !prev)
   })
 
-  const [, setSelectedBookUuid] = useQueryState("book", parseAsString)
+  const { setSelectedBookUuid } = useBookInSidePanel()
 
   const [uploadOpen, setUploadOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)

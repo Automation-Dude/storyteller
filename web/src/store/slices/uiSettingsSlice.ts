@@ -1,7 +1,7 @@
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit"
 
 import { type GridCardSize } from "@/database/userPreferencesTypes"
-import { type DisplayField } from "@/sort"
+import { BookSort, SortDirection, SortField, type DisplayField } from "@/sort"
 
 // the top-level layout of a book list page
 export type BookLayout = "grid" | "list"
@@ -32,6 +32,10 @@ export type UISettings = {
   detailPanelWidth: number
   librarySidebarWidth: number
   bookLayout: BookLayout
+
+  /* default sorts for each page */
+  defaultSorts: Record<string, BookSort[number]>
+
   gridView: GridView
   listView: ListView
   // the fields shown below a grid cover. null = auto (derived from sort/filter);
@@ -49,6 +53,10 @@ export type UISettings = {
   showReadaloudBadge: boolean
   showProcessingBadge: boolean
   logDisplay: LogDisplayPrefs
+  collapsedSidebarGroups: Record<string, boolean>
+  collapsedDetailSections: Record<string, boolean>
+
+  theme: "light" | "dark" | "system"
 }
 
 const COOKIE_NAME = "st-ui"
@@ -85,6 +93,10 @@ const defaults: UISettings = {
   showReadaloudBadge: true,
   showProcessingBadge: true,
   logDisplay: defaultLogDisplay,
+  collapsedSidebarGroups: {},
+  collapsedDetailSections: {},
+  theme: "system",
+  defaultSorts: {},
 }
 
 export function parseCookie(cookieString: string): Partial<UISettings> | null {
@@ -272,11 +284,44 @@ export const uiSettingsSlice = createSlice({
       saveToCookie(state)
     },
 
+    setTheme: (state, action: PayloadAction<"light" | "dark" | "system">) => {
+      state.theme = action.payload
+      saveToCookie(state)
+    },
+
     setLogDisplayPrefs: (
       state,
       action: PayloadAction<Partial<LogDisplayPrefs>>,
     ) => {
       state.logDisplay = { ...state.logDisplay, ...action.payload }
+      saveToCookie(state)
+    },
+
+    toggleSidebarGroupCollapsed: (
+      state,
+      action: PayloadAction<{ groupId: string; collapsed: boolean }>,
+    ) => {
+      state.collapsedSidebarGroups[action.payload.groupId] =
+        action.payload.collapsed
+
+      saveToCookie(state)
+    },
+
+    toggleDetailSection: (
+      state,
+      action: PayloadAction<{ sectionKey: string; collapsed: boolean }>,
+    ) => {
+      state.collapsedDetailSections[action.payload.sectionKey] =
+        action.payload.collapsed
+
+      saveToCookie(state)
+    },
+
+    setDefaultSort: (
+      state,
+      action: PayloadAction<{ page: string; sort: BookSort[number] }>,
+    ) => {
+      state.defaultSorts[action.payload.page] = action.payload.sort
       saveToCookie(state)
     },
   },
@@ -328,3 +373,29 @@ export const selectShowProcessingBadge = (state: { uiSettings: UISettings }) =>
 
 export const selectLogDisplayPrefs = (state: { uiSettings: UISettings }) =>
   state.uiSettings.logDisplay
+
+export const selectCollapsedSidebarGroups = (state: {
+  uiSettings: UISettings
+}) => state.uiSettings.collapsedSidebarGroups
+
+export const selectCollapsedDetailSections = (state: {
+  uiSettings: UISettings
+}) => state.uiSettings.collapsedDetailSections
+
+export const selectTheme = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.theme
+
+export const selectDefaultSort = (
+  state: { uiSettings: UISettings },
+  page?: string,
+  fallback?: BookSort[number],
+): BookSort[number] => {
+  if (!page) {
+    return fallback ?? { field: "createdAt", direction: "desc" }
+  }
+
+  return (
+    state.uiSettings.defaultSorts[page] ??
+    fallback ?? { field: "createdAt", direction: "desc" }
+  )
+}

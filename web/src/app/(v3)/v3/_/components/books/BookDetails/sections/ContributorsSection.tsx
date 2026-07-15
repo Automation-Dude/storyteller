@@ -19,6 +19,8 @@ import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { creatorRelators } from "@/components/books/edit/marcRelators"
 import * as icon from "@/icons"
 
+import { CollapsibleSection } from "./CollapsibleSection"
+
 export function ContributorsSection({ className }: { className?: string }) {
   const { book, isEditing } = useBookForm()
   const tLabels = useTranslation("Labels")
@@ -31,12 +33,12 @@ export function ContributorsSection({ className }: { className?: string }) {
   if (!isVisible) return null
 
   return (
-    <section className={className}>
-      <h2 className="section-label mb-3">
-        <icon.User className="h-4 w-4" />
-        {tLabels("otherContributors")}
-      </h2>
-
+    <CollapsibleSection
+      title={tLabels("otherContributors")}
+      sectionKey="contributors"
+      icon={<icon.User className="size-3.5 stroke-[1.5]" />}
+      className={className}
+    >
       {isEditing ? (
         <ContributorsEditor />
       ) : (
@@ -53,7 +55,7 @@ export function ContributorsSection({ className }: { className?: string }) {
           ))}
         </div>
       )}
-    </section>
+    </CollapsibleSection>
   )
 }
 

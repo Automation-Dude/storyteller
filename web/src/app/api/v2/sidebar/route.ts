@@ -2,29 +2,29 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import {
-  type SidebarItemInput,
-  getSidebarItems,
-  initializeDefaultSidebar,
-  setSidebarItems,
+  type SidebarGroupInput,
+  ensureSidebarDefaults,
+  getSidebarGroups,
+  setSidebarGroups,
 } from "@/database/sidebar"
 
 export const dynamic = "force-dynamic"
 
 export const GET = withHasPermission("bookList")(async (request) => {
   const user = request.auth.user
-  await initializeDefaultSidebar(user.id)
-  const items = await getSidebarItems(user.id)
+  await ensureSidebarDefaults(user.id)
+  const groups = await getSidebarGroups(user.id)
 
-  return NextResponse.json(items)
+  return NextResponse.json(groups)
 })
 
 export const PUT = withHasPermission("bookList")(async (request) => {
   const user = request.auth.user
+  const body = (await request.json()) as SidebarGroupInput[]
 
-  const body = (await request.json()) as SidebarItemInput[]
+  // setSidebarGroups re-establishes the invariants itself
+  await setSidebarGroups(user.id, body)
+  const groups = await getSidebarGroups(user.id)
 
-  await setSidebarItems(user.id, body)
-  const items = await getSidebarItems(user.id)
-
-  return NextResponse.json(items)
+  return NextResponse.json(groups)
 })

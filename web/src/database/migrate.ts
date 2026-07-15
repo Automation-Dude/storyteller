@@ -74,6 +74,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   "102_book_cover_colors_override.sql": (
     await import("./migrations/102_book_cover_colors_override.sql")
   ).default,
+  "104_sidebar_group_kind.sql": (
+    await import("./migrations/104_sidebar_group_kind.sql")
+  ).default,
 }
 
 async function isFirstStartup() {
@@ -133,6 +136,8 @@ async function setInitialAudioCodec(options: {
   }
 }
 
+// runs the sql file and returns its hash so the caller can record it after
+// any companion js migration also succeeded; returns null when already applied
 async function migrateFile(path: string) {
   const contents = await readFile(path, {
     encoding: "utf-8",
@@ -140,7 +145,7 @@ async function migrateFile(path: string) {
   const hash = createHash("sha256").update(contents).digest("hex")
 
   const existingMigration = await getMigration(hash)
-  if (existingMigration) return false
+  if (existingMigration) return null
   logger.info(hash)
   logger.info(`Running migration: "${basename(path, ".sql")}"\n`)
   logger.info(contents)
@@ -168,8 +173,7 @@ ${statement}`)
     await sql`PRAGMA foreign_keys = 1`.execute(db)
   }
 
-  await createMigration(hash, basename(path))
-  return true
+  return hash
 }
 
 export async function migrate() {
@@ -187,10 +191,13 @@ export async function migrate() {
   for (const migrationFile of migrationFiles.filter(
     (f) => extname(f) === ".sql",
   )) {
-    const migrated = await migrateFile(join(migrationsDir, migrationFile))
+    const hash = await migrateFile(join(migrationsDir, migrationFile))
 
-    if (migrated) {
+    if (hash) {
+      // record only after the companion js migration also succeeded, so a
+      // failed js migration is retried on the next startup
       await jsMigrations[migrationFile]?.()
+      await createMigration(hash, migrationFile)
     }
   }
 
