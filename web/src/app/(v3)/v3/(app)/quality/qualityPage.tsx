@@ -3,8 +3,9 @@
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 
-import { BookFilters, BookGrid } from "@v3/_/components/books"
+import { BookFilters } from "@v3/_/components/books"
 import { BookListLayout } from "@v3/_/components/books/BookListLayout"
+import { BooksView } from "@v3/_/components/books/BooksView"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { GradePill } from "@v3/_/components/books/grade-pill"
 import { Button } from "@v3/_/components/ui/button"
@@ -15,7 +16,6 @@ import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import * as icon from "@/icons"
 import { type ShelfFilterCondition, type ShelfFilterNode } from "@/shelves"
 import {
@@ -32,19 +32,11 @@ import {
 } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
-  selectBookView,
   selectGridDisplayFields,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 
 const GRADES = ["A+", "A", "A-", "B", "B-", "C", "D", "F"] as const
-
-const ALIGNMENT_COLUMNS: DisplayField[] = [
-  "alignmentGrade",
-  "alignmentScore",
-  "alignmentMissingSentences",
-  "alignmentMutedChapters",
-]
 
 // the user picks with the facet chips / filter bar.
 const GRADED_SEED: ShelfFilterNode = {
@@ -56,7 +48,6 @@ const GRADED_SEED: ShelfFilterNode = {
 export default function QualityPage() {
   const dispatch = useAppDispatch()
   const tLabel = useTranslation("Common.fields.label")
-  const bookView = useAppSelector(selectBookView)
   const gridDisplayFields = useAppSelector(selectGridDisplayFields)
 
   const handleDisplayFieldsChange = useCallback(
@@ -161,6 +152,7 @@ export default function QualityPage() {
     userFilter,
     displayContext,
     gridDisplayFields,
+    controller.isDefaultSort,
   )
 
   const showMuted =
@@ -266,47 +258,27 @@ export default function QualityPage() {
 
       {/* shrink only the list title here, without touching BookListItem. */}
       <PageContent className="p-6 [&_.font-heading]:text-[0.8125rem]!">
-        {bookView === "list" ? (
-          <BookList
-            books={books}
-            isLoading={isLoading}
-            isFetchingNextPage={isFetchingNextPage}
-            hasNextPage={hasNextPage}
-            fetchNextPage={fetchNextPage}
-            showMuted={showMuted}
-            emptyMessage="No graded books yet"
-            emptySubMessage="Books get a grade after they finish aligning."
-            onClearFilters={clearAll}
-            hasActiveFilters={activeFilterCount > 0}
-            selectedBookUuid={selectedBookUuid}
-            onBookClick={handleBookClick}
-            displayFields={displayFields}
-            displayContext={displayContext}
-            visibleColumns={ALIGNMENT_COLUMNS}
-            sortField={sort.field}
-            sortDirection={sort.direction}
-            onSortChange={(field: SortField, dir: SortDirection) => {
-              setSort(field, dir)
-            }}
-          />
-        ) : (
-          <BookGrid
-            books={books}
-            isLoading={isLoading}
-            isFetchingNextPage={isFetchingNextPage}
-            hasNextPage={hasNextPage}
-            fetchNextPage={fetchNextPage}
-            showMuted={showMuted}
-            emptyMessage="No graded books yet"
-            emptySubMessage="Books get a grade after they finish aligning."
-            onClearFilters={clearAll}
-            hasActiveFilters={activeFilterCount > 0}
-            selectedBookUuid={selectedBookUuid}
-            onBookClick={handleBookClick}
-            displayFields={displayFields}
-            displayContext={displayContext}
-          />
-        )}
+        <BooksView
+          books={books}
+          isLoading={isLoading}
+          isFetchingNextPage={isFetchingNextPage}
+          hasNextPage={hasNextPage}
+          fetchNextPage={fetchNextPage}
+          showMuted={showMuted}
+          emptyMessage="No graded books yet"
+          emptySubMessage="Books get a grade after they finish aligning."
+          onClearFilters={clearAll}
+          hasActiveFilters={activeFilterCount > 0}
+          selectedBookUuid={selectedBookUuid}
+          onBookClick={handleBookClick}
+          displayFields={displayFields}
+          displayContext={displayContext}
+          sortField={sort.field}
+          sortDirection={sort.direction}
+          onSortChange={(field: SortField, dir: SortDirection) => {
+            setSort(field, dir)
+          }}
+        />
         <SelectionToolbar allBooks={books} />
       </PageContent>
     </BookListLayout>

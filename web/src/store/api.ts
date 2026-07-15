@@ -1006,6 +1006,11 @@ export const api = createApi({
       }),
       invalidatesTags: ["Statuses"],
     }),
+    listDistinctFieldValues: build.query<string[], { field: string }>({
+      query: ({ field }) =>
+        `/books/distinct?field=${encodeURIComponent(field)}`,
+      providesTags: ["Books"],
+    }),
     listCreators: build.query<(Creator & { roles: Role[] })[], void>({
       query: () => "/creators",
       providesTags: (creators) =>
@@ -2070,6 +2075,7 @@ export const {
   useListNarratorsQuery,
   useListTranslatorsQuery,
   useListCreatorsQuery,
+  useListDistinctFieldValuesQuery,
   useListBooksQuery,
   useListInfiniteBooksInfiniteQuery,
   useListCollectionsQuery,

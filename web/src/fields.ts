@@ -27,6 +27,9 @@ export type FacetSource =
   | "narrators"
   | "translators"
   | "creators"
+  // the distinct stored values of the field's own book column (language,
+  // transcription engine, ...), fetched via the generic distinct endpoint
+  | "distinct"
 
 export type FieldScale = {
   min?: number
@@ -164,7 +167,8 @@ export const FIELD_REGISTRY = {
     type: "string",
   },
   language: {
-    control: "text",
+    control: "facet",
+    source: "distinct",
     sortable: true,
     defaultSort: "asc",
     quick: true,
@@ -172,6 +176,7 @@ export const FIELD_REGISTRY = {
     labelKey: "language",
     group: "text",
     type: "string",
+    defaultOperator: "isAnyOf",
   },
   review: {
     control: "text",
@@ -509,6 +514,30 @@ export const FIELD_REGISTRY = {
     group: "alignment",
     type: "date",
   },
+  // the transcription engine details ("whisper.cpp:tiny", "deepgram:nova-2")
+  // the alignment ran with. the column predates the field and keeps its name.
+  alignedWith: {
+    control: "facet",
+    source: "distinct",
+    sortable: false,
+    quick: true,
+    token: "engine",
+    labelKey: "alignedWith",
+    group: "alignment",
+    type: "string",
+    defaultOperator: "isAnyOf",
+  },
+  alignedByStorytellerVersion: {
+    control: "facet",
+    source: "distinct",
+    sortable: false,
+    quick: true,
+    token: "aligner",
+    labelKey: "alignedByStorytellerVersion",
+    group: "alignment",
+    type: "string",
+    defaultOperator: "isAnyOf",
+  },
 } as const satisfies Record<string, FieldDef>
 
 export type Field = keyof typeof FIELD_REGISTRY
@@ -583,3 +612,20 @@ export const QUICK_FILTER_FIELDS = Object.keys(FIELD_REGISTRY).filter((f) => {
   const field = FIELD_REGISTRY[f as Field]
   return field.quick
 }) as QuickFilterField[]
+
+// fields whose facet options are the distinct stored values of their own book
+// column. doubles as the server-side allowlist for the distinct endpoint.
+export type DistinctFacetField = AcceptedKeys<
+  typeof FIELD_REGISTRY,
+  { control: "facet"; source: "distinct" }
+>
+export const DISTINCT_FACET_FIELDS = FIELDS.filter((f) => {
+  const def = FIELD_REGISTRY[f]
+  return def.control === "facet" && def.source === "distinct"
+}) as DistinctFacetField[]
+
+export function isDistinctFacetField(
+  value: string,
+): value is DistinctFacetField {
+  return (DISTINCT_FACET_FIELDS as string[]).includes(value)
+}

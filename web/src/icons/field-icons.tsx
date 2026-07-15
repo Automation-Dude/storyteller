@@ -50,6 +50,8 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   createdAt: { base: icon.CalendarPlus },
   updatedAt: { base: icon.History },
   alignedAt: { base: icon.CalendarCheck },
+  alignedWith: { base: icon.Microphone2 },
+  alignedByStorytellerVersion: { base: icon.Stack },
   lastRead: { base: icon.Eye },
   seriesPosition: { base: icon.ListNumbers },
 }

@@ -10,13 +10,11 @@ import {
   FilterableMenuItem,
   FilterableMenuSeparator,
 } from "@v3/_/components/ui/filterable-menu"
-import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useGridNavigation } from "@v3/_/hooks/use-grid-navigation"
 import { useLayoutAnimations } from "@v3/_/hooks/use-layout-animations"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
 
-import { Card } from "@/app/(v3)/v3/(app)/test/page"
 import { ActionEntryList } from "@/app/(v3)/v3/_/components/books/ActionMenu/BookActionMenuItems"
 import { useBookActionMenu } from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
 import { CoverLoadProvider } from "@/app/(v3)/v3/_/components/books/Cover"
@@ -41,7 +39,13 @@ import {
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import * as icon from "@/icons"
-import { type DisplayField, type SortContext } from "@/sort"
+import { type DisplayField, type SortContext, groupDisplayRows } from "@/sort"
+import { useAppSelector } from "@/store/appState"
+import {
+  type GridSpacing,
+  selectGridCardSize,
+  selectGridSpacing,
+} from "@/store/slices/uiSettingsSlice"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -73,22 +77,26 @@ export const GRID_CARD_WIDTHS: Record<GridCardSize, number> = {
   large: 220,
   largest: 270,
 }
-export const BOOK_GRID_GAP = 16 // gap-4
+export const GRID_SPACING_PX: Record<GridSpacing, number> = {
+  compact: 8,
+  cozy: 16,
+  spacious: 24,
+}
 const COVER_ASPECT = 16 / 13 // cover box is aspect-13/16 -> height = width * 16/13
 const MOBILE_COLUMNS = 2
 
 // meta height must be known up front (this virtualizer is uniform-cell and
-// doesn't measure rows). estimate it from the fields the card renders: a
-// 2-line title when shown, an authors line when shown, plus one line per other
-// field. title is now part of the selectable field set, so it's counted only
-// when present (an empty set renders nothing but the top margin).
+// doesn't measure rows). estimate it from the rows the card renders (compact
+// fields share a row): a 2-line title row plus one text line per other row.
+// an empty field set renders no meta at all, so row gaps equal column gaps.
 function metaHeightFor(fields: DisplayField[]): number {
+  if (fields.length === 0) return 0
   const TOP = 8 // mt-2
   const TITLE = 38 // 2 lines, leading-tight
   const LINE = 18 // one text-xs line + gap-0.5
-  const titleHeight = fields.includes("title") ? TITLE : 0
-  const otherLines = fields.filter((f) => f !== "title").length
-  return TOP + titleHeight + otherLines * LINE
+  const rows = groupDisplayRows(fields)
+  const titleRows = rows.filter((row) => row[0] === "title").length
+  return TOP + titleRows * TITLE + (rows.length - titleRows) * LINE
 }
 
 export function BookGrid({
@@ -116,29 +124,30 @@ export function BookGrid({
   const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")
 
   const isMobile = useIsMobile()
-  const { gridCardSize } = useUserPreferences()
+  const gridCardSize = useAppSelector(selectGridCardSize)
   const cardWidth = GRID_CARD_WIDTHS[gridCardSize]
+  const gridGap = GRID_SPACING_PX[useAppSelector(selectGridSpacing)]
 
   // animated mode: fluid 1fr cards + FLIP re-wraps. fallback (reduced motion or
   // the preference off): fluid cards that reflow instantly (no FLIP).
   const animate = useLayoutAnimations() && !isMobile
 
   const metaHeight = useMemo(
-    () => metaHeightFor(displayFields ?? ["authors"]),
+    () => metaHeightFor(displayFields ?? ["authors", "title"]),
     [displayFields],
   )
 
   const geometry = useMemo<VirtualGridGeometry>(
     () => ({
       minColumnWidth: cardWidth,
-      gapX: BOOK_GRID_GAP,
-      gapY: BOOK_GRID_GAP,
+      gapX: gridGap,
+      gapY: gridGap,
       padX: 0,
       padY: 0,
       rowHeightForColumnWidth: (w) => w * COVER_ASPECT + metaHeight,
       ...(isMobile ? { fixedColumns: MOBILE_COLUMNS } : {}),
     }),
-    [cardWidth, metaHeight, isMobile],
+    [cardWidth, gridGap, metaHeight, isMobile],
   )
 
   // pin the selected card across reflows (panel open, resize, card-size change)
@@ -223,8 +232,9 @@ export function BookGrid({
   if (isLoading) {
     return (
       <div
-        className="grid gap-4"
+        className="grid"
         style={{
+          gap: gridGap,
           gridTemplateColumns: isMobile
             ? "minmax(0, 1fr)"
             : `repeat(auto-fill, ${cardWidth}px)`,

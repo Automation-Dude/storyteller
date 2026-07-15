@@ -30,8 +30,8 @@ import { usePanelWidthDriver } from "@v3/_/hooks/use-panel-width-driver"
 
 import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
 import {
-  BOOK_GRID_GAP,
   GRID_CARD_WIDTHS,
+  GRID_SPACING_PX,
 } from "@/app/(v3)/v3/_/components/books/Grid/BookGrid"
 import {
   BOOK_COLLECTION_ID,
@@ -103,7 +103,7 @@ export function BookListLayout({
   const panelWidth = useAppSelector(
     (state) => state.uiSettings.detailPanelWidth,
   )
-  const bookView = useAppSelector((state) => state.uiSettings.bookView)
+  const bookLayout = useAppSelector((state) => state.uiSettings.bookLayout)
 
   const panelOpen = !!selectedBookUuid
   const animate = useLayoutAnimations() && !isMobile
@@ -115,8 +115,11 @@ export function BookListLayout({
     [dispatch],
   )
 
-  const { gridCardSize, animatePanelOpen } = useUserPreferences()
-  const cardWidth = GRID_CARD_WIDTHS[gridCardSize]
+  const { animatePanelOpen } = useUserPreferences()
+  const cardWidth =
+    GRID_CARD_WIDTHS[useAppSelector((state) => state.uiSettings.gridCardSize)]
+  const gridGap =
+    GRID_SPACING_PX[useAppSelector((state) => state.uiSettings.gridSpacing)]
   const pageLayoutRef = useRef<HTMLDivElement>(null)
 
   const GRID_PADDING = 48 // PageContent p-6 (24px each side)
@@ -129,14 +132,11 @@ export function BookListLayout({
       const layoutWidth =
         pageLayoutRef.current?.offsetWidth ?? window.innerWidth
 
-      const pitch = cardWidth + BOOK_GRID_GAP
+      const pitch = cardWidth + gridGap
       const available = layoutWidth - otherChrome - GRID_PADDING
 
       const gridWidth = available - rawWidth
-      const idealCols = Math.max(
-        1,
-        Math.round((gridWidth + BOOK_GRID_GAP) / pitch),
-      )
+      const idealCols = Math.max(1, Math.round((gridWidth + gridGap) / pitch))
 
       // walk outward from the ideal column count until we find one whose
       // chrome width falls within [minW, maxW]. at most one step needed
@@ -146,17 +146,17 @@ export function BookListLayout({
           const cols = idealCols + d
           if (cols < 1) continue
 
-          const chrome = available - (cols * pitch - BOOK_GRID_GAP)
+          const chrome = available - (cols * pitch - gridGap)
           if (chrome >= minW && chrome <= maxW) return chrome
         }
       }
 
       return Math.max(
         minW,
-        Math.min(maxW, available - (idealCols * pitch - BOOK_GRID_GAP)),
+        Math.min(maxW, available - (idealCols * pitch - gridGap)),
       )
     },
-    [cardWidth, GRID_PADDING],
+    [cardWidth, gridGap, GRID_PADDING],
   )
 
   const snapPanelWidth = useCallback(
@@ -180,7 +180,8 @@ export function BookListLayout({
     // `animate` keeps the grid FLIP on; this only toggles the open/close slide,
     // so both feels can be compared from the preference.
     animateOpenClose: animate && animatePanelOpen,
-    snapOnRelease: !animate && bookView === "grid" ? snapPanelWidth : undefined,
+    snapOnRelease:
+      !animate && bookLayout === "grid" ? snapPanelWidth : undefined,
     commit: handlePanelWidthChange,
   })
 

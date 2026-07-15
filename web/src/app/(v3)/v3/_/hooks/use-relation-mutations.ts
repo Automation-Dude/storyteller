@@ -116,8 +116,10 @@ export function useRelationEditActions(
         return creatorRole("nrt")
       case "translators":
         return creatorRole("trl")
-      // generic "other creators" need a role chosen per add -> not editable here
+      // generic "other creators" need a role chosen per add, and distinct
+      // column values are read-only filter options -> not editable here
       case "creators":
+      case "distinct":
         return {
           add: () => {},
           remove: () => {},

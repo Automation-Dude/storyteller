@@ -121,6 +121,63 @@ function cycleTriState(
 // chip trigger
 // ---------------------------------------------------------------------------
 
+// the chip's inline summary for facet/enum fields: the selected value names
+// (first two, then "+n"), with exclusions prefixed "not". falls back to a
+// bare count while the option names are still loading.
+const MAX_SUMMARY_NAMES = 2
+
+function useFacetSummary(
+  field: ShelfFilterField,
+  def: FieldDef,
+  conditions: ShelfFilterCondition[],
+): string | null {
+  const c = useCommon()
+  const isFacet = def.control === "facet"
+  const isEnum = def.control === "enum"
+  const { inc, exc } =
+    isFacet || isEnum
+      ? readFacet(conditions, facetOperators(field))
+      : { inc: [], exc: [] }
+  const active = inc.length + exc.length > 0
+
+  const { items } = useRelationItems(
+    isFacet && active ? def.source : undefined,
+    isFacet && active,
+    field,
+  )
+
+  if (!isFacet && !isEnum) return null
+  if (!active) return ""
+
+  const nameOf = (value: string): string | null => {
+    if (isEnum) return c.plain(`fields.options.${field}.${value}` as never)
+    const item = items.find((i) => i.uuid === value)
+    if (item) return item.name
+    // a distinct facet's value is its own (unformatted) display fallback
+    if (isFacet && def.source === "distinct") return value
+    return null
+  }
+
+  const label = (values: string[], negate: boolean): string | null => {
+    const names = values.map(nameOf)
+    if (names.some((n) => n === null)) return null
+    const shown = names.slice(0, MAX_SUMMARY_NAMES) as string[]
+    const rest = names.length - shown.length
+    const list = shown.join(", ") + (rest > 0 ? ` +${rest}` : "")
+    return negate ? `not ${list}` : list
+  }
+
+  const incLabel = inc.length ? label(inc, false) : null
+  const excLabel = exc.length ? label(exc, true) : null
+
+  // any unresolved name (options not fetched yet) -> count fallback
+  if ((inc.length && !incLabel) || (exc.length && !excLabel)) {
+    return ` (${inc.length + exc.length})`
+  }
+
+  return `: ${[incLabel, excLabel].filter(Boolean).join(", ")}`
+}
+
 function summarize(
   def: FieldDef,
   field: ShelfFilterField,
@@ -152,7 +209,11 @@ function fmtBound(
   def: FieldDefDate | FieldDefNumeric | FieldDefDuration,
   v: number | string,
 ): string {
-  if (def.control === "date-range") return String(v)
+  if (def.control === "date-range") {
+    // year-scaled dates read better as bare years in the chip
+    if (def.scale?.unit === "year") return String(v).slice(0, 4)
+    return String(v)
+  }
   const u = unitDisplay(def.scale?.unit)
   return `${u.to(Number(v))}${u.suffix}`
 }
@@ -170,7 +231,8 @@ export function FilterControl({
 
   // labelKey is a registry string; the keys are exactly the Fields.label keys.
   const label = tLabel(def.labelKey as Parameters<typeof tLabel>[0])
-  const summary = summarize(def, field, conditions)
+  const facetSummary = useFacetSummary(field, def, conditions)
+  const summary = facetSummary ?? summarize(def, field, conditions)
   const active = conditions.length > 0
 
   if (locked) {
@@ -317,6 +379,7 @@ export function FacetEditor({
   const fetched = useRelationItems(
     staticItems ? undefined : (def as FieldDefFacet).source,
     enabled,
+    field,
   )
   const items = staticItems ?? fetched.items
   const loading = staticItems ? false : fetched.loading
@@ -594,6 +657,151 @@ function writeDateRange(
   return [{ type: "condition", field, operator: "before", value: to }]
 }
 
+// ---------------------------------------------------------------------------
+// year editor (for date fields scaled in years, e.g. publication date):
+// a mode picker (in / after / before / between) over plain year inputs, writing
+// the same date conditions the generic editor produces.
+// ---------------------------------------------------------------------------
+
+type YearMode = "in" | "after" | "before" | "between"
+
+const YEAR_MODE_LABELS: Record<YearMode, string> = {
+  in: "In",
+  after: "From",
+  before: "Until",
+  between: "Between",
+}
+
+function yearOf(v: string): string {
+  return v.slice(0, 4)
+}
+
+function readYearState(conditions: ShelfFilterCondition[]): {
+  mode: YearMode
+  a: string
+  b: string
+} {
+  const c = conditions[0]
+  if (!c) return { mode: "in", a: "", b: "" }
+  if (c.operator === "between" && Array.isArray(c.value)) {
+    const [from, to] = c.value as [string, string]
+    const same = yearOf(from) === yearOf(to)
+    return same
+      ? { mode: "in", a: yearOf(from), b: "" }
+      : { mode: "between", a: yearOf(from), b: yearOf(to) }
+  }
+  if (c.operator === "after")
+    return { mode: "after", a: yearOf(String(c.value)), b: "" }
+  if (c.operator === "before")
+    return { mode: "before", a: yearOf(String(c.value)), b: "" }
+  return { mode: "in", a: "", b: "" }
+}
+
+function writeYearState(
+  field: ShelfFilterField,
+  mode: YearMode,
+  a: string,
+  b: string,
+): ShelfFilterCondition[] {
+  const base = { type: "condition" as const, field }
+  if (!a) return []
+  switch (mode) {
+    case "in":
+      return [
+        { ...base, operator: "between", value: [`${a}-01-01`, `${a}-12-31`] },
+      ]
+    case "after":
+      return [{ ...base, operator: "after", value: `${a}-01-01` }]
+    case "before":
+      return [{ ...base, operator: "before", value: `${a}-12-31` }]
+    case "between":
+      if (!b) return [{ ...base, operator: "after", value: `${a}-01-01` }]
+      return [
+        { ...base, operator: "between", value: [`${a}-01-01`, `${b}-12-31`] },
+      ]
+  }
+}
+
+function YearEditor({
+  field,
+  conditions,
+  onChange,
+}: {
+  field: ShelfFilterField
+  conditions: ShelfFilterCondition[]
+  onChange: (next: ShelfFilterCondition[]) => void
+}) {
+  const { mode, a, b } = readYearState(conditions)
+
+  const set = (nextMode: YearMode, nextA: string, nextB: string) => {
+    onChange(writeYearState(field, nextMode, nextA, nextB))
+  }
+
+  // only commit plausible years so half-typed input doesn't filter to nothing
+  const sanitize = (raw: string): string | null => {
+    if (raw === "") return ""
+    if (!/^\d{1,4}$/.test(raw)) return null
+    return raw
+  }
+
+  return (
+    <div className="flex flex-col gap-3 p-3">
+      <div className="flex flex-wrap gap-1">
+        {(Object.keys(YEAR_MODE_LABELS) as YearMode[]).map((m) => (
+          <button
+            key={m}
+            onClick={() => {
+              set(m, a, m === "between" ? b : "")
+            }}
+            className={cn(
+              "rounded-full border px-2 py-0.5 text-xs",
+              m === mode
+                ? "border-primary/30 bg-primary/10 text-primary"
+                : "bg-muted text-muted-foreground border-transparent",
+            )}
+          >
+            {YEAR_MODE_LABELS[m]}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          inputMode="numeric"
+          placeholder="Year"
+          min={0}
+          max={9999}
+          value={a}
+          onChange={(e) => {
+            const next = sanitize(e.target.value)
+            if (next !== null) set(mode, next, b)
+          }}
+          className="h-8"
+        />
+        {mode === "between" && (
+          <>
+            <span className="text-muted-foreground text-xs">–</span>
+            <Input
+              type="number"
+              inputMode="numeric"
+              placeholder="Year"
+              min={0}
+              max={9999}
+              value={b}
+              onChange={(e) => {
+                const next = sanitize(e.target.value)
+                if (next !== null) set(mode, a, next)
+              }}
+              className="h-8"
+            />
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function DateRangeEditor({
   field,
   def,
@@ -607,6 +815,12 @@ function DateRangeEditor({
 }) {
   const { from, to } = readDateRange(conditions)
   const presets = def.presets
+
+  if (def.scale?.unit === "year") {
+    return (
+      <YearEditor field={field} conditions={conditions} onChange={onChange} />
+    )
+  }
 
   const applyPreset = (days: number) => {
     const d = new Date()

@@ -41,6 +41,9 @@ function bookRelationUuids(
       return book.creators.filter((c) => c.role === "trl").map((c) => c.uuid)
     case "creators":
       return book.creators.filter((c) => c.role !== "trl").map((c) => c.uuid)
+    // distinct column values are filter-only options; books hold no relation
+    case "distinct":
+      return []
   }
 }
 

@@ -19,7 +19,6 @@ import {
   findScrollParent,
   useBookActionMenu,
 } from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
-import { ColumnSelector } from "@/app/(v3)/v3/_/components/books/ColumnSelector"
 import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import {
   BOOK_COLLECTION_ID,
@@ -29,18 +28,8 @@ import {
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
-import {
-  type DisplayField,
-  type SortContext,
-  type SortDirection,
-  type SortField,
-} from "@/sort"
+import { type DisplayField, type SortContext } from "@/sort"
 
-import {
-  ColumnHeader,
-  DEFAULT_COLUMNS,
-  ESTIMATED_ROW_HEIGHT,
-} from "./BookListColumns"
 import { BookListItem, BookListItemSkeleton } from "./BookListItem"
 
 type BookListProps = {
@@ -56,16 +45,10 @@ type BookListProps = {
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
   onBookClick?: (book: BookWithRelations) => void
-  // click on a specific column cell (e.g. the alignment grade) instead of the
-  // row. when omitted, those cells fall through to the row click.
-  onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
+  // the list layout's selected fields, rendered below each title
   displayFields?: DisplayField[]
   displayContext?: SortContext
-  visibleColumns?: DisplayField[]
-  onVisibleColumnsChange?: (fields: DisplayField[]) => void
-  sortField?: SortField
-  sortDirection?: SortDirection
-  onSortChange?: (field: SortField, direction: SortDirection) => void
+  showThumbnail?: boolean
   // temporary: which keyboard-open model the list uses (see LibraryPage toggle)
   navModel?: BookNavModel
 }
@@ -81,14 +64,9 @@ export function BookList({
   hasActiveFilters,
   selectedBookUuid,
   onBookClick,
-  onColumnClick,
   displayFields = ["authors"],
   displayContext,
-  visibleColumns = DEFAULT_COLUMNS,
-  onVisibleColumnsChange,
-  sortField,
-  sortDirection,
-  onSortChange,
+  showThumbnail = true,
   navModel = "commit",
   ...props
 }: BookListProps) {
@@ -97,11 +75,6 @@ export function BookList({
 
   const emptyMessage = props.emptyMessage ?? t("emptyState")
   const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")
-
-  // the column headers that get their own column (not title/authors)
-  const extraColumns = visibleColumns.filter(
-    (f) => f !== "title" && f !== "authors",
-  )
 
   // --- virtualization ---
 
@@ -125,10 +98,12 @@ export function BookList({
     observerRef.current = observer
   }, [])
 
+  const estimatedRowHeight = showThumbnail ? 58 : 40
+
   const rowVirtualizer = useVirtualizer({
     count: books.length,
     getScrollElement: () => scrollElement,
-    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    estimateSize: () => estimatedRowHeight,
     overscan: 8,
     measureElement:
       typeof window !== "undefined"
@@ -233,45 +208,12 @@ export function BookList({
     )
   }
 
-  const translatedVisibleColumns = visibleColumns.map((field) => {
-    return {
-      field,
-      label: c(`fields.short.${field}`),
-    }
-  })
-
   return (
     <>
-      <div className="border-border bg-surface-base sticky -top-6 z-10 -mx-6 flex items-center gap-3 border-b px-5 pb-1.5">
-        {/* spacer for cover + title */}
-        <div className="h-px w-10 shrink-0" />
-        <div className="min-w-0 flex-1" />
-
-        {extraColumns.length > 0 &&
-          extraColumns.map((field) => (
-            <ColumnHeader
-              key={field}
-              field={field}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSortChange={onSortChange}
-            />
-          ))}
-        <div className="flex w-[4rem] shrink-0 items-center justify-center">
-          {onVisibleColumnsChange && (
-            <ColumnSelector
-              visibleFields={visibleColumns}
-              onChange={onVisibleColumnsChange}
-              className="h-4"
-            />
-          )}
-        </div>
-      </div>
-
       {isLoading ? (
         <div className="flex flex-col gap-px py-2">
           {Array.from({ length: 12 }).map((_, i) => (
-            <BookListItemSkeleton key={i} />
+            <BookListItemSkeleton key={i} showThumbnail={showThumbnail} />
           ))}
         </div>
       ) : (
@@ -316,10 +258,9 @@ export function BookList({
                     menu.menuOpen && menu.menuBook?.uuid === book.uuid
                   }
                   onClick={onBookClick}
-                  onColumnClick={onColumnClick}
                   displayFields={displayFields}
                   displayContext={displayContext}
-                  visibleColumns={translatedVisibleColumns}
+                  showThumbnail={showThumbnail}
                 />
               </div>
             )

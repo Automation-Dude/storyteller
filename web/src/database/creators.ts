@@ -20,41 +20,26 @@ export async function getCreators(
   return (
     db
       .selectFrom("creator")
-      // if we are just getting creators, we need to get the roles for each creator
+      // one bookToCreator join serves the roles aggregation, the role filter,
+      // and the visibility check (joining it multiple times multiplied rows
+      // and produced duplicate roles).
+      .innerJoin("bookToCreator", "bookToCreator.creatorUuid", "creator.uuid")
       .$if(!role, (qb) =>
-        qb
-          .innerJoin(
-            "bookToCreator as bookToCreatorAgg",
-            "bookToCreatorAgg.creatorUuid",
-            "creator.uuid",
-          )
-          .select((eb) =>
-            // TODO: dedupe
-            eb
-              .fn<Role[]>("json_group_array", ["bookToCreatorAgg.role"])
-              .as("roles"),
-          )
-          .whereRef("bookToCreatorAgg.creatorUuid", "=", "creator.uuid"),
+        qb.select((eb) =>
+          eb.fn
+            .agg<Role[]>("json_group_array", ["bookToCreator.role"])
+            .distinct()
+            .as("roles"),
+        ),
       )
       .$if(!!role, (qb) =>
-        qb
-          .innerJoin(
-            "bookToCreator as roleCheck",
-            "roleCheck.creatorUuid",
-            "creator.uuid",
-          )
-          // The $if condition ensures that this only runs when role
-          // is not null
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .where("roleCheck.role", "=", role!),
+        // The $if condition ensures that this only runs when role
+        // is not null
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        qb.where("bookToCreator.role", "=", role!),
       )
       .$if(!!userId, (qb) =>
         qb
-          .innerJoin(
-            "bookToCreator",
-            "bookToCreator.creatorUuid",
-            "creator.uuid",
-          )
           .leftJoin(
             "bookToCollection",
             "bookToCreator.bookUuid",

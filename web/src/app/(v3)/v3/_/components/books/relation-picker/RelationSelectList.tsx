@@ -11,10 +11,25 @@ import {
   type RelationSource,
   useRelationItems,
 } from "@/app/(v3)/v3/_/hooks/use-relation-items"
+import { marcRelators } from "@/components/books/edit/marcRelators"
+import { type Field } from "@/fields"
 
 // a row's selection state, rendered as a trailing icon. what "primary" and
 // "secondary" mean is up to the caller (include/exclude, all/some, selected).
 export type RelationRowState = "primary" | "secondary" | "none"
+
+const ROLE_LABELS = new Map(marcRelators.map((r) => [r.value, r.label]))
+
+// role rows come from json aggregation, so nulls can sneak in despite the type
+function roleSuffix(
+  roles: readonly (string | null)[] | undefined,
+): string | null {
+  if (!roles?.length) return null
+  const labels = roles
+    .filter((r): r is string => r != null)
+    .map((r) => ROLE_LABELS.get(r as never) ?? r)
+  return labels.length ? labels.join(", ") : null
+}
 
 function defaultTrailing(state: RelationRowState): ReactNode {
   if (state === "primary")
@@ -30,6 +45,7 @@ function defaultTrailing(state: RelationRowState): ReactNode {
 // FilterableMenuContent / FilterableMenuSubContent (which supplies the search).
 export function RelationSelectList({
   source,
+  field,
   items: itemsProp,
   loading: loadingProp,
   enabled,
@@ -42,6 +58,8 @@ export function RelationSelectList({
   emptyText,
 }: {
   source?: RelationSource
+  // the registry field backing a "distinct" source
+  field?: Field
   items?: RelationItem[]
   loading?: boolean
   enabled: boolean
@@ -56,7 +74,7 @@ export function RelationSelectList({
   footer?: ReactNode
   emptyText?: string
 }) {
-  const fetched = useRelationItems(source, enabled && !itemsProp)
+  const fetched = useRelationItems(source, enabled && !itemsProp, field)
   const rawItems = itemsProp ?? fetched.items
   const loading = loadingProp ?? (itemsProp ? false : fetched.loading)
 
@@ -98,15 +116,25 @@ export function RelationSelectList({
       emptyText={emptyText}
       create={create}
       footer={footer}
-      renderRow={(item) => (
-        <>
-          <RelationGlyph item={item} />
-          <span className="min-w-0 flex-1 truncate">{item.name}</span>
-          <span className="flex w-4 shrink-0 items-center justify-center">
-            {renderTrailing(stateOf(item))}
-          </span>
-        </>
-      )}
+      renderRow={(item) => {
+        const roles = roleSuffix(item.roles)
+        return (
+          <>
+            <RelationGlyph item={item} />
+            <span className="min-w-0 flex-1 truncate">
+              {item.name}
+              {roles && (
+                <span className="text-muted-foreground/80 ml-1.5 text-xs">
+                  {roles}
+                </span>
+              )}
+            </span>
+            <span className="flex w-4 shrink-0 items-center justify-center">
+              {renderTrailing(stateOf(item))}
+            </span>
+          </>
+        )
+      }}
     />
   )
 }

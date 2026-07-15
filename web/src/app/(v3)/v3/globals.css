@@ -369,18 +369,18 @@
   [data-cover-tint] {
     --cover-wash: color-mix(
       in oklab,
-      rgb(var(--cover-rgb)) calc(18% * var(--cover-intensity)),
+      rgb(var(--cover-rgb)) min(calc(18% * var(--cover-intensity)), 96%),
       var(--cover-background-mix)
     );
     --cover-well: color-mix(
       in oklab,
-      rgb(var(--cover-rgb)) calc(30% * var(--cover-intensity)),
+      rgb(var(--cover-rgb)) min(calc(30% * var(--cover-intensity)), 96%),
       var(--cover-background-mix)
     );
     /* --cover-well: rgba(var(--cover-rgb)  30%); */
     --cover-header: color-mix(
       in oklab,
-      rgb(var(--cover-rgb)) calc(50% * var(--cover-intensity)),
+      rgb(var(--cover-rgb)) min(calc(50% * var(--cover-intensity)), 96%),
       var(--cover-background-mix)
     );
     --tinted-foreground: color-mix(
@@ -402,12 +402,12 @@
   [data-cover-accent] {
     --tint: color-mix(
       in oklab,
-      rgb(var(--cover-solid-rgb)) calc(12% * var(--cover-intensity)),
+      rgb(var(--cover-solid-rgb)) min(calc(12% * var(--cover-intensity)), 96%),
       var(--cover-background-mix)
     );
     --tint-strong: color-mix(
       in oklab,
-      rgb(var(--cover-solid-rgb)) calc(20% * var(--cover-intensity)),
+      rgb(var(--cover-solid-rgb)) min(calc(20% * var(--cover-intensity)), 96%),
       var(--cover-background-mix)
     );
   }
@@ -415,23 +415,23 @@
     [data-cover-tint] {
       --cover-wash: color-mix(
         in oklab,
-        rgb(var(--cover-rgb)) calc(60% * var(--cover-intensity)),
+        rgb(var(--cover-rgb)) min(calc(60% * var(--cover-intensity)), 96%),
         var(--cover-background-mix)
       );
       --cover-well: color-mix(
         in oklab,
-        rgb(var(--cover-rgb)) calc(70% * var(--cover-intensity)),
+        rgb(var(--cover-rgb)) min(calc(70% * var(--cover-intensity)), 96%),
         var(--cover-background-mix)
       );
       /* --cover-well: rgba(
-        var(--cover-rgb) / calc(70% * var(--cover-intensity)),
+        var(--cover-rgb) / min(calc(70% * var(--cover-intensity)), 96%),
         var(--cover-background-mix)
       ); */
       /* --cover */
 
       --cover-header: color-mix(
         in oklab,
-        rgb(var(--cover-rgb)) calc(80% * var(--cover-intensity)),
+        rgb(var(--cover-rgb)) min(calc(80% * var(--cover-intensity)), 96%),
         var(--cover-background-mix)
       );
       --tinted-foreground: color-mix(
@@ -454,12 +454,12 @@
     [data-cover-accent] {
       --tint: color-mix(
         in oklab,
-        rgb(var(--cover-solid-rgb)) calc(12% * var(--cover-intensity)),
+        rgb(var(--cover-solid-rgb)) min(calc(12% * var(--cover-intensity)), 96%),
         var(--cover-background-mix)
       );
       --tint-strong: color-mix(
         in oklab,
-        rgb(var(--cover-solid-rgb)) calc(20% * var(--cover-intensity)),
+        rgb(var(--cover-solid-rgb)) min(calc(20% * var(--cover-intensity)), 96%),
         var(--cover-background-mix)
       );
     }

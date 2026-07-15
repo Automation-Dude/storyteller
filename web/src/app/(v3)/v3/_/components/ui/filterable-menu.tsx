@@ -372,12 +372,15 @@ function SearchBox({
   placeholder?: string
   className?: string
 }) {
+  const c = useCommon()
+  const placeholderDefault = c.plain("actions.search")
+
   return (
     <div className="mb-1 border-b p-1">
       <input
         ref={inputRef}
         value={query}
-        placeholder={placeholder}
+        placeholder={placeholder ?? placeholderDefault}
         onChange={(event) => {
           setQuery(event.target.value)
         }}
@@ -443,10 +446,6 @@ export function FilterableMenuTrigger(
   return <Popover.Trigger data-slot="filterable-menu-trigger" {...props} />
 }
 
-// the popup body. shows a search input by default (`searchable={false}` to hide
-// it). use inside `FilterableMenu`, or standalone inside a
-// `<Popover.Root handle={...}>` for externally-triggered menus (pass
-// `onClose={() => handle.close()}` so items can dismiss it).
 export function FilterableMenuContent({
   children,
   searchable = true,
@@ -457,6 +456,7 @@ export function FilterableMenuContent({
   className,
   searchInputClassName,
   onClose,
+  anchor,
 }: {
   children: ReactNode
   searchable?: boolean
@@ -467,6 +467,9 @@ export function FilterableMenuContent({
   className?: string
   searchInputClassName?: string
   onClose?: () => void
+  // position against something other than the trigger (e.g. a context menu's
+  // cursor coordinates as a virtual element)
+  anchor?: ComponentProps<typeof Popover.Positioner>["anchor"]
 }) {
   const rootClose = useContext(FilterableMenuRootContext).close
   const { ctx, query, setQuery, resetQuery, inputRef, handleKeyDown } =
@@ -482,6 +485,7 @@ export function FilterableMenuContent({
         align={align}
         side={side}
         sideOffset={sideOffset}
+        anchor={anchor}
       >
         <Popover.Popup
           data-slot="filterable-menu-content"
@@ -539,9 +543,6 @@ export function FilterableMenuGroup({
   )
 }
 
-// the group's heading. only meaningful inside a `FilterableMenuGroup`, whose
-// search it drives. hidden while filtering unless the group itself matches, so a
-// query never leaves an orphaned header behind.
 export function FilterableMenuLabel({
   children,
   className,
@@ -729,7 +730,7 @@ export function FilterableMenuSubTrigger({
 
 export function FilterableMenuSubContent({
   children,
-  searchable = false,
+  searchable = true,
   searchPlaceholder,
   className,
   side = "right",

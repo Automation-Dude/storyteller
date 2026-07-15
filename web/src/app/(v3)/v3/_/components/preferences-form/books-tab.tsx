@@ -29,7 +29,6 @@ import { statusDisplayLabel } from "@/database/statusKinds"
 import {
   BookDetailDisplays,
   DoubleCoverAlignments,
-  GridCardSizes,
   GridCoverDisplays,
   RatingIcons,
 } from "@/database/userPreferencesTypes"
@@ -57,11 +56,6 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
   const alignmentOptions = DoubleCoverAlignments.map((key) => ({
     value: key,
     label: t(`gridDisplay.alignmentOptions.${key}`),
-  }))
-
-  const gridSizeOptions = GridCardSizes.map((key) => ({
-    value: key,
-    label: t(`gridDisplay.sizeOptions.${key}`),
   }))
 
   const detailDisplayOptions = BookDetailDisplays.map((key) => ({
@@ -165,26 +159,6 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                 alignment={doubleCoverAlignment}
               />
             </div>
-
-            <Controller
-              name="gridCardSize"
-              control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <FieldLabel>{t("gridDisplay.sizeLabel")}</FieldLabel>
-                  <FieldDescription>
-                    {t("gridDisplay.sizeHint")}
-                  </FieldDescription>
-                  <SegmentedControl
-                    value={field.value}
-                    onChange={(value) => {
-                      field.onChange(value)
-                    }}
-                    options={gridSizeOptions}
-                  />
-                </Field>
-              )}
-            />
           </CardContent>
         </Card>
       </PreferencesSection>

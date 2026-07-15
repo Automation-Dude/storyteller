@@ -16,6 +16,7 @@ import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { ShelfFilterEditor } from "@/app/(v3)/v3/_/components/shelves/ShelfFilterEditor"
 import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type FieldGroupKey,
@@ -24,10 +25,12 @@ import {
   getFieldDef,
 } from "@/fields"
 import * as icon from "@/icons"
+import { type ShelfFilterNode } from "@/shelves"
 import { type DisplayField, type SortField } from "@/sort"
 
 import { DisplayControl } from "./DisplayControl"
 import { FilterControl, FilterEditor } from "./RelationshipDropdownMenu"
+import { SaveAsShelfDialog } from "./SaveAsShelfDialog"
 import { SearchInput } from "./SearchInput"
 import { SortControl } from "./SortControl"
 
@@ -47,14 +50,9 @@ type BookFiltersProps = {
   onDisplayOverridesChange: (fields: DisplayField[] | null) => void
   currentFields: DisplayField[]
 
-  bookView?: import("@/store/slices/uiSettingsSlice").BookView
-  onBookViewChange?: (
-    view: import("@/store/slices/uiSettingsSlice").BookView,
-  ) => void
-
-  advancedOpen?: boolean
-  onToggleAdvanced?: () => void
-  onSaveAsShelf?: () => void
+  // the advanced (shelf-tree) editor + save-as-shelf. on by default so every
+  // book list gets them; opt out for contexts where saving makes no sense.
+  enableAdvanced?: boolean
 
   children?: ReactNode
 }
@@ -63,6 +61,12 @@ const searchHotKey = "/" as const
 const filterHotKey = "F" as const
 const advancedHotKey = "Shift+F" as const
 const saveAsShelfHotKey = "Alt+Shift+S" as const
+
+function countConditions(node: ShelfFilterNode): number {
+  if (node.type === "condition") return 1
+  if (node.type === "not") return countConditions(node.child)
+  return node.children.reduce((n, child) => n + countConditions(child), 0)
+}
 
 export function BookFilters({
   controller,
@@ -73,11 +77,7 @@ export function BookFilters({
   displayOverrides,
   onDisplayOverridesChange,
   currentFields,
-  bookView,
-  onBookViewChange,
-  advancedOpen = false,
-  onToggleAdvanced,
-  onSaveAsShelf,
+  enableAdvanced = true,
   children,
 }: BookFiltersProps) {
   const t = useTranslation("BooksPage")
@@ -91,12 +91,28 @@ export function BookFilters({
     conditionsForField,
     setConditionsForField,
     removeField,
+    userFilter,
+    setUserFilter,
+    effectiveFilter,
   } = controller
 
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
   const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
+  // undefined = follow the filter shape (auto-open when the url filter is
+  // already advanced); true/false = the user's explicit choice.
+  const [advancedOverride, setAdvancedOverride] = useState<boolean | undefined>(
+    undefined,
+  )
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  const advancedVisible = enableAdvanced && (advancedOverride ?? isAdvanced)
+  const canSaveAsShelf = enableAdvanced && !!effectiveFilter
+
+  const toggleAdvanced = () => {
+    setAdvancedOverride((prev) => !(prev ?? isAdvanced))
+  }
 
   useHotkeys([
     {
@@ -114,22 +130,28 @@ export function BookFilters({
     {
       hotkey: advancedHotKey,
       callback: () => {
-        onToggleAdvanced?.()
+        if (enableAdvanced) toggleAdvanced()
       },
     },
     {
       hotkey: saveAsShelfHotKey,
       callback: () => {
-        onSaveAsShelf?.()
+        if (canSaveAsShelf) setSaveDialogOpen(true)
       },
     },
   ])
 
   const shownFields = activeFields
 
-  const advancedVisible = advancedOpen || isAdvanced
+  // an advanced tree can't render as quick chips; when collapsed it gets a
+  // single summary chip so the active filter is never invisible.
+  const advancedChip = isAdvanced && !advancedVisible
+  const advancedCount = useMemo(
+    () => (isAdvanced ? countConditions(userFilter) : 0),
+    [isAdvanced, userFilter],
+  )
 
-  const hasChips = !!seedLabel || shownFields.length > 0
+  const hasChips = !!seedLabel || shownFields.length > 0 || advancedChip
 
   return (
     <div
@@ -155,8 +177,7 @@ export function BookFilters({
             conditionsForField={conditionsForField}
             setConditionsForField={setConditionsForField}
             advancedVisible={advancedVisible}
-            onToggleAdvanced={onToggleAdvanced}
-            onSaveAsShelf={onSaveAsShelf}
+            onToggleAdvanced={enableAdvanced ? toggleAdvanced : undefined}
           />
         )}
 
@@ -175,9 +196,24 @@ export function BookFilters({
           currentFields={currentFields}
           open={displayMenuOpen}
           onOpenChange={setDisplayMenuOpen}
-          bookView={bookView}
-          onBookViewChange={onBookViewChange}
         />
+
+        {canSaveAsShelf && (
+          <TooltipButton
+            variant="outline"
+            size="sm"
+            className="ml-auto h-7 shrink-0 gap-1.5 rounded-full text-xs font-medium"
+            tooltip={t("filters.saveAsShelf")}
+            aria-label={t.plain("filters.saveAsShelf")}
+            shortcut={[saveAsShelfHotKey]}
+            onClick={() => {
+              setSaveDialogOpen(true)
+            }}
+          >
+            <icon.BookmarkPlus className="size-3.5" />
+            {t("filters.saveAsShelf")}
+          </TooltipButton>
+        )}
       </div>
 
       {hasChips && (
@@ -186,6 +222,18 @@ export function BookFilters({
             <span className="border-border bg-muted text-muted-foreground inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
               {seedLabel}
             </span>
+          )}
+
+          {advancedChip && (
+            <button
+              className="border-primary/30 bg-primary/10 text-primary inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+              onClick={() => {
+                setAdvancedOverride(true)
+              }}
+            >
+              <icon.AdjustmentsHorizontal className="h-3 w-3" />
+              {t.plain("filters.advancedSummary", { count: advancedCount })}
+            </button>
           )}
 
           {!isAdvanced &&
@@ -205,6 +253,39 @@ export function BookFilters({
         </div>
       )}
 
+      {advancedVisible && (
+        <div className="border-border border-t pt-2">
+          <div className="flex items-center justify-between pb-1">
+            <span className="text-muted-foreground text-xs font-medium">
+              {t("filters.advanced")}
+            </span>
+            <TooltipButton
+              variant="ghost"
+              size="icon-sm"
+              tooltip={t("filters.closeAdvanced")}
+              aria-label={t.plain("filters.closeAdvanced")}
+              shortcut={[advancedHotKey]}
+              onClick={() => {
+                setAdvancedOverride(false)
+              }}
+            >
+              <icon.ChevronUp className="size-4" />
+            </TooltipButton>
+          </div>
+          <ShelfFilterEditor filter={userFilter} onChange={setUserFilter} />
+        </div>
+      )}
+
+      {effectiveFilter && (
+        <SaveAsShelfDialog
+          open={saveDialogOpen}
+          onOpenChange={setSaveDialogOpen}
+          filter={effectiveFilter}
+          sortField={sort.field}
+          sortDirection={sort.direction}
+        />
+      )}
+
       {children}
     </div>
   )
@@ -217,7 +298,6 @@ function FilterMenu({
   setConditionsForField,
   advancedVisible,
   onToggleAdvanced,
-  onSaveAsShelf,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -225,7 +305,6 @@ function FilterMenu({
   setConditionsForField: BookFiltersController["setConditionsForField"]
   advancedVisible: boolean
   onToggleAdvanced?: () => void
-  onSaveAsShelf?: () => void
 }) {
   const t = useTranslation("BooksPage")
   const tLabel = useTranslation("Common.fields.label")
@@ -270,7 +349,7 @@ function FilterMenu({
                 >
                   {tLabel(getFieldDef(field).labelKey as never)}
                 </FilterableMenuSubTrigger>
-                <FilterableMenuSubContent>
+                <FilterableMenuSubContent searchable>
                   <FilterEditor
                     field={field}
                     def={getFieldDef(field)}
@@ -320,34 +399,20 @@ function FilterMenu({
           ),
         )}
 
-        {(onToggleAdvanced || onSaveAsShelf) && (
+        {onToggleAdvanced && (
           <>
             <FilterableMenuSeparator />
 
-            {onToggleAdvanced && (
-              <FilterableMenuItem
-                textValue="Advanced filter"
-                icon={<icon.AdjustmentsHorizontal className="size-4" />}
-                onSelect={() => {
-                  onToggleAdvanced()
-                }}
-              >
-                Advanced filter
-                {advancedVisible && <icon.Check className="ml-auto" />}
-              </FilterableMenuItem>
-            )}
-
-            {onSaveAsShelf && (
-              <FilterableMenuItem
-                textValue="Save as shelf"
-                icon={<icon.BookmarkPlus className="size-4" />}
-                onSelect={() => {
-                  onSaveAsShelf()
-                }}
-              >
-                Save as shelf
-              </FilterableMenuItem>
-            )}
+            <FilterableMenuItem
+              textValue={t.plain("filters.advanced")}
+              icon={<icon.AdjustmentsHorizontal className="size-4" />}
+              onSelect={() => {
+                onToggleAdvanced()
+              }}
+            >
+              {t("filters.advanced")}
+              {advancedVisible && <icon.Check className="ml-auto" />}
+            </FilterableMenuItem>
           </>
         )}
       </FilterableMenuContent>

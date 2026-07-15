@@ -21,7 +21,17 @@ import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
-import { type DisplayField, type SortContext } from "@/sort"
+import {
+  type CreatorDisplayField,
+  type DisplayField,
+  type SortContext,
+  groupDisplayRows,
+} from "@/sort"
+import { useAppSelector } from "@/store/appState"
+import {
+  selectShowProcessingBadge,
+  selectShowReadaloudBadge,
+} from "@/store/slices/uiSettingsSlice"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -163,6 +173,10 @@ export function SecondaryText({
         : none
     case "title":
     case "authors":
+    case "narrators":
+    case "translators":
+    case "creators":
+      // rendered as their own rich (linked) rows, not through SecondaryText
       return null
     case "alignmentScore":
       return book.alignmentSummary?.score != null ? (
@@ -198,6 +212,89 @@ export function SecondaryText({
   }
 }
 
+const MAX_CARD_CREATORS = 5
+
+// which people a creator display row shows, with the MARC role kept for the
+// generic "other creators" row.
+function creatorsFor(
+  book: BookWithRelations,
+  field: CreatorDisplayField,
+): { uuid: string; name: string; role?: string | null }[] {
+  switch (field) {
+    case "authors":
+      return book.authors
+    case "narrators":
+      return book.narrators
+    case "translators":
+      return book.creators.filter((c) => c.role === "trl")
+    case "creators":
+      return book.creators.filter((c) => c.role !== "trl")
+  }
+}
+
+const CREATOR_LINK_BASE: Record<CreatorDisplayField, string | null> = {
+  authors: "/authors",
+  narrators: "/narrators",
+  translators: "/translators",
+  creators: null,
+}
+
+export function CreatorsLine({
+  book,
+  field,
+}: {
+  book: BookWithRelations
+  field: CreatorDisplayField
+}) {
+  const people = creatorsFor(book, field)
+  if (people.length === 0) return null
+
+  const visible = people.slice(0, MAX_CARD_CREATORS)
+  const hiddenCount = people.length - visible.length
+  const linkBase = CREATOR_LINK_BASE[field]
+
+  return (
+    <p className="text-muted-foreground/80 line-clamp-1 text-xs">
+      {visible.map((person, index) => (
+        <Fragment key={person.uuid}>
+          {linkBase ? (
+            <V3Link
+              className="hover:text-tinted-strong relative z-20 hover:underline"
+              prefetch={false}
+              href={`${linkBase}?item=${person.uuid}`}
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
+            >
+              {person.name}
+            </V3Link>
+          ) : (
+            person.name
+          )}
+          {/* the mixed-role row disambiguates each person by their marc code */}
+          {field === "creators" && person.role && (
+            <span className="text-muted-foreground/60"> ({person.role})</span>
+          )}
+          {index < visible.length - 1 && ", "}
+        </Fragment>
+      ))}
+      {hiddenCount > 0 && ` +${hiddenCount}`}
+      {field === "translators" && (
+        <span className="text-muted-foreground/60"> (trl)</span>
+      )}
+    </p>
+  )
+}
+
+function isCreatorField(field: DisplayField): field is CreatorDisplayField {
+  return (
+    field === "authors" ||
+    field === "narrators" ||
+    field === "translators" ||
+    field === "creators"
+  )
+}
+
 export const BookCard = memo(function BookCard({
   book,
   index,
@@ -218,20 +315,22 @@ export const BookCard = memo(function BookCard({
 }: BookCardProps) {
   const isMobile = useIsMobile()
 
+  const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)
+  const showProcessingBadge = useAppSelector(selectShowProcessingBadge)
+
   const hasReadaloud = book.readaloud !== null
-  const isSynced = hasReadaloud && book.readaloud?.status === "ALIGNED"
+  const isSynced =
+    hasReadaloud && book.readaloud?.status === "ALIGNED" && showReadaloudBadge
   const isProcessing =
-    book.readaloud?.status === "PROCESSING" ||
-    book.readaloud?.status === "QUEUED"
+    (book.readaloud?.status === "PROCESSING" ||
+      book.readaloud?.status === "QUEUED") &&
+    showProcessingBadge
   const hasDualFormat = isDual(book)
 
-  const MAX_CARD_AUTHORS = 5
-  const authors = book.authors
-  const visibleAuthors = useMemo(
-    () => authors.slice(0, MAX_CARD_AUTHORS),
-    [authors],
+  const displayRows = useMemo(
+    () => groupDisplayRows(displayFields),
+    [displayFields],
   )
-  const hiddenAuthorCount = authors.length - visibleAuthors.length
   const progress = getReadingProgress(book)
 
   const scope = useCoverScope(book)
@@ -312,62 +411,52 @@ export const BookCard = memo(function BookCard({
         )}
       </div>
 
-      <div className="mt-2 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden px-1">
-        {displayFields.map((field) => {
-          // title and authors get their own rich (linked) markup; every other
-          // field renders through SecondaryText. rendered in selection order.
-          if (field === "title") {
-            return (
-              <V3Link
-                key="title"
-                href={`/books/${book.uuid}`}
-                prefetch={false}
-                className={cn(!onClick && "big-link")}
-              >
-                <h3 className="group-hover:text-tinted-strong font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
-                  {book.title}
-                </h3>
-              </V3Link>
-            )
-          }
+      {displayRows.length > 0 && (
+        <div className="mt-2 flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden px-1">
+          {displayRows.map((row) => {
+            const [field] = row
+            if (!field) return null
 
-          if (field === "authors") {
-            if (authors.length === 0) return null
+            // title and the creator rows get their own rich (linked) markup;
+            // everything else renders through SecondaryText, with compact
+            // fields sharing a row. rendered in selection order.
+            if (field === "title") {
+              return (
+                <V3Link
+                  key="title"
+                  href={`/books/${book.uuid}`}
+                  prefetch={false}
+                  className={cn(!onClick && "big-link")}
+                >
+                  <h3 className="group-hover:text-tinted-strong font-heading line-clamp-2 text-[0.9375rem] leading-tight font-normal">
+                    {book.title}
+                  </h3>
+                </V3Link>
+              )
+            }
+
+            if (isCreatorField(field)) {
+              return <CreatorsLine key={field} book={book} field={field} />
+            }
+
             return (
               <p
-                key="authors"
-                className="text-muted-foreground/80 line-clamp-1 text-xs"
+                key={row.join("+")}
+                className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums"
               >
-                {visibleAuthors.map((a, index) => (
-                  <Fragment key={a.uuid}>
-                    <V3Link
-                      className="hover:text-tinted-strong relative z-20 hover:underline"
-                      prefetch={false}
-                      href={`/authors?item=${a.uuid}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                      }}
-                    >
-                      {a.name}
-                    </V3Link>
-                    {index < visibleAuthors.length - 1 && ", "}
+                {row.map((f, i) => (
+                  <Fragment key={f}>
+                    {i > 0 && (
+                      <span className="text-muted-foreground/50"> · </span>
+                    )}
+                    <SecondaryText book={book} field={f} ctx={displayContext} />
                   </Fragment>
                 ))}
-                {hiddenAuthorCount > 0 && ` +${hiddenAuthorCount}`}
               </p>
             )
-          }
-
-          return (
-            <p
-              key={field}
-              className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums"
-            >
-              <SecondaryText book={book} field={field} ctx={displayContext} />
-            </p>
-          )
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </>
   )
 

@@ -17,6 +17,7 @@ import {
   NUMBER_FIELDS,
   STRING_FIELDS,
   UUID_FIELDS,
+  getFieldDef,
   getFieldType,
 } from "./fields"
 import { type RegistrySortField, SORTABLE_FIELDS } from "./sort"
@@ -503,6 +504,9 @@ export function defaultOperatorForField(
   field: ShelfFilterField,
 ): ShelfFilterOperator {
   if (field === "search" || field === "review") return "contains"
+
+  const registryDefault = getFieldDef(field).defaultOperator
+  if (registryDefault) return registryDefault
 
   switch (getFieldType(field)) {
     case "string":

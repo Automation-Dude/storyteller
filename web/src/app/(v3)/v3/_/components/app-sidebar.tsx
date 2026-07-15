@@ -10,7 +10,6 @@ import { useTheme } from "next-themes"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
-
 import {
   NavSecondary,
   type NavSecondaryItem,
@@ -266,7 +265,7 @@ export function AppSidebar({
   return (
     <>
       <Sidebar variant="inset" collapsible="icon" {...props}>
-        <SidebarHeader className="flex flex-row items-center justify-between gap-2">
+        <SidebarHeader className="flex h-(--header-height) flex-row items-center justify-between gap-2">
           <V3Link
             href="/"
             className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0"
@@ -279,7 +278,7 @@ export function AppSidebar({
               alt="Storyteller"
               className="h-7! max-h-7! w-7! max-w-7! shrink-0"
             />
-            <span className="font-heading w-auto text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+            <span className="w-auto font-[Young_Serif] text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
               Storyteller
             </span>
           </V3Link>

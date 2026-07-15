@@ -5,6 +5,7 @@ import { type MouseEvent } from "react"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 
 import { cn } from "@/cn"
+import * as icon from "@/icons"
 
 // the selection affordance shared by BookCard (grid) and BookListItem (list) so
 // both render identically. shift-click extends a range; a plain click toggles.
@@ -68,13 +69,32 @@ export function SelectionCheckbox({
   )
 }
 
-export function SelectionBullet({ selected }: { selected: boolean }) {
+// non-interactive twin of SelectionCheckbox for use inside buttons and menu
+// items (nesting a real checkbox there would be a button-in-button)
+export function SelectionBullet({
+  selected,
+  indeterminate = false,
+  className,
+}: {
+  selected: boolean
+  indeterminate?: boolean
+  className?: string
+}) {
   return (
     <div
+      aria-hidden
       className={cn(
-        "hover:border-primary bg-background border-foreground mr-1.5 size-3.5 rounded-full border transition-colors focus-within:border-blue-500",
-        selected && "bg-primary",
+        "border-input hover:border-primary bg-background flex size-5 shrink-0 items-center justify-center rounded-full border-2 shadow-sm transition-colors",
+        (selected || indeterminate) &&
+          "bg-primary border-primary text-primary-foreground",
+        className,
       )}
-    />
+    >
+      {selected ? (
+        <icon.Check className="size-3.5" />
+      ) : indeterminate ? (
+        <icon.Minus className="size-3.5" />
+      ) : null}
+    </div>
   )
 }

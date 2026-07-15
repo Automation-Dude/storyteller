@@ -23,6 +23,7 @@ import {
 import { getDefaultSuffix, getSafeFilepathSegment } from "@/assets/paths"
 import { ASSETS_DIR } from "@/directories"
 import { BookEvents, type BookUpdatePayload } from "@/events"
+import { type DistinctFacetField } from "@/fields"
 import { type ShelfFilter } from "@/shelves"
 import { type BookSort, type SortField } from "@/sort"
 import type { UUID } from "@/uuid"
@@ -1708,4 +1709,23 @@ export async function markFormatMissing(
       payload: book,
     })
   }
+}
+
+// the distinct non-empty stored values of a distinct-facet book column
+// (language, transcription engine, ...), for filter option lists.
+export async function getDistinctBookFieldValues(
+  field: DistinctFacetField,
+): Promise<string[]> {
+  const rows = await db
+    .selectFrom("book")
+    .select(field)
+    .distinct()
+    .where(field, "is not", null)
+    .where(field, "!=", "")
+    .orderBy(field)
+    .execute()
+
+  return rows
+    .map((row) => row[field])
+    .filter((value): value is string => !!value)
 }

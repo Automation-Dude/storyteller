@@ -111,7 +111,11 @@
       "allSeries": "Alle series",
       "status": "Status",
       "allStatuses": "Alle statusen",
-      "clearAllFilters": "Wis alle filters"
+      "clearAllFilters": "Wis alle filters",
+      "advanced": "Geavanceerd filter",
+      "closeAdvanced": "Geavanceerd filter verbergen",
+      "advancedSummary": "Geavanceerd filter ({count})",
+      "saveAsShelf": "Opslaan als plank"
     },
     "sortBy": {
       "createdAt": "Toegevoegd op",
@@ -128,7 +132,14 @@
   },
   "BookList": {
     "emptyState": "Geen boeken gevonden",
-    "emptyStateSub": "Pas je zoekopdracht of filters aan"
+    "emptyStateSub": "Pas je zoekopdracht of filters aan",
+    "columnMenu": {
+      "autofit": "Aanpassen aan inhoud",
+      "resetWidth": "Breedte herstellen",
+      "moveLeft": "Naar links",
+      "moveRight": "Naar rechts",
+      "hide": "Kolom verbergen"
+    }
   },
   "LibraryPage": {
     "emptyStateSub": "Selecteer een item in de zijbalk om de bijbehorende boeken te zien",
@@ -375,7 +386,8 @@
       "kb": "KB",
       "mb": "MB",
       "gb": "GB"
-    }
+    },
+    "selectValues": "Zoek waarden..."
   },
   "ShelfEditor": {
     "editTitle": "Plank bewerken",
@@ -1237,7 +1249,8 @@
       "select": "Selecteren",
       "deselect": "Deselecteren",
       "confirm": "Bevestigen",
-      "selectFolder": "Selecteer map"
+      "selectFolder": "Selecteer map",
+      "search": "Zoeken"
     },
     "states": {
       "saving": "Opslaan...",
@@ -1263,6 +1276,8 @@
         "alignmentMissingSentences": "Ontbrekende zinnen",
         "alignmentMutedChapters": "Gedempte hoofdstukken",
         "alignedAt": "Laatst gesynchroniseerd",
+        "alignedWith": "Transcriptie-engine",
+        "alignedByStorytellerVersion": "Aligner-versie",
         "lastRead": "Laatst gelezen",
         "readingPosition": "Voortgang",
         "seriesPosition": "Seriepositie",
@@ -1296,7 +1311,12 @@
         "alignedAt": "Gesynchroniseerd",
         "lastRead": "Laatst gelezen",
         "readingPosition": "Voortgang",
-        "seriesPosition": "Pos."
+        "seriesPosition": "Pos.",
+        "narrators": "Vertellers",
+        "translators": "Vertalers",
+        "creators": "Makers",
+        "alignedWith": "Engine",
+        "alignedByStorytellerVersion": "Versie"
       },
       "options": {
         "mediaType": {

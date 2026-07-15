@@ -34,6 +34,22 @@ export function ColumnValue({
   switch (field) {
     case "authors":
       return formatList(book.authors.map((a) => a.name)) || "\u2014"
+    case "narrators":
+      return formatList(book.narrators.map((n) => n.name)) || "\u2014"
+    case "translators":
+      return (
+        formatList(
+          book.creators.filter((c) => c.role === "trl").map((c) => c.name),
+        ) || "\u2014"
+      )
+    case "creators":
+      return (
+        formatList(
+          book.creators
+            .filter((c) => c.role !== "trl")
+            .map((c) => (c.role ? `${c.name} (${c.role})` : c.name)),
+        ) || "\u2014"
+      )
     case "userRating":
       return book.userBookRating?.rating != null
         ? `\u2605 ${book.userBookRating.rating.toFixed(1)}`
@@ -91,6 +107,9 @@ export function ColumnValue({
       return book.alignmentSummary?.mutedChapters != null
         ? `${book.alignmentSummary.mutedChapters}`
         : "\u2014"
+    case "alignmentMissingChapters":
+      // not carried in alignmentSummary (no client column)
+      return "\u2014"
     case "title":
       return book.title
     case "alignedAt":
@@ -132,6 +151,10 @@ export const ESTIMATED_ROW_HEIGHT = 58
 
 export const columnWidths: Record<DisplayField, number> = {
   authors: 80,
+  narrators: 80,
+  translators: 80,
+  creators: 80,
+  alignmentMissingChapters: 60,
   duration: 40,
   pageCount: 40,
   fileSize: 40,

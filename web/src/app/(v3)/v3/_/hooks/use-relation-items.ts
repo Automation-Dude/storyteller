@@ -1,10 +1,12 @@
+import { useLocale } from "next-intl"
 import { useMemo } from "react"
 
-import { type FacetSource } from "@/fields"
+import { type FacetSource, type Field } from "@/fields"
 import {
   useListAuthorsQuery,
   useListCollectionsQuery,
   useListCreatorsQuery,
+  useListDistinctFieldValuesQuery,
   useListNarratorsQuery,
   useListSeriesQuery,
   useListStatusesQuery,
@@ -22,6 +24,8 @@ export type RelationItem = {
   name: string
   icon?: string | null
   color?: string | null
+  // MARC relator codes the person holds (only present for the creators source)
+  roles?: readonly string[]
 }
 
 // a permissive shape every list query's rows satisfy; icon/color/roles are only
@@ -34,10 +38,35 @@ type RelationRow = {
   roles?: readonly string[]
 }
 
+// display name for a raw distinct value; only language codes get special
+// treatment (localized language names), everything else shows verbatim.
+function distinctValueName(
+  field: Field | undefined,
+  value: string,
+  locale: string,
+): string {
+  if (field !== "language") return value
+  try {
+    return (
+      new Intl.DisplayNames([locale], {
+        type: "language",
+        languageDisplay: "dialect",
+      }).of(value) ?? value
+    )
+  } catch {
+    return value
+  }
+}
+
 export function useRelationItems(
   source: RelationSource | undefined,
   enabled: boolean,
+  // the registry field backing a "distinct" source (its own column supplies
+  // the option values); unused for the entity-table sources.
+  field?: Field,
 ): { items: RelationItem[]; loading: boolean } {
+  const locale = useLocale()
+
   // each source has its own endpoint; only the active one is fetched, and only
   // once the picker is enabled (opened).
   const on = (s: RelationSource) => enabled && source === s
@@ -56,6 +85,10 @@ export function useRelationItems(
   // "creators" is everyone without a first-class role facet, so it filters the
   // full list client-side (there is no dedicated endpoint for it).
   const creators = useListCreatorsQuery(undefined, { skip: !on("creators") })
+  const distinct = useListDistinctFieldValuesQuery(
+    { field: field ?? "" },
+    { skip: !on("distinct") || !field },
+  )
 
   const active = (() => {
     switch (source) {
@@ -75,6 +108,8 @@ export function useRelationItems(
         return translators
       case "creators":
         return creators
+      case "distinct":
+        return distinct
       default:
         return undefined
     }
@@ -82,6 +117,16 @@ export function useRelationItems(
 
   const data = active?.data
   const items = useMemo<RelationItem[]>(() => {
+    if (source === "distinct") {
+      const values = (data ?? []) as readonly string[]
+      return values
+        .map((value) => ({
+          uuid: value,
+          name: distinctValueName(field, value, locale),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    }
+
     const rows = (data ?? []) as readonly RelationRow[]
     const list =
       source === "creators"
@@ -98,9 +143,10 @@ export function useRelationItems(
         name: d.name,
         icon: d.icon,
         color: d.color,
+        ...(source === "creators" && d.roles ? { roles: d.roles } : {}),
       }))
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [data, source])
+  }, [data, source, field, locale])
 
   return { items, loading: !!active?.isLoading }
 }

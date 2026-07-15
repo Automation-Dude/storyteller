@@ -308,6 +308,18 @@ function buildIsEmptyExpression(
         eb("book.language", "=", ""),
       ])
 
+    case "alignedWith":
+      return eb.or([
+        eb("book.alignedWith", "is", null),
+        eb("book.alignedWith", "=", ""),
+      ])
+
+    case "alignedByStorytellerVersion":
+      return eb.or([
+        eb("book.alignedByStorytellerVersion", "is", null),
+        eb("book.alignedByStorytellerVersion", "=", ""),
+      ])
+
     case "publicationDate":
       return eb("book.publicationDate", "is", null)
 
@@ -655,7 +667,7 @@ function buildComparisonExpression(
     case "string":
       return buildStringComparison(
         eb,
-        field as "title" | "subtitle" | "description" | "language",
+        field as StringBookColumnField,
         operator,
         value,
       )
@@ -690,9 +702,18 @@ function buildComparisonExpression(
   }
 }
 
+// string fields whose value lives in an identically-named book column
+type StringBookColumnField =
+  | "title"
+  | "subtitle"
+  | "description"
+  | "language"
+  | "alignedWith"
+  | "alignedByStorytellerVersion"
+
 function buildStringComparison(
   eb: EB,
-  field: "title" | "subtitle" | "description" | "language",
+  field: StringBookColumnField,
   operator: ShelfFilterOperator,
   value: ShelfFilterValue,
 ): FilterExpression {
@@ -1105,7 +1126,6 @@ export function buildBookSearchExpression(
   return eb.or([
     eb(sql`lower(book.title)`, "like", searchTerm),
     eb(sql`lower(book.subtitle)`, "like", searchTerm),
-    eb(sql`lower(book.description)`, "like", searchTerm),
     eb.exists(
       eb
         .selectFrom("creator")

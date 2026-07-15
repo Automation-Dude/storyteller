@@ -1002,17 +1002,20 @@ type ConditionValueInputProps = {
 // editor, so authors/narrators/etc. can never fall through like they used to.
 function FacetValueMenu({
   source,
+  field,
   value,
   onChange,
   placeholder,
 }: {
   source: FacetSource
+  // the registry field backing a "distinct" source
+  field?: ShelfFilterField
   value: string[]
   onChange: (value: string[]) => void
   placeholder: string
 }) {
   const [open, setOpen] = useState(false)
-  const { items, loading } = useRelationItems(source, true)
+  const { items, loading } = useRelationItems(source, true, field)
   const selectedNames = items
     .filter((i) => value.includes(i.uuid))
     .map((i) => i.name)
@@ -1139,7 +1142,10 @@ function ConditionValueInput({
 
   // -- facet relations + status (options come from def.source) --------------
 
-  if (def.control === "facet") {
+  // a distinct-facet string field with a scalar text operator (is / contains /
+  // starts with) edits as plain text below; only membership operators get the
+  // multi-select.
+  if (def.control === "facet" && (isArray || def.source !== "distinct")) {
     const selected = Array.isArray(value) ? (value as string[]) : []
 
     // status is / isNot picks a single value: keep the plain select.
@@ -1178,11 +1184,14 @@ function ConditionValueInput({
             ? t.plain("selectSeries")
             : def.source === "statuses"
               ? t.plain("selectStatuses")
-              : t.plain("selectCreators")
+              : def.source === "distinct"
+                ? t.plain("selectValues")
+                : t.plain("selectCreators")
 
     return (
       <FacetValueMenu
         source={def.source}
+        field={field}
         value={selected}
         onChange={onChange}
         placeholder={placeholder}

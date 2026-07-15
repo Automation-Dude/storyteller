@@ -6,7 +6,10 @@ import { type JsColor } from "@storyteller-platform/okmain"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 
 import { type BookWithRelations } from "@/database/books"
-import { type ColorMode } from "@/database/userPreferencesTypes"
+import {
+  type ColorMode,
+  NEUTRAL_COLOR_STRENGTH,
+} from "@/database/userPreferencesTypes"
 
 export type CoverColor = {
   rgb: { r: number; g: number; b: number }
@@ -148,7 +151,17 @@ export function ensureContrast(
   color: CoverColor,
   isDarkMode: boolean,
 ): ContrastColor {
-  const surface = isDarkMode ? DARK_SURFACE : LIGHT_SURFACE
+  return ensureContrastAgainst(color, isDarkMode ? DARK_SURFACE : LIGHT_SURFACE)
+}
+
+// same lightness walk, but against an arbitrary surface luminance (0-255): a
+// tinted hero background, a colored chip, ... moves away from the surface's
+// side of the scale until the contrast target is met.
+export function ensureContrastAgainst(
+  color: CoverColor,
+  surface: number,
+): ContrastColor {
+  const surfaceIsDark = surface < 128
   let { r, g, b } = color.rgb
 
   const lum = () => r * 0.2126 + g * 0.7152 + b * 0.0722
@@ -156,7 +169,7 @@ export function ensureContrast(
   for (let i = 0; i < 16; i++) {
     if (contrastRatio(lum(), surface) >= MIN_CONTRAST) break
 
-    if (isDarkMode) {
+    if (surfaceIsDark) {
       // step toward white
       r = clamp8(r + (255 - r) * 0.12)
       g = clamp8(g + (255 - g) * 0.12)
@@ -183,10 +196,16 @@ export function useIsDarkMode(): boolean {
   return resolvedTheme === "dark"
 }
 
+// how far past the historical maximum the multiplier may go at 100% strength
+const MAX_INTENSITY_MULTIPLIER = 1.5
+
 export type ColorPreferences = {
   level: ColorMode
+  // the tint multiplier fed to --cover-intensity. the stored strength maps so
+  // NEUTRAL_COLOR_STRENGTH -> 1 (the historical look) and 1 -> genuinely more.
   intensity: number
-  colorMix: "vibrant" | "subdued"
+  // the raw stored 0..1 strength, for the settings ui
+  strength: number
   // ambient background tints (card bg, panel header, hero) apply at medium+
   showTint: boolean
   // strong ui coloring (--primary overrides, hover tints, colored buttons /
@@ -197,18 +216,57 @@ export type ColorPreferences = {
 }
 
 export function useColorPreferences(): ColorPreferences {
-  const { colorMode, colorIntensity, colorMix } = useUserPreferences()
+  const { colorMode, colorIntensity } = useUserPreferences()
 
   return useMemo(() => {
     const showTint = colorMode !== "minimal"
+    const intensity = Math.min(
+      colorIntensity / NEUTRAL_COLOR_STRENGTH,
+      MAX_INTENSITY_MULTIPLIER,
+    )
     return {
       level: colorMode,
-      colorMix,
-      intensity: colorIntensity,
+      intensity,
+      strength: colorIntensity,
       showTint,
       showAccent: colorMode === "full",
       tint: (color, base) =>
-        showTint ? color.alpha(base * colorIntensity) : "transparent",
+        showTint ? color.alpha(Math.min(base * intensity, 1)) : "transparent",
     }
-  }, [colorMode, colorIntensity, colorMix])
+  }, [colorMode, colorIntensity])
+}
+
+// the hero gradient paints the cover color (via --cover-header, an
+// intensity-scaled blend against the page surface) behind arbitrary text, so
+// the tinted text tokens have to be re-derived against that blend rather than
+// the page background. returns css vars to spread on the hero container.
+export function useHeroContrast(
+  book: BookWithRelations | undefined,
+): React.CSSProperties {
+  const { primary, hasColors } = useCoverColors(book)
+  const { intensity, showTint } = useColorPreferences()
+  const isDark = useIsDarkMode()
+
+  return useMemo(() => {
+    if (!hasColors || !showTint) return {}
+
+    const surface = isDark ? DARK_SURFACE : LIGHT_SURFACE
+    // the css blends the cover into the surface at 50% (light) / 80% (dark)
+    // times the intensity multiplier, then the hero paints that at ~0.8 alpha
+    const mix = Math.min((isDark ? 0.8 : 0.5) * intensity, 0.96) * 0.8
+    const heroLum = surface + (primary.luminance - surface) * mix
+
+    const tinted = ensureContrastAgainst(primary, heroLum)
+    const heroIsDark = heroLum < 128
+
+    return {
+      "--tinted-foreground": tinted.solid,
+      "--tinted-foreground-strong": heroIsDark ? "#fff" : "#000",
+      // plain body/muted text inside the hero also has to clear the blend
+      "--foreground": heroIsDark ? "oklch(0.98 0 0)" : "oklch(0.15 0 0)",
+      "--muted-foreground": heroIsDark
+        ? "oklch(0.85 0 0 / 0.85)"
+        : "oklch(0.3 0 0 / 0.85)",
+    } as React.CSSProperties
+  }, [hasColors, showTint, primary, intensity, isDark])
 }

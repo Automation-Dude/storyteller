@@ -1,8 +1,20 @@
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit"
 
+import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { type DisplayField } from "@/sort"
 
-export type BookView = "grid" | "list"
+// the top-level layout of a book list page
+export type BookLayout = "grid" | "list"
+// legacy name kept for the few call sites that still say "view"
+export type BookView = BookLayout
+
+// per-layout views: the grid shows cards (cover + meta) or bare thumbnails;
+// the list shows stacked rows or a real table.
+export type GridView = "card" | "thumbnail"
+export type ListView = "list" | "table"
+
+// gap between grid cards, resolved to pixels in BookGrid
+export type GridSpacing = "compact" | "cozy" | "spacious"
 
 export type LogDisplayPrefs = {
   wrapLines: boolean
@@ -13,14 +25,29 @@ export type LogDisplayPrefs = {
   levelFilter: string
 }
 
+// device-specific view state, persisted in a cookie (never synced across
+// devices; a cookie reset just falls back to the defaults). account-level
+// taste (colors, cover type, rating icon, ...) lives in the DB user prefs.
 export type UISettings = {
   detailPanelWidth: number
   librarySidebarWidth: number
-  bookView: BookView
-  listVisibleColumns: DisplayField[]
+  bookLayout: BookLayout
+  gridView: GridView
+  listView: ListView
   // the fields shown below a grid cover. null = auto (derived from sort/filter);
   // an explicit array (possibly empty = show nothing) is the user's own choice.
   gridDisplayFields: DisplayField[] | null
+  gridSpacing: GridSpacing
+  gridCardSize: GridCardSize
+  // the fields the list layout shows: secondary lines in the list view, columns
+  // in the table view.
+  listDisplayFields: DisplayField[]
+  listShowThumbnail: boolean
+  // table view column order (null = the listDisplayFields order) and widths
+  tableColumnOrder: string[] | null
+  tableColumnWidths: Record<string, number>
+  showReadaloudBadge: boolean
+  showProcessingBadge: boolean
   logDisplay: LogDisplayPrefs
 }
 
@@ -36,7 +63,7 @@ const defaultLogDisplay: LogDisplayPrefs = {
   levelFilter: "all",
 }
 
-const defaultListVisibleColumns: DisplayField[] = [
+const defaultListDisplayFields: DisplayField[] = [
   "authors",
   "duration",
   "pageCount",
@@ -45,9 +72,18 @@ const defaultListVisibleColumns: DisplayField[] = [
 const defaults: UISettings = {
   detailPanelWidth: 420,
   librarySidebarWidth: 280,
-  bookView: "grid",
-  listVisibleColumns: defaultListVisibleColumns,
+  bookLayout: "grid",
+  gridView: "card",
+  listView: "list",
   gridDisplayFields: null,
+  gridSpacing: "cozy",
+  gridCardSize: "medium",
+  listDisplayFields: defaultListDisplayFields,
+  listShowThumbnail: true,
+  tableColumnOrder: null,
+  tableColumnWidths: {},
+  showReadaloudBadge: true,
+  showProcessingBadge: true,
   logDisplay: defaultLogDisplay,
 }
 
@@ -118,19 +154,31 @@ export const uiSettingsSlice = createSlice({
         ...merged.logDisplay,
       }
 
-      // backwards compat: cookies that predate the rename
+      // backwards compat: cookies that predate the renames
       const legacy = action.payload as Record<string, unknown>
       if (
-        !merged.listVisibleColumns.length &&
-        Array.isArray(legacy["listVisibleFields"])
+        !("bookLayout" in legacy) &&
+        (legacy["bookView"] === "grid" || legacy["bookView"] === "list")
       ) {
-        merged.listVisibleColumns = legacy[
-          "listVisibleFields"
+        merged.bookLayout = legacy["bookView"]
+      }
+      if (
+        !merged.listDisplayFields.length &&
+        Array.isArray(legacy["listVisibleColumns"])
+      ) {
+        merged.listDisplayFields = legacy[
+          "listVisibleColumns"
         ] as DisplayField[]
       }
+      if (
+        !merged.listDisplayFields.length &&
+        Array.isArray(legacy["listVisibleFields"])
+      ) {
+        merged.listDisplayFields = legacy["listVisibleFields"] as DisplayField[]
+      }
 
-      if (merged.listVisibleColumns.length === 0) {
-        merged.listVisibleColumns = defaultListVisibleColumns
+      if (merged.listDisplayFields.length === 0) {
+        merged.listDisplayFields = defaultListDisplayFields
       }
 
       return merged
@@ -146,13 +194,53 @@ export const uiSettingsSlice = createSlice({
       saveToCookie(state)
     },
 
-    setBookView: (state, action: PayloadAction<BookView>) => {
-      state.bookView = action.payload
+    setBookLayout: (state, action: PayloadAction<BookLayout>) => {
+      state.bookLayout = action.payload
       saveToCookie(state)
     },
 
-    setListVisibleColumns: (state, action: PayloadAction<DisplayField[]>) => {
-      state.listVisibleColumns = action.payload
+    setGridView: (state, action: PayloadAction<GridView>) => {
+      state.gridView = action.payload
+      saveToCookie(state)
+    },
+
+    setListView: (state, action: PayloadAction<ListView>) => {
+      state.listView = action.payload
+      saveToCookie(state)
+    },
+
+    setListDisplayFields: (state, action: PayloadAction<DisplayField[]>) => {
+      state.listDisplayFields = action.payload
+      saveToCookie(state)
+    },
+
+    setListShowThumbnail: (state, action: PayloadAction<boolean>) => {
+      state.listShowThumbnail = action.payload
+      saveToCookie(state)
+    },
+
+    setTableColumnOrder: (state, action: PayloadAction<string[] | null>) => {
+      state.tableColumnOrder = action.payload
+      saveToCookie(state)
+    },
+
+    setTableColumnWidths: (
+      state,
+      action: PayloadAction<Record<string, number>>,
+    ) => {
+      state.tableColumnWidths = {
+        ...state.tableColumnWidths,
+        ...action.payload,
+      }
+      saveToCookie(state)
+    },
+
+    resetTableColumnWidth: (state, action: PayloadAction<string>) => {
+      state.tableColumnWidths = Object.fromEntries(
+        Object.entries(state.tableColumnWidths).filter(
+          ([key]) => key !== action.payload,
+        ),
+      )
       saveToCookie(state)
     },
 
@@ -161,6 +249,26 @@ export const uiSettingsSlice = createSlice({
       action: PayloadAction<DisplayField[] | null>,
     ) => {
       state.gridDisplayFields = action.payload
+      saveToCookie(state)
+    },
+
+    setGridSpacing: (state, action: PayloadAction<GridSpacing>) => {
+      state.gridSpacing = action.payload
+      saveToCookie(state)
+    },
+
+    setGridCardSize: (state, action: PayloadAction<GridCardSize>) => {
+      state.gridCardSize = action.payload
+      saveToCookie(state)
+    },
+
+    setShowReadaloudBadge: (state, action: PayloadAction<boolean>) => {
+      state.showReadaloudBadge = action.payload
+      saveToCookie(state)
+    },
+
+    setShowProcessingBadge: (state, action: PayloadAction<boolean>) => {
+      state.showProcessingBadge = action.payload
       saveToCookie(state)
     },
 
@@ -182,14 +290,41 @@ export const selectDetailPanelWidth = (state: { uiSettings: UISettings }) =>
 export const selectLibrarySidebarWidth = (state: { uiSettings: UISettings }) =>
   state.uiSettings.librarySidebarWidth
 
-export const selectBookView = (state: { uiSettings: UISettings }) =>
-  state.uiSettings.bookView
+export const selectBookLayout = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.bookLayout
 
-export const selectListVisibleColumns = (state: { uiSettings: UISettings }) =>
-  state.uiSettings.listVisibleColumns
+export const selectGridView = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.gridView
+
+export const selectListView = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.listView
+
+export const selectListDisplayFields = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.listDisplayFields
+
+export const selectListShowThumbnail = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.listShowThumbnail
+
+export const selectTableColumnOrder = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.tableColumnOrder
+
+export const selectTableColumnWidths = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.tableColumnWidths
 
 export const selectGridDisplayFields = (state: { uiSettings: UISettings }) =>
   state.uiSettings.gridDisplayFields
+
+export const selectGridSpacing = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.gridSpacing
+
+export const selectGridCardSize = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.gridCardSize
+
+export const selectShowReadaloudBadge = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.showReadaloudBadge
+
+export const selectShowProcessingBadge = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.showProcessingBadge
 
 export const selectLogDisplayPrefs = (state: { uiSettings: UISettings }) =>
   state.uiSettings.logDisplay

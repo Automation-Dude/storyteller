@@ -45,7 +45,12 @@ import {
   useSetUserBookRatingMutation,
 } from "@/store/api"
 
-import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
+import {
+  ensureContrast,
+  useCoverColors,
+  useHeroContrast,
+  useIsDarkMode,
+} from "./useCoverColors"
 
 const MAX_CREATORS = 5
 
@@ -110,18 +115,20 @@ export function HeroSection({
   const isDark = useIsDarkMode()
   const ratingColor = ensureContrast(primary, isDark).solid
 
+  const heroContrast = useHeroContrast(book)
+
   return (
     <div
       className={cn(
         "from-cover-header/80 to-cover-well/80 dark:from-cover-header/70 dark:to-cover-well/70 relative bg-linear-to-t",
       )}
+      style={heroContrast}
     >
       <div
         className={cn(
           "group/hero relative flex flex-col items-center gap-5 px-6 pt-14 pb-5 text-center",
           `@xl/book:flex-row @xl/book:items-center @xl/book:gap-8 @xl/book:text-left`,
           !isEditing && !editingCovers && `@xl/book:h-80`,
-          // !compact && `w-screen`,
           className,
         )}
       >

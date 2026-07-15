@@ -4,11 +4,12 @@ import { useVirtualizer } from "@tanstack/react-virtual"
 import { parseAsString, useQueryState } from "nuqs"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { BookFilters, BookGrid } from "@v3/_/components/books"
+import { BookFilters } from "@v3/_/components/books"
 import {
   BookDetailDrawer,
   BookListLayout,
 } from "@v3/_/components/books/BookListLayout"
+import { BooksView } from "@v3/_/components/books/BooksView"
 import { SearchInput } from "@v3/_/components/books/SearchInput"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import { BOOK_COLLECTION_ID } from "@v3/_/components/books/keyboard-nav"
@@ -55,7 +56,6 @@ import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateC
 import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSeriesDialog"
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { EditSeriesDialog } from "@/app/(v3)/v3/_/components/books/EditSeriesDialog"
-import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import {
   SelectionBullet,
   SelectionCheckbox,
@@ -89,10 +89,7 @@ import {
 } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
-  type BookView,
-  selectBookView,
   selectGridDisplayFields,
-  selectListVisibleColumns,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
@@ -171,27 +168,11 @@ function LibraryPageInner({
   const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
 
-  const bookView = useAppSelector(selectBookView)
-  const listVisibleColumns = useAppSelector(selectListVisibleColumns)
   const gridDisplayFields = useAppSelector(selectGridDisplayFields)
-
-  const handleBookViewChange = useCallback(
-    (view: BookView) => {
-      dispatch(uiSettingsSlice.actions.setBookView(view))
-    },
-    [dispatch],
-  )
 
   const handleDisplayFieldsChange = useCallback(
     (fields: DisplayField[] | null) => {
       dispatch(uiSettingsSlice.actions.setGridDisplayFields(fields))
-    },
-    [dispatch],
-  )
-
-  const handleListColumnsChange = useCallback(
-    (fields: DisplayField[]) => {
-      dispatch(uiSettingsSlice.actions.setListVisibleColumns(fields))
     },
     [dispatch],
   )
@@ -280,6 +261,7 @@ function LibraryPageInner({
     effectiveFilter,
     displayContext,
     gridDisplayFields,
+    controller.isDefaultSort,
   )
 
   // the server returns the facet list; the client only relabels the synthetic
@@ -363,7 +345,6 @@ function LibraryPageInner({
     () => gridData?.pages.flatMap((page) => page) ?? [],
     [gridData?.pages],
   )
-  console.log("filteredBooks", filteredBooks)
 
   const selectedFacet = allItems.find((i) => i.key === selectedItem)
   const selectedItemName = selectedFacet?.name
@@ -579,58 +560,32 @@ function LibraryPageInner({
         displayOverrides={gridDisplayFields}
         onDisplayOverridesChange={handleDisplayFieldsChange}
         currentFields={displayFields}
-        bookView={bookView}
-        onBookViewChange={handleBookViewChange}
       />
 
       <PageContent className="p-6">
-        {bookView === "list" ? (
-          <BookList
-            books={filteredBooks}
-            isLoading={gridLoading}
-            isFetchingNextPage={isFetchingNextPage}
-            hasNextPage={hasNextPage}
-            fetchNextPage={fetchNextPage}
-            showMuted={showMuted}
-            emptySubMessage={
-              deferredSearch || activeFilterCount > 0
-                ? undefined
-                : t("emptyStateSub")
-            }
-            onClearFilters={clearAll}
-            hasActiveFilters={activeFilterCount > 0}
-            selectedBookUuid={selectedBookUuid}
-            onBookClick={handleBookClick}
-            onColumnClick={handleColumnClick}
-            displayFields={displayFields}
-            displayContext={displayContext}
-            visibleColumns={listVisibleColumns}
-            onVisibleColumnsChange={handleListColumnsChange}
-            sortField={sort.field}
-            sortDirection={sort.direction}
-            onSortChange={handleColumnSort}
-          />
-        ) : (
-          <BookGrid
-            books={filteredBooks}
-            isLoading={gridLoading}
-            isFetchingNextPage={isFetchingNextPage}
-            hasNextPage={hasNextPage}
-            fetchNextPage={fetchNextPage}
-            showMuted={showMuted}
-            emptySubMessage={
-              deferredSearch || activeFilterCount > 0
-                ? undefined
-                : t("emptyStateSub")
-            }
-            onClearFilters={clearAll}
-            hasActiveFilters={activeFilterCount > 0}
-            selectedBookUuid={selectedBookUuid}
-            onBookClick={handleBookClick}
-            displayFields={displayFields}
-            displayContext={displayContext}
-          />
-        )}
+        <BooksView
+          books={filteredBooks}
+          isLoading={gridLoading}
+          isFetchingNextPage={isFetchingNextPage}
+          hasNextPage={hasNextPage}
+          fetchNextPage={fetchNextPage}
+          showMuted={showMuted}
+          emptySubMessage={
+            deferredSearch || activeFilterCount > 0
+              ? undefined
+              : t("emptyStateSub")
+          }
+          onClearFilters={clearAll}
+          hasActiveFilters={activeFilterCount > 0}
+          selectedBookUuid={selectedBookUuid}
+          onBookClick={handleBookClick}
+          onColumnClick={handleColumnClick}
+          displayFields={displayFields}
+          displayContext={displayContext}
+          sortField={sort.field}
+          sortDirection={sort.direction}
+          onSortChange={handleColumnSort}
+        />
       </PageContent>
       <SelectionToolbar allBooks={filteredBooks} />
     </>

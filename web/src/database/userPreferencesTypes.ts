@@ -47,7 +47,9 @@ export const UserPreferencesSchema = z.object({
   defaultReadingMode: z.enum(["readaloud", "audiobook", "epub"]).nullable(),
   defaultView: z.enum(ViewKinds),
   colorMode: z.enum(ColorModes),
-  // multiplier on cover-tint opacity, 0 (faint) .. 1 (current)
+  // cover-tint strength, 0 (faint) .. 1 (saturated). the default sits at
+  // NEUTRAL_COLOR_STRENGTH, values above it push past the historical maximum
+  // (see useColorPreferences, which turns this into a tint multiplier).
   colorIntensity: z.number().min(0).max(1),
   gridCoverDisplay: z.enum(GridCoverDisplays),
   gridCardSize: z.enum(GridCardSizes),
@@ -78,8 +80,11 @@ export const UserPreferencesSchema = z.object({
   // full width immediately (manual drag still animates). independent of the grid
   // FLIP, so both feels can be compared.
   animatePanelOpen: z.boolean(),
-  colorMix: z.enum(["vibrant", "subdued"]),
 })
+
+// the colorIntensity value that reproduces the historical full-strength tint;
+// values above it blend in genuinely more cover color.
+export const NEUTRAL_COLOR_STRENGTH = 0.65
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>
 
@@ -88,8 +93,7 @@ export const defaultUserPreferences: UserPreferences = {
   defaultReadingMode: null,
   defaultView: "grid",
   colorMode: "full",
-  colorIntensity: 1,
-  colorMix: "vibrant",
+  colorIntensity: NEUTRAL_COLOR_STRENGTH,
   gridCoverDisplay: "auto",
   gridCardSize: "medium",
   doubleCoverAlignment: "auto",

@@ -5,6 +5,7 @@ import {
   IconAlertOctagon,
   IconAlertTriangle,
   IconAlignLeft,
+  IconArrowAutofitWidth,
   IconArrowBack,
   IconArrowDown,
   IconArrowLeft,
@@ -182,6 +183,7 @@ export const Pointer = /*#__PURE__*/ styled(IconPointer)
 export const Logout = /*#__PURE__*/ styled(IconLogout)
 export const ArrowBack = /*#__PURE__*/ styled(IconArrowBack)
 export const Rotate2 = /*#__PURE__*/ styled(IconRotate2)
+export const ArrowAutofitWidth = /*#__PURE__*/ styled(IconArrowAutofitWidth)
 
 // navigation
 export const ArrowLeft = /*#__PURE__*/ styled(IconArrowLeft)

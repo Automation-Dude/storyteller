@@ -32,11 +32,26 @@ export const GENERAL_SORT_FIELDS: RegistrySortField[] = SORTABLE_FIELDS
 
 export type SortContext = { seriesUuid?: UUID | null }
 
-// the card's secondary line can show any sortable field, or fall back to the
-// authors (the historical default).
-export type DisplayField = SortField | "authors"
+// the card's secondary line can show any sortable field, or one of the
+// display-only creator rows (authors is the historical default; narrators /
+// translators / other creators are shown but never sorted by).
+export type CreatorDisplayField =
+  | "authors"
+  | "narrators"
+  | "translators"
+  | "creators"
+export const CREATOR_DISPLAY_FIELDS: readonly CreatorDisplayField[] = [
+  "narrators",
+  "translators",
+  "creators",
+]
 
-export const DISPLAY_FIELDS = [...SORTABLE_FIELDS, "authors"] as const
+export type DisplayField = SortField | CreatorDisplayField
+
+export const DISPLAY_FIELDS = [
+  ...SORTABLE_FIELDS,
+  ...CREATOR_DISPLAY_FIELDS,
+] as const
 
 const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
   "createdAt",
@@ -45,15 +60,22 @@ const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
   "language",
 ]
 
-// the auto-mode secondary field: echo a meaningful sort, else a filtered field,
-// else series position or the authors. title is added on top by the caller.
+// the auto-mode secondary field: echo an explicitly chosen sort, else (still on
+// the default sort) a filtered field, else series position or the authors.
+// title is added on top by the caller.
 function deriveAutoSecondary(
   sortField: SortField,
+  isDefaultSort: boolean,
   filter?: ShelfFilterNode,
   ctx?: SortContext,
 ): DisplayField {
-  // an explicit, meaningful sort echoes itself (show what you sorted by)
-  if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return sortField
+  // a sort the user actually picked always echoes itself, so a filter can never
+  // take over the display slot. the untouched default sort only echoes itself
+  // when it's a meaningful (non-neutral) field.
+  if (sortField !== "title") {
+    if (!isDefaultSort) return sortField
+    if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return sortField
+  }
   if (filter?.type === "condition") {
     if ((DISPLAY_FIELDS as readonly string[]).includes(filter.field)) {
       return filter.field as DisplayField
@@ -70,14 +92,64 @@ export function deriveDisplayFields(
   filter?: ShelfFilterNode,
   ctx?: SortContext,
   overrides?: DisplayField[] | null,
+  // whether the current sort is still the page default (not chosen by the user)
+  isDefaultSort = true,
 ): DisplayField[] {
   // an explicit selection (including an empty set = show nothing) wins verbatim.
   if (overrides) return overrides
 
   // auto mode: the derived secondary field above the title (the card's heading
   // sits at the bottom), matching the historical single-field layout.
-  const secondary = deriveAutoSecondary(sortField, filter, ctx)
+  const secondary = deriveAutoSecondary(sortField, isDefaultSort, filter, ctx)
   return secondary === "title" ? ["title"] : [secondary, "title"]
+}
+
+// fields short enough to share a card row (joined with a separator). title and
+// the creator rows always get their own line.
+const COMPACT_DISPLAY_FIELDS: ReadonlySet<DisplayField> = new Set([
+  "pageCount",
+  "duration",
+  "fileSize",
+  "publicationDate",
+  "userRating",
+  "alignmentScore",
+  "alignmentGrade",
+  "alignmentMissingSentences",
+  "alignmentMutedChapters",
+  "alignmentMissingChapters",
+])
+
+const MAX_COMPACT_PER_ROW = 2
+
+// group the selected display fields into the rows a card renders: consecutive
+// compact fields pair up (max two per row), everything else is its own row.
+export function groupDisplayRows(fields: DisplayField[]): DisplayField[][] {
+  const rows: DisplayField[][] = []
+  for (const field of fields) {
+    const last = rows[rows.length - 1]
+    if (
+      last &&
+      COMPACT_DISPLAY_FIELDS.has(field) &&
+      last.length < MAX_COMPACT_PER_ROW &&
+      last.every((f) => COMPACT_DISPLAY_FIELDS.has(f))
+    ) {
+      last.push(field)
+    } else {
+      rows.push([field])
+    }
+  }
+  return rows
+}
+
+// insert a newly toggled-on field above the title row (extra fields stack above
+// the card heading, never below it).
+export function insertDisplayField(
+  fields: DisplayField[],
+  field: DisplayField,
+): DisplayField[] {
+  const titleIndex = fields.indexOf("title")
+  if (titleIndex === -1) return [...fields, field]
+  return [...fields.slice(0, titleIndex), field, ...fields.slice(titleIndex)]
 }
 
 function seriesPositionOf(

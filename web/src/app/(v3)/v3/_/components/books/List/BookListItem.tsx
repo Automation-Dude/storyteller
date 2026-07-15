@@ -3,7 +3,10 @@ import { Fragment, memo, useCallback } from "react"
 
 import { BookCover } from "@/app/(v3)/v3/_/components/books/BookCover"
 import { useCoverScope } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
-import { SecondaryText } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
+import {
+  CreatorsLine,
+  SecondaryText,
+} from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
 import {
   ProgressDisplayBar,
@@ -19,8 +22,22 @@ import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
+import { useAppSelector } from "@/store/appState"
+import {
+  selectShowProcessingBadge,
+  selectShowReadaloudBadge,
+} from "@/store/slices/uiSettingsSlice"
 
-import { ColumnValue, getColumnWidth } from "./BookListColumns"
+function isCreatorField(
+  field: DisplayField,
+): field is "authors" | "narrators" | "translators" | "creators" {
+  return (
+    field === "authors" ||
+    field === "narrators" ||
+    field === "translators" ||
+    field === "creators"
+  )
+}
 
 export const BookListItem = memo(function BookListItem({
   book,
@@ -35,14 +52,12 @@ export const BookListItem = memo(function BookListItem({
   onOpenMenu,
   isMenuOpen = false,
   onClick,
-  onColumnClick,
   displayFields = ["authors"],
   displayContext,
-  visibleColumns,
+  showThumbnail = true,
   handle,
 }: {
   book: BookWithRelations
-  visibleColumns: { field: DisplayField; label: string }[]
   muted?: boolean
   selected?: boolean
   // roving keyboard cursor: container owns the tab stop, this row is the active
@@ -56,29 +71,27 @@ export const BookListItem = memo(function BookListItem({
   onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
   isMenuOpen?: boolean
   onClick?: (book: BookWithRelations) => void
-  onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
+  // the list layout's selected fields, rendered below the title
   displayFields?: DisplayField[]
   displayContext?: SortContext
+  showThumbnail?: boolean
   handle?: Popover.Handle<unknown>
 }) {
   const isMobile = useIsMobile()
 
+  const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)
+  const showProcessingBadge = useAppSelector(selectShowProcessingBadge)
+
   const isSynced =
-    book.readaloud !== null && book.readaloud.status === "ALIGNED"
+    book.readaloud !== null &&
+    book.readaloud.status === "ALIGNED" &&
+    showReadaloudBadge
   const isProcessing =
-    book.readaloud?.status === "PROCESSING" ||
-    book.readaloud?.status === "QUEUED"
+    (book.readaloud?.status === "PROCESSING" ||
+      book.readaloud?.status === "QUEUED") &&
+    showProcessingBadge
 
   const progress = getReadingProgress(book)
-  const authors = book.authors
-
-  // if the sort field is already visible as a column, keep showing authors
-  // in the secondary line. otherwise replace authors with the sort field.
-  const _sortFieldIsVisibleColumn =
-    displayFields.includes("authors") ||
-    visibleColumns.some((c) => displayFields.includes(c.field))
-
-  // const showAuthors = effectiveSecondary === null
 
   const scope = useCoverScope(book)
 
@@ -98,9 +111,11 @@ export const BookListItem = memo(function BookListItem({
     [book, onClick, onSelectRange],
   )
 
-  // columns that aren't title or authors get dedicated cells
-  const extraColumns = visibleColumns.filter(
-    (c) => c.field !== "title" && c.field !== "authors",
+  // the creator rows render as their own (linked) lines; every other selected
+  // field shares a single compact line below the title.
+  const creatorFields = displayFields.filter(isCreatorField)
+  const scalarFields = displayFields.filter(
+    (f) => f !== "title" && !isCreatorField(f),
   )
 
   return (
@@ -111,7 +126,8 @@ export const BookListItem = memo(function BookListItem({
         "aria-selected": active,
       })}
       className={cn(
-        "group hover:bg-tint relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md py-px pr-3 pl-px transition-colors",
+        "group hover:bg-tint relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-md pr-3 pl-px transition-colors",
+        showThumbnail ? "py-px" : "py-1",
         muted && "opacity-50",
         isBookSelected &&
           !selected &&
@@ -136,33 +152,35 @@ export const BookListItem = memo(function BookListItem({
       {...scope}
     >
       {/* cover */}
-      <div className="bg-cover-well relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
-        <div className="relative flex h-12 w-10 items-center justify-center">
-          <BookCover
-            book={book}
-            width={50}
-            disableHover
-            onLoadingChange={() => {}}
-          />
+      {showThumbnail && (
+        <div className="bg-cover-well relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
+          <div className="relative flex h-12 w-10 items-center justify-center">
+            <BookCover
+              book={book}
+              width={50}
+              disableHover
+              onLoadingChange={() => {}}
+            />
 
-          {isSynced && (
-            <div className="bg-cover-accent absolute -top-1 -right-1.5 z-30 flex size-3 shrink-0 items-center justify-center rounded-full">
-              <IconReadaloud className="size-2.5 text-white" />
+            {isSynced && (
+              <div className="bg-cover-accent absolute -top-1 -right-1.5 z-30 flex size-3 shrink-0 items-center justify-center rounded-full">
+                <IconReadaloud className="size-2.5 text-white" />
+              </div>
+            )}
+          </div>
+          {progress !== null && progress > 0 && (
+            <div className="absolute right-0 bottom-0 left-0">
+              <ProgressDisplayBar
+                progress={progress}
+                className="h-0.5"
+                book={book}
+              />
             </div>
           )}
         </div>
-        {progress !== null && progress > 0 && (
-          <div className="absolute right-0 bottom-0 left-0">
-            <ProgressDisplayBar
-              progress={progress}
-              className="h-0.5"
-              book={book}
-            />
-          </div>
-        )}
-      </div>
+      )}
 
-      {/* title + secondary (authors or dynamic field) */}
+      {/* title + selected fields */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <V3Link
@@ -178,94 +196,45 @@ export const BookListItem = memo(function BookListItem({
             </span>
           </V3Link>
 
+          {!showThumbnail && isSynced && (
+            <IconReadaloud className="text-cover-accent size-3.5 shrink-0" />
+          )}
+
           {isProcessing && (
             <ProcessingIndicator book={book} size={16} className="shrink-0" />
           )}
         </div>
 
-        <div
-          className={cn(
-            "text-muted-foreground flex gap-2 truncate text-xs tabular-nums",
-            "group-hover:text-tinted",
-            (selected || isBookSelected) && "text-tinted",
-          )}
-        >
-          {displayFields.map((field) => (
-            <SecondaryText
-              key={field}
-              book={book}
-              field={field}
-              ctx={displayContext}
-            />
-          ))}
-        </div>
-
-        {displayFields.includes("authors") && authors.length > 0 && (
-          <p
+        {creatorFields.map((field) => (
+          <div
+            key={field}
             className={cn(
               "text-muted-foreground truncate text-xs",
               "group-hover:text-tinted",
               (selected || isBookSelected) && "text-tinted",
             )}
           >
-            {authors.map((a, i) => (
-              <Fragment key={a.uuid}>
-                <V3Link
-                  className="hover:text-tinted-strong hover:underline"
-                  prefetch={false}
-                  href={`/authors?item=${a.uuid}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                >
-                  {a.name}
-                </V3Link>
-                {i < authors.length - 1 && ", "}
+            <CreatorsLine book={book} field={field} />
+          </div>
+        ))}
+
+        {scalarFields.length > 0 && (
+          <div
+            className={cn(
+              "text-muted-foreground flex gap-1 truncate text-xs tabular-nums",
+              "group-hover:text-tinted",
+              (selected || isBookSelected) && "text-tinted",
+            )}
+          >
+            {scalarFields.map((field, i) => (
+              <Fragment key={field}>
+                {i > 0 && <span className="text-muted-foreground/50">·</span>}
+                <SecondaryText book={book} field={field} ctx={displayContext} />
               </Fragment>
             ))}
-          </p>
+          </div>
         )}
       </div>
-
-      {/* column values */}
-      {extraColumns.map(({ field, label }, index) => {
-        const isClickable =
-          !!onColumnClick &&
-          (field === "alignmentGrade" || field === "alignmentScore") &&
-          book.alignmentSummary?.grade != null
-
-        const cols = extraColumns.length
-
-        return (
-          <span
-            key={field}
-            className={cn(
-              "text-muted-foreground hidden flex-shrink-0 text-right text-xs tabular-nums",
-              "group-hover:text-tinted",
-              (selected || isBookSelected) && "text-tinted!",
-              isClickable && "hover:text-foreground cursor-pointer",
-              cols > 2 && cols - index > 2
-                ? "@lg/page-content:block"
-                : cols > 1 && cols - index > 1
-                  ? "@md/page-content:block"
-                  : "@sm/page-content:block",
-            )}
-            style={{
-              width: getColumnWidth(field, label),
-            }}
-            onClick={
-              isClickable
-                ? (e) => {
-                    e.stopPropagation()
-                    onColumnClick(book, field)
-                  }
-                : undefined
-            }
-          >
-            <ColumnValue book={book} field={field} />
-          </span>
-        )
-      })}
 
       {/* actions: checkbox + ellipsis */}
       <div className="flex shrink-0 items-center gap-1">
@@ -304,10 +273,19 @@ export const BookListItem = memo(function BookListItem({
   )
 })
 
-export function BookListItemSkeleton() {
+export function BookListItemSkeleton({
+  showThumbnail = true,
+}: {
+  showThumbnail?: boolean
+}) {
   return (
-    <div className="flex h-14 items-center gap-3 rounded-md py-px pr-3 pl-px">
-      <Skeleton className="h-14 w-14 rounded-md" />
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-md py-px pr-3 pl-px",
+        showThumbnail ? "h-14" : "h-10",
+      )}
+    >
+      {showThumbnail && <Skeleton className="h-14 w-14 rounded-md" />}
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-48" />
         <Skeleton className="h-3 w-32" />

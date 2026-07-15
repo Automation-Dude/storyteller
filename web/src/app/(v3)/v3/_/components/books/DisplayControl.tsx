@@ -15,11 +15,24 @@ import {
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
 import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
+import { getFieldDef } from "@/fields"
 import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
-import { DISPLAY_FIELDS, type DisplayField } from "@/sort"
+import { DISPLAY_FIELDS, type DisplayField, insertDisplayField } from "@/sort"
 import { useSetUserSettingMutation } from "@/store/api"
-import { type BookView } from "@/store/slices/uiSettingsSlice"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import {
+  type GridSpacing,
+  selectBookLayout,
+  selectGridSpacing,
+  selectGridView,
+  selectListDisplayFields,
+  selectListShowThumbnail,
+  selectListView,
+  selectShowProcessingBadge,
+  selectShowReadaloudBadge,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
 
 import { useColorPreferences } from "./BookDetails/sections/useCoverColors"
 
@@ -31,8 +44,7 @@ export function DisplayControl({
   currentFields,
   open,
   onOpenChange,
-  bookView,
-  onBookViewChange,
+  showLayout = true,
 }: {
   // null = auto (derived from sort/filter); an explicit array is the user's own
   // choice (an empty array shows nothing under the cover).
@@ -43,15 +55,25 @@ export function DisplayControl({
   currentFields: DisplayField[]
   open: boolean
   onOpenChange: (open: boolean) => void
-  bookView?: BookView
-  onBookViewChange?: (view: BookView) => void
+  showLayout?: boolean
 }) {
   const tLabels = useTranslation("Common.fields.label")
   const t = useTranslation("BooksPage")
 
-  const { gridCoverDisplay, gridCardSize } = useUserPreferences()
+  const { gridCoverDisplay } = useUserPreferences()
   const [updateSetting] = useSetUserSettingMutation()
-  const { colorMix, intensity } = useColorPreferences()
+  const { strength } = useColorPreferences()
+
+  const dispatch = useAppDispatch()
+  const bookLayout = useAppSelector(selectBookLayout)
+  const gridView = useAppSelector(selectGridView)
+  const listView = useAppSelector(selectListView)
+  const listDisplayFields = useAppSelector(selectListDisplayFields)
+  const listShowThumbnail = useAppSelector(selectListShowThumbnail)
+  const gridSpacing = useAppSelector(selectGridSpacing)
+  const gridCardSize = useAppSelector((state) => state.uiSettings.gridCardSize)
+  const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)
+  const showProcessingBadge = useAppSelector(selectShowProcessingBadge)
 
   useHotkeys([
     {
@@ -62,15 +84,25 @@ export function DisplayControl({
     },
   ])
 
-  // the set the checkmarks reflect: the explicit selection, or (in auto mode)
-  // whatever auto currently resolves to.
-  const shown = displayOverrides ?? currentFields
+  const isGrid = bookLayout === "grid"
 
+  // the set the checkmarks reflect: the layout's own field selection. for the
+  // grid that's the explicit selection or (in auto mode) whatever auto
+  // currently resolves to; the list layout is always explicit.
+  const shown = isGrid ? displayOverrides ?? currentFields : listDisplayFields
+
+  // toggled-on fields always land above the title row, never below it. the
+  // grid and list layouts keep independent selections.
   const toggleField = (field: DisplayField) => {
-    const base = displayOverrides ?? currentFields
-    onDisplayOverridesChange(
-      base.includes(field) ? base.filter((f) => f !== field) : [...base, field],
-    )
+    const base = isGrid ? displayOverrides ?? currentFields : listDisplayFields
+    const next = base.includes(field)
+      ? base.filter((f) => f !== field)
+      : insertDisplayField(base, field)
+    if (isGrid) {
+      onDisplayOverridesChange(next)
+    } else {
+      dispatch(uiSettingsSlice.actions.setListDisplayFields(next))
+    }
   }
 
   return (
@@ -92,8 +124,8 @@ export function DisplayControl({
       <FilterableMenuContent
         searchPlaceholder={t.plain("displayOptions.searchHint")}
       >
-        {/* ---- layout ---- */}
-        {bookView && onBookViewChange && (
+        {/* ---- layout + per-layout view ---- */}
+        {showLayout && (
           <>
             <FilterableMenuGroup>
               <FilterableMenuLabel>Layout</FilterableMenuLabel>
@@ -103,11 +135,11 @@ export function DisplayControl({
                 textValue="Grid"
                 icon={<icon.LayoutGrid className="size-4" />}
                 onSelect={() => {
-                  onBookViewChange("grid")
+                  dispatch(uiSettingsSlice.actions.setBookLayout("grid"))
                 }}
               >
                 Grid
-                {bookView === "grid" && <icon.Check className="ml-auto" />}
+                {isGrid && <icon.Check className="ml-auto" />}
               </FilterableMenuItem>
 
               <FilterableMenuItem
@@ -115,12 +147,88 @@ export function DisplayControl({
                 textValue="List"
                 icon={<icon.LayoutList className="size-4" />}
                 onSelect={() => {
-                  onBookViewChange("list")
+                  dispatch(uiSettingsSlice.actions.setBookLayout("list"))
                 }}
               >
                 List
-                {bookView === "list" && <icon.Check className="ml-auto" />}
+                {!isGrid && <icon.Check className="ml-auto" />}
               </FilterableMenuItem>
+            </FilterableMenuGroup>
+
+            <FilterableMenuGroup>
+              <FilterableMenuLabel>View</FilterableMenuLabel>
+
+              {isGrid ? (
+                <>
+                  <FilterableMenuItem
+                    closeOnClick={false}
+                    textValue="Cards"
+                    icon={<icon.LayoutGrid className="size-4" />}
+                    onSelect={() => {
+                      dispatch(uiSettingsSlice.actions.setGridView("card"))
+                    }}
+                  >
+                    Cards
+                    {gridView === "card" && <icon.Check className="ml-auto" />}
+                  </FilterableMenuItem>
+
+                  <FilterableMenuItem
+                    closeOnClick={false}
+                    textValue="Covers only"
+                    icon={<icon.Book className="size-4" />}
+                    onSelect={() => {
+                      dispatch(uiSettingsSlice.actions.setGridView("thumbnail"))
+                    }}
+                  >
+                    Covers only
+                    {gridView === "thumbnail" && (
+                      <icon.Check className="ml-auto" />
+                    )}
+                  </FilterableMenuItem>
+                </>
+              ) : (
+                <>
+                  <FilterableMenuItem
+                    closeOnClick={false}
+                    textValue="Rows"
+                    icon={<icon.LayoutList className="size-4" />}
+                    onSelect={() => {
+                      dispatch(uiSettingsSlice.actions.setListView("list"))
+                    }}
+                  >
+                    Rows
+                    {listView === "list" && <icon.Check className="ml-auto" />}
+                  </FilterableMenuItem>
+
+                  <FilterableMenuItem
+                    closeOnClick={false}
+                    textValue="Table"
+                    icon={<icon.Columns3 className="size-4" />}
+                    onSelect={() => {
+                      dispatch(uiSettingsSlice.actions.setListView("table"))
+                    }}
+                  >
+                    Table
+                    {listView === "table" && <icon.Check className="ml-auto" />}
+                  </FilterableMenuItem>
+
+                  <FilterableMenuItem
+                    closeOnClick={false}
+                    textValue="Thumbnails"
+                    icon={<icon.Book className="size-4" />}
+                    onSelect={() => {
+                      dispatch(
+                        uiSettingsSlice.actions.setListShowThumbnail(
+                          !listShowThumbnail,
+                        ),
+                      )
+                    }}
+                  >
+                    Thumbnails
+                    {listShowThumbnail && <icon.Check className="ml-auto" />}
+                  </FilterableMenuItem>
+                </>
+              )}
             </FilterableMenuGroup>
 
             <FilterableMenuSeparator />
@@ -131,83 +239,115 @@ export function DisplayControl({
         <FilterableMenuGroup>
           <FilterableMenuLabel>Appearance</FilterableMenuLabel>
 
-          <FilterableMenuItem
-            closeOnClick={false}
-            textValue="Subdued"
-            onSelect={() => {
-              void updateSetting({ name: "colorMix", value: "subdued" })
-            }}
-          >
-            Subdued
-            {colorMix === "subdued" && <icon.Check className="ml-auto" />}
-          </FilterableMenuItem>
-
-          <FilterableMenuItem
-            closeOnClick={false}
-            textValue="Vibrant"
-            onSelect={() => {
-              void updateSetting({ name: "colorMix", value: "vibrant" })
-            }}
-          >
-            Vibrant
-            {colorMix === "vibrant" && <icon.Check className="ml-auto" />}
-          </FilterableMenuItem>
-
           <FilterableMenuSub>
             <FilterableMenuSubTrigger textValue="Color intensity">
               Intensity
             </FilterableMenuSubTrigger>
             <FilterableMenuSubContent>
-              <IntensitySubmenu intensity={intensity} />
+              <IntensitySubmenu strength={strength} />
             </FilterableMenuSubContent>
           </FilterableMenuSub>
         </FilterableMenuGroup>
 
         <FilterableMenuSeparator />
 
-        {/* ---- card ---- */}
+        {/* ---- card (grid layout only) + badges ---- */}
         <FilterableMenuGroup>
-          <FilterableMenuLabel>Card</FilterableMenuLabel>
+          <FilterableMenuLabel>{isGrid ? "Card" : "Row"}</FilterableMenuLabel>
 
-          <FilterableMenuSub>
-            <FilterableMenuSubTrigger
-              icon={<icon.Readaloud className="size-4" />}
-              textValue="Cover type"
-            >
-              Cover type
-            </FilterableMenuSubTrigger>
-            <FilterableMenuSubContent>
-              <CoverTypeSubmenu
-                value={gridCoverDisplay}
-                onChange={(v) => {
-                  void updateSetting({
-                    name: "gridCoverDisplay",
-                    value: v as typeof gridCoverDisplay,
-                  })
-                }}
-              />
-            </FilterableMenuSubContent>
-          </FilterableMenuSub>
+          {isGrid && (
+            <>
+              <FilterableMenuSub>
+                <FilterableMenuSubTrigger
+                  icon={<icon.Readaloud className="size-4" />}
+                  textValue="Cover type"
+                >
+                  Cover type
+                </FilterableMenuSubTrigger>
+                <FilterableMenuSubContent>
+                  <CoverTypeSubmenu
+                    value={gridCoverDisplay}
+                    onChange={(v) => {
+                      void updateSetting({
+                        name: "gridCoverDisplay",
+                        value: v as typeof gridCoverDisplay,
+                      })
+                    }}
+                  />
+                </FilterableMenuSubContent>
+              </FilterableMenuSub>
 
-          <FilterableMenuSub>
-            <FilterableMenuSubTrigger
-              icon={<icon.Maximize className="size-4" />}
-              textValue="Card size"
-            >
-              Card size
-            </FilterableMenuSubTrigger>
-            <FilterableMenuSubContent>
-              <CardSizeSubmenu
-                value={gridCardSize}
-                onChange={(v) => {
-                  void updateSetting({
-                    name: "gridCardSize",
-                    value: v as typeof gridCardSize,
-                  })
-                }}
-              />
-            </FilterableMenuSubContent>
-          </FilterableMenuSub>
+              <FilterableMenuSub>
+                <FilterableMenuSubTrigger
+                  icon={<icon.Maximize className="size-4" />}
+                  textValue="Card size"
+                >
+                  Card size
+                </FilterableMenuSubTrigger>
+                <FilterableMenuSubContent>
+                  <CardSizeSubmenu
+                    value={gridCardSize}
+                    onChange={(v) => {
+                      dispatch(
+                        uiSettingsSlice.actions.setGridCardSize(
+                          v as typeof gridCardSize,
+                        ),
+                      )
+                    }}
+                  />
+                </FilterableMenuSubContent>
+              </FilterableMenuSub>
+
+              <FilterableMenuSub>
+                <FilterableMenuSubTrigger
+                  icon={<icon.ArrowsMaximize className="size-4" />}
+                  textValue="Card spacing"
+                >
+                  Card spacing
+                </FilterableMenuSubTrigger>
+                <FilterableMenuSubContent>
+                  <SpacingSubmenu
+                    value={gridSpacing}
+                    onChange={(v) => {
+                      dispatch(uiSettingsSlice.actions.setGridSpacing(v))
+                    }}
+                  />
+                </FilterableMenuSubContent>
+              </FilterableMenuSub>
+            </>
+          )}
+
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue="Readaloud icon"
+            icon={<icon.Readaloud className="size-4" />}
+            onSelect={() => {
+              dispatch(
+                uiSettingsSlice.actions.setShowReadaloudBadge(
+                  !showReadaloudBadge,
+                ),
+              )
+            }}
+          >
+            Readaloud icon
+            {showReadaloudBadge && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
+
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue="Processing icon"
+            icon={<icon.Loader className="size-4" />}
+            onSelect={() => {
+              dispatch(
+                uiSettingsSlice.actions.setShowProcessingBadge(
+                  !showProcessingBadge,
+                ),
+              )
+            }}
+          >
+            Processing icon
+            {showProcessingBadge && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
         </FilterableMenuGroup>
 
         <FilterableMenuSeparator />
@@ -218,18 +358,22 @@ export function DisplayControl({
             {t.plain("displayOptions.hint")}
           </FilterableMenuLabel>
 
-          <FilterableMenuItem
-            closeOnClick={false}
-            textValue={t.plain("displayOptions.auto")}
-            onSelect={() => {
-              onDisplayOverridesChange(null)
-            }}
-          >
-            {t("displayOptions.auto")}
-            {displayOverrides === null && <icon.Check className="ml-auto" />}
-          </FilterableMenuItem>
+          {isGrid && (
+            <FilterableMenuItem
+              closeOnClick={false}
+              textValue={t.plain("displayOptions.auto")}
+              onSelect={() => {
+                onDisplayOverridesChange(null)
+              }}
+            >
+              {t("displayOptions.auto")}
+              {displayOverrides === null && <icon.Check className="ml-auto" />}
+            </FilterableMenuItem>
+          )}
 
-          {DISPLAY_FIELDS.map((field) => (
+          {DISPLAY_FIELDS.filter(
+            (field) => getFieldDef(field).group !== "alignment",
+          ).map((field) => (
             <FilterableMenuItem
               key={field}
               closeOnClick={false}
@@ -243,6 +387,33 @@ export function DisplayControl({
               {shown.includes(field) && <icon.Check className="ml-auto" />}
             </FilterableMenuItem>
           ))}
+
+          <FilterableMenuSub>
+            <FilterableMenuSubTrigger
+              icon={<icon.AlignLeft className="size-4" />}
+              textValue={tLabels.plain("alignment")}
+            >
+              {tLabels("alignment")}
+            </FilterableMenuSubTrigger>
+            <FilterableMenuSubContent searchable>
+              {DISPLAY_FIELDS.filter(
+                (field) => getFieldDef(field).group === "alignment",
+              ).map((field) => (
+                <FilterableMenuItem
+                  key={field}
+                  closeOnClick={false}
+                  textValue={tLabels(field)}
+                  onSelect={() => {
+                    toggleField(field)
+                  }}
+                >
+                  <FieldIcon field={field} className="mr-2" />
+                  {tLabels(field)}
+                  {shown.includes(field) && <icon.Check className="ml-auto" />}
+                </FilterableMenuItem>
+              ))}
+            </FilterableMenuSubContent>
+          </FilterableMenuSub>
         </FilterableMenuGroup>
       </FilterableMenuContent>
     </FilterableMenu>
@@ -251,10 +422,12 @@ export function DisplayControl({
 
 // ---- sub-menus -------------------------------------------------------------
 
-function IntensitySubmenu({ intensity }: { intensity: number }) {
+function IntensitySubmenu({ strength }: { strength: number }) {
   const [updateSetting] = useSetUserSettingMutation()
-  const steps = [0, 25, 50, 75, 100]
-  const current = Math.round(intensity * 100)
+  // 65 is the neutral default (the historical full-strength look); 100 pushes
+  // well past it
+  const steps = [0, 25, 50, 65, 85, 100]
+  const current = Math.round(strength * 100)
 
   return (
     <>
@@ -271,6 +444,38 @@ function IntensitySubmenu({ intensity }: { intensity: number }) {
           }}
         >
           {pct}%{current === pct && <icon.Check className="ml-auto" />}
+        </FilterableMenuItem>
+      ))}
+    </>
+  )
+}
+
+function SpacingSubmenu({
+  value,
+  onChange,
+}: {
+  value: GridSpacing
+  onChange: (v: GridSpacing) => void
+}) {
+  const options: { id: GridSpacing; label: string }[] = [
+    { id: "compact", label: "Compact" },
+    { id: "cozy", label: "Cozy" },
+    { id: "spacious", label: "Spacious" },
+  ]
+
+  return (
+    <>
+      {options.map((opt) => (
+        <FilterableMenuItem
+          key={opt.id}
+          closeOnClick={false}
+          textValue={opt.label}
+          onSelect={() => {
+            onChange(opt.id)
+          }}
+        >
+          {opt.label}
+          {value === opt.id && <icon.Check className="ml-auto" />}
         </FilterableMenuItem>
       ))}
     </>

@@ -243,6 +243,12 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     ? 1
     : activeFields.length + (search ? 1 : 0)
 
+  // whether the sort is still the page default (auto display fields only defer
+  // to the filter while the user hasn't picked a sort themselves)
+  const isDefaultSort =
+    sort.field === (options.defaultSortField ?? "createdAt") &&
+    sort.direction === (options.defaultSortDirection ?? "desc")
+
   return {
     userFilter,
     isAdvanced,
@@ -257,6 +263,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     setSearch,
     sort,
     setSort,
+    isDefaultSort,
     queryArg,
     isSearching,
     deferredSearch,
