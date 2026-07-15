@@ -15,6 +15,7 @@ import {
   type User,
 } from "@/apiModels"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
+import { type Role } from "@/components/books/edit/marcRelators"
 import {
   type AlignmentOverrides,
   type AlignmentReport,
@@ -78,7 +79,6 @@ import { type RunConfig } from "@/work/runConfig"
 
 import { subscribeToBookEventStream } from "./bookEventsStream"
 import { subscribeToJobEventStream } from "./jobEventsStream"
-import { Role } from "@/components/books/edit/marcRelators"
 
 type SingleUserSettingUpdate = {
   [K in keyof UserPreferences]: { name: K; value: UserPreferences[K] }

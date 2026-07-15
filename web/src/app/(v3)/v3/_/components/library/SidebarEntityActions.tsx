@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { type MouseEvent, useCallback, useMemo, useState } from "react"
 
 import {
@@ -26,6 +25,7 @@ import {
 } from "@v3/_/components/ui/dropdown-menu"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
+import * as icon from "@/icons"
 import { type ShelfFilterNode } from "@/shelves"
 import {
   useDeleteCollectionMutation,

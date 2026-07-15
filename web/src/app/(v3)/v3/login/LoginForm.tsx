@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as icon from "@/icons"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -27,6 +26,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type Providers, type PublicProvider } from "@/auth/providers"
 import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
+import * as icon from "@/icons"
 
 const loginSchema = z.object({
   usernameOrEmail: z.string().min(1, "Username or email is required"),

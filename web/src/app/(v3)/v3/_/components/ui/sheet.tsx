@@ -1,11 +1,12 @@
 "use client"
 
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
-import * as icon from "@/icons"
 import * as React from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
+
+import * as icon from "@/icons"
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />

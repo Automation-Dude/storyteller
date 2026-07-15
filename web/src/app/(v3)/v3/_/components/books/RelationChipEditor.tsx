@@ -10,6 +10,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import * as icon from "@/icons"
+
 import { useColorPreferences } from "./BookDetails/sections/useCoverColors"
 
 type RelationItem = {

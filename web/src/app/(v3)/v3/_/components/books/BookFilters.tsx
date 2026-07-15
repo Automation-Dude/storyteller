@@ -17,13 +17,13 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
-import * as icon from "@/icons"
 import {
-  FieldGroupKey,
-  getFieldDef,
+  type FieldGroupKey,
   QUICK_FILTER_FIELDS,
-  QuickFilterField,
+  type QuickFilterField,
+  getFieldDef,
 } from "@/fields"
+import * as icon from "@/icons"
 import { type DisplayField, type SortField } from "@/sort"
 
 import { DisplayControl } from "./DisplayControl"

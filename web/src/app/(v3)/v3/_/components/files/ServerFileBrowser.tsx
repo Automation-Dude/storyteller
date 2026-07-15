@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { matchSorter } from "match-sorter"
 import { lookup } from "mime-types"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -16,6 +15,7 @@ import {
   type DirectoryFileEntry,
   listDirectoryAction,
 } from "@/actions/listDirectoryAction"
+import * as icon from "@/icons"
 import { formatBytes } from "@/strings"
 
 function dirname(path: string) {

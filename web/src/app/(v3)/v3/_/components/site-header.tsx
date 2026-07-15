@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Fragment, type ReactNode } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -8,6 +7,7 @@ import { useSidebarMaybe } from "@v3/_/components/ui/sidebar"
 import { V3Link } from "@v3/_/components/v3-link"
 
 import { cn } from "@/cn"
+import * as icon from "@/icons"
 
 type Breadcrumb = { label: string; url?: string } | { render: ReactNode }
 

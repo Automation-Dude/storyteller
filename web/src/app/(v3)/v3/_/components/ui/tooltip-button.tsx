@@ -1,12 +1,12 @@
 "use client"
 
 import { type Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
+import { type Hotkey } from "@tanstack/react-hotkeys"
 import { type VariantProps } from "class-variance-authority"
 
 import { Button, type buttonVariants } from "./button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip"
-import { Hotkey } from "@tanstack/react-hotkeys"
 import { KeyboardShortcut } from "./kbd"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip"
 
 type TooltipButtonProps = React.ComponentProps<typeof Button> &
   VariantProps<typeof buttonVariants> & {

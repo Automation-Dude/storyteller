@@ -12,7 +12,7 @@ export type Tag = Selectable<DB["tag"]>
 
 export async function getTags(
   userId?: UUID,
-  { order = "asc", limit }: ListOptions = {},
+  { order = "asc", limit }: { order?: "asc" | "desc"; limit?: number } = {},
 ) {
   const query = db
     .selectFrom("tag")

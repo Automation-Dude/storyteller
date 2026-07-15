@@ -1,5 +1,6 @@
 "use client"
 
+import { type Variant } from "motion/react"
 import {
   createContext,
   memo,
@@ -13,9 +14,12 @@ import {
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
+import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
+import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { getCoverUrl } from "@/store/api"
+
 
 import { FallbackCover } from "./BookCover"
 import {
@@ -24,9 +28,6 @@ import {
   getBlurhashGradient,
 } from "./blurhash-data-uri"
 // import { BookDoubleCover } from "./BookDoubleCover"
-import { useUserPreferences } from "../user-preferences-provider"
-import { Variant } from "motion/react"
-import { useIsMobile } from "../../hooks/use-mobile"
 
 // cap DPR at 2: a 3x fetch triples decode cost for no visible gain on a small
 // grid cell.

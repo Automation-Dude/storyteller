@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as icon from "@/icons"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod"
@@ -30,12 +29,14 @@ import { Textarea } from "@v3/_/components/ui/textarea"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfWithBooks } from "@/database/shelves"
+import * as icon from "@/icons"
 import {
+  SHELF_ORDER_BY_FIELDS,
   type ShelfFilterNode,
   type ShelfOrderBy,
-  SHELF_ORDER_BY_FIELDS,
 } from "@/shelves"
 import { SORTABLE_FIELDS } from "@/sort"
 import {
@@ -46,12 +47,12 @@ import {
   useUpdateUserShelfMutation,
 } from "@/store/api"
 
+
 import {
   FilterPreview,
   ShelfFilterEditor,
   isFilterValid,
 } from "./ShelfFilterEditor"
-import { IAdd } from "../ui/icon"
 
 const shelfFormSchema = z.object({
   name: z.string().min(1, "Name is required"),

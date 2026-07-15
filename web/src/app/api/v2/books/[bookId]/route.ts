@@ -1,5 +1,6 @@
-import { type JsColor } from "@storyteller-platform/okmain"
 import { NextResponse } from "next/server"
+
+import { type JsColor } from "@storyteller-platform/okmain"
 
 import { type CoverData, type CoverKind, persistCover } from "@/assets/covers"
 import { deleteAssets } from "@/assets/fs"

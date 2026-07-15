@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import Link from "next/link"
 import { useTheme } from "next-themes"
 
@@ -25,6 +24,8 @@ import {
 } from "@v3/_/components/ui/sidebar"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import * as icon from "@/icons"
 
 export function NavUser({
   user,

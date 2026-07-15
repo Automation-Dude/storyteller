@@ -1,8 +1,9 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
+
+import * as icon from "@/icons"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme } = useTheme()

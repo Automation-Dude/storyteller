@@ -1,4 +1,3 @@
-import * as icon from "@/icons"
 import { useTheme } from "next-themes"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -8,6 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
+
+import * as icon from "@/icons"
 
 export function ModeToggle() {
   const { setTheme } = useTheme()

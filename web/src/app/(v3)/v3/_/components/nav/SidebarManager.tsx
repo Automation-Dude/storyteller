@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Reorder, useDragControls } from "motion/react"
 import { useState } from "react"
 
@@ -28,12 +27,14 @@ import {
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type ShelfWithBooks } from "@/database/shelves"
 import {
   type SidebarGroupWithItems,
   type SidebarItemKind,
 } from "@/database/sidebar"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import {
   useListCollectionsQuery,
   useListUserShelvesQuery,
@@ -41,12 +42,12 @@ import {
 } from "@/store/api"
 import { extractEmojiIcon } from "@/strings"
 
+
 import {
   BUILTIN_SIDEBAR_ITEMS,
   BUILTIN_SIDEBAR_MAP,
   type BuiltinSidebarItem,
 } from "./sidebar-items"
-import { IAdd } from "../ui/icon"
 
 type ShelfListItem = {
   uuid: string

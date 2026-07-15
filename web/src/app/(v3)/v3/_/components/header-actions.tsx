@@ -1,4 +1,3 @@
-import * as icon from "@/icons"
 import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -8,6 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
+
+import * as icon from "@/icons"
 
 export type HeaderAction = {
   label: string

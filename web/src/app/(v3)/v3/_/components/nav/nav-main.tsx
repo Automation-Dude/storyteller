@@ -1,7 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
-import { type StyledIcon } from "@/icons"
 import { usePathname } from "next/navigation"
 
 import {
@@ -22,6 +20,9 @@ import {
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useSidebarState } from "@v3/_/hooks/use-sidebar-state"
+
+import { type StyledIcon } from "@/icons"
+import * as icon from "@/icons"
 
 export type NavSubItem = {
   title: string

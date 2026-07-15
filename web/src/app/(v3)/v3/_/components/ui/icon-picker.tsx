@@ -1,8 +1,8 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Suspense, lazy, memo, useMemo, useState } from "react"
 
+import * as icon from "@/icons"
 import { ICON_REGISTRY, type IconEntry } from "@/icons/icon-registry"
 
 import { Button } from "./button"

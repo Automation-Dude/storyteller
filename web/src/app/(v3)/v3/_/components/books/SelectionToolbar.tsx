@@ -18,13 +18,13 @@ import {
   FilterableMenuTrigger,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 
 import {
   ActionEntryList,
   useBookActionItems,
 } from "./ActionMenu/BookActionMenuItems"
-import { BookWithRelations } from "@/database/books"
 
 type SelectionToolbarProps = {
   allBooks: BookWithRelations[]

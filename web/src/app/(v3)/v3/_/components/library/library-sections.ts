@@ -5,7 +5,7 @@ import {
   type ShelfFilterField,
   type ShelfFilterNode,
 } from "@/shelves"
-import { DisplayField, SortDirection, SortField } from "@/sort"
+import { type DisplayField, type SortDirection, type SortField } from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
 import { type UUID } from "@/uuid"
 

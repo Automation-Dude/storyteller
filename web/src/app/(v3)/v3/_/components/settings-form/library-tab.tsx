@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useMemo, useState } from "react"
 import { useWatch } from "react-hook-form"
 
@@ -41,6 +40,7 @@ import {
   TabsTrigger,
 } from "@v3/_/components/ui/tabs"
 
+import { ServerFileBrowser } from "@/app/(v3)/v3/_/components/files/ServerFileBrowser"
 import {
   Combobox,
   ComboboxChip,
@@ -52,6 +52,7 @@ import {
   ComboboxList,
   ComboboxValue,
 } from "@/app/(v3)/v3/_/components/ui/combobox"
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   useCommon,
   useTranslation,
@@ -77,6 +78,7 @@ import {
 } from "@/database/settingsTypes"
 import { statusDisplayLabel } from "@/database/statusKinds"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import {
   useCancelScanMutation,
   useCreateImportRuleMutation,
@@ -91,10 +93,9 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
+
 import { SettingsFormField, useSettingsForm } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"
-import { IAdd } from "../ui/icon"
-import { ServerFileBrowser } from "../files/ServerFileBrowser"
 
 export function LibraryTab() {
   return (

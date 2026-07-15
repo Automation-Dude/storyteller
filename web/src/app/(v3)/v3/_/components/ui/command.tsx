@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Command as CommandPrimitive } from "cmdk"
 import * as React from "react"
 
@@ -13,6 +12,8 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { InputGroup, InputGroupAddon } from "@v3/_/components/ui/input-group"
 import { cn } from "@v3/_/lib/utils"
+
+import * as icon from "@/icons"
 
 function Command({
   className,

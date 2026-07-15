@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useEffect, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -15,6 +14,7 @@ import {
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type ChangelogEntry } from "@/database/changelog"
+import * as icon from "@/icons"
 import { api, useGetLatestVersionQuery } from "@/store/api"
 import { BETA_TAGS, compareVersions } from "@/versions"
 

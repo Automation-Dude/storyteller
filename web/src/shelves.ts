@@ -19,7 +19,7 @@ import {
   UUID_FIELDS,
   getFieldType,
 } from "./fields"
-import { SORTABLE_FIELDS, type RegistrySortField } from "./sort"
+import { type RegistrySortField, SORTABLE_FIELDS } from "./sort"
 
 export const shelfFilterFieldSchema = z.enum(FIELDS)
 

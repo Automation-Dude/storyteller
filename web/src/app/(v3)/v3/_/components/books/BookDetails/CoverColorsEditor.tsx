@@ -98,9 +98,9 @@ export function CoverColorsEditor({ book }: { book: BookWithRelations }) {
     setDraft((d) => d.map((c, i) => (i === index ? rgb : c)))
   }
   const remove = (index: number) =>
-    setDraft((d) => d.filter((_, i) => i !== index))
+    { setDraft((d) => d.filter((_, i) => i !== index)); }
   const move = (index: number, dir: -1 | 1) =>
-    setDraft((d) => {
+    { setDraft((d) => {
       const next = index + dir
       const a = d[index]
       const b = d[next]
@@ -109,17 +109,17 @@ export function CoverColorsEditor({ book }: { book: BookWithRelations }) {
       copy[index] = b
       copy[next] = a
       return copy
-    })
+    }); }
   const makePrimary = (index: number) =>
-    setDraft((d) => {
+    { setDraft((d) => {
       if (index === 0) return d
       const copy = [...d]
       const [picked] = copy.splice(index, 1)
       if (!picked) return d
       copy.unshift(picked)
       return copy
-    })
-  const add = () => setDraft((d) => [...d, d[0] ?? { r: 136, g: 136, b: 136 }])
+    }); }
+  const add = () => { setDraft((d) => [...d, d[0] ?? { r: 136, g: 136, b: 136 }]); }
 
   const save = async () => {
     const res = await updateBook({

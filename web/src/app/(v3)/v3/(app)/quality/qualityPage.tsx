@@ -12,10 +12,10 @@ import { PageContent } from "@v3/_/components/ui/page-layout"
 import { useBookFilters } from "@v3/_/hooks/use-book-filters"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
-import { useTranslation } from "@v3/_/hooks/use-translation"
 import * as icon from "@/icons"
 import { type ShelfFilterCondition, type ShelfFilterNode } from "@/shelves"
 import {

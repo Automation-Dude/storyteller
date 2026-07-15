@@ -1,9 +1,15 @@
 "use client"
 
-import * as icon from "@/icons"
+import {
+  useHotkey,
+  useHotkeySequence,
+  useKeyHold,
+} from "@tanstack/react-hotkeys"
 import { usePathname, useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
+
 
 import {
   NavSecondary,
@@ -40,6 +46,7 @@ import {
 } from "@/database/sidebar"
 import { usePermission } from "@/hooks/usePermission"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import {
   useGetLatestVersionQuery,
   useListSidebarGroupsQuery,
@@ -72,13 +79,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
 import { DynamicIcon } from "./ui/dynamic-icon"
-import {
-  useHotkey,
-  useHotkeySequence,
-  useKeyHold,
-} from "@tanstack/react-hotkeys"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { useTheme } from "next-themes"
 import { TooltipButton } from "./ui/tooltip-button"
 
 const THIRTY_MINUTES = 30 * 60 * 1000

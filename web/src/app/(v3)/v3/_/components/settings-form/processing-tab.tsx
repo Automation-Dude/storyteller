@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { type ReactNode, useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 import { toast } from "sonner"
@@ -44,6 +43,7 @@ import {
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 import { cn } from "@/cn"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import { useClearBooksCacheMutation } from "@/store/api"
 
 import {

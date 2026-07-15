@@ -1,9 +1,10 @@
 "use client"
 
-import * as icon from "@/icons"
 import { memo, useState } from "react"
 
 import { cn } from "@v3/_/lib/utils"
+
+import * as icon from "@/icons"
 
 import { Button } from "./button"
 import { Input } from "./input"

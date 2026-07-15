@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { type default as Uppy } from "@uppy/core"
 import useUppyState from "@uppy/react/lib/useUppyState"
 import { useRef, useState } from "react"
@@ -15,6 +14,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/app/(v3)/v3/_/components/ui/item"
+import * as icon from "@/icons"
 import { formatBytes } from "@/strings"
 
 // v3-styled replacement for the Uppy Dashboard: a drop target + file list with

@@ -13,80 +13,78 @@ export type Creator = Selectable<DB["creator"]>
 export type NewCreator = Insertable<DB["creator"]>
 export type CreatorUpdate = Updateable<DB["creator"]>
 
-// (
-//   select coalesce(json_group_array(json_object(
-//     'pet_id', "agg"."pet_id",
-//     'name', "agg"."name"
-//   )), '[]') from (
-//     select "pet"."id" as "pet_id", "pet"."name"
-//     from "pet"
-//     where "pet"."owner_id" = "person"."id"
-//     order by "pet"."name"
-//   ) as "agg"
-// ) as "pets"
-
 export async function getCreators(
   userId?: UUID,
   role?: Role,
 ): Promise<(Creator & { roles?: Role[] })[]> {
-  return db
-    .selectFrom("creator")
-    .$if(!role, (qb) =>
-      qb
-        .innerJoin(
-          "bookToCreator as bookToCreatorAgg",
-          "bookToCreatorAgg.creatorUuid",
-          "creator.uuid",
-        )
-        .select((eb) =>
-          eb.fn("json_group_array", ["bookToCreatorAgg.role"]).as("roles"),
-        )
-        .whereRef("bookToCreatorAgg.creatorUuid", "=", "creator.uuid"),
-    )
-    .$if(!!role, (qb) =>
-      qb
-        .innerJoin(
-          "bookToCreator as roleCheck",
-          "roleCheck.creatorUuid",
-          "creator.uuid",
-        )
-        // The $if condition ensures that this only runs when role
-        // is not null
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .where("roleCheck.role", "=", role!),
-    )
-    .$if(!!userId, (qb) =>
-      qb
-        .innerJoin("bookToCreator", "bookToCreator.creatorUuid", "creator.uuid")
-        .leftJoin(
-          "bookToCollection",
-          "bookToCreator.bookUuid",
-          "bookToCollection.bookUuid",
-        )
-        .leftJoin(
-          "collection",
-          "collection.uuid",
-          "bookToCollection.collectionUuid",
-        )
-        .leftJoin(
-          "collectionToUser",
-          "collectionToUser.collectionUuid",
-          "bookToCollection.collectionUuid",
-        )
-        .where((eb) =>
-          eb.or([
-            // The $if condition ensures that this only runs when userId
-            // is not null
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            eb("collectionToUser.userId", "=", userId!),
-            eb("collection.public", "=", true),
-            eb("collection.public", "is", null),
-          ]),
-        ),
-    )
-    .groupBy("creator.uuid")
-    .selectAll("creator")
-    .execute()
+  return (
+    db
+      .selectFrom("creator")
+      // if we are just getting creators, we need to get the roles for each creator
+      .$if(!role, (qb) =>
+        qb
+          .innerJoin(
+            "bookToCreator as bookToCreatorAgg",
+            "bookToCreatorAgg.creatorUuid",
+            "creator.uuid",
+          )
+          .select((eb) =>
+            // TODO: dedupe
+            eb
+              .fn<Role[]>("json_group_array", ["bookToCreatorAgg.role"])
+              .as("roles"),
+          )
+          .whereRef("bookToCreatorAgg.creatorUuid", "=", "creator.uuid"),
+      )
+      .$if(!!role, (qb) =>
+        qb
+          .innerJoin(
+            "bookToCreator as roleCheck",
+            "roleCheck.creatorUuid",
+            "creator.uuid",
+          )
+          // The $if condition ensures that this only runs when role
+          // is not null
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          .where("roleCheck.role", "=", role!),
+      )
+      .$if(!!userId, (qb) =>
+        qb
+          .innerJoin(
+            "bookToCreator",
+            "bookToCreator.creatorUuid",
+            "creator.uuid",
+          )
+          .leftJoin(
+            "bookToCollection",
+            "bookToCreator.bookUuid",
+            "bookToCollection.bookUuid",
+          )
+          .leftJoin(
+            "collection",
+            "collection.uuid",
+            "bookToCollection.collectionUuid",
+          )
+          .leftJoin(
+            "collectionToUser",
+            "collectionToUser.collectionUuid",
+            "bookToCollection.collectionUuid",
+          )
+          .where((eb) =>
+            eb.or([
+              // The $if condition ensures that this only runs when userId
+              // is not null
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              eb("collectionToUser.userId", "=", userId!),
+              eb("collection.public", "=", true),
+              eb("collection.public", "is", null),
+            ]),
+          ),
+      )
+      .groupBy("creator.uuid")
+      .selectAll("creator")
+      .execute()
+  )
 }
 
 export async function updateCreator(uuid: UUID, update: CreatorUpdate) {

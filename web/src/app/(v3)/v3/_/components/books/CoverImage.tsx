@@ -6,8 +6,8 @@ import { type JsColor } from "@storyteller-platform/okmain"
 
 import { cn } from "@/cn"
 
-import { getBlurhashDataUri } from "./blurhash-data-uri"
 import { FallbackCover } from "./BookCover"
+import { getBlurhashDataUri } from "./blurhash-data-uri"
 
 type CoverImageProps = {
   src: string

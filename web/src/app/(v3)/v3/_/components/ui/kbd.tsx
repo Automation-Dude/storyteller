@@ -1,15 +1,16 @@
-import { cn } from "@v3/_/lib/utils"
 import {
-  Hotkey,
+  type Hotkey,
+  type IndividualKey,
   MODIFIER_KEYS,
-  useKeyHold,
-  Modifier,
+  type Modifier,
   formatForDisplay,
-  IndividualKey,
-  useHeldKeys,
   resolveModifier,
+  useHeldKeys,
+  useKeyHold,
 } from "@tanstack/react-hotkeys"
 import React from "react"
+
+import { cn } from "@v3/_/lib/utils"
 
 function Kbd({ className, ...props }: React.ComponentProps<"kbd">) {
   return (

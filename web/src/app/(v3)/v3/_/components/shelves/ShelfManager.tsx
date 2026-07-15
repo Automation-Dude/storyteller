@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { Reorder, motion, useDragControls } from "motion/react"
 import { type ReactElement, useState } from "react"
 
@@ -22,7 +21,9 @@ import {
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type HomeSectionKind, type ShelfWithBooks } from "@/database/shelves"
+import * as icon from "@/icons"
 import {
   useDeleteUserShelfMutation,
   useListHomeShelvesQuery,
@@ -31,8 +32,8 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
+
 import { ShelfEditor } from "./ShelfEditor"
-import { IAdd } from "../ui/icon"
 
 type ShelfManagerProps = {
   className?: string

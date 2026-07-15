@@ -2,7 +2,6 @@
 
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
-import * as icon from "@/icons"
 import { type VariantProps, cva } from "class-variance-authority"
 import * as React from "react"
 
@@ -24,6 +23,9 @@ import {
 } from "@v3/_/components/ui/tooltip"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { cn } from "@v3/_/lib/utils"
+
+import * as icon from "@/icons"
+
 import { TooltipButton } from "./tooltip-button"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"

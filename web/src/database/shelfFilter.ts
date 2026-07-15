@@ -506,6 +506,37 @@ function buildIsEmptyExpression(
         ),
       )
 
+    case "authors":
+      return eb.not(
+        eb.exists(
+          eb
+            .selectFrom("bookToCreator")
+            .select(sql.lit(1).as("one"))
+            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
+            .where("bookToCreator.role", "=", "aut"),
+        ),
+      )
+    case "narrators":
+      return eb.not(
+        eb.exists(
+          eb
+            .selectFrom("bookToCreator")
+            .select(sql.lit(1).as("one"))
+            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
+            .where("bookToCreator.role", "=", "nrt"),
+        ),
+      )
+    case "translators":
+      return eb.not(
+        eb.exists(
+          eb
+            .selectFrom("bookToCreator")
+            .select(sql.lit(1).as("one"))
+            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
+            .where("bookToCreator.role", "=", "trl"),
+        ),
+      )
+
     case "creators":
       return eb.not(
         eb.exists(
@@ -959,8 +990,7 @@ function buildReviewComparison(
   value: ShelfFilterValue | undefined,
   userId?: UUID,
 ): FilterExpression {
-  // the review text lives in userBookRating, per user. each operator becomes an
-  // exists / not-exists against the user's row.
+  // review kinda complicated
   const base = eb
     .selectFrom("userBookRating")
     .select(sql.lit(1).as("one"))
@@ -1074,6 +1104,8 @@ export function buildBookSearchExpression(
 
   return eb.or([
     eb(sql`lower(book.title)`, "like", searchTerm),
+    eb(sql`lower(book.subtitle)`, "like", searchTerm),
+    eb(sql`lower(book.description)`, "like", searchTerm),
     eb.exists(
       eb
         .selectFrom("creator")

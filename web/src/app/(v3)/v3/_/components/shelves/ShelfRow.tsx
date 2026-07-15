@@ -1,18 +1,18 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useMemo, useRef } from "react"
 
-import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
-import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
+import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
 import { type BookWithRelations } from "@/database/books"
 import { type HomeSectionWithDetails } from "@/database/shelves"
 import { STATUS_READ, STATUS_READING } from "@/database/statusKinds"
+import * as icon from "@/icons"
 import { type DisplayField } from "@/sort"
 import {
   useListBooksQuery,

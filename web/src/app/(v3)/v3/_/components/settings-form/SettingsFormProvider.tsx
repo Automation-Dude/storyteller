@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { createContext, useContext } from "react"
 import {
   Controller,
@@ -26,6 +25,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Settings } from "@/apiModels"
 import { type SettingsSchema } from "@/database/settingsTypes"
+import * as icon from "@/icons"
 
 export type SettingsFormForm = UseFormReturn<z.infer<typeof SettingsSchema>>
 

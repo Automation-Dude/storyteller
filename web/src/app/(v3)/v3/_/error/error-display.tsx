@@ -1,4 +1,3 @@
-import * as icon from "@/icons"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -11,6 +10,8 @@ import {
   CardTitle,
 } from "@v3/_/components/ui/card"
 import { cn } from "@v3/_/lib/utils"
+
+import * as icon from "@/icons"
 
 const GITLAB_ISSUES_URL =
   "https://gitlab.com/storyteller-platform/storyteller/-/issues/new"

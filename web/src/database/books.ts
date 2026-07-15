@@ -950,11 +950,10 @@ export async function getBooks(
     )
   }
 
-  // stable tiebreaker so equal sort keys (and unsupported context fields that
-  // collapse to null) keep a deterministic order
-  // if (sort.length > 0 && sort[sort.length - 1]?.field !== "createdAt") {
-  //   query = query.orderBy(sql`book.created_at`, "desc")
-  // }
+  // fallback tie-braker sort
+  if (sort.length > 0 && sort[sort.length - 1]?.field !== "createdAt") {
+    query = query.orderBy(sql`book.created_at`, "desc")
+  }
 
   return await query.execute()
 }

@@ -1,7 +1,13 @@
 "use client"
 
-import * as icon from "@/icons"
+import {
+  parseAsInteger,
+  parseAsString,
+  parseAsStringEnum,
+  useQueryState,
+} from "nuqs"
 import { useEffect, useState } from "react"
+
 
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
@@ -40,6 +46,7 @@ import {
   useFormatRelativeTime,
 } from "@/app/(v3)/v3/_/lib/formatters"
 import { type PublicJob } from "@/database/jobs"
+import * as icon from "@/icons"
 import {
   getCoverUrl,
   useCancelJobMutation,
@@ -50,12 +57,7 @@ import {
   useResumeJobMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
-import {
-  parseAsInteger,
-  parseAsString,
-  parseAsStringEnum,
-  useQueryState,
-} from "nuqs"
+
 
 const PAGE_SIZE = 10
 

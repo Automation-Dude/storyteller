@@ -12,8 +12,8 @@ import {
   removeDeletedEntityReferences,
 } from "@/database/shelfFilter"
 import {
-  FIELD_REGISTRY,
   FIELDS,
+  FIELD_REGISTRY,
   MEDIA_TYPE_VALUES,
   getFieldDef,
   getFieldType,

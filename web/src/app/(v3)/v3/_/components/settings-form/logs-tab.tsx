@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -20,6 +19,7 @@ import { TooltipButton } from "@v3/_/components/ui/tooltip-button"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import * as icon from "@/icons"
 import {
   useClearLogsMutation,
   useGetLogLevelQuery,

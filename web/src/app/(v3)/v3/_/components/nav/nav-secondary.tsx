@@ -1,6 +1,5 @@
 "use client"
 
-import { type StyledIcon } from "@/icons"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 
@@ -14,6 +13,8 @@ import {
 } from "@v3/_/components/ui/sidebar"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
+
+import { type StyledIcon } from "@/icons"
 
 export type NavSecondaryItem =
   | ({

@@ -1,7 +1,6 @@
 "use client"
 
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
-import * as icon from "@/icons"
 import * as React from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -12,6 +11,8 @@ import {
   InputGroupInput,
 } from "@v3/_/components/ui/input-group"
 import { cn } from "@v3/_/lib/utils"
+
+import * as icon from "@/icons"
 
 const Combobox = ComboboxPrimitive.Root
 

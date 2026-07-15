@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import { useMemo } from "react"
 
 import { Book3D } from "@v3/_/components/books/Book3D"
@@ -12,6 +11,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
 import { STATUS_READING } from "@/database/statusKinds"
+import * as icon from "@/icons"
 import { useListBooksQuery } from "@/store/api"
 
 type ReadLink = {

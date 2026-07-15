@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import Link from "next/link"
 import { useCallback, useLayoutEffect, useState } from "react"
 
@@ -24,8 +23,10 @@ import { Spinner } from "@v3/_/components/ui/spinner"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Invite, type User } from "@/apiModels"
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type UserPermissionSet } from "@/database/users"
 import { useInitialData } from "@/hooks/useInitialData"
+import * as icon from "@/icons"
 import {
   api,
   useCreateInviteMutation,
@@ -38,8 +39,8 @@ import {
   useUpdateUserMutation,
 } from "@/store/api"
 
+
 import { SettingsSection } from "./shared"
-import { IAdd } from "../ui/icon"
 
 type Permission = keyof UserPermissionSet
 

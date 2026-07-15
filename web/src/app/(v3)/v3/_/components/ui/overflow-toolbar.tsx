@@ -12,9 +12,10 @@ import {
   useState,
 } from "react"
 
+import { cn } from "@v3/_/lib/utils"
+
 import * as icon from "@/icons"
 
-import { cn } from "@v3/_/lib/utils"
 
 import {
   DropdownMenu,
@@ -167,7 +168,7 @@ export function OverflowToolbar({
     })
 
     ro.observe(el)
-    return () => ro.disconnect()
+    return () => { ro.disconnect(); }
   }, [recalculate])
 
   // ---- context value -------------------------------------------------------

@@ -1,6 +1,5 @@
 "use client"
 
-import * as icon from "@/icons"
 import {
   Controller,
   type FieldError as FormFieldError,
@@ -36,14 +35,16 @@ import {
 import { Switch } from "@v3/_/components/ui/switch"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { Providers } from "@/auth/providers"
 import { cn } from "@/cn"
 import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
 import type { UserPermissionSet } from "@/database/users"
+import * as icon from "@/icons"
+
 
 import { LockTooltip, useSettingsForm } from "./SettingsFormProvider"
 import { type SettingsFormForm, SettingsSection, safeUrl } from "./shared"
-import { IAdd } from "../ui/icon"
 
 type Permission = keyof UserPermissionSet
 

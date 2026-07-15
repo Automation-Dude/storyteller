@@ -35,12 +35,12 @@ import { DeleteBookModal } from "./DeleteBookModal"
 import { ProcessingSection } from "./ProcessingSection"
 import { CollapsibleSection } from "./sections/CollapsibleSection"
 import { ContributorsSection } from "./sections/ContributorsSection"
+import { useCoverScope } from "./sections/CoverScope"
 import { DescriptionSection } from "./sections/DescriptionSection"
 import { DetailsSection } from "./sections/DetailsSection"
 import { FileSection } from "./sections/FileSection"
 import { HeroSection } from "./sections/HeroSection"
 import { ReviewSection } from "./sections/ReviewSection"
-import { useCoverScope } from "./sections/CoverScope"
 
 // table-heavy report view; lazy so it stays out of the book-details bundle and
 // only loads when a book is actually viewed in report mode.
@@ -307,7 +307,7 @@ function BookPageHeader() {
           className={cn(pill)}
           tooltip="Back"
           aria-label="Back"
-          onClick={() => router.back()}
+          onClick={() => { router.back(); }}
           shortcut={["Shift+ArrowLeft"]}
         >
           <icon.ArrowLeft className="size-3.5 stroke-[1.5]" />

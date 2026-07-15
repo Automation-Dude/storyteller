@@ -1,7 +1,7 @@
+import { type Permission } from "@/database/users"
 import * as icon from "@/icons"
 import { type StyledIcon } from "@/icons"
 
-import { type Permission } from "@/database/users"
 
 export type SidebarGroup = "main" | "library"
 
