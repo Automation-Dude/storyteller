@@ -111,15 +111,18 @@ export function patchKoboApiEndpoint(
       ? text
       : text.replace(
           /^api_endpoint=(.*)$/m,
-          `# storyteller-previous-api_endpoint=$1\napi_endpoint=$1`,
+          (_match, previous: string) =>
+            `# storyteller-previous-api_endpoint=${previous}\napi_endpoint=${previous}`,
         )
-    return withBackup.replace(/^api_endpoint=(.*)$/m, line)
+    // Replace via a function: a "$" in the url is a substitution in a string
+    // replacement, and this writes to her device's own config.
+    return withBackup.replace(/^api_endpoint=(.*)$/m, () => line)
   }
 
   if (/^\[OneStoreServices\]/m.test(text)) {
     return text.replace(
       /^\[OneStoreServices\][^\n]*$/m,
-      `[OneStoreServices]\n${line}`,
+      () => `[OneStoreServices]\n${line}`,
     )
   }
 
@@ -133,8 +136,9 @@ export function unpatchKoboApiEndpoint(existing: string | null): string {
   const previous = /^#\s*storyteller-previous-api_endpoint=(.*)$/m.exec(text)
   if (!previous) return text
 
+  const restored = `api_endpoint=${previous[1]}`
   return text
-    .replace(/^api_endpoint=(.*)$/m, `api_endpoint=${previous[1]}`)
+    .replace(/^api_endpoint=(.*)$/m, () => restored)
     .replace(/^#\s*storyteller-previous-api_endpoint=.*\n?/m, "")
 }
 

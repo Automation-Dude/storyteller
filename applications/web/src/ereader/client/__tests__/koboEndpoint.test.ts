@@ -79,6 +79,25 @@ void describe("patchKoboApiEndpoint", () => {
     assert.strictEqual(patchKoboApiEndpoint(once, OURS), once)
   })
 
+  void it("writes a url containing $ verbatim", () => {
+    // "$&" and "$1" are substitutions in a string replacement. Getting this
+    // wrong writes a corrupted endpoint into her device's own config, and the
+    // device would simply never find its library.
+    const weird = "https://storyteller.example/kobo/a$&b$1c$$d"
+    const out = patchKoboApiEndpoint(CONF, weird)
+    assert.match(out, /^api_endpoint=(.*)$/m)
+    assert.ok(
+      out.includes(`api_endpoint=${weird}`),
+      `url was mangled: ${/^api_endpoint=.*$/m.exec(out)?.[0] ?? "missing"}`,
+    )
+  })
+
+  void it("restores a url containing $ verbatim", () => {
+    const conf = `[OneStoreServices]\napi_endpoint=https://kobo.example/a$1b\n`
+    const restored = unpatchKoboApiEndpoint(patchKoboApiEndpoint(conf, OURS))
+    assert.ok(restored.includes("api_endpoint=https://kobo.example/a$1b"))
+  })
+
   void it("adds the section when the conf has none", () => {
     const out = patchKoboApiEndpoint("[ApplicationPreferences]\nx=1\n", OURS)
     assert.match(out, /^\[OneStoreServices\]$/m)

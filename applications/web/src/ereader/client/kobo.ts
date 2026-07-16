@@ -97,15 +97,20 @@ export async function pickKobo(): Promise<KoboDevice> {
 
   const { serial, firmware, model } = parseKoboVersion(versionLine)
 
-  // Setup replaces the device's startup script, so refuse anything upstream
-  // does not support rather than find out on someone's e-reader. Checked here,
-  // before the picker's handle is used for anything, so a refused device is
-  // left exactly as it was.
+  // Refuse a device we have no basis to support, before the picker's handle is
+  // used for anything, so a refused device is left exactly as it was.
+  //
+  // Setup only rewrites one line of the device's own config now; it does not
+  // touch the startup script, so this is a conservative bound rather than a
+  // safety gate. The floor is inherited from the launcher install this
+  // replaced, and no separate minimum is documented for redirecting the store,
+  // so it stays until there is a reason to move it. It also fails closed on a
+  // version it cannot read, which is the case worth keeping either way.
   if (!isFirmwareSupported(firmware)) {
     throw new Error(
-      `This ${model} is running firmware ${firmware}, and setting it up safely ` +
-        `needs ${MINIMUM_FIRMWARE} or newer. Please update it from the Kobo ` +
-        `app or on the device, then try again.`,
+      `This ${model} is running firmware ${firmware}, and setting it up needs ` +
+        `${MINIMUM_FIRMWARE} or newer. Please update it from the Kobo app or ` +
+        `on the device, then try again.`,
     )
   }
 
