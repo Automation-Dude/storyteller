@@ -2586,6 +2586,26 @@ export function SettingsForm({
           )}
         </Stack>
       </Fieldset>
+      <Fieldset legend="Kobo sync settings">
+        <Stack>
+          <Switch
+            label="Enable Kobo sync"
+            description="Lets a Kobo read its library from Storyteller, in the device's own reader, with nothing installed on it. Set a device up from Set up my e-reader: it points the Kobo here by changing one line of its own config. Books on the shelf you give it appear in its library to download, and where it stops reading comes back here."
+            checked={state.koboSyncEnabled ?? false}
+            onChange={(event) => {
+              form.setFieldValue("koboSyncEnabled", event.currentTarget.checked)
+            }}
+            disabled={isLocked("koboSyncEnabled")}
+          />
+          {state.koboSyncEnabled && (
+            <Text size="xs" c="dimmed">
+              Turning this off stops every Kobo that is set up from syncing.
+              Books already downloaded stay on the device, and it keeps working
+              with the Kobo store as normal.
+            </Text>
+          )}
+        </Stack>
+      </Fieldset>
       <Fieldset
         legend="Email settings"
         disabled={isAnyLocked(

@@ -49,7 +49,13 @@ function downloadUrlsFor(
   if (!book.ebook) return []
   return [
     {
-      Format: "EPUB3",
+      // We ask for the device's own kepub reader, which is the only one that
+      // remembers the sentence she stopped on. The download converts the book
+      // when it can and serves the plain EPUB when it cannot; a Kobo reads
+      // either under this format, losing only the finer position.
+      Format: "KEPUB",
+      // The size before conversion, as the converted file does not exist yet.
+      // The device reads the real length off the download itself.
       Size: book.ebook.fileSize ?? 0,
       Url: `${baseUrl}/download/${book.uuid}`,
       Platform: "Generic",

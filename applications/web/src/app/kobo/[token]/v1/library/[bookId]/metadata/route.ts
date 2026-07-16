@@ -33,7 +33,8 @@ export async function GET(request: Request, context: { params: Params }) {
   ).replace(/\/+$/, "")
   const downloadUrls: KoboDownloadUrl[] = [
     {
-      Format: "EPUB3",
+      // Must match the format the sync advertises for the same book.
+      Format: "KEPUB",
       Size: book.ebook.fileSize ?? 0,
       Url: `${base}/kobo/${token}/download/${book.uuid}`,
       Platform: "Generic",

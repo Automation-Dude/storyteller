@@ -5,6 +5,7 @@ import { NextResponse, after } from "next/server"
 
 import { getBook, markFormatMissing } from "@/database/books"
 import { getKoboDeviceByToken } from "@/kobo/devices"
+import { getCachedKepub } from "@/kobo/kepub"
 import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
 
@@ -41,16 +42,34 @@ export async function GET(_request: Request, context: { params: Params }) {
     }
   }
 
-  const filepath = book.ebook.filepath
-  let file: FileHandle
-  try {
-    file = await open(filepath)
-  } catch {
-    // Same treatment as every other download path: record it rather than
-    // leaving a book that silently fails on the device forever.
-    after(() => markFormatMissing(book.uuid, "ebook"))
-    logger.error(`Kobo download: could not open ${filepath}`)
-    return NextResponse.json({ message: "Not found" }, { status: 404 })
+  // Hand the device a kepub when we can make one we trust: it is what lets her
+  // Kobo remember the sentence she stopped on rather than the chapter. When we
+  // cannot, the original EPUB still reads perfectly, only more coarsely.
+  const source = book.ebook.filepath
+  const cached = await getCachedKepub(book.uuid, source)
+
+  let file: FileHandle | null = null
+  let servingKepub = false
+  if (cached) {
+    try {
+      file = await open(cached)
+      servingKepub = true
+    } catch {
+      // Only our cache is unreadable, which says nothing about her book.
+      logger.warn(`Kobo download: could not open cached kepub ${cached}`)
+    }
+  }
+
+  if (!file) {
+    try {
+      file = await open(source)
+    } catch {
+      // Same treatment as every other download path: record it rather than
+      // leaving a book that silently fails on the device forever.
+      after(() => markFormatMissing(book.uuid, "ebook"))
+      logger.error(`Kobo download: could not open ${source}`)
+      return NextResponse.json({ message: "Not found" }, { status: 404 })
+    }
   }
 
   const stats = await file.stat()
@@ -63,7 +82,9 @@ export async function GET(_request: Request, context: { params: Params }) {
 
   return new NextResponse(Readable.toWeb(stream) as ReadableStream, {
     headers: {
-      "Content-Type": "application/epub+zip",
+      "Content-Type": servingKepub
+        ? "application/x-kobo-epub+zip"
+        : "application/epub+zip",
       "Content-Length": `${stats.size}`,
     },
   })
