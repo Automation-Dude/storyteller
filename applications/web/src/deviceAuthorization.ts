@@ -3,11 +3,31 @@ import { networkInterfaces } from "node:os"
 import { getSettings } from "@/database/settings"
 import { env } from "@/env"
 
-function isLocalhostUrl(candidate: string) {
+/**
+ * True for addresses that only mean something on the machine serving the
+ * request, so they must never be handed to a separate device.
+ *
+ * This covers the wildcard bind addresses as well as loopback. A server
+ * listening on 0.0.0.0 reports that as its own origin, and 0.0.0.0 is "every
+ * interface here", not somewhere an e-reader can connect to; handing it out
+ * produced devices configured with an unreachable library.
+ *
+ * Exported for tests: getting this wrong is silent, and only shows up as a
+ * device that cannot reach its library.
+ */
+export function isLocalOnlyUrl(candidate: string) {
   try {
     const { hostname } = new URL(candidate)
+    // URL keeps IPv6 literals bracketed, e.g. "[::1]".
+    const host = hostname.replace(/^\[/, "").replace(/\]$/, "").toLowerCase()
     return (
-      hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1"
+      host === "localhost" ||
+      host === "0.0.0.0" ||
+      host === "::" ||
+      host === "::1" ||
+      // The whole 127.0.0.0/8 loopback range, not just 127.0.0.1. Anchored to
+      // four octets so a real hostname like "127.example.com" is left alone.
+      /^127(\.\d{1,3}){3}$/.test(host)
     )
   } catch {
     return false
@@ -39,7 +59,7 @@ function getLanAddress() {
 function normalizeDeviceBaseUrl(candidate: string) {
   const parsed = new URL(candidate)
 
-  if (!isLocalhostUrl(parsed.toString())) {
+  if (!isLocalOnlyUrl(parsed.toString())) {
     return parsed.toString()
   }
 
@@ -95,9 +115,9 @@ export async function getDeviceVerificationBaseUrl(fallbackOrigin?: string) {
 
   const candidates =
     fallbackOrigin &&
-    isLocalhostUrl(fallbackOrigin) &&
+    isLocalOnlyUrl(fallbackOrigin) &&
     configuredWebUrl &&
-    !isLocalhostUrl(configuredWebUrl)
+    !isLocalOnlyUrl(configuredWebUrl)
       ? [configuredWebUrl, fallbackOrigin, env.AUTH_URL]
       : [fallbackOrigin, configuredWebUrl, env.AUTH_URL]
 
