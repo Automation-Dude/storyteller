@@ -13,6 +13,20 @@ const GRADE_STYLES: Record<string, string> = {
   F: "bg-poor-bg text-poor dark:bg-poor-900 dark:text-poor-200",
 }
 
+// the same grade → colour ramp as GRADE_STYLES, as raw css variables so a
+// facet colour dot can carry the grade's signature colour. mid-tone oklch that
+// reads on both light and dark.
+export const GRADE_COLORS: Record<string, string> = {
+  "A+": "var(--positive)",
+  A: "var(--good)",
+  "A-": "var(--good)",
+  B: "var(--moderate)",
+  "B-": "var(--moderate)",
+  C: "var(--poor)",
+  D: "var(--poor)",
+  F: "var(--poor)",
+}
+
 export function GradePill({
   grade,
   className,

@@ -335,17 +335,19 @@ const TILE_TONE: Record<GradeTone, string> = {
 }
 
 const TILE_GLOW: Record<GradeTone, string> = {
-  positive: "from-positive-bg/70 dark:from-positive-500/10",
-  good: "from-good-bg/70 dark:from-good-500/10",
-  moderate: "from-moderate-bg/70 dark:from-moderate-500/10",
-  poor: "from-poor-bg/70 dark:from-poor-500/10",
+  positive:
+    "from-positive-bg/70 dark:from-positive-500/50 dark:to-positive-bg/50",
+  good: "from-good-bg/70 dark:from-good-500/50 dark:to-good-bg/50",
+  moderate:
+    "from-moderate-bg/70 dark:from-moderate-500/50 dark:to-moderate-bg/50",
+  poor: "from-poor-bg/70 dark:from-poor-500/50 dark:to-poor-bg/50",
 }
 
 const MARK_TONE = {
-  positive: "text-positive dark:text-positive-400",
-  good: "text-good dark:text-good-400",
-  moderate: "text-moderate dark:text-moderate-400",
-  poor: "text-poor dark:text-poor-400",
+  positive: "text-positive dark:text-positive-bg",
+  good: "text-good dark:text-good-bg",
+  moderate: "text-moderate dark:text-moderate-bg",
+  poor: "text-poor dark:text-poor-bg",
   muted: "text-foreground",
 } as const
 
@@ -519,10 +521,10 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
             {verdict.lead}
             {/* <em className="text-primary italic">{verdict.em}</em>. */}
           </h2>
-          <p className="text-muted-foreground mt-1.5 max-w-prose text-sm leading-relaxed">
+          <p className="text-muted-foreground dark:text-foreground mt-1.5 max-w-prose text-sm leading-relaxed">
             {verdict.body}
           </p>
-          <p className="text-muted-foreground/80 mt-2.5 font-mono text-[11px]">
+          <p className="text-muted-foreground/80 dark:text-foreground/80 mt-2.5 font-mono text-[11px]">
             {t("lastGraded", { date: formatDate(view.createdAt) })}
           </p>
         </div>

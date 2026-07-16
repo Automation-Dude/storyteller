@@ -259,6 +259,18 @@
       "ebook-only": "Alleen e-book",
       "no-media": "Geen media"
     },
+    "Shelves": {
+      "plain": "Planken",
+      "by": "Op plank",
+      "none": "(geen plank)"
+    },
+    "BookReports": {
+      "title": "Boekrapporten",
+      "by": "Op cijfer",
+      "none": "(geen cijfer)",
+      "emptyState": "Nog geen beoordeelde boeken, probeer een paar boeken uit te lijnen",
+      "all": "Alle beoordeeld"
+    },
     "search": "Zoeken...",
     "pinAsShelf": "Vastpinnen als plank",
     "sortByCount": "Sorteren op aantal",

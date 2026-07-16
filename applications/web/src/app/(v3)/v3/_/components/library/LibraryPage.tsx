@@ -34,6 +34,7 @@ import { useBookInSidePanel } from "@v3/_/hooks/use-open-book"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import * as icon from "@/icons"
+import { type DisplayField } from "@/sort"
 import { api, useGetSectionFacetsQuery } from "@/store/api"
 import { useAppDispatch } from "@/store/appState"
 import { type UUID } from "@/uuid"
@@ -57,6 +58,9 @@ type LibraryPageProps = {
   contentClassName?: string
   emptyMessage?: string
   emptyFilteredSubMessage?: string
+  // force the list/table layout's columns for this page, overriding the global
+  // listDisplayFields preference (e.g. quality shows only alignment fields).
+  listDisplayFields?: DisplayField[]
 }
 
 export function LibraryPage({
@@ -72,6 +76,7 @@ export function LibraryPage({
   contentClassName,
   emptyMessage,
   emptyFilteredSubMessage,
+  listDisplayFields,
 }: LibraryPageProps) {
   const t = useTranslation("LibraryPage")
   const c = useCommon()
@@ -106,7 +111,7 @@ export function LibraryPage({
           name: itemLabels?.[facet.key] ?? facet.name,
           bookCount: facet.bookCount,
           icon: facet.icon,
-          color: facet.color,
+          color: section.itemColor?.(facet.key) ?? facet.color,
           kind: facet.kind,
         },
       ]
@@ -121,7 +126,7 @@ export function LibraryPage({
     }
 
     return items
-  }, [facets, noneLabel, itemLabels, section.allFilter, t])
+  }, [facets, noneLabel, itemLabels, section, t])
 
   const visibleItems = useMemo(() => {
     let items = allItems
@@ -301,6 +306,7 @@ export function LibraryPage({
         afterFilters={afterFilters}
         bookClickMode={bookClickMode}
         contentClassName={contentClassName}
+        listDisplayFields={listDisplayFields}
         emptyMessage={emptyMessage}
         emptySubMessage={t("emptyStateSub")}
         emptyFilteredSubMessage={emptyFilteredSubMessage}

@@ -269,6 +269,13 @@
       "ebook-only": "Ebook only",
       "no-media": "No media"
     },
+    "BookReports": {
+      "title": "Book Reports",
+      "by": "By Grade",
+      "none": "(no grade)",
+      "emptyState": "No graded books yet, try aligning some books",
+      "all": "All graded"
+    },
     "search": "Search...",
     "pinAsShelf": "Pin as shelf",
     "sortByCount": "Sort by count",
@@ -1075,7 +1082,7 @@
   "AppSidebar": {
     "home": "Home",
     "books": "Books",
-    "alignmentQuality": "Alignment quality",
+    "alignmentQuality": "Book Reports",
     "allBooks": "All books",
     "collections": "Collections",
     "allCollections": "All collections",

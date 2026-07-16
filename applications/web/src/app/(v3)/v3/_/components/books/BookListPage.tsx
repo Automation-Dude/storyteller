@@ -131,6 +131,8 @@ type BookListPageProps = {
   afterFilters?: ReactNode
   filtersClassName?: string
   contentClassName?: string
+  // force the list/table layout's columns, overriding the global preference
+  listDisplayFields?: DisplayField[]
 
   // what a plain click on a book opens in the side panel
   bookClickMode?: "panel" | "report"
@@ -183,6 +185,7 @@ function BookListPageInner({
   afterFilters,
   filtersClassName,
   contentClassName,
+  listDisplayFields,
   bookClickMode = "panel",
   enableBookStepping = false,
   emptyMessage,
@@ -772,6 +775,7 @@ function BookListPageInner({
                 onBookClick={handleBookClick}
                 onColumnClick={handleColumnClick}
                 displayFields={displayFields}
+                listDisplayFieldsOverride={listDisplayFields}
                 displayContext={displayContext}
                 sortField={sort.field}
                 sortDirection={sort.direction}
@@ -871,6 +875,7 @@ function BookListPageInner({
                 onBookClick={handleBookClick}
                 onColumnClick={handleColumnClick}
                 displayFields={displayFields}
+                listDisplayFieldsOverride={listDisplayFields}
                 displayContext={displayContext}
                 sortField={sort.field}
                 sortDirection={sort.direction}

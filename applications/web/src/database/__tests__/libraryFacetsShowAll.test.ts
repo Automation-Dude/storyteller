@@ -70,6 +70,40 @@ void describe("getSectionFacets show-all", () => {
     assert.strictEqual(byKey["no-media"], 0)
   })
 
+  void it("grades: shows all 8 grades in A+…F order, empty ones at 0", async () => {
+    using ctx = setupTestDb()
+    seedUser(ctx.sqlite)
+
+    const [b1, b2, b3] = seedBooks(ctx, [
+      { title: "one" },
+      { title: "two" },
+      { title: "three" },
+    ])
+
+    const report = ctx.sqlite.prepare(
+      `INSERT INTO alignment_report (uuid, book_uuid, report, grade) VALUES (?, ?, ?, ?)`,
+    )
+    report.run("aaaaaaaa-0000-0000-0000-000000000001", b1, "{}", "A+")
+    report.run("aaaaaaaa-0000-0000-0000-000000000002", b2, "{}", "A+")
+    report.run("aaaaaaaa-0000-0000-0000-000000000003", b3, "{}", "C")
+
+    const facets = await getSectionFacets(userId, "grades")
+    const byKey = Object.fromEntries(facets.map((f) => [f.key, f.bookCount]))
+
+    // all eight canonical grades present, graded ones counted
+    assert.strictEqual(facets.length, 8)
+    assert.strictEqual(byKey["A+"], 2)
+    assert.strictEqual(byKey["C"], 1)
+    // empty grades still shown at 0
+    assert.strictEqual(byKey["A"], 0)
+    assert.strictEqual(byKey["F"], 0)
+    // canonical A+ … F order preserved
+    assert.deepStrictEqual(
+      facets.map((f) => f.key),
+      ["A+", "A", "A-", "B", "B-", "C", "D", "F"],
+    )
+  })
+
   void it("statuses: shows every status even with zero books", async () => {
     using ctx = setupTestDb()
     seedUser(ctx.sqlite)

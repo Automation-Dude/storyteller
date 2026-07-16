@@ -1,5 +1,7 @@
+import { GRADE_COLORS } from "@v3/_/components/books/grade-pill"
+
 import { type FacetSection } from "@/database/libraryCounts"
-import { ALIGNMENT_GRADES, type MediaTypeValue } from "@/fields"
+import { type MediaTypeValue } from "@/fields"
 import { type ShelfFilterField, type ShelfFilterNode } from "@/shelves"
 import { GRADE_RANK, type SortDirection, type SortField } from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
@@ -44,6 +46,9 @@ export type LibrarySectionDef = {
   /* replaces the alphabetical "name" ordering in the sidebar when facet names
   have a domain order (grades sort by rank, not by text) */
   compareItems?: (a: FacetValue, b: FacetValue) => number
+  /* a signature colour per facet value, keyed by facet key (grades → their
+  grade-pill colour). takes precedence over any entity colour. */
+  itemColor?: (itemKey: string) => string | null | undefined
   sort?: {
     field: SortField
     direction: SortDirection
@@ -198,9 +203,10 @@ export const librarySections = {
             value: itemKey,
           },
     allFilter: GRADED_FILTER,
+    // highest grade (A+) first, worst (F) last; unknown grades sink to the end
     compareItems: (a, b) =>
-      (GRADE_RANK[a.name] ?? ALIGNMENT_GRADES.length) -
-      (GRADE_RANK[b.name] ?? ALIGNMENT_GRADES.length),
+      (GRADE_RANK[b.name] ?? -1) - (GRADE_RANK[a.name] ?? -1),
+    itemColor: (key) => GRADE_COLORS[key] ?? null,
     sort: {
       field: "alignmentScore",
       direction: "desc",

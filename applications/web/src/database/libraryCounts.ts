@@ -1,6 +1,7 @@
 import { sql } from "kysely"
 
 import { type Role } from "@/components/books/edit/marcRelators"
+import { ALIGNMENT_GRADES } from "@/fields"
 import { type ShelfFilter } from "@/shelves"
 import { type UUID } from "@/uuid"
 
@@ -464,15 +465,29 @@ const latestGradeExpr = sql<string>`(
 )`
 
 async function gradeFacets(userId: UUID): Promise<FacetValue[]> {
-  return visibleBooks(userId)
+  const rows = await visibleBooks(userId)
     .where(latestGradeExpr, "is not", null)
     .select((eb) => [
       latestGradeExpr.as("key"),
-      latestGradeExpr.as("name"),
       eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
     ])
     .groupBy(latestGradeExpr)
     .execute()
+
+  const counts = new Map(rows.map((r) => [r.key, r.bookCount]))
+
+  // show every grade always, 0-filled, in canonical (A+ … F) order. any grade
+  // outside the canonical set (defensive) is appended as-is.
+  const canonical: FacetValue[] = ALIGNMENT_GRADES.map((grade) => ({
+    key: grade,
+    name: grade,
+    bookCount: counts.get(grade) ?? 0,
+  }))
+  const extra: FacetValue[] = rows
+    .filter((r) => !(ALIGNMENT_GRADES as readonly string[]).includes(r.key))
+    .map((r) => ({ key: r.key, name: r.key, bookCount: r.bookCount }))
+
+  return [...canonical, ...extra]
 }
 
 async function shelfFacets(userId: UUID): Promise<FacetValue[]> {

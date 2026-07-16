@@ -41,6 +41,9 @@ type BooksViewProps = {
   onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
   // the grid layout's resolved display fields (auto or manual)
   displayFields?: DisplayField[]
+  // forces the list/table columns for this page, overriding the global
+  // listDisplayFields preference (e.g. quality shows only alignment fields)
+  listDisplayFieldsOverride?: DisplayField[]
   displayContext?: SortContext
   sortField?: SortField
   sortDirection?: SortDirection
@@ -52,6 +55,7 @@ type BooksViewProps = {
 // uiSettings so every book list behaves identically.
 export function BooksView({
   displayFields,
+  listDisplayFieldsOverride,
   onBookClick,
   onColumnClick,
   sortField,
@@ -62,7 +66,8 @@ export function BooksView({
   const layout = useAppSelector(selectBookLayout)
   const gridView = useAppSelector(selectGridView)
   const listView = useAppSelector(selectListView)
-  const listDisplayFields = useAppSelector(selectListDisplayFields)
+  const listDisplayFieldsPref = useAppSelector(selectListDisplayFields)
+  const listDisplayFields = listDisplayFieldsOverride ?? listDisplayFieldsPref
   const listShowThumbnail = useAppSelector(selectListShowThumbnail)
 
   if (layout === "list") {

@@ -4,7 +4,7 @@
 import { z } from "zod"
 
 import {
-  type ALIGNMENT_GRADES,
+  ALIGNMENT_GRADES,
   ARRAY_FIELDS,
   ASSET_FORMATS,
   type AssetFormat,
@@ -227,23 +227,28 @@ const arrayCondition = z
   })
   .describe("relation membership (tags, collections, series, creators)")
 
+// enum fields: mediaType (media type values) and alignmentGrade (letter grades)
+const ENUM_VALUES = [...MEDIA_TYPE_VALUES, ...ALIGNMENT_GRADES] as const
+
 const enumMatchCondition = z
   .object({
     type: TYPE,
     field: z.enum(ENUM_FIELDS),
     operator: z.enum(ENUM_MATCH_OPERATORS),
-    value: z.enum(MEDIA_TYPE_VALUES).describe("the media type"),
+    value: z.enum(ENUM_VALUES).describe("a media type or alignment grade"),
   })
-  .describe("scalar match on the media type")
+  .describe("scalar match on an enum field (media type / alignment grade)")
 
 const enumListCondition = z
   .object({
     type: TYPE,
     field: z.enum(ENUM_FIELDS),
     operator: z.enum(ENUM_LIST_OPERATORS),
-    value: z.array(z.enum(MEDIA_TYPE_VALUES)).describe("a set of media types"),
+    value: z
+      .array(z.enum(ENUM_VALUES))
+      .describe("a set of media types or alignment grades"),
   })
-  .describe("membership test on the media type")
+  .describe("membership test on an enum field (media type / alignment grade)")
 
 const reviewCondition = z
   .object({
