@@ -4,17 +4,9 @@
   "type": "module",
   "packageManager": "yarn@4.14.1+sha512.64df448055b2d37ba269d7db535a469b8da93f8ef1140c25fd7a83c00a8fbaacb214ca0e02553b92a2c54cef78bb67d0b4817fab02001df0e24fac0faccc3b42",
   "workspaces": [
-    "web/",
-    "docs/",
-    "mobile/",
-    "fs/",
-    "epub/",
-    "audiobook/",
-    "path/",
-    "config/*",
-    "ghost-story/",
-    "align/",
-    "okmain/"
+    "applications/*",
+    "libraries/*",
+    "config/*"
   ],
   "scripts": {
     "build:docs": "yarn workspace @storyteller-platform/docs build",
@@ -33,7 +25,7 @@
     "fix:format": "yarn prettier --write . && yarn workspace @storyteller-platform/mobile prettier --write .",
     "fix:lint": "yarn workspaces foreach -pA run eslint --ext .cjs,.js,.jsx,.ts,.tsx,.mjs --fix .",
     "fix": "yarn fix:lint && yarn fix:format",
-    "generate:env-docs": "tsx ./web/scripts/generate-env-docs.ts",
+    "generate:env-docs": "tsx ./applications/web/scripts/generate-env-docs.ts",
     "postinstall": "husky",
     "test:align": "yarn workspace @storyteller-platform/align test",
     "test:audiobook": "yarn workspace @storyteller-platform/audiobook test",

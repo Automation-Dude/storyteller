@@ -1,0 +1,71 @@
+{
+  "name": "@storyteller-platform/epub",
+  "version": "0.6.3",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./node.ts",
+      "default": "./index.ts"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "readme:toc": "markdown-toc --maxdepth=5 --append='\n- [API Docs](#api-docs)' --bullets='-' -i readme-stub.md",
+    "readme:api": "typedoc",
+    "readme": "yarn readme:api && yarn readme:toc && cat readme-stub.md > README.md && tail -n +2 gen/README.md >> README.md",
+    "install-epubcheck": "tsx scripts/install-epubcheck.ts",
+    "test": "yarn install-epubcheck && tsx -C @storyteller --test *.test.ts",
+    "test:watch": "yarn install-epubcheck && tsx -C @storyteller --test --watch *.test.ts",
+    "prepack": "yarn build"
+  },
+  "devDependencies": {
+    "@storyteller-platform/eslint": "workspace:*",
+    "@storyteller-platform/tsup": "workspace:^",
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/mime-types": "^2",
+    "@types/node": "^24.0.0",
+    "@types/yauzl-promise": "^4",
+    "@types/yazl": "^3",
+    "eslint": "^8.0.0",
+    "markdown-toc": "^1.2.0",
+    "remark-toc": "^9.0.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.19.2",
+    "typedoc": "^0.28.13",
+    "typedoc-plugin-markdown": "^4.6.3",
+    "typedoc-plugin-remark": "^1.2.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@readium/shared": "^2.2.0",
+    "@storyteller-platform/fs": "workspace:^",
+    "@storyteller-platform/path": "workspace:^",
+    "@zip.js/zip.js": "^2.0.0",
+    "async-mutex": "^0.5.0",
+    "fast-xml-parser": "^4.0.1",
+    "mem": "^8.0.0",
+    "mime-types": "^3.0.1",
+    "nanoid": "^5.1.5",
+    "yauzl-promise": "^4.0.0",
+    "yazl": "^3.3.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  }
+}

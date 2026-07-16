@@ -1,5 +1,5 @@
 check:
-  image: registry.gitlab.com/storyteller-platform/storyteller-base:main
+  image: registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:main
   stage: check
   tags: [saas-linux-large-amd64]
   rules:
@@ -13,7 +13,7 @@ check:
     - yarn check
 
 check-versions:
-  image: registry.gitlab.com/storyteller-platform/storyteller-base:main
+  image: registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:main
   stage: check
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -22,7 +22,7 @@ check-versions:
     - ./scripts/check-versions.sh
 
 check-docs:
-  image: registry.gitlab.com/storyteller-platform/storyteller-base:main
+  image: registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:main
   stage: check
   tags: [saas-linux-large-amd64]
   rules:
@@ -37,7 +37,7 @@ check-docs:
     - yarn build:docs
 
 test-web:
-  image: registry.gitlab.com/storyteller-platform/storyteller-base:main
+  image: registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:main
   stage: check
   tags: [saas-linux-large-amd64]
   rules:
@@ -52,7 +52,7 @@ test-web:
     - yarn test:web
 
 test-epub:
-  image: registry.gitlab.com/storyteller-platform/storyteller-base:main
+  image: registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:main
   stage: check
   tags: [saas-linux-large-amd64]
   rules:
@@ -69,7 +69,7 @@ test-epub:
     - yarn test:epub
 
 test-audiobook:
-  image: registry.gitlab.com/storyteller-platform/storyteller-base:main
+  image: registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:main
   stage: check
   tags: [saas-linux-large-amd64]
   rules:
@@ -84,7 +84,7 @@ test-audiobook:
     - yarn test:audiobook
 
 test-align:
-  image: registry.gitlab.com/storyteller-platform/storyteller-base:main
+  image: registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:main
   stage: check
   tags: [saas-linux-large-amd64]
   rules:
