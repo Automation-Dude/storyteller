@@ -256,6 +256,7 @@ export interface KoboDevice {
   updatedAt: Generated<string>
   userId: string
   uuid: Generated<string>
+  wholeLibrary: Generated<number>
 }
 
 export interface KoboSyncedBook {

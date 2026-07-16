@@ -71,9 +71,24 @@ export async function buildSync(args: {
 }): Promise<SyncResult> {
   const { device, baseUrl } = args
 
+  // A device that was given a shelf but no longer has one gets nothing, not
+  // everything. The alternative is that losing a shelf quietly hands a reader
+  // the entire library, which is the wrong way for this to fail.
+  if (!device.wholeLibrary && !device.collectionUuid) {
+    const alreadySentAll = await getSyncedBookUuids(device.uuid)
+    const now = new Date().toISOString()
+    const removals = [...alreadySentAll].slice(0, SYNC_ITEM_LIMIT)
+    return {
+      items: removals.map((uuid) => buildRemovedEntitlement(uuid, now)),
+      hasMore: alreadySentAll.size > removals.length,
+      bookUuids: [],
+      removedUuids: removals,
+    }
+  }
+
   let query = booksQuery(device.userId as UUID)
   // Narrow outside the closure: inside it, the field is still string | null.
-  const shelf = device.collectionUuid
+  const shelf = device.wholeLibrary ? null : device.collectionUuid
   if (shelf) {
     query = query.where((eb) =>
       eb.exists(

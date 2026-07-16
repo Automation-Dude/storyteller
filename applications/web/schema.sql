@@ -905,7 +905,8 @@ CREATE TABLE kobo_device (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_synced_at TEXT,
   revoked_at TEXT,
-  serial TEXT
+  serial TEXT,
+  whole_library INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE INDEX idx_kobo_device_user_id ON kobo_device (user_id);

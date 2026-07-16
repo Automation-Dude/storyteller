@@ -28,6 +28,22 @@ export type KoboDeviceRecord = {
   userId: string
   label: string
   collectionUuid: UUID | null
+  /** True when the reader was given everything rather than a shelf. */
+  wholeLibrary: boolean
+}
+
+/**
+ * SQLite has no boolean, so the flag comes back as 0 or 1. Convert it here
+ * rather than leave 0/1 to be truthiness-tested all over the sync.
+ */
+function toRecord(row: {
+  uuid: string
+  userId: string
+  label: string
+  collectionUuid: UUID | null
+  wholeLibrary: number
+}): KoboDeviceRecord {
+  return { ...row, wholeLibrary: Boolean(row.wholeLibrary) }
 }
 
 /**
@@ -41,12 +57,12 @@ export async function getKoboDeviceByToken(
 ): Promise<KoboDeviceRecord | null> {
   const device = await db
     .selectFrom("koboDevice")
-    .select(["uuid", "userId", "label", "collectionUuid"])
+    .select(["uuid", "userId", "label", "collectionUuid", "wholeLibrary"])
     .where("tokenHash", "=", hashKoboToken(token))
     .where("revokedAt", "is", null)
     .executeTakeFirst()
 
-  return device ?? null
+  return device ? toRecord(device) : null
 }
 
 /**
@@ -66,7 +82,7 @@ export async function createKoboDevice(args: {
   label: string
   /** The device's own serial, from .kobo/version. */
   serial?: string | null
-  /** The shelf this device sees. Null means the whole library. */
+  /** The shelf this device sees. Null means everything. */
   collectionUuid?: UUID | null
 }): Promise<{ device: KoboDeviceRecord; token: string }> {
   const token = generateKoboToken()
@@ -90,13 +106,20 @@ export async function createKoboDevice(args: {
           label: args.label,
           tokenHash: hashKoboToken(token),
           collectionUuid: args.collectionUuid ?? null,
+          wholeLibrary: args.collectionUuid ? 0 : 1,
           revokedAt: null,
         })
         .where("uuid", "=", existing.uuid)
-        .returning(["uuid", "userId", "label", "collectionUuid"])
+        .returning([
+          "uuid",
+          "userId",
+          "label",
+          "collectionUuid",
+          "wholeLibrary",
+        ])
         .executeTakeFirstOrThrow()
 
-      return { device, token }
+      return { device: toRecord(device), token }
     }
   }
 
@@ -108,11 +131,14 @@ export async function createKoboDevice(args: {
       serial,
       tokenHash: hashKoboToken(token),
       collectionUuid: args.collectionUuid ?? null,
+      // Record what was chosen, so a shelf that later disappears does not read
+      // as "give this reader everything".
+      wholeLibrary: args.collectionUuid ? 0 : 1,
     })
-    .returning(["uuid", "userId", "label", "collectionUuid"])
+    .returning(["uuid", "userId", "label", "collectionUuid", "wholeLibrary"])
     .executeTakeFirstOrThrow()
 
-  return { device, token }
+  return { device: toRecord(device), token }
 }
 
 export async function listKoboDevices(userId: UUID) {
