@@ -3,10 +3,15 @@ import { type UUID } from "@/uuid"
 
 import {
   type KoboDeviceRecord,
+  forgetSyncedBooks,
   getSyncedBookUuids,
   markBooksSynced,
 } from "./devices"
-import { type KoboDownloadUrl, buildNewEntitlement } from "./metadata"
+import {
+  type KoboDownloadUrl,
+  buildNewEntitlement,
+  buildRemovedEntitlement,
+} from "./metadata"
 
 /**
  * The Kobo sync protocol is incremental: the device sends the token from its
@@ -29,6 +34,8 @@ export type SyncResult = {
   hasMore: boolean
   /** The books included, so they can be marked sent once the response is out. */
   bookUuids: UUID[]
+  /** Books taken back, so the device can be sent them again if they return. */
+  removedUuids: string[]
 }
 
 /**
@@ -79,32 +86,53 @@ export async function buildSync(args: {
     )
   }
 
-  const books = await query.orderBy("book.createdAt", "asc").execute()
+  const onShelf = await query.orderBy("book.createdAt", "asc").execute()
   const alreadySent = await getSyncedBookUuids(device.uuid)
+  const onShelfUuids = new Set<string>(onShelf.map((book) => book.uuid))
 
-  // Only books she can actually read on a Kobo, and only ones not yet sent.
-  const pending = books.filter(
+  // Removal means the book left the shelf, and nothing else.
+  //
+  // Deliberately not "we cannot serve it right now": a format is marked
+  // missing lazily, the first time a download fails, so keying removal off
+  // that would let one bad moment on the server delete a book she is halfway
+  // through. A book that is on the shelf but unreadable is left alone.
+  const removed = [...alreadySent].filter((uuid) => !onShelfUuids.has(uuid))
+
+  // Only send what a Kobo can actually open and what is really on disk: a book
+  // whose file is gone would appear on the device and fail to download.
+  const pending = onShelf.filter(
     (book) => book.ebook && !book.ebook.missing && !alreadySent.has(book.uuid),
   )
 
-  const batch = pending.slice(0, SYNC_ITEM_LIMIT)
   const now = new Date().toISOString()
 
-  const items = batch.map((book) =>
-    buildNewEntitlement(book, downloadUrlsFor(book, baseUrl), now),
-  )
+  // Removals are cheap and go first: the device should not be told to fetch
+  // new books while still holding ones it should not have.
+  const removals = removed.slice(0, SYNC_ITEM_LIMIT)
+  const room = SYNC_ITEM_LIMIT - removals.length
+  const batch = pending.slice(0, Math.max(room, 0))
+
+  const items = [
+    ...removals.map((uuid) => buildRemovedEntitlement(uuid, now)),
+    ...batch.map((book) =>
+      buildNewEntitlement(book, downloadUrlsFor(book, baseUrl), now),
+    ),
+  ]
 
   return {
     items,
-    hasMore: pending.length > batch.length,
+    hasMore: removed.length > removals.length || pending.length > batch.length,
     bookUuids: batch.map((book) => book.uuid),
+    removedUuids: removals,
   }
 }
 
 /** Record what went out, once the response is committed. */
 export async function commitSync(
   device: KoboDeviceRecord,
-  bookUuids: UUID[],
+  result: Pick<SyncResult, "bookUuids" | "removedUuids">,
 ): Promise<void> {
-  await markBooksSynced(device.uuid, bookUuids)
+  await markBooksSynced(device.uuid, result.bookUuids)
+  // Forget removals, so putting a book back on the shelf sends it again.
+  await forgetSyncedBooks(device.uuid, result.removedUuids)
 }

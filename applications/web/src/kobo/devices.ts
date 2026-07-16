@@ -120,6 +120,25 @@ export async function getSyncedBookUuids(
   return new Set(rows.map((row) => row.bookUuid))
 }
 
+/**
+ * Forget that a device was sent these books.
+ *
+ * Used when a book leaves the device's shelf: the device is told to remove it,
+ * and forgetting it here means putting the book back on the shelf later sends
+ * it again rather than the device never hearing about it a second time.
+ */
+export async function forgetSyncedBooks(
+  deviceUuid: string,
+  bookUuids: string[],
+): Promise<void> {
+  if (!bookUuids.length) return
+  await db
+    .deleteFrom("koboSyncedBook")
+    .where("koboDeviceUuid", "=", deviceUuid)
+    .where("bookUuid", "in", bookUuids as UUID[])
+    .execute()
+}
+
 export async function markBooksSynced(
   deviceUuid: string,
   bookUuids: UUID[],

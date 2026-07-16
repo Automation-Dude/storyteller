@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 
 import { getSettings } from "@/database/settings"
 import { getDeviceVerificationBaseUrl } from "@/deviceAuthorization"
@@ -40,12 +40,21 @@ export async function GET(request: Request, context: { params: Params }) {
   const baseUrl = `${origin.replace(/\/+$/, "")}/kobo/${token}`
 
   try {
-    const { items, hasMore, bookUuids } = await buildSync({ device, baseUrl })
+    const result = await buildSync({ device, baseUrl })
+    const { items, hasMore } = result
 
-    // Only record what went out after it is built, so a failure mid-build does
-    // not leave books marked as sent that the device never saw.
-    await commitSync(device, bookUuids)
-    await touchKoboDeviceSync(device.uuid)
+    // Record what went out only once the response has actually been sent.
+    //
+    // These books are marked sent and never offered again, so committing
+    // before delivery means a dropped response loses them for good: the device
+    // would come back, be told there is nothing new, and quietly never receive
+    // them. We do not honour the device's own synctoken, which is what would
+    // otherwise make a retry idempotent, so this ordering is what stands in for
+    // it.
+    after(async () => {
+      await commitSync(device, result)
+      await touchKoboDeviceSync(device.uuid)
+    })
 
     const response = NextResponse.json(items)
     // Tells the device to come straight back for the next batch.

@@ -1,10 +1,9 @@
-import { createReadStream } from "node:fs"
-import { open } from "node:fs/promises"
+import { type FileHandle, open } from "node:fs/promises"
 import { Readable } from "node:stream"
 
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 
-import { type BookFormat, getBook, markFormatMissing } from "@/database/books"
+import { getBook, markFormatMissing } from "@/database/books"
 import { getKoboDeviceByToken } from "@/kobo/devices"
 import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
@@ -43,19 +42,21 @@ export async function GET(_request: Request, context: { params: Params }) {
   }
 
   const filepath = book.ebook.filepath
-  let file
+  let file: FileHandle
   try {
     file = await open(filepath)
   } catch {
     // Same treatment as every other download path: record it rather than
     // leaving a book that silently fails on the device forever.
-    void markFormatMissing(book.uuid, "ebook" as BookFormat)
+    after(() => markFormatMissing(book.uuid, "ebook"))
     logger.error(`Kobo download: could not open ${filepath}`)
     return NextResponse.json({ message: "Not found" }, { status: 404 })
   }
 
   const stats = await file.stat()
-  const stream = createReadStream("", { fd: file.fd, autoClose: true })
+  // The handle's own stream, so the handle owns and closes the descriptor.
+  // Handing the raw fd to createReadStream leaves both of them owning it.
+  const stream = file.createReadStream()
   stream.on("error", (e) => {
     logger.error(e)
   })

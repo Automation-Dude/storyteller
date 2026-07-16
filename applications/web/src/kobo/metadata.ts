@@ -109,6 +109,37 @@ export function buildKoboMetadata(
 }
 
 /**
+ * Tell a device a book is no longer its to read.
+ *
+ * Sent when a book leaves the device's shelf. Without this a shelf could only
+ * ever grow: taking a book back would leave it sitting on the device forever,
+ * and "remove it from her shelf" would quietly do nothing.
+ */
+export function buildRemovedEntitlement(
+  bookUuid: string,
+  lastModified: string,
+): Record<string, unknown> {
+  return {
+    ChangedEntitlement: {
+      BookEntitlement: {
+        Accessibility: "Full",
+        ActivePeriod: { From: lastModified },
+        Created: lastModified,
+        CrossRevisionId: bookUuid,
+        Id: bookUuid,
+        IsRemoved: true,
+        IsHiddenFromArchive: true,
+        IsLocked: false,
+        LastModified: lastModified,
+        OriginCategory: "Imported",
+        RevisionId: bookUuid,
+        Status: "Active",
+      },
+    },
+  }
+}
+
+/**
  * Wrap metadata as a "new entitlement": how a Kobo is told a book is now in its
  * library. Active + not archived is what makes it appear and be downloadable.
  */

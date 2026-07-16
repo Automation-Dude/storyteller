@@ -39,6 +39,44 @@ export function koboProgressToLocator(
 }
 
 /**
+ * Turn a stored position back into the reading state a Kobo expects.
+ *
+ * The device asks for this when it wants to know where a book stands. Claiming
+ * a book is unread when she is halfway through it invites the device to put
+ * her back at the start, so what is stored is what is reported.
+ *
+ * The location is deliberately not sent back: our locator is Readium's, and a
+ * Kobo only understands its own span ids. The percentage is the honest part
+ * that both sides agree on.
+ */
+export function koboReadingStateFromLocator(
+  bookUuid: string,
+  locator: ReadiumLocator | null,
+  lastModified: string,
+): Record<string, unknown> {
+  const progression = locator?.locations?.totalProgression ?? 0
+  const percent = Math.min(Math.max(progression * 100, 0), 100)
+
+  return {
+    EntitlementId: bookUuid,
+    Created: lastModified,
+    LastModified: lastModified,
+    StatusInfo: {
+      LastModified: lastModified,
+      Status:
+        percent <= 0 ? "ReadyToRead" : percent >= 100 ? "Finished" : "Reading",
+    },
+    ...(percent > 0 && {
+      CurrentBookmark: {
+        LastModified: lastModified,
+        ProgressPercent: percent,
+        ContentSourceProgressPercent: percent,
+      },
+    }),
+  }
+}
+
+/**
  * Mirror a Kobo reading state into Storyteller's position table.
  *
  * Failures here must not fail the sync call: the device's own state is already

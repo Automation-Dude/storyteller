@@ -1,38 +1,73 @@
 "use client"
 
-import { Alert, Button, Code, List, Progress, Stack, Text } from "@mantine/core"
-import { useState } from "react"
+import {
+  Alert,
+  Button,
+  Code,
+  List,
+  Loader,
+  Select,
+  Stack,
+  Text,
+} from "@mantine/core"
+import { useEffect, useState } from "react"
 
-import { installToKobo } from "@/ereader/client/install"
 import {
   type KoboDevice,
   isFileSystemAccessSupported,
   pickKobo,
+  readFileAtPath,
+  writeFileAtPath,
 } from "@/ereader/client/kobo"
+import { patchKoboApiEndpoint } from "@/ereader/client/plan"
 
-type Phase = "idle" | "working" | "done" | "error"
+type Phase = "loading" | "idle" | "working" | "done" | "error"
 
-type EreaderConfigResponse = {
-  files: Record<string, string>
-  summary: { libraryUrl: string; syncUrl: string; deviceLabel: string }
+type Options = {
+  canSetUpForOthers: boolean
+  users: { id: string; name: string }[]
+  shelves: { uuid: string; name: string }[]
 }
 
-async function fetchBytes(url: string): Promise<Uint8Array> {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Could not download a required file (${response.status}).`)
-  }
-  return new Uint8Array(await response.arrayBuffer())
-}
+/** The one file setup touches. Nothing is installed on the device. */
+const CONF_PATH = ".kobo/Kobo/Kobo eReader.conf"
+
+const WHOLE_LIBRARY = "__whole_library__"
 
 export function SetUpEreaderClient() {
   const supported = isFileSystemAccessSupported()
 
-  const [phase, setPhase] = useState<Phase>("idle")
+  const [phase, setPhase] = useState<Phase>("loading")
   const [status, setStatus] = useState("")
-  const [progress, setProgress] = useState(0)
   const [error, setError] = useState("")
   const [device, setDevice] = useState<KoboDevice | null>(null)
+  const [options, setOptions] = useState<Options | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [shelf, setShelf] = useState<string>(WHOLE_LIBRARY)
+
+  useEffect(() => {
+    if (!supported) return
+    void (async () => {
+      try {
+        const response = await fetch("/api/v2/ereader/kobo/options")
+        if (!response.ok) {
+          const message = (
+            (await response.json().catch(() => null)) as {
+              message?: string
+            } | null
+          )?.message
+          throw new Error(message ?? "Could not load your library's readers.")
+        }
+        const loaded = (await response.json()) as Options
+        setOptions(loaded)
+        setUserId(loaded.users[0]?.id ?? null)
+        setPhase("idle")
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong.")
+        setPhase("error")
+      }
+    })()
+  }, [supported])
 
   if (!supported) {
     return (
@@ -47,54 +82,53 @@ export function SetUpEreaderClient() {
   async function run() {
     setPhase("working")
     setError("")
-    setProgress(0)
 
     try {
-      setStatus("Waiting for you to choose your e-reader...")
+      setStatus("Waiting for you to choose the e-reader...")
       const kobo = await pickKobo()
       setDevice(kobo)
 
-      setStatus(`Found your ${kobo.model}. Preparing your library...`)
-      const configResponse = await fetch("/api/v2/ereader/config", {
+      setStatus(`Found a ${kobo.model}. Setting up its library...`)
+      const response = await fetch("/api/v2/ereader/kobo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deviceLabel: kobo.model }),
+        body: JSON.stringify({
+          deviceLabel: kobo.model,
+          ...(userId && { userId }),
+          ...(shelf !== WHOLE_LIBRARY && { collectionUuid: shelf }),
+        }),
       })
-      if (!configResponse.ok) {
+      if (!response.ok) {
         const message = (
-          (await configResponse.json().catch(() => null)) as {
+          (await response.json().catch(() => null)) as {
             message?: string
           } | null
         )?.message
         throw new Error(
           message ??
-            "Could not prepare your library. Ask your Storyteller admin to enable the OPDS feed and KOReader sync.",
+            "Could not set up the library. Ask your Storyteller admin to enable Kobo sync.",
         )
       }
-      const config = (await configResponse.json()) as EreaderConfigResponse
+      const { apiEndpoint } = (await response.json()) as { apiEndpoint: string }
 
-      setStatus("Downloading the reader app...")
-      const [koreaderZip, kfmonZip, kfmonInstaller] = await Promise.all([
-        fetchBytes("/api/v2/ereader/packages/koreader"),
-        fetchBytes("/api/v2/ereader/packages/kfmon"),
-        fetchBytes("/api/v2/ereader/packages/kfmon-installer"),
-      ])
+      // The entire install: one line of the device's own config. Nothing is
+      // copied onto it, no launcher, no reboot.
+      setStatus("Pointing the e-reader at your library...")
+      const existing = await readFileAtPath(kobo.root, CONF_PATH)
+      await writeFileAtPath(
+        kobo.root,
+        CONF_PATH,
+        patchKoboApiEndpoint(existing, apiEndpoint),
+      )
 
-      await installToKobo({
-        device: kobo,
-        koreaderZip,
-        kfmonZip,
-        kfmonInstaller,
-        configFiles: config.files,
-        onProgress: (p) => {
-          setStatus(p.message + (p.phase === "koreader" ? "..." : ""))
-          if (p.phase === "koreader" && p.fraction !== undefined) {
-            setProgress(Math.round(p.fraction * 100))
-          } else if (p.phase === "launcher") {
-            setProgress(100)
-          }
-        },
-      })
+      // Read it back: if the write silently failed, the device would look set
+      // up and simply never show a book.
+      const written = await readFileAtPath(kobo.root, CONF_PATH)
+      if (!written?.includes(apiEndpoint)) {
+        throw new Error(
+          "Setup could not confirm the e-reader was configured. It has not been changed; please try again.",
+        )
+      }
 
       setPhase("done")
     } catch (e) {
@@ -103,42 +137,85 @@ export function SetUpEreaderClient() {
     }
   }
 
-  if (phase === "done") {
+  if (phase === "loading") {
     return (
-      <Stack>
-        <Alert color="green" title="Your e-reader is ready">
-          <Stack gap="xs">
-            <Text>
-              You can safely unplug your {device?.model ?? "e-reader"} now.
-            </Text>
-            <Text>Then, on the device:</Text>
-            <List type="ordered" size="sm">
-              <List.Item>
-                It will restart and finish installing on its own.
-              </List.Item>
-              <List.Item>Open KOReader from your home screen.</List.Item>
-              <List.Item>
-                Your library is already there, and your reading place will sync
-                on its own. Nothing else to set up.
-              </List.Item>
-            </List>
-          </Stack>
-        </Alert>
+      <Stack align="center">
+        <Loader />
       </Stack>
+    )
+  }
+
+  if (phase === "done") {
+    const who = options?.users.find((user) => user.id === userId)?.name
+    return (
+      <Alert color="green" title="The e-reader is ready">
+        <Stack gap="xs">
+          <Text>
+            You can unplug the {device?.model ?? "e-reader"} now.
+            {who ? ` It is set up for ${who}.` : ""}
+          </Text>
+          <List type="ordered" size="sm">
+            <List.Item>
+              The books appear in its own library, over Wi-Fi. Nothing to open
+              or install.
+            </List.Item>
+            <List.Item>
+              Tap a book to download it, and read it as normal.
+            </List.Item>
+            <List.Item>
+              Add a book to the shelf here and it turns up on the device by
+              itself.
+            </List.Item>
+          </List>
+        </Stack>
+      </Alert>
     )
   }
 
   return (
     <Stack>
       <Text>
-        This will set up your e-reader so your Storyteller library is on it and
-        your reading place syncs automatically. You will not need to type
-        anything on the device.
+        This points an e-reader at your library. The books show up in the
+        device&apos;s own library, in its own reader. Nothing is installed on
+        it, and nothing has to be typed on the device.
       </Text>
+
+      {options?.canSetUpForOthers && (
+        <Select
+          label="Who is this e-reader for?"
+          description="Their reading place syncs to their own account, so pick the person who reads on it."
+          data={options.users.map((user) => ({
+            value: user.id,
+            label: user.name,
+          }))}
+          value={userId}
+          onChange={setUserId}
+          searchable
+          allowDeselect={false}
+        />
+      )}
+
+      <Select
+        label="Which books?"
+        description="A shelf keeps it to just those books. The whole library puts everything within reach."
+        data={[
+          { value: WHOLE_LIBRARY, label: "The whole library" },
+          ...(options?.shelves ?? []).map((s) => ({
+            value: s.uuid,
+            label: s.name,
+          })),
+        ]}
+        value={shelf}
+        onChange={(value) => {
+          setShelf(value ?? WHOLE_LIBRARY)
+        }}
+        allowDeselect={false}
+      />
+
       <Text fw={500}>Before you start:</Text>
       <List size="sm">
         <List.Item>
-          Plug your e-reader into this computer with its cable.
+          Plug the e-reader into this computer with its cable.
         </List.Item>
         <List.Item>
           If the device asks, choose to <Code>Connect</Code> so the computer can
@@ -147,13 +224,9 @@ export function SetUpEreaderClient() {
       </List>
 
       {phase === "working" && (
-        <Stack gap="xs">
-          <Text size="sm">{status}</Text>
-          <Progress value={progress} animated />
-          <Text size="xs" c="dimmed">
-            Please leave the device plugged in until this finishes.
-          </Text>
-        </Stack>
+        <Text size="sm" c="dimmed">
+          {status}
+        </Text>
       )}
 
       {phase === "error" && (
@@ -167,9 +240,10 @@ export function SetUpEreaderClient() {
           void run()
         }}
         loading={phase === "working"}
+        disabled={!userId && Boolean(options?.canSetUpForOthers)}
         w="fit-content"
       >
-        {phase === "error" ? "Try again" : "Set up my e-reader"}
+        {phase === "error" ? "Try again" : "Set up this e-reader"}
       </Button>
     </Stack>
   )

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 
 import { getBook } from "@/database/books"
+import { getPosition } from "@/database/positions"
 import { getKoboDeviceByToken } from "@/kobo/devices"
-import { bridgeKoboStateToPosition } from "@/kobo/positions"
+import {
+  bridgeKoboStateToPosition,
+  koboReadingStateFromLocator,
+} from "@/kobo/positions"
 import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
 
@@ -38,14 +42,17 @@ export async function GET(_request: Request, context: { params: Params }) {
   const book = await getBook(bookId as UUID, device.userId as UUID)
   if (!book) return NextResponse.json({ message: "Not found" }, { status: 404 })
 
+  // Report where she actually is. Saying "unread" for a book she is halfway
+  // through invites the device to send her back to the first page.
+  const position = await getPosition(device.userId as UUID, book.uuid)
   const now = new Date().toISOString()
+
   return NextResponse.json([
-    {
-      EntitlementId: book.uuid,
-      Created: now,
-      LastModified: now,
-      StatusInfo: { LastModified: now, Status: "ReadyToRead" },
-    },
+    koboReadingStateFromLocator(
+      book.uuid,
+      position?.locator ?? null,
+      position?.timestamp ? new Date(position.timestamp).toISOString() : now,
+    ),
   ])
 }
 
