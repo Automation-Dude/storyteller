@@ -32,13 +32,12 @@ import {
   DurationEdit,
   PageCountEdit,
 } from "@/app/(v3)/v3/_/components/books/BookDetails/MetricEdit"
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { usePermissions } from "@/hooks/usePermissions"
-import { type StyledIcon } from "@/icons"
 import * as icon from "@/icons"
+import { type StyledIcon } from "@/icons"
 import {
   getDownloadUrl,
   useDeleteUserBookRatingMutation,
@@ -544,7 +543,7 @@ function QuickAddEmptyFields({
             tooltip={c("actions.add")}
             aria-label={c("actions.add")}
           >
-            <IAdd.base className="size-3.5 stroke-[1.5]" />
+            <icon.Add className="size-3.5 stroke-[1.5]" />
           </TooltipButton>
         }
       />
@@ -553,7 +552,7 @@ function QuickAddEmptyFields({
           <DropdownMenuItem key={chip.key} onClick={chip.onClick}>
             <chip.icon className="size-3.5 stroke-[1.5]" />
             <span className="grow">{chip.label}</span>
-            <IAdd.base className="h-3 w-3" />
+            <icon.Add className="size-3" />
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

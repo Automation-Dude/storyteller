@@ -215,8 +215,6 @@ export const librarySections = {
   },
   shelves: {
     key: "shelves" as const,
-    toShelfFilter: entityFilter("shelves"),
-    noneFilter: emptyFilter("shelves"),
     entityType: "shelf" as const,
   },
 } as const satisfies Record<string, LibrarySectionDef>

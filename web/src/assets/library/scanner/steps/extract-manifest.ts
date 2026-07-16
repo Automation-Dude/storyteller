@@ -78,8 +78,8 @@ export type ExtractedEbookManifest = ExtractedEpubMetadata & {
   manifest: ReadiumWebPublicationManifest
   pageCount: number | null
   duration: null
-  coverColors: JsColor[] | null
-  coverBlurhash: string | null
+  coverColors?: JsColor[]
+  coverBlurhash?: string
 }
 
 export const extractReadaloudManifestStep = defineStep(
@@ -108,8 +108,8 @@ export type ExtractedReadaloudManifest = ExtractedEpubMetadata & {
   manifest: ReadiumWebPublicationManifest
   pageCount: number | null
   duration: number | null
-  coverColors: JsColor[] | null
-  coverBlurhash: string | null
+  coverColors?: JsColor[]
+  coverBlurhash?: string
 }
 
 export const extractAudiobookManifestStep = defineStep(
@@ -145,6 +145,6 @@ export type ExtractedAudiobookManifest = ExtractedAudiobookMetadata & {
   manifest: ReadiumWebPublicationManifest
   pageCount: null
   duration: number | null
-  coverColors: JsColor[] | null
-  coverBlurhash: string | null
+  coverColors?: JsColor[]
+  coverBlurhash?: string
 }

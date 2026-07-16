@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  type Hotkey,
   useHotkey,
   useHotkeySequence,
   useKeyHold,
@@ -615,7 +616,7 @@ function SidebarNavItem({
     : location
 
   useHotkeySequence(
-    [`Alt+${firstKey}`, `Alt+${secondKey}`],
+    [`Alt+${firstKey}` as Hotkey, `Alt+${secondKey}` as Hotkey],
     () => {
       if (!resolved) return
       router.push(resolved.url)
@@ -672,7 +673,7 @@ function SidebarNavItem({
           }
         />
         <TooltipContent side="right">
-          <KeyboardShortcut shortcut={[`Alt+${firstKey}`, secondKey]} />
+          <KeyboardShortcut shortcut={[`Alt+${firstKey}` as Hotkey, secondKey as Hotkey]} />
         </TooltipContent>
       </Tooltip>
 
@@ -757,7 +758,7 @@ function ShelfEditorFromSidebar({
 type ResolvedItem = {
   title: string
   url: string
-  icon: React.ComponentType | null
+  icon: React.ComponentType<{ className?: string }> | null
   customIcon: string | null
   color: string | null
   countKey: string | null

@@ -580,7 +580,7 @@ function buildIsEmptyExpression(
       ])
     default: {
       const _exhaustive: never = field
-      return sql.lit(true)
+      return eb.lit(true) as FilterExpression
     }
   }
 }

@@ -624,7 +624,7 @@ void describe("FIELD_REGISTRY", () => {
           `${field}: facet control expects array/uuid, got ${type}`,
         )
       }
-      if (control === "format-enum") assert.equal(type, "enum", field)
+      if (control === "enum") assert.equal(type, "enum", field)
     }
   })
 })

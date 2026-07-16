@@ -43,7 +43,7 @@ export function ShelfActionsMenu({
       onDeleted?.()
     },
     title: tEntity("deleteTitle", {
-      count: "1",
+      count: 1,
       entity: tEntity("entityTypes.shelf", { count: 1 }),
     }),
     description: tEntity("deleteDescription"),

@@ -392,18 +392,18 @@ function verdictFor(
   parts.push(
     summary.score != null
       ? t("heading.partAlignedScore", {
-          score: summary.score.toString(),
-          chapters: summary.chapters.toString(),
+          score: String(summary.score),
+          chapters: String(summary.chapters),
         })
       : t("heading.partNotAlignedScore", {
-          chapters: summary.chapters.toString(),
+          chapters: String(summary.chapters),
         }),
   )
   parts.push(
     summary.unalignedAudio === 0
       ? t("heading.partAllAudioPlaced")
       : t("heading.partSomeAudioNotPlaced", {
-          count: summary.unalignedAudio.toString(),
+          count: summary.unalignedAudio,
         }),
   )
   if (summary.missingSentences > 0) {
@@ -411,7 +411,7 @@ function verdictFor(
       summary.missingSentences <= 12
         ? t("heading.partFewGaps")
         : t("heading.partManyGaps", {
-            count: summary.missingSentences.toString(),
+            count: summary.missingSentences,
           }),
     )
   }
@@ -448,7 +448,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
       extra:
         summary.unalignedAudio > 0
           ? t("marks.excludedClips", {
-              count: summary.unalignedAudio.toString(),
+              count: summary.unalignedAudio,
             })
           : null,
       tone:
@@ -465,7 +465,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
       label: tNouns("chapter", { count: summary.chapters }),
       value: `${summary.chapters}`,
       sub: t("marks.mutedChapters", {
-        count: summary.mutedChapters.toString(),
+        count: summary.mutedChapters,
       }),
       tone: "muted",
     },
@@ -480,7 +480,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
       extra:
         view.significantChapters > 0
           ? t("marks.significantMisalignment", {
-              count: view.significantChapters.toString(),
+              count: view.significantChapters,
             })
           : null,
       tone:

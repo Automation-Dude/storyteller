@@ -26,7 +26,7 @@
       "read": "Read",
       "listen": "Listen",
       "viewDetails": "View details",
-      "percent": "{percent}%",
+      "percent": "{percent, number}%",
       "timeLeft": "about {time} left"
     },
     "stats": {
@@ -45,7 +45,7 @@
       "title": "Customize Home Page",
       "description": "Add, remove, and reorder the sections shown on your home page.",
       "createNewShelf": "Create New Shelf",
-      "hidden": "Hidden sections ({count})",
+      "hidden": "Hidden sections ({count, number})",
       "show": "Show",
       "save": "Save Changes",
       "hideFromHome": "Hide from home",
@@ -114,7 +114,7 @@
       "clearAllFilters": "Clear all filters",
       "advanced": "Advanced filter",
       "closeAdvanced": "Hide advanced filter",
-      "advancedSummary": "Advanced filter ({count})",
+      "advancedSummary": "Advanced filter ({count, number})",
       "saveAsShelf": "Save as shelf"
     },
     "sortBy": {
@@ -226,9 +226,9 @@
   "EntityActions": {
     "mergeInto": "Merge into...",
     "createShelfWith": "Create shelf with selected",
-    "deleteTitle": "Delete {count} {entity}?",
+    "deleteTitle": "Delete {count, number} {entity}?",
     "deleteDescription": "This will remove the selected items and unlink them from all books. This cannot be undone.",
-    "mergeTitle": "Merge {count} items into \"{target}\"?",
+    "mergeTitle": "Merge {count, number} items into \"{target}\"?",
     "mergeDescription": "All books from the other selected items will be reassigned to the target. The other items will be deleted.",
     "shiftSkipHint": "hold shift to skip this next time",
     "editTag": "Edit Tag",
@@ -271,7 +271,7 @@
     "actions": "Actions",
     "addToCollection": "Add to Collection",
     "addToSeries": "Add to Series",
-    "deleteTitle": "Delete {count} book(s)?",
+    "deleteTitle": "Delete {count, number} book(s)?",
     "deleteDescription": "This cannot be undone.",
     "cancelSelection": "Stop selecting"
   },
@@ -529,8 +529,8 @@
             "autoIgnoreRulesDescription": "Auto-ignore rules are added by Storyteller when books are relocated, backed up, or removed with re-import prevention. If a book isn't importing, search here for its path or title.",
             "noAutoIgnoreRules": "No auto-ignore rules.",
             "noAutoIgnoreRulesMatchSearch": "No auto-ignore rules match your search.",
-            "showingRules": "Showing {start}–{end} of {total}",
-            "showingRulesTotal": "Showing {total} of {totalAuto}.",
+            "showingRules": "Showing {start, number}–{end, number} of {total, number}",
+            "showingRulesTotal": "Showing {total, number} of {totalAuto, number}.",
             "watch": "Import",
             "ignore": "Ignore",
             "autoIgnore": "Auto-ignore",
@@ -758,7 +758,7 @@
         "highlighting": "Toggle highlighting",
         "hideTime": "Hide timestamps",
         "showTime": "Show timestamps",
-        "lineCount": "{count} lines",
+        "lineCount": "{count, number} lines",
         "enableDebug": "Enable debug logging",
         "disableDebug": "Disable debug logging",
         "follow": "Follow new logs",
@@ -1224,7 +1224,8 @@
       "select": "Select",
       "deselect": "Deselect",
       "confirm": "Confirm",
-      "selectFolder": "Select folder"
+      "selectFolder": "Select folder",
+      "download": "Download"
     },
     "states": {
       "saving": "Saving...",
@@ -1403,7 +1404,7 @@
   },
   "UploadDialog": {
     "metadataBehavior": "Metadata behavior",
-    "failedFiles": "{count} file(s) failed to upload — process the rest anyway",
+    "failedFiles": "{count, number} file(s) failed to upload, process the rest anyway",
     "uploadAnother": "Upload another",
     "uploadFormat": "Upload {format}",
     "uploadReplacementFormat": "Upload replacement {format}",
@@ -1458,18 +1459,19 @@
       "partAlignedScore": "{score}% of the ebook aligned to the narration across {chapters} chapters.",
       "partNotAlignedScore": "Across {chapters} chapters, no sentence-level alignment was recorded.",
       "partAllAudioPlaced": "All audio was placed.",
-      "partSomeAudioNotPlaced": "{count} audio file(s) could not be placed.",
+      "partSomeAudioNotPlaced": "{count, number} audio file(s) could not be placed.",
       "partFewGaps": "The few gaps are scattered single sentences, not whole sections.",
-      "partManyGaps": "{count} sentences went unmatched."
+      "partManyGaps": "{count, number} sentences went unmatched."
     },
     "marks": {
       "score": "% Sentences aligned",
       "alignmentGrade": "Grade",
       "audioIncluded": "Audio included",
-      "excludedClips": "{count} excluded clips",
-      "mutedChapters": "{count} muted",
+      "excludedClips": "{count, number} excluded clips",
+      "mutedChapters": "{count, number} muted",
       "sentencesAligned": "Sentences aligned",
-      "significantMisalignment": "{count} chapters with significant misalignment"
+      "significantMisalignment": "{count, number} chapters with significant misalignment",
+      "unalignedChapters": "Unaligned chapters"
     },
     "overrides": {
       "menu": "Chapter options",
@@ -1584,7 +1586,7 @@
       "expand": "Expand",
       "minimize": "Minimize",
       "dismiss": "Dismiss",
-      "queuedSuffix": "+{count} queued",
+      "queuedSuffix": "+{count, number} queued",
       "ready": "{title} is ready",
       "open": "Open",
       "notifyReadyTitle": "Book ready",

@@ -30,7 +30,6 @@ import {
   DropdownMenuSeparator,
 } from "@v3/_/components/ui/dropdown-menu"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
-import { IAdd } from "@v3/_/components/ui/icon"
 import { V3Link } from "@v3/_/components/v3-link"
 import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useDeleteEntity } from "@v3/_/hooks/use-delete-entity"
@@ -169,7 +168,7 @@ export function LibrarySidebar({
     onConfirm: handleRowDelete,
     title: menuTarget
       ? tEntity("deleteTitle", {
-          count: "1",
+          count: 1,
           entity: entityType
             ? tEntity(`entityTypes.${entityType}` as "entityTypes.tag", {
                 count: 1,
@@ -200,7 +199,7 @@ export function LibrarySidebar({
                   }}
                   title={createLabel}
                 >
-                  <IAdd.base className="h-4 w-4" />
+                  <icon.Add className="size-4" />
                 </Button>
               )}
 

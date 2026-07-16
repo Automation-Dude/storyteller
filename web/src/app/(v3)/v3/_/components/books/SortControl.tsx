@@ -15,7 +15,7 @@ import {
   useCommon,
   useTranslation,
 } from "@/app/(v3)/v3/_/hooks/use-translation"
-import { type FieldGroupKey, getFieldDef } from "@/fields"
+import { type Field, type FieldGroupKey, getFieldDef } from "@/fields"
 import * as icon from "@/icons"
 import { FieldIcon } from "@/icons"
 
@@ -64,7 +64,7 @@ export function SortControl({
   const grouped = useMemo(() => {
     return options.reduce(
       (acc, option) => {
-        const fieldDef = getFieldDef(option.value)
+        const fieldDef = getFieldDef(option.value as Field)
         if (!fieldDef) {
           return acc
         }

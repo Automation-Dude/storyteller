@@ -23,7 +23,6 @@ import { Spinner } from "@v3/_/components/ui/spinner"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type Invite, type User } from "@/apiModels"
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type UserPermissionSet } from "@/database/users"
 import { useInitialData } from "@/hooks/useInitialData"
 import * as icon from "@/icons"
@@ -38,7 +37,6 @@ import {
   useResendInviteMutation,
   useUpdateUserMutation,
 } from "@/store/api"
-
 
 import { SettingsSection } from "./shared"
 
@@ -408,7 +406,7 @@ function CreateInviteSection({
           setShowForm(true)
         }}
       >
-        <IAdd.base className="mr-2 h-4 w-4" />
+        <icon.Add className="mr-2 h-4 w-4" />
         {t("inviteUser")}
       </Button>
     )

@@ -6,7 +6,7 @@ import { type Permission, type UserWithPermissions } from "@/database/users"
 
 export function withPageAuth<
   T extends {
-    params: Promise<Record<string, unknown>>
+    params?: Promise<Record<string, unknown>>
     searchParams?: Promise<Record<string, unknown>> | undefined
   },
 >(permissions: Permission[]) {

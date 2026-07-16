@@ -26,7 +26,6 @@ import {
   FilterableMenuSubContent,
   FilterableMenuSubTrigger,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
-import { ITag } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type BookWithRelations, type CreatorRelation } from "@/database/books"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
@@ -309,7 +308,7 @@ export function useBookActionItems({
     entries.push({
       key: "tags",
       label: t.plain("editTags"),
-      icon: <ITag.add className="size-4" />,
+      icon: <icon.TagAdd className="size-4" />,
       submenuSearchable: true,
       submenuSearchPlaceholder: t.plain("search"),
       submenu: () => (

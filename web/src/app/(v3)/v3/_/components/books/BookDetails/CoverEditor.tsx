@@ -104,8 +104,8 @@ function CoverSlot({
           type="button"
           variant="secondary"
           size="icon-sm"
-          tooltip={c("actions.download")}
-          aria-label={c("actions.download")}
+          tooltip={c.plain("actions.download")}
+          aria-label={c.plain("actions.download")}
           render={
             <a
               href={currentUrl}

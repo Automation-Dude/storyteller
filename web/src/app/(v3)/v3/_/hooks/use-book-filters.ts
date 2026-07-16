@@ -12,7 +12,12 @@ import {
   createAndBlock,
   shelfFilterRootSchema,
 } from "@/shelves"
-import { type DisplayField, type SortDirection, type SortField } from "@/sort"
+import {
+  type BookSort,
+  type DisplayField,
+  type SortDirection,
+  type SortField,
+} from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
@@ -126,7 +131,7 @@ function replaceFieldConditions(
 const defaultSortDefault = {
   field: "createdAt",
   direction: "desc",
-}
+} as const
 
 export function useBookFilters(options: UseBookFiltersOptions = {}) {
   const pathName = usePathname()
@@ -273,8 +278,8 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   // whether the sort is still the page default (auto display fields only defer
   // to the filter while the user hasn't picked a sort themselves)
   const isDefaultSort =
-    sort.field === (options.defaultSortField ?? "createdAt") &&
-    sort.direction === (options.defaultSortDirection ?? "desc")
+    sort.field === (options.defaultSort?.field ?? "createdAt") &&
+    sort.direction === (options.defaultSort?.direction ?? "desc")
 
   return {
     userFilter,

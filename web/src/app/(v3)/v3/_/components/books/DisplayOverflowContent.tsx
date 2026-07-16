@@ -5,12 +5,11 @@ import {
   DropdownMenuSeparator,
 } from "@v3/_/components/ui/dropdown-menu"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
-import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
+import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
-import { DISPLAY_FIELDS } from "@/sort"
+import { DISPLAY_FIELDS, type DisplayField  } from "@/sort"
 import { useSetUserSettingMutation } from "@/store/api"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
 
@@ -20,8 +19,8 @@ export function DisplayOverflowContent({
   bookView,
   onBookViewChange,
 }: {
-  displayOverrides: BookFiltersController["displayOverrides"]
-  onDisplayOverridesChange: BookFiltersController["setDisplayOverrides"]
+  displayOverrides: DisplayField[] | null
+  onDisplayOverridesChange: (fields: DisplayField[] | null) => void
   bookView?: BookView
   onBookViewChange?: (view: BookView) => void
 }) {
@@ -126,7 +125,7 @@ export function DisplayOverflowContent({
         <DropdownMenuCheckboxItem
           checked={!displayOverrides}
           onClick={() => {
-            void onDisplayOverridesChange(null)
+            onDisplayOverridesChange(null)
           }}
         >
           Auto
@@ -137,7 +136,7 @@ export function DisplayOverflowContent({
             key={field}
             checked={displayOverrides?.includes(field) ?? false}
             onClick={() => {
-              void onDisplayOverridesChange([field])
+              onDisplayOverridesChange([field])
             }}
           >
             <FieldIcon field={field} className="mr-2 h-4 w-4" />

@@ -152,7 +152,7 @@ export function ProcessingToast() {
             <span className="text-muted-foreground text-xs">
               {headline}
               {queuedCount > 0
-                ? ` · ${t("toast.queuedSuffix", { count: queuedCount.toString() })}`
+                ? ` · ${t("toast.queuedSuffix", { count: queuedCount })}`
                 : ""}
             </span>
 

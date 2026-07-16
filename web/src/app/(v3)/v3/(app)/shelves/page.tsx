@@ -12,6 +12,10 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default withPageAuth(["bookList"])(() => {
-  return <ShelvesPageClient />
+export default withPageAuth<{
+  searchParams: Promise<{ initialShelfUuid?: string }>
+}>(["bookList"])(async ({ searchParams }) => {
+  const initialShelfUuid = (await searchParams).initialShelfUuid
+
+  return <ShelvesPageClient initialShelfUuid={initialShelfUuid} />
 })

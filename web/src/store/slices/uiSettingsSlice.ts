@@ -5,7 +5,7 @@ import {
 } from "@reduxjs/toolkit"
 
 import { type GridCardSize } from "@/database/userPreferencesTypes"
-import { BookSort, SortDirection, SortField, type DisplayField } from "@/sort"
+import { type BookSort, type DisplayField, SortDirection, SortField } from "@/sort"
 
 // the top-level layout of a book list page
 export type BookLayout = "grid" | "list"

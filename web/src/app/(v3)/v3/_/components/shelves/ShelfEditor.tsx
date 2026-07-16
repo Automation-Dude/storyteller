@@ -29,7 +29,6 @@ import { Textarea } from "@v3/_/components/ui/textarea"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfWithBooks } from "@/database/shelves"
 import * as icon from "@/icons"
@@ -46,7 +45,6 @@ import {
   usePreviewShelfFilterMutation,
   useUpdateUserShelfMutation,
 } from "@/store/api"
-
 
 import {
   FilterPreview,
@@ -639,7 +637,7 @@ function BookSelector({
                     onAdd(book.uuid)
                   }}
                 >
-                  <IAdd.base className="size-3" />
+                  <icon.Add className="size-3" />
                 </Button>
               }
             />

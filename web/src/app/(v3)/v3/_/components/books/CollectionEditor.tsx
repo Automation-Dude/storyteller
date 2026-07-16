@@ -2,9 +2,10 @@ import { useCallback, useMemo, useState } from "react"
 
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
+
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { usePermission } from "@/hooks/usePermission"
+import * as icon from "@/icons"
 import {
   useAddBooksToCollectionsMutation,
   useListCollectionsQuery,
@@ -112,7 +113,7 @@ export function CollectionEditor({
                 aria-label={c.plain("actions.add")}
                 variant="ghost"
               >
-                <IAdd.base size="sm" className="text-muted-foreground" />
+                <icon.Add className="size-4" />
               </TooltipButton>
             }
           />

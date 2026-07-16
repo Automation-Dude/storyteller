@@ -155,7 +155,7 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
 
   return (
     <CollapsibleSection
-      name="alignment"
+      sectionKey="alignment"
       title={t("title")}
       icon={<icon.Progress className="size-3.5 stroke-[1.5]" />}
       className="mb-3 flex flex-col gap-2"
@@ -344,7 +344,7 @@ function AlignmentReportSummary({ book }: { book: BookWithRelations }) {
           value: `${summary.chapters}`,
         },
         {
-          label: tr("marks.failedChapters"),
+          label: tr("marks.unalignedChapters"),
           value: `${summary.failedChapters}`,
         },
       ]
@@ -395,7 +395,9 @@ function AlignmentReportSummary({ book }: { book: BookWithRelations }) {
             className="hover:text-primary inline-flex items-center gap-1 hover:underline"
           >
             <icon.Briefcase className="size-3.5" />{" "}
-            {tr("createdByJob", { relativeTime: relativeTime(data.createdAt) })}
+            {tr("createdByJob", {
+              relativeTime: relativeTime(data.createdAt, { now: new Date() }),
+            })}
           </V3Link>
         )}
       </div>

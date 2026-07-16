@@ -433,8 +433,6 @@ async function formatFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
-// the book's latest alignment grade (same latest-report semantics as the
-// alignmentGrade shelf filter in shelfFilter.ts).
 const latestGradeExpr = sql<string>`(
   select grade from alignment_report
   where book_uuid = book.uuid
@@ -457,7 +455,12 @@ async function gradeFacets(userId: UUID): Promise<LibraryFacet[]> {
 async function shelfFacets(userId: UUID): Promise<LibraryFacet[]> {
   return db
     .selectFrom("shelf")
-    .select((eb) => ["shelf.uuid as key", "shelf.name as name"])
+    .leftJoin("shelfBook", "shelfBook.shelfUuid", "shelf.uuid")
+    .select((eb) => [
+      "shelf.uuid as key",
+      "shelf.name as name",
+      eb.fn.count<number>("shelfBook.bookUuid").distinct().as("bookCount"),
+    ])
     .groupBy(["shelf.uuid", "shelf.name"])
     .where("shelf.userId", "=", userId)
     .execute()
@@ -546,6 +549,7 @@ async function countSectionNone(
           ])
         case "formats":
         case "grades":
+        case "shelves":
           return eb.lit(false)
       }
     })

@@ -16,7 +16,6 @@ import { Slider } from "@v3/_/components/ui/slider"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   RATING_DIMENSION_MAX,
   RATING_DIMENSION_MIN,
@@ -410,7 +409,7 @@ export function MultidimensionalRating({
                 toggle(d.id)
               }}
             >
-              <IAdd.base />
+              <icon.Add className="size-4" />
               {d.label}
             </Button>
           ))}

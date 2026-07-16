@@ -14,7 +14,6 @@ import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { Button } from "@/app/(v3)/v3/_/components/ui/button"
-import { FieldIcon, ICheck, IRemove } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type RelationItem,
   useRelationItems,
@@ -31,6 +30,7 @@ import {
   getFieldDef,
   getFieldType,
 } from "@/fields"
+import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
 import {
   type ShelfFilterCondition,
@@ -330,7 +330,7 @@ export function FilterEditor({
         enabled={enabled}
         staticItems={def.options.map((v) => ({
           uuid: v,
-          name: c(`fields.options.${field}.${v}`),
+          name: c.plain(`fields.options.${field}.${v}` as any),
         }))}
       />
     )
@@ -410,9 +410,9 @@ export function FacetEditor({
       }}
       renderTrailing={(state) =>
         state === "primary" ? (
-          <ICheck.base className="text-primary h-4 w-4" />
+          <icon.Check className="text-primary h-4 w-4" />
         ) : state === "secondary" ? (
-          <IRemove.base className="text-destructive h-4 w-4" />
+          <icon.Remove className="text-destructive h-4 w-4" />
         ) : null
       }
       footer={
@@ -612,7 +612,7 @@ function NumberRangeEditor({
             >
               <span className="min-w-0 flex-1 truncate">{p.label}</span>
               {active && (
-                <ICheck.base className="text-primary ml-auto h-4 w-4" />
+                <icon.Check className="text-primary ml-auto h-4 w-4" />
               )}
             </FilterableMenuItem>
           )

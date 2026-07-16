@@ -60,7 +60,7 @@ export function EntityActionsMenu({
       onDeleted?.()
     },
     title: tEntity("deleteTitle", {
-      count: "1",
+      count: 1,
       entity: entityType
         ? tEntity(`entityTypes.${entityType}` as "entityTypes.tag", {
             count: 1,

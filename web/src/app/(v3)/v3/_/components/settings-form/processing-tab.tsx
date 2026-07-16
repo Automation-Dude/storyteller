@@ -250,6 +250,10 @@ export function ProcessingSettingsFields({
                 disabled={isLocked}
                 aria-invalid={fieldState.invalid}
                 data-disabled={isLocked}
+                items={trackLengths.map(({ value, label }) => ({
+                  value: String(value),
+                  label,
+                }))}
                 value={String(field.value)}
                 onValueChange={(value) => {
                   if (value) {
@@ -283,15 +287,16 @@ export function ProcessingSettingsFields({
                 aria-invalid={fieldState.invalid}
                 data-disabled={isLocked}
                 value={field.value ?? "default"}
+                items={codecOptions.map(({ value, label }) => ({
+                  value,
+                  label,
+                }))}
                 onValueChange={(value) => {
                   field.onChange(value === "default" ? null : value)
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {codecOptions.find(({ value }) => value === field.value)
-                      ?.label ?? ta("codecDefault")}
-                  </SelectValue>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {codecOptions.map(({ value, label }) => (
@@ -310,6 +315,7 @@ export function ProcessingSettingsFields({
               label={ta("bitrate")}
               render={(field, fieldState, isLocked) => (
                 <Select
+                  items={opusBitrateOptions}
                   disabled={isLocked}
                   aria-invalid={fieldState.invalid}
                   data-disabled={isLocked}
@@ -319,11 +325,7 @@ export function ProcessingSettingsFields({
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {opusBitrateOptions.find(
-                        ({ value }) => value === field.value,
-                      )?.label ?? ta("bitrateDefault")}
-                    </SelectValue>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {opusBitrateOptions.map(({ value, label }) => (
@@ -350,13 +352,10 @@ export function ProcessingSettingsFields({
                   onValueChange={(value) => {
                     field.onChange(value || null)
                   }}
+                  items={mp3BitrateOptions}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {mp3BitrateOptions.find(
-                        ({ value }) => value === field.value,
-                      )?.label ?? ta("mp3BitrateDefault")}
-                    </SelectValue>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {mp3BitrateOptions.map(({ value, label }) => (

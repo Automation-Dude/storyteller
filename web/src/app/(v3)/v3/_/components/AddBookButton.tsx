@@ -2,33 +2,22 @@
 
 import { type ButtonProps } from "@base-ui/react"
 import { useHotkey } from "@tanstack/react-hotkeys"
-import { parseAsString, useQueryState } from "nuqs"
 import { useState } from "react"
 
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
+import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import * as icon from "@/icons"
-
 
 import { ImportBookDialog } from "./books/ImportBookDialog"
 import { UploadBookDialog } from "./books/UploadBookDialog"
-import { Button } from "./ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
 import {
   FilterableMenu,
   FilterableMenuContent,
   FilterableMenuItem,
   FilterableMenuTrigger,
 } from "./ui/filterable-menu"
-import { IAdd } from "./ui/icon"
 import { TooltipButton } from "./ui/tooltip-button"
-import { useBookInSidePanel } from "../hooks/use-open-book";
-
 
 export function AddBookButton(props: ButtonProps) {
   const t = useTranslation("BooksPage")
@@ -60,7 +49,7 @@ export function AddBookButton(props: ButtonProps) {
               aria-label={t("addBook")}
               shortcut={["Shift+A"]}
             >
-              <IAdd.base className="size-4" />
+              <icon.Add className="size-4" />
             </TooltipButton>
           }
         />

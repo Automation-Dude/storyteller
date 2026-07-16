@@ -125,7 +125,7 @@ function RunConfigForm({
   const { data: estimate } = useGetAlignmentEstimateQuery(
     {
       bookUuid: book.uuid,
-      engine: watchedEngine ?? settings.transcriptionEngine,
+      engine: watchedEngine ?? settings.transcriptionEngine ?? "whisper.cpp",
       whisperModel: watchedModel ?? settings.whisperModel ?? null,
       restart: restart || false,
     },
@@ -159,6 +159,10 @@ function RunConfigForm({
 
   const busy = isProcessing || isSaving
 
+  const languageItems = LANGUAGES.map((lang) => ({
+    value: lang,
+    label: lang,
+  }))
   return (
     <SettingsFormProvider form={form} lockedSettings={new Set()}>
       <form
@@ -174,15 +178,16 @@ function RunConfigForm({
                 onValueChange={(v) => {
                   setLanguage(v ?? "auto")
                 }}
+                items={languageItems}
               >
                 <SelectTrigger id="run-language" className="w-full">
                   <SelectValue placeholder={t("autoLanguage")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="auto">{t("autoLanguage")}</SelectItem>
-                  {LANGUAGES.map((lang) => (
-                    <SelectItem key={lang} value={lang}>
-                      {lang}
+                  {languageItems.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -20,7 +20,7 @@ import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { useCommon } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
+import * as icon from "@/icons"
 import { ChevronRight } from "@/icons"
 
 const ROW_HEIGHT = 32
@@ -989,7 +989,7 @@ export function VirtualizedFilterableMenuItems<T>({
             if (closeOnSelect) close()
           }}
         >
-          <IAdd.base className="h-3.5 w-3.5" />
+          <icon.Add />
           {create.label(trimmed)}
         </button>
       )}

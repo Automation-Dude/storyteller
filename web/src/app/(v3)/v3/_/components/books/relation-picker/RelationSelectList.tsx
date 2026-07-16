@@ -5,7 +5,6 @@ import { type ReactNode, useEffect, useMemo, useRef } from "react"
 import { VirtualizedFilterableMenuItems } from "@v3/_/components/ui/filterable-menu"
 
 import { RelationGlyph } from "@/app/(v3)/v3/_/components/books/RelationChipEditor"
-import { ICheck, IRemove } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   type RelationItem,
   type RelationSource,
@@ -13,6 +12,7 @@ import {
 } from "@/app/(v3)/v3/_/hooks/use-relation-items"
 import { marcRelators } from "@/components/books/edit/marcRelators"
 import { type Field } from "@/fields"
+import * as icon from "@/icons"
 
 // a row's selection state, rendered as a trailing icon. what "primary" and
 // "secondary" mean is up to the caller (include/exclude, all/some, selected).
@@ -33,9 +33,9 @@ function roleSuffix(
 
 function defaultTrailing(state: RelationRowState): ReactNode {
   if (state === "primary")
-    return <ICheck.base className="text-primary h-4 w-4" />
+    return <icon.Check className="text-primary h-4 w-4" />
   if (state === "secondary")
-    return <IRemove.base className="text-muted-foreground h-4 w-4" />
+    return <icon.Remove className="text-muted-foreground h-4 w-4" />
   return null
 }
 

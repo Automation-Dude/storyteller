@@ -21,7 +21,6 @@ import {
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type HomeSectionKind, type ShelfWithBooks } from "@/database/shelves"
 import * as icon from "@/icons"
 import {
@@ -31,7 +30,6 @@ import {
   useSetHomeShelvesMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
-
 
 import { ShelfEditor } from "./ShelfEditor"
 
@@ -274,7 +272,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         onClick={handleCreateNewShelf}
         className="mt-2 w-full"
       >
-        <IAdd.base className="mr-2 size-4" />
+        <icon.Add className="mr-2 size-4" />
         {t("sections.createNewShelf")}
       </Button>
 
@@ -487,7 +485,7 @@ function HiddenShelfItem({
       </div>
 
       <Button variant="outline" size="sm" onClick={onShow} className="h-7">
-        <IAdd.base className="mr-1 size-3" />
+        <icon.Add className="mr-1 size-3" />
         {t("sections.show")}
       </Button>
 

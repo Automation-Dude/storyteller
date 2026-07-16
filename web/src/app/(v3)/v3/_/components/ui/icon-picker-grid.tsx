@@ -6,7 +6,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type IconEntry } from "@/icons/icon-registry"
 
-type TablerIconComponent = React.ComponentType<{ className?: string }>
+type TablerIconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>
 
 type IconPickerGridProps = {
   icons: IconEntry[]

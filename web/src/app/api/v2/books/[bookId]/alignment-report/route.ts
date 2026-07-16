@@ -40,6 +40,10 @@ export const GET = withHasPermission<Params>("bookProcess")(async (
 
   const book = await getBook(bookUuid, request.auth.user.id)
 
+  const overrides = report.overrides
+    ? (JSON.parse(report.overrides) as AlignmentOverrides)
+    : null
+
   const view = buildReportView({
     report: report.report,
     bookUuid,
@@ -47,8 +51,8 @@ export const GET = withHasPermission<Params>("bookProcess")(async (
     reportUuid: report.uuid,
     jobUuid: report.jobUuid,
     createdAt: report.createdAt,
-    summary: summarizeReport(report.report, report.overrides),
-    overrides: report.overrides,
+    summary: summarizeReport(report.report, overrides),
+    overrides,
     ebookManifest: (book?.ebook?.manifest as ManifestLike | null) ?? null,
     audiobookManifest:
       (book?.audiobook?.manifest as ManifestLike | null) ?? null,

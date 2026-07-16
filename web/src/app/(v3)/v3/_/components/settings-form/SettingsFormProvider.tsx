@@ -85,7 +85,7 @@ export const LockTooltip = () => {
   return (
     <Tooltip>
       <TooltipTrigger>
-        <icon.Lock size={14} className="text-amber-500" />
+        <icon.Lock size="sm" className="text-amber-500" />
       </TooltipTrigger>
       <TooltipContent>{t("lockedSettingTooltip")}</TooltipContent>
     </Tooltip>

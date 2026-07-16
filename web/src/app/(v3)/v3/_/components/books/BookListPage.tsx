@@ -56,7 +56,7 @@ import { usePanelWidthDriver } from "@/app/(v3)/v3/_/hooks/use-panel-width-drive
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfFilterNode } from "@/shelves"
 import {
-  BookSort,
+  type BookSort,
   type DisplayField,
   GENERAL_SORT_FIELDS,
   type SortContext,

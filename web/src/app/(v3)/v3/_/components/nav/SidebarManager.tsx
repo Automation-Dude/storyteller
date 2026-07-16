@@ -43,7 +43,6 @@ import {
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { type ShelfWithBooks } from "@/database/shelves"
 import {
   type SidebarGroupKind,
@@ -525,7 +524,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
                       size="sm"
                       className="text-muted-foreground hover:text-foreground text-xs"
                     >
-                      <IAdd.base className="mr-1 size-3" />
+                      <icon.Add className="mr-1 size-3" />
                       {t("add")}
                     </Button>
                   }

@@ -97,7 +97,7 @@ export function UploadBookDialog({
         metadataMerge: c.plain("metadataBehavior.merge"),
         metadataSkip: c.plain("metadataBehavior.keep"),
         metadataOverwrite: c.plain("metadataBehavior.overwrite"),
-        failedFiles: (count) => t("failedFiles", { count: String(count) }),
+        failedFiles: (count) => t("failedFiles", { count }),
         cancel: c.plain("actions.cancel"),
         upload: c.plain("actions.upload"),
         done: c.plain("actions.done"),

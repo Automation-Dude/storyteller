@@ -369,7 +369,7 @@ function LogsToolbar({
 
   const lineCountItems = LINE_COUNT_OPTIONS.map((n) => ({
     value: String(n),
-    label: t("lineCount", { count: String(n) }),
+    label: t("lineCount", { count: n }),
   }))
 
   return (

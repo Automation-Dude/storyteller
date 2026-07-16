@@ -1,5 +1,6 @@
 "use client"
 
+import { ReactNode } from "react"
 import {
   Controller,
   type FieldError as FormFieldError,
@@ -35,13 +36,11 @@ import {
 import { Switch } from "@v3/_/components/ui/switch"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { Providers } from "@/auth/providers"
 import { cn } from "@/cn"
 import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
 import type { UserPermissionSet } from "@/database/users"
 import * as icon from "@/icons"
-
 
 import { LockTooltip, useSettingsForm } from "./SettingsFormProvider"
 import { type SettingsFormForm, SettingsSection, safeUrl } from "./shared"
@@ -326,7 +325,7 @@ export function AuthTab() {
                 })
               }}
             >
-              <IAdd.base className="mr-2 h-4 w-4" />
+              <icon.Add className="size-4" />
               {t("addProvider")}
             </Button>
 
@@ -469,7 +468,12 @@ function BuiltInProviderFields({
           >
             <FieldLabel>{t("provider")}</FieldLabel>
             <Select
-              items={providerOptions}
+              items={
+                providerOptions as unknown as {
+                  value: string
+                  label: string
+                }[]
+              }
               value={field.value as string}
               onValueChange={field.onChange}
               disabled={isAuthProvidersLocked}
@@ -802,7 +806,7 @@ function GroupPermissionsField({
           className="self-start"
           onClick={addGroup}
         >
-          <IAdd.base className="mr-1.5 h-3.5 w-3.5" />
+          <icon.Add className="size-4" />
           {t("addGroup")}
         </Button>
 

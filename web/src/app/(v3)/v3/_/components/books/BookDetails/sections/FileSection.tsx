@@ -17,7 +17,6 @@ import {
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
 import { ConfirmDialog } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import {
   useCommon,
@@ -240,7 +239,7 @@ export function FileSection({
                   aria-label={t("fileInformation.addFile")}
                   tooltip={t("fileInformation.addFile")}
                 >
-                  <IAdd.base className="size-3.5 stroke-[1.5]" />
+                  <icon.Plus className="size-3.5 stroke-[1.5]" />
                 </TooltipButton>
               }
             />

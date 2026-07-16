@@ -19,7 +19,7 @@ function Dialog({
 }) {
   const isMobile = useIsMobile()
   if (isMobile) {
-    return <Drawer.Root data-slot="dialog" {...props} />
+    return <Drawer.Root data-slot="dialog" {...(props as any)} />
   }
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }

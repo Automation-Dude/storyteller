@@ -52,7 +52,6 @@ import {
   ComboboxList,
   ComboboxValue,
 } from "@/app/(v3)/v3/_/components/ui/combobox"
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import {
   useCommon,
   useTranslation,
@@ -92,7 +91,6 @@ import {
   useUpdateImportRuleMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
-
 
 import { SettingsFormField, useSettingsForm } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"
@@ -397,7 +395,7 @@ function WatchRuleCard({
           aria-label="Delete rule"
           onClick={onDelete}
         >
-          <icon.Trash size={14} className="text-destructive" />
+          <icon.Trash className="text-destructive size-4" />
         </Button>
       )}
 
@@ -446,7 +444,7 @@ function IgnoreRuleRow({
           aria-label="Delete rule"
           onClick={onDelete}
         >
-          <icon.Trash size={14} className="text-destructive" />
+          <icon.Trash className="text-destructive size-4" />
         </Button>
       )}
     </div>
@@ -1139,10 +1137,7 @@ function TabHeader({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-[200px] flex-1">
-        <icon.Search
-          size={14}
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 -translate-y-1/2"
-        />
+        <icon.Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 -translate-y-1/2" />
         <Input
           value={searchValue}
           onChange={(e) => {
@@ -1155,7 +1150,7 @@ function TabHeader({
 
       {addLabel && onAdd && (
         <Button variant="outline" size="sm" onClick={onAdd}>
-          <IAdd.base size={14} className="mr-1" />
+          <icon.Add className="size-4" />
           {addLabel}
         </Button>
       )}
@@ -1185,7 +1180,7 @@ function TabHeader({
           disabled={isDeleting}
           onClick={onDeleteSelected}
         >
-          <icon.Trash size={14} className="mr-1" />
+          <icon.Trash className="mr-1 size-4" />
           Delete {selectedCount}
         </Button>
       )}
@@ -1238,6 +1233,10 @@ function PerFieldOverridesEditor({
   onChange: (overrides: MetadataFieldOverrides) => void
 }) {
   const t = useTranslation("Labels.metadata")
+  const items = MODE_OPTIONS.map(({ value, labelKey }) => ({
+    value,
+    label: t(labelKey),
+  }))
 
   return (
     <div className="divide-border divide-y rounded-md border">
@@ -1255,19 +1254,15 @@ function PerFieldOverridesEditor({
             onValueChange={(mode) => {
               onChange({ ...value, [field]: mode })
             }}
+            items={items}
           >
             <SelectTrigger className="w-[140px]">
-              <SelectValue>
-                {t(
-                  MODE_OPTIONS.find((opt) => opt.value === value[field])
-                    ?.labelKey ?? "modeMerge",
-                )}
-              </SelectValue>
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {MODE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {t(opt.labelKey)}
+              {items.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1288,6 +1283,10 @@ export function MetadataFieldOverridesEditor({
   const [showAdvanced, setShowAdvanced] = useState(false)
   const uniformMode = getUniformMode(value)
   const t = useTranslation("Labels.metadata")
+  const items = MODE_OPTIONS.map(({ value, labelKey }) => ({
+    value,
+    label: t(labelKey),
+  }))
 
   return (
     <div className="space-y-2">
@@ -1297,6 +1296,7 @@ export function MetadataFieldOverridesEditor({
           if (mode === "custom") return
           onChange(defaultMetadataFieldOverrides(mode as MetadataFieldMode))
         }}
+        items={items}
       >
         <SelectTrigger className="w-full">
           <SelectValue>

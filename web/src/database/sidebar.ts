@@ -62,7 +62,9 @@ const KIND_GROUP_DEFAULTS = {
 
 type SpecialGroupKind = keyof typeof KIND_GROUP_DEFAULTS
 
-const SPECIAL_GROUP_KINDS = new Set<string>(Object.keys(KIND_GROUP_DEFAULTS))
+const SPECIAL_GROUP_KINDS = new Set<SpecialGroupKind>(
+  Object.keys(KIND_GROUP_DEFAULTS) as SpecialGroupKind[],
+)
 
 export async function getSidebarGroups(
   userId: UUID,
@@ -199,8 +201,8 @@ export async function ensureSidebarDefaults(
     // 1. special groups always exist
     const groupUuidByKind = new Map<SpecialGroupKind, string>()
     for (const group of groups) {
-      if (group.kind && SPECIAL_GROUP_KINDS.has(group.kind)) {
-        groupUuidByKind.set(group.kind, group.uuid)
+      if (group.kind && SPECIAL_GROUP_KINDS.has(group.kind as SpecialGroupKind)) {
+        groupUuidByKind.set(group.kind as SpecialGroupKind, group.uuid)
       }
     }
 
@@ -386,7 +388,9 @@ export async function setSidebarGroups(
           .select(["uuid", "kind"])
           .where("userId", "=", userId)
           .execute()
-      ).map((g) => [g.uuid, g.kind]),
+      )
+        .filter((g): g is typeof g & { kind: SidebarGroupKind } => g.kind != null)
+        .map((g) => [g.uuid, g.kind]),
     )
 
     await trx.deleteFrom("sidebarItem").where("userId", "=", userId).execute()

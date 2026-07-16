@@ -61,7 +61,7 @@ export function KeyboardShortcut({
 
 export function HeldKbd({ modifier }: { modifier: IndividualKey | Modifier }) {
   const isHeld = useKeyHold(
-    modifier === "Mod" ? resolveModifier(modifier) : modifier,
+    (modifier === "Mod" ? resolveModifier(modifier) : modifier) as IndividualKey,
   )
 
   return (

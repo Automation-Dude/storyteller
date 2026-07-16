@@ -60,7 +60,7 @@ export async function scanEbook(
   const cover = await extractTextCoverStep(metadata, ctx)
 
   const manifest =
-    metadata.format === "readaloud"
+    cover.format === "readaloud"
       ? await extractReadaloudManifestStep(cover, ctx)
       : await extractEbookManifestStep(cover, ctx)
 

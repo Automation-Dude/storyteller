@@ -170,7 +170,7 @@ export function SidebarEntityActions({
 
   const deleteAction = useConfirmAction({
     onConfirm: handleDelete,
-    title: t("deleteTitle", { count, entity: entityLabel }),
+    title: t.plain("deleteTitle", { count, entity: entityLabel }),
     description: t("deleteDescription"),
     confirmLabel: c("actions.delete"),
     variant: "destructive",
@@ -179,7 +179,7 @@ export function SidebarEntityActions({
   const mergeAction = useConfirmAction({
     onConfirm: handleMerge,
     title: mergeTarget
-      ? t("mergeTitle", { count, target: mergeTarget.name })
+      ? t.plain("mergeTitle", { count, target: mergeTarget.name })
       : c("actions.merge"),
     description: t("mergeDescription"),
     confirmLabel: c("actions.merge"),

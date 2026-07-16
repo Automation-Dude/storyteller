@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
-import { deleteShelf, getShelf, updateShelf } from "@/database/shelves"
-import { type ShelfFilter, shelfFilterSchema } from "@/shelves"
+import { type ShelfUpdate, deleteShelf, getShelf, updateShelf } from "@/database/shelves"
+import { type ShelfFilter, type ShelfOrderBy, shelfFilterSchema } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
@@ -60,14 +60,16 @@ export const PUT = withHasPermission<Params>("bookList")(async (
       ...(body.filter !== undefined
         ? { filter: body.filter ? JSON.stringify(body.filter) : null }
         : {}),
-      ...(body.orderBy !== undefined ? { orderBy: body.orderBy } : {}),
+      ...(body.orderBy !== undefined
+        ? { orderBy: (body.orderBy ?? undefined) as ShelfOrderBy | undefined }
+        : {}),
       ...(body.orderDirection !== undefined
-        ? { orderDirection: body.orderDirection }
+        ? { orderDirection: body.orderDirection ?? undefined }
         : {}),
       ...(body.limitCount !== undefined ? { limitCount: body.limitCount } : {}),
       ...(body.icon !== undefined ? { icon: body.icon } : {}),
       ...(body.color !== undefined ? { color: body.color } : {}),
-    },
+    } satisfies ShelfUpdate,
     body.books,
   )
 

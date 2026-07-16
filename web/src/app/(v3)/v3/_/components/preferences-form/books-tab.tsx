@@ -24,7 +24,6 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { MultidimensionalRating } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/MultidimensionalRating"
 import { RatingInput } from "@/app/(v3)/v3/_/components/books/RatingInput"
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { statusDisplayLabel } from "@/database/statusKinds"
 import {
   BookDetailDisplays,
@@ -97,6 +96,11 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
     control: form.control,
     name: "accentColor",
   })
+
+  const viewOptions = VIEW_KEYS.map((key) => ({
+    value: key,
+    label: t(`detail.view.options.${key}`),
+  }))
 
   return (
     <div className="space-y-6">
@@ -209,14 +213,15 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                           onValueChange={(value) => {
                             field.onChange(Number(value))
                           }}
+                          items={viewOptions}
                         >
                           <SelectTrigger className="w-60">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {VIEW_KEYS.map((key, index) => (
-                              <SelectItem key={key} value={String(index)}>
-                                {t(`detail.view.options.${key}`)}
+                            {viewOptions.map(({ value, label }) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -309,7 +314,7 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                     appendDimension({ id: uuidv4(), label: "" })
                   }}
                 >
-                  <IAdd.base className="mr-1 h-4 w-4" />
+                  <icon.Add className="size-4" />
                   {t("ratingDimensions.add")}
                 </Button>
               </div>

@@ -491,7 +491,9 @@ export function withUser<
     context: { params: Promise<Params> },
   ) => Promise<Response> | Response,
 ): AppRouteHandlerFn {
-  return async (request, context) => {
+  // cast needed because next-auth's .auth() wrapper returns NextMiddlewareResult
+  // which includes null/undefined, but our handlers always return a Response
+  return (async (request, context) => {
     const token = extractTokenFromHeader(request.headers)
     if (token) {
       request.cookies.set("st_token", token)
@@ -506,13 +508,10 @@ export function withUser<
       }
 
       return handler(request as VerifiedAuthRequest, context)
-      // We have to do a cast here because NextAuthResult is
-      // typed incorrectly: the `auth` function becmomes async
-      // when passed a lazy init function
     }) as unknown as Promise<ReturnType<typeof nextAuth.auth>>
 
-    return (await h)(request, context)
-  }
+    return (await h)(request, context as never)
+  }) as AppRouteHandlerFn
 }
 
 /**
@@ -539,7 +538,7 @@ export function withHasPermission<
         context: { params: Promise<Params> },
       ) => Promise<Response> | Response,
     ): AppRouteHandlerFn =>
-    async (request, context) => {
+    (async (request, context) => {
       if (options?.allowBasicAuth) {
         // only allow basic auth if OPDS is enabled
         const settings = await getSettings()
@@ -632,8 +631,8 @@ export function withHasPermission<
         // when passed a lazy init function
       }) as unknown as Promise<ReturnType<typeof nextAuth.auth>>
 
-      return (await h)(request, context)
-    }
+      return (await h)(request, context as never)
+    }) as AppRouteHandlerFn
 }
 
 export function hasPermission(

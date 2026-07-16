@@ -97,7 +97,8 @@ export function mapToEntries<
 >(obj: T, mapping: M): T extends T ? MapToEntries<T, M, C, Buffer> : never {
   const result: Record<string, any> = {}
   for (let i = 0; i < Math.min(obj.length, mapping.length); i++) {
-    result[mapping[i]] = obj[i]
+    const key = mapping[i]
+    if (key != null) result[key] = obj[i]
   }
   return result as any
 }

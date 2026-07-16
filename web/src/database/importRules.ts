@@ -34,7 +34,7 @@ function getConfigRuleObjects(): ImportRuleWithCollections[] {
   const entries = getConfigImportRules()
   const now = new Date().toISOString()
 
-  globalThis._configImportRuleObjects = entries.map((entry) => ({
+  const rules: ImportRuleWithCollections[] = entries.map((entry) => ({
     uuid: randomUUID(),
     kind: entry.kind,
     path: entry.path,
@@ -47,7 +47,9 @@ function getConfigRuleObjects(): ImportRuleWithCollections[] {
     bookTitle: null,
   }))
 
-  return globalThis._configImportRuleObjects
+  globalThis._configImportRuleObjects = rules
+
+  return rules
 }
 
 export function isConfigImportRule(uuid: UUID): boolean {

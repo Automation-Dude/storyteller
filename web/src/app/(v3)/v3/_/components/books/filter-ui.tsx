@@ -23,7 +23,7 @@ import {
 } from "@v3/_/components/ui/select"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { type FieldDefNumeric } from "@/shelves"
+import { type FieldDefNumeric } from "@/fields"
 
 // ---------------------------------------------------------------------------
 // the single home for filter value-input primitives + the derived helpers both

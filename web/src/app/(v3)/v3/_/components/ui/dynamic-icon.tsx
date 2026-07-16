@@ -4,7 +4,10 @@ import { type ComponentProps, Suspense, lazy, memo, useMemo } from "react"
 
 import { ICON_MAP } from "@/icons/icon-registry"
 
-type IconComponent = React.ComponentType<{ className?: string }>
+type IconComponent = React.ComponentType<{
+  className?: string
+  style?: React.CSSProperties
+}>
 
 // lazily resolve a tabler icon by its export name. each call to lazy() creates
 // a chunk boundary so only icons actually rendered get loaded.
@@ -18,10 +21,10 @@ function getLazyIcon(
 
   const component = lazy(async () => {
     const mod = await import("@tabler/icons-react")
-    const Icon = (mod as Record<string, IconComponent>)[tablerName]
+    const Icon = (mod as unknown as Record<string, IconComponent>)[tablerName]
 
     if (!Icon) {
-      return { default: FallbackIcon }
+      return { default: FallbackIcon as IconComponent }
     }
 
     return { default: Icon }
@@ -31,7 +34,7 @@ function getLazyIcon(
   return component
 }
 
-function FallbackIcon({ className }: { className?: string }) {
+function FallbackIcon({ className }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={className}

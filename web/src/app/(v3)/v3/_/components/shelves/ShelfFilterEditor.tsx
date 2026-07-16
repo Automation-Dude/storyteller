@@ -7,10 +7,7 @@ import { Button } from "@v3/_/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { Input } from "@v3/_/components/ui/input"
@@ -40,7 +37,6 @@ import {
   FilterableMenuLabel,
   FilterableMenuTrigger,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
-import { FieldIcon, IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { useRelationItems } from "@/app/(v3)/v3/_/hooks/use-relation-items"
 import { type BookWithRelations } from "@/database/books"
 import { DEFAULT_RATING_DIMENSIONS } from "@/database/ratingDimensions"
@@ -51,6 +47,7 @@ import {
   type FieldGroupKey,
   getFieldDef,
 } from "@/fields"
+import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
 import {
   type ShelfFilterAnd,
@@ -61,7 +58,6 @@ import {
   type ShelfFilterOperator,
   type ShelfFilterOr,
   createAndBlock,
-  createEmptyCondition,
   createNotBlock,
   createOrBlock,
   getOperatorsForField,
@@ -298,7 +294,7 @@ function AddNodeDropdown({
       <DropdownMenuTrigger
         render={
           <Button variant="ghost" size="sm" className="h-7 w-fit gap-1 text-xs">
-            <IAdd.base className="size-3" />
+            <icon.Add className="size-3" />
             {c.plain("actions.add")}
           </Button>
         }

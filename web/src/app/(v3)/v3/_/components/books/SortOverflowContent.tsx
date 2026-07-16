@@ -3,7 +3,7 @@ import {
   DropdownMenuItem,
 } from "@v3/_/components/ui/dropdown-menu"
 
-import { FieldIcon } from "@/app/(v3)/v3/_/components/ui/icon"
+import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
 import { type SortField } from "@/sort"
 

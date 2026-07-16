@@ -15,7 +15,6 @@ import {
 } from "@v3/_/components/ui/select"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { IAdd } from "@/app/(v3)/v3/_/components/ui/icon"
 import { creatorRelators } from "@/components/books/edit/marcRelators"
 import * as icon from "@/icons"
 
@@ -82,6 +81,7 @@ function ContributorsEditor() {
             name={`creators.${idx}.role`}
             render={({ field: roleField }) => (
               <Select
+                items={creatorRelators}
                 value={roleField.value}
                 onValueChange={(value) => {
                   roleField.onChange(value ?? "")
@@ -124,7 +124,7 @@ function ContributorsEditor() {
           append({ name: "", role: "" })
         }}
       >
-        <IAdd.base className="mr-1 h-3 w-3" />
+        <icon.Add className="size-4" />
         Add contributor
       </Button>
     </div>

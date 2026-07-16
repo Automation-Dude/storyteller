@@ -152,7 +152,9 @@ import { styled } from "./styled"
 
 // actions
 export const Plus = /*#__PURE__*/ styled(IconPlus)
+export const Add = /*#__PURE__*/ styled(IconPlus)
 export const Minus = /*#__PURE__*/ styled(IconMinus)
+export const Remove = /*#__PURE__*/ styled(IconMinus)
 export const Close = /*#__PURE__*/ styled(IconX)
 export const Check = /*#__PURE__*/ styled(IconCheck)
 export const Checkbox = /*#__PURE__*/ styled(IconCheckbox)

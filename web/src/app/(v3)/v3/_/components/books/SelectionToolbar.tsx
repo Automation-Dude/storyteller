@@ -48,7 +48,7 @@ export function SelectionToolbar({
     stopSelecting,
   } = useBookSelection()
 
-  // const { data: allBooks = [] } = useListBooksQuery()
+  const allBookUuids = allBooks.map((book) => book.uuid)
   const selectedBookObjects = allBooks.filter((book) =>
     selectedBooks.has(book.uuid),
   )

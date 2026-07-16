@@ -1279,7 +1279,8 @@
       "deselect": "Deselecteren",
       "confirm": "Bevestigen",
       "selectFolder": "Selecteer map",
-      "search": "Zoeken"
+      "search": "Zoeken",
+      "download": "Downloaden"
     },
     "states": {
       "saving": "Opslaan...",
