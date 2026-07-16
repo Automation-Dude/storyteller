@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Storyteller — Layout Rules</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"/>
+<style>
+doc-page:not(:defined) { visibility: hidden; }
+doc-page {
+  --ink: oklch(0.245 0.02 50);
+  --ink-2: oklch(0.42 0.018 50);
+  --ink-3: oklch(0.56 0.015 55);
+  --line: oklch(0.885 0.014 68);
+  --accent: oklch(0.58 0.13 40);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  color: var(--ink);
+}
+a { color: var(--accent); }
+a:hover { color: oklch(0.46 0.13 40); }
+h1 {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 26pt; font-weight: 500; letter-spacing: -0.015em;
+  margin: 0 0 4px;
+}
+h1 em { font-style: italic; color: var(--accent); font-weight: 400; }
+.lede {
+  font-family: "Fraunces", Georgia, serif; font-style: italic;
+  font-size: 12pt; color: var(--ink-3);
+  margin: 0 0 26px;
+}
+h2 {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 15pt; font-weight: 500; letter-spacing: -0.01em;
+  margin: 26px 0 8px;
+  display: flex; align-items: baseline; gap: 10px;
+}
+h2 .no {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9pt; color: var(--accent); font-weight: 500;
+}
+p { margin: 0 0 10px; }
+strong { font-weight: 600; }
+code, .mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 8.5pt;
+  background: oklch(0.955 0.012 75);
+  padding: 1px 5px; border-radius: 4px;
+}
+pre {
+  background: oklch(0.955 0.012 75);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 8.5pt; line-height: 1.6;
+  overflow-x: auto;
+  margin: 10px 0 14px;
+}
+pre code { background: none; padding: 0; }
+ul { margin: 0 0 10px; padding-left: 18px; }
+li { margin-bottom: 4px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 9.5pt; }
+th {
+  text-align: left; font-size: 8pt; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 6px 12px 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+td { padding: 7px 12px 7px 0; border-bottom: 1px solid oklch(0.93 0.01 70); vertical-align: top; }
+td:first-child { font-weight: 500; white-space: nowrap; }
+.rule {
+  border-left: 3px solid var(--accent);
+  padding: 2px 0 2px 14px;
+  margin: 12px 0 14px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 11.5pt;
+}
+.note { font-size: 9pt; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<doc-page size="a4" margin="0.85in">
+
+<h1>Layout rules for a <em>three-panel</em> library</h1>
+<p class="lede">Nav sidebar · grid · detail panel — how to make them read as one calm surface instead of a pile of lines. Written to be applied directly in Storyteller's code.</p>
+
+<h2><span class="no">01</span>The separator budget</h2>
+<p>Every boundary between two regions gets <strong>exactly one</strong> separator: a tone change, <em>or</em> a hairline, <em>or</em> a gap + shadow. Never two. Most "too many lines" feelings come from boundaries paying twice — a border <em>and</em> a background change <em>and</em> each panel's own header border, all within a few pixels.</p>
+<div class="rule">One boundary, one separator. Inside a panel, prefer spacing over lines.</div>
+<ul>
+  <li><strong>Tone steps</strong> (recommended default) — each region is its own surface, zero borders. Quietest, and resize-friendly: a moving edge with no line on it can't look misaligned.</li>
+  <li><strong>Hairlines</strong> — one shared background, a single 1px line per boundary. Then panel headers may <em>not</em> also have bottom borders; separate header from content with spacing only.</li>
+  <li><strong>Floating panels</strong> — gaps + soft shadow over a sunk canvas. Most "modern app", but the gaps cost width; use 10px gaps max.</li>
+</ul>
+
+<h2><span class="no">02</span>The tone ladder</h2>
+<p>Three surfaces, always in the same order of importance. The panel you want the eye on is the <em>lightest</em> in light mode and the <em>lightest</em> in dark mode too — raised means lighter, both ways.</p>
+<table>
+  <tr><th>Surface</th><th>Region</th><th>Light (warm paper)</th><th>Dark (charcoal)</th></tr>
+  <tr><td>sunk</td><td>nav sidebar</td><td><span class="mono">oklch(0.938 0.019 74)</span></td><td><span class="mono">oklch(0.152 0.006 280)</span></td></tr>
+  <tr><td>base</td><td>grid / content</td><td><span class="mono">oklch(0.975 0.013 78)</span></td><td><span class="mono">oklch(0.18 0.006 280)</span></td></tr>
+  <tr><td>raised</td><td>detail panel</td><td><span class="mono">oklch(0.990 0.008 80)</span></td><td><span class="mono">oklch(0.238 0.006 280)</span></td></tr>
+</table>
+<p class="note">Keep the lightness steps small (0.015–0.035 in oklch). If a step is big enough to be "a color", it starts competing with the covers.</p>
+
+<h2><span class="no">03</span>The 56px header line</h2>
+<p>The single highest-leverage alignment rule: <strong>every panel's header row is exactly the same height</strong> (56px), with its content vertically centered. The grid toolbar, the detail panel's close row, and any list-panel header all share one invisible horizontal line across the whole app. When headers are 52px here and 64px there, every border you draw afterwards looks crooked even when it isn't.</p>
+
+<h2><span class="no">04</span>Spacing scale &amp; insets</h2>
+<ul>
+  <li>Scale: <span class="mono">4 · 8 · 12 · 16 · 20 · 24 · 32 · 40</span> — nothing off-scale.</li>
+  <li><strong>Panel inset = 24px</strong> on all sides of every panel's content (Tailwind <span class="mono">p-6</span>). One inset, everywhere — the left edge of the grid, the toolbar title, and the detail panel's text all sit 24px from their panel edge.</li>
+  <li><strong>Grid gutter ≈ panel inset</strong>: 18–24px between cards. If the gutter is much smaller than the inset, the grid looks crowded inside a roomy frame.</li>
+  <li>Vertical rhythm inside the detail panel: 24–28px between sections, 8–12px within a section. Section labels (small caps + trailing hairline) are the only lines allowed <em>inside</em> a panel.</li>
+</ul>
+
+<h2><span class="no">05</span>Resizable panels</h2>
+<ul>
+  <li>Detail panel: <span class="mono">min 300px · default 384px · max min(720px, 45vw)</span>.</li>
+  <li>Handle: <strong>14px invisible hit area</strong> straddling the edge; on hover/drag show a 4×44px rounded pill, accent-colored while dragging. <strong>Never an outline preview</strong> — the real panel moves.</li>
+  <li>Panel content is anchored to the panel's <em>right</em> edge with a fixed <span class="mono">min-width: 300px</span>, so text never reflows or squishes while the panel animates — it slides as one rigid sheet and gets revealed.</li>
+  <li>Snapping, if you keep it, is <em>magnetic</em>: within ~30px of a width where the grid gains/loses a column, ease the applied width toward that point (<span class="mono">applied += (target − applied) × 0.32</span> per frame). No ghost lines, no jump on release.</li>
+</ul>
+
+<h2><span class="no">06</span>Motion spec — the panel/grid contract</h2>
+<p>The four wishes (panel animates, resize is smooth, grid doesn't jump, clicked card stays in view) are compatible if the grid <strong>never re-wraps without FLIP</strong> and <strong>never moves without a scroll anchor</strong>.</p>
+<table>
+  <tr><th>Event</th><th>Duration</th><th>Easing</th></tr>
+  <tr><td>Panel open / close</td><td>360ms</td><td><span class="mono">cubic-bezier(0.22, 1, 0.36, 1)</span></td></tr>
+  <tr><td>Grid re-wrap (FLIP)</td><td>240ms</td><td>same</td></tr>
+  <tr><td>Hover / selection</td><td>150–180ms</td><td><span class="mono">ease</span></td></tr>
+</table>
+<p><strong>FLIP re-wrap</strong> — whenever the column count changes:</p>
+<pre><code>capture rects of cards near the viewport      // getBoundingClientRect
+apply the new grid-template-columns
+adjust scrollTop so the anchor card keeps its viewport Y   // see below
+for each captured card:
+  delta = oldRect − newRect
+  card.animate([translate(delta), none], { 240ms, easeOut })</code></pre>
+<p><strong>Scroll anchor</strong> — the clicked/selected card if it's on screen, else the topmost visible card. Measure with <span class="mono">offsetTop</span> (layout position — immune to running transforms), not <span class="mono">getBoundingClientRect</span>:</p>
+<pre><code>before: y = anchor.offsetTop − scroller.scrollTop
+after:  scroller.scrollTop = anchor.offsetTop − y</code></pre>
+<ul>
+  <li>During a <em>continuous</em> width change (drag or open animation), run the anchor correction every frame; run FLIP only at the moments the column count actually changes.</li>
+  <li>Only animate cards within ±700px of the viewport; farther cards may jump — nobody sees it. Use <span class="mono">content-visibility: auto</span> on cards so the 1000-card grid stays cheap.</li>
+  <li>Honor <span class="mono">prefers-reduced-motion</span>: skip FLIP and open/close animation, keep the scroll anchoring (it's a correctness feature, not a flourish).</li>
+</ul>
+
+<h2><span class="no">07</span>Choosing a drag strategy</h2>
+<table>
+  <tr><th>Strategy</th><th>While dragging</th><th>Best when</th></tr>
+  <tr><td>Fluid scale</td><td>column count frozen; cards scale smoothly; one FLIP re-wrap on release</td><td>default — calmest drag, nothing re-wraps under the cursor</td></tr>
+  <tr><td>Live reflow</td><td>columns recompute continuously, each change FLIP-animated</td><td>you want the grid to feel physically attached to the edge</td></tr>
+  <tr><td>Magnetic snap</td><td>free resize with easing pull toward column boundaries</td><td>you want consistent card sizes at rest without the Windows-2000 preview</td></tr>
+</table>
+<p class="note">All three are implemented in <strong>Panel Lab.html</strong> — switch them in the Tweaks panel and feel the difference before committing.</p>
+
+</doc-page>
+<script src="doc-page.js"></script>
+</body>
+</html>

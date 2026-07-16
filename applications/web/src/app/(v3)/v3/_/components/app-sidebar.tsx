@@ -90,6 +90,7 @@ import {
 } from "./ui/dropdown-menu"
 import { DynamicIcon } from "./ui/dynamic-icon"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+import { TooltipButton } from "./ui/tooltip-button"
 
 const THIRTY_MINUTES = 30 * 60 * 1000
 
@@ -304,16 +305,18 @@ export function AppSidebar({
           </V3Link>
 
           <div className="relative flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
-            <SidebarMenuButton
+            <TooltipButton
               size="sm"
-              className="size-7 shrink-0"
+              variant="real-ghost"
+              className="hover:text-sidebar-accent-foreground size-7 shrink-0"
               onClick={() => {
                 setEditMode(true)
               }}
               tooltip={t("customize")}
+              aria-label={t("customize")}
             >
               <icon.AdjustmentsHorizontal className="size-4" />
-            </SidebarMenuButton>
+            </TooltipButton>
             <SidebarPinButton />
           </div>
         </SidebarHeader>
