@@ -86,13 +86,8 @@ export function DisplayControl({
 
   const isGrid = bookLayout === "grid"
 
-  // the set the checkmarks reflect: the layout's own field selection. for the
-  // grid that's the explicit selection or (in auto mode) whatever auto
-  // currently resolves to; the list layout is always explicit.
   const shown = isGrid ? displayOverrides ?? currentFields : listDisplayFields
 
-  // toggled-on fields always land above the title row, never below it. the
-  // grid and list layouts keep independent selections.
   const toggleField = (field: DisplayField) => {
     const base = isGrid ? displayOverrides ?? currentFields : listDisplayFields
     const next = base.includes(field)
@@ -128,59 +123,63 @@ export function DisplayControl({
         {showLayout && (
           <>
             <FilterableMenuGroup>
-              <FilterableMenuLabel>Layout</FilterableMenuLabel>
+              <FilterableMenuLabel>
+                {t("displayOptions.layout")}
+              </FilterableMenuLabel>
 
               <FilterableMenuItem
                 closeOnClick={false}
-                textValue="Grid"
+                textValue={t("displayOptions.grid")}
                 icon={<icon.LayoutGrid className="size-4" />}
                 onSelect={() => {
                   dispatch(uiSettingsSlice.actions.setBookLayout("grid"))
                 }}
               >
-                Grid
+                {t("displayOptions.grid")}
                 {isGrid && <icon.Check className="ml-auto" />}
               </FilterableMenuItem>
 
               <FilterableMenuItem
                 closeOnClick={false}
-                textValue="List"
+                textValue={t("displayOptions.list")}
                 icon={<icon.LayoutList className="size-4" />}
                 onSelect={() => {
                   dispatch(uiSettingsSlice.actions.setBookLayout("list"))
                 }}
               >
-                List
+                {t("displayOptions.list")}
                 {!isGrid && <icon.Check className="ml-auto" />}
               </FilterableMenuItem>
             </FilterableMenuGroup>
 
             <FilterableMenuGroup>
-              <FilterableMenuLabel>View</FilterableMenuLabel>
+              <FilterableMenuLabel>
+                {t("displayOptions.view")}
+              </FilterableMenuLabel>
 
               {isGrid ? (
                 <>
                   <FilterableMenuItem
                     closeOnClick={false}
-                    textValue="Cards"
+                    textValue={t("displayOptions.cards")}
                     icon={<icon.LayoutGrid className="size-4" />}
                     onSelect={() => {
                       dispatch(uiSettingsSlice.actions.setGridView("card"))
                     }}
                   >
-                    Cards
+                    {t("displayOptions.cards")}
                     {gridView === "card" && <icon.Check className="ml-auto" />}
                   </FilterableMenuItem>
 
                   <FilterableMenuItem
                     closeOnClick={false}
-                    textValue="Covers only"
+                    textValue={t("displayOptions.coversOnly")}
                     icon={<icon.Book className="size-4" />}
                     onSelect={() => {
                       dispatch(uiSettingsSlice.actions.setGridView("thumbnail"))
                     }}
                   >
-                    Covers only
+                    {t("displayOptions.coversOnly")}
                     {gridView === "thumbnail" && (
                       <icon.Check className="ml-auto" />
                     )}
@@ -190,31 +189,31 @@ export function DisplayControl({
                 <>
                   <FilterableMenuItem
                     closeOnClick={false}
-                    textValue="Rows"
+                    textValue={t("displayOptions.rows")}
                     icon={<icon.LayoutList className="size-4" />}
                     onSelect={() => {
                       dispatch(uiSettingsSlice.actions.setListView("list"))
                     }}
                   >
-                    Rows
+                    {t("displayOptions.rows")}
                     {listView === "list" && <icon.Check className="ml-auto" />}
                   </FilterableMenuItem>
 
                   <FilterableMenuItem
                     closeOnClick={false}
-                    textValue="Table"
+                    textValue={t("displayOptions.table")}
                     icon={<icon.Columns3 className="size-4" />}
                     onSelect={() => {
                       dispatch(uiSettingsSlice.actions.setListView("table"))
                     }}
                   >
-                    Table
+                    {t("displayOptions.table")}
                     {listView === "table" && <icon.Check className="ml-auto" />}
                   </FilterableMenuItem>
 
                   <FilterableMenuItem
                     closeOnClick={false}
-                    textValue="Thumbnails"
+                    textValue={t("displayOptions.thumbnails")}
                     icon={<icon.Book className="size-4" />}
                     onSelect={() => {
                       dispatch(
@@ -224,7 +223,7 @@ export function DisplayControl({
                       )
                     }}
                   >
-                    Thumbnails
+                    {t("displayOptions.thumbnails")}
                     {listShowThumbnail && <icon.Check className="ml-auto" />}
                   </FilterableMenuItem>
                 </>
@@ -237,11 +236,13 @@ export function DisplayControl({
 
         {/* ---- appearance ---- */}
         <FilterableMenuGroup>
-          <FilterableMenuLabel>Appearance</FilterableMenuLabel>
+          <FilterableMenuLabel>
+            {t("displayOptions.appearance")}
+          </FilterableMenuLabel>
 
           <FilterableMenuSub>
-            <FilterableMenuSubTrigger textValue="Color intensity">
-              Intensity
+            <FilterableMenuSubTrigger textValue={t("displayOptions.intensity")}>
+              {t("displayOptions.intensity")}
             </FilterableMenuSubTrigger>
             <FilterableMenuSubContent>
               <IntensitySubmenu strength={strength} />
@@ -251,18 +252,19 @@ export function DisplayControl({
 
         <FilterableMenuSeparator />
 
-        {/* ---- card (grid layout only) + badges ---- */}
         <FilterableMenuGroup>
-          <FilterableMenuLabel>{isGrid ? "Card" : "Row"}</FilterableMenuLabel>
+          <FilterableMenuLabel>
+            {isGrid ? t("displayOptions.card") : t("displayOptions.row")}
+          </FilterableMenuLabel>
 
           {isGrid && (
             <>
               <FilterableMenuSub>
                 <FilterableMenuSubTrigger
                   icon={<icon.Readaloud className="size-4" />}
-                  textValue="Cover type"
+                  textValue={t("displayOptions.coverType.title")}
                 >
-                  Cover type
+                  {t("displayOptions.coverType.title")}
                 </FilterableMenuSubTrigger>
                 <FilterableMenuSubContent>
                   <CoverTypeSubmenu
@@ -280,9 +282,9 @@ export function DisplayControl({
               <FilterableMenuSub>
                 <FilterableMenuSubTrigger
                   icon={<icon.Maximize className="size-4" />}
-                  textValue="Card size"
+                  textValue={t("displayOptions.cardSize.title")}
                 >
-                  Card size
+                  {t("displayOptions.cardSize.title")}
                 </FilterableMenuSubTrigger>
                 <FilterableMenuSubContent>
                   <CardSizeSubmenu
@@ -301,9 +303,9 @@ export function DisplayControl({
               <FilterableMenuSub>
                 <FilterableMenuSubTrigger
                   icon={<icon.ArrowsMaximize className="size-4" />}
-                  textValue="Card spacing"
+                  textValue={t("displayOptions.cardSpacing.title")}
                 >
-                  Card spacing
+                  {t("displayOptions.cardSpacing.title")}
                 </FilterableMenuSubTrigger>
                 <FilterableMenuSubContent>
                   <SpacingSubmenu
@@ -319,7 +321,7 @@ export function DisplayControl({
 
           <FilterableMenuItem
             closeOnClick={false}
-            textValue="Readaloud icon"
+            textValue={t("displayOptions.readaloudIcon")}
             icon={<icon.Readaloud className="size-4" />}
             onSelect={() => {
               dispatch(
@@ -329,13 +331,13 @@ export function DisplayControl({
               )
             }}
           >
-            Readaloud icon
+            {t("displayOptions.readaloudIcon")}
             {showReadaloudBadge && <icon.Check className="ml-auto" />}
           </FilterableMenuItem>
 
           <FilterableMenuItem
             closeOnClick={false}
-            textValue="Processing icon"
+            textValue={t("displayOptions.processingIcon")}
             icon={<icon.Loader className="size-4" />}
             onSelect={() => {
               dispatch(
@@ -345,7 +347,7 @@ export function DisplayControl({
               )
             }}
           >
-            Processing icon
+            {t("displayOptions.processingIcon")}
             {showProcessingBadge && <icon.Check className="ml-auto" />}
           </FilterableMenuItem>
         </FilterableMenuGroup>
@@ -424,8 +426,6 @@ export function DisplayControl({
 
 function IntensitySubmenu({ strength }: { strength: number }) {
   const [updateSetting] = useSetUserSettingMutation()
-  // 65 is the neutral default (the historical full-strength look); 100 pushes
-  // well past it
   const steps = [0, 25, 50, 65, 85, 100]
   const current = Math.round(strength * 100)
 
@@ -457,10 +457,12 @@ function SpacingSubmenu({
   value: GridSpacing
   onChange: (v: GridSpacing) => void
 }) {
+  const t = useTranslation("BooksPage.displayOptions.cardSpacing")
+
   const options: { id: GridSpacing; label: string }[] = [
-    { id: "compact", label: "Compact" },
-    { id: "cozy", label: "Cozy" },
-    { id: "spacious", label: "Spacious" },
+    { id: "compact", label: t("compact") },
+    { id: "cozy", label: t("cozy") },
+    { id: "spacious", label: t("spacious") },
   ]
 
   return (
@@ -489,20 +491,21 @@ function CoverTypeSubmenu({
   value: string
   onChange: (v: string) => void
 }) {
+  const t = useTranslation("BooksPage.displayOptions.coverType")
   const options = [
     {
       id: "auto",
-      label: "Double cover",
+      label: t("doubleCover"),
       icon: <icon.Readaloud className="size-4" />,
     },
     {
       id: "ebook",
-      label: "Ebook cover",
+      label: t("ebookCover"),
       icon: <icon.Book className="size-4" />,
     },
     {
       id: "audiobook",
-      label: "Audiobook cover",
+      label: t("audiobookCover"),
       icon: <icon.Audiobook className="size-4" />,
     },
   ]
@@ -534,12 +537,14 @@ function CardSizeSubmenu({
   value: string
   onChange: (v: string) => void
 }) {
+  const t = useTranslation("BooksPage.displayOptions.cardSize")
+
   const options = [
-    { id: "smallest", label: "Extra Small" },
-    { id: "small", label: "Small" },
-    { id: "medium", label: "Medium" },
-    { id: "large", label: "Large" },
-    { id: "largest", label: "Extra Large" },
+    { id: "smallest", label: t("extraSmall") },
+    { id: "small", label: t("small") },
+    { id: "medium", label: t("medium") },
+    { id: "large", label: t("large") },
+    { id: "largest", label: t("extraLarge") },
   ]
 
   return (

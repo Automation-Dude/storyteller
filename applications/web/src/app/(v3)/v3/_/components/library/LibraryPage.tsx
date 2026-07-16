@@ -21,7 +21,7 @@ import {
 } from "@v3/_/components/library/LibrarySidebar"
 import {
   ALL_KEY,
-  type LibraryItem,
+  type FacetValue,
   type LibrarySectionDef,
   NONE_KEY,
   sectionSeedQueryArg,
@@ -91,7 +91,7 @@ export function LibraryPage({
 
   const isSeriesSection = section.entityType === "series"
 
-  const allItems = useMemo<LibraryItem[]>(() => {
+  const allItems = useMemo<FacetValue[]>(() => {
     if (!facets) return []
 
     const items = facets.flatMap((facet) => {
@@ -135,10 +135,10 @@ export function LibraryPage({
     // otherwise jess will yell at you
     const compareNames =
       section.compareItems ??
-      ((a: LibraryItem, b: LibraryItem) => a.name.localeCompare(b.name))
+      ((a: FacetValue, b: FacetValue) => a.name.localeCompare(b.name))
 
     // the "all" row stays pinned at the top regardless of the sort mode
-    const allFirst = (a: LibraryItem, b: LibraryItem) =>
+    const allFirst = (a: FacetValue, b: FacetValue) =>
       Number(b.key === ALL_KEY) - Number(a.key === ALL_KEY)
 
     if (sidebarSort === "name") {

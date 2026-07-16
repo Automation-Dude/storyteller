@@ -33,6 +33,10 @@ export type UISettings = {
   librarySidebarWidth: number
   bookLayout: BookLayout
 
+  // load every matching book at once instead of paging. increases load time on
+  // large libraries; off by default.
+  alwaysLoadAllBooks: boolean
+
   /* default sorts for each page */
   defaultSorts: Record<string, BookSort[number]>
 
@@ -81,6 +85,7 @@ const defaults: UISettings = {
   detailPanelWidth: 420,
   librarySidebarWidth: 280,
   bookLayout: "grid",
+  alwaysLoadAllBooks: false,
   gridView: "card",
   listView: "list",
   gridDisplayFields: null,
@@ -203,6 +208,11 @@ export const uiSettingsSlice = createSlice({
 
     setLibrarySidebarWidth: (state, action: PayloadAction<number>) => {
       state.librarySidebarWidth = action.payload
+      saveToCookie(state)
+    },
+
+    setAlwaysLoadAllBooks: (state, action: PayloadAction<boolean>) => {
+      state.alwaysLoadAllBooks = action.payload
       saveToCookie(state)
     },
 
@@ -337,6 +347,9 @@ export const selectLibrarySidebarWidth = (state: { uiSettings: UISettings }) =>
 
 export const selectBookLayout = (state: { uiSettings: UISettings }) =>
   state.uiSettings.bookLayout
+
+export const selectAlwaysLoadAllBooks = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.alwaysLoadAllBooks
 
 export const selectGridView = (state: { uiSettings: UISettings }) =>
   state.uiSettings.gridView

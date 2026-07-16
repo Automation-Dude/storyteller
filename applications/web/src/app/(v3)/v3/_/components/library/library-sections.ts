@@ -7,14 +7,17 @@ import { type ListBooksQueryArg } from "@/store/api"
 export const NONE_KEY = "__none__"
 export const ALL_KEY = "__all__"
 
-export type LibraryItem = {
+// one row within a facet: a single status, rating bucket, format, author, ...
+// (a facet is the whole dimension; see LibrarySectionDef / FacetSection). the
+// client display shape, mirrors the server FacetValue in libraryCounts.ts.
+export type FacetValue = {
   key: string
   name: string
   bookCount: number
   // present for entities that carry an icon/color (tags, collections)
   icon?: string | null
   color?: string | null
-  // kind for statues, to prevent editing
+  // kind for statuses, to prevent editing well-known ones
   kind?: string
 }
 
@@ -43,7 +46,7 @@ export type LibrarySectionDef = {
   entityType?: LibraryEntityType
   /* replaces the alphabetical "name" ordering in the sidebar when facet names
   have a domain order (grades sort by rank, not by text) */
-  compareItems?: (a: LibraryItem, b: LibraryItem) => number
+  compareItems?: (a: FacetValue, b: FacetValue) => number
   sort?: {
     field: SortField
     direction: SortDirection

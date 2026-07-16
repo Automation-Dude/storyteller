@@ -226,12 +226,10 @@
   --st-orange-800: oklch(0.556 0.155 43.9);
   --st-orange-900: oklch(0.502 0.143 44);
 
-  /* tone ladder: each layout region is its own surface, small oklch lightness
-     steps, so region boundaries need no borders (one separator per boundary) */
   --surface-sunk: oklch(0.945 0.02 74); /* nav rail */
   /* --surface-soft: oklch(0.962 0.016 76); facet sidebar */
   --surface-soft: var(--color-background);
-  /* --surface-base: oklch(0.975 0.013 78); grid / main content */
+  /* --surface-base: oklch(0.975 0.013 78) grid / main content */
   --surface-base: color-mix(
     in oklab,
     var(--color-background) 80%,
@@ -239,11 +237,10 @@
   );
   /* --surface-raised: oklch(0.99 0.008 80); detail panel */
   --surface-raised: var(--color-background);
-  /* the surface behind the sticky page header: PageMain overrides this to its
-     own tone so the header always matches the panel it sits in */
+  /* the surface behind the sticky page header */
   --page-surface: var(--background);
 
-  /* ===== earthy grade tones — sage ===== */
+  /* ===== sage ===== */
   --positive: oklch(0.5 0.075 150);
   --positive-bg: oklch(0.955 0.03 150);
   --positive-line: oklch(0.86 0.055 150);
@@ -284,17 +281,6 @@
   --cover-accent-foreground: var(--primary-foreground);
 
   --cover-background-mix: var(--background);
-
-  /* --sth-orange-50: #fff1e7;
-  --sth-orange-100: #fbe2d3;
-  --sth-orange-200: #f6c2a5;
-  --sth-orange-300: #f1a173;
-  --sth-orange-400: #ed8449;
-  --sth-orange-500: #eb722f;
-  --sth-orange-600: #ea6920;
-  --sth-orange-700: #d15815;
-  --sth-orange-800: #ba4d0f;
-  --sth-orange-900: #a34106; */
 }
 
 .dark {

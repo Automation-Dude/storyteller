@@ -185,7 +185,7 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
     return {
       books: recentlyAddedBooks,
       isLoading: isLoadingAllBooks,
-      seeAllHref: "/books?sort=createdAt,desc",
+      seeAllHref: "/books?sort=createdAt:desc",
       displayField: "createdAt",
     }
   }

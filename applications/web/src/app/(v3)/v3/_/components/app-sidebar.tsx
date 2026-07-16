@@ -116,7 +116,6 @@ export function AppSidebar({
     useListSidebarGroupsQuery()
 
   const libraryCounts = useLibraryCounts()
-  const basePath = useVersionBasePath()
   const [editMode, setEditMode] = useState(false)
   const [editingShelfUuid, setEditingShelfUuid] = useState<string | null>(null)
   const [creatingCollection, setCreatingCollection] = useState(false)
@@ -130,8 +129,7 @@ export function AppSidebar({
     if (!pinned) setEditMode(false)
   }, [pinned])
 
-  // items are hidden, never deleted: a row marked hidden records "the user
-  // said no", which stops ensureSidebarDefaults from resurrecting the item
+  // items are hidden, never deleted
   const hideWhere = (
     predicate: (
       item: SidebarItemDetail,
@@ -195,7 +193,7 @@ export function AppSidebar({
       action: {
         label: "View changelog",
         onClick: () => {
-          window.location.href = `${basePath}/settings?tab=changelog`
+          window.location.href = `${window.location.origin}/settings?tab=changelog`
           localStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
         },
       },
@@ -217,8 +215,9 @@ export function AppSidebar({
 
   const navSecondary: NavSecondaryItem[] = [
     {
-      // eslint-disable-next-line react-compiler/react-compiler
       onClick: () => {
+        // this is fine dont hate me react-compiler-chan
+        // eslint-disable-next-line react-compiler/react-compiler
         document.cookie = "frontend-version=v2; path=/; max-age=31536000"
         window.location.href = "/"
       },
@@ -286,7 +285,7 @@ export function AppSidebar({
         <SidebarHeader className="flex h-(--header-height) flex-row items-center justify-between gap-2">
           <V3Link
             href="/"
-            className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0"
+            className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0 pl-2"
           >
             <img
               loading="eager"
@@ -301,7 +300,7 @@ export function AppSidebar({
             </span>
           </V3Link>
 
-          <div className="flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
+          <div className="relative flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
             <SidebarMenuButton
               size="sm"
               className="size-7 shrink-0"
@@ -326,33 +325,40 @@ export function AppSidebar({
             />
           ) : (
             <>
-              {sidebarGroups.map((group) => (
-                <SidebarNavGroup
-                  key={group.uuid}
-                  group={group}
-                  libraryCounts={libraryCounts}
-                  onEditShelf={(uuid) => {
-                    setEditingShelfUuid(uuid)
-                  }}
-                  onHideItem={(itemUuid) => {
-                    hideWhere((i) => i.uuid === itemUuid)
-                  }}
-                  onHideAll={() => {
-                    hideWhere((_, g) => g.uuid === group.uuid)
-                  }}
-                  onCreateNew={
-                    group.kind === "collections"
-                      ? () => {
-                          setCreatingCollection(true)
-                        }
-                      : group.kind === "shelves"
+              {sidebarGroups.map((group, index) => {
+                const startIndex = sidebarGroups
+                  .slice(0, index)
+                  .reduce((acc, group) => acc + group.items.length, 0)
+
+                return (
+                  <SidebarNavGroup
+                    key={group.uuid}
+                    group={group}
+                    startIndex={startIndex}
+                    libraryCounts={libraryCounts}
+                    onEditShelf={(uuid) => {
+                      setEditingShelfUuid(uuid)
+                    }}
+                    onHideItem={(itemUuid) => {
+                      hideWhere((i) => i.uuid === itemUuid)
+                    }}
+                    onHideAll={() => {
+                      hideWhere((_, g) => g.uuid === group.uuid)
+                    }}
+                    onCreateNew={
+                      group.kind === "collections"
                         ? () => {
-                            setCreatingShelf(true)
+                            setCreatingCollection(true)
                           }
-                        : undefined
-                  }
-                />
-              ))}
+                        : group.kind === "shelves"
+                          ? () => {
+                              setCreatingShelf(true)
+                            }
+                          : undefined
+                    }
+                  />
+                )
+              })}
               <NavSecondary items={navSecondary} className="mt-auto" />
             </>
           )}
@@ -396,6 +402,7 @@ export function AppSidebar({
 
 function SidebarNavGroup({
   group,
+  startIndex,
   libraryCounts,
   onEditShelf,
   onHideItem,
@@ -407,6 +414,7 @@ function SidebarNavGroup({
     string,
     { count: number | undefined; isLoading: boolean }
   >
+  startIndex: number
   onEditShelf: (shelfUuid: string) => void
   onHideItem: (itemUuid: string) => void
   onHideAll: () => void
@@ -447,7 +455,7 @@ function SidebarNavGroup({
   const renderItem = (item: SidebarItemDetail, index: number) => (
     <SidebarNavItem
       key={item.uuid}
-      index={index}
+      index={index + startIndex}
       item={item}
       builtinTitle={builtinTitle}
       libraryCounts={libraryCounts}
@@ -674,7 +682,9 @@ function SidebarNavItem({
           }
         />
         <TooltipContent side="right">
-          <KeyboardShortcut shortcut={[`Alt+${firstKey}` as Hotkey, secondKey as Hotkey]} />
+          <KeyboardShortcut
+            shortcut={[`Alt+${firstKey}` as Hotkey, secondKey as Hotkey]}
+          />
         </TooltipContent>
       </Tooltip>
 

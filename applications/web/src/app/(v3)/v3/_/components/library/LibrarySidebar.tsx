@@ -14,8 +14,8 @@ import {
 import { EntityEditDialog } from "@v3/_/components/library/EntityEditDialog"
 import { SidebarEntityActions } from "@v3/_/components/library/SidebarEntityActions"
 import {
+  type FacetValue,
   type LibraryEntityType,
-  type LibraryItem,
   NONE_KEY,
 } from "@v3/_/components/library/library-sections"
 import { Button } from "@v3/_/components/ui/button"
@@ -75,7 +75,7 @@ export function LibrarySidebar({
   toShelfFilter,
 }: {
   title: string
-  items: LibraryItem[]
+  items: FacetValue[]
   selectedKey: string | null
   isLoading: boolean
   search: string
@@ -111,7 +111,7 @@ export function LibrarySidebar({
   }, [sortMode, onSortModeChange])
 
   const [menuOpen, setMenuOpen] = useState(false)
-  const [menuTarget, setMenuTarget] = useState<LibraryItem | null>(null)
+  const [menuTarget, setMenuTarget] = useState<FacetValue | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
 
   const handleMenuOpen = useCallback((open: boolean) => {
@@ -126,7 +126,7 @@ export function LibrarySidebar({
   }, [])
 
   const handleOpenItemMenu = useCallback(
-    (item: LibraryItem, anchor: HTMLElement) => {
+    (item: FacetValue, anchor: HTMLElement) => {
       setMenuTarget(item)
       setMenuAnchor(anchor)
       setMenuOpen(true)
@@ -135,9 +135,9 @@ export function LibrarySidebar({
   )
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editItem, setEditItem] = useState<LibraryItem | null>(null)
+  const [editItem, setEditItem] = useState<FacetValue | null>(null)
 
-  const handleEditItem = useCallback((item: LibraryItem) => {
+  const handleEditItem = useCallback((item: FacetValue) => {
     setEditItem(item)
     setEditDialogOpen(true)
   }, [])
@@ -149,7 +149,7 @@ export function LibrarySidebar({
   const canPin = !!toShelfFilter
 
   const handlePinItem = useCallback(
-    (item: LibraryItem) => {
+    (item: FacetValue) => {
       if (!toShelfFilter) return
       void pinShelf(item.name, toShelfFilter(item.key))
     },
@@ -337,15 +337,15 @@ function SidebarItemList({
   onOpenItemMenu,
   menuTarget,
 }: {
-  items: LibraryItem[]
+  items: FacetValue[]
   selectedKey: string | null
   onItemClick: (key: string) => void
   onHoverItem?: (key: string) => void
   isLoading: boolean
   entityType?: LibraryEntityType | undefined
   itemSelection?: ReturnType<typeof useItemSelection>
-  onOpenItemMenu?: (item: LibraryItem, anchor: HTMLElement) => void
-  menuTarget?: LibraryItem | null
+  onOpenItemMenu?: (item: FacetValue, anchor: HTMLElement) => void
+  menuTarget?: FacetValue | null
 }) {
   const isSelecting = itemSelection?.isSelecting ?? false
   const canSelect = !!entityType && !!itemSelection
@@ -392,12 +392,9 @@ function SidebarItemList({
     sel?.selectRange(key, keys)
   }, [])
 
-  const handleRowMenu = useCallback(
-    (item: LibraryItem, anchor: HTMLElement) => {
-      callbacksRef.current.onOpenItemMenu?.(item, anchor)
-    },
-    [],
-  )
+  const handleRowMenu = useCallback((item: FacetValue, anchor: HTMLElement) => {
+    callbacksRef.current.onOpenItemMenu?.(item, anchor)
+  }, [])
 
   const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
   const [scrollMargin, setScrollMargin] = useState(0)
@@ -510,7 +507,7 @@ function SidebarRow({
   onSelectRange,
   onOpenMenu,
 }: {
-  item: LibraryItem
+  item: FacetValue
   isActive: boolean
   isChecked: boolean
   isSelecting: boolean
@@ -521,7 +518,7 @@ function SidebarRow({
   onHover: (key: string) => void
   onToggle: (key: string) => void
   onSelectRange: (key: string) => void
-  onOpenMenu: (item: LibraryItem, anchor: HTMLElement) => void
+  onOpenMenu: (item: FacetValue, anchor: HTMLElement) => void
 }) {
   const pathname = usePathname()
   const firstPathSegment = pathname.split("/")[1]

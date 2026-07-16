@@ -15,7 +15,7 @@ export default function BookPage({
 
   return (
     <BookListPage
-      source={{ kind: "books", limit: 1000 }}
+      source={{ kind: "books" }}
       breadcrumbs={[
         {
           render: (

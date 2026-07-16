@@ -4,8 +4,8 @@ import { EditCreatorDialog } from "@v3/_/components/library/EditCreatorDialog"
 import { EditStatusDialog } from "@v3/_/components/library/EditStatusDialog"
 import { EditTagDialog } from "@v3/_/components/library/EditTagDialog"
 import {
+  type FacetValue,
   type LibraryEntityType,
-  type LibraryItem,
 } from "@v3/_/components/library/library-sections"
 
 import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateCollectionDialog"
@@ -21,7 +21,7 @@ export function EntityEditDialog({
   entityType: LibraryEntityType
   open: boolean
   onOpenChange: (open: boolean) => void
-  item: LibraryItem | null
+  item: FacetValue | null
 }) {
   if (entityType === "tag") {
     return (

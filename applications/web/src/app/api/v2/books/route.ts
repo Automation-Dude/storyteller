@@ -10,20 +10,15 @@ import { filepathFolder, scan } from "@/assets/library/scanner/scan"
 import { type Candidate } from "@/assets/library/scanner/types"
 import { isAudioFile, isZipArchive } from "@/audio"
 import { withHasPermission } from "@/auth/auth"
-import {
-  type GetBooksOptions,
-  deleteBook,
-  getBook,
-  getBooks,
-} from "@/database/books"
+import { deleteBook, getBook, getBooks } from "@/database/books"
 import {
   type Epub2ImportStrategy,
   type ImportMode,
 } from "@/database/settingsTypes"
 import { isEpubVersionError } from "@/epub"
-import { type ShelfFilter, shelfFilterSchema } from "@/shelves"
-import { SORTABLE_FIELDS, type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
+
+import { parseGetBooksOptions } from "./parseBookQuery"
 
 export const dynamic = "force-dynamic"
 
@@ -33,84 +28,13 @@ export const dynamic = "force-dynamic"
  *       have been aligned by Storyteller successfully.
  */
 export const GET = withHasPermission("bookList")(async (request) => {
-  const limitParam = request.nextUrl.searchParams.get("limit")
-  const offsetParam = request.nextUrl.searchParams.get("offset")
-  const orderByParam = request.nextUrl.searchParams.get("orderBy")
-  const orderDirectionParam = request.nextUrl.searchParams.get("orderDirection")
-  const searchParam = request.nextUrl.searchParams.get("search")
-  const collectionParam = request.nextUrl.searchParams.get("collection")
-  const seriesParam = request.nextUrl.searchParams.get("series")
-  const mediaFilterParam = request.nextUrl.searchParams.get("mediaFilter")
-  const statusParam = request.nextUrl.searchParams.get("status")
-  const filterParam = request.nextUrl.searchParams.get("filter")
-
-  const opts: GetBooksOptions = {}
-
-  if (filterParam) {
-    let parsed: ShelfFilter
-    try {
-      parsed = JSON.parse(filterParam) as ShelfFilter
-    } catch {
-      return NextResponse.json({ error: "Invalid filter" }, { status: 400 })
-    }
-    if (parsed.type === "condition") {
-      parsed = {
-        type: "and",
-        children: [parsed],
-      }
-    }
-    const validated = shelfFilterSchema.safeParse(parsed)
-    if (!validated.success) {
-      console.error(validated.error)
-      return NextResponse.json(
-        { error: validated.error.message },
-        { status: 400 },
-      )
-    }
-    opts.filter = validated.data
-  }
-
-  if (limitParam) {
-    opts.limit = parseInt(limitParam)
-  }
-
-  if (offsetParam) {
-    opts.offset = parseInt(offsetParam)
-  }
-
-  if (
-    orderByParam &&
-    (SORTABLE_FIELDS as readonly string[]).includes(orderByParam)
-  ) {
-    opts.orderBy = orderByParam as SortField
-  }
-
-  if (orderDirectionParam) {
-    opts.orderDirection = orderDirectionParam as "asc" | "desc"
-  }
-
-  if (searchParam) {
-    opts.search = searchParam
-  }
-
-  if (collectionParam) {
-    opts.collection = collectionParam as UUID
-  }
-
-  if (seriesParam) {
-    opts.series = seriesParam as UUID
-  }
-
-  if (mediaFilterParam) {
-    opts.mediaFilter = mediaFilterParam as "ebook" | "audiobook" | "synced"
-  }
-
-  if (statusParam) {
-    opts.status = statusParam as UUID
+  const parsed = parseGetBooksOptions(request.nextUrl.searchParams)
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
 
   const books = await getBooks(null, request.auth.user.id, {
-    ...opts,
+    ...parsed.opts,
     includeManifest: false,
   })
 

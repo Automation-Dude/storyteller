@@ -128,6 +128,56 @@
       "ebook": "Ebook",
       "audiobook": "Audioboek",
       "readaloud": "<em>Readaloud</em>"
+    },
+    "displayOptions": {
+      "layout": "Layout",
+      "view": "Weergave",
+      "auto": "Automatisch",
+      "searchHint": "Weergaveopties",
+      "hint": "Toon op item",
+      "tooltip": "Weergaveopties",
+      "grid": "Raster",
+      "list": "Lijst",
+      "cards": "Kaarten",
+      "coversOnly": "Alleen covers",
+      "cardSize": {
+        "title": "Kaartgrootte",
+        "extraSmall": "Extra klein",
+        "small": "Klein",
+        "medium": "Medium",
+        "large": "Large",
+        "extraLarge": "Extra groot"
+      },
+      "coverType": {
+        "title": "Coversoort",
+        "doubleCover": "Dubbele cover",
+        "ebookCover": "Ebookcover",
+        "audiobookCover": "Luisterboekcover"
+      },
+      "cardSpacing": {
+        "title": "Kaartruimte",
+        "compact": "Compact",
+        "cozy": "Gemiddeld",
+        "spacious": "Ruim"
+      },
+      "rows": "Rijen",
+      "table": "Tabel",
+      "thumbnails": "Thumbnails",
+      "appearance": "Uiterlijk",
+      "intensity": "Kleurintensiteit",
+      "card": "Kaart",
+      "row": "Rij",
+      "readaloudIcon": "Readaloudicoon",
+      "processingIcon": "Verwerkingsicoon"
+    },
+    "count": {
+      "summary": "{shown, number} van {total, number}",
+      "allLoaded": "{total, number} boeken",
+      "loaded": "{shown, number} geladen",
+      "loadRemaining": "Rest laden ({count, number})",
+      "loadingAll": "Alles laden…",
+      "alwaysLoadAll": "Altijd alle boeken laden",
+      "alwaysLoadAllHint": "Laadt alle resultaten in één keer. Trager bij grote bibliotheken."
     }
   },
   "BookList": {
@@ -1326,6 +1376,7 @@
         "alignmentGrade": "Synchronisatiecijfer",
         "alignmentMissingSentences": "Ontbrekende zinnen",
         "alignmentMutedChapters": "Gedempte hoofdstukken",
+        "alignmentMissingChapters": "Ontbrekende hoofdstukken",
         "alignedAt": "Laatst gesynchroniseerd",
         "alignedWith": "Transcriptie-engine",
         "alignedByStorytellerVersion": "Aligner-versie",
@@ -1338,11 +1389,14 @@
         "tags": "Labels",
         "collections": "Verzamelingen",
         "series": "Reeksen",
-        "creators": "Auteurs / Betrokkenen",
+        "narrators": "Vertellers",
+        "translators": "Vertalers",
+        "creators": "Overige Betrokkenen",
         "mediaType": "Formaat",
         "review": "Mijn recensie",
         "ratingDimension": "Beoordelingsdimensie",
-        "search": "Zoek (alle velden)"
+        "search": "Zoek (alle velden)",
+        "alignment": "Synchronisatie"
       },
       "short": {
         "title": "Titel",
@@ -1359,6 +1413,7 @@
         "alignmentGrade": "Cijfer",
         "alignmentMissingSentences": "Ontbrekend",
         "alignmentMutedChapters": "Gedempt",
+        "alignmentMissingChapters": "Ontbrk. hfdst.",
         "alignedAt": "Gesynchroniseerd",
         "lastRead": "Laatst gelezen",
         "readingPosition": "Voortgang",

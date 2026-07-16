@@ -54,6 +54,7 @@ const BUILTIN_META: Record<SidebarBuiltinKey, BuiltinMeta> = {
   books: {
     icon: icon.BookAlt,
     href: "/books",
+    countKey: "books",
     labelNs: "AppSidebar",
     labelKey: "books",
   },

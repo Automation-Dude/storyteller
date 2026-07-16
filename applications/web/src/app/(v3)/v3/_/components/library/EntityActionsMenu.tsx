@@ -4,8 +4,8 @@ import { useState } from "react"
 
 import { EntityEditDialog } from "@v3/_/components/library/EntityEditDialog"
 import {
+  type FacetValue,
   type LibraryEntityType,
-  type LibraryItem,
 } from "@v3/_/components/library/library-sections"
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -38,7 +38,7 @@ export function EntityActionsMenu({
   onDeleted,
 }: {
   entityType?: LibraryEntityType | undefined
-  item: LibraryItem | null
+  item: FacetValue | null
   toShelfFilter?: ((itemKey: string) => ShelfFilterNode) | undefined
   onDeleted?: (() => void) | undefined
 }) {

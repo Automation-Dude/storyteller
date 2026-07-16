@@ -43,8 +43,8 @@ import { type ImportRuleWithCollections } from "@/database/importRules"
 import { type PublicJob } from "@/database/jobs"
 import {
   type FacetSection,
+  type FacetValue,
   type LibraryCounts,
-  type LibraryFacet,
 } from "@/database/libraryCounts"
 import { type Position } from "@/database/positions"
 import {
@@ -960,7 +960,23 @@ export const api = createApi({
         "Sidebar",
       ],
     }),
-    getSectionFacets: build.query<LibraryFacet[], { section: FacetSection }>({
+    getBooksCount: build.query<number, ListBooksQueryArg>({
+      query: (queryArg) => {
+        const params = new URLSearchParams()
+        if (queryArg.orderBy) params.set("orderBy", queryArg.orderBy)
+        if (queryArg.orderDirection)
+          params.set("orderDirection", queryArg.orderDirection)
+        if (queryArg.search) params.set("search", queryArg.search)
+        if (queryArg.collection) params.set("collection", queryArg.collection)
+        if (queryArg.series) params.set("series", queryArg.series)
+        if (queryArg.filter)
+          params.set("filter", JSON.stringify(queryArg.filter))
+        return `/books/count?${params.toString()}`
+      },
+      transformResponse: (response: { count: number }) => response.count,
+      providesTags: ["Books"],
+    }),
+    getSectionFacets: build.query<FacetValue[], { section: FacetSection }>({
       query: ({ section }) => `/library/facets?section=${section}`,
       providesTags: [
         "Books",
@@ -2169,6 +2185,7 @@ export const {
   useListSeriesQuery,
   useGetLibraryCountsQuery,
   useGetSectionFacetsQuery,
+  useGetBooksCountQuery,
   // eslint-disable-next-line @typescript-eslint/unbound-method
   usePrefetch,
   useListStatusesQuery,

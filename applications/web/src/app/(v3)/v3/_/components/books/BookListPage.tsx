@@ -53,6 +53,7 @@ import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-
 import { useLayoutAnimations } from "@/app/(v3)/v3/_/hooks/use-layout-animations"
 import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
 import { usePanelWidthDriver } from "@/app/(v3)/v3/_/hooks/use-panel-width-driver"
+import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { type ShelfFilterNode } from "@/shelves"
 import {
@@ -65,17 +66,21 @@ import {
   deriveDisplayFields,
 } from "@/sort"
 import {
+  type ListBooksQueryArg,
   type ListShelfBooksQueryArg,
+  useGetBooksCountQuery,
   useListInfiniteBooksInfiniteQuery,
   useListInfiniteShelfBooksInfiniteQuery,
 } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
+  selectAlwaysLoadAllBooks,
   selectGridDisplayFields,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
+import { BookCountIndicator } from "./BookCountIndicator"
 import { BookDetailsSkeleton } from "./BookDetails/BookDetailsSkeleton"
 import { useCoverScope } from "./BookDetails/sections/CoverScope"
 import { GRID_CARD_WIDTHS, GRID_SPACING_PX } from "./Grid/BookGrid"
@@ -278,6 +283,74 @@ function BookListPageInner({
     () => data?.pages.flatMap((page) => page) ?? [],
     [data?.pages],
   )
+
+  // "X of Y" = books matching the active filters, out of the page's baseline.
+  // filtered uses the full effective query (seed + user filters + search);
+  // baseline uses only the page's default filter (the seed/chip + series/
+  // collection context), so on a facet page Y is that facet's total and on the
+  // all-books page Y is the whole library. shelf lists have no cheap count, so
+  // both come back undefined and the indicator hides the "of Y".
+  const baselineQueryArg = useMemo<ListBooksQueryArg>(() => {
+    if (!isBooksSource) return {}
+    const arg: ListBooksQueryArg = {}
+    if (source.seed) arg.filter = source.seed
+    if (source.seriesContext) arg.series = source.seriesContext
+    if (source.collectionContext) arg.collection = source.collectionContext
+    return arg
+  }, [isBooksSource, source])
+
+  const { data: filteredCount } = useGetBooksCountQuery(queryArg, {
+    skip: skip || !isBooksSource,
+  })
+  const { data: baselineCount } = useGetBooksCountQuery(baselineQueryArg, {
+    skip: skip || !isBooksSource,
+  })
+
+  // "load all": drain every remaining page. driven by the persisted preference
+  // or a one-shot "load remaining" request; clears itself once fully paged in.
+  const alwaysLoadAll = useAppSelector(selectAlwaysLoadAllBooks)
+  const [drainRequested, setDrainRequested] = useState(false)
+  const shouldDrain = alwaysLoadAll || drainRequested
+
+  useEffect(() => {
+    if (skip) return
+    if (shouldDrain && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage()
+    } else if (drainRequested && !hasNextPage) {
+      setDrainRequested(false)
+    }
+  }, [
+    skip,
+    shouldDrain,
+    drainRequested,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ])
+
+  const handleAlwaysLoadAllChange = useCallback(
+    (value: boolean) => {
+      dispatch(uiSettingsSlice.actions.setAlwaysLoadAllBooks(value))
+    },
+    [dispatch],
+  )
+
+  const handleLoadRemaining = useCallback(() => {
+    setDrainRequested(true)
+  }, [])
+
+  const countIndicator = !skip ? (
+    <BookCountIndicator
+      loaded={books.length}
+      filtered={isBooksSource ? filteredCount : undefined}
+      total={isBooksSource ? baselineCount : undefined}
+      hasMore={hasNextPage}
+      isFetching={isFetchingNextPage}
+      onLoadRemaining={handleLoadRemaining}
+      alwaysLoadAll={alwaysLoadAll}
+      onAlwaysLoadAllChange={handleAlwaysLoadAllChange}
+    />
+  ) : null
 
   const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
   const [, setReportMode] = useReportPanel()
@@ -659,7 +732,11 @@ function BookListPageInner({
           <PageMain>
             <SkipToBooksLink />
             <PageHeader>
-              <SiteHeader breadcrumbs={breadcrumbs} actions={headerActions} />
+              <SiteHeader
+                breadcrumbs={breadcrumbs}
+                actions={headerActions}
+                afterTitle={countIndicator}
+              />
             </PageHeader>
 
             {beforeFilters}
@@ -737,7 +814,11 @@ function BookListPageInner({
           <PageMain>
             <SkipToBooksLink />
             <PageHeader>
-              <SiteHeader breadcrumbs={breadcrumbs} actions={headerActions} />
+              <SiteHeader
+                breadcrumbs={breadcrumbs}
+                actions={headerActions}
+                afterTitle={countIndicator}
+              />
             </PageHeader>
 
             {/* <BookListLayout
@@ -772,7 +853,7 @@ function BookListPageInner({
 
             {afterFilters}
 
-            <PageContent className={contentClassName ?? "p-6"}>
+            <PageContent className={cn(contentClassName ?? "p-6", "relative")}>
               <BooksView
                 books={books}
                 isLoading={isLoading}

@@ -91,7 +91,13 @@ export function BookFilters({
   const searchRef = useRef<HTMLInputElement>(null)
 
   const advancedVisible = enableAdvanced && (advancedOverride ?? isAdvanced)
-  const canSaveAsShelf = enableAdvanced && !!effectiveFilter
+
+  const advancedChip = isAdvanced && !advancedVisible
+  const hasChips = !!seedLabel || activeFields.length > 0 || advancedChip
+  const canSaveAsShelf =
+    enableAdvanced &&
+    !!effectiveFilter &&
+    (activeFields.length > 0 || advancedChip)
 
   const toggleAdvanced = () => {
     setAdvancedOverride((prev) => !(prev ?? isAdvanced))
@@ -118,17 +124,10 @@ export function BookFilters({
     },
   ])
 
-  const shownFields = activeFields
-
-  // an advanced tree can't render as quick chips; when collapsed it gets a
-  // single summary chip so the active filter is never invisible.
-  const advancedChip = isAdvanced && !advancedVisible
   const advancedCount = useMemo(
     () => (isAdvanced ? countConditions(userFilter) : 0),
     [isAdvanced, userFilter],
   )
-
-  const hasChips = !!seedLabel || shownFields.length > 0 || advancedChip
 
   return (
     <div
@@ -175,23 +174,6 @@ export function BookFilters({
           open={displayMenuOpen}
           onOpenChange={setDisplayMenuOpen}
         />
-
-        {canSaveAsShelf && (
-          <TooltipButton
-            variant="outline"
-            size="sm"
-            className="ml-auto h-7 shrink-0 gap-1.5 rounded-full text-xs font-medium"
-            tooltip={t("filters.saveAsShelf")}
-            aria-label={t.plain("filters.saveAsShelf")}
-            shortcut={[saveAsShelfHotKey]}
-            onClick={() => {
-              setSaveDialogOpen(true)
-            }}
-          >
-            <icon.BookmarkPlus className="size-3.5" />
-            {t("filters.saveAsShelf")}
-          </TooltipButton>
-        )}
       </div>
 
       {hasChips && (
@@ -215,7 +197,7 @@ export function BookFilters({
           )}
 
           {!isAdvanced &&
-            shownFields.map((field) => (
+            activeFields.map((field) => (
               <FilterChip
                 key={field}
                 field={field}
@@ -228,6 +210,23 @@ export function BookFilters({
                 }}
               />
             ))}
+
+          {canSaveAsShelf && (
+            <TooltipButton
+              variant="outline"
+              size="sm"
+              className="ml-auto h-7 shrink-0 gap-1.5 rounded-full text-xs font-medium"
+              tooltip={t("filters.saveAsShelf")}
+              aria-label={t.plain("filters.saveAsShelf")}
+              shortcut={[saveAsShelfHotKey]}
+              onClick={() => {
+                setSaveDialogOpen(true)
+              }}
+            >
+              <icon.BookmarkPlus className="size-3.5" />
+              {t("filters.saveAsShelf")}
+            </TooltipButton>
+          )}
         </div>
       )}
 

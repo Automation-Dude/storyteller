@@ -3,8 +3,8 @@
 import { type MouseEvent, useCallback, useMemo, useState } from "react"
 
 import {
+  type FacetValue,
   type LibraryEntityType,
-  type LibraryItem,
 } from "@v3/_/components/library/library-sections"
 import { ShelfEditor } from "@v3/_/components/shelves/ShelfEditor"
 import { ActionTray } from "@v3/_/components/ui/action-tray"
@@ -42,9 +42,9 @@ import { type UUID } from "@/uuid"
 type SidebarEntityActionsProps = {
   entityType: LibraryEntityType
   selectedItems: Set<string>
-  allItems: LibraryItem[]
+  allItems: FacetValue[]
   onStopSelecting: () => void
-  onEdit?: (item: LibraryItem) => void
+  onEdit?: (item: FacetValue) => void
   toShelfFilter?: (itemKey: string) => ShelfFilterNode
 }
 
@@ -117,7 +117,7 @@ export function SidebarEntityActions({
   const singleSelected = count === 1 ? selectedItemObjects[0] : undefined
 
   // merge state
-  const [mergeTarget, setMergeTarget] = useState<LibraryItem | null>(null)
+  const [mergeTarget, setMergeTarget] = useState<FacetValue | null>(null)
   const [isMerging, setIsMerging] = useState(false)
 
   const combinedShelfFilter = useMemo<ShelfFilterNode | null>(() => {
@@ -187,7 +187,7 @@ export function SidebarEntityActions({
   })
 
   const handleMergeInto = useCallback(
-    (target: LibraryItem, event: MouseEvent) => {
+    (target: FacetValue, event: MouseEvent) => {
       setMergeTarget(target)
       mergeAction.confirm(event)
     },

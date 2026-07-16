@@ -7,9 +7,8 @@ export type CountResult = {
 
 export type LibraryCounts = Record<string, CountResult>
 
-// the scalar facet counts on the LibraryCounts payload that badge the builtin
-// sidebar nav entries (collections + shelves are keyed separately below).
 const NAV_FACET_KEYS = [
+  "books",
   "series",
   "authors",
   "narrators",
@@ -20,12 +19,6 @@ const NAV_FACET_KEYS = [
   "ratings",
 ] as const
 
-/**
- * library facet + entity counts, computed on the server in a single request.
- * the facet counts (series, authors, tags, ...) badge the builtin sidebar
- * entries; the per-entity counts are exposed under `collection:<uuid>` and
- * `shelf:<uuid>` keys so collection and shelf sidebar rows can badge too.
- */
 export function useLibraryCounts(): LibraryCounts {
   const { data, isLoading } = useGetLibraryCountsQuery()
 

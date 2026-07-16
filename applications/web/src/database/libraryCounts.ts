@@ -7,7 +7,10 @@ import { type UUID } from "@/uuid"
 import { db } from "./connection"
 import { buildFilterExpression } from "./shelfFilter"
 
-export type LibraryFacet = {
+// a single row within a facet (one status, one rating bucket, one author). a
+// facet (aka section, see FacetSection) is the dimension; a FacetValue is one
+// value along it.
+export type FacetValue = {
   key: string
   name: string
   bookCount: number
@@ -42,6 +45,8 @@ export function isFacetSection(value: string): value is FacetSection {
 export const NONE_FACET_KEY = "__none__"
 
 export type LibraryCounts = {
+  // total visible books in the whole library
+  books: number
   series: number
   authors: number
   narrators: number
@@ -99,8 +104,15 @@ async function countSmartShelf(userId: UUID, filter: ShelfFilter) {
   return row?.count ?? 0
 }
 
+// shelf.filter is stored as json; older rows may already be parsed objects.
+function parseShelfFilter(raw: unknown): ShelfFilter {
+  return (typeof raw === "string" ? JSON.parse(raw) : raw) as ShelfFilter
+}
+
 export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
-  const _allP = visibleBooks(userId)
+  const booksP = visibleBooks(userId)
+    .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
+    .executeTakeFirst()
 
   const seriesP = visibleBooks(userId)
     .innerJoin("bookToSeries", "bookToSeries.bookUuid", "book.uuid")
@@ -171,7 +183,7 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     .execute()
 
   const [
-    // _all,
+    books,
     series,
     authors,
     narrators,
@@ -184,7 +196,7 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     manualShelfRows,
     smartShelves,
   ] = await Promise.all([
-    // allP,
+    booksP,
     seriesP,
     countCreatorsByRole(userId, "aut"),
     countCreatorsByRole(userId, "nrt"),
@@ -206,16 +218,14 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
 
   const smartCounts = await Promise.all(
     smartShelves.map(async (shelf) => {
-      const raw = shelf.filter as unknown
-      const filter = (
-        typeof raw === "string" ? JSON.parse(raw) : raw
-      ) as ShelfFilter
+      const filter = parseShelfFilter(shelf.filter)
       return [shelf.uuid, await countSmartShelf(userId, filter)] as const
     }),
   )
   for (const [uuid, count] of smartCounts) shelves[uuid] = count
 
   return {
+    books: books?.count ?? 0,
     series: series?.count ?? 0,
     authors,
     narrators,
@@ -237,7 +247,7 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
 // back to name when it's empty. raw sql bypasses the camelCase plugin.
 const creatorName = sql<string>`coalesce(nullif(creator.file_as, ''), creator.name)`
 
-async function seriesFacets(userId: UUID): Promise<LibraryFacet[]> {
+async function seriesFacets(userId: UUID): Promise<FacetValue[]> {
   return visibleBooks(userId)
     .innerJoin("bookToSeries", "bookToSeries.bookUuid", "book.uuid")
     .innerJoin("series", "series.uuid", "bookToSeries.seriesUuid")
@@ -250,10 +260,7 @@ async function seriesFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
-async function creatorFacets(
-  userId: UUID,
-  role: Role,
-): Promise<LibraryFacet[]> {
+async function creatorFacets(userId: UUID, role: Role): Promise<FacetValue[]> {
   return visibleBooks(userId)
     .innerJoin("bookToCreator", "bookToCreator.bookUuid", "book.uuid")
     .innerJoin("creator", "creator.uuid", "bookToCreator.creatorUuid")
@@ -267,7 +274,7 @@ async function creatorFacets(
     .execute()
 }
 
-async function tagFacets(userId: UUID): Promise<LibraryFacet[]> {
+async function tagFacets(userId: UUID): Promise<FacetValue[]> {
   return visibleBooks(userId)
     .innerJoin("bookToTag", "bookToTag.bookUuid", "book.uuid")
     .innerJoin("tag", "tag.uuid", "bookToTag.tagUuid")
@@ -282,7 +289,7 @@ async function tagFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
-async function collectionFacets(userId: UUID): Promise<LibraryFacet[]> {
+async function collectionFacets(userId: UUID): Promise<FacetValue[]> {
   // collection visibility is the gate here, so the collection table is the base
   // (its columns are non-null) rather than visibleBooks' left-joined collection.
   return db
@@ -323,22 +330,27 @@ async function collectionFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
-async function statusFacets(userId: UUID): Promise<LibraryFacet[]> {
-  return visibleBooks(userId)
-    .innerJoin("bookToStatus", "bookToStatus.bookUuid", "book.uuid")
-    .innerJoin("status", "status.uuid", "bookToStatus.statusUuid")
-    .where("bookToStatus.userId", "=", userId)
+// statuses are a fixed, user-owned set: every status shows even with zero books,
+// so the base is the status table left-joined to this user's book-status links.
+async function statusFacets(userId: UUID): Promise<FacetValue[]> {
+  return db
+    .selectFrom("status")
+    .leftJoin("bookToStatus", (join) =>
+      join
+        .onRef("bookToStatus.statusUuid", "=", "status.uuid")
+        .on("bookToStatus.userId", "=", userId),
+    )
     .select((eb) => [
       "status.uuid as key",
       sql<string>`coalesce(status.label, status.name)`.as("name"),
       "status.name as kind",
-      eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
+      eb.fn.count<number>("bookToStatus.bookUuid").distinct().as("bookCount"),
     ])
     .groupBy(["status.uuid", "status.label", "status.name"])
     .execute()
 }
 
-async function publicationYearFacets(userId: UUID): Promise<LibraryFacet[]> {
+async function publicationYearFacets(userId: UUID): Promise<FacetValue[]> {
   const year = sql<string>`substr(book.publication_date, 1, 4)`
   return visibleBooks(userId)
     .where("book.publicationDate", "is not", null)
@@ -351,8 +363,37 @@ async function publicationYearFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
-async function ratingFacets(userId: UUID): Promise<LibraryFacet[]> {
-  return visibleBooks(userId)
+// canonical rating buckets, always shown in full (empty buckets get 0). single
+// source for the key, its ★ label, and its upper bound, so the SQL bucketing and
+// the zero-fill can't drift. keys stay stable (ShelfFilter ranges depend on them).
+const RATING_BUCKETS = [
+  { key: "0-0.49", name: "☆☆☆☆☆", max: 0.49 },
+  { key: "0.5-1.49", name: "★☆☆☆☆", max: 1.49 },
+  { key: "1.5-2.49", name: "★★☆☆☆", max: 2.49 },
+  { key: "2.5-3.49", name: "★★★☆☆", max: 3.49 },
+  { key: "3.5-4.49", name: "★★★★☆", max: 4.49 },
+  { key: "4.5-5", name: "★★★★★", max: 5 },
+] as const
+
+// bucket key from the rating value, derived from RATING_BUCKETS so it stays in
+// lockstep with the fill. the top bucket is the else branch (rating <= 5).
+const TOP_RATING_BUCKET = RATING_BUCKETS[RATING_BUCKETS.length - 1] as {
+  key: string
+}
+const ratingBucketKeyExpr = sql<string>`
+  case
+    ${sql.join(
+      RATING_BUCKETS.slice(0, -1).map(
+        (b) => sql`when user_book_rating.rating < ${b.max} then ${b.key}`,
+      ),
+      sql` `,
+    )}
+    else ${TOP_RATING_BUCKET.key}
+  end
+`
+
+async function ratingFacets(userId: UUID): Promise<FacetValue[]> {
+  const rows = await visibleBooks(userId)
     .innerJoin("userBookRating", (join) =>
       join
         .onRef("userBookRating.bookUuid", "=", "book.uuid")
@@ -360,45 +401,18 @@ async function ratingFacets(userId: UUID): Promise<LibraryFacet[]> {
     )
     .where("userBookRating.rating", "is not", null)
     .select((eb) => [
-      eb
-        .case()
-        .when("userBookRating.rating", "<", 0.49)
-        .then("0-0.49")
-        .when("userBookRating.rating", "<", 1.49)
-        .then("0.5-1.49")
-        .when("userBookRating.rating", "<", 2.49)
-        .then("1.5-2.49")
-        .when("userBookRating.rating", "<", 2.99)
-        .then("2.5-3.49")
-        .when("userBookRating.rating", "<", 3.49)
-        .then("3.5-4.49")
-        .when("userBookRating.rating", "<", 4.99)
-        .then("4.5-5")
-        .else("no-rating")
-        .end()
-        .as("key"),
-
-      eb
-        .case()
-        .when("userBookRating.rating", "<", 0.49)
-        .then("☆☆☆☆☆")
-        .when("userBookRating.rating", "<", 1.49)
-        .then("★☆☆☆☆")
-        .when("userBookRating.rating", "<", 2.49)
-        .then("★★☆☆☆")
-        .when("userBookRating.rating", "<", 3.49)
-        .then("★★★☆☆")
-        .when("userBookRating.rating", "<", 4.49)
-        .then("★★★★☆")
-        .when("userBookRating.rating", "<", 5)
-        .then("★★★★★")
-        .else("no-rating")
-        .end()
-        .as("name"),
+      ratingBucketKeyExpr.as("key"),
       eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
     ])
-    .groupBy("key")
+    .groupBy(ratingBucketKeyExpr)
     .execute()
+
+  const counts = new Map(rows.map((r) => [r.key, r.bookCount]))
+  return RATING_BUCKETS.map((b) => ({
+    key: b.key,
+    name: b.name,
+    bookCount: counts.get(b.key) ?? 0,
+  }))
 }
 
 // the exclusive format partition matching getFormatKey in library-sections.ts.
@@ -421,15 +435,40 @@ const formatKeyExpr = sql<string>`
   end
 `
 
-async function formatFacets(userId: UUID): Promise<LibraryFacet[]> {
-  return visibleBooks(userId)
+// canonical format partition (matches FormatKey in library-sections.ts and the
+// non-else branches of formatKeyExpr, minus the edge 'missing-media' bucket which
+// has no filter mapping yet). the client relabels these keys via itemLabels.
+const FORMAT_VALUE_KEYS = [
+  "readaloud",
+  "audiobook-ebook",
+  "audiobook-only",
+  "ebook-only",
+  "no-media",
+] as const
+
+async function formatFacets(userId: UUID): Promise<FacetValue[]> {
+  const rows = await visibleBooks(userId)
     .select((eb) => [
       formatKeyExpr.as("key"),
-      formatKeyExpr.as("name"),
       eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
     ])
     .groupBy(formatKeyExpr)
     .execute()
+
+  const counts = new Map(rows.map((r) => [r.key, r.bookCount]))
+
+  // the canonical set always shows (0-filled); surface any extra bucket the
+  // partition emits (e.g. 'missing-media') so no book is silently uncounted.
+  const canonical: FacetValue[] = FORMAT_VALUE_KEYS.map((key) => ({
+    key,
+    name: key,
+    bookCount: counts.get(key) ?? 0,
+  }))
+  const extra: FacetValue[] = rows
+    .filter((r) => !(FORMAT_VALUE_KEYS as readonly string[]).includes(r.key))
+    .map((r) => ({ key: r.key, name: r.key, bookCount: r.bookCount }))
+
+  return [...canonical, ...extra]
 }
 
 const latestGradeExpr = sql<string>`(
@@ -439,7 +478,7 @@ const latestGradeExpr = sql<string>`(
   limit 1
 )`
 
-async function gradeFacets(userId: UUID): Promise<LibraryFacet[]> {
+async function gradeFacets(userId: UUID): Promise<FacetValue[]> {
   return visibleBooks(userId)
     .where(latestGradeExpr, "is not", null)
     .select((eb) => [
@@ -451,18 +490,32 @@ async function gradeFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
-async function shelfFacets(userId: UUID): Promise<LibraryFacet[]> {
-  return db
+// manual shelves count their shelfBook rows; smart shelves (filter set) are
+// counted by running their filter, same as getLibraryCounts. a shelf is one or
+// the other, so the filter presence decides which count wins.
+async function shelfFacets(userId: UUID): Promise<FacetValue[]> {
+  const shelves = await db
     .selectFrom("shelf")
     .leftJoin("shelfBook", "shelfBook.shelfUuid", "shelf.uuid")
     .select((eb) => [
       "shelf.uuid as key",
       "shelf.name as name",
-      eb.fn.count<number>("shelfBook.bookUuid").distinct().as("bookCount"),
+      "shelf.filter as filter",
+      eb.fn.count<number>("shelfBook.bookUuid").distinct().as("manualCount"),
     ])
-    .groupBy(["shelf.uuid", "shelf.name"])
+    .groupBy(["shelf.uuid", "shelf.name", "shelf.filter"])
     .where("shelf.userId", "=", userId)
     .execute()
+
+  return Promise.all(
+    shelves.map(async (shelf) => {
+      const bookCount =
+        shelf.filter != null
+          ? await countSmartShelf(userId, parseShelfFilter(shelf.filter))
+          : shelf.manualCount
+      return { key: shelf.key, name: shelf.name, bookCount }
+    }),
+  )
 }
 
 const NONE_CREATOR_ROLE: Partial<Record<FacetSection, Role>> = {
@@ -561,7 +614,7 @@ async function countSectionNone(
 export async function getSectionFacets(
   userId: UUID,
   section: FacetSection,
-): Promise<LibraryFacet[]> {
+): Promise<FacetValue[]> {
   const facets = await getSectionFacetList(userId, section)
 
   // formats partition every book; grades only exist on graded books. neither
@@ -579,7 +632,7 @@ export async function getSectionFacets(
 function getSectionFacetList(
   userId: UUID,
   section: FacetSection,
-): Promise<LibraryFacet[]> {
+): Promise<FacetValue[]> {
   switch (section) {
     case "series":
       return seriesFacets(userId)

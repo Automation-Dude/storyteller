@@ -14,10 +14,13 @@ type Breadcrumb = { label: string; url?: string } | { render: ReactNode }
 export function SiteHeader({
   breadcrumbs,
   actions,
+  afterTitle,
   className,
 }: {
   breadcrumbs: Breadcrumb[]
   actions?: ReactNode
+  // rendered inline right after the current title (e.g. a "X of Y" count)
+  afterTitle?: ReactNode
   className?: string
 }) {
   const parents = breadcrumbs.slice(0, -1)
@@ -64,15 +67,20 @@ export function SiteHeader({
                   </span>
                 </div>
               )}
-              {"render" in current ? (
-                current.render
-              ) : (
-                <h1 className="min-w-0">
-                  <span className="font-heading font-tracking-tight block truncate text-lg leading-tight font-normal">
-                    {current.label}
-                  </span>
-                </h1>
-              )}
+              <div className="flex min-w-0 items-baseline gap-2">
+                {"render" in current ? (
+                  current.render
+                ) : (
+                  <h1 className="min-w-0">
+                    <span className="font-heading font-tracking-tight block truncate text-lg leading-tight font-normal">
+                      {current.label}
+                    </span>
+                  </h1>
+                )}
+                {afterTitle && (
+                  <div className="flex shrink-0 items-center">{afterTitle}</div>
+                )}
+              </div>
             </div>
           )}
 

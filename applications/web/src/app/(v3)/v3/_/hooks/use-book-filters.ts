@@ -28,17 +28,6 @@ import { type UUID } from "@/uuid"
 
 import { useDebounce } from "./use-debounce"
 
-// ---------------------------------------------------------------------------
-// the single owner of a book list's filter + sort + display, backed by the url.
-//
-// the filter is ONE ShelfFilter tree (the same shape shelves + the advanced
-// editor use). the quick chips edit the top-level `and` conditions; the
-// advanced editor edits the whole tree. an optional locked `seed` (series /
-// collection / shelf page) is ANDed in but never editable. everything is
-// serialized to the url with shallow + replace so changing a filter never runs
-// the server loader or pushes a history entry.
-// ---------------------------------------------------------------------------
-
 type UseBookFiltersOptions = {
   // a locked condition contributed by the page context (e.g. "series is Dune").
   // rendered as a non-removable chip and always ANDed into the query.

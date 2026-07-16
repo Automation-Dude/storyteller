@@ -1,6 +1,7 @@
 import {
   type ExpressionBuilder,
   type Insertable,
+  type SelectQueryBuilder,
   type Selectable,
   type Transaction,
   type Updateable,
@@ -900,117 +901,155 @@ export type GetBooksOptions = {
   status?: UUID
   includeManifest?: boolean
 }
-export async function getBooks(
-  bookUuids: UUID[] | null = null,
-  userId?: UUID,
-  opts?: GetBooksOptions,
-) {
-  let query = booksQuery(userId, opts)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    .$if(!!bookUuids, (qb) => qb.where("book.uuid", "in", bookUuids!))
-    .$if(!!opts?.search, (qb) =>
-      qb.where((eb) =>
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        buildBookSearchExpression(eb, opts!.search!),
-      ),
-    )
-    .$if(!!opts?.collection, (qb) =>
-      qb.where((eb) =>
-        eb.exists(
-          eb
-            .selectFrom("bookToCollection")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            .where("bookToCollection.collectionUuid", "=", opts!.collection!),
+// the membership/search/media/status/filter WHERE chain shared by getBooks and
+// countBooks, so a list and its total always constrain the catalog identically.
+// applied to any book-rooted query (limit/offset/sort stay with the caller).
+function applyBookFilters<O>(
+  query: SelectQueryBuilder<DB, "book", O>,
+  bookUuids: UUID[] | null,
+  userId: UUID | undefined,
+  opts: GetBooksOptions | undefined,
+): SelectQueryBuilder<DB, "book", O> {
+  return (
+    query
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      .$if(!!bookUuids, (qb) => qb.where("book.uuid", "in", bookUuids!))
+      .$if(!!opts?.search, (qb) =>
+        qb.where((eb) =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          buildBookSearchExpression(eb, opts!.search!),
         ),
-      ),
-    )
-    .$if(!!opts?.series, (qb) =>
-      qb.where((eb) =>
-        eb.exists(
-          eb
-            .selectFrom("bookToSeries")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            .where("bookToSeries.seriesUuid", "=", opts!.series!),
-        ),
-      ),
-    )
-    .$if(opts?.mediaFilter === "ebook", (qb) =>
-      qb
-        .where((eb) =>
+      )
+      .$if(!!opts?.collection, (qb) =>
+        qb.where((eb) =>
           eb.exists(
             eb
-              .selectFrom("ebook")
+              .selectFrom("bookToCollection")
               .select(sql.lit(1).as("one"))
-              .whereRef("ebook.bookUuid", "=", "book.uuid"),
-          ),
-        )
-        .where((eb) =>
-          eb.not(
-            eb.exists(
-              eb
-                .selectFrom("audiobook")
-                .select(sql.lit(1).as("one"))
-                .whereRef("audiobook.bookUuid", "=", "book.uuid"),
-            ),
+              .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              .where("bookToCollection.collectionUuid", "=", opts!.collection!),
           ),
         ),
-    )
-    .$if(opts?.mediaFilter === "audiobook", (qb) =>
-      qb
-        .where((eb) =>
+      )
+      .$if(!!opts?.series, (qb) =>
+        qb.where((eb) =>
           eb.exists(
             eb
-              .selectFrom("audiobook")
+              .selectFrom("bookToSeries")
               .select(sql.lit(1).as("one"))
-              .whereRef("audiobook.bookUuid", "=", "book.uuid"),
+              .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              .where("bookToSeries.seriesUuid", "=", opts!.series!),
           ),
-        )
-        .where((eb) =>
-          eb.not(
+        ),
+      )
+      .$if(opts?.mediaFilter === "ebook", (qb) =>
+        qb
+          .where((eb) =>
             eb.exists(
               eb
                 .selectFrom("ebook")
                 .select(sql.lit(1).as("one"))
                 .whereRef("ebook.bookUuid", "=", "book.uuid"),
             ),
+          )
+          .where((eb) =>
+            eb.not(
+              eb.exists(
+                eb
+                  .selectFrom("audiobook")
+                  .select(sql.lit(1).as("one"))
+                  .whereRef("audiobook.bookUuid", "=", "book.uuid"),
+              ),
+            ),
+          ),
+      )
+      .$if(opts?.mediaFilter === "audiobook", (qb) =>
+        qb
+          .where((eb) =>
+            eb.exists(
+              eb
+                .selectFrom("audiobook")
+                .select(sql.lit(1).as("one"))
+                .whereRef("audiobook.bookUuid", "=", "book.uuid"),
+            ),
+          )
+          .where((eb) =>
+            eb.not(
+              eb.exists(
+                eb
+                  .selectFrom("ebook")
+                  .select(sql.lit(1).as("one"))
+                  .whereRef("ebook.bookUuid", "=", "book.uuid"),
+              ),
+            ),
+          ),
+      )
+      .$if(opts?.mediaFilter === "synced", (qb) =>
+        qb.where((eb) =>
+          eb.exists(
+            eb
+              .selectFrom("readaloud")
+              .select(sql.lit(1).as("one"))
+              .whereRef("readaloud.bookUuid", "=", "book.uuid")
+              .where("readaloud.status", "=", "ALIGNED"),
           ),
         ),
-    )
-    .$if(opts?.mediaFilter === "synced", (qb) =>
-      qb.where((eb) =>
-        eb.exists(
-          eb
-            .selectFrom("readaloud")
-            .select(sql.lit(1).as("one"))
-            .whereRef("readaloud.bookUuid", "=", "book.uuid")
-            .where("readaloud.status", "=", "ALIGNED"),
+      )
+      .$if(!!opts?.status && !!userId, (qb) =>
+        qb.where((eb) =>
+          eb.exists(
+            eb
+              .selectFrom("bookToStatus")
+              .select(sql.lit(1).as("one"))
+              .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              .where("bookToStatus.statusUuid", "=", opts!.status!)
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              .where("bookToStatus.userId", "=", userId!),
+          ),
         ),
-      ),
-    )
-    .$if(!!opts?.status && !!userId, (qb) =>
-      qb.where((eb) =>
-        eb.exists(
-          eb
-            .selectFrom("bookToStatus")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            .where("bookToStatus.statusUuid", "=", opts!.status!)
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            .where("bookToStatus.userId", "=", userId!),
+      )
+      .$if(!!opts?.filter, (qb) =>
+        qb.where((eb) =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          buildFilterExpression(eb, opts!.filter!, userId),
         ),
-      ),
-    )
-    .$if(!!opts?.filter, (qb) =>
-      qb.where((eb) =>
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        buildFilterExpression(eb, opts!.filter!, userId),
-      ),
-    )
+      )
+  )
+}
+
+// count of books matching the same constraints getBooks would list (no
+// limit/offset/sort). used for the "showing X of Y" indicator.
+export async function countBooks(
+  userId?: UUID,
+  opts?: GetBooksOptions,
+  bookUuids: UUID[] | null = null,
+): Promise<number> {
+  const row = await applyBookFilters(
+    db.selectFrom("book"),
+    bookUuids,
+    userId,
+    opts,
+  )
+    .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
+    .executeTakeFirst()
+
+  return row?.count ?? 0
+}
+
+export async function getBooks(
+  bookUuids: UUID[] | null = null,
+  userId?: UUID,
+  opts?: GetBooksOptions,
+) {
+  let query = applyBookFilters(
+    booksQuery(userId, opts),
+    bookUuids,
+    userId,
+    opts,
+  )
     .$if(!!opts?.limit, (qb) => qb.limit(opts?.limit ?? 10))
     .$if(!!opts?.offset, (qb) => qb.offset(opts?.offset ?? 0))
 

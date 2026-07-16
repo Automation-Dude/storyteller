@@ -129,16 +129,60 @@
       "tooltip": "Toggle sort direction"
     },
     "displayOptions": {
+      "layout": "Layout",
+      "view": "View",
       "auto": "Auto",
       "searchHint": "Search display options...",
       "hint": "Show on item",
-      "tooltip": "Display options"
+      "tooltip": "Display options",
+      "grid": "Grid",
+      "list": "List",
+      "cards": "Cards",
+      "coversOnly": "Covers only",
+      "cardSize": {
+        "title": "Card size",
+        "extraSmall": "Extra small",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "extraLarge": "Extra large"
+      },
+      "coverType": {
+        "title": "Cover type",
+        "doubleCover": "Double cover",
+        "ebookCover": "Ebook cover",
+        "audiobookCover": "Audiobook cover"
+      },
+      "cardSpacing": {
+        "title": "Card spacing",
+        "compact": "Compact",
+        "cozy": "Cozy",
+        "spacious": "Spacious"
+      },
+      "rows": "Rows",
+      "table": "Table",
+      "thumbnails": "Thumbnails",
+      "appearance": "Appearance",
+      "intensity": "Intensity",
+      "card": "Card",
+      "row": "Row",
+      "readaloudIcon": "Readaloud icon",
+      "processingIcon": "Processing icon"
     },
     "mediaTypes": {
       "all": "All",
       "ebook": "Ebook",
       "audiobook": "Audiobook",
       "readaloud": "Readaloud"
+    },
+    "count": {
+      "summary": "{shown, number} of {total, number}",
+      "allLoaded": "{total, number} books",
+      "loaded": "{shown, number} loaded",
+      "loadRemaining": "Load remaining ({count, number})",
+      "loadingAll": "Loading all…",
+      "alwaysLoadAll": "Always load all books",
+      "alwaysLoadAllHint": "Loads every match at once. Slower on large libraries."
     }
   },
   "BookList": {

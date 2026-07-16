@@ -13,11 +13,11 @@ export const documentedServerEnvVars = {
     .describe(
       "[Required for OAuth](https://storyteller-platform.gitlab.io/storyteller/docs/settings#setting-the-auth_url-environment-variable)",
     ),
-  ENABLE_WEB_READER: z.coerce
-    .boolean()
-    .optional()
+  ENABLE_WEB_READER: z
+    .stringbool()
+    .default(true)
     .describe(
-      "[Enable the experimental web reader by setting to `true`.](https://storyteller-platform.gitlab.io/storyteller/docs/reading/web-reader) | `false`",
+      "[Enable the experimental web reader by setting to `true`.](https://storyteller-platform.gitlab.io/storyteller/docs/reading/web-reader) | `true`",
     ),
   READIUM_PORT: z.coerce
     .number()
@@ -175,9 +175,9 @@ export const internalServerEnvVars = {
     .stringbool()
     .optional()
     .describe("Whether to enable React Scan for development."),
-  ENABLE_V3_FRONTEND: z.coerce
-    .boolean()
-    .optional()
+  ENABLE_V3_FRONTEND: z
+    .stringbool()
+    .default(true)
     .describe(
       "When true, the v3 frontend becomes the default interface. Users can switch back to v2 via the UI toggle.",
     ),
