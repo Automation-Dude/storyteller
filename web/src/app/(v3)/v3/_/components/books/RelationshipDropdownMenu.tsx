@@ -44,7 +44,7 @@ import {
   RelationSelectList,
 } from "./relation-picker/RelationSelectList"
 
-export type FilterControlProps = {
+export type FilterChipProps = {
   field: ShelfFilterField
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
@@ -218,13 +218,13 @@ function fmtBound(
   return `${u.to(Number(v))}${u.suffix}`
 }
 
-export function FilterControl({
+export function FilterChip({
   field,
   conditions,
   onChange,
   locked = false,
   onRemove,
-}: FilterControlProps) {
+}: FilterChipProps) {
   const def = getFieldDef(field)
   const tLabel = useTranslation("Common.fields.label")
   const [open, setOpen] = useState(false)

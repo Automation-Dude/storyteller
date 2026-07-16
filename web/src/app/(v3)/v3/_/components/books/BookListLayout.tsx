@@ -1,5 +1,7 @@
 "use client"
 
+// TODO: is not used atm, maybe reomve?
+
 import { useHotkey } from "@tanstack/react-hotkeys"
 import dynamic from "next/dynamic"
 import {
@@ -96,8 +98,7 @@ export function BookListLayout({
     document.getElementById(BOOK_COLLECTION_ID)?.focus()
   }, [])
 
-  // "go to books": jump focus straight into the collection from anywhere,
-  // alongside the skip link, so keyboard users never tab in through the chrome.
+  // "go to books": jump focus straight into the collection from anywhere
   useHotkey("G", focusCollection, { ignoreInputs: true })
 
   const panelWidth = useAppSelector(
@@ -124,9 +125,7 @@ export function BookListLayout({
 
   const GRID_PADDING = 48 // PageContent p-6 (24px each side)
 
-  // snap a resizable chrome (sidebar or panel) so the grid in the middle holds
-  // a whole number of columns at the current card width. returns a width within
-  // [minW, maxW] that leaves the grid a whole number of columns wide.
+  // TODO: remove?
   const snapChromeWidth = useCallback(
     (rawWidth: number, otherChrome: number, minW: number, maxW: number) => {
       const layoutWidth =
@@ -170,9 +169,6 @@ export function BookListLayout({
     [snapChromeWidth, sidebar, sidebarWidth],
   )
 
-  // the page sidebar is freely resizable between its min/max -- only the detail
-  // panel snaps so the grid keeps whole columns (in the non-animated fallback).
-
   const driver = usePanelWidthDriver({
     open: panelOpen && !isMobile,
     storedWidth: panelWidth,
@@ -201,6 +197,7 @@ export function BookListLayout({
   }, [sidebarState])
 
   // keep the closing panel's content mounted while it slides shut
+  // very annoying
   const lastSelectedRef = useRef<{
     uuid: string
     book: BookWithRelations | undefined
@@ -274,9 +271,6 @@ export function BookListLayout({
     }
   }, [panelOpen, cardWidth, layoutWidth, snapChromeWidth, animate])
 
-  // let the keyboard user step back out of the panel to the grid. Escape always
-  // returns; plain Left is a bonus that must not fire when the focused control
-  // wants the key itself (text fields, sliders, etc).
   const handlePanelKeyDown = useCallback((e: React.KeyboardEvent) => {
     const returnFocus = () => {
       document.getElementById(BOOK_COLLECTION_ID)?.focus()
@@ -398,7 +392,7 @@ export function BookListLayout({
 }
 
 // a11y skip link
-function SkipToBooksLink() {
+export function SkipToBooksLink() {
   return (
     <a
       href={`#${BOOK_COLLECTION_ID}`}

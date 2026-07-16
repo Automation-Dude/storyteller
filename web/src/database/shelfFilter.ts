@@ -122,11 +122,6 @@ export function removeDeletedEntityReferences(
   return walk(filter)
 }
 
-/**
- * when an entity (tag, creator, series, collection, status) is deleted,
- * remove references to it from every shelf filter that mentions it.
- * shelves whose filter becomes empty are left with a null filter.
- */
 export async function cleanShelfFiltersForDeletedEntity(
   entityType: "tag" | "collection" | "series" | "status" | "creator",
   entityUuid: UUID,
@@ -184,10 +179,6 @@ export async function cleanShelfFiltersForDeletedEntity(
   }
 }
 
-// ---------------------------------------------------------------------------
-// kysely expression builders
-// ---------------------------------------------------------------------------
-
 type EB = ExpressionBuilder<DB, "book">
 type FilterExpression = ExpressionWrapper<DB, "book", SqlBool>
 
@@ -223,9 +214,6 @@ export function buildFilterExpression(
   }
 }
 
-// fields whose comparison/emptiness lives on the book row or its direct
-// relations. review, ratingDimension and search are handled up front because
-// they query userBookRating (and ratingDimension carries an extra `dimension`).
 type ScalarField = Exclude<
   ShelfFilterField,
   "review" | "ratingDimension" | "search"
@@ -590,9 +578,9 @@ function buildIsEmptyExpression(
           ),
         ),
       ])
-
     default: {
       const _exhaustive: never = field
+      return sql.lit(true)
     }
   }
 }

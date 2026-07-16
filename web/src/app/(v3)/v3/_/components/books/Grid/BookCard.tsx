@@ -20,6 +20,7 @@ import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
+import { getFieldDef } from "@/fields"
 import * as icon from "@/icons"
 import {
   type CreatorDisplayField,
@@ -35,16 +36,11 @@ import {
 
 type BookCardProps = {
   book: BookWithRelations
-  // absolute item index, surfaced as data-index so the virtualizer's FLIP can
-  // find and animate the card on column-count changes.
+  // important for flipping animation when resizing
   index?: number
-  // stable fetch-resolution bucket for the cover (rendered card width). kept
-  // stable rather than the live fluid width so fluid resize can't refetch.
   coverWidth?: number
   muted?: boolean
   selected?: boolean
-  // roving keyboard cursor: container owns the tab stop, this card is the
-  // active descendant when `active`.
   keyboardNav?: boolean
   active?: boolean
   isSelecting?: boolean
@@ -107,6 +103,7 @@ export function SecondaryText({
       if (!s || s.position == null) return none
 
       return (
+        // TODO: localize
         <span>
           #{s.position} in {s.name}
         </span>
@@ -176,7 +173,7 @@ export function SecondaryText({
     case "narrators":
     case "translators":
     case "creators":
-      // rendered as their own rich (linked) rows, not through SecondaryText
+      // rendered as their own thing, with links and such
       return null
     case "alignmentScore":
       return book.alignmentSummary?.score != null ? (
@@ -203,8 +200,11 @@ export function SecondaryText({
         none
       )
     case "alignmentMissingChapters":
-      // not carried in alignmentSummary (no client column); shows as none.
-      return none
+      return book.alignmentSummary?.unalignedAudio != null ? (
+        <span>{book.alignmentSummary.unalignedAudio}</span>
+      ) : (
+        none
+      )
     default: {
       const _exhaustive: never = field
       return null
@@ -214,8 +214,6 @@ export function SecondaryText({
 
 const MAX_CARD_CREATORS = 5
 
-// which people a creator display row shows, with the MARC role kept for the
-// generic "other creators" row.
 function creatorsFor(
   book: BookWithRelations,
   field: CreatorDisplayField,
@@ -287,12 +285,11 @@ export function CreatorsLine({
 }
 
 function isCreatorField(field: DisplayField): field is CreatorDisplayField {
-  return (
-    field === "authors" ||
-    field === "narrators" ||
-    field === "translators" ||
-    field === "creators"
-  )
+  if (field === "seriesPosition") {
+    return false
+  }
+  const fieldDef = getFieldDef(field)
+  return fieldDef.group === "creators"
 }
 
 export const BookCard = memo(function BookCard({
@@ -417,9 +414,6 @@ export const BookCard = memo(function BookCard({
             const [field] = row
             if (!field) return null
 
-            // title and the creator rows get their own rich (linked) markup;
-            // everything else renders through SecondaryText, with compact
-            // fields sharing a row. rendered in selection order.
             if (field === "title") {
               return (
                 <V3Link

@@ -1,6 +1,5 @@
 "use client"
 
-import { useQueryState } from "nuqs"
 import { useCallback, useMemo } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
@@ -28,6 +27,7 @@ import {
   bookItemDomId,
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { usePanelDragging } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
+import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import {
   useCommon,
   useTranslation,
@@ -46,7 +46,6 @@ import {
   selectGridCardSize,
   selectGridSpacing,
 } from "@/store/slices/uiSettingsSlice"
-import { useBookInSidePanel } from "../../../hooks/use-open-book"
 
 type BookGridProps = {
   books: BookWithRelations[]
@@ -279,7 +278,7 @@ export function BookGrid({
         aria-label="Books"
         {...(navEnabled ? nav.containerProps : {})}
         className={cn(
-          "relative w-full transition-opacity duration-200 outline-none",
+          "relative w-full max-w-[100cqw] transition-opacity duration-200 outline-none",
           showMuted && "opacity-60",
         )}
         style={grid.sizerStyle}

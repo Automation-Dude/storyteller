@@ -1,4 +1,8 @@
-import { type PayloadAction, createSlice } from "@reduxjs/toolkit"
+import {
+  type PayloadAction,
+  createSelector,
+  createSlice,
+} from "@reduxjs/toolkit"
 
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { BookSort, SortDirection, SortField, type DisplayField } from "@/sort"
@@ -385,17 +389,6 @@ export const selectCollapsedDetailSections = (state: {
 export const selectTheme = (state: { uiSettings: UISettings }) =>
   state.uiSettings.theme
 
-export const selectDefaultSort = (
-  state: { uiSettings: UISettings },
-  page?: string,
-  fallback?: BookSort[number],
-): BookSort[number] => {
-  if (!page) {
-    return fallback ?? { field: "createdAt", direction: "desc" }
-  }
-
-  return (
-    state.uiSettings.defaultSorts[page] ??
-    fallback ?? { field: "createdAt", direction: "desc" }
-  )
+export const selectDefaultSorts = (state: { uiSettings: UISettings }) => {
+  return state.uiSettings.defaultSorts
 }

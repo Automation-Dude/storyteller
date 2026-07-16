@@ -29,6 +29,8 @@ export const FACET_SECTIONS = [
   "publicationYears",
   "ratings",
   "formats",
+  "grades",
+  "shelves",
 ] as const
 
 export type FacetSection = (typeof FACET_SECTIONS)[number]
@@ -431,6 +433,36 @@ async function formatFacets(userId: UUID): Promise<LibraryFacet[]> {
     .execute()
 }
 
+// the book's latest alignment grade (same latest-report semantics as the
+// alignmentGrade shelf filter in shelfFilter.ts).
+const latestGradeExpr = sql<string>`(
+  select grade from alignment_report
+  where book_uuid = book.uuid
+  order by created_at desc
+  limit 1
+)`
+
+async function gradeFacets(userId: UUID): Promise<LibraryFacet[]> {
+  return visibleBooks(userId)
+    .where(latestGradeExpr, "is not", null)
+    .select((eb) => [
+      latestGradeExpr.as("key"),
+      latestGradeExpr.as("name"),
+      eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
+    ])
+    .groupBy(latestGradeExpr)
+    .execute()
+}
+
+async function shelfFacets(userId: UUID): Promise<LibraryFacet[]> {
+  return db
+    .selectFrom("shelf")
+    .select((eb) => ["shelf.uuid as key", "shelf.name as name"])
+    .groupBy(["shelf.uuid", "shelf.name"])
+    .where("shelf.userId", "=", userId)
+    .execute()
+}
+
 const NONE_CREATOR_ROLE: Partial<Record<FacetSection, Role>> = {
   authors: "aut",
   narrators: "nrt",
@@ -513,6 +545,7 @@ async function countSectionNone(
             eb("book.publicationDate", "=", ""),
           ])
         case "formats":
+        case "grades":
           return eb.lit(false)
       }
     })
@@ -528,7 +561,9 @@ export async function getSectionFacets(
 ): Promise<LibraryFacet[]> {
   const facets = await getSectionFacetList(userId, section)
 
-  if (section === "formats") return facets
+  // formats partition every book; grades only exist on graded books. neither
+  // gets a "(no X)" bucket.
+  if (section === "formats" || section === "grades") return facets
 
   const none = await countSectionNone(userId, section)
   if (none > 0) {
@@ -563,5 +598,9 @@ function getSectionFacetList(
       return ratingFacets(userId)
     case "formats":
       return formatFacets(userId)
+    case "grades":
+      return gradeFacets(userId)
+    case "shelves":
+      return shelfFacets(userId)
   }
 }

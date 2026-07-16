@@ -1,4 +1,3 @@
-import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
 import { type UUID } from "@/uuid"
@@ -14,10 +13,6 @@ type ShelfPageProps = {
 export default withPageAuth<ShelfPageProps>(["bookList"])(
   async function ShelfPage({ params }) {
     const { uuid } = await params
-    return (
-      <BookSelectionProvider>
-        <ShelfPageClient shelfUuid={uuid} />
-      </BookSelectionProvider>
-    )
+    return <ShelfPageClient shelfUuid={uuid} />
   },
 )

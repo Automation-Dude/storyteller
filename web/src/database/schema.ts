@@ -73,15 +73,7 @@ export interface Book {
   alignedByStorytellerVersion: string | null
   alignedWith: string | null
   assetDir: Generated<string>
-  // manual override of the cover palette; when set, takes precedence over the
-  // per-format coverColors. index 0 is the primary. null = derive from format.
-  coverColorsOverride:
-    | import("kysely").ColumnType<
-        import("@storyteller-platform/okmain").JsColor[],
-        string,
-        string
-      >
-    | null
+  coverColorsOverride: string | null
   createdAt: Generated<string>
   description: string | null
   duration: number | null
@@ -390,7 +382,7 @@ export interface ShelfFilterReference {
 
 export interface SidebarGroup {
   createdAt: Generated<string>
-  kind: "collections" | "shelves" | "main" | "library" | null
+  kind: string | null
   name: string
   position: number
   updatedAt: Generated<string>

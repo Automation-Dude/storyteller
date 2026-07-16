@@ -592,13 +592,11 @@ export type CanBeEmptyField = AcceptedKeys<
 // TODO: exclude search
 export const CAN_BE_EMPTY_FIELDS = Object.keys(FIELD_REGISTRY).filter((f) => {
   const field = FIELD_REGISTRY[f as Field]
-  return (
-    field.type === "string" ||
-    field.type === "number" ||
-    field.type === "date" ||
-    field.type === "uuid" ||
-    field.type === "enum"
-  )
+  if (field.labelKey === "search") {
+    return false
+  }
+
+  return true
 }) as CanBeEmptyField[]
 
 export type QuickFilterField = AcceptedKeys<

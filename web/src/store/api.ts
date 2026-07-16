@@ -936,8 +936,6 @@ export const api = createApi({
     }),
     getSectionFacets: build.query<LibraryFacet[], { section: FacetSection }>({
       query: ({ section }) => `/library/facets?section=${section}`,
-      // the facet list + per-facet book counts for one library section. shares
-      // the broad invalidation set with the counts query so badges stay honest.
       providesTags: [
         "Books",
         "Series",
@@ -948,6 +946,7 @@ export const api = createApi({
         "Statuses",
         "Collections",
         "UserRatings",
+        "UserShelves",
         "Sidebar",
       ],
     }),
@@ -1819,6 +1818,48 @@ export const api = createApi({
       providesTags: ["Books"],
     }),
 
+    listInfiniteShelfBooks: build.infiniteQuery<
+      BookWithRelations[],
+      ListShelfBooksQueryArg,
+      number
+    >({
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+
+        getNextPageParam: (
+          lastPage,
+          _allPages,
+          lastPageParam,
+          _allPageParams,
+          queryArg,
+        ) => {
+          const limit = queryArg.limit ?? 50
+          if (lastPage.length < limit) return undefined
+          return lastPageParam + 1
+        },
+        getPreviousPageParam: (_firstPage, _allPages, firstPageParam) => {
+          return firstPageParam > 0 ? firstPageParam - 1 : undefined
+        },
+      },
+      query: ({ pageParam, queryArg }) => {
+        const { shelfUuid, ...params } = queryArg
+        const limit = params.limit ?? 50
+        const searchParams = new URLSearchParams()
+
+        searchParams.set("limit", String(limit))
+        searchParams.set("offset", String(pageParam * limit))
+        if (params.sortField) searchParams.set("sortField", params.sortField)
+        if (params.orderDirection)
+          searchParams.set("orderDirection", params.orderDirection)
+        if (params.search) searchParams.set("search", params.search)
+        if (params.filter)
+          searchParams.set("filter", JSON.stringify(params.filter))
+
+        return `/shelves/${shelfUuid}/books?${searchParams.toString()}`
+      },
+      providesTags: ["Books"],
+    }),
+
     previewShelfFilter: build.mutation<
       BookWithRelations[],
       {
@@ -2105,6 +2146,7 @@ export const {
   useUpdateUserShelfMutation,
   useDeleteUserShelfMutation,
   useListShelfBooksQuery,
+  useListInfiniteShelfBooksInfiniteQuery,
   usePreviewShelfFilterMutation,
   useGetUserSettingsQuery,
   useUpdateUserSettingsMutation,
@@ -2169,5 +2211,14 @@ export type ListBooksQueryArg = {
   collection?: string | undefined
   series?: string | undefined
   // ad-hoc filter tree (same shape as shelves), serialized as json in the query
+  filter?: ShelfFilter | undefined
+}
+
+export type ListShelfBooksQueryArg = {
+  shelfUuid: string
+  limit?: number | undefined
+  sortField?: SortField | undefined
+  orderDirection?: "asc" | "desc" | undefined
+  search?: string | undefined
   filter?: ShelfFilter | undefined
 }

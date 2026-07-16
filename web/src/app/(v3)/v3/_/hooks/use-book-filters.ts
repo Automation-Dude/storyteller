@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { createParser, parseAsString, useQueryState } from "nuqs"
 import { useCallback, useDeferredValue, useMemo } from "react"
 
@@ -13,15 +14,14 @@ import {
 } from "@/shelves"
 import { type DisplayField, type SortDirection, type SortField } from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import {
+  selectDefaultSorts,
+  uiSettingsSlice,
+} from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
 import { useDebounce } from "./use-debounce"
-import { useAppDispatch, useAppSelector } from "@/store/appState"
-import {
-  selectDefaultSort,
-  uiSettingsSlice,
-} from "@/store/slices/uiSettingsSlice"
-import { usePathname } from "next/navigation"
 
 // ---------------------------------------------------------------------------
 // the single owner of a book list's filter + sort + display, backed by the url.
@@ -42,8 +42,7 @@ type UseBookFiltersOptions = {
   // and reuse its membership filters. orthogonal to the filter tree.
   seriesContext?: UUID
   collectionContext?: UUID
-  defaultSortField?: SortField
-  defaultSortDirection?: SortDirection
+  defaultSort?: BookSort[number]
 }
 
 type Sort = { field: SortField; direction: SortDirection }
@@ -124,15 +123,17 @@ function replaceFieldConditions(
   return out
 }
 
+const defaultSortDefault = {
+  field: "createdAt",
+  direction: "desc",
+}
+
 export function useBookFilters(options: UseBookFiltersOptions = {}) {
   const pathName = usePathname()
   const currentPage = pathName.split("/").pop()
-  const defaultSort = useAppSelector((state) =>
-    selectDefaultSort(state, currentPage, {
-      field: options.defaultSortField ?? "createdAt",
-      direction: options.defaultSortDirection ?? "desc",
-    }),
-  )
+  const defaultSorts = useAppSelector(selectDefaultSorts)
+  const defaultSort =
+    defaultSorts[currentPage ?? ""] ?? options.defaultSort ?? defaultSortDefault
 
   const [userFilter, setUserFilterRaw] = useQueryState("f", filterParser)
   const [search, setSearchRaw] = useQueryState(

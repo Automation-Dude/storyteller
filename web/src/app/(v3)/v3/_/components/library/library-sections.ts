@@ -1,15 +1,11 @@
-import { type BookWithRelations } from "@/database/books"
 import { type FacetSection } from "@/database/libraryCounts"
-import {
-  type MediaTypeValue,
-  type ShelfFilterField,
-  type ShelfFilterNode,
-} from "@/shelves"
-import { type DisplayField, type SortDirection, type SortField } from "@/sort"
+import { ALIGNMENT_GRADES, type MediaTypeValue } from "@/fields"
+import { type ShelfFilterField, type ShelfFilterNode } from "@/shelves"
+import { GRADE_RANK, type SortDirection, type SortField } from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
-import { type UUID } from "@/uuid"
 
 export const NONE_KEY = "__none__"
+export const ALL_KEY = "__all__"
 
 export type LibraryItem = {
   key: string
@@ -18,46 +14,42 @@ export type LibraryItem = {
   // present for entities that carry an icon/color (tags, collections)
   icon?: string | null
   color?: string | null
-  // machine-readable kind for statuses, used to identify core statuses
+  // kind for statues, to prevent editing
   kind?: string
 }
 
-// entity types that support edit/delete/merge from the sidebar.
-// "status" only supports label editing (no delete/merge).
+// status and shelf no edit or merge
 export type LibraryEntityType =
   | "tag"
   | "creator"
   | "series"
   | "collection"
   | "status"
+  | "shelf"
 
 export type LibrarySectionDef = {
   /* the section identifier, used to fetch its facet list from the server. */
   key: FacetSection
-  extractItems: (books: BookWithRelations[]) => LibraryItem[]
-  filterBooks: (
-    books: BookWithRelations[],
-    itemKey: string,
-  ) => BookWithRelations[]
   /* build a shelf filter matching a single facet, for "pin as shelf". absent
   when the facet can't be expressed as a saved filter (e.g. publication year). */
   toShelfFilter?: (itemKey: string) => ShelfFilterNode
   /* the filter seeding the "(no author)" / "(no series)" bucket's grid. absent
-  for sections that have no none bucket (formats). */
+  for sections that have no none bucket (formats, grades). */
   noneFilter?: ShelfFilterNode
+  /* the filter behind a synthetic "all" row pinned at the top of the sidebar,
+  for sections whose facets don't span the whole library (grades → "All graded") */
+  allFilter?: ShelfFilterNode
   /* when present, the sidebar supports edit/delete/merge for this entity type */
   entityType?: LibraryEntityType
-  /* returns books that have none of this entity (no author, no tag, etc.) */
-  filterNone?: (books: BookWithRelations[]) => BookWithRelations[]
-  displayFields?: DisplayField[]
+  /* replaces the alphabetical "name" ordering in the sidebar when facet names
+  have a domain order (grades sort by rank, not by text) */
+  compareItems?: (a: LibraryItem, b: LibraryItem) => number
   sort?: {
     field: SortField
     direction: SortDirection
   }
 }
 
-// an entity facet (series/tag/collection) maps to an array-field "includes" of
-// that entity's uuid.
 function entityFilter(
   field: "tags" | "collections" | "series",
 ): (itemKey: string) => ShelfFilterNode {
@@ -69,8 +61,6 @@ function entityFilter(
   })
 }
 
-// a creator facet, scoped to a single relator role so the narrators page filters
-// on narration (not "anyone who is also an author").
 function creatorFilter(role: string): (itemKey: string) => ShelfFilterNode {
   return (itemKey) => ({
     type: "condition",
@@ -92,109 +82,9 @@ function emptyFilter(field: ShelfFilterField, role?: string): ShelfFilterNode {
   }
 }
 
-function buildRelationSection<
-  T extends {
-    uuid: UUID
-    name: string
-    fileAs?: string
-    icon?: string | null
-    color?: string | null
-  },
->(
-  getRelations: (book: BookWithRelations) => T[],
-): Omit<LibrarySectionDef, "key"> {
-  return {
-    extractItems(books) {
-      const map = new Map<
-        UUID,
-        {
-          name: string
-          count: number
-          icon: string | null
-          color: string | null
-        }
-      >()
-
-      for (const book of books) {
-        for (const rel of getRelations(book)) {
-          const existing = map.get(rel.uuid)
-
-          if (existing) {
-            existing.count += 1
-          } else {
-            map.set(rel.uuid, {
-              name: rel.fileAs ?? rel.name,
-              count: 1,
-              icon: rel.icon ?? null,
-              color: rel.color ?? null,
-            })
-          }
-        }
-      }
-
-      return Array.from(map, ([key, { name, count, icon, color }]) => ({
-        key,
-        name,
-        bookCount: count,
-        icon,
-        color,
-      }))
-    },
-
-    filterBooks(books, itemKey) {
-      if (itemKey === NONE_KEY) {
-        return books.filter((book) => getRelations(book).length === 0)
-      }
-
-      return books.filter((book) =>
-        getRelations(book).some((rel) => rel.uuid === itemKey),
-      )
-    },
-
-    filterNone(books) {
-      return books.filter((book) => getRelations(book).length === 0)
-    },
-  }
-}
-
-function buildScalarSection(
-  getValue: (book: BookWithRelations) => string | null | undefined,
-): Omit<LibrarySectionDef, "key"> {
-  return {
-    extractItems(books) {
-      const map = new Map<string, number>()
-
-      for (const book of books) {
-        const value = getValue(book)
-        if (!value) continue
-
-        map.set(value, (map.get(value) ?? 0) + 1)
-      }
-
-      return Array.from(map, ([key, count]) => ({
-        key,
-        name: key,
-        bookCount: count,
-      }))
-    },
-
-    filterBooks(books, itemKey) {
-      if (itemKey === NONE_KEY) {
-        return books.filter((book) => !getValue(book))
-      }
-
-      return books.filter((book) => getValue(book) === itemKey)
-    },
-
-    filterNone(books) {
-      return books.filter((book) => !getValue(book))
-    },
-  }
-}
-
-// the format facet keys (getFormatKey) map onto the broader Format filter
-// values so a formats-page facet can seed the same server filter as the books
-// page. "readaloud" -> synced (aligned), "audiobook-ebook" -> missing-readaloud.
+// the format facet keys map onto the broader Format filter values so a
+// formats-page facet can seed the same server filter as the books page.
+// "readaloud" -> synced (aligned), "audiobook-ebook" -> missing-readaloud.
 // typed to MediaTypeValue so a facet can only seed a filter value the enum (and
 // therefore the SQL compiler) actually supports - an invalid bridge is a compile
 // error, not a filter that silently matches nothing.
@@ -206,14 +96,18 @@ const FORMAT_KEY_TO_MEDIA_TYPE: Record<FormatKey, MediaTypeValue> = {
   "no-media": "no-media",
 }
 
+const GRADED_FILTER: ShelfFilterNode = {
+  type: "condition",
+  field: "alignmentGrade",
+  operator: "isNotEmpty",
+}
+
 export const librarySections = {
   series: {
     key: "series" as const,
-    ...buildRelationSection((book) => book.series),
     toShelfFilter: entityFilter("series"),
     noneFilter: emptyFilter("series"),
     entityType: "series" as const,
-    displayFields: ["seriesPosition"],
     sort: {
       field: "seriesPosition",
       direction: "asc",
@@ -221,44 +115,36 @@ export const librarySections = {
   },
   authors: {
     key: "authors" as const,
-    ...buildRelationSection((book) => book.authors),
     toShelfFilter: creatorFilter("aut"),
     noneFilter: emptyFilter("creators", "aut"),
     entityType: "creator" as const,
   },
   narrators: {
     key: "narrators" as const,
-    ...buildRelationSection((book) => book.narrators),
     toShelfFilter: creatorFilter("nrt"),
     noneFilter: emptyFilter("creators", "nrt"),
     entityType: "creator" as const,
   },
   translators: {
     key: "translators" as const,
-    ...buildRelationSection((book) =>
-      book.creators.filter((c) => c.role === "trl"),
-    ),
     toShelfFilter: creatorFilter("trl"),
     noneFilter: emptyFilter("creators", "trl"),
     entityType: "creator" as const,
   },
   tags: {
     key: "tags" as const,
-    ...buildRelationSection((book) => book.tags),
     toShelfFilter: entityFilter("tags"),
     noneFilter: emptyFilter("tags"),
     entityType: "tag" as const,
   },
   collections: {
     key: "collections" as const,
-    ...buildRelationSection((book) => book.collections),
     toShelfFilter: entityFilter("collections"),
     noneFilter: emptyFilter("collections"),
     entityType: "collection" as const,
   },
   statuses: {
     key: "statuses" as const,
-    ...buildRelationSection((book) => (book.status ? [book.status] : [])),
     entityType: "status" as const,
     toShelfFilter: (itemKey: string): ShelfFilterNode => ({
       type: "condition",
@@ -270,7 +156,6 @@ export const librarySections = {
   },
   publicationYears: {
     key: "publicationYears" as const,
-    ...buildScalarSection((book) => book.publicationDate?.slice(0, 4)),
     // a year facet seeds a date range. the lower bound is the bare year (not
     // year-01-01) so it also matches books whose date is stored as "YYYY".
     toShelfFilter: (itemKey: string): ShelfFilterNode => ({
@@ -283,13 +168,8 @@ export const librarySections = {
   },
   ratings: {
     key: "ratings" as const,
-    ...buildScalarSection((book) =>
-      book.userBookRating?.rating != null
-        ? String(book.userBookRating.rating)
-        : null,
-    ),
     toShelfFilter: (itemKey: string): ShelfFilterNode => {
-      const [min, max] = itemKey.split("-").map(Number)
+      const [min = 0, max = 5] = itemKey.split("-").map(Number)
 
       return {
         type: "condition",
@@ -298,7 +178,6 @@ export const librarySections = {
         value: [min, max],
       }
     },
-    displayFields: ["userRating"],
     sort: {
       field: "userRating",
       direction: "desc",
@@ -313,26 +192,32 @@ export const librarySections = {
       operator: "is",
       value: FORMAT_KEY_TO_MEDIA_TYPE[itemKey as FormatKey],
     }),
-    extractItems(books) {
-      const counts = new Map<string, number>()
-
-      for (const book of books) {
-        const key = getFormatKey(book)
-        counts.set(key, (counts.get(key) ?? 0) + 1)
-      }
-
-      return FORMAT_ORDER.filter((key) => (counts.get(key) ?? 0) > 0).map(
-        (key) => ({
-          key,
-          name: key,
-          bookCount: counts.get(key) ?? 0,
-        }),
-      )
+  },
+  grades: {
+    key: "grades" as const,
+    toShelfFilter: (itemKey: string): ShelfFilterNode =>
+      itemKey === ALL_KEY
+        ? GRADED_FILTER
+        : {
+            type: "condition",
+            field: "alignmentGrade",
+            operator: "is",
+            value: itemKey,
+          },
+    allFilter: GRADED_FILTER,
+    compareItems: (a, b) =>
+      (GRADE_RANK[a.name] ?? ALIGNMENT_GRADES.length) -
+      (GRADE_RANK[b.name] ?? ALIGNMENT_GRADES.length),
+    sort: {
+      field: "alignmentScore",
+      direction: "desc",
     },
-
-    filterBooks(books, itemKey) {
-      return books.filter((book) => getFormatKey(book) === itemKey)
-    },
+  },
+  shelves: {
+    key: "shelves" as const,
+    toShelfFilter: entityFilter("shelves"),
+    noneFilter: emptyFilter("shelves"),
+    entityType: "shelf" as const,
   },
 } as const satisfies Record<string, LibrarySectionDef>
 
@@ -341,13 +226,18 @@ export type LibrarySectionKey = keyof typeof librarySections
 // translate a selected facet into the server query that constrains the grid to
 // it. series and collections route through the native params so getBooks can
 // supply series-position context and reuse its existing membership filters;
-// everything else (and every "(no X)" bucket) seeds the generic filter tree.
+// everything else (and every "(no X)" / "all" bucket) seeds the generic
+// filter tree.
 export function sectionSeedQueryArg(
   section: LibrarySectionDef,
   itemKey: string,
 ): ListBooksQueryArg {
   if (itemKey === NONE_KEY) {
     return section.noneFilter ? { filter: section.noneFilter } : {}
+  }
+
+  if (itemKey === ALL_KEY) {
+    return section.allFilter ? { filter: section.allFilter } : {}
   }
 
   if (section.entityType === "series") return { series: itemKey }
@@ -357,29 +247,12 @@ export function sectionSeedQueryArg(
 }
 
 // the exclusive format partition (every book falls in exactly one bucket),
-// distinct from the overlapping MEDIA_TYPE_VALUES predicates. getFormatKey (TS,
-// below) and formatKeyExpr (SQL, libraryCounts.ts) must compute the same buckets;
-// both are typed to this union so the set stays in lockstep.
+// distinct from the overlapping MEDIA_TYPE_VALUES predicates. formatKeyExpr
+// (SQL, libraryCounts.ts) computes these buckets; the union keeps the
+// FORMAT_KEY_TO_MEDIA_TYPE bridge in lockstep with it.
 export type FormatKey =
   | "readaloud"
   | "audiobook-ebook"
   | "audiobook-only"
   | "ebook-only"
   | "no-media"
-
-const FORMAT_ORDER: FormatKey[] = [
-  "readaloud",
-  "audiobook-ebook",
-  "audiobook-only",
-  "ebook-only",
-  "no-media",
-]
-
-function getFormatKey(book: BookWithRelations): FormatKey {
-  if (book.readaloud) return "readaloud"
-  if (book.audiobook && book.ebook) return "audiobook-ebook"
-  if (book.audiobook) return "audiobook-only"
-  if (book.ebook) return "ebook-only"
-
-  return "no-media"
-}

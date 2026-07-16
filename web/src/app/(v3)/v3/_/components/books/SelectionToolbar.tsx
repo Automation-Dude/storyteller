@@ -31,9 +31,6 @@ type SelectionToolbarProps = {
   className?: string
 }
 
-// docked to the bottom of the grid column (sticky) rather than floating over the
-// whole screen -- it shares the workspace surface. a serif selection count sits
-// left, then the core select / actions menus, then a close affordance.
 export function SelectionToolbar({
   className,
   allBooks,
@@ -76,12 +73,16 @@ export function SelectionToolbar({
 
   return (
     <>
-      <div className="@container pointer-events-none sticky inset-x-0 bottom-0 z-40 flex justify-center px-2">
+      <div
+        className={cn(
+          "@container pointer-events-none absolute bottom-0 z-40 flex w-full justify-center px-2",
+          className,
+        )}
+      >
         <ActionTray
           show={isSelecting}
           className={cn(
             "pointer-events-auto max-w-full min-w-0 gap-1.5 pr-1.5 pl-4",
-            className,
           )}
         >
           <span className="font-heading mr-1 min-w-0 truncate text-sm">

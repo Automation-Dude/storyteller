@@ -505,10 +505,17 @@ export async function getShelfBooks(
     query = query.where((eb) => buildBookSearchExpression(eb, term))
   }
 
+  // a paged request must still respect the shelf's own limitCount: the page
+  // size is capped to whatever of the shelf's limit remains past the offset.
   const shelfLimit = (shelf as { limitCount?: number | null }).limitCount
-  const effectiveLimit = opts?.limit ?? shelfLimit
+  let effectiveLimit = opts?.limit ?? shelfLimit
 
-  if (effectiveLimit) {
+  if (opts?.limit != null && shelfLimit != null) {
+    const remaining = Math.max(0, shelfLimit - (opts.offset ?? 0))
+    effectiveLimit = Math.min(opts.limit, remaining)
+  }
+
+  if (effectiveLimit != null) {
     query = query.limit(effectiveLimit)
   }
 

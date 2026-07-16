@@ -1,7 +1,6 @@
 import { type Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 
-import { BookSelectionProvider } from "@v3/_/hooks/use-book-selection"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
 import BookPage from "./bookPage"
@@ -14,9 +13,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default withPageAuth(["bookList"])((_, user) => {
-  return (
-    <BookSelectionProvider>
-      <BookPage permissions={user.permissions} />
-    </BookSelectionProvider>
-  )
+  return <BookPage permissions={user.permissions} />
 })

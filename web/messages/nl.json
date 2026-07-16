@@ -143,6 +143,7 @@
   },
   "LibraryPage": {
     "emptyStateSub": "Selecteer een item in de zijbalk om de bijbehorende boeken te zien",
+    "allItems": "Alle",
     "Series": {
       "plain": "Serie",
       "by": "Op Serie",
@@ -242,7 +243,8 @@
       "creator": "{count, plural, one {maker} other {makers}}",
       "series": "{count, plural, one {serie} other {series}}",
       "collection": "{count, plural, one {verzameling} other {verzamelingen}}",
-      "status": "{count, plural, one {status} other {statussen}}"
+      "status": "{count, plural, one {status} other {statussen}}",
+      "shelf": "{count, plural, one {boekenplank} other {boekenplanken}}"
     }
   },
   "SelectionToolbar": {

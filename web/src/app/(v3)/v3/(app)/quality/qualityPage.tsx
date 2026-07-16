@@ -1,134 +1,45 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback } from "react"
 
-import { BookFilters } from "@v3/_/components/books"
-import { BookListLayout } from "@v3/_/components/books/BookListLayout"
-import { BooksView } from "@v3/_/components/books/BooksView"
-import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
-import { GradePill } from "@v3/_/components/books/grade-pill"
+import { useBookListPageState } from "@v3/_/components/books/BookListPage"
+import { LibraryPage } from "@v3/_/components/library/LibraryPage"
+import {
+  ALL_KEY,
+  librarySections,
+} from "@v3/_/components/library/library-sections"
 import { Button } from "@v3/_/components/ui/button"
-import { PageContent } from "@v3/_/components/ui/page-layout"
-import { useBookFilters } from "@v3/_/hooks/use-book-filters"
-import { useBookSelection } from "@v3/_/hooks/use-book-selection"
-import { useReportPanel } from "@v3/_/hooks/use-report-panel"
-import { useTranslation } from "@v3/_/hooks/use-translation"
-import { cn } from "@v3/_/lib/utils"
 
 import * as icon from "@/icons"
-import { type ShelfFilterCondition, type ShelfFilterNode } from "@/shelves"
-import {
-  type DisplayField,
-  GENERAL_SORT_FIELDS,
-  type SortContext,
-  type SortDirection,
-  type SortField,
-  deriveDisplayFields,
-} from "@/sort"
-import {
-  useGetAlignmentFacetsQuery,
-  useListInfiniteBooksInfiniteQuery,
-} from "@/store/api"
-import { useAppDispatch, useAppSelector } from "@/store/appState"
-import {
-  selectGridDisplayFields,
-  uiSettingsSlice,
-} from "@/store/slices/uiSettingsSlice"
-import { useBookInSidePanel } from "../../_/hooks/use-open-book"
-
-const GRADES = ["A+", "A", "A-", "B", "B-", "C", "D", "F"] as const
-
-// the user picks with the facet chips / filter bar.
-const GRADED_SEED: ShelfFilterNode = {
-  type: "condition",
-  field: "alignmentGrade",
-  operator: "isNotEmpty",
-}
+import { type ShelfFilterCondition } from "@/shelves"
+import { useGetAlignmentFacetsQuery } from "@/store/api"
 
 export default function QualityPage() {
-  const dispatch = useAppDispatch()
-  const tLabel = useTranslation("Common.fields.label")
-  const gridDisplayFields = useAppSelector(selectGridDisplayFields)
-
-  const handleDisplayFieldsChange = useCallback(
-    (fields: DisplayField[] | null) => {
-      dispatch(uiSettingsSlice.actions.setGridDisplayFields(fields))
-    },
-    [dispatch],
+  return (
+    <LibraryPage
+      title="Alignment quality"
+      section={librarySections.grades}
+      itemLabels={{ [ALL_KEY]: "All graded" }}
+      bookClickMode="report"
+      afterFilters={<MutedToggle />}
+      emptyMessage="No graded books yet"
+      contentClassName="p-6 [&_.font-heading]:text-[0.8125rem]!"
+    />
   )
+}
 
-  const sortFieldOptions = useMemo<{ value: SortField; label: string }[]>(
-    () => GENERAL_SORT_FIELDS.map((value) => ({ value, label: tLabel(value) })),
-    [tLabel],
-  )
-
-  const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
-  const [, setReportMode] = useReportPanel()
-  const { isSelecting, toggleSelection } = useBookSelection()
-
-  const controller = useBookFilters({
-    seed: GRADED_SEED,
-    defaultSortField: "alignmentScore",
-    defaultSortDirection: "desc",
-  })
-  const {
-    queryArg,
-    userFilter,
-    sort,
-    setSort,
-    conditionsForField,
-    setConditionsForField,
-    removeField,
-    isSearching,
-    activeFilterCount,
-    clearAll,
-  } = controller
+// the muted-chapters toggle writes an ordinary condition onto the page's
+// filter controller so it stays in sync with the filter bar's chips.
+function MutedToggle() {
+  const { controller } = useBookListPageState()
+  const { conditionsForField, setConditionsForField, removeField } = controller
 
   const { data: facets } = useGetAlignmentFacetsQuery()
-
-  const {
-    data,
-    isLoading,
-    isFetching,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useListInfiniteBooksInfiniteQuery(queryArg)
-
-  const books = useMemo(
-    () => data?.pages.flatMap((page) => page) ?? [],
-    [data?.pages],
-  )
-  const selectedBook = useMemo(
-    () => books.find((b) => b.uuid === selectedBookUuid),
-    [books, selectedBookUuid],
-  )
-
-  // the grade facet row and the muted toggle write ordinary conditions onto the
-  // controller so they stay in sync with the filter bar's chips.
-  const activeGrade =
-    conditionsForField("alignmentGrade").find((c) => c.operator === "is")
-      ?.value ?? null
-  const setGrade = useCallback(
-    (grade: string | null) => {
-      if (!grade) {
-        removeField("alignmentGrade")
-        return
-      }
-      const cond: ShelfFilterCondition = {
-        type: "condition",
-        field: "alignmentGrade",
-        operator: "is",
-        value: grade,
-      }
-      setConditionsForField("alignmentGrade", [cond])
-    },
-    [removeField, setConditionsForField],
-  )
 
   const mutedActive = conditionsForField("alignmentMutedChapters").some(
     (c) => c.operator === "greaterThan",
   )
+
   const toggleMuted = useCallback(() => {
     if (mutedActive) {
       removeField("alignmentMutedChapters")
@@ -143,141 +54,22 @@ export default function QualityPage() {
     setConditionsForField("alignmentMutedChapters", [cond])
   }, [mutedActive, removeField, setConditionsForField])
 
-  const displayContext: SortContext = useMemo(() => ({ seriesUuid: null }), [])
-  const displayFields = deriveDisplayFields(
-    sort.field,
-    userFilter,
-    displayContext,
-    gridDisplayFields,
-    controller.isDefaultSort,
-  )
-
-  const showMuted =
-    isSearching || (isFetching && !isFetchingNextPage && books.length > 0)
-
-  const handleBookClick = (book: { uuid: string }) => {
-    if (isSelecting) {
-      toggleSelection(book.uuid)
-      return
-    }
-    void setReportMode(true)
-    void setSelectedBookUuid(book.uuid)
-  }
-
-  const handleClosePanel = () => {
-    void setSelectedBookUuid(null)
-    void setReportMode(false)
-  }
-
   return (
-    <BookListLayout
-      headerBreadcrumbs={[
-        {
-          render: (
-            <h1 className="font-heading text-foreground truncate text-3xl font-normal">
-              Alignment quality
-            </h1>
-          ),
-        },
-      ]}
-      selectedBookUuid={selectedBookUuid}
-      selectedBook={selectedBook}
-      onClosePanel={handleClosePanel}
-    >
-      <BookFilters
-        controller={controller}
-        seedLabel="Graded"
-        sortOptions={sortFieldOptions}
-        onSortChange={setSort}
-        displayOverrides={gridDisplayFields}
-        onDisplayOverridesChange={handleDisplayFieldsChange}
-        currentFields={displayFields}
-      />
-
-      {/* alignment-specific facet row: grade chips + muted toggle, counts
-            from the server-side facets. */}
-      <div className="flex flex-wrap items-center gap-1.5 px-4 pt-2">
-        <Button
-          variant={activeGrade ? "ghost" : "secondary"}
-          size="sm"
-          onClick={() => {
-            setGrade(null)
-          }}
-          className="gap-1.5"
-        >
-          All
-          {facets && (
-            <span className="text-muted-foreground tabular-nums">
-              {facets.total}
-            </span>
-          )}
-        </Button>
-        {GRADES.map((g) => {
-          const count = facets?.grades[g] ?? 0
-          return (
-            <button
-              key={g}
-              type="button"
-              disabled={!!facets && count === 0}
-              onClick={() => {
-                setGrade(activeGrade === g ? null : g)
-              }}
-              className={cn(
-                "flex items-center gap-1 rounded transition",
-                activeGrade === g
-                  ? "ring-primary ring-2"
-                  : "opacity-70 hover:opacity-100",
-                !!facets && count === 0 && "opacity-30",
-              )}
-            >
-              <GradePill grade={g} />
-              <span className="text-muted-foreground pr-1 text-xs tabular-nums">
-                {count}
-              </span>
-            </button>
-          )
-        })}
-        <Button
-          variant={mutedActive ? "secondary" : "ghost"}
-          size="sm"
-          onClick={toggleMuted}
-          className="ml-2 gap-1.5"
-        >
-          <icon.VolumeOff className="size-4" />
-          Muted
-          {facets && facets.muted > 0 && (
-            <span className="text-muted-foreground tabular-nums">
-              {facets.muted}
-            </span>
-          )}
-        </Button>
-      </div>
-
-      {/* shrink only the list title here, without touching BookListItem. */}
-      <PageContent className="p-6 [&_.font-heading]:text-[0.8125rem]!">
-        <BooksView
-          books={books}
-          isLoading={isLoading}
-          isFetchingNextPage={isFetchingNextPage}
-          hasNextPage={hasNextPage}
-          fetchNextPage={fetchNextPage}
-          showMuted={showMuted}
-          emptyMessage="No graded books yet"
-          emptySubMessage="Books get a grade after they finish aligning."
-          onClearFilters={clearAll}
-          hasActiveFilters={activeFilterCount > 0}
-          selectedBookUuid={selectedBookUuid}
-          onBookClick={handleBookClick}
-          displayFields={displayFields}
-          displayContext={displayContext}
-          sortField={sort.field}
-          sortDirection={sort.direction}
-          onSortChange={(field: SortField, dir: SortDirection) => {
-            setSort(field, dir)
-          }}
-        />
-        <SelectionToolbar allBooks={books} />
-      </PageContent>
-    </BookListLayout>
+    <div className="flex items-center px-4 pt-2">
+      <Button
+        variant={mutedActive ? "secondary" : "ghost"}
+        size="sm"
+        onClick={toggleMuted}
+        className="gap-1.5"
+      >
+        <icon.VolumeOff className="size-4" />
+        Muted
+        {facets && facets.muted > 0 && (
+          <span className="text-muted-foreground tabular-nums">
+            {facets.muted}
+          </span>
+        )}
+      </Button>
+    </div>
   )
 }

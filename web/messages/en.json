@@ -154,6 +154,12 @@
   },
   "LibraryPage": {
     "emptyStateSub": "Select an item in the sidebar to see its books",
+    "allItems": "All",
+    "Shelves": {
+      "plain": "Shelves",
+      "by": "By Shelf",
+      "none": "(no shelf)"
+    },
     "Series": {
       "plain": "Series",
       "by": "By Series",
@@ -253,7 +259,8 @@
       "creator": "{count, plural, one {creator} other {creators}}",
       "series": "{count, plural, one {series} other {series}}",
       "collection": "{count, plural, one {collection} other {collections}}",
-      "status": "{count, plural, one {status} other {statuses}}"
+      "status": "{count, plural, one {status} other {statuses}}",
+      "shelf": "{count, plural, one {shelf} other {shelves}}"
     }
   },
   "SelectionToolbar": {

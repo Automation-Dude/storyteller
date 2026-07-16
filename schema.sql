@@ -33,7 +33,8 @@ CREATE TABLE "book" (
   subtitle TEXT,
   "duration" real,
   "page_count" integer,
-  asset_dir text NOT NULL DEFAULT ''
+  asset_dir text NOT NULL DEFAULT '',
+  "cover_colors_override" text
 );
 
 CREATE TRIGGER book_update_trigger AFTER
@@ -756,9 +757,9 @@ CREATE TABLE sidebar_group (
   user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   position integer NOT NULL,
-  collapsed integer NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  kind TEXT
 );
 
 CREATE TRIGGER sidebar_group_update_trigger AFTER
@@ -820,10 +821,15 @@ CREATE TABLE alignment_report (
   failed_chapters INTEGER,
   unaligned_audio INTEGER,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  overrides TEXT,
-  scoring_version INTEGER
+  overrides TEXT
 );
 
 CREATE INDEX idx_alignment_report_job ON alignment_report (job_uuid);
 
 CREATE INDEX idx_alignment_report_book ON alignment_report (book_uuid);
+
+CREATE UNIQUE INDEX idx_book_to_series_unique ON book_to_series (book_uuid, series_uuid);
+
+CREATE UNIQUE INDEX idx_sidebar_group_user_kind ON sidebar_group (user_id, kind)
+WHERE
+  kind IS NOT NULL;

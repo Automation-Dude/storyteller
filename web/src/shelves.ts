@@ -336,20 +336,15 @@ const conditionVariants = z.union([
   unaryCondition,
 ])
 
-// unary operators take no value; tolerate legacy conditions that still carry an
-// empty value by stripping it before matching the strict variants above.
 export const shelfFilterConditionSchema = z.preprocess((val) => {
   if (!val || typeof val !== "object") return val
   let obj = val as Record<string, unknown>
 
-  // the aggregate book `rating` field was removed; only the user's own rating
-  // remains. map any legacy saved condition onto userRating so it still loads.
+  // we dont look at the main rating field, only the user's rating
   if (obj["field"] === "rating") {
     obj = { ...obj, field: "userRating" }
   }
 
-  // unary operators take no value; tolerate legacy conditions that still carry
-  // an empty value by stripping it before matching the strict variants above.
   const op = obj["operator"]
   if ((op === "isEmpty" || op === "isNotEmpty") && "value" in obj) {
     const { value: _omit, ...rest } = obj

@@ -168,17 +168,6 @@ async function getAccessibleEntityUuids(trx: Transaction<DB>, userId: UUID) {
   }
 }
 
-// reconciles a user's sidebar with the expected defaults. the DB stores
-// deviations (an item the user hid or moved); anything the user never touched
-// is materialized here on read:
-//   * the four special groups (main/library/collections/shelves) always exist
-//   * every builtin without a row appears in its default group -- adding a new
-//     builtin to SIDEBAR_BUILTINS is enough, no migration needed
-//   * every accessible collection / shelf without a row is appended to its
-//     group, unhidden
-//   * stale rows (unknown builtins, revoked collections, dangling groups) are
-//     cleaned up
-// steady state performs reads only.
 export async function ensureSidebarDefaults(
   userId: UUID,
   tr?: Transaction<DB>,
