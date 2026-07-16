@@ -39,7 +39,10 @@ import {
   useUpdateSettingsMutation,
 } from "@/store/api"
 
-import { SettingsFormProvider } from "./SettingsFormProvider"
+import {
+  type SettingsFormForm,
+  SettingsFormProvider,
+} from "./SettingsFormProvider"
 import { AuthTab } from "./auth-tab"
 import { ChangelogTab } from "./changelog-tab"
 import { EmailTab } from "./email-tab"
@@ -247,9 +250,9 @@ export function SettingsForm({
     }
   }
 
-  const onInvalidSubmit = (
-    errors: FieldErrors<z.output<typeof SettingsSchema>>,
-  ) => {
+  const onInvalidSubmit = (rawErrors: FieldErrors) => {
+    const errors = rawErrors as FieldErrors<z.output<typeof SettingsSchema>>
+
     const flattenedErrors = flattenNestedErrors(errors)
     const resolvedErrors = resolveFieldErrors(flattenedErrors, t)
     const fieldErrorCount = resolvedErrors.length
@@ -473,7 +476,10 @@ export function SettingsForm({
   )
 
   const contentArea = (
-    <SettingsFormProvider form={form} lockedSettings={lockedKeys}>
+    <SettingsFormProvider
+      form={form as SettingsFormForm}
+      lockedSettings={lockedKeys}
+    >
       <SearchContext.Provider value={{ query: searchQuery, isMatch }}>
         {isFormTab ? (
           <form

@@ -171,7 +171,7 @@ export const SettingsSchema = z.object({
   // Audio settings
   codec: z.string().nullable(),
   bitrate: z.string().nullable(),
-  maxTrackLength: z.number().nullable(),
+  maxTrackLength: z.coerce.number().nullable(),
   // Transcription settings
   transcriptionEngine: TranscriptionEngineSchema.nullable(),
   whisperModel: WhisperModelSchema.nullable(),
