@@ -782,7 +782,8 @@
           "userDelete": "Gebruikers verwijderen",
           "userUpdate": "Andere gebruikers machtigingen wijzigen",
           "settingsUpdate": "Server instellingen wijzigen",
-          "createCollections": "Verzamelingen aanmaken"
+          "createCollections": "Verzamelingen aanmaken",
+          "userPasswordReset": "Wachtwoorden van gebruikers resetten"
         },
         "sections": {
           "users-invites": {

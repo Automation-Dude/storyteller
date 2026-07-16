@@ -16,6 +16,7 @@
       "audiobook.uuid": "Generated<import(\"@/uuid\").UUID>",
       "audiobook.cover_colors": "import(\"kysely\").ColumnType<import(\"@storyteller-platform/okmain\").JsColor[], string, string> | null",
       "book.manifest": "ColumnType<Record<string, unknown>, string, string> | null",
+      "book.cover_colors_override": "import(\"kysely\").ColumnType<import(\"@storyteller-platform/okmain\").JsColor[], string, string> | null",
       "creator.uuid": "Generated<import(\"@/uuid\").UUID>",
       "book_to_creator.creator_uuid": "import(\"@/uuid\").UUID",
       "book_to_creator.book_uuid": "import(\"@/uuid\").UUID",

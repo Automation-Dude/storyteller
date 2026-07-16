@@ -535,6 +535,7 @@ function AddRuleDialog({
   rules,
   collections,
   importModeOptions,
+  epub2StrategyOptions,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void

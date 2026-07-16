@@ -803,7 +803,8 @@
           "userDelete": "Delete users",
           "userUpdate": "Update other users' permissions",
           "settingsUpdate": "Change server settings",
-          "createCollections": "Create collections"
+          "createCollections": "Create collections",
+          "userPasswordReset": "Reset user passwords"
         },
         "sections": {
           "users-invites": {

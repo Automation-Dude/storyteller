@@ -9,7 +9,6 @@ import {
   deleteImportRules,
   getImportRules,
   getUserImportRules,
-  isConfigImportRule,
 } from "@/database/importRules"
 import {
   validateWatchRulePath,
@@ -80,7 +79,11 @@ export const POST = withHasPermission("settingsUpdate")(async (request) => {
 export const DELETE = withHasPermission("settingsUpdate")(async (request) => {
   const body = (await request.json()) as { uuids: UUID[] }
 
-  const deletable = body.uuids.filter((uuid) => !isConfigImportRule(uuid))
+  const allRules = await getImportRules()
+  const configUuids = new Set(
+    allRules.filter((r) => r.source === "config").map((r) => r.uuid),
+  )
+  const deletable = body.uuids.filter((uuid) => !configUuids.has(uuid))
 
   if (deletable.length > 0) {
     await deleteImportRules(deletable)

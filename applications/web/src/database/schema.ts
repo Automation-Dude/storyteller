@@ -73,7 +73,13 @@ export interface Book {
   alignedByStorytellerVersion: string | null
   alignedWith: string | null
   assetDir: Generated<string>
-  coverColorsOverride: string | null
+  coverColorsOverride:
+    | import("kysely").ColumnType<
+        import("@storyteller-platform/okmain").JsColor[],
+        string,
+        string
+      >
+    | null
   createdAt: Generated<string>
   description: string | null
   duration: number | null
