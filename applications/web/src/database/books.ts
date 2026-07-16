@@ -901,9 +901,7 @@ export type GetBooksOptions = {
   status?: UUID
   includeManifest?: boolean
 }
-// the membership/search/media/status/filter WHERE chain shared by getBooks and
-// countBooks, so a list and its total always constrain the catalog identically.
-// applied to any book-rooted query (limit/offset/sort stay with the caller).
+
 function applyBookFilters<O>(
   query: SelectQueryBuilder<DB, "book", O>,
   bookUuids: UUID[] | null,

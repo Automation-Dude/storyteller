@@ -14,12 +14,8 @@ import { type RelationRowState, RelationSelectList } from "./RelationSelectList"
 
 export type MembershipState = "all" | "some" | "none"
 
-// how many of a set of books currently have each relation, keyed by item uuid.
 export type RelationMembership = Map<string, number>
 
-// the relation uuids a single book currently has for the given source. creators
-// split by role: authors/narrators are their own arrays; translators live in the
-// `creators` bucket alongside other roles, so they're filtered by role there.
 function bookRelationUuids(
   book: BookWithRelations,
   source: RelationSource,
@@ -47,16 +43,12 @@ function bookRelationUuids(
   }
 }
 
-// build the uuid -> count membership map from a set of books
 export function membershipFromBooks(
   books: BookWithRelations[],
   source: RelationSource,
 ): RelationMembership {
   const m: RelationMembership = new Map()
   for (const book of books) {
-    // dedupe within a book: a book counts once toward "all/some/none" even if it
-    // holds the same relation twice, otherwise the count exceeds the book total
-    // and the tri-state never reads as "all"
     for (const uuid of new Set(bookRelationUuids(book, source))) {
       m.set(uuid, (m.get(uuid) ?? 0) + 1)
     }
@@ -71,9 +63,6 @@ function membershipRowState(state: MembershipState): RelationRowState {
   return "none"
 }
 
-// the relation list wired for editing: membership all/some/none across the
-// selected books, add/remove via the source's mutations, and an optional
-// create-new row. wraps the generic RelationSelectList.
 export function RelationEditList({
   source,
   bookUuids,
@@ -88,14 +77,14 @@ export function RelationEditList({
   bookUuids: UUID[]
   membership: RelationMembership
   enabled: boolean
-  // when false, already-applied items are hidden (add-only feel); removal then
-  // happens elsewhere, e.g. the inline chips
+  /* when false, already-applied items are hidden (add-only feel); removal then
+   happens elsewhere, e.g. the inline chips*/
   showApplied?: boolean
-  // when set, offers a "create '<search>'" row
+  /* when set, offers a "create '<search>'" row*/
   onCreate?: (name: string) => void
   createLabel?: (search: string) => string
-  // fully overrides the default add on click (e.g. series opens a position
-  // dialog instead of attaching directly)
+  /* fully overrides the default add on click (e.g. series opens a position
+   dialog instead of attaching directly)*/
   onSelectOverride?: (item: RelationItem, state: MembershipState) => void
 }) {
   const actions = useRelationEditActions(source)
@@ -126,8 +115,6 @@ export function RelationEditList({
     }
   }
 
-  // create attaches a brand-new item: an explicit onCreate (dialog flows), else
-  // the source's own one-step create (e.g. a new author by name).
   const create =
     onCreate || actions.createAndAdd
       ? {

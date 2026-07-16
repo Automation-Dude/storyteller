@@ -156,8 +156,6 @@ export async function enqueueBookAlign(
   return job
 }
 
-// claim the next queued job under the lock, marking it RUNNING and registering its
-// abort controller. returns undefined when no slot is free or nothing is queued.
 async function claimNextJob(): Promise<Job | undefined> {
   await pumpMutex.lock()
   try {
@@ -471,8 +469,6 @@ export async function startProcessing(
   await enqueueBookAlign(bookUuid, restart)
 }
 
-// clamp the requested restart to the book's actual progress so we never
-// skip ahead past stages that haven't completed yet
 function clampRestart(
   restart: RestartMode,
   book: BookWithRelations,

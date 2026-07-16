@@ -193,8 +193,6 @@ export async function getAlignmentReportForJob(
   return row ?? null
 }
 
-// latest report for a book, regardless of which job produced it (covers
-// backfilled reports that have no job).
 export async function getAlignmentReportForBook(
   bookUuid: UUID,
 ): Promise<AlignmentReport | null> {

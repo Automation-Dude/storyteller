@@ -3,13 +3,10 @@ import { type PayloadAction, createSlice } from "@reduxjs/toolkit"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import { type BookSort, type DisplayField } from "@/sort"
 
-// the top-level layout of a book list page
 export type BookLayout = "grid" | "list"
-// legacy name kept for the few call sites that still say "view"
 export type BookView = BookLayout
 
-// per-layout views: the grid shows cards (cover + meta) or bare thumbnails;
-// the list shows stacked rows or a real table.
+// per-layout views: the grid shows cards (cover + meta) or bare thumbnails
 export type GridView = "card" | "thumbnail"
 export type ListView = "list" | "table"
 
@@ -25,16 +22,11 @@ export type LogDisplayPrefs = {
   levelFilter: string
 }
 
-// device-specific view state, persisted in a cookie (never synced across
-// devices; a cookie reset just falls back to the defaults). account-level
-// taste (colors, cover type, rating icon, ...) lives in the DB user prefs.
 export type UISettings = {
   detailPanelWidth: number
   librarySidebarWidth: number
   bookLayout: BookLayout
 
-  // load every matching book at once instead of paging. increases load time on
-  // large libraries; off by default.
   alwaysLoadAllBooks: boolean
 
   /* default sorts for each page */

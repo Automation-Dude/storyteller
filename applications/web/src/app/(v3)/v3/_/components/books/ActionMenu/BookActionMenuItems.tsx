@@ -43,9 +43,6 @@ import { type UUID } from "@/uuid"
 
 type Mode = "single" | "bulk"
 
-// action data emitted by the hook. every book-action surface renders it through
-// ActionEntryList inside a (searchable) FilterableMenu, so they all behave the
-// same. submenu content mounts lazily via FilterableMenuItem.
 export type BookActionEntry = {
   key: string
   label: string
@@ -61,12 +58,9 @@ export type BookActionEntry = {
   disabled?: boolean
 }
 
-// shared row styling for hand-rolled submenu buttons (processing positions).
 const actionRowClassName =
   "focus:bg-accent hover:bg-accent flex min-h-7 w-full cursor-default items-center gap-2 rounded-md px-2 py-1 text-left text-xs/relaxed outline-hidden select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5"
 
-// renders action entries as FilterableMenu items. Drop it inside a
-// `FilterableMenu` / `FilterableMenuContent` to get search + submenus for free.
 export function ActionEntryList({ entries }: { entries: BookActionEntry[] }) {
   return (
     <>

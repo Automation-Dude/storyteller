@@ -25,19 +25,13 @@ export default async function AppLayout({
   const currentVersion = getCurrentVersion()
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
 
-  // resolve the sidebar config on the server so the nav is fully rendered on
-  // first paint (no placeholder flash); the client query takes over for edits.
   await ensureSidebarDefaults(user.id)
   const sidebarGroups = await getSidebarGroups(user.id)
 
-  // same server-resolve for preferences, so accent color + colorfulness apply
-  // on first paint without a flash
   const preferences = resolveUserPreferences(await getUserSettings(user.id))
 
   const pendingAnnouncements = await getPendingAnnouncements(user.id)
 
-  // a custom accent color overrides the primary across the whole app (sidebar
-  // included), the same way --sidebar-width is set here
   const accentStyle: React.CSSProperties = preferences.accentColor
     ? ({
         "--primary": preferences.accentColor,

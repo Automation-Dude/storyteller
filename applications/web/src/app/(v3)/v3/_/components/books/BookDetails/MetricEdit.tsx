@@ -28,8 +28,6 @@ function metricDisplayClass(canEdit: boolean, empty: boolean) {
   )
 }
 
-// page count is a plain number override; display falls back through the
-// format-specific counts (book > ebook > readaloud) via bookPageCount.
 export function PageCountEdit({ className }: { className?: string }) {
   const {
     book,
@@ -118,8 +116,6 @@ export function PageCountEdit({ className }: { className?: string }) {
     />
   )
 
-  // global edit mode uses the boxed input in flow; single-field inline edit
-  // floats the shared chrome over the metrics line.
   if (!inlineMode) return input
 
   return (
@@ -271,8 +267,6 @@ export function DurationEdit({ className }: { className?: string }) {
     </span>
   )
 
-  // global edit mode keeps the h/m/s group in flow; single-field inline edit
-  // floats the shared chrome over the metrics line.
   if (!inlineMode) return group
 
   return (

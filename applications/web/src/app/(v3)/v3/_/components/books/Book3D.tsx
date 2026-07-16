@@ -27,53 +27,38 @@ import {
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
 
-// cap at 2x: the cover is the heaviest gpu texture here, 3x triples its area
-// for no visible gain on a small slab and chews memory while turning
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 2
 
-// thickness is a *fraction of the cover width*, so a book looks like the same
-// book whether it renders in the panel or fullscreen (only width differs)
 const THICK_MIN_RATIO = 0.07
 const THICK_MAX_RATIO = 0.32
 
-// reference "long" values per metric, used to normalise thickness
 const DURATION_MAX = 108_000 // ~30h in seconds
 const PAGES_MAX = 1_000
 const FILE_SIZE_MAX = 50_000_000 // 50mb
 
-// paper page-stack texture for the head / tail / fore-edge of a book
 const PAGE_EDGE_V =
   "repeating-linear-gradient(to right, #f3ecda 0 1px, #d4c4a0 1px 2.5px)"
 const PAGE_EDGE_H =
   "repeating-linear-gradient(to bottom, #f3ecda 0 1px, #d4c4a0 1px 2.5px)"
-// glossy plastic edge for a cd / jewel case
 const CD_EDGE_V =
   "linear-gradient(to right, rgba(255,255,255,0.6), rgba(170,176,188,0.35) 45%, rgba(90,96,108,0.5))"
 const CD_EDGE_H =
   "linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(170,176,188,0.35) 45%, rgba(90,96,108,0.5))"
 
-// audiobook cd case: one disc per ~6h of audio, capped, each disc only adds a
-// little depth so a long listen reads as a fat multi-disc case (not a brick).
-// also width-relative for the same panel/fullscreen consistency as books.
 const HOURS_PER_DISC = 6
 const MAX_DISCS = 6
 const CD_BASE_RATIO = 0.11
 const CD_PER_DISC_RATIO = 0.03
 
-// spine type sizes scale with width too (clamped), so the spine reads the same
-// proportionally at any render size. the pretext fitter is fed these exact
-// values so its measurement matches what we render.
 const SPINE_TITLE_RATIO = 0.072
 const SPINE_TITLE_MIN = 10
 const SPINE_TITLE_MAX = 22
 const SPINE_FONT_SERIF = 'Georgia, "Times New Roman", serif'
 const SPINE_FONT_SANS = "ui-sans-serif, system-ui, sans-serif"
 
-// what to print along the spine
 export type SpineInfo = "title" | "pages" | "duration"
 
-// preset angles cycled through on tap
 const VIEWS = [
   { y: 0, x: 0 }, // cover
   { y: -30, x: 0 }, // spine
@@ -84,9 +69,6 @@ const VIEWS = [
 const SPRING = { stiffness: 140, damping: 18, mass: 0.6 }
 const DRAG_SENSITIVITY = 0.4
 
-// a transparent outline forces chrome to inflate the composited 3d quad and
-// antialias its edges, otherwise rotated faces in a preserve-3d context render
-// with jagged silhouettes
 const AA_EDGE = { outline: "1px solid transparent" } as const
 
 function clamp(value: number, min: number, max: number): number {
@@ -236,9 +218,6 @@ function CoverFace({
   )
 }
 
-// the back of the book: blurb with a drop cap, year tucked in the corner.
-// everything scales off the rendered width so the blurb reads well both small
-// (in the panel) and large (fullscreen), and the drop cap uses em so it tracks
 function DescriptionBack({
   book,
   primary,
@@ -270,7 +249,6 @@ function DescriptionBack({
       {text ? (
         <p
           className="h-full max-h-full text-left font-serif leading-relaxed first-letter:float-left first-letter:mr-[0.1em] first-letter:font-serif first-letter:text-[3.1em] first-letter:leading-[0.72] first-letter:font-semibold"
-          // dont read that shit
           aria-hidden
           style={{
             fontSize: backFontSize,
@@ -281,10 +259,7 @@ function DescriptionBack({
         >
           {text}
         </p>
-      ) : // <p className="m-auto font-serif italic opacity-70" style={{ fontSize }}>
-      //   No description
-      // </p>
-      null}
+      ) : null}
 
       {year !== null && (
         <span
@@ -310,9 +285,6 @@ type SlabProps = {
   front: ReactNode
   primary: CoverColor
   accent: CoverColor
-  // color of the physical body (back + spine). defaults to primary; the single
-  // stage passes the ebook's own color so the back/spine aren't tinted by an
-  // audiobook cover or a manual override.
   back?: CoverColor
   edge: "paper" | "plastic"
   spine: SpineInfo

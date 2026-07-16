@@ -354,21 +354,13 @@ export const shelfFilterConditionSchema = z.preprocess((val) => {
   return obj
 }, conditionVariants)
 
-// the in-memory condition the editor manipulates is intentionally loose; the
-// strict schema above is the validation boundary (routes + generated json
-// schema). value is optional (absent for unary), dimension only for
-// ratingDimension.
 export type ShelfFilterCondition = {
   type: "condition"
   field: ShelfFilterField
   operator: ShelfFilterOperator
   value?: ShelfFilterValue
   dimension?: string
-  // only meaningful when field is "creators": scopes the match to a single marc
-  // relator role (aut / nrt / trl). absent = any role.
   role?: string
-  // only meaningful for fileSize / duration / pageCount: scopes the numeric to
-  // one asset format. absent = the cross-format fallback.
   format?: AssetFormat
 }
 
@@ -456,9 +448,6 @@ export const OPERATOR_LABELS: Record<ShelfFilterOperator, string> = {
 export function getOperatorsForField(
   field: ShelfFilterField,
 ): ShelfFilterOperator[] {
-  // the special fields don't follow the plain field-type operator sets: review
-  // is text-match only (no any-of), a rating axis is numeric, search is a single
-  // contains.
   if (field === "review") {
     return [...TEXT_MATCH_OPERATORS, ...UNARY_OPERATORS]
   }
@@ -564,14 +553,10 @@ export function isLogicalBlock(
 ): node is ShelfFilterAnd | ShelfFilterOr | ShelfFilterNot {
   return node.type === "and" || node.type === "or" || node.type === "not"
 }
-// the default filter the editor starts from: an `and` block holding a single
-// blank condition, ready to fill in or add siblings to.
 
 export function createDefaultFilter(): ShelfFilterAnd {
   return createAndBlock()
 }
-// coerce any stored filter to the root rule: a logical block. a bare condition
-// gets wrapped in an `and`; a missing filter becomes the default block.
 
 export function normalizeRootFilter(
   node: ShelfFilterNode | null,
@@ -581,14 +566,8 @@ export function normalizeRootFilter(
   return node
 }
 
-// the shelf's persisted default sort. accepts any registry sort field (the same
-// vocabulary the books-page SortControl offers) plus "position", the manual
-// ordering used by hand-curated shelves. legacy "rating" rows are normalized to
-// userRating at read time (see getShelfBooks).
 export type ShelfOrderBy = RegistrySortField | "position"
 
-// non-empty tuple (runtime always has the registry fields + "position") so it
-// can seed z.enum directly at the call sites.
 export const SHELF_ORDER_BY_FIELDS = [
   ...SORTABLE_FIELDS,
   "position",

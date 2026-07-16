@@ -27,8 +27,6 @@ import {
 } from "@/database/ratingDimensions"
 import * as icon from "@/icons"
 
-// the chart geometry is hand-tuned around this fixed size so the drag overlay,
-// the polygon, and the labels all line up; resizing it throws that off.
 const SIZE = 280
 const LABEL_PADDING = 42
 
@@ -88,12 +86,6 @@ type Props = {
   className?: string
 }
 
-/**
- * Directly-editable radar for the multidimensional ("JoJo") rating. The recharts
- * chart renders the polygon; a transparent svg overlay (sharing the same polar
- * geometry) handles drag/click. The chart is hidden from screen readers, who get
- * the labelled sliders under "Adjust scores" instead.
- */
 export function MultidimensionalRating({
   dimensions,
   scores,
@@ -120,10 +112,6 @@ export function MultidimensionalRating({
   const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
-    // adopt server/optimistic state unless the user is mid-drag; the value
-    // compare keeps an unstable scores reference from looping or wiping edits.
-    // while there are uncommitted edits (dirty) an unrelated store refresh, e.g.
-    // setting a manual star rating, must not clobber the in-progress draft.
     if (draggingRef.current || dirty) return
     const incoming = scores ?? {}
     if (!sameScores(incoming, draftRef.current)) setDraft({ ...incoming })
@@ -186,7 +174,6 @@ export function MultidimensionalRating({
     value: draft[d.id] ?? 0,
   }))
 
-  // map a pointer event to svg-space coordinates (accounting for css scaling)
   const toLocal = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return null
@@ -255,13 +242,7 @@ export function MultidimensionalRating({
 
   return (
     <div className={cn("relative flex flex-col items-center gap-4", className)}>
-      <div
-        // must stay square: the pointer hit-testing maps the box back onto the
-        // SIZE x SIZE polar geometry, so a non-square box skews click accuracy
-        className="relative mx-auto h-[280px] w-[280px]"
-        // hidden from screen readers; they use the sliders under "Adjust scores"
-        aria-hidden
-      >
+      <div className="relative mx-auto h-[280px] w-[280px]" aria-hidden>
         <ChartContainer
           config={chartConfig}
           className="relative flex h-full w-full items-center"
@@ -325,7 +306,6 @@ export function MultidimensionalRating({
           })}
         </ChartContainer>
 
-        {/* interactive overlay: shares cx/cy/outerRadius with the chart above */}
         <svg
           ref={svgRef}
           width={SIZE}
@@ -395,7 +375,6 @@ export function MultidimensionalRating({
         )}
       </div>
 
-      {/* re-add axes the user deselected without digging into the sliders */}
       {deselectedDimensions.length > 0 && (
         <div className="flex flex-wrap items-center justify-center gap-1.5">
           {deselectedDimensions.map((d) => (

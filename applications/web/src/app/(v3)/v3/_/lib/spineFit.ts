@@ -1,9 +1,5 @@
-// spine text fitting, backed by @chenglou/pretext.
+// spine text fitting using @chenglou/pretext
 //
-// this is the *only* file in the app that imports pretext. to measure the
-// bundle impact of removing it: delete this file, remove the fitSpine import +
-// the small effect block in Book3D.tsx, and `yarn remove @chenglou/pretext`.
-// the spine falls back to a single title line on its own, so nothing breaks.
 import { measureLineStats, prepareWithSegments } from "@chenglou/pretext"
 
 export type SpineFit = {
@@ -24,9 +20,6 @@ type FitArgs = {
   authorSize: number
 }
 
-// decide how many lines the title needs and whether the author still fits
-// below it, given the physical spine dimensions. pretext measures via canvas
-// (no DOM reflow), so this must only run in the browser.
 export function fitSpine(args: FitArgs): SpineFit {
   if (typeof document === "undefined") return DEFAULT_SPINE_FIT
 

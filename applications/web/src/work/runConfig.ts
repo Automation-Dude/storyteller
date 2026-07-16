@@ -3,10 +3,6 @@ import { z } from "zod"
 import { type Settings } from "@/apiModels"
 import { SettingsSchema } from "@/database/settingsTypes"
 
-// the transcription/alignment settings a single align run actually consumes (see
-// worker.ts). captured per job at enqueue so a run is unaffected by later edits to
-// global settings, and so you can transcribe one book with a different model/language
-// without touching the defaults.
 export const RUN_CONFIG_SETTING_KEYS = [
   // split tracks
   "maxTrackLength",
@@ -41,15 +37,11 @@ export const RunConfigSchema = SettingsSchema.pick(
     [K in (typeof RUN_CONFIG_SETTING_KEYS)[number]]: true
   },
 ).extend({
-  // bcp-47 language tag for the run, defaults to the book's language. null means
-  // fall back to the ebook's declared language at transcribe time.
   language: z.string().nullable(),
 })
 
 export type RunConfig = z.infer<typeof RunConfigSchema>
 
-// a non-secret summary safe to send to the client (the full config carries api
-// keys). used by the queue ui / toast to show what a run is doing.
 export type RunConfigSummary = Pick<
   RunConfig,
   | "transcriptionEngine"
@@ -74,8 +66,6 @@ export function summarizeRunConfig(
   }
 }
 
-// build a validated run config from global settings + the book's language, with
-// optional per-run overrides layered on top.
 export function buildRunConfig(
   settings: Settings,
   bookLanguage: string | null,

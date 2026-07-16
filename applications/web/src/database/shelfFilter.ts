@@ -182,8 +182,6 @@ export async function cleanShelfFiltersForDeletedEntity(
 type EB = ExpressionBuilder<DB, "book">
 type FilterExpression = ExpressionWrapper<DB, "book", SqlBool>
 
-// correlated scalar subquery pulling a column from the latest alignment_report
-// for the current book. used throughout isEmpty, comparison, and sort builders.
 function latestReportColumn(column: string) {
   return sql`(select ${sql.raw(column)} from alignment_report where book_uuid = book.uuid order by created_at desc limit 1)`
 }
@@ -774,8 +772,6 @@ function buildStringComparison(
   }
 }
 
-// string comparison against an arbitrary sql expression (e.g. a correlated
-// subquery) rather than a fixed book column.
 function buildStringExprComparison(
   eb: EB,
   expr: ReturnType<typeof sql>,
@@ -908,9 +904,6 @@ function buildUserRatingComparison(
   }
 }
 
-// last-read date lives on the per-user position row (position.updatedAt, an iso
-// datetime); each operator becomes an exists against the user's row, mirroring
-// the userRating pattern.
 function buildLastReadComparison(
   eb: EB,
   operator: ShelfFilterOperator,
@@ -949,9 +942,6 @@ function buildLastReadComparison(
   }
 }
 
-// reading progress is the locator's total progression (0-1), stored as json on
-// the per-user position row. extract it with json_extract (a literal path, not
-// interpolated sql) and compare numerically.
 function buildReadingPositionComparison(
   eb: EB,
   operator: ShelfFilterOperator,
@@ -999,7 +989,6 @@ function buildReviewComparison(
   value: ShelfFilterValue | undefined,
   userId?: UUID,
 ): FilterExpression {
-  // review kinda complicated
   const base = eb
     .selectFrom("userBookRating")
     .select(sql.lit(1).as("one"))
@@ -1051,9 +1040,6 @@ function buildRatingDimensionComparison(
 ): FilterExpression {
   if (!dimension) return eb.lit(true)
 
-  // the per-axis scores are a json object on userBookRating.dimensions; pull out
-  // the requested axis with json_extract (the path is a bound value, not
-  // interpolated sql).
   const path = `$.${dimension}`
   const score = sql<number>`json_extract(${sql.ref("userBookRating.dimensions")}, ${path})`
   const base = eb
@@ -1101,9 +1087,7 @@ function buildRatingDimensionComparison(
 }
 
 /**
- * generic free-text search across a book's title, authors and series. shared
- * with getBooks (database/books.ts) so the `search` shelf field and the books
- * list query stay in sync; swap this out when full-text search lands.
+ * generic free-text search across a book's title, authors and series.
  */
 export function buildBookSearchExpression(
   eb: EB,
@@ -1222,9 +1206,6 @@ function assetNumericExpr(
   }
 }
 
-// a single asset format's numeric column, when the condition scopes to one
-// format (e.g. "ebook file size"). combinations that don't exist (an audiobook
-// has no page count) resolve to null so the comparison simply matches nothing.
 function formatScopedNumericExpr(
   field: "fileSize" | "duration" | "pageCount",
   format: AssetFormat,

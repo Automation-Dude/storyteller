@@ -28,8 +28,6 @@ import {
 import { CollapsibleSection } from "./CollapsibleSection"
 import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
 
-// inline number editor styled like EditableField (SEAMLESS_BOX), but committing
-// through setBookRating since the rating is per-user and not part of the form
 function InlineRatingNumber({
   value,
   placeholder,
@@ -141,8 +139,6 @@ export function ReviewSection({ className }: { className?: string }) {
     setEditing(true)
   }
 
-  // a manual rating always replaces the multidimensional rating; drop the whole
-  // row when there's nothing left to keep
   const applyManualRating = (value: number | null) => {
     if (value == null && !currentReview) {
       void deleteUserBookRating({ bookUuid: book.uuid })
@@ -157,8 +153,6 @@ export function ReviewSection({ className }: { className?: string }) {
   }
 
   const addAdvancedRating = () => {
-    // seed every axis with the current (snapped) star rating so converting
-    // keeps the score, then let the user adjust
     const base =
       Math.round(Math.min(5, Math.max(0, currentRating ?? 0)) * 2) / 2
     const scores: RatingDimensionScores = Object.fromEntries(
@@ -200,8 +194,6 @@ export function ReviewSection({ className }: { className?: string }) {
     [book.uuid, setUserBookRating],
   )
 
-  // a manual star rating that sits on top of the dimensions; sent without
-  // dimensions so the server keeps them and treats this as an override
   const lastManualRef = useRef<number | null>(null)
   const setManualRating = useCallback(
     (value: number | null) => {
@@ -211,7 +203,6 @@ export function ReviewSection({ className }: { className?: string }) {
     [book.uuid, setUserBookRating],
   )
 
-  // re-sync the star rating to whatever the dimensions currently average to
   const useDimensionAverage = useCallback(() => {
     if (currentDimensions) {
       void setUserBookRating({

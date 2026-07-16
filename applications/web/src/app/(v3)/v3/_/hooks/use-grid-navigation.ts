@@ -2,15 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-// headless keyboard navigation over a (possibly virtualized) collection.
-//
-// dom focus stays on the container; the active item is tracked as an index and
-// surfaced via aria-activedescendant, so the focused item can unmount (as it
-// does under virtualization) without losing focus. arrow math is 2d via
-// `columns` (pass 1 for a plain list). generalized from the virtual-focus
-// pattern in ui/filterable-menu.tsx so the same primitive can later drive the
-// app sidebar and the sidebar search.
-
 type NavKey =
   | "ArrowRight"
   | "ArrowLeft"
@@ -37,15 +28,10 @@ export type GridNavigationOptions = {
   // 1 for lists/sidebars, column count for a grid
   columns: number
   role?: string
-  // maps an index to the dom id of that item (for aria-activedescendant)
   getItemId: (index: number) => string | undefined
-  // keep the active item on screen (virtualizer.scrollToIndex of its row)
   scrollToIndex?: (index: number) => void
-  // Enter/Space, and the "commit" action in general
   onActivate?: (index: number) => void
-  // fires on every cursor move (drives the "preview follows focus" model)
   onActiveChange?: (index: number) => void
-  // where the cursor lands the first time nav starts (e.g. the selected item)
   initialIndex?: () => number | null
   enabled?: boolean
 }
@@ -76,7 +62,6 @@ export function useGridNavigation({
 }: GridNavigationOptions): GridNavigation {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
-  // read callbacks at event time so the key handler never needs re-subscribing
   const cbRef = useRef({
     onActivate,
     onActiveChange,
@@ -85,7 +70,6 @@ export function useGridNavigation({
   })
   cbRef.current = { onActivate, onActiveChange, scrollToIndex, initialIndex }
 
-  // clamp when the collection shrinks (facet switch, filter change)
   useEffect(() => {
     setActiveIndex((current) => {
       if (current === null) return null
@@ -104,10 +88,6 @@ export function useGridNavigation({
     [itemCount],
   )
 
-  // scroll from a post-commit effect, not inside move(): calling
-  // virtualizer.scrollToIndex mid-keydown (before react commits the new index)
-  // undershoots with dynamically-measured rows and drifts, so after a handful of
-  // rows the active item lands outside overscan, unmounts, and nav looks dead.
   useEffect(() => {
     if (activeIndex === null) return
     cbRef.current.scrollToIndex?.(activeIndex)
@@ -116,14 +96,10 @@ export function useGridNavigation({
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (!enabled || itemCount === 0) return
-      // ignore keys bubbling from inner focusables (card links, menu trigger) so
-      // we don't hijack their Enter/arrows -- we only drive nav from the
-      // container itself, which is where focus lives in the activedescendant model.
       if (event.target !== event.currentTarget) return
 
       const current = activeIndex
 
-      // the first nav key just reveals the cursor at the initial position
       if (current === null) {
         if (!isNavKey(event.key)) return
         event.preventDefault()
@@ -169,9 +145,6 @@ export function useGridNavigation({
     [enabled, itemCount, activeIndex, columns, move],
   )
 
-  // landing in the collection shows the cursor without opening anything. guard
-  // against focus bubbling up from inner links so clicking a card link doesn't
-  // spuriously seed the cursor.
   const onFocus = useCallback(
     (event: React.FocusEvent) => {
       if (!enabled || itemCount === 0) return

@@ -30,11 +30,6 @@ type BuiltinMetaBase = {
   permission?: Permission
 }
 
-// presentation metadata for a builtin nav entry. the canonical key list and
-// default grouping/order live in src/sidebar-builtins.ts; this map must cover
-// exactly those keys (enforced by the Record type). the labelNs discriminant
-// keeps labelKey precise so the matching translator validates it without
-// casts.
 type BuiltinMeta =
   | (BuiltinMetaBase & { labelNs: "AppSidebar"; labelKey: AppSidebarLabelKey })
   | (BuiltinMetaBase & { labelNs: "LibraryPage"; labelKey: LibraryLabelKey })

@@ -22,11 +22,6 @@ import {
   membershipFromBooks,
 } from "./RelationEditList"
 
-// filterable-menu shell around RelationEditList: owns open state and drives the
-// picker's lazy fetch (the content only mounts, so only fetches, once opened).
-// membership is supplied either as a book list (action menu) or as explicit uuids
-// + counts (the inline chip editors, which only hold the current relation, not
-// the book). the picker brings its own search, so the menu content hides its.
 export function RelationEditMenu({
   source,
   books,

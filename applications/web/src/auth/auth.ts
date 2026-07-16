@@ -642,11 +642,6 @@ export function hasPermission(
   return !!user?.permissions?.[permission]
 }
 
-// the app authenticates by reading the st_token cookie (or bearer header) and
-// looking the session up in the db directly. we deliberately do not use
-// nextAuth.auth() here: with the credentials provider + hand-rolled session
-// cookie, auth() has session-cookie side effects that clear st_token when run
-// from a server component, which logs the user straight back out.
 export async function getCurrentUser(): Promise<UserWithPermissions | null> {
   const cookieStore = await cookies()
   const authToken =

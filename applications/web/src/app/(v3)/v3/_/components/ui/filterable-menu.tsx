@@ -65,12 +65,8 @@ function itemMatches(query: string, text: string): boolean {
   return q === "" || text.toLowerCase().includes(q)
 }
 
-// modifier keys captured at activation time, so a confirm action can honor
-// shift-to-skip whether the row was clicked or triggered with Enter.
 export type ActivationModifiers = { shiftKey: boolean }
 
-// what a registered row exposes to keyboard navigation. `metaRef` is read at
-// event time (not registration time) so it always reflects the latest closures.
 type FilterableMenuItemMeta = {
   disabled: boolean
   isSubmenu: boolean
@@ -81,9 +77,6 @@ type FilterableMenuItemEntry = {
   metaRef: RefObject<FilterableMenuItemMeta>
 }
 
-// a virtualized list owns its own index-based navigation (its rows aren't all in
-// the DOM), so it hands the surface these two operations and the surface routes
-// keyboard events to them instead of the DOM registry.
 type MenuNavApi = {
   move: (to: "up" | "down" | "home" | "end") => void
   activate: (modifiers?: ActivationModifiers) => void
@@ -117,9 +110,6 @@ const FilterableMenuContext = createContext<FilterableMenuContextValue>({
   searchRef: { current: null },
 })
 
-// a group scopes label-aware search: when the query matches the group's own
-// label, every item in the group survives. items outside any group fall back to
-// the default (never a group match, so they match individually).
 type FilterableMenuGroupContextValue = {
   inGroup: boolean
   groupMatches: boolean
@@ -132,8 +122,6 @@ const FilterableMenuGroupContext =
     registerLabel: noop,
   })
 
-// the enclosing submenu's open state, so the trigger can open it and the
-// content can render (and close) itself.
 type FilterableMenuSubContextValue = {
   open: boolean
   setOpen: (open: boolean) => void
@@ -143,15 +131,10 @@ const FilterableMenuSubContext = createContext<FilterableMenuSubContextValue>({
   setOpen: noop,
 })
 
-// closes the menu (or nearest surface) an item lives in. root menus supply this
-// through FilterableMenu; the handle-based menus pass an explicit onClose.
 const FilterableMenuRootContext = createContext<{ close: () => void }>({
   close: noop,
 })
 
-// registers a row with the enclosing menu for keyboard navigation and reports
-// whether it is the active (highlighted) row. rows that don't match the current
-// query pass `matches: false` and stay out of the registry.
 function useFilterableMenuItem(
   id: string,
   matches: boolean,
@@ -186,8 +169,6 @@ function useFilterableMenuItem(
   }
 }
 
-// the shared machinery behind a menu surface (root content and each submenu
-// content): the item registry, active-row tracking, and arrow-key navigation.
 function useMenuSurface({
   searchable,
   onClose,
@@ -195,7 +176,6 @@ function useMenuSurface({
 }: {
   searchable: boolean
   onClose: () => void
-  // exit this surface back to its parent (for submenus). undefined at the root.
   onExit?: () => void
 }) {
   const [query, setQuery] = useState("")
@@ -220,7 +200,6 @@ function useMenuSurface({
     onClose()
   }, [onClose])
 
-  // the visible, enabled rows in document order -- the order arrow keys follow.
   const orderedIds = useCallback(() => {
     return [...registryRef.current.entries()]
       .filter(([, entry]) => !entry.metaRef.current.disabled)
@@ -233,9 +212,6 @@ function useMenuSurface({
       .map(([id]) => id)
   }, [])
 
-  // as the query changes the matching set changes; child register/unregister
-  // effects run before this one, so the registry is current. reset the highlight
-  // to the first match so it always tracks what's typed.
   useEffect(() => {
     if (!searchable) return
     setActiveId(orderedIds()[0] ?? null)
@@ -265,7 +241,6 @@ function useMenuSurface({
       event.key === "Home" ||
       event.key === "End"
     ) {
-      // a virtualized list owns its own nav; otherwise walk the DOM registry.
       if (nav) {
         event.preventDefault()
         nav.move(
@@ -293,8 +268,6 @@ function useMenuSurface({
       return
     }
 
-    // enter/exit a submenu along the reading direction, so RTL flips which arrow
-    // goes inward vs outward.
     const rtl =
       getComputedStyle(event.currentTarget as HTMLElement).direction === "rtl"
     const inwardKey = rtl ? "ArrowLeft" : "ArrowRight"
@@ -302,8 +275,6 @@ function useMenuSurface({
     const input = inputRef.current
     const inInput = input !== null && event.target === input
 
-    // exit back to the parent menu (mirror of entering). from the search input
-    // only when the caret is already at the start, so the key still moves it.
     if (event.key === outwardKey && onExit) {
       if (inInput && !(input.selectionStart === 0 && input.selectionEnd === 0))
         return
@@ -352,8 +323,6 @@ function useMenuSurface({
   return { ctx, query, setQuery, resetQuery, inputRef, handleKeyDown }
 }
 
-// clears the surface's query when the popup subtree unmounts (i.e. the menu
-// closes), so a stale query never lingers into the next open.
 function ResetQueryOnClose({ reset }: { reset: () => void }) {
   useEffect(() => reset, [reset])
   return null
@@ -467,8 +436,6 @@ export function FilterableMenuContent({
   className?: string
   searchInputClassName?: string
   onClose?: () => void
-  // position against something other than the trigger (e.g. a context menu's
-  // cursor coordinates as a virtual element)
   anchor?: ComponentProps<typeof Popover.Positioner>["anchor"]
 }) {
   const rootClose = useContext(FilterableMenuRootContext).close
@@ -512,8 +479,6 @@ export function FilterableMenuContent({
   )
 }
 
-// groups scope label-aware search. put a single `FilterableMenuLabel` inside to
-// give the group its heading and its searchable text.
 export function FilterableMenuGroup({
   children,
   className,
@@ -646,9 +611,6 @@ export function FilterableMenuItem({
   )
 }
 
-// submenu triad, composed like dropdown-menu: `FilterableMenuSub` holds the open
-// state, `FilterableMenuSubTrigger` is the row that opens it, and
-// `FilterableMenuSubContent` is its own self-contained menu surface.
 export function FilterableMenuSub({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const value = useMemo<FilterableMenuSubContextValue>(
@@ -748,8 +710,6 @@ export function FilterableMenuSubContent({
   alignOffset?: number
 }) {
   const { open, setOpen } = useContext(FilterableMenuSubContext)
-  // the parent surface's search input, so closing this flyout (e.g. Escape)
-  // returns focus there rather than to the non-focusable trigger row.
   const parentSearchRef = useContext(FilterableMenuContext).searchRef
   const close = useCallback(() => {
     setOpen(false)
@@ -762,9 +722,7 @@ export function FilterableMenuSubContent({
       onExit: close,
     })
 
-  // initalfocus should do that, no ure why its seemingly failngo
   useEffect(() => {
-    // focus on open
     if (open) {
       inputRef.current?.focus()
     }
@@ -786,8 +744,6 @@ export function FilterableMenuSubContent({
           className={cn(menuPopupClassName, "w-64", className)}
           onKeyDown={handleKeyDown}
         >
-          {/* mount lazily so lazy content (relation pickers) only fetches once
-              the submenu is opened. */}
           {open && (
             <FilterableMenuContext.Provider value={ctx}>
               <ResetQueryOnClose reset={resetQuery} />
@@ -808,10 +764,6 @@ export function FilterableMenuSubContent({
   )
 }
 
-// a data-driven, always-virtualized list of rows for inside a menu surface. it
-// reuses the surface's search box (filters by `getText` against the menu query)
-// and delegates keyboard nav to the surface via `registerNav`. use this instead
-// of mapping hundreds of `FilterableMenuItem` children.
 export function VirtualizedFilterableMenuItems<T>({
   items,
   getKey,
@@ -830,9 +782,7 @@ export function VirtualizedFilterableMenuItems<T>({
   getText: (item: T) => string
   renderRow: (item: T) => ReactNode
   onSelect: (item: T, modifiers: ActivationModifiers) => void
-  // keep the menu open after a selection (multi/tri-state pickers). default: keep
   closeOnSelect?: boolean
-  // a trailing "create <query>" row, shown when the query has no exact match
   create?: {
     label: (query: string) => string
     onCreate: (query: string) => void
@@ -847,8 +797,6 @@ export function VirtualizedFilterableMenuItems<T>({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
 
-  // callbacks are read through refs so the filter memo / nav registration stay
-  // stable across renders (parents often pass inline closures).
   const getTextRef = useRef(getText)
   getTextRef.current = getText
 
@@ -869,7 +817,6 @@ export function VirtualizedFilterableMenuItems<T>({
   const createIndex = showCreate ? filtered.length : -1
   const rowCount = filtered.length + (showCreate ? 1 : 0)
 
-  // track the filtered set changing (query typed) and snap the highlight to top.
   useEffect(() => {
     setActive(0)
   }, [q])
@@ -918,7 +865,6 @@ export function VirtualizedFilterableMenuItems<T>({
     }
   }, [registerNav])
 
-  // keep the active row (when it's a real item, not the create row) in view.
   useEffect(() => {
     if (active < filtered.length) {
       virtualizer.scrollToIndex(active, { align: "auto" })

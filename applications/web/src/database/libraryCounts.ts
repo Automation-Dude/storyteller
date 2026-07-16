@@ -239,12 +239,6 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// per-section facet lists (replaces extractItems over an all-books fetch)
-// ---------------------------------------------------------------------------
-
-// the displayed creator name: prefer fileAs (for "Last, First" sorting) but fall
-// back to name when it's empty. raw sql bypasses the camelCase plugin.
 const creatorName = sql<string>`coalesce(nullif(creator.file_as, ''), creator.name)`
 
 async function seriesFacets(userId: UUID): Promise<FacetValue[]> {
@@ -330,8 +324,6 @@ async function collectionFacets(userId: UUID): Promise<FacetValue[]> {
     .execute()
 }
 
-// statuses are a fixed, user-owned set: every status shows even with zero books,
-// so the base is the status table left-joined to this user's book-status links.
 async function statusFacets(userId: UUID): Promise<FacetValue[]> {
   return db
     .selectFrom("status")
@@ -363,9 +355,6 @@ async function publicationYearFacets(userId: UUID): Promise<FacetValue[]> {
     .execute()
 }
 
-// canonical rating buckets, always shown in full (empty buckets get 0). single
-// source for the key, its ★ label, and its upper bound, so the SQL bucketing and
-// the zero-fill can't drift. keys stay stable (ShelfFilter ranges depend on them).
 const RATING_BUCKETS = [
   { key: "0-0.49", name: "☆☆☆☆☆", max: 0.49 },
   { key: "0.5-1.49", name: "★☆☆☆☆", max: 1.49 },
@@ -375,8 +364,6 @@ const RATING_BUCKETS = [
   { key: "4.5-5", name: "★★★★★", max: 5 },
 ] as const
 
-// bucket key from the rating value, derived from RATING_BUCKETS so it stays in
-// lockstep with the fill. the top bucket is the else branch (rating <= 5).
 const TOP_RATING_BUCKET = RATING_BUCKETS[RATING_BUCKETS.length - 1] as {
   key: string
 }
@@ -457,8 +444,6 @@ async function formatFacets(userId: UUID): Promise<FacetValue[]> {
 
   const counts = new Map(rows.map((r) => [r.key, r.bookCount]))
 
-  // the canonical set always shows (0-filled); surface any extra bucket the
-  // partition emits (e.g. 'missing-media') so no book is silently uncounted.
   const canonical: FacetValue[] = FORMAT_VALUE_KEYS.map((key) => ({
     key,
     name: key,
@@ -490,9 +475,6 @@ async function gradeFacets(userId: UUID): Promise<FacetValue[]> {
     .execute()
 }
 
-// manual shelves count their shelfBook rows; smart shelves (filter set) are
-// counted by running their filter, same as getLibraryCounts. a shelf is one or
-// the other, so the filter presence decides which count wins.
 async function shelfFacets(userId: UUID): Promise<FacetValue[]> {
   const shelves = await db
     .selectFrom("shelf")
@@ -617,8 +599,6 @@ export async function getSectionFacets(
 ): Promise<FacetValue[]> {
   const facets = await getSectionFacetList(userId, section)
 
-  // formats partition every book; grades only exist on graded books. neither
-  // gets a "(no X)" bucket.
   if (section === "formats" || section === "grades") return facets
 
   const none = await countSectionNone(userId, section)

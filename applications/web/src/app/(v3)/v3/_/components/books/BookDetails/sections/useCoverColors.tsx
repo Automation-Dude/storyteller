@@ -1,3 +1,4 @@
+// TODO: deprecae in favor of coverscope
 import { useTheme } from "next-themes"
 import { useMemo } from "react"
 
@@ -26,12 +27,8 @@ export type CoverColor = {
 
 export type CoverColors = {
   primary: CoverColor
-  // highest-contrast swatch vs primary, falls back to primary
   accent: CoverColor
-  // every swatch in source order
   palette: CoverColor[]
-  // false when the book has no extracted colors and primary/accent are the
-  // theme-primary fallback (consumers should stay neutral rather than tint)
   hasColors: boolean
 }
 
@@ -121,12 +118,8 @@ export function useCoverColors(
   }, [bookOrColors, type])
 }
 
-// the surface a cover-derived accent has to read against, as a luminance on the
-// same 0-255 scale used above. light mode is near-white, dark mode near-black.
 const LIGHT_SURFACE = 250
 const DARK_SURFACE = 28
-// modest target: enough for a ui accent / large text without forcing every
-// color to near-black or near-white.
 const MIN_CONTRAST = 3.2
 
 function clamp8(n: number): number {
@@ -143,10 +136,6 @@ export type ContrastColor = {
   onColor: string
 }
 
-// take a cover color and nudge its lightness until it reads with enough contrast
-// against the active surface: darken in light mode, lighten in dark mode. this
-// replaces the old "fall back to the theme orange when the color is too light"
-// behavior -- we keep the cover's hue and just move it far enough to be legible.
 export function ensureContrast(
   color: CoverColor,
   isDarkMode: boolean,
@@ -154,9 +143,6 @@ export function ensureContrast(
   return ensureContrastAgainst(color, isDarkMode ? DARK_SURFACE : LIGHT_SURFACE)
 }
 
-// same lightness walk, but against an arbitrary surface luminance (0-255): a
-// tinted hero background, a colored chip, ... moves away from the surface's
-// side of the scale until the contrast target is met.
 export function ensureContrastAgainst(
   color: CoverColor,
   surface: number,
@@ -189,29 +175,19 @@ export function ensureContrastAgainst(
   }
 }
 
-// resolved light/dark mode for cover-color contrast decisions. undefined during
-// the first client render (before next-themes resolves) reads as light.
 export function useIsDarkMode(): boolean {
   const { resolvedTheme } = useTheme()
   return resolvedTheme === "dark"
 }
 
-// how far past the historical maximum the multiplier may go at 100% strength
 const MAX_INTENSITY_MULTIPLIER = 1.5
 
 export type ColorPreferences = {
   level: ColorMode
-  // the tint multiplier fed to --cover-intensity. the stored strength maps so
-  // NEUTRAL_COLOR_STRENGTH -> 1 (the historical look) and 1 -> genuinely more.
   intensity: number
-  // the raw stored 0..1 strength, for the settings ui
   strength: number
-  // ambient background tints (card bg, panel header, hero) apply at medium+
   showTint: boolean
-  // strong ui coloring (--primary overrides, hover tints, colored buttons /
-  // badges) applies at full only
   showAccent: boolean
-  // a tint alpha scaled by intensity; "transparent" when tints are off
   tint: (color: CoverColor, base: number) => string
 }
 
@@ -251,8 +227,6 @@ export function useHeroContrast(
     if (!hasColors || !showTint) return {}
 
     const surface = isDark ? DARK_SURFACE : LIGHT_SURFACE
-    // the css blends the cover into the surface at 50% (light) / 80% (dark)
-    // times the intensity multiplier, then the hero paints that at ~0.8 alpha
     const mix = Math.min((isDark ? 0.8 : 0.5) * intensity, 0.96) * 0.8
     const heroLum = surface + (primary.luminance - surface) * mix
 

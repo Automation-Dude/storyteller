@@ -11,14 +11,6 @@ import * as icon from "@/icons"
 import { useBookForm } from "./BookFormProvider"
 import { type BookFormValues } from "./schema"
 
-// the card drawn around a single field being edited inline: a rounded, bordered,
-// shadowed panel with a terracotta rule running flush down the left edge, and a
-// save / discard row with keyboard hints beneath the field. it replaces the old
-// floating pill so the confirm affordance sits on the field it acts on.
-//
-// `floating` overlays the card (absolutely) so the extra row never reflows the
-// surrounding layout -- it just covers whatever sits below it. the caller then
-// reserves the field's original footprint with a relatively-positioned spacer.
 export function InlineEditChrome({
   children,
   onSave,
@@ -59,8 +51,6 @@ export function InlineEditChrome({
           </span>
 
           <div className="flex items-center gap-1">
-            {/* mousedown + preventDefault so the field doesn't blur-commit
-                before the click handler runs */}
             <button
               type="button"
               aria-label={c("actions.discard")}
@@ -93,10 +83,6 @@ export function InlineEditChrome({
   )
 }
 
-// wraps a single field's editor in the floating chrome, reserving the field's
-// original footprint (via `size`) so the card overlays the layout instead of
-// reflowing it. save/discard is identical for every field, so it lives here:
-// commit the field on save, revert + leave inline mode on discard.
 export function InlineFieldChrome({
   name,
   size,
@@ -105,10 +91,8 @@ export function InlineFieldChrome({
 }: {
   name: FieldPath<BookFormValues>
   size: { width: number; height: number } | null
-  // reserve footprint as an inline-block (for fields sitting in flowing text)
-  // rather than a block
-  inline?: boolean
   children: React.ReactNode
+  inline?: boolean
 }) {
   const { form, isSaving, setEditingField, commitField } = useBookForm()
 

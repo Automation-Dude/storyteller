@@ -18,9 +18,6 @@ import { useDismissAnnouncementMutation } from "@/store/api"
 
 type AnnouncementMessage = { title: string } & Record<string, string>
 
-// the pending list is server-resolved (see getPendingAnnouncements) so the modal
-// is seeded without a fetch flash. title/body come from the `Announcements.<key>`
-// i18n namespace; body is any number of `p1`..`pN` paragraph keys.
 export function AnnouncementModal({ pending }: { pending: Announcement[] }) {
   const [dismissAnnouncement] = useDismissAnnouncementMutation()
   const t = useTranslation("Announcements")
@@ -28,7 +25,6 @@ export function AnnouncementModal({ pending }: { pending: Announcement[] }) {
     Announcements?: Record<string, AnnouncementMessage>
   }
 
-  // show one at a time; advancing the index reveals the next pending notice
   const [index, setIndex] = useState(0)
   const announcement = pending[index]
 

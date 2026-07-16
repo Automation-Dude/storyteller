@@ -41,8 +41,6 @@ import { FileSection } from "./sections/FileSection"
 import { HeroSection } from "./sections/HeroSection"
 import { ReviewSection } from "./sections/ReviewSection"
 
-// table-heavy report view; lazy so it stays out of the book-details bundle and
-// only loads when a book is actually viewed in report mode.
 const DynamicAlignmentReport = dynamic(
   () =>
     import(
@@ -63,9 +61,6 @@ type BookDetailsContentProps = {
   previousBook?: () => void
 }
 
-// seed the getBook cache from a row we already have (e.g. the list query) so
-// opening the panel resolves from cache instead of firing another request.
-// rtk's equivalent of react-query's initialData.
 function useSeedBook(uuid: UUID, book: BookWithRelations | undefined) {
   const dispatch = useAppDispatch()
   const seeded = useRef<string | null>(null)
@@ -331,8 +326,6 @@ function BookPageHeader() {
   )
 }
 
-// the docked bar for whole-book edit and cover edit. single-field inline edits
-// carry their own chrome (see InlineEditChrome), so this bar stays out of them.
 function BookEditBar() {
   const {
     isEditing,

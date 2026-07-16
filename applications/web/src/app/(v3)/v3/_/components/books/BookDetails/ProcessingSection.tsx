@@ -316,10 +316,6 @@ const GRADE_BADGE: Record<GradeTone, string> = {
   poor: "border-poor-border bg-poor-bg text-poor dark:border-poor-900 dark:bg-poor-950/40 dark:text-poor-300",
 }
 
-// a compact echo of the full alignment report: grade + a few headline marks,
-// with links out to the in-panel report, its full page, and the job that
-// produced it. the heavy report query is shared with the full report view, so
-// opening the report is instant once this has loaded.
 function AlignmentReportSummary({ book }: { book: BookWithRelations }) {
   const { data } = useGetBookAlignmentReportQuery({ uuid: book.uuid })
   const [, setReportMode] = useReportPanel()

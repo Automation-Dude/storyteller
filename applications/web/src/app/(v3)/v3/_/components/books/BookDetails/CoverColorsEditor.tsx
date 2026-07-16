@@ -13,8 +13,6 @@ import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import { useUpdateBookMutation } from "@/store/api"
 
-// hex <-> JsColor; palettes are stored as {r,g,b}, but the native color input
-// and swatch styles speak hex
 function rgbToHex({ r, g, b }: JsColor): string {
   const h = (n: number) =>
     Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0")
@@ -36,8 +34,6 @@ function samePalette(a: JsColor[], b: JsColor[]): boolean {
   })
 }
 
-// the palette that would be resolved for the book right now (see resolveColors
-// in useCoverColors): the override wins, else the first format with colors.
 function resolvedPalette(book: BookWithRelations): JsColor[] {
   return (
     book.coverColorsOverride ??
@@ -74,9 +70,6 @@ export function CoverColorsEditor({ book }: { book: BookWithRelations }) {
   const [updateBook, { isLoading }] = useUpdateBookMutation()
   const [draft, setDraft] = useState<JsColor[]>(() => resolvedPalette(book))
 
-  // resync when the persisted colors change (e.g. after save, or an sse update).
-  // keyed on what the book actually stores so in-flight edits survive unrelated
-  // rerenders but are dropped when the source of truth moves.
   const persistedKey = JSON.stringify([
     book.coverColorsOverride ?? null,
     book.ebook?.coverColors ?? null,
@@ -154,7 +147,6 @@ export function CoverColorsEditor({ book }: { book: BookWithRelations }) {
         Cover colors
       </div>
 
-      {/* the active (editable) palette; first swatch is the primary */}
       <div className="flex flex-wrap items-center gap-1.5">
         {draft.map((color, index) => (
           <div
@@ -244,7 +236,6 @@ export function CoverColorsEditor({ book }: { book: BookWithRelations }) {
         </TooltipButton>
       </div>
 
-      {/* per-format reference palettes, click to adopt one wholesale */}
       {formats.length > 0 && (
         <div className="mt-3 flex flex-col gap-1.5">
           {formats.map((f) => (

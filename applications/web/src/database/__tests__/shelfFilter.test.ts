@@ -39,10 +39,6 @@ import {
 import { SORTABLE_FIELDS, type SortField, makeBookComparator } from "@/sort"
 import { type UUID } from "@/uuid"
 
-// ---------------------------------------------------------------------------
-// zod schema validation
-// ---------------------------------------------------------------------------
-
 void describe("shelfFilterFieldSchema", () => {
   void it("accepts all known fields", () => {
     const knownFields = Object.keys(FIELD_REGISTRY) as ShelfFilterField[]
@@ -244,10 +240,6 @@ void describe("shelfFilterNodeSchema", () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// field type classification
-// ---------------------------------------------------------------------------
-
 void describe("getFieldType", () => {
   void it("classifies string fields", () => {
     assert.strictEqual(getFieldType("title"), "string")
@@ -313,10 +305,6 @@ void describe("getOperatorsForField", () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// operator helpers
-// ---------------------------------------------------------------------------
-
 void describe("operatorRequiresValue", () => {
   void it("returns false for isEmpty and isNotEmpty", () => {
     assert.strictEqual(operatorRequiresValue("isEmpty"), false)
@@ -352,10 +340,6 @@ void describe("operatorRequiresRangeValue", () => {
     assert.strictEqual(operatorRequiresRangeValue("greaterThan"), false)
   })
 })
-
-// ---------------------------------------------------------------------------
-// node construction helpers
-// ---------------------------------------------------------------------------
 
 void describe("createEmptyCondition", () => {
   void it("creates a default title/contains condition", () => {
@@ -413,10 +397,6 @@ void describe("isLogicalBlock", () => {
     assert.ok(!isLogicalBlock(createEmptyCondition()))
   })
 })
-
-// ---------------------------------------------------------------------------
-// entity reference extraction
-// ---------------------------------------------------------------------------
 
 void describe("extractEntityReferences", () => {
   void it("extracts tag references from a condition", () => {
@@ -582,10 +562,6 @@ void describe("removeDeletedEntityReferences", () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// FIELD_REGISTRY completeness
-// ---------------------------------------------------------------------------
-
 void describe("FIELD_REGISTRY", () => {
   void it("has an entry for every field in the schema", () => {
     const fields = shelfFilterFieldSchema.options
@@ -628,10 +604,6 @@ void describe("FIELD_REGISTRY", () => {
     }
   })
 })
-
-// ---------------------------------------------------------------------------
-// strict condition schema (field -> operator -> value coupling)
-// ---------------------------------------------------------------------------
 
 void describe("strict condition schema", () => {
   void it("rejects an operator the field type does not support", () => {
@@ -738,14 +710,8 @@ void describe("strict condition schema", () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// sql compilation of the new fields
-// ---------------------------------------------------------------------------
-
 void describe("buildFilterExpression sql", () => {
   const userId = "11111111-1111-1111-1111-111111111111" as UUID
-  // a compile-only kysely instance: .compile() builds sql without executing, so
-  // an in-memory db with no schema is enough.
   const testDb = createKyselyDb(new Database(":memory:"))
 
   const compile = (node: ShelfFilterNode): string =>
@@ -1085,9 +1051,6 @@ void describe("MEDIA_TYPE_VALUES / compiler coverage", () => {
       )
       .compile().sql
 
-  // every enum value must compile to a real asset-table predicate. an unhandled
-  // value falls through to `eb.lit(false)` (no asset table referenced), so this
-  // fails if MEDIA_TYPE_VALUES and mediaTypeCondition ever drift apart.
   for (const value of MEDIA_TYPE_VALUES) {
     void it(`compiles "${value}" to an asset-table predicate`, () => {
       const sql = compile(value)

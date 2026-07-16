@@ -68,9 +68,6 @@ import {
 } from "@/shelves"
 import { getCoverUrl, useListStatusesQuery } from "@/store/api"
 
-// the advanced-editor field picker, derived from the registry so it can never
-// drift out of sync: every field grouped by its own `group`, in this order.
-// `search` is excluded (it has the dedicated search box, not a filter chip).
 const FIELD_GROUP_ORDER: FieldGroupKey[] = [
   "text",
   "dates",
@@ -159,10 +156,6 @@ const FILTER_PRESETS: FilterPreset[] = [
   },
 ]
 
-// ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
-
 type ShelfFilterEditorProps = {
   filter: ShelfFilterNode | null
   onChange: (filter: ShelfFilterNode | null) => void
@@ -191,10 +184,6 @@ export function isFilterValid(node: ShelfFilterNode | null): boolean {
 
   return node.children.every((child) => isFilterValid(child))
 }
-
-// ---------------------------------------------------------------------------
-// root editor
-// ---------------------------------------------------------------------------
 
 export function ShelfFilterEditor({
   filter,
@@ -237,10 +226,6 @@ export function ShelfFilterEditor({
   )
 }
 
-// ---------------------------------------------------------------------------
-// presets dropdown
-// ---------------------------------------------------------------------------
-
 function FilterPresetsDropdown({
   onApply,
 }: {
@@ -276,10 +261,6 @@ function FilterPresetsDropdown({
     </DropdownMenu>
   )
 }
-
-// ---------------------------------------------------------------------------
-// add-node dropdown
-// ---------------------------------------------------------------------------
 
 function AddNodeDropdown({
   onAdd,
@@ -325,10 +306,6 @@ function AddNodeDropdown({
     </DropdownMenu>
   )
 }
-
-// ---------------------------------------------------------------------------
-// preview
-// ---------------------------------------------------------------------------
 
 export type FilterPreviewProps = {
   books: BookWithRelations[]
@@ -407,10 +384,6 @@ export function PreviewBookItem({ book }: { book: BookWithRelations }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// filter node editor (dispatcher)
-// ---------------------------------------------------------------------------
-
 type FilterNodeEditorProps = {
   node: ShelfFilterNode
   onChange: (node: ShelfFilterNode) => void
@@ -460,10 +433,6 @@ function FilterNodeEditor({
   )
 }
 
-// ---------------------------------------------------------------------------
-// draggable filter item (for reordering inside logical blocks)
-// ---------------------------------------------------------------------------
-
 function DraggableFilterItem({
   id,
   showHandle,
@@ -502,10 +471,6 @@ function DraggableFilterItem({
     </Reorder.Item>
   )
 }
-
-// ---------------------------------------------------------------------------
-// logical block (AND / OR)
-// ---------------------------------------------------------------------------
 
 function LogicalBlockEditor({
   block,
@@ -697,10 +662,6 @@ function LogicalBlockEditor({
   )
 }
 
-// ---------------------------------------------------------------------------
-// NOT block
-// ---------------------------------------------------------------------------
-
 function NotBlockEditor({
   block,
   onChange,
@@ -758,10 +719,6 @@ function NotBlockEditor({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-// condition editor
-// ---------------------------------------------------------------------------
 
 function ConditionEditor({
   condition,
@@ -975,14 +932,6 @@ function ConditionEditor({
   )
 }
 
-// ---------------------------------------------------------------------------
-// condition value input
-//
-// dispatches on the field's registry control (getFieldDef(field).control) and
-// reads its scale, so it renders the same primitives the quick-chip editor uses
-// and never hand-classifies a field or invents its own scale.
-// ---------------------------------------------------------------------------
-
 type ConditionValueInputProps = {
   field: ShelfFilterField
   isArray: boolean
@@ -998,9 +947,6 @@ type ConditionValueInputProps = {
   onChange: (value: string | number | (string | number)[] | null) => void
 }
 
-// multi-select over a facet source, as a chip trigger opening the shared
-// relation list. one place for every relation value picker in the advanced
-// editor, so authors/narrators/etc. can never fall through like they used to.
 function FacetValueMenu({
   source,
   field,
@@ -1009,7 +955,6 @@ function FacetValueMenu({
   placeholder,
 }: {
   source: FacetSource
-  // the registry field backing a "distinct" source
   field?: ShelfFilterField
   value: string[]
   onChange: (value: string[]) => void

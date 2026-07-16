@@ -117,13 +117,6 @@ function cycleTriState(
   return { inc: [...inc, uuid], exc }
 }
 
-// ---------------------------------------------------------------------------
-// chip trigger
-// ---------------------------------------------------------------------------
-
-// the chip's inline summary for facet/enum fields: the selected value names
-// (first two, then "+n"), with exclusions prefixed "not". falls back to a
-// bare count while the option names are still loading.
 const MAX_SUMMARY_NAMES = 2
 
 function useFacetSummary(
@@ -153,7 +146,6 @@ function useFacetSummary(
     if (isEnum) return c.plain(`fields.options.${field}.${value}` as never)
     const item = items.find((i) => i.uuid === value)
     if (item) return item.name
-    // a distinct facet's value is its own (unformatted) display fallback
     if (isFacet && def.source === "distinct") return value
     return null
   }
@@ -170,7 +162,6 @@ function useFacetSummary(
   const incLabel = inc.length ? label(inc, false) : null
   const excLabel = exc.length ? label(exc, true) : null
 
-  // any unresolved name (options not fetched yet) -> count fallback
   if ((inc.length && !incLabel) || (exc.length && !excLabel)) {
     return ` (${inc.length + exc.length})`
   }
@@ -293,8 +284,6 @@ export function FilterChip({
   )
 }
 
-// dispatch to the right editor for the field's control type. exported so the
-// "Add filter" fan-out menu can render the same editor inline in a submenu.
 export function FilterEditor({
   field,
   def,
@@ -626,10 +615,6 @@ function NumberRangeEditor({
   return <div className="p-3">{controls}</div>
 }
 
-// ---------------------------------------------------------------------------
-// date range editor (from / to date inputs)
-// ---------------------------------------------------------------------------
-
 function readDateRange(conditions: ShelfFilterCondition[]): {
   from: string
   to: string
@@ -657,12 +642,6 @@ function writeDateRange(
     return [{ type: "condition", field, operator: "after", value: from }]
   return [{ type: "condition", field, operator: "before", value: to }]
 }
-
-// ---------------------------------------------------------------------------
-// year editor (for date fields scaled in years, e.g. publication date):
-// a mode picker (in / after / before / between) over plain year inputs, writing
-// the same date conditions the generic editor produces.
-// ---------------------------------------------------------------------------
 
 type YearMode = "in" | "after" | "before" | "between"
 
@@ -738,7 +717,6 @@ function YearEditor({
     onChange(writeYearState(field, nextMode, nextA, nextB))
   }
 
-  // only commit plausible years so half-typed input doesn't filter to nothing
   const sanitize = (raw: string): string | null => {
     if (raw === "") return ""
     if (!/^\d{1,4}$/.test(raw)) return null

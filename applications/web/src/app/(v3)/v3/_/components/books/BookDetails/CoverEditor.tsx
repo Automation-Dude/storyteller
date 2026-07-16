@@ -20,8 +20,6 @@ import { getCoverUrl, useSetUserSettingMutation } from "@/store/api"
 import { useBookForm } from "./BookFormProvider"
 import { CoverColorsEditor } from "./CoverColorsEditor"
 
-// local toggle: flip to "pages" or "duration" to print length info on the
-// spine instead of the author / title
 const SPINE_INFO: SpineInfo = "title"
 
 function useFilePreview(file: File | null): string | null {
@@ -44,10 +42,6 @@ function useFilePreview(file: File | null): string | null {
   return url
 }
 
-// an editable cover: the live image (pending upload or saved cover) with a
-// click-anywhere upload overlay laid on top. the whole cover is the file
-// <label>, so it stays keyboard- and screenreader-friendly via the sr-only
-// input + text. the overlay is half-transparent so the cover stays visible.
 function CoverSlot({
   label,
   file,
@@ -146,8 +140,6 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   const { bookDetailDisplay, gridCoverDisplay, bookDetail3dView } =
     useUserPreferences()
   const [setUserSetting] = useSetUserSettingMutation()
-  // the position the book is currently rotated to, so it can be saved as the
-  // default; seeded from the saved preference
   const [currentView, setCurrentView] = useState(bookDetail3dView ?? 0)
 
   const canSetEbookCover = !!book.ebook || !!book.readaloud
@@ -184,7 +176,6 @@ export function CoverEditor({ compact }: { compact: boolean }) {
       </TooltipButton>
     )
 
-    // a flat cover that falls back to the user's grid cover-display choice
     if (bookDetailDisplay === "cover") {
       return (
         <div className="group relative flex min-h-50 w-fit shrink-0 items-center justify-center select-none">

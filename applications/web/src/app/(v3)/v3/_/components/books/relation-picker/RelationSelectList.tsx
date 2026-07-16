@@ -14,8 +14,6 @@ import { marcRelators } from "@/components/books/edit/marcRelators"
 import { type Field } from "@/fields"
 import * as icon from "@/icons"
 
-// a row's selection state, rendered as a trailing icon. what "primary" and
-// "secondary" mean is up to the caller (include/exclude, all/some, selected).
 export type RelationRowState = "primary" | "secondary" | "none"
 
 const ROLE_LABELS = new Map(marcRelators.map((r) => [r.value, r.label]))
@@ -39,10 +37,6 @@ function defaultTrailing(state: RelationRowState): ReactNode {
   return null
 }
 
-// the one relation list: fetches (lazily) + alphabetises via useRelationItems,
-// floats applied rows to the top (frozen while the menu is open so they don't
-// jump), and renders through the virtualized menu primitive. drop it inside a
-// FilterableMenuContent / FilterableMenuSubContent (which supplies the search).
 export function RelationSelectList({
   source,
   field,
@@ -83,9 +77,6 @@ export function RelationSelectList({
     [rawItems, filter],
   )
 
-  // capture which rows are applied when the menu opens, and keep that order for
-  // the whole session so toggling a row doesn't reshuffle the list under the
-  // cursor. recaptured on the next open.
   const snapshotRef = useRef<Set<string> | null>(null)
   if (enabled && items.length > 0 && snapshotRef.current === null) {
     snapshotRef.current = new Set(

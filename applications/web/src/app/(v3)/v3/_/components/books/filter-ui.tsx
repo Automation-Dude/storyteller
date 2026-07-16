@@ -25,17 +25,6 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type FieldDefNumeric } from "@/fields"
 
-// ---------------------------------------------------------------------------
-// the single home for filter value-input primitives + the derived helpers both
-// the quick-chip editor (RelationshipDropdownMenu) and the advanced editor
-// (ShelfFilterEditor) build on, so neither reinvents scale/unit conversion or
-// drifts from FIELD_REGISTRY.
-// ---------------------------------------------------------------------------
-
-// unit conversion for a numeric field's raw stored value <-> a human display
-// value, driven by the registry scale unit. ONE copy: both editors import this
-// so a byte or a second means the same thing everywhere. bytes use the binary
-// 1 MiB (1048576) convention, matching FILE_SIZE_MULTIPLIERS below.
 export type ScaleUnit = NonNullable<FieldDefNumeric["scale"]>["unit"]
 
 export function unitDisplay(unit: ScaleUnit): {
@@ -70,10 +59,6 @@ export function unitDisplay(unit: ScaleUnit): {
       return { to: (v) => v, from: (v) => v, suffix: "", step: 1 }
   }
 }
-
-// ---------------------------------------------------------------------------
-// numeric input (type=text + inputMode so the field can be cleared properly)
-// ---------------------------------------------------------------------------
 
 export function NumericInput({
   value,
@@ -127,10 +112,6 @@ export function NumericInput({
   )
 }
 
-// ---------------------------------------------------------------------------
-// duration input (hours + minutes instead of raw seconds)
-// ---------------------------------------------------------------------------
-
 export function DurationInput({
   value,
   onChange,
@@ -171,10 +152,6 @@ export function DurationInput({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-// file size input (with unit selector instead of raw bytes)
-// ---------------------------------------------------------------------------
 
 export type FileSizeUnit = "bytes" | "kb" | "mb" | "gb"
 
@@ -248,10 +225,6 @@ export function FileSizeInput({
     </div>
   )
 }
-
-// ---------------------------------------------------------------------------
-// shared multi-select combobox (used for tags, collections, media types, etc.)
-// ---------------------------------------------------------------------------
 
 export function MultiCombobox({
   options,

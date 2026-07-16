@@ -1,9 +1,3 @@
-// the shape the alignment report ui consumes: the raw align report enriched with
-// human titles + durations pulled from the ebook / audiobook manifests, plus the
-// computed summary, per-chapter coverage and flags. pure (no db), so it is safe
-// to import from client components for the response type, and runs server-side in
-// the report route to build it.
-
 import { type Report } from "@storyteller-platform/align"
 
 import {
@@ -18,8 +12,6 @@ interface SentenceContext {
   nextSentence: string | null
 }
 
-// a flag is a short diagnostic about a chapter's audio / matching. tone drives
-// colour. info flags are not "problems" (they don't flag the chapter on their own).
 export type FlagTone = "poor" | "moderate" | "good" | "info"
 export interface ReportFlag {
   label: string
@@ -74,10 +66,7 @@ export interface ReportUnalignedAudio {
   filepath: string
   title: string | null
   duration: number | null
-  // why the audio could not be placed; populated when a transcription is
-  // available (see align lib / backfill). null when unknown.
   transcription: string | null
-  // marked as deliberately unplaced (not counted as unaligned).
   excluded: boolean
 }
 
@@ -98,13 +87,8 @@ export interface BookAlignmentReportView {
   summary: AlignmentSummary
   totalAudioDuration: number
   alignedAudioDuration: number
-  // sentence totals across chapters that carry sentence data. score is
-  // alignedSentences / totalSentences; surfaced so the ui can show the raw
-  // counts alongside the percentage without recomputing.
   totalSentences: number
   alignedSentences: number
-  // chapters carrying a meaningful number of unmatched sentences (mirrors the
-  // "sig" rule in computeGrade): a count for the sentence summary box.
   significantChapters: number
   chapters: ReportChapterRow[]
   unalignedChapters: ReportUnalignedChapter[]
@@ -167,8 +151,6 @@ function chapterTitlesFromManifest(
   return map
 }
 
-// port of the analyzer's per-chapter diagnostics (getFlags). audio anomalies plus
-// matching problems; "flagged" marks a chapter worth surfacing by default.
 function chapterDiagnostics(ch: RawChapter): {
   flags: ReportFlag[]
   flagged: boolean

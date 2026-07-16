@@ -56,10 +56,6 @@ const sortParser = createParser<Sort>({
   },
 }).withOptions({ shallow: true, history: "replace" })
 
-// the user portion of the filter, serialized as compact json in a single param.
-// validated against the strict root schema on parse; anything malformed falls
-// back to an empty `and` block. forward-compatible: a future tag:foo query
-// syntax becomes the codec for this same param without touching the tree shape.
 const EMPTY_FILTER: ShelfFilterAnd = createAndBlock([])
 
 const filterParser = createParser({
@@ -83,7 +79,6 @@ const filterParser = createParser({
   .withOptions({ shallow: true, history: "replace" })
   .withDefault(EMPTY_FILTER)
 
-// a top-level node that is a simple condition the quick chips can edit.
 function isConditionNode(node: ShelfFilterNode): node is ShelfFilterCondition {
   return node.type === "condition"
 }
@@ -94,8 +89,6 @@ function asSimpleAnd(node: ShelfFilterNode): ShelfFilterCondition[] | null {
   return node.children
 }
 
-// replace every condition targeting `field` with `conds`, in place (so editing a
-// chip never reorders the others).
 function replaceFieldConditions(
   children: ShelfFilterNode[],
   field: ShelfFilterField,
@@ -151,7 +144,6 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
   const simpleConditions = useMemo(() => asSimpleAnd(userFilter), [userFilter])
   const isAdvanced = simpleConditions === null
 
-  // the fields with at least one active condition, in tree order (for chips).
   const activeFields = useMemo(() => {
     if (!simpleConditions) return []
     const seen = new Set<ShelfFilterField>()
@@ -227,8 +219,6 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     void setSearchRaw("")
   }, [setUserFilterRaw, setSearchRaw])
 
-  // the user's tree has content when it's a non-empty and-block or any
-  // or/not/nested structure.
   const userHasContent =
     userFilter.type !== "and" || userFilter.children.length > 0
 
@@ -264,8 +254,6 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     ? 1
     : activeFields.length + (search ? 1 : 0)
 
-  // whether the sort is still the page default (auto display fields only defer
-  // to the filter while the user hasn't picked a sort themselves)
   const isDefaultSort =
     sort.field === (options.defaultSort?.field ?? "createdAt") &&
     sort.direction === (options.defaultSort?.direction ?? "desc")

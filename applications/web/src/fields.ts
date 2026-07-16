@@ -608,8 +608,6 @@ export const QUICK_FILTER_FIELDS = Object.keys(FIELD_REGISTRY).filter((f) => {
   return field.quick
 }) as QuickFilterField[]
 
-// fields whose facet options are the distinct stored values of their own book
-// column. doubles as the server-side allowlist for the distinct endpoint.
 export type DistinctFacetField = AcceptedKeys<
   typeof FIELD_REGISTRY,
   { control: "facet"; source: "distinct" }

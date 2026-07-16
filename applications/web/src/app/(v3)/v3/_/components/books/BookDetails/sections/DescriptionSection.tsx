@@ -14,9 +14,6 @@ import { CollapsibleSection } from "./CollapsibleSection"
 
 const COLLAPSED_HEIGHT = 96
 
-// the read-only description. while collapsed it has to be expanded ("show more")
-// before a click hands off to editing, so a tap meant to read the rest of the
-// blurb doesn't drop the user straight into a textarea.
 function CollapsibleDescription({
   html,
   canEdit,
@@ -169,9 +166,6 @@ export function DescriptionSection({ className }: { className?: string }) {
                 <FieldError errors={[fieldState.error]} />
               </Field>
             )
-
-            // global edit mode defers to the bottom edit bar; only the inline
-            // single-field edit wears its own save/discard chrome.
             if (!inlineMode) return editor
 
             return (

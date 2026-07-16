@@ -5,9 +5,6 @@ import { type UUID } from "@/uuid"
 
 import { type AcceptedKeys } from "./app/(v3)/v3/_/lib/mapping"
 
-// the registry-backed sortable fields. seriesPosition is a virtual,
-// context-scoped sort field (series page / active series filter) that isn't in
-// the registry, so it's unioned in separately below.
 export type RegistrySortField = AcceptedKeys<
   typeof FIELD_REGISTRY,
   { sortable: true }
@@ -25,16 +22,10 @@ export const GRADE_RANK: Record<string, number> = Object.fromEntries(
 export type SortDirection = "asc" | "desc"
 export type BookSort = { field: SortField; direction: SortDirection }[]
 
-// seriesPosition is only meaningful inside a series context (series page or an
-// active series filter) and isn't registry-backed, so SORTABLE_FIELDS (registry
-// only) is already the general-purpose set.
 export const GENERAL_SORT_FIELDS: RegistrySortField[] = SORTABLE_FIELDS
 
 export type SortContext = { seriesUuid?: UUID | null }
 
-// the card's secondary line can show any sortable field, or one of the
-// display-only creator rows (authors is the historical default; narrators /
-// translators / other creators are shown but never sorted by).
 export type CreatorDisplayField =
   | "authors"
   | "narrators"
@@ -60,18 +51,12 @@ const NEUTRAL_DISPLAY_FIELDS: readonly SortField[] = [
   "language",
 ]
 
-// the auto-mode secondary field: echo an explicitly chosen sort, else (still on
-// the default sort) a filtered field, else series position or the authors.
-// title is added on top by the caller.
 function deriveAutoSecondary(
   sortField: SortField,
   isDefaultSort: boolean,
   filter?: ShelfFilterNode,
   ctx?: SortContext,
 ): DisplayField {
-  // a sort the user actually picked always echoes itself, so a filter can never
-  // take over the display slot. the untouched default sort only echoes itself
-  // when it's a meaningful (non-neutral) field.
   if (sortField !== "title") {
     if (!isDefaultSort) return sortField
     if (!NEUTRAL_DISPLAY_FIELDS.includes(sortField)) return sortField
@@ -92,20 +77,14 @@ export function deriveDisplayFields(
   filter?: ShelfFilterNode,
   ctx?: SortContext,
   overrides?: DisplayField[] | null,
-  // whether the current sort is still the page default (not chosen by the user)
   isDefaultSort = true,
 ): DisplayField[] {
-  // an explicit selection (including an empty set = show nothing) wins verbatim.
   if (overrides) return overrides
 
-  // auto mode: the derived secondary field above the title (the card's heading
-  // sits at the bottom), matching the historical single-field layout.
   const secondary = deriveAutoSecondary(sortField, isDefaultSort, filter, ctx)
   return secondary === "title" ? ["title"] : [secondary, "title"]
 }
 
-// fields short enough to share a card row (joined with a separator). title and
-// the creator rows always get their own line.
 const COMPACT_DISPLAY_FIELDS: ReadonlySet<DisplayField> = new Set([
   "pageCount",
   "duration",
@@ -121,8 +100,6 @@ const COMPACT_DISPLAY_FIELDS: ReadonlySet<DisplayField> = new Set([
 
 const MAX_COMPACT_PER_ROW = 2
 
-// group the selected display fields into the rows a card renders: consecutive
-// compact fields pair up (max two per row), everything else is its own row.
 export function groupDisplayRows(fields: DisplayField[]): DisplayField[][] {
   const rows: DisplayField[][] = []
   for (const field of fields) {
@@ -141,8 +118,6 @@ export function groupDisplayRows(fields: DisplayField[]): DisplayField[][] {
   return rows
 }
 
-// insert a newly toggled-on field above the title row (extra fields stack above
-// the card heading, never below it).
 export function insertDisplayField(
   fields: DisplayField[],
   field: DisplayField,
@@ -197,8 +172,6 @@ function sortValue(
     case "alignmentMutedChapters":
       return book.alignmentSummary?.mutedChapters ?? null
     case "alignmentMissingChapters":
-      // no client-side data source (not selected into alignmentSummary), so it
-      // can't participate in client-side comparison; server sort still applies.
       return null
     case "alignedAt":
       return book.alignedAt

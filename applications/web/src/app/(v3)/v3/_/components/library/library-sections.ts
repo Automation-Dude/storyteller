@@ -7,9 +7,6 @@ import { type ListBooksQueryArg } from "@/store/api"
 export const NONE_KEY = "__none__"
 export const ALL_KEY = "__all__"
 
-// one row within a facet: a single status, rating bucket, format, author, ...
-// (a facet is the whole dimension; see LibrarySectionDef / FacetSection). the
-// client display shape, mirrors the server FacetValue in libraryCounts.ts.
 export type FacetValue = {
   key: string
   name: string
@@ -74,8 +71,6 @@ function creatorFilter(role: string): (itemKey: string) => ShelfFilterNode {
   })
 }
 
-// the "(no X)" seed: an isEmpty test on the section's field (role-scoped for
-// creators so "(no narrator)" means no narrator, not no creator at all).
 function emptyFilter(field: ShelfFilterField, role?: string): ShelfFilterNode {
   return {
     type: "condition",
@@ -85,12 +80,7 @@ function emptyFilter(field: ShelfFilterField, role?: string): ShelfFilterNode {
   }
 }
 
-// the format facet keys map onto the broader Format filter values so a
-// formats-page facet can seed the same server filter as the books page.
-// "readaloud" -> synced (aligned), "audiobook-ebook" -> missing-readaloud.
-// typed to MediaTypeValue so a facet can only seed a filter value the enum (and
-// therefore the SQL compiler) actually supports - an invalid bridge is a compile
-// error, not a filter that silently matches nothing.
+// TODO: unify
 const FORMAT_KEY_TO_MEDIA_TYPE: Record<FormatKey, MediaTypeValue> = {
   readaloud: "synced",
   "audiobook-ebook": "missing-readaloud",
@@ -247,10 +237,6 @@ export function sectionSeedQueryArg(
   return section.toShelfFilter ? { filter: section.toShelfFilter(itemKey) } : {}
 }
 
-// the exclusive format partition (every book falls in exactly one bucket),
-// distinct from the overlapping MEDIA_TYPE_VALUES predicates. formatKeyExpr
-// (SQL, libraryCounts.ts) computes these buckets; the union keeps the
-// FORMAT_KEY_TO_MEDIA_TYPE bridge in lockstep with it.
 export type FormatKey =
   | "readaloud"
   | "audiobook-ebook"

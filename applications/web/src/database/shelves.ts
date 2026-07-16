@@ -298,10 +298,6 @@ export async function removeBooksFromShelf(
     .execute()
 }
 
-// ---------------------------------------------------------------------------
-// home section management
-// ---------------------------------------------------------------------------
-
 export type HomeSectionInput = {
   shelfUuid?: UUID | null
   kind: HomeSectionKind
