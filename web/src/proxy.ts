@@ -22,7 +22,15 @@ const V3_ROUTES = [
   "/not-found",
 ]
 
+// routes that have no v3 page yet and must fall through to v2 even though they
+// live under a v3-owned prefix like /books. the read route is not ported yet;
+// let it resolve to the v2 page (full page load) instead of rewriting to a
+// nonexistent /v3/books/[uuid]/read.
+const V2_ONLY_PATTERNS = [/^\/books\/[^/]+\/read$/]
+
 function hasV3Route(pathname: string): boolean {
+  if (V2_ONLY_PATTERNS.some((pattern) => pattern.test(pathname))) return false
+
   if (V3_ROUTES.includes(pathname)) return true
 
   // match dynamic segments like /books/[uuid]
