@@ -675,6 +675,8 @@ function SidebarNavItem({
             <SidebarMenuButton
               size="sm"
               isActive={isActive}
+              // gets ignored otherwise
+              style={{ scrollbarWidth: "none" }}
               render={
                 <V3Link href={resolved.url}>
                   {resolved.customIcon ? (
