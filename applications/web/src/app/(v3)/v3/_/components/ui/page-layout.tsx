@@ -99,12 +99,11 @@ function PageContent({
   )
 }
 
-// invisible hit area straddling a panel edge; the pill only appears on
-// hover/drag so region boundaries stay line-free at rest.
 function ResizeHandle({
   side,
   dragging,
   onPointerDown,
+  className,
   ...props
 }: React.ComponentProps<"div"> & {
   side: "left" | "right"
@@ -114,8 +113,11 @@ function ResizeHandle({
   return (
     <div
       data-slot="resize-handle"
-      className="group relative z-30 flex w-0 items-stretch"
       {...props}
+      className={cn(
+        "group hover:border-primary relative z-30 flex w-0 items-stretch border-l transition-colors",
+        className,
+      )}
     >
       <div
         className={cn(
@@ -157,7 +159,6 @@ function PagePanel({
   width: number
   panelRef?: React.Ref<HTMLDivElement>
   // pointer-down on the resize handle. width changes are driven externally
-  // (see usePanelWidthDriver) and land on the DOM node via panelRef.
   onResizeStart?: (e: React.PointerEvent) => void
   dragging?: boolean
   colors?: CoverScopeProps
@@ -172,6 +173,7 @@ function PagePanel({
           {...(dragging !== undefined && { dragging })}
           onPointerDown={onResizeStart}
           {...colors}
+          className="border-l-primary/30"
         />
       )}
 

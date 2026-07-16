@@ -32,7 +32,7 @@
   "[nix]": {
     "editor.defaultFormatter": "jnoortheen.nix-ide"
   },
-  "tailwindCSS.experimental.configFile": "../web/src/app/(v3)/v3/globals.css",
+  "tailwindCSS.experimental.configFile": "../applications/web/src/app/(v3)/v3/globals.css",
   "eslint.workingDirectories": [
     "audiobook",
     "config/eslint",
