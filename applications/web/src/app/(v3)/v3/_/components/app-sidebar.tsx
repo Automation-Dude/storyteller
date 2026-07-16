@@ -208,10 +208,14 @@ export function AppSidebar({
   const theme = useAppSelector(selectTheme)
   const { setTheme } = useTheme()
 
-  useHotkey("Mod+Shift+L", () => {
+  const toggleTheme = () => {
     setTheme(
       theme === "dark" ? "system" : theme === "system" ? "light" : "dark",
     )
+  }
+
+  useHotkey("Mod+Shift+L", () => {
+    toggleTheme()
   })
 
   const navSecondary: NavSecondaryItem[] = [
@@ -233,6 +237,7 @@ export function AppSidebar({
             <TooltipTrigger
               render={
                 <SidebarMenuButton
+                  onClick={toggleTheme}
                   className="flex items-center gap-2"
                   suppressHydrationWarning
                 >
