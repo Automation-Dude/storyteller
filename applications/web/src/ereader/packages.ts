@@ -151,8 +151,23 @@ export async function getKfmonInstaller(): Promise<Buffer> {
   const cached = await readCached(INSTALLER_FILENAME)
   if (cached) return cached
 
-  const zipBytes = await getPackage("kfmon")
-  const reader = new ZipReader(new Uint8ArrayReader(zipBytes))
+  const installer = await buildKoboRootInstaller(await getPackage("kfmon"))
+  await writeCached(INSTALLER_FILENAME, installer)
+  return installer
+}
+
+/**
+ * The build step of {@link getKfmonInstaller}, without the caching, so it can
+ * be tested against a real zip.
+ */
+export async function buildKoboRootInstaller(
+  kfmonZip: Uint8Array,
+): Promise<Buffer> {
+  // Copy into a plain Uint8Array. This looks redundant, but zip.js fails with
+  // "Split zip file" when handed a Node Buffer: Buffer.slice returns a view
+  // where zip.js needs a copy, so it reads the wrong bytes. Callers pass
+  // Buffers (that is what fs and fetch hand back), so do not "simplify" this.
+  const reader = new ZipReader(new Uint8ArrayReader(new Uint8Array(kfmonZip)))
 
   let koboRoot: Uint8Array | null = null
   const configs: TarFile[] = []
@@ -187,9 +202,7 @@ export async function getKfmonInstaller(): Promise<Buffer> {
     )
   }
 
-  const installer = appendToTarGz(koboRoot, configs)
-  await writeCached(INSTALLER_FILENAME, installer)
-  return installer
+  return appendToTarGz(koboRoot, configs)
 }
 
 export const INSTALLER = {
