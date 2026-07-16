@@ -49,6 +49,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
     await import("./migrations/77_importrule_source.sql")
   ).default,
   "78_asset_dir.sql": (await import("./migrations/78_asset_dir.sql")).default,
+  "80_import_rule_epub2_strategy.sql": (
+    await import("./migrations/80_import_rule_epub2_strategy.sql")
+  ).default,
   "73_add_cover_colors_blurhash.sql": (
     await import("./migrations/73_add_cover_colors_blurhash.sql")
   ).default,
@@ -77,6 +80,8 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   "104_sidebar_group_kind.sql": (
     await import("./migrations/104_sidebar_group_kind.sql")
   ).default,
+  "105_v2_reconcile.sql": (await import("./migrations/105_v2_reconcile.sql"))
+    .default,
 }
 
 async function isFirstStartup() {
