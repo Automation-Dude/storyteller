@@ -99,20 +99,18 @@ function Hero({ book }: { book: BookWithRelations }) {
       className="bg-cover-wash relative -mx-4 flex flex-col gap-0"
       {...scope}
     >
-      <p className="text-muted-foreground mx-6 mt-8 text-xs font-medium tracking-[0.18em] uppercase">
+      <p className="text-tinted mx-6 mt-8 text-xs font-medium tracking-[0.18em] uppercase">
         {t("hero.eyebrow")}
       </p>
-      <div className="flex flex-col-reverse gap-6 overflow-hidden px-6 py-4 @xl/main:flex-row @xl/main:gap-10">
+      <div className="flex flex-col-reverse gap-6 overflow-hidden px-6 py-8 @xl/main:flex-row @xl/main:gap-10">
         <div className="flex flex-1 flex-col justify-between pb-4">
           <div slot="main-info">
-            <h2 className="font-heading text-3xl leading-tight @xl/main:text-4xl">
+            <h2 className="font-heading text-subtle-foreground text-3xl leading-tight @xl/main:text-4xl">
               {book.title}
             </h2>
 
             {byline && (
-              <p className="text-muted-foreground font-heading mt-2 text-sm">
-                {byline}
-              </p>
+              <p className="text-tinted font-heading mt-2 text-sm">{byline}</p>
             )}
           </div>
 
@@ -124,7 +122,7 @@ function Hero({ book }: { book: BookWithRelations }) {
                   style={{ width: `${Math.round(progress * 100)}%` }}
                 />
               </div>
-              <span className="text-muted-foreground text-sm">
+              <span className="text-tinted text-sm">
                 {t("hero.percent", { percent: Math.round(progress * 100) })}
                 {timeLeft && <> · {t("hero.timeLeft", { time: timeLeft })}</>}
               </span>

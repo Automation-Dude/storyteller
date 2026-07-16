@@ -218,7 +218,7 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
           </div>
 
           {estimateData?.estimateSeconds != null && (
-            <span className="text-muted-foreground text-xs">
+            <span className="text-tinted text-xs">
               {t("estimatedRemaining", {
                 duration: formatDuration(estimateData.estimateSeconds, {
                   approximate: true,
@@ -249,8 +249,8 @@ export function ProcessingSection({ book }: { book: BookWithRelations }) {
 
       {!readaloudStatus && canCreateReadaloud && (
         <Button
-          variant="outline"
           size="sm"
+          className="bg-cover-header max-w-40"
           onClick={() => {
             start(false)
           }}
