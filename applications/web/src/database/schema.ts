@@ -245,6 +245,25 @@ export interface ImportRuleToCollection {
   importRuleUuid: import("@/uuid").UUID
 }
 
+export interface KoboDevice {
+  collectionUuid: import("@/uuid").UUID | null
+  createdAt: Generated<string>
+  label: string
+  lastSyncedAt: string | null
+  revokedAt: string | null
+  tokenHash: string
+  updatedAt: Generated<string>
+  userId: string
+  uuid: Generated<string>
+}
+
+export interface KoboSyncedBook {
+  bookUuid: import("@/uuid").UUID
+  createdAt: Generated<string>
+  koboDeviceUuid: string
+  uuid: Generated<string>
+}
+
 export interface KoreaderDocument {
   bookUuid: string
   createdAt: Generated<string>
@@ -456,6 +475,8 @@ export interface DB {
   identifierType: IdentifierType
   importRule: ImportRule
   importRuleToCollection: ImportRuleToCollection
+  koboDevice: KoboDevice
+  koboSyncedBook: KoboSyncedBook
   koreaderDocument: KoreaderDocument
   koreaderProgress: KoreaderProgress
   koreaderUser: KoreaderUser

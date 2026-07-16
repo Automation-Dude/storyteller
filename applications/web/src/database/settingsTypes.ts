@@ -214,6 +214,12 @@ export const SettingsSchema = z.object({
   // protocol, which Storyteller implements at /kosync.
   koreaderSyncEnabled: z.boolean().nullable(),
   koreaderSyncAllowRegistration: z.boolean().nullable(),
+  // Kobo sync settings. A Kobo reads its library from a store rather than from
+  // the files on its USB partition, so Storyteller answers the same API Kobo's
+  // own store does, at /kobo/<token>. This is what lets a book put on a shelf
+  // here show up in the device's own library, in its own reader, with nothing
+  // installed on it.
+  koboSyncEnabled: z.boolean().nullable(),
   // Scanning settings
   scanCronExpression: z.string().nullable(),
   metadataFieldOverrides: MetadataFieldOverridesSchema,

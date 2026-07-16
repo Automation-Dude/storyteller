@@ -58,6 +58,7 @@ const DEFAULT_SETTINGS: Settings = {
   opdsPageSize: null,
   opdsFormat: null,
   koreaderSyncEnabled: null,
+  koboSyncEnabled: null,
   koreaderSyncAllowRegistration: null,
   scanCronExpression: null,
   importMode: "reference",

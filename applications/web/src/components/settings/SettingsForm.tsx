@@ -1176,6 +1176,7 @@ export function SettingsForm({
     opdsPageSize: settings.opdsPageSize,
     opdsFormat: settings.opdsFormat,
     koreaderSyncEnabled: settings.koreaderSyncEnabled,
+    koboSyncEnabled: settings.koboSyncEnabled,
     koreaderSyncAllowRegistration: settings.koreaderSyncAllowRegistration,
     scanCronExpression: settings.scanCronExpression ?? null,
     metadataFieldOverrides: settings.metadataFieldOverrides,
