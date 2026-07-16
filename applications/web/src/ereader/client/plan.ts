@@ -18,6 +18,24 @@ export function koreaderEntryToDevicePath(entryPath: string): string {
 export const KFMON_INSTALLER_PATH = ".kobo/KoboRoot.tgz"
 
 /**
+ * Where KFMon reads its watches from on the user partition.
+ *
+ * The browser never writes these. Chromium refuses to create files whose
+ * extension it treats as dangerous on Windows, and KFMon is configured purely
+ * through .ini files, so `getFileHandle` throws "Name is not allowed" and the
+ * launcher ends up installed with nothing to launch. They are folded into
+ * KoboRoot.tgz server-side instead and laid down by the device itself on the
+ * reboot that follows setup. Skipped on every platform, so there is one
+ * install path rather than a Windows-only branch.
+ */
+export const KFMON_CONFIG_DIR = ".adds/kfmon/config/"
+
+/** True for files the device installs for us, which the browser must skip. */
+export function isDeviceInstalledConfig(path: string): boolean {
+  return path.startsWith(KFMON_CONFIG_DIR)
+}
+
+/**
  * Order KFMon's entries so the installer is written last.
  *
  * Nickel processes KoboRoot.tgz and reboots when the device is ejected. The

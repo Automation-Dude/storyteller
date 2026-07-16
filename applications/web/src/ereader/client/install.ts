@@ -3,6 +3,7 @@ import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader } from "@zip.js/zip.js"
 import { type KoboDevice, readFileAtPath, writeFileAtPath } from "./kobo"
 import {
   KFMON_INSTALLER_PATH,
+  isDeviceInstalledConfig,
   kfmonEntriesInWriteOrder,
   koreaderEntryToDevicePath,
   patchEReaderConf,
@@ -19,16 +20,28 @@ export type InstallInputs = {
   device: KoboDevice
   koreaderZip: Uint8Array
   /**
-   * The full KFMon package, which carries the trigger icon and watch config as
-   * well as the installer. A bare KoboRoot.tgz would install KFMon with nothing
-   * to launch.
+   * The full KFMon package, which carries the trigger icon and KFMon's own
+   * resources. Its watch configs are not written from here; see
+   * `isDeviceInstalledConfig`.
    */
   kfmonZip: Uint8Array
+  /**
+   * The KoboRoot.tgz the server builds: KFMon's installer plus the watch
+   * configs the browser is not allowed to write. The device lays those down
+   * itself on the reboot after setup.
+   */
+  kfmonInstaller: Uint8Array
   configFiles: Record<string, string>
   onProgress: (progress: InstallProgress) => void
 }
 
-/** Files that must exist before we let the device install and reboot. */
+/**
+ * Files that must exist before we let the device install and reboot.
+ *
+ * KFMon's watch configs are deliberately absent: they arrive inside
+ * KoboRoot.tgz and only exist after the reboot, so there is nothing to read
+ * back here.
+ */
 const REQUIRED_BEFORE_ARMING = [
   // KOReader itself, and the script KFMon's watch config points at.
   ".adds/koreader/reader.lua",
@@ -36,9 +49,8 @@ const REQUIRED_BEFORE_ARMING = [
   // Seeded so nothing has to be typed on the device.
   ".adds/koreader/settings/opds.lua",
   ".adds/koreader/settings/kosync.lua",
-  // The icon the reader is opened from, and the watch that maps it to KOReader.
+  // The icon the reader is opened from.
   "koreader.png",
-  ".adds/kfmon/config/koreader.ini",
 ]
 
 async function readZipEntries(
@@ -74,6 +86,7 @@ export async function installToKobo({
   device,
   koreaderZip,
   kfmonZip,
+  kfmonInstaller,
   configFiles,
   onProgress,
 }: InstallInputs): Promise<void> {
@@ -97,14 +110,11 @@ export async function installToKobo({
   //    already laid out relative to the USB root, so it is written verbatim.
   onProgress({ phase: "launcher", message: "Installing the launcher" })
   const kfmonFiles = await readZipEntries(kfmonZip)
-  const installer = kfmonFiles.get(KFMON_INSTALLER_PATH)
-  if (!installer) {
-    throw new Error(
-      "The launcher package is missing its installer. Please try again.",
-    )
-  }
   for (const path of kfmonEntriesInWriteOrder([...kfmonFiles.keys()])) {
-    if (path === KFMON_INSTALLER_PATH) continue
+    // The installer goes last, once the rest is confirmed on the device. The
+    // watch configs ride inside it, because the browser is not allowed to
+    // create them.
+    if (path === KFMON_INSTALLER_PATH || isDeviceInstalledConfig(path)) continue
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await writeFileAtPath(root, path, kfmonFiles.get(path)!)
   }
@@ -132,8 +142,9 @@ export async function installToKobo({
     }
   }
 
-  // 5. Arm it: the Kobo installs this and reboots once it is unplugged.
-  await writeFileAtPath(root, KFMON_INSTALLER_PATH, installer)
+  // 5. Arm it: the Kobo unpacks this over / and reboots once it is unplugged,
+  //    installing the launcher and its watch configs in one go.
+  await writeFileAtPath(root, KFMON_INSTALLER_PATH, kfmonInstaller)
   if ((await readFileAtPath(root, KFMON_INSTALLER_PATH)) === null) {
     throw new Error(
       `Setup could not confirm ${KFMON_INSTALLER_PATH} was written. Please try again.`,

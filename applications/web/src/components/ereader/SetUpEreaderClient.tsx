@@ -74,15 +74,17 @@ export function SetUpEreaderClient() {
       const config = (await configResponse.json()) as EreaderConfigResponse
 
       setStatus("Downloading the reader app...")
-      const [koreaderZip, kfmonZip] = await Promise.all([
+      const [koreaderZip, kfmonZip, kfmonInstaller] = await Promise.all([
         fetchBytes("/api/v2/ereader/packages/koreader"),
         fetchBytes("/api/v2/ereader/packages/kfmon"),
+        fetchBytes("/api/v2/ereader/packages/kfmon-installer"),
       ])
 
       await installToKobo({
         device: kobo,
         koreaderZip,
         kfmonZip,
+        kfmonInstaller,
         configFiles: config.files,
         onProgress: (p) => {
           setStatus(p.message + (p.phase === "koreader" ? "..." : ""))

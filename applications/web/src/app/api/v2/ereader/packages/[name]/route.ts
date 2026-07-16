@@ -2,7 +2,13 @@ import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
 import { getSettings } from "@/database/settings"
-import { PACKAGES, type PackageName, getPackage } from "@/ereader/packages"
+import {
+  INSTALLER,
+  PACKAGES,
+  type PackageName,
+  getKfmonInstaller,
+  getPackage,
+} from "@/ereader/packages"
 import { logger } from "@/logging"
 
 export const dynamic = "force-dynamic"
@@ -10,6 +16,12 @@ export const dynamic = "force-dynamic"
 type Params = Promise<{
   name: string
 }>
+
+/**
+ * The launcher's installer is built from the pinned KFMon package rather than
+ * downloaded, so it is served by name alongside the packages themselves.
+ */
+const KFMON_INSTALLER = "kfmon-installer"
 
 /**
  * @summary Serve a device package (KOReader or the KFMon launcher)
@@ -30,15 +42,18 @@ export const GET = withHasPermission<Params>("bookDownload")(async (
   }
 
   const { name } = await context.params
-  if (!(name in PACKAGES)) {
+  const isInstaller = name === KFMON_INSTALLER
+  if (!isInstaller && !(name in PACKAGES)) {
     return NextResponse.json({ message: "Unknown package" }, { status: 404 })
   }
 
-  const spec = PACKAGES[name as PackageName]
+  const spec = isInstaller ? INSTALLER : PACKAGES[name as PackageName]
 
   let bytes: Buffer
   try {
-    bytes = await getPackage(name as PackageName)
+    bytes = isInstaller
+      ? await getKfmonInstaller()
+      : await getPackage(name as PackageName)
   } catch (e) {
     logger.error(e)
     return NextResponse.json(

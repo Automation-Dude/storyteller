@@ -2,8 +2,13 @@ import { createHash } from "node:crypto"
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 
+import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader } from "@zip.js/zip.js"
+
 import { DATA_DIR } from "@/directories"
 import { logger } from "@/logging"
+
+import { KFMON_CONFIG_DIR } from "./client/plan"
+import { type TarFile, appendToTarGz } from "./tar"
 
 /**
  * The device packages the browser writes to a Kobo: KOReader itself, and the
@@ -73,6 +78,17 @@ async function readCached(filename: string): Promise<Buffer | null> {
 }
 
 /**
+ * Write to a temp file and rename into place, so a killed write never leaves a
+ * truncated file that would later be served as if it were complete.
+ */
+async function writeCached(filename: string, bytes: Buffer): Promise<void> {
+  await mkdir(cacheDir(), { recursive: true })
+  const tmp = join(cacheDir(), `${filename}.downloading`)
+  await writeFile(tmp, bytes)
+  await rename(tmp, join(cacheDir(), filename))
+}
+
+/**
  * Return the package bytes, downloading and caching on first use. Downloads to
  * a temp file and renames into place so a killed download never leaves a
  * truncated file that would be served as if complete.
@@ -106,13 +122,80 @@ export async function getPackage(name: PackageName): Promise<Buffer> {
     )
   }
 
-  await mkdir(cacheDir(), { recursive: true })
-  const tmp = join(cacheDir(), `${spec.filename}.downloading`)
-  await writeFile(tmp, bytes)
-  await rename(tmp, join(cacheDir(), spec.filename))
+  await writeCached(spec.filename, bytes)
 
   return bytes
 }
+
+const INSTALLER_FILENAME = `KFMon-${KFMON_VERSION}-KoboRoot.tgz`
+const KOBOROOT_ENTRY = ".kobo/KoboRoot.tgz"
+
+/** Where Nickel's tarball lands: it is unpacked over / with onboard mounted. */
+const ONBOARD_PREFIX = "mnt/onboard/"
+
+/**
+ * Build the KoboRoot.tgz the browser writes to the device.
+ *
+ * KFMon's own KoboRoot.tgz installs only the launcher binaries; its watch
+ * configs ship beside it in the zip as .ini files destined for the user
+ * partition. The browser cannot write those: Chromium classifies .ini as
+ * dangerous on Windows and refuses to create them, which left the launcher
+ * installed with nothing to launch.
+ *
+ * So we fold the configs into the tarball, under mnt/onboard/, and let the
+ * device lay them down itself on the reboot that follows setup. This is done
+ * for every platform rather than only Windows, so there is a single install
+ * path to reason about and test.
+ */
+export async function getKfmonInstaller(): Promise<Buffer> {
+  const cached = await readCached(INSTALLER_FILENAME)
+  if (cached) return cached
+
+  const zipBytes = await getPackage("kfmon")
+  const reader = new ZipReader(new Uint8ArrayReader(zipBytes))
+
+  let koboRoot: Uint8Array | null = null
+  const configs: TarFile[] = []
+  try {
+    for (const entry of await reader.getEntries()) {
+      if (entry.directory || !entry.getData) continue
+      const name = entry.filename.replace(/^\/+/, "")
+      if (name === KOBOROOT_ENTRY) {
+        koboRoot = await entry.getData(new Uint8ArrayWriter())
+      } else if (name.startsWith(KFMON_CONFIG_DIR)) {
+        // The whole config directory, not just .ini, so this stays in step
+        // with what the browser skips.
+        configs.push({
+          path: `${ONBOARD_PREFIX}${name}`,
+          data: await entry.getData(new Uint8ArrayWriter()),
+        })
+      }
+    }
+  } finally {
+    await reader.close()
+  }
+
+  if (!koboRoot) {
+    throw new Error(`${PACKAGES.kfmon.filename} is missing ${KOBOROOT_ENTRY}`)
+  }
+  if (!configs.some((config) => config.path.endsWith("/koreader.ini"))) {
+    // Without the KOReader watch the launcher installs but never starts it,
+    // which is the exact failure this function exists to prevent. Fail here,
+    // on the server, rather than on someone's device.
+    throw new Error(
+      `${PACKAGES.kfmon.filename} carries no ${KFMON_CONFIG_DIR}koreader.ini`,
+    )
+  }
+
+  const installer = appendToTarGz(koboRoot, configs)
+  await writeCached(INSTALLER_FILENAME, installer)
+  return installer
+}
+
+export const INSTALLER = {
+  filename: "KoboRoot.tgz",
+  contentType: "application/gzip",
+} as const
 
 function sha256(buffer: Buffer): string {
   return createHash("sha256").update(buffer).digest("hex")
