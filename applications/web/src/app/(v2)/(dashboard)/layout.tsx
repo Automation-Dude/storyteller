@@ -35,7 +35,7 @@ export default async function DashboardLayout({ children }: Props) {
       currentUser={currentUser}
       collections={collections}
       demoMode={!!env.STORYTELLER_DEMO_MODE}
-      v3Available={!!env.ENABLE_V3_FRONTEND}
+      v3Available
     >
       {children}
       {!hideReader && <MiniPlayer />}

@@ -42,9 +42,6 @@ function hasV3Route(pathname: string): boolean {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const isV3Enabled = process.env["ENABLE_V3_FRONTEND"] === "true"
-  if (!isV3Enabled) return NextResponse.next()
-
   if (pathname.startsWith("/v3")) return NextResponse.next()
 
   const versionCookie = request.cookies.get("frontend-version")?.value
