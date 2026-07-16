@@ -207,7 +207,7 @@ export function AppSidebar({
   const theme = useAppSelector(selectTheme)
   const { setTheme } = useTheme()
 
-  useHotkey("Mod+M", () => {
+  useHotkey("Mod+Shift+L", () => {
     setTheme(
       theme === "dark" ? "system" : theme === "system" ? "light" : "dark",
     )
@@ -243,7 +243,7 @@ export function AppSidebar({
             />
             <TooltipContent side="right">
               {t("toggleTheme")}
-              <KeyboardShortcut shortcut={["Mod+L"]} />
+              <KeyboardShortcut shortcut={["Mod+Shift+L"]} />
             </TooltipContent>
           </Tooltip>
         </SidebarMenuItem>
@@ -528,7 +528,7 @@ function SidebarNavGroup({
                   )}
                 />
                 {totalCount != null && (
-                  <span className="text-muted-foreground flex h-5 min-w-5 items-center justify-center text-[12px] tabular-nums transition-opacity group-hover/group-header:opacity-0 group-has-data-popup-open/group-header:opacity-0">
+                  <span className="text-muted-foreground mr-2 flex h-5 min-w-5 items-center justify-center text-[12px] tabular-nums transition-opacity group-hover/group-header:opacity-0 group-has-data-popup-open/group-header:opacity-0">
                     {totalCount}
                   </span>
                 )}
@@ -540,7 +540,7 @@ function SidebarNavGroup({
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <SidebarGroupAction className="top-1.5 right-1 opacity-0 transition-opacity group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 data-popup-open:opacity-100">
+                  <SidebarGroupAction className="top-1.5 right-3 opacity-0 transition-opacity group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 data-popup-open:opacity-100">
                     <icon.DotsVertical className="size-3.5" />
                   </SidebarGroupAction>
                 }
