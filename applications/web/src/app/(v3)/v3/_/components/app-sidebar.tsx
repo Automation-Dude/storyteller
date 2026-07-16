@@ -231,17 +231,22 @@ export function AppSidebar({
           <Tooltip delay={500}>
             <TooltipTrigger
               render={
-                <SidebarMenuButton className="flex gap-2">
-                  <icon.LightMode
-                    className={cn("block dark:hidden", "size-4")}
-                  />
-                  <icon.DarkMode
-                    className={cn("hidden dark:block", "size-4")}
-                  />
+                <SidebarMenuButton
+                  className="flex items-center gap-2"
+                  suppressHydrationWarning
+                >
+                  {theme === "dark" ? (
+                    <icon.DarkMode className="size-4" />
+                  ) : theme === "system" ? (
+                    <icon.System className="size-4" />
+                  ) : (
+                    <icon.LightMode className="size-4" />
+                  )}
+                  <span>{t(theme)}</span>
                 </SidebarMenuButton>
               }
             />
-            <TooltipContent side="right">
+            <TooltipContent side="right" suppressHydrationWarning>
               {t("toggleTheme")}
               <KeyboardShortcut shortcut={["Mod+Shift+L"]} />
             </TooltipContent>
@@ -257,10 +262,8 @@ export function AppSidebar({
             onClick={openSearch}
             className="flex justify-between gap-2"
           >
-            <div className="flex items-center gap-2">
-              <icon.Search />
-              {t("search")}
-            </div>
+            <icon.Search />
+            <span className="grow">{t("search")}</span>
             <KeyboardShortcut shortcut={["Mod+K"]} />
           </SidebarMenuButton>
         </SidebarMenuItem>

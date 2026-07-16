@@ -85,8 +85,6 @@ type LocalGroup = {
   items: LocalItem[]
 }
 
-// items live either in a group (visible) or in the hidden pool; hiding never
-// deletes the underlying row, so ensureSidebarDefaults won't resurrect them
 type ManagerState = {
   groups: LocalGroup[]
   hidden: LocalItem[]
@@ -605,15 +603,12 @@ function EditableGroup({
         <div className="flex items-center gap-1">
           <CollapsibleTrigger
             render={
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="text-muted-foreground size-5"
-              >
+              <Button variant="real-ghost" size="icon-xs" className="size-5">
                 <icon.ChevronDown
                   className={cn(
                     "size-3 transition-transform",
                     !isOpen && "-rotate-90",
+                    "text-muted-foreground!",
                   )}
                 />
               </Button>
@@ -648,7 +643,7 @@ function EditableGroup({
           >
             <ul
               ref={setNodeRef}
-              className="flex min-h-6 flex-col gap-0.5 rounded"
+              className="flex min-h-6 flex-col gap-0 rounded"
             >
               {items.map((item) => (
                 <EditableItem
@@ -759,7 +754,7 @@ function EditableItem({
         transition,
       }}
       className={cn(
-        "flex items-center gap-1 rounded px-0.5 py-1.5",
+        "flex items-center gap-1 rounded px-0.5 py-1",
         isDragging && "bg-sidebar-accent opacity-50",
         hidden && "opacity-60",
       )}
@@ -768,7 +763,7 @@ function EditableItem({
         type="button"
         {...attributes}
         {...listeners}
-        className="text-muted-foreground hover:text-foreground flex h-6 w-5 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+        className="text-muted-foreground hover:text-foreground hover:text-sidebar-accent flex h-6 w-5 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
       >
         <icon.GripVertical className="size-3.5" />
       </button>
