@@ -3,6 +3,9 @@ import { describe, it } from "node:test"
 
 import {
   KFMON_INSTALLER_PATH,
+  MINIMUM_FIRMWARE,
+  isDeviceInstalledConfig,
+  isFirmwareSupported,
   kfmonEntriesInWriteOrder,
   koreaderEntryToDevicePath,
   patchEReaderConf,
@@ -74,6 +77,57 @@ void describe("kfmonEntriesInWriteOrder", () => {
       kfmonEntriesInWriteOrder(withoutInstaller),
       withoutInstaller,
     )
+  })
+})
+
+void describe("isFirmwareSupported", () => {
+  void it("accepts the firmware on real hardware", () => {
+    // A Kobo Clara Colour, read from its own .kobo/version.
+    assert.strictEqual(isFirmwareSupported("4.45.23697"), true)
+  })
+
+  void it("accepts exactly the minimum, and rejects just below it", () => {
+    assert.strictEqual(isFirmwareSupported(MINIMUM_FIRMWARE), true)
+    assert.strictEqual(isFirmwareSupported("2.9.1"), true)
+    assert.strictEqual(isFirmwareSupported("2.8.9"), false)
+    assert.strictEqual(isFirmwareSupported("1.9.9"), false)
+  })
+
+  void it("compares numerically, not as text", () => {
+    // "2.10.0" sorts before "2.9.0" as a string but is newer.
+    assert.strictEqual(isFirmwareSupported("2.10.0"), true)
+    // 45 > 9 only if the minor is read as a number.
+    assert.strictEqual(isFirmwareSupported("2.45.0"), true)
+  })
+
+  void it("refuses rather than guesses when the version is unreadable", () => {
+    // Failing closed matters: this gate is what keeps setup off firmware
+    // whose startup script we should not be replacing.
+    assert.strictEqual(isFirmwareSupported("unknown"), false)
+    assert.strictEqual(isFirmwareSupported(""), false)
+    assert.strictEqual(isFirmwareSupported("4.x.1"), false)
+  })
+})
+
+void describe("isDeviceInstalledConfig", () => {
+  void it("claims KFMon's config dir, which the browser must not write", () => {
+    assert.strictEqual(
+      isDeviceInstalledConfig(".adds/kfmon/config/koreader.ini"),
+      true,
+    )
+    assert.strictEqual(
+      isDeviceInstalledConfig(".adds/kfmon/config/kfmon.ini"),
+      true,
+    )
+  })
+
+  void it("leaves the files the browser does write alone", () => {
+    assert.strictEqual(
+      isDeviceInstalledConfig(".adds/kfmon/bin/kfmon-printlog.sh"),
+      false,
+    )
+    assert.strictEqual(isDeviceInstalledConfig("koreader.png"), false)
+    assert.strictEqual(isDeviceInstalledConfig(KFMON_INSTALLER_PATH), false)
   })
 })
 

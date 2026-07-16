@@ -50,6 +50,39 @@ export function kfmonEntriesInWriteOrder(paths: string[]): string[] {
   ]
 }
 
+/**
+ * The oldest Nickel KFMon supports. Upstream is explicit that this is its only
+ * device requirement: it is otherwise device-agnostic and works across the Kobo
+ * range, including unreleased models.
+ */
+export const MINIMUM_FIRMWARE = "2.9.0"
+
+function versionParts(version: string): number[] | null {
+  const parts = version.trim().split(".").map(Number)
+  if (!parts.length || parts.some((part) => !Number.isFinite(part))) return null
+  return parts
+}
+
+/**
+ * Whether a device's firmware is new enough to install the launcher onto.
+ *
+ * Setup replaces the device's startup script, so it must not run on firmware
+ * upstream does not support, and it must refuse rather than guess when the
+ * version cannot be read at all: this is the one step that touches anything
+ * outside the user partition.
+ */
+export function isFirmwareSupported(firmware: string): boolean {
+  const parts = versionParts(firmware)
+  const minimum = versionParts(MINIMUM_FIRMWARE)
+  if (!parts || !minimum) return false
+
+  for (let i = 0; i < Math.max(parts.length, minimum.length); i++) {
+    const difference = (parts[i] ?? 0) - (minimum[i] ?? 0)
+    if (difference !== 0) return difference > 0
+  }
+  return true
+}
+
 export const EXCLUDE_LINE = "ExcludeSyncFolders=\\.(?:adds|kobo)"
 
 /**

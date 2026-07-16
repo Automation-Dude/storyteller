@@ -2,6 +2,8 @@
 // the File System Access API. Kept free of React so the logic can be unit
 // tested with a mock directory handle; the real end-to-end runs on hardware.
 
+import { MINIMUM_FIRMWARE, isFirmwareSupported } from "./plan"
+
 // showDirectoryPicker is not yet in the TypeScript DOM lib.
 declare global {
   interface Window {
@@ -94,6 +96,19 @@ export async function pickKobo(): Promise<KoboDevice> {
   }
 
   const { serial, firmware, model } = parseKoboVersion(versionLine)
+
+  // Setup replaces the device's startup script, so refuse anything upstream
+  // does not support rather than find out on someone's e-reader. Checked here,
+  // before the picker's handle is used for anything, so a refused device is
+  // left exactly as it was.
+  if (!isFirmwareSupported(firmware)) {
+    throw new Error(
+      `This ${model} is running firmware ${firmware}, and setting it up safely ` +
+        `needs ${MINIMUM_FIRMWARE} or newer. Please update it from the Kobo ` +
+        `app or on the device, then try again.`,
+    )
+  }
+
   return { root, model, serial, firmware }
 }
 
