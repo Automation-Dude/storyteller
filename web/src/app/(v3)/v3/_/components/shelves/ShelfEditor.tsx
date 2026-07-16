@@ -234,9 +234,11 @@ export function ShelfEditor({
       return
     }
 
+    if (!filter) return
+
     try {
       const books = await previewFilter({
-        filter: filter!,
+        filter,
         orderBy,
         orderDirection,
         limit: limitCount ? Math.min(limitCount, 20) : undefined,

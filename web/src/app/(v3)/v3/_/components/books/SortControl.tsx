@@ -65,10 +65,6 @@ export function SortControl({
     return options.reduce(
       (acc, option) => {
         const fieldDef = getFieldDef(option.value as Field)
-        if (!fieldDef) {
-          return acc
-        }
-
         const group = fieldDef.group
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!acc[group]) {

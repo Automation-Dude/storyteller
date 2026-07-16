@@ -596,10 +596,6 @@ export function BookTable({
               const isBookSelected =
                 menu.selection?.isSelected(book.uuid) ?? false
 
-              if (virtualRow.index === 2) {
-                console.log(virtualRow.start, showThumbnail)
-              }
-
               return (
                 <TableRow
                   key={row.id}

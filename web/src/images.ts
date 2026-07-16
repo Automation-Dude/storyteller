@@ -8,7 +8,7 @@ let _sharp: typeof import("sharp") | undefined
 
 const AVIF = "image/avif"
 const WEBP = "image/webp"
-const JPEG = "image/jpeg"
+const _JPEG = "image/jpeg"
 
 async function getSharp() {
   if (_sharp) {

@@ -206,7 +206,6 @@ function BookListPageInner({
   )
 
   const isBooksSource = source.kind === "books"
-  console.log(source)
 
   const controller = useBookFilters({
     seed: (isBooksSource ? source.seed : null) ?? null,

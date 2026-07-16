@@ -559,7 +559,10 @@ function LogicalBlockEditor({
   }
 
   const handleChildDuplicate = (index: number) => {
-    const copy = structuredClone(block.children[index]!)
+    const child = block.children[index]
+    if (!child) return
+
+    const copy = structuredClone(child)
     const newChildren = [...block.children]
     newChildren.splice(index + 1, 0, copy)
 
@@ -578,6 +581,7 @@ function LogicalBlockEditor({
   const handleReorder = (newIds: string[]) => {
     const newChildren = newIds.map((id) => {
       const oldIndex = idsRef.current.indexOf(id)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return block.children[oldIndex]!
     })
 
@@ -650,6 +654,7 @@ function LogicalBlockEditor({
         {block.children.map((child, index) => (
           <DraggableFilterItem
             key={idsRef.current[index]}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             id={idsRef.current[index]!}
             showHandle={showDragHandles}
           >
@@ -834,7 +839,7 @@ function ConditionEditor({
       <div
         className={cn(
           "flex flex-wrap items-center gap-1.5 py-1",
-          !hasValidValue && needsValue && "opacity-60",
+          !hasValidValue && "opacity-60",
         )}
       >
         <FilterableMenu>

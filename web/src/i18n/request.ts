@@ -1,11 +1,9 @@
-import { deepmerge, deepmergeCustom } from "deepmerge-ts"
-import { ValuesNode } from "kysely"
+import { deepmergeCustom } from "deepmerge-ts"
 import { cookies } from "next/headers"
 import { getRequestConfig } from "next-intl/server"
 
 import { LOCALE_COOKIE_NAME } from "./constants"
 import type { locales } from "./locales"
-
 
 export default getRequestConfig(async () => {
   const store = await cookies()

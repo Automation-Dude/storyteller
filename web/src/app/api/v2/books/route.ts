@@ -53,7 +53,6 @@ export const GET = withHasPermission("bookList")(async (request) => {
         children: [parsed],
       }
     }
-    console.log("parsed", parsed)
     const validated = shelfFilterSchema.safeParse(parsed)
     if (!validated.success) {
       console.error(validated.error)

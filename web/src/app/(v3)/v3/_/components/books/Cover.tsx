@@ -370,7 +370,7 @@ function StaticDoubleCover({ audio, ebook, className }: DoubleCoverProps) {
   )
 }
 
-function DoubleCover({
+function _DoubleCover({
   interactive = true,
   ...props
 }: DoubleCoverProps & { interactive?: boolean }) {
@@ -553,8 +553,8 @@ export function BookDoubleCover({
   const audiobookRef = useRef<HTMLDivElement>(null)
   const ebookRef = useRef<HTMLDivElement>(null)
 
-  const [audioLoading, setAudioLoading] = useState(true)
-  const [ebookLoading, setEbookLoading] = useState(true)
+  const [audioLoading, _setAudioLoading] = useState(true)
+  const [ebookLoading, _setEbookLoading] = useState(true)
 
   const onLoadingChangeRef = useRef(onLoadingChange)
   onLoadingChangeRef.current = onLoadingChange
@@ -663,7 +663,7 @@ export function BookDoubleCover({
     updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
   })
 
-  const fallbackColors = book.ebook?.coverColors ?? book.readaloud?.coverColors
+  const _fallbackColors = book.ebook?.coverColors ?? book.readaloud?.coverColors
 
   return (
     <div

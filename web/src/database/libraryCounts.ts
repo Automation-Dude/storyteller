@@ -100,7 +100,7 @@ async function countSmartShelf(userId: UUID, filter: ShelfFilter) {
 }
 
 export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
-  const allP = visibleBooks(userId)
+  const _allP = visibleBooks(userId)
 
   const seriesP = visibleBooks(userId)
     .innerJoin("bookToSeries", "bookToSeries.bookUuid", "book.uuid")
@@ -171,7 +171,7 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     .execute()
 
   const [
-    all,
+    // _all,
     series,
     authors,
     narrators,
@@ -184,7 +184,7 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     manualShelfRows,
     smartShelves,
   ] = await Promise.all([
-    allP,
+    // allP,
     seriesP,
     countCreatorsByRole(userId, "aut"),
     countCreatorsByRole(userId, "nrt"),
@@ -352,7 +352,6 @@ async function publicationYearFacets(userId: UUID): Promise<LibraryFacet[]> {
 }
 
 async function ratingFacets(userId: UUID): Promise<LibraryFacet[]> {
-  const rating = sql<string>`cast(user_book_rating.rating as text)`
   return visibleBooks(userId)
     .innerJoin("userBookRating", (join) =>
       join

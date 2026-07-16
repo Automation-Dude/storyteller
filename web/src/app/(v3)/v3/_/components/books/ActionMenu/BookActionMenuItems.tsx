@@ -142,7 +142,7 @@ export function useBookActionItems({
   const processingRun = useProcessingRun(
     mode === "single" ? books[0] : undefined,
   )
-  const [mergeTarget, setMergeTarget] = useState<BookWithRelations | null>(null)
+  const [mergeTarget, _setMergeTarget] = useState<BookWithRelations | null>(null)
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false)
   const [createCollectionName, setCreateCollectionName] = useState("")
   const [createSeriesOpen, setCreateSeriesOpen] = useState(false)

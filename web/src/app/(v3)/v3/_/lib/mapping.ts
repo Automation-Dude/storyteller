@@ -75,6 +75,7 @@ type MapToEntries<
   T extends readonly unknown[],
   M extends readonly string[],
   C extends any[] = [],
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   Buffer extends Record<string, any> = {},
 > = C["length"] extends T["length"]
   ? Buffer
@@ -93,6 +94,7 @@ export function mapToEntries<
   const T extends readonly unknown[],
   const M extends readonly string[],
   C extends any[] = [],
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   Buffer extends Record<string, any> = {},
 >(obj: T, mapping: M): T extends T ? MapToEntries<T, M, C, Buffer> : never {
   const result: Record<string, any> = {}

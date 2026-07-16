@@ -1,11 +1,9 @@
 import {
   type Hotkey,
   type IndividualKey,
-  MODIFIER_KEYS,
   type Modifier,
   formatForDisplay,
   resolveModifier,
-  useHeldKeys,
   useKeyHold,
 } from "@tanstack/react-hotkeys"
 import React from "react"

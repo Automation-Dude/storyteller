@@ -115,7 +115,7 @@ export type AddTagInput =
   | { name: string; icon?: string | null; color?: string | null }
 
 export async function addTagsToBooks(bookUuids: UUID[], tags: AddTagInput[]) {
-  const byId = tags.filter((t): t is { uuid: UUID } => "uuid" in t && !!t.uuid)
+  const byId = tags.filter((t): t is { uuid: UUID } => "uuid" in t)
   const byName = tags.filter(
     (t): t is { name: string; icon?: string | null; color?: string | null } =>
       "name" in t && !!t.name,

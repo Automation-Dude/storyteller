@@ -217,6 +217,7 @@ export function AppSidebar({
 
   const navSecondary: NavSecondaryItem[] = [
     {
+      // eslint-disable-next-line react-compiler/react-compiler
       onClick: () => {
         document.cookie = "frontend-version=v2; path=/; max-age=31536000"
         window.location.href = "/"

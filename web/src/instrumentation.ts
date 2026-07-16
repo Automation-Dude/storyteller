@@ -1,5 +1,3 @@
-import { env } from "@/env"
-
 export async function register() {
   if (process.env["NEXT_RUNTIME"] === "edge") {
     return
@@ -9,10 +7,10 @@ export async function register() {
   // we don't import it "normally" as this may cause issues in the edge runtime if end up
   // adding extra imports to env.ts
   await import("@/env")
-  const { getWatcher } = await import(
+  const { getWatcher: getWatcher } = await import(
     "./assets/library/scanner/triggers/watcher"
   )
-  const { getScheduler } = await import(
+  const { getScheduler: getScheduler } = await import(
     "./assets/library/scanner/triggers/scheduler"
   )
   const { logger } = await import("./logging")
@@ -44,8 +42,8 @@ export async function register() {
   }
 
   try {
-    // await getWatcher().start()
-    // await getScheduler().refresh()
+    await getWatcher().start()
+    await getScheduler().refresh()
   } catch (err) {
     logger.error("Failed to initiate library watcher services")
     logger.error(err)

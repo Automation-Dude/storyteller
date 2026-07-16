@@ -44,7 +44,9 @@ export function HeaderActions({ actions }: HeaderActionsProps) {
       let count = 0
 
       for (let i = 0; i < actions.length; i++) {
-        const action = actions[i]!
+        const action = actions[i]
+        if (!action) continue
+
         const btn = document.createElement("button")
         btn.className =
           "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-8 px-3"
@@ -66,7 +68,8 @@ export function HeaderActions({ actions }: HeaderActionsProps) {
       measureRef.innerHTML = ""
       let allFitWidth = 0
       for (let i = 0; i < actions.length; i++) {
-        const action = actions[i]!
+        const action = actions[i]
+        if (!action) continue
         const btn = document.createElement("button")
         btn.className =
           "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-8 px-3"

@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useTheme } from "next-themes"
 
 import { LocaleChanger } from "@v3/_/components/locale-changer"
 import {
@@ -11,9 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import {
@@ -37,7 +33,6 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const { setTheme, theme } = useTheme()
   const basePath = useVersionBasePath()
 
   const displayName = user.name ?? user.username ?? "User"

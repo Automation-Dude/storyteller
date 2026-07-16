@@ -1,11 +1,7 @@
-import {
-  type PayloadAction,
-  createSelector,
-  createSlice,
-} from "@reduxjs/toolkit"
+import { type PayloadAction, createSlice } from "@reduxjs/toolkit"
 
 import { type GridCardSize } from "@/database/userPreferencesTypes"
-import { type BookSort, type DisplayField, SortDirection, SortField } from "@/sort"
+import { type BookSort, type DisplayField } from "@/sort"
 
 // the top-level layout of a book list page
 export type BookLayout = "grid" | "list"

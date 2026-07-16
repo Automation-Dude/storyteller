@@ -77,7 +77,7 @@ export function summarizeReport(
   const mutedChapters = chapters.filter(
     (ch) =>
       !overrides?.chapters?.[ch.href]?.markedOk &&
-      (ch.audioFiles ?? []).length === 0 &&
+      ch.audioFiles.length === 0 &&
       (ch.chapterSentenceCount || 0) > 2,
   ).length
 

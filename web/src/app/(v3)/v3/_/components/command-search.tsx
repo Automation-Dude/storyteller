@@ -1,6 +1,6 @@
 import { useHotkey } from "@tanstack/react-hotkeys"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 // import { BookOpen, FileText, Headphones, RefreshCw, Search } from "lucide-react"
 
 import {

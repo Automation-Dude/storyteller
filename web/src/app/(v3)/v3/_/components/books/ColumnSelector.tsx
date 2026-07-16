@@ -3,12 +3,6 @@ import { useMemo } from "react"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/app/(v3)/v3/_/components/ui/dropdown-menu"
-import {
   FilterableMenu,
   FilterableMenuContent,
   FilterableMenuItem,
@@ -16,7 +10,6 @@ import {
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
-import { getFieldDef } from "@/fields"
 import * as icon from "@/icons"
 import { type DisplayField, GENERAL_SORT_FIELDS } from "@/sort"
 

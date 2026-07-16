@@ -330,6 +330,7 @@ export function FilterEditor({
         enabled={enabled}
         staticItems={def.options.map((v) => ({
           uuid: v,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
           name: c.plain(`fields.options.${field}.${v}` as any),
         }))}
       />

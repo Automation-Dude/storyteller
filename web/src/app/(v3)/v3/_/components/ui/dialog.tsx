@@ -19,6 +19,7 @@ function Dialog({
 }) {
   const isMobile = useIsMobile()
   if (isMobile) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return <Drawer.Root data-slot="dialog" {...(props as any)} />
   }
   return <DialogPrimitive.Root data-slot="dialog" {...props} />

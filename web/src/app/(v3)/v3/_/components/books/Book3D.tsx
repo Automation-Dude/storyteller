@@ -1,7 +1,7 @@
 "use client"
 
 import { type PanInfo, motion, useSpring } from "motion/react"
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react"
+import { type ReactNode, useMemo, useRef, useState } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -13,7 +13,7 @@ import {
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 import { useFormatDuration } from "@v3/_/lib/formatters"
-import { type SpineFit, fitSpine } from "@v3/_/lib/spineFit"
+import { fitSpine } from "@v3/_/lib/spineFit"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { type BookWithRelations } from "@/database/books"

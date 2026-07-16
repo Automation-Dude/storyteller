@@ -176,7 +176,8 @@ export function BookGrid({
   })
 
   // revisit
-  const navEnabled = false // !!onBookClick
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const navEnabled = false as boolean // !!onBookClick
 
   const { setSelectedBookUuid } = useBookInSidePanel()
 

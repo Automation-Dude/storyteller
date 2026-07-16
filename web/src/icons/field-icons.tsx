@@ -62,7 +62,6 @@ export function fieldIcon(
   field: FieldIconKey,
   variant: "base" | "add" | "remove" | "filled" = "base",
 ): ComponentType<StyledIconProps> {
-  console.log("fieldIcon", field, variant)
   const def = FIELD_ICONS[field]
 
   const resolved = def[variant]

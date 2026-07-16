@@ -10,7 +10,6 @@ import {
   type SpineInfo,
 } from "@v3/_/components/books/Book3D"
 import { BookCover } from "@v3/_/components/books/BookCover"
-import { Button } from "@v3/_/components/ui/button"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 

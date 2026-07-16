@@ -77,7 +77,7 @@ export function useTranslation<
   const fn = (<TargetKey extends NamespacedMessageKeys<Messages, NestedKey>>(
     ...args: Parameters<typeof t<TargetKey>>
   ) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const result = (t as any).rich(...args, {
       em: (text: string) => <em>{text}</em>,
     })
