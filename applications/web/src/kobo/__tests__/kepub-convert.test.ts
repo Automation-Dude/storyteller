@@ -1,12 +1,20 @@
 import assert from "node:assert"
-import { mkdtemp, readFile, rm } from "node:fs/promises"
+import {
+  copyFile,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  utimes,
+} from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { basename, dirname, join } from "node:path"
 import { after, before, describe, it } from "node:test"
 
 import { Epub } from "@storyteller-platform/epub"
 
-import { convertToKepub } from "@/kobo/kepub"
+import { convertToKepub, getCachedKepub } from "@/kobo/kepub"
+import { type UUID } from "@/uuid"
 
 const FIXTURE = join(
   import.meta.dirname,
@@ -68,6 +76,37 @@ void describe("convertToKepub on a real book", () => {
 
     assert.match(chapter, /class="koboSpan"/, "spans must be in the markup")
     assert.match(chapter, /id="kobo\.\d+\.\d+"/, "ids must be kobo.N.M")
+  })
+
+  void it("retires the cached kepub when the book's EPUB is replaced", async () => {
+    // Replacing a book's EPUB is a thing that actually happens here, and
+    // serving yesterday's text under today's book would be silent and wrong.
+    const uuid = "00000000-0000-4000-8000-00000000feed" as UUID
+    const source = join(dir, "replaceable.epub")
+    await copyFile(FIXTURE, source)
+
+    const first = await getCachedKepub(uuid, source)
+    assert.ok(first, "should convert the first time")
+    assert.strictEqual(
+      await getCachedKepub(uuid, source),
+      first,
+      "an unchanged book should reuse the cached kepub",
+    )
+
+    // Stand in for a replaced file: same path, different mtime.
+    const later = new Date(Date.now() + 60_000)
+    await utimes(source, later, later)
+
+    const second = await getCachedKepub(uuid, source)
+    assert.ok(second, "should convert again after the source changed")
+    assert.notStrictEqual(second, first, "must not serve the retired kepub")
+
+    const left = await readdir(dirname(second))
+    assert.deepStrictEqual(
+      left,
+      [basename(second)],
+      "the retired kepub should be gone, not left to rot",
+    )
   })
 
   void it("is still a readable EPUB, and still a zip", async () => {
