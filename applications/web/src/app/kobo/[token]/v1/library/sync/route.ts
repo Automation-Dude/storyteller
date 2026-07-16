@@ -57,8 +57,13 @@ export async function GET(request: Request, context: { params: Params }) {
     })
 
     const response = NextResponse.json(items)
-    // Tells the device to come straight back for the next batch.
-    response.headers.set("x-kobo-sync", hasMore ? "continue" : "done")
+    // Present only when there is more, which is how the device knows to come
+    // straight back for the next batch. Absent means finished: there is no
+    // "done" value, and inventing one is not something to guess at.
+    if (hasMore) response.headers.set("x-kobo-sync", "continue")
+    // The device echoes this back on its next sync. We do not read it, since
+    // what a device has been sent is tracked here rather than in a token it
+    // holds, but it expects to be given one.
     response.headers.set("x-kobo-synctoken", new Date().toISOString())
     return response
   } catch (e) {
