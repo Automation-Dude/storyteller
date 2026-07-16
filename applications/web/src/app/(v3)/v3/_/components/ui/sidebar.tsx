@@ -662,6 +662,7 @@ function SidebarMenuButton({
     props: mergeProps<"button">(
       {
         className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+        style: { scrollbarWidth: "none" },
       },
       props,
     ),
