@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { getSettings } from "@/database/settings"
+import { getDeviceVerificationBaseUrl } from "@/deviceAuthorization"
 import { getKoboDeviceByToken, touchKoboDeviceSync } from "@/kobo/devices"
 import { buildSync, commitSync } from "@/kobo/sync"
 import { logger } from "@/logging"
@@ -33,8 +34,10 @@ export async function GET(request: Request, context: { params: Params }) {
     return NextResponse.json({ message: "Not found" }, { status: 404 })
   }
 
-  const url = new URL(request.url)
-  const baseUrl = `${url.origin}/kobo/${token}`
+  // Not request.url: behind a proxy the server sees its own bind address, and
+  // a device handed 0.0.0.0 lists every book and downloads none of them.
+  const origin = await getDeviceVerificationBaseUrl(new URL(request.url).origin)
+  const baseUrl = `${origin.replace(/\/+$/, "")}/kobo/${token}`
 
   try {
     const { items, hasMore, bookUuids } = await buildSync({ device, baseUrl })

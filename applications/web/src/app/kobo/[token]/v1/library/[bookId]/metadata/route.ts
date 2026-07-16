@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { getBook } from "@/database/books"
+import { getDeviceVerificationBaseUrl } from "@/deviceAuthorization"
 import { getKoboDeviceByToken } from "@/kobo/devices"
 import { type KoboDownloadUrl, buildKoboMetadata } from "@/kobo/metadata"
 import { type UUID } from "@/uuid"
@@ -26,12 +27,15 @@ export async function GET(request: Request, context: { params: Params }) {
     return NextResponse.json({ message: "Not found" }, { status: 404 })
   }
 
-  const origin = new URL(request.url).origin
+  // Same reason as the sync route: the request origin is the bind address.
+  const base = (
+    await getDeviceVerificationBaseUrl(new URL(request.url).origin)
+  ).replace(/\/+$/, "")
   const downloadUrls: KoboDownloadUrl[] = [
     {
       Format: "EPUB3",
       Size: book.ebook.fileSize ?? 0,
-      Url: `${origin}/kobo/${token}/download/${book.uuid}`,
+      Url: `${base}/kobo/${token}/download/${book.uuid}`,
       Platform: "Generic",
     },
   ]
