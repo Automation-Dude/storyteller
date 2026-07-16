@@ -335,7 +335,7 @@ export const BookCard = memo(function BookCard({
   const cardContent = (
     <>
       <div className="relative flex aspect-13/16 shrink-0 flex-col items-center justify-center transition-shadow">
-        <div className="from-cover-well to-cover-well/80 absolute inset-0 flex flex-col-reverse overflow-hidden rounded-lg bg-linear-to-t">
+        <div className="from-cover-well to-cover-well/80 rounded-card absolute inset-0 flex flex-col-reverse overflow-hidden bg-linear-to-t">
           {progress !== null && progress > 0 && (
             <ProgressDisplayBar progress={progress} book={book} />
           )}
@@ -352,20 +352,10 @@ export const BookCard = memo(function BookCard({
         <div
           className={cn(
             "absolute inset-0 flex items-center justify-center p-2",
-            hasDualFormat ? "overflow-visible" : "rounded-lg",
+            hasDualFormat ? "overflow-visible" : "rounded-card",
           )}
         >
-          <Cover
-            book={book}
-            width={coverWidth}
-            interactive={!isSelecting}
-            className="rounded-lg"
-          />
-          {/* <BookCover
-            book={book}
-            width={coverWidth}
-            disableHover={isSelecting}
-          /> */}
+          <Cover book={book} width={coverWidth} interactive={!isSelecting} />
         </div>
 
         {onToggleSelection && (
@@ -380,9 +370,9 @@ export const BookCard = memo(function BookCard({
         )}
 
         {isSynced && !isMobile && (
-          <div className="absolute top-[7%] right-[6%] aspect-square w-[10%]">
+          <div className="absolute top-[7%] right-[6%] aspect-square w-[12%]">
             <div className="bg-cover-header flex size-full items-center justify-center rounded-full shadow-md">
-              <IconReadaloud className="size-full text-white" />
+              <IconReadaloud className="size-[110%] text-white" />
             </div>
           </div>
         )}

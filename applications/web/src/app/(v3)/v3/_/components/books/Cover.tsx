@@ -7,7 +7,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react"
@@ -18,38 +17,23 @@ import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-
 import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
+import * as icon from "@/icons"
 import { getCoverUrl } from "@/store/api"
 
+import { useCoverColors } from "./BookDetails/sections/useCoverColors"
+import { getBlurhashDataUri } from "./blurhash-data-uri"
 
-import { FallbackCover } from "./BookCover"
-import {
-  getBlurhashAverageColor,
-  getBlurhashDataUri,
-  getBlurhashGradient,
-} from "./blurhash-data-uri"
-// import { BookDoubleCover } from "./BookDoubleCover"
+// potential target for user-configurable override
+const ROUNDED_CLASS = "rounded-cover"
 
-// cap DPR at 2: a 3x fetch triples decode cost for no visible gain on a small
-// grid cell.
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1
 
-// ── experiment settings ────────────────────────────────────────────────────
-// defaults are the production-sane choice; the lab (test page) overrides them
-// via the provider so behaviors can be toggled and compared side by side.
-
-export type BlurhashMode = "gradient" | "canvas" | "none"
-export type DoubleCoverMode = "waapi" | "css" | "static"
-
 export type CoverSettings = {
-  blurhash: BlurhashMode
-  doubleCover: DoubleCoverMode
   deferWhileScrolling: boolean
 }
 
 export const DEFAULT_COVER_SETTINGS: CoverSettings = {
-  blurhash: "canvas",
-  doubleCover: "waapi",
   deferWhileScrolling: true,
 }
 
@@ -61,14 +45,11 @@ export function useCoverSettings(): CoverSettings {
   return useContext(CoverSettingsContext)
 }
 
-// whether images are allowed to begin their network load. the grid flips this
-// off while scrolling so cover requests don't starve the next-page fetch on
-// HTTP/1 (six-connection cap). defaults to true so non-grid callers just load.
+// whether images are allowed to begin their network load
+// to disable while scrolling
 const CoverLoadContext = createContext(true)
 export const CoverLoadProvider = CoverLoadContext.Provider
 
-// exported so callers can match their layout (e.g. overflow-visible for the
-// spread animation) to exactly when Cover renders a double cover.
 export function isDual(book: BookWithRelations): boolean {
   const synced = book.readaloud !== null && book.readaloud.status === "ALIGNED"
   return synced || (book.ebook !== null && book.audiobook !== null)
@@ -77,27 +58,16 @@ export function isDual(book: BookWithRelations): boolean {
 // ── tile ────────────────────────────────────────────────────────────────────
 
 function blurhashStyle(
-  mode: BlurhashMode,
   blurhash: string | null | undefined,
 ): React.CSSProperties | undefined {
-  if (mode === "none") return undefined
-
-  if (mode === "canvas") {
-    const uri = getBlurhashDataUri(blurhash)
-    return uri
-      ? {
-          backgroundImage: `url(${uri})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }
-      : undefined
-  }
-
-  // gradient: cheap multi-radial approximation over the average tone.
-  return {
-    backgroundColor: getBlurhashAverageColor(blurhash) ?? undefined,
-    backgroundImage: getBlurhashGradient(blurhash) ?? undefined,
-  }
+  const uri = getBlurhashDataUri(blurhash)
+  return uri
+    ? {
+        backgroundImage: `url(${uri})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : undefined
 }
 
 type TileProps = {
@@ -111,9 +81,6 @@ type TileProps = {
   className?: string
 }
 
-// a single cover image. blurhash sits behind as a cheap placeholder; the <img>
-// decodes off the main thread and paints on top. no loaded-state, so a settled
-// tile never re-renders. radius is inherited from whatever the caller rounds.
 export const Tile = memo(function Tile({
   src,
   alt,
@@ -122,7 +89,6 @@ export const Tile = memo(function Tile({
   type,
   className,
 }: TileProps) {
-  const { blurhash: mode } = useCoverSettings()
   const canLoad = useContext(CoverLoadContext)
   // latch: once we've been allowed to load, stay loaded so a later scroll (which
   // flips canLoad back off) never yanks the src and forces a re-decode.
@@ -139,15 +105,15 @@ export const Tile = memo(function Tile({
         title={alt}
         type={type}
         colors={colors}
-        className={cn("rounded-[inherit]", className)}
+        className={cn(ROUNDED_CLASS, className)}
       />
     )
   }
 
   return (
     <div
-      className={cn("relative overflow-hidden rounded-[inherit]", className)}
-      style={blurhashStyle(mode, blurhash)}
+      className={cn("relative overflow-hidden", ROUNDED_CLASS, className)}
+      style={blurhashStyle(blurhash)}
     >
       {load && (
         <img
@@ -160,235 +126,13 @@ export const Tile = memo(function Tile({
           onError={() => {
             setErrored(true)
           }}
-          className="h-full w-full rounded-[inherit] object-contain"
+          className={cn("h-full w-full", ROUNDED_CLASS, "object-contain")}
         />
       )}
     </div>
   )
 })
 
-// ── double cover ─────────────────────────────────────────────────────────────
-
-type Face = {
-  src: string
-  alt: string
-  blurhash: string | null | undefined
-  colors: JsColor[] | null | undefined
-}
-
-type DoubleCoverProps = {
-  audio: Face
-  ebook: Face
-  className?: string
-}
-
-function AudioTile({ face }: { face: Face }) {
-  return (
-    <Tile
-      src={face.src}
-      alt={face.alt}
-      blurhash={face.blurhash}
-      colors={face.colors}
-      type="audiobook"
-      className="h-full w-full rounded-sm shadow-md"
-    />
-  )
-}
-
-function EbookTile({ face }: { face: Face }) {
-  return (
-    <Tile
-      src={face.src}
-      alt={face.alt}
-      blurhash={face.blurhash}
-      colors={face.colors}
-      type="ebook"
-      className="h-full w-full rounded-sm shadow-md"
-    />
-  )
-}
-
-const AUDIO_BOX: React.CSSProperties = { width: "82%", aspectRatio: "1 / 1" }
-const EBOOK_BOX: React.CSSProperties = { width: "82%", aspectRatio: "2 / 3" }
-
-// idle stack, wide mid-spread (where the restack hides), swapped rest. scale is
-// present in every state so WAAPI interpolates matching transform lists.
-const DC_DURATION = 440
-const DC_EASE = "cubic-bezier(0.22, 1, 0.36, 1)"
-const DC_Z_PEAK = 0.45
-const DC = {
-  idleEbook: "translateX(-10%) rotate(-2.5deg) scale(1)",
-  idleAudio: "translateX(15%) rotate(2.5deg) scale(1)",
-  hoverEbook: "translateX(15%) rotate(2.5deg) scale(0.94)",
-  hoverAudio: "translateX(-10%) rotate(-2.5deg) scale(1.04)",
-  peakEbook: "translateX(-46%) rotate(-5deg) scale(0.98)",
-  peakAudio: "translateX(46%) rotate(5deg) scale(1.02)",
-}
-
-// the interruptible / reversible peak-swap. WAAPI is the honest tool for a
-// three-point arc that reverses mid-flight; commitStyles carries the current
-// visual position across an interruption so hovering in/out repeatedly stays
-// smooth. it can only fire when stationary (the grid drops pointer-events while
-// scrolling), so its cost never lands on a scroll frame.
-function WaapiDoubleCover({ audio, ebook, className }: DoubleCoverProps) {
-  const ebookRef = useRef<HTMLDivElement>(null)
-  const audioRef = useRef<HTMLDivElement>(null)
-  const zTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const anims = useRef<Animation[]>([])
-
-  useLayoutEffect(() => {
-    const eb = ebookRef.current
-    const ab = audioRef.current
-    if (!eb || !ab) return
-    eb.style.transform = DC.idleEbook
-    eb.style.zIndex = "20"
-    ab.style.transform = DC.idleAudio
-    ab.style.zIndex = "10"
-  }, [])
-
-  const run = useCallback((hover: boolean) => {
-    const eb = ebookRef.current
-    const ab = audioRef.current
-    if (!eb || !ab) return
-
-    for (const a of anims.current) {
-      try {
-        a.commitStyles()
-      } catch {
-        // commitStyles throws if the element detached mid-flight; ignore.
-      }
-      a.cancel()
-    }
-    clearTimeout(zTimer.current)
-
-    const opts = {
-      duration: DC_DURATION,
-      easing: DC_EASE,
-      fill: "forwards" as const,
-    }
-    anims.current = [
-      eb.animate(
-        [
-          { transform: DC.peakEbook, offset: DC_Z_PEAK },
-          { transform: hover ? DC.hoverEbook : DC.idleEbook },
-        ],
-        opts,
-      ),
-      ab.animate(
-        [
-          { transform: DC.peakAudio, offset: DC_Z_PEAK },
-          { transform: hover ? DC.hoverAudio : DC.idleAudio },
-        ],
-        opts,
-      ),
-    ]
-
-    // flip stacking at the spread peak, when the swap is out of sight.
-    zTimer.current = setTimeout(() => {
-      eb.style.zIndex = hover ? "10" : "20"
-      ab.style.zIndex = hover ? "20" : "10"
-    }, DC_DURATION * DC_Z_PEAK)
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(zTimer.current)
-      for (const a of anims.current) a.cancel()
-    }
-  }, [])
-
-  return (
-    <div
-      className={cn("relative h-full w-full", className)}
-      onPointerEnter={() => {
-        run(true)
-      }}
-      onPointerLeave={() => {
-        run(false)
-      }}
-    >
-      <div ref={audioRef} className="absolute inset-0 m-auto" style={AUDIO_BOX}>
-        <AudioTile face={audio} />
-      </div>
-      <div ref={ebookRef} className="absolute inset-0 m-auto" style={EBOOK_BOX}>
-        <EbookTile face={ebook} />
-      </div>
-    </div>
-  )
-}
-
-// pure-CSS cross-swap: the z-index flip is delayed to the crossover midpoint via
-// `transition: z-index 0s <delay>`; transitions run from the current value so
-// it's reversible for free. no mid spread (a two-endpoint transition can't
-// peak), so covers cross through center rather than spreading wide.
-function CssDoubleCover({ audio, ebook, className }: DoubleCoverProps) {
-  const tileTransition =
-    "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), z-index 0s 0.175s"
-  return (
-    <div className={cn("group/dc relative h-full w-full", className)}>
-      <div
-        className={cn(
-          "absolute inset-0 z-10 m-auto",
-          "transform-[translateX(15%)_rotate(2.5deg)]",
-          "group-hover/dc:z-20 group-hover/dc:transform-[translateX(-10%)_rotate(-2.5deg)_scale(1.03)]",
-        )}
-        style={{ ...AUDIO_BOX, transition: tileTransition }}
-      >
-        <AudioTile face={audio} />
-      </div>
-      <div
-        className={cn(
-          "absolute inset-0 z-20 m-auto",
-          "transform-[translateX(-10%)_rotate(-2.5deg)]",
-          "group-hover/dc:z-10 group-hover/dc:transform-[translateX(15%)_rotate(2.5deg)_scale(0.94)]",
-        )}
-        style={{ ...EBOOK_BOX, transition: tileTransition }}
-      >
-        <EbookTile face={ebook} />
-      </div>
-    </div>
-  )
-}
-
-// no interaction at all: cheapest to mount.
-function StaticDoubleCover({ audio, ebook, className }: DoubleCoverProps) {
-  return (
-    <div className={cn("relative h-full w-full", className)}>
-      <div
-        className="absolute inset-0 z-10 m-auto"
-        style={{ ...AUDIO_BOX, transform: "translateX(15%) rotate(2.5deg)" }}
-      >
-        <AudioTile face={audio} />
-      </div>
-      <div
-        className="absolute inset-0 z-20 m-auto"
-        style={{ ...EBOOK_BOX, transform: "translateX(-10%) rotate(-2.5deg)" }}
-      >
-        <EbookTile face={ebook} />
-      </div>
-    </div>
-  )
-}
-
-function _DoubleCover({
-  interactive = true,
-  ...props
-}: DoubleCoverProps & { interactive?: boolean }) {
-  const { doubleCover } = useCoverSettings()
-  // selection mode (or any non-interactive context) freezes the spread so
-  // hovering to pick a book doesn't animate.
-  if (!interactive || doubleCover === "static")
-    return <StaticDoubleCover {...props} />
-  if (doubleCover === "css") return <CssDoubleCover {...props} />
-  return <WaapiDoubleCover {...props} />
-}
-
-// ── cover ────────────────────────────────────────────────────────────────────
-
-// lean book cover for dense grids. round it by putting a `rounded-*` class in
-// `className` — tiles inherit the radius, so there's nothing else to thread
-// through. dual-format behavior (animation + blurhash) is driven by the cover
-// settings context so it can be tuned in the lab.
 export const Cover = memo(function Cover({
   book,
   width = 150,
@@ -406,43 +150,13 @@ export const Cover = memo(function Cover({
   const { doubleCoverAlignment } = useUserPreferences()
 
   if (isDual(book)) {
-    // const colors = book.ebook?.coverColors ?? book.readaloud?.coverColors
-    // const ebookUrl = getCoverUrl(book.uuid, {
-    //   width: w,
-    //   height: h,
-    //   audio: false,
-    //   updatedAt: book.ebook?.updatedAt ?? book.updatedAt,
-    // })
-    // const audiobookUrl = getCoverUrl(book.uuid, {
-    //   width: w,
-    //   height: w,
-    //   audio: true,
-    //   updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
-    // })
     return (
       <BookDoubleCover
         book={book}
         width={width}
-        // interactive={interactive}
         forceAligned={doubleCoverAlignment === "straight"}
         disableHover={!interactive}
       />
-      // <DoubleCover
-      //   className={className}
-      //   interactive={interactive}
-      //   audio={{
-      //     src: audiobookUrl,
-      //     alt: book.title,
-      //     blurhash: book.audiobook?.coverBlurhash,
-      //     colors,
-      //   }}
-      //   ebook={{
-      //     src: ebookUrl,
-      //     alt: book.title,
-      //     blurhash: book.ebook?.coverBlurhash,
-      //     colors,
-      //   }}
-      // />
     )
   }
 
@@ -460,7 +174,7 @@ export const Cover = memo(function Cover({
         blurhash={book.audiobook.coverBlurhash}
         colors={book.audiobook.coverColors}
         type="audiobook"
-        className={cn("aspect-square h-full shadow-sm", className)}
+        className={cn("aspect-square shadow-sm", className)}
       />
     )
   }
@@ -699,7 +413,7 @@ export function BookDoubleCover({
           alt={book.title}
           blurhash={book.audiobook?.coverBlurhash}
           type="audiobook"
-          className="h-full w-full rounded-sm"
+          className={cn("h-full w-full", ROUNDED_CLASS)}
           colors={book.audiobook?.coverColors}
         />
       </div>
@@ -713,10 +427,54 @@ export function BookDoubleCover({
           alt={book.title}
           blurhash={book.ebook?.coverBlurhash}
           type="ebook"
-          className="h-full w-full rounded-sm"
+          className={cn("h-full w-full", ROUNDED_CLASS)}
           colors={book.ebook?.coverColors}
         />
       </div>
+    </div>
+  )
+}
+
+export function FallbackCover({
+  title,
+  type,
+  colors,
+  className,
+}: {
+  title: string
+  type: "audiobook" | "ebook"
+  className?: string
+  colors?: JsColor[] | null
+}) {
+  const { primary } = useCoverColors(colors ?? [])
+
+  return (
+    <div
+      className={cn(
+        "from-primary/10 to-primary/5 relative flex w-full flex-col items-center justify-center gap-2 overflow-clip bg-linear-to-br p-4 text-center before:absolute before:inset-0 before:-z-10 before:bg-white before:content-['']",
+        className,
+      )}
+      style={{
+        background: primary.solid,
+      }}
+    >
+      {type === "audiobook" ? (
+        <icon.HeadphonesFilled
+          className="h-12 w-12"
+          style={{ color: primary.onColor }}
+        />
+      ) : (
+        <icon.BookFilled
+          className="h-12 w-12"
+          style={{ color: primary.onColor }}
+        />
+      )}
+      <h3
+        className="line-clamp-2 max-w-full text-center text-sm font-medium"
+        style={{ color: primary.onColor }}
+      >
+        {title}
+      </h3>
     </div>
   )
 }

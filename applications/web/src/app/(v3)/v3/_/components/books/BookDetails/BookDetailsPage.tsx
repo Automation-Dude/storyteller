@@ -298,7 +298,7 @@ function BookPageHeader() {
     "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
 
   return (
-    <div className="absolute top-0 z-20 flex h-(--header-height) w-full shrink-0 items-center justify-between gap-2 border-b px-4">
+    <div className="absolute top-0 z-20 flex h-(--header-height) w-full shrink-0 items-center justify-between gap-2 px-4">
       <div className="flex min-w-0 items-center gap-2">
         <TooltipButton
           variant="ghost"
@@ -306,7 +306,9 @@ function BookPageHeader() {
           className={cn(pill)}
           tooltip="Back"
           aria-label="Back"
-          onClick={() => { router.back(); }}
+          onClick={() => {
+            router.back()
+          }}
           shortcut={["Shift+ArrowLeft"]}
         >
           <icon.ArrowLeft className="size-3.5 stroke-[1.5]" />

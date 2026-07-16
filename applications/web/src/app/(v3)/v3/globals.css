@@ -134,6 +134,9 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
+  --radius-card: var(--radius-card);
+  --radius-cover: var(--radius-cover);
+
   --color-positive: var(--positive);
   --color-positive-bg: var(--positive-bg);
   --color-positive-border: var(--positive-line);
@@ -263,9 +266,9 @@
   --highlight-wash: oklch(0.91 0.06 80);
   --highlight-edge: oklch(0.78 0.11 72);
 
-  /* cover-color toolkit neutral defaults. with no CoverScope active every token
-     is neutral, so components use the utility classes unconditionally. these are
-     var-references, so .dark inherits without an override. */
+  --radius-card: var(--radius-lg);
+  --radius-cover: var(--radius-md);
+
   --cover-intensity: 1;
   --cover-wash: transparent; /* faint ambient bg, hero / page */
   --cover-well: var(--muted); /* medium ambient bg, the well behind a cover */
@@ -292,17 +295,6 @@
   --sth-orange-700: #d15815;
   --sth-orange-800: #ba4d0f;
   --sth-orange-900: #a34106; */
-
-  /* #fff1e7
-  #fbe2d3
-  #f6c2a5
-  #f1a173
-  #ed8449
-  #eb722f
-  #ea6920
-  #d15815
-  #ba4d0f
-  #a34106 */
 }
 
 .dark {
