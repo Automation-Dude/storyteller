@@ -1,7 +1,12 @@
 import assert from "node:assert"
 import { describe, it } from "node:test"
 
-import { koreaderEntryToDevicePath, patchEReaderConf } from "@/ereader/client/plan"
+import {
+  KFMON_INSTALLER_PATH,
+  kfmonEntriesInWriteOrder,
+  koreaderEntryToDevicePath,
+  patchEReaderConf,
+} from "@/ereader/client/plan"
 
 void describe("koreaderEntryToDevicePath", () => {
   void it("puts the koreader tree and launcher icon under .adds", () => {
@@ -23,6 +28,51 @@ void describe("koreaderEntryToDevicePath", () => {
     assert.strictEqual(
       koreaderEntryToDevicePath("/koreader/reader.lua"),
       ".adds/koreader/reader.lua",
+    )
+  })
+})
+
+void describe("kfmonEntriesInWriteOrder", () => {
+  // The package as shipped lists the installer first; writing it in that order
+  // would let an interrupted setup reboot into a KFMon with no icon to launch.
+  const packaged = [
+    KFMON_INSTALLER_PATH,
+    ".adds/kfmon/config/koreader.ini",
+    "koreader.png",
+    "icons/plato.png",
+  ]
+
+  void it("writes the installer last, after the icon and watch config", () => {
+    const ordered = kfmonEntriesInWriteOrder(packaged)
+    assert.strictEqual(ordered.at(-1), KFMON_INSTALLER_PATH)
+    assert.ok(
+      ordered.indexOf("koreader.png") < ordered.indexOf(KFMON_INSTALLER_PATH),
+    )
+    assert.ok(
+      ordered.indexOf(".adds/kfmon/config/koreader.ini") <
+        ordered.indexOf(KFMON_INSTALLER_PATH),
+    )
+  })
+
+  void it("keeps every entry exactly once", () => {
+    const ordered = kfmonEntriesInWriteOrder(packaged)
+    assert.strictEqual(ordered.length, packaged.length)
+    assert.deepStrictEqual([...ordered].sort(), [...packaged].sort())
+  })
+
+  void it("preserves the relative order of the other entries", () => {
+    const ordered = kfmonEntriesInWriteOrder(packaged)
+    assert.deepStrictEqual(
+      ordered.filter((path) => path !== KFMON_INSTALLER_PATH),
+      [".adds/kfmon/config/koreader.ini", "koreader.png", "icons/plato.png"],
+    )
+  })
+
+  void it("is a no-op for a package that carries no installer", () => {
+    const withoutInstaller = ["koreader.png", ".adds/kfmon/config/kfmon.ini"]
+    assert.deepStrictEqual(
+      kfmonEntriesInWriteOrder(withoutInstaller),
+      withoutInstaller,
     )
   })
 })

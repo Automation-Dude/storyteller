@@ -9,11 +9,19 @@ import { logger } from "@/logging"
  * The device packages the browser writes to a Kobo: KOReader itself, and the
  * KFMon launcher that makes the Kobo start it. They are the same for every
  * user, so the server downloads each once, caches it, and serves it
- * same-origin (the browser cannot fetch GitHub release assets directly without
+ * same-origin (the browser cannot fetch the upstream assets directly without
  * cross-origin trouble).
  *
  * Versions are pinned so a setup is reproducible and we only ship builds we
  * have tested on real hardware. Bump these deliberately, then re-test.
+ *
+ * KFMon is NOT published on GitHub releases: the repository only carries tags,
+ * and upstream distributes the built package as an attachment on its MobileRead
+ * thread (see the "How do I install this?" section of its README). So the pin
+ * here is a specific attachment, identified by its checksum rather than by a
+ * "latest" URL that cannot exist. Both packages are checksum-verified before
+ * they are cached or served, so a truncated or swapped download fails loudly
+ * here instead of half-installing on someone's device.
  *
  * KOReader is AGPL-3.0 and KFMon is GPL-3.0; redistributing their unmodified
  * release artifacts is permitted. We serve them verbatim.
@@ -29,19 +37,24 @@ type PackageSpec = {
 
 const KOREADER_VERSION = "v2026.03"
 
+/** The KFMon build attached to its MobileRead thread (t=274231). */
+const KFMON_VERSION = "v1.4.6-191-gca31869"
+const KFMON_ATTACHMENT_ID = "223768"
+
 export const PACKAGES = {
   koreader: {
     filename: `koreader-kobo-${KOREADER_VERSION}.zip`,
     url: `https://github.com/koreader/koreader/releases/download/${KOREADER_VERSION}/koreader-kobo-${KOREADER_VERSION}.zip`,
-    // Filled in on first verified download; see verifyOrLearnHash below.
-    sha256: "",
+    sha256: "510bbc4618dcc5a2fc54a2a8069f94ea5aa7a47a5d6c5a92b75c22d7b701146f",
     contentType: "application/zip",
   },
   kfmon: {
-    filename: "KFMon-KoboRoot.tgz",
-    url: "https://github.com/NiLuJe/kfmon/releases/latest/download/KoboRoot.tgz",
-    sha256: "",
-    contentType: "application/gzip",
+    // The full KFMon package, not a bare KoboRoot.tgz: it also carries the
+    // trigger icon and the watch config that actually make KOReader launchable.
+    filename: `KFMon-${KFMON_VERSION}.zip`,
+    url: `https://www.mobileread.com/forums/attachment.php?attachmentid=${KFMON_ATTACHMENT_ID}&d=1780864476`,
+    sha256: "ddc55dcd984a56a1d039d4b7a4488c09c2a9de9f0ec2732ed468b422dc5cc7e1",
+    contentType: "application/zip",
   },
 } satisfies Record<string, PackageSpec>
 

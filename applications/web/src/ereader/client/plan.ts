@@ -9,6 +9,29 @@ export function koreaderEntryToDevicePath(entryPath: string): string {
   return `.adds/${entryPath.replace(/^\/+/, "")}`
 }
 
+/**
+ * The KFMon installer, which Nickel unpacks and then reboots to apply. KFMon's
+ * package is already laid out relative to the USB root (`.kobo/`,
+ * `.adds/kfmon/`, `koreader.png`), so unlike KOReader's zip its entries are
+ * written verbatim.
+ */
+export const KFMON_INSTALLER_PATH = ".kobo/KoboRoot.tgz"
+
+/**
+ * Order KFMon's entries so the installer is written last.
+ *
+ * Nickel processes KoboRoot.tgz and reboots when the device is ejected. The
+ * trigger icon (`koreader.png`) and its watch config must already be on disk by
+ * then, or the device reboots into a KFMon with nothing to launch and the
+ * reader appears to have simply not installed.
+ */
+export function kfmonEntriesInWriteOrder(paths: string[]): string[] {
+  return [
+    ...paths.filter((path) => path !== KFMON_INSTALLER_PATH),
+    ...paths.filter((path) => path === KFMON_INSTALLER_PATH),
+  ]
+}
+
 export const EXCLUDE_LINE = "ExcludeSyncFolders=\\.(?:adds|kobo)"
 
 /**

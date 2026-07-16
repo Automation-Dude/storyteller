@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  Alert,
-  Button,
-  Code,
-  List,
-  Progress,
-  Stack,
-  Text,
-} from "@mantine/core"
+import { Alert, Button, Code, List, Progress, Stack, Text } from "@mantine/core"
 import { useState } from "react"
 
 import { installToKobo } from "@/ereader/client/install"
@@ -82,7 +74,7 @@ export function SetUpEreaderClient() {
       const config = (await configResponse.json()) as EreaderConfigResponse
 
       setStatus("Downloading the reader app...")
-      const [koreaderZip, kfmonTgz] = await Promise.all([
+      const [koreaderZip, kfmonZip] = await Promise.all([
         fetchBytes("/api/v2/ereader/packages/koreader"),
         fetchBytes("/api/v2/ereader/packages/kfmon"),
       ])
@@ -90,7 +82,7 @@ export function SetUpEreaderClient() {
       await installToKobo({
         device: kobo,
         koreaderZip,
-        kfmonTgz,
+        kfmonZip,
         configFiles: config.files,
         onProgress: (p) => {
           setStatus(p.message + (p.phase === "koreader" ? "..." : ""))
@@ -119,7 +111,9 @@ export function SetUpEreaderClient() {
             </Text>
             <Text>Then, on the device:</Text>
             <List type="ordered" size="sm">
-              <List.Item>It will restart and finish installing on its own.</List.Item>
+              <List.Item>
+                It will restart and finish installing on its own.
+              </List.Item>
               <List.Item>Open KOReader from your home screen.</List.Item>
               <List.Item>
                 Your library is already there, and your reading place will sync
@@ -141,7 +135,9 @@ export function SetUpEreaderClient() {
       </Text>
       <Text fw={500}>Before you start:</Text>
       <List size="sm">
-        <List.Item>Plug your e-reader into this computer with its cable.</List.Item>
+        <List.Item>
+          Plug your e-reader into this computer with its cable.
+        </List.Item>
         <List.Item>
           If the device asks, choose to <Code>Connect</Code> so the computer can
           see it.
