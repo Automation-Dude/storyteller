@@ -83,6 +83,61 @@ export function isFirmwareSupported(firmware: string): boolean {
   return true
 }
 
+/**
+ * Point a Kobo's store at Storyteller by rewriting one line of its config.
+ *
+ * This is the whole install. A Kobo reads its library from a store rather than
+ * from the files on its USB partition, so redirecting api_endpoint is what
+ * makes a book put on its shelf appear in the device's own library, in its own
+ * reader, with nothing installed and no reboot. It touches a text file on the
+ * user partition and nothing else.
+ *
+ * The previous value is preserved as a comment so the device can be put back
+ * to the real Kobo store by hand, without needing us.
+ */
+export function patchKoboApiEndpoint(
+  existing: string | null,
+  apiEndpoint: string,
+): string {
+  const line = `api_endpoint=${apiEndpoint}`
+  const text = existing ?? ""
+
+  const current = /^api_endpoint=(.*)$/m.exec(text)
+  if (current) {
+    if (current[1] === apiEndpoint) return text // already ours, leave it be
+    // Keep the old endpoint alongside, once: re-running setup must not bury
+    // the original Kobo store behind a stack of our own previous values.
+    const withBackup = /^#\s*storyteller-previous-api_endpoint=/m.test(text)
+      ? text
+      : text.replace(
+          /^api_endpoint=(.*)$/m,
+          `# storyteller-previous-api_endpoint=$1\napi_endpoint=$1`,
+        )
+    return withBackup.replace(/^api_endpoint=(.*)$/m, line)
+  }
+
+  if (/^\[OneStoreServices\]/m.test(text)) {
+    return text.replace(
+      /^\[OneStoreServices\][^\n]*$/m,
+      `[OneStoreServices]\n${line}`,
+    )
+  }
+
+  const prefix = text.length && !text.endsWith("\n") ? `${text}\n` : text
+  return `${prefix}[OneStoreServices]\n${line}\n`
+}
+
+/** Restore the device to the Kobo store, using the value setup preserved. */
+export function unpatchKoboApiEndpoint(existing: string | null): string {
+  const text = existing ?? ""
+  const previous = /^#\s*storyteller-previous-api_endpoint=(.*)$/m.exec(text)
+  if (!previous) return text
+
+  return text
+    .replace(/^api_endpoint=(.*)$/m, `api_endpoint=${previous[1]}`)
+    .replace(/^#\s*storyteller-previous-api_endpoint=.*\n?/m, "")
+}
+
 export const EXCLUDE_LINE = "ExcludeSyncFolders=\\.(?:adds|kobo)"
 
 /**
