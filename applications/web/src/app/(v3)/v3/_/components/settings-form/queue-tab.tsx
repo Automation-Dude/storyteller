@@ -8,7 +8,6 @@ import {
 } from "nuqs"
 import { useEffect, useState } from "react"
 
-
 import { Button } from "@v3/_/components/ui/button"
 import { Input } from "@v3/_/components/ui/input"
 import {
@@ -57,7 +56,6 @@ import {
   useResumeJobMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
-
 
 const PAGE_SIZE = 10
 

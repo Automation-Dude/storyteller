@@ -6,7 +6,6 @@ import { cn } from "@v3/_/lib/utils"
 
 import * as icon from "@/icons"
 
-
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (
     <CheckboxPrimitive.Root

@@ -1,6 +1,4 @@
-import {
-  DropdownMenuItem,
-} from "@v3/_/components/ui/dropdown-menu"
+import { DropdownMenuItem } from "@v3/_/components/ui/dropdown-menu"
 
 import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"

@@ -204,10 +204,9 @@ export function BookEditForm({ book }: Props) {
               update: {
                 uuid: book.uuid,
                 ...update,
-                publicationDate:
-                  update.publicationDate
-                    ? new Date(update.publicationDate).toISOString()
-                    : null,
+                publicationDate: update.publicationDate
+                  ? new Date(update.publicationDate).toISOString()
+                  : null,
               },
               textCover,
               audioCover,

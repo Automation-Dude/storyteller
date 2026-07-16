@@ -85,7 +85,11 @@ export function useTranslation<
     if (typeof result === "string" && result.includes("__fallback__")) {
       const [key, ...rest] = result.split("__fallback__")
       return (
-        <MissingMessageFallback namespace={namespace} key={key ?? ""} result={rest.join("__fallback__")} />
+        <MissingMessageFallback
+          namespace={namespace}
+          key={key ?? ""}
+          result={rest.join("__fallback__")}
+        />
       )
     }
 

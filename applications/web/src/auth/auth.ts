@@ -533,11 +533,11 @@ export function withHasPermission<
   },
 ) {
   return (
-      handler: (
-        request: VerifiedAuthRequest,
-        context: { params: Promise<Params> },
-      ) => Promise<Response> | Response,
-    ): AppRouteHandlerFn =>
+    handler: (
+      request: VerifiedAuthRequest,
+      context: { params: Promise<Params> },
+    ) => Promise<Response> | Response,
+  ): AppRouteHandlerFn =>
     (async (request, context) => {
       if (options?.allowBasicAuth) {
         // only allow basic auth if OPDS is enabled

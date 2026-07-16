@@ -34,7 +34,12 @@ function getLazyIcon(
   return component
 }
 
-function FallbackIcon({ className }: { className?: string; style?: React.CSSProperties }) {
+function FallbackIcon({
+  className,
+}: {
+  className?: string
+  style?: React.CSSProperties
+}) {
   return (
     <svg
       className={className}

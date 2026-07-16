@@ -13,7 +13,6 @@ import { cn } from "@/cn"
 import * as icon from "@/icons"
 import { type DisplayField, GENERAL_SORT_FIELDS } from "@/sort"
 
-
 const PICKABLE_FIELDS: DisplayField[] = [
   ...GENERAL_SORT_FIELDS.filter((f) => f !== "title"),
 ]

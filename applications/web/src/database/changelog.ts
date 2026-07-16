@@ -21,7 +21,6 @@ const timeoutAgent = new Agent({
   connectTimeout: 30e3,
 })
 
-
 type GitLabRelease = {
   tag_name: string
   description: string | null

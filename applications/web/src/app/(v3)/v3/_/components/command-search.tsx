@@ -19,7 +19,6 @@ import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
 import { api, getCoverUrl } from "@/store/api"
 
-
 // import { useDebounce}
 
 export function CommandSearch() {

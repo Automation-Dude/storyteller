@@ -87,7 +87,11 @@ export function ShelfActionsMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ShelfEditor open={editorOpen} onOpenChange={setEditorOpen} shelf={shelf} />
+      <ShelfEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        shelf={shelf}
+      />
 
       <ConfirmDialog {...deleteAction.dialogProps} />
     </>

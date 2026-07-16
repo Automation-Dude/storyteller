@@ -9,7 +9,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
-import { DISPLAY_FIELDS, type DisplayField  } from "@/sort"
+import { DISPLAY_FIELDS, type DisplayField } from "@/sort"
 import { useSetUserSettingMutation } from "@/store/api"
 import { type BookView } from "@/store/slices/uiSettingsSlice"
 
