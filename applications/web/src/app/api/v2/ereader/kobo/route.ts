@@ -18,6 +18,11 @@ const BodySchema = z.object({
    * the person who reads on it.
    */
   userId: z.string().optional(),
+  /**
+   * The device's own serial. Setting the same e-reader up twice rotates its
+   * token instead of stranding the old one.
+   */
+  serial: z.string().trim().min(1).optional(),
   /** The shelf this device sees. Omitted means the whole library. */
   collectionUuid: z.uuid().optional(),
 })
@@ -74,6 +79,7 @@ export const POST = withHasPermission("bookDownload")(async (request) => {
   const { token } = await createKoboDevice({
     userId: targetUserId as UUID,
     label: parsed.data.deviceLabel ?? "Kobo",
+    serial: parsed.data.serial ?? null,
     collectionUuid: (parsed.data.collectionUuid ?? null) as UUID | null,
   })
 

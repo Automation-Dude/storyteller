@@ -52,20 +52,60 @@ export async function getKoboDeviceByToken(
 /**
  * Register a device and return the token to put in its config. The token is
  * returned once, here, and only its digest is kept.
+ *
+ * Keyed by the device's serial, so setting the same e-reader up twice rotates
+ * its token rather than leaving the first one behind. Without that, every
+ * retry, and every failed config write, would strand a live key to someone's
+ * library that nobody knows exists and nobody will revoke.
+ *
+ * A device with no serial (nothing reported it) always gets its own row: there
+ * is nothing to recognise it by, and guessing would merge two real devices.
  */
 export async function createKoboDevice(args: {
   userId: UUID
   label: string
+  /** The device's own serial, from .kobo/version. */
+  serial?: string | null
   /** The shelf this device sees. Null means the whole library. */
   collectionUuid?: UUID | null
 }): Promise<{ device: KoboDeviceRecord; token: string }> {
   const token = generateKoboToken()
+  const serial = args.serial?.trim() || null
+
+  if (serial) {
+    const existing = await db
+      .selectFrom("koboDevice")
+      .select("uuid")
+      .where("userId", "=", args.userId)
+      .where("serial", "=", serial)
+      .executeTakeFirst()
+
+    if (existing) {
+      // Same device, set up again: rotate the token and take the new shelf.
+      // The old token stops working, which is what re-running setup should
+      // mean.
+      const device = await db
+        .updateTable("koboDevice")
+        .set({
+          label: args.label,
+          tokenHash: hashKoboToken(token),
+          collectionUuid: args.collectionUuid ?? null,
+          revokedAt: null,
+        })
+        .where("uuid", "=", existing.uuid)
+        .returning(["uuid", "userId", "label", "collectionUuid"])
+        .executeTakeFirstOrThrow()
+
+      return { device, token }
+    }
+  }
 
   const device = await db
     .insertInto("koboDevice")
     .values({
       userId: args.userId,
       label: args.label,
+      serial,
       tokenHash: hashKoboToken(token),
       collectionUuid: args.collectionUuid ?? null,
     })

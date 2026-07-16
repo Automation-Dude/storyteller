@@ -94,6 +94,9 @@ export function SetUpEreaderClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           deviceLabel: kobo.model,
+          // Identifies the physical device, so re-running setup rotates this
+          // e-reader's token rather than leaving the old one live.
+          ...(kobo.serial && { serial: kobo.serial }),
           ...(userId && { userId }),
           ...(shelf !== WHOLE_LIBRARY && { collectionUuid: shelf }),
         }),

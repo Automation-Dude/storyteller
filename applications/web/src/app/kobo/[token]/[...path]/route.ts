@@ -33,14 +33,14 @@ async function proxy(request: Request, context: { params: Params }) {
   const url = new URL(request.url)
   const target = `${KOBO_STORE}/${path.join("/")}${url.search}`
 
-  const headers = new Headers(request.headers)
+  const requestHeaders = new Headers(request.headers)
   // Host must follow the request, not the one it arrived on.
-  headers.delete("host")
+  requestHeaders.delete("host")
 
   try {
     const response = await fetch(target, {
       method: request.method,
-      headers,
+      headers: requestHeaders,
       body:
         request.method === "GET" || request.method === "HEAD"
           ? undefined
@@ -48,9 +48,18 @@ async function proxy(request: Request, context: { params: Params }) {
       redirect: "manual",
     })
 
+    // fetch has already decompressed the body, but the store's headers still
+    // describe it as compressed and give its compressed length. Passing those
+    // through hands the device a body that does not match what it was told to
+    // expect, and it fails to parse a response that is actually fine.
+    const responseHeaders = new Headers(response.headers)
+    responseHeaders.delete("content-encoding")
+    responseHeaders.delete("content-length")
+    responseHeaders.delete("transfer-encoding")
+
     return new NextResponse(response.body, {
       status: response.status,
-      headers: response.headers,
+      headers: responseHeaders,
     })
   } catch (e) {
     // The store being unreachable must not look like a broken library.

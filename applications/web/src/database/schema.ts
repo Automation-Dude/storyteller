@@ -251,6 +251,7 @@ export interface KoboDevice {
   label: string
   lastSyncedAt: string | null
   revokedAt: string | null
+  serial: string | null
   tokenHash: string
   updatedAt: Generated<string>
   userId: string

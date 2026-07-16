@@ -904,10 +904,15 @@ CREATE TABLE kobo_device (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_synced_at TEXT,
-  revoked_at TEXT
+  revoked_at TEXT,
+  serial TEXT
 );
 
 CREATE INDEX idx_kobo_device_user_id ON kobo_device (user_id);
+
+CREATE UNIQUE INDEX idx_kobo_device_user_serial ON kobo_device (user_id, serial)
+WHERE
+  serial IS NOT NULL;
 
 CREATE TRIGGER kobo_device_update_trigger AFTER
 UPDATE ON kobo_device FOR EACH ROW BEGIN
