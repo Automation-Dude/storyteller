@@ -77,6 +77,12 @@ async function backfillSummaries() {
 
       report = JSON.parse(reportText) as Report
     } catch (error) {
+      if (error instanceof Error && error.message.includes("ENOENT")) {
+        logger.warn({
+          msg: `Failed to read alignment report for book ${row.title}. This is expected and not an error, carry on.`,
+        })
+        continue
+      }
       logger.warn({
         msg: `Failed to read alignment report for book ${row.title}. This may be expected.`,
         err: error,
