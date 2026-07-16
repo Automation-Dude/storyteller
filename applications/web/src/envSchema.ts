@@ -163,6 +163,12 @@ export const internalServerEnvVars = {
     .stringbool()
     .default(true)
     .describe("Whether to sync the changelog from GitLab."),
+  STORYTELLER_SKIP_STARTUP_BACKUP: z
+    .stringbool()
+    .default(false)
+    .describe(
+      "Skip the one-time safety backup of the database taken on the first boot of an existing library. By default startup aborts if the backup cannot be made.",
+    ),
   SQLITE_NATIVE_BINDING: z
     .string()
     .optional()

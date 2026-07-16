@@ -1,15 +1,18 @@
 import { createHash } from "node:crypto"
-import { readFile, readdir } from "node:fs/promises"
+import { existsSync, mkdirSync } from "node:fs"
+import { readFile, readdir, writeFile } from "node:fs/promises"
 import { basename, extname, join } from "node:path"
 import { cwd } from "node:process"
 
 import { splitQuery, sqliteSplitterOptions } from "dbgate-query-splitter"
 import { sql } from "kysely"
 
+import { BACKUP_DIR, DB_DIR } from "@/directories"
 import { env } from "@/env"
 import { logger } from "@/logging"
+import { getCurrentVersion } from "@/versions"
 
-import { db } from "./connection"
+import { backupDatabase, db } from "./connection"
 
 const jsMigrations: Record<string, () => Promise<void>> = {
   "33_add_more_book_metadata.sql": (
@@ -181,10 +184,45 @@ ${statement}`)
   return hash
 }
 
+const BACKUP_MARKER = join(DB_DIR, ".startup-backup-done")
+
+async function backupOnce(foundFirstStartup: boolean) {
+  if (foundFirstStartup) return
+  if (existsSync(BACKUP_MARKER)) return
+
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-")
+  const destPath = join(
+    BACKUP_DIR,
+    `storyteller-pre-v3-${getCurrentVersion()}-${stamp}.db`,
+  )
+
+  try {
+    mkdirSync(BACKUP_DIR, { recursive: true })
+    await backupDatabase(destPath)
+    await writeFile(BACKUP_MARKER, `${destPath}\n`, { encoding: "utf-8" })
+    logger.info(`Created one-time safety backup of the database at ${destPath}`)
+  } catch (err) {
+    if (env.STORYTELLER_SKIP_STARTUP_BACKUP) {
+      logger.warn({
+        err,
+        msg: "Could not create the startup safety backup, continuing anyway because STORYTELLER_SKIP_STARTUP_BACKUP is set",
+      })
+      return
+    }
+    logger.error(
+      "Could not create the startup safety backup of the database. Refusing to start so your data is not migrated without a backup. Set STORYTELLER_SKIP_STARTUP_BACKUP=true to bypass this.",
+    )
+    throw err
+  }
+}
+
 export async function migrate() {
   // Make sure to evaluate this _before_ running any migrations
   const foundFirstStartup = await isFirstStartup()
   if (foundFirstStartup) logger.info("First startup - initializing database")
+
+  // must run before any migration mutates the existing library
+  await backupOnce(foundFirstStartup)
 
   const migrationsDir = join(cwd(), "migrations")
   const migrationFiles = await readdir(migrationsDir)

@@ -1,4 +1,15 @@
 {
+  "Announcements": {
+    "dismiss": "Begrepen",
+    "v3-beta-welcome": {
+      "title": "Welkom bij de v3-bèta",
+      "p1": "We hebben automatisch een back-up van je database gemaakt, maar zelf een back-up maken voordat je op de bèta vertrouwt is nooit een slecht idee. Dataverlies is niet te verwachten, maar dit is een bèta, dus het kan gebeuren.",
+      "p2": "Houd er rekening mee dat dit een work in progress is. Er zullen veel stijl- en functionaliteitswijzigingen zijn die elkaar snel opvolgen. Als we iets veranderen, hebben we dat weloverwogen gedaan.",
+      "p3": "We staan open voor suggesties, maar we proberen onze eigen neiging tot scope-creep al in toom te houden. Nieuwe functies worden waarschijnlijk pas toegevoegd nadat v3 officieel is.",
+      "p4": "Dat gezegd hebbende zijn we erg blij met bugmeldingen, input over de ergonomie en feedback over wat verwarrend is.",
+      "p5": "We staan graag open voor merge requests, maar dien ze eerst in als een feature request op Discord of GitLab zodat we het kunnen bespreken. Achter de schermen verandert er veel en we willen dubbel werk voorkomen."
+    }
+  },
   "Layout": {
     "description": "Een eenvoudig hulpmiddel voor het synchroniseren van audiobooks en ebooks",
     "title": "Storyteller"

@@ -1,4 +1,15 @@
 {
+  "Announcements": {
+    "dismiss": "Got it",
+    "v3-beta-welcome": {
+      "title": "Welcome to the v3 beta",
+      "p1": "We've made a backup of your database automatically, but making your own before you rely on the beta is never a bad idea. Data loss is not expected, but this is a beta, so it can happen.",
+      "p2": "Please understand that this is a work in progress. There will be many style and functionality changes that happen very rapidly. When we change something, we've done it thoughtfully.",
+      "p3": "We welcome suggestions, but we're already trying to contain our own scope-creep impulses. New features are unlikely to be added until after v3 is official.",
+      "p4": "That said, we are very eager for bug reports, input on ergonomics, and feedback about what is confusing.",
+      "p5": "We're very happy to entertain merge requests, but please first raise them as a feature request on Discord or GitLab so we can discuss it. Things are changing very rapidly behind the scenes and we want to avoid duplicated effort."
+    }
+  },
   "Layout": {
     "description": "A simple tool for syncing audiobooks and ebooks",
     "title": "Storyteller"

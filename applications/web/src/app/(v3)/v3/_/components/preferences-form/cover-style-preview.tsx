@@ -41,7 +41,7 @@ export function GridCoverPreview({
   const tilted = alignment === "auto"
 
   return (
-    <div className="bg-muted flex aspect-13/16 w-28 shrink-0 items-center justify-center rounded-lg p-2">
+    <div className="bg-muted flex aspect-11/16 w-28 shrink-0 items-center justify-center rounded-lg p-2">
       {display === "auto" && (
         <div className="relative flex h-full w-full items-center justify-center">
           <MiniCover
@@ -53,7 +53,7 @@ export function GridCoverPreview({
           />
           <MiniCover
             variant="ebook"
-            className="absolute h-[88%] w-1/2"
+            className="absolute aspect-[2/3] h-[80%]"
             style={{
               transform: `translateX(-10%) scale(1)${tilted ? " rotate(-2.5deg)" : ""}`,
             }}
@@ -81,7 +81,7 @@ export function DetailDisplayPreview({
     return (
       <div className="bg-muted flex aspect-square w-28 shrink-0 items-center justify-center rounded-lg p-3">
         <div
-          className="h-full w-3/4 rounded shadow-lg"
+          className="aspect-[2/3] h-full rounded shadow-lg"
           style={{
             background: ebookGradient,
             transform: "perspective(400px) rotateY(-15deg)",
@@ -93,7 +93,7 @@ export function DetailDisplayPreview({
   }
 
   return (
-    <div className="bg-muted flex aspect-13/16 w-28 shrink-0 items-center justify-center rounded-lg p-2">
+    <div className="bg-muted flex aspect-11/16 w-28 shrink-0 items-center justify-center rounded-lg p-2">
       <div className="relative flex h-full w-full items-center justify-center">
         <MiniCover
           variant="audiobook"
@@ -102,7 +102,7 @@ export function DetailDisplayPreview({
         />
         <MiniCover
           variant="ebook"
-          className="absolute h-[88%] w-1/2"
+          className="absolute aspect-[2/3] h-[80%]"
           style={{ transform: "translateX(-10%) scale(1)" }}
         />
       </div>

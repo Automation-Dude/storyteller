@@ -7,6 +7,7 @@ import {
   type AlignmentFacets,
   type BookAlignmentReportView,
 } from "@/alignmentReportView"
+import { dismissalKey } from "@/announcement-builtins"
 import {
   type Invite,
   type InviteRequest,
@@ -1658,6 +1659,14 @@ export const api = createApi({
       }),
       invalidatesTags: ["UserSettings"],
     }),
+    dismissAnnouncement: build.mutation<void, { key: string }>({
+      query: ({ key }) => ({
+        url: `/user/settings`,
+        method: "PUT",
+        body: { [dismissalKey(key)]: true },
+      }),
+      invalidatesTags: ["UserSettings"],
+    }),
 
     listIdentifierTypes: build.query<IdentifierType[], void>({
       query: () => "/identifiers",
@@ -2254,6 +2263,7 @@ export const {
   useGetUserSettingsQuery,
   useUpdateUserSettingsMutation,
   useSetUserSettingMutation,
+  useDismissAnnouncementMutation,
   useCreateTagMutation,
   useUpdateTagMutation,
   useDeleteTagMutation,

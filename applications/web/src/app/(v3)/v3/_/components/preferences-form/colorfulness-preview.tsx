@@ -4,15 +4,11 @@ import { cn } from "@v3/_/lib/utils"
 
 import { type ColorMode } from "@/database/userPreferencesTypes"
 
-// a representative cover color so the preview reads the same for everyone,
-// independent of any real book
 const SAMPLE = { r: 37, g: 99, b: 235 }
 const solid = `rgb(${SAMPLE.r}, ${SAMPLE.g}, ${SAMPLE.b})`
 const alpha = (a: number) => `rgba(${SAMPLE.r}, ${SAMPLE.g}, ${SAMPLE.b}, ${a})`
 const channels = `${SAMPLE.r} ${SAMPLE.g} ${SAMPLE.b}`
 
-// opens a cover-color scope for the sample, exactly as CoverScope does for a
-// real book, so the preview resolves the same tokens the book components use
 function sampleScope(level: ColorMode, intensity: number) {
   const style: Record<string, string | number> = {
     "--cover-rgb": channels,
@@ -34,8 +30,6 @@ function sampleScope(level: ColorMode, intensity: number) {
   }
 }
 
-// mirrors how the real book components gate cover-color usage, so the preview
-// matches what the setting actually does
 export function ColorfulnessPreview({
   level,
   intensity,
@@ -60,7 +54,7 @@ export function ColorfulnessPreview({
           <p
             className={cn(
               "text-[0.8rem] leading-tight font-medium",
-              level === "full" && "text-cover",
+              level === "full" && "text-primary",
             )}
           >
             Sample title

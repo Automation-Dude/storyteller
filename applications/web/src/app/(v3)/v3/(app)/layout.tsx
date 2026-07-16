@@ -1,11 +1,13 @@
 import { cookies } from "next/headers"
 
+import { AnnouncementModal } from "@v3/_/components/announcements/announcement-modal"
 import { AppSidebar } from "@v3/_/components/app-sidebar"
 import { ProcessingToast } from "@v3/_/components/processing/ProcessingToast"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
 import { UserPreferencesProvider } from "@v3/_/components/user-preferences-provider"
 
 import { assertAuthenticatedUser } from "@/auth/auth"
+import { getPendingAnnouncements } from "@/database/announcements"
 import { ensureSidebarDefaults, getSidebarGroups } from "@/database/sidebar"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
@@ -31,6 +33,8 @@ export default async function AppLayout({
   // same server-resolve for preferences, so accent color + colorfulness apply
   // on first paint without a flash
   const preferences = resolveUserPreferences(await getUserSettings(user.id))
+
+  const pendingAnnouncements = await getPendingAnnouncements(user.id)
 
   // a custom accent color overrides the primary across the whole app (sidebar
   // included), the same way --sidebar-width is set here
@@ -65,6 +69,7 @@ export default async function AppLayout({
         />
         <SidebarInset className="overflow-x-hidden">{children}</SidebarInset>
         {user.permissions.bookProcess && <ProcessingToast />}
+        <AnnouncementModal pending={pendingAnnouncements} />
         {/* <ThemeTweaksPanel /> */}
       </SidebarProvider>
     </UserPreferencesProvider>
