@@ -1,17 +1,6 @@
--- 106_cascade_rebuild: single convergence point for every database population
--- (fresh installs, v2 upgrades, pre-merge v3 upgrades). replays the FK work of
--- v2's 88_fk_updates, which v3 databases never ran and which cannot run there
--- as-is: it copies rows with SELECT * and v3 added columns to several of these
--- tables. every insert below therefore lists columns explicitly, and the
--- column set is the union available in all populations by the time 106 runs
--- (73_add_cover_colors_blurhash, 90_multidimensional_ratings and
--- 105_v2_reconcile guarantee the v3-only columns everywhere).
---
--- legacy_alter_table stays on while renaming so REFERENCES clauses in other
--- tables (import_rule_to_collection -> import_rule, identifier -> ebook /
--- audiobook / readaloud) keep pointing at the original names instead of
--- following the rename to _temp_* -- the dangling-reference bug that
--- 93_fix_collection_import_rule_fk had to clean up after 88.
+-- replacement for the fk_cascade update
+-- legacy_alter_table stays on while renaming 
+-- necessary bc it would brick v3 dbs if we tried to run the old drop and cascade table
 PRAGMA foreign_keys = 0;
 
 PRAGMA legacy_alter_table = 1;
@@ -34,7 +23,7 @@ CREATE TABLE position(
 );
 
 INSERT INTO
-  position (
+  position(
     uuid,
     user_id,
     book_uuid,
@@ -66,7 +55,7 @@ WHERE
 
 END;
 
-CREATE INDEX IF NOT EXISTS idx_position_book ON position (book_uuid);
+CREATE INDEX IF NOT EXISTS idx_position_book ON position(book_uuid);
 
 -- book_to_status: cascade on book, status, or user delete
 ALTER TABLE book_to_status
@@ -851,7 +840,14 @@ CREATE TABLE user_settings (
 );
 
 INSERT INTO
-  user_settings (uuid, user_id, name, value, created_at, updated_at)
+  user_settings (
+    uuid,
+    user_id,
+    name,
+    value,
+    created_at,
+    updated_at
+  )
 SELECT
   uuid,
   user_id,
@@ -874,8 +870,7 @@ WHERE
 
 END;
 
--- alignment_report: cascade on book delete. databases that ran an early
--- version of 95_alignment_reports have ON DELETE SET NULL here instead
+-- alignment_report: cascade on book delete
 ALTER TABLE alignment_report
 RENAME TO _temp_alignment_report;
 
