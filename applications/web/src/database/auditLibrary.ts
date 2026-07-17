@@ -27,13 +27,35 @@ import { getBooks } from "./books"
 type Issue = "NO-COVER" | "NO-AUTHOR" | "NO-LANG" | "NO-DESC" | "BAD-TITLE"
 
 const PLACEHOLDER_TITLES = new Set(["unknown", "untitled", "unknown title"])
-const FILENAME_TITLE = /\.(epub|kepub|mobi|azw3|pdf)$/i
+
+/**
+ * Signals that a title is really an ingestion artifact, not a book name.
+ *
+ * These are tuned against the actual library: leading track/disc numbers
+ * ("02 - Dune - ..."), catalogue codes ("DP19 - Treasure of Khan"), an author
+ * dumped before the title ("Hobb - Liveship Traders - ..."), file and format
+ * leftovers ("..._mp3", "epub2"), edition noise ("(Unabridged)"), and the
+ * worst case, a whole URL or blurb where the title should be. Bare all-caps or
+ * a stray underscore are deliberately not enough on their own, so a real title
+ * like "SHIFT" is left alone.
+ */
+const BAD_TITLE_PATTERNS: RegExp[] = [
+  /^\d+\s*[-_.]\s*\S/, // leading track/disc number: "02 - ...", "18 - ..."
+  /^(cd|disc|disk)\s*\d+/i, // "CD1 - ...", "Disc 01"
+  /\b(cd|disc|disk|pt|part|track)\s*\d+\b/i, // "(Disc 01)", "Part1"
+  /\b[A-Z]{1,3}\d{2}\b[\s-]/, // catalogue code prefix: "DP19 -", "D01-"
+  /^[A-Z][a-z]+\s+-\s+\S/, // author dumped first: "Hobb - ...", "Ludlum Robert - "
+  /_\w|\w_/, // internal underscores: "_mp3", "Inn_Volume"
+  /\bepub\d?\b|\.mp3\b|\.m4b\b|\bmp3\d*\b/i, // format leftovers
+  /https?:\/\/|\|adbl\||media-amazon/i, // a URL or store blurb as the title
+  /\((un)?abridged\)|\(full[- ]cast/i, // edition noise in place of a title
+]
 
 function titleIsBad(title: string | null): boolean {
   const t = (title ?? "").trim()
   if (!t) return true
   if (PLACEHOLDER_TITLES.has(t.toLowerCase())) return true
-  return FILENAME_TITLE.test(t)
+  return BAD_TITLE_PATTERNS.some((re) => re.test(t))
 }
 
 async function loadCoverSet(path: string): Promise<Set<string>> {
