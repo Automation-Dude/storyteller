@@ -171,9 +171,10 @@ export function SeriesEditor({
             return (
               <button
                 type="button"
-                className="text-muted-foreground hover:text-foreground cursor-pointer underline"
+                className="text-muted-foreground hover:text-foreground relative z-10 cursor-pointer underline"
                 onClick={(e) => {
                   e.stopPropagation()
+                  e.preventDefault()
                   handleEditPosition(s)
                 }}
               >
