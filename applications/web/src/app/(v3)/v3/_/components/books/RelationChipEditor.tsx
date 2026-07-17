@@ -64,13 +64,13 @@ const RelationChip = ({
       {canInteract && (
         <Button
           size="icon-xs"
-          variant="ghost"
+          variant="real-ghost"
           aria-label={label}
           onClick={(e) => {
             e.preventDefault()
             onRemoveItem(item)
           }}
-          className="absolute top-1/2 -right-0.5 z-20 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
+          className="text-foreground absolute top-1/2 -right-0.5 z-20 -translate-y-1/2 rounded-full opacity-0 transition-opacity group-hover/badge:opacity-100"
         >
           <icon.Close className="h-3 w-3" />
         </Button>

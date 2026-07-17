@@ -163,27 +163,19 @@ export function SeriesEditor({
         onRemoveItem={handleRemove}
         canInteract={!!canInteract}
         renderBadgeExtra={(s) => {
-          if (!editMode && s.position != null) {
-            return <span className="text-muted-foreground">#{s.position}</span>
-          }
-
-          if (editMode) {
-            return (
-              <button
-                type="button"
-                className="text-muted-foreground hover:text-foreground relative z-10 cursor-pointer underline"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  handleEditPosition(s)
-                }}
-              >
-                {s.position != null ? `#${s.position}` : "#?"}
-              </button>
-            )
-          }
-
-          return null
+          return (
+            <button
+              type="button"
+              className="relative z-10 mr-1 cursor-pointer underline"
+              onClick={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                handleEditPosition(s)
+              }}
+            >
+              {s.position != null ? `#${s.position}` : "#?"}
+            </button>
+          )
         }}
       >
         {canUpdate && (
