@@ -55,20 +55,24 @@ export function AccentColorPicker({
   onChange,
   defaultLabel,
   customLabel,
+  defaultColor,
 }: {
   value: string | null
   onChange: (value: string | null) => void
   defaultLabel: string
   customLabel: string
+  // the color the "default" swatch renders
+  defaultColor?: string | null
 }) {
   // a value not in the preset list (and not null) is treated as custom
   const isPreset = value !== null && PRESETS.includes(value as never)
   const customValue = !isPreset && value !== null ? value : DEFAULT_SWATCH
+  const defaultSwatch = defaultColor ?? DEFAULT_SWATCH
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Swatch
-        color={DEFAULT_SWATCH}
+        color={defaultSwatch}
         selected={value === null}
         onClick={() => {
           onChange(null)

@@ -35,6 +35,7 @@ import * as icon from "@/icons"
 import { useListStatusesQuery } from "@/store/api"
 
 import { DetailDisplayPreview, GridCoverPreview } from "./cover-style-preview"
+import { SettingLabel } from "./library-defaults"
 import {
   type PreferencesFormType,
   PreferencesSection,
@@ -118,7 +119,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                   control={form.control}
                   render={({ field }) => (
                     <Field>
-                      <FieldLabel>{t("gridDisplay.coverLabel")}</FieldLabel>
+                      <SettingLabel field="gridCoverDisplay">
+                        {t("gridDisplay.coverLabel")}
+                      </SettingLabel>
                       <FieldDescription>
                         {t("gridDisplay.coverHint")}
                       </FieldDescription>
@@ -139,9 +142,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                     control={form.control}
                     render={({ field }) => (
                       <Field>
-                        <FieldLabel>
+                        <SettingLabel field="doubleCoverAlignment">
                           {t("gridDisplay.alignmentLabel")}
-                        </FieldLabel>
+                        </SettingLabel>
                         <FieldDescription>
                           {t("gridDisplay.alignmentHint")}
                         </FieldDescription>
@@ -181,7 +184,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                   control={form.control}
                   render={({ field }) => (
                     <Field>
-                      <FieldLabel>{t("detail.display.label")}</FieldLabel>
+                      <SettingLabel field="bookDetailDisplay">
+                        {t("detail.display.label")}
+                      </SettingLabel>
                       <FieldDescription>
                         {t("detail.display.hint")}
                       </FieldDescription>
@@ -202,7 +207,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                     control={form.control}
                     render={({ field }) => (
                       <Field>
-                        <FieldLabel>{t("detail.view.label")}</FieldLabel>
+                        <SettingLabel field="bookDetail3dView">
+                          {t("detail.view.label")}
+                        </SettingLabel>
                         <FieldDescription>
                           {t("detail.view.hint")}
                         </FieldDescription>
@@ -250,7 +257,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel>{t("ratingIcon.label")}</FieldLabel>
+                  <SettingLabel field="ratingIcon">
+                    {t("ratingIcon.label")}
+                  </SettingLabel>
                   <FieldDescription>{t("ratingIcon.hint")}</FieldDescription>
                   <SegmentedControl
                     value={field.value}
@@ -275,7 +284,9 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
             />
 
             <Field>
-              <FieldLabel>{t("ratingDimensions.label")}</FieldLabel>
+              <SettingLabel field="ratingDimensions">
+                {t("ratingDimensions.label")}
+              </SettingLabel>
               <FieldDescription>{t("ratingDimensions.hint")}</FieldDescription>
               <div className="flex flex-col gap-2">
                 {dimensions.map((dimension, index) => (

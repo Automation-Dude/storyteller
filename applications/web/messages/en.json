@@ -909,6 +909,14 @@
     "savedSuccessfully": "Preferences saved",
     "failedToSave": "Failed to save preferences",
     "searchPreferences": "Search preferences...",
+    "libraryDefault": {
+      "setAsDefault": "Set as default for everyone",
+      "isDefault": "Current default",
+      "saved": "Saved as the default for all users",
+      "failed": "Couldn't save the default",
+      "locked": "Set in config",
+      "lockedHint": "This default is managed by the server config file and can't be changed here."
+    },
     "sidebar": {
       "user": "User",
       "preferences": "Preferences"

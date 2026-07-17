@@ -9,7 +9,11 @@ import {
 } from "@v3/_/components/preferences-form/tabs"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
-import { getSettings } from "@/database/settings"
+import {
+  getConfigLockedKeys,
+  getPreferenceDefaults,
+  getSettings,
+} from "@/database/settings"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
 import { getAccounts } from "@/database/users"
@@ -65,15 +69,23 @@ export default withPageAuth<{ params: Promise<Record<string, unknown>> }>([])(
       forbidden()
     }
 
-    const [settings, rawPreferences, linkedAccounts, messages] =
+    const [settings, rawPreferences, linkedAccounts, messages, prefDefaults] =
       await Promise.all([
         getSettings(),
         getUserSettings(user.id),
         getAccounts(user.id),
         getMessages(),
+        getPreferenceDefaults(),
       ])
 
-    const preferences = resolveUserPreferences(rawPreferences)
+    const preferences = {
+      ...resolveUserPreferences(rawPreferences, prefDefaults),
+      accentColor:
+        (rawPreferences["accentColor"] as string | null | undefined) ?? null,
+    }
+
+    const preferenceDefaultsLocked =
+      getConfigLockedKeys().has("preferenceDefaults")
 
     const preferencesMessages = messages.PreferencesPage as {
       tabs: Record<string, { sections?: Record<string, unknown> }>
@@ -94,6 +106,8 @@ export default withPageAuth<{ params: Promise<Record<string, unknown>> }>([])(
             : { id: provider.name, name: provider.name },
         )}
         disablePasswordLogin={settings.disablePasswordLogin}
+        preferenceDefaults={prefDefaults}
+        preferenceDefaultsLocked={preferenceDefaultsLocked}
       />
     )
   },

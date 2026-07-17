@@ -87,12 +87,18 @@ export function LoginForm({
 
   return (
     <div
-      className={cn("flex flex-col items-center gap-6", className)}
+      className={cn("flex flex-col items-center gap-0", className)}
       {...props}
     >
-      <Card className="w-md overflow-hidden bg-transparent p-0 ring-0">
+      <img
+        src="/Storyteller_Logo.png"
+        alt="Storyteller Logo"
+        width={100}
+        height={100}
+      />
+      <Card className="w-md max-w-sm overflow-hidden bg-transparent p-0 ring-0">
         <CardContent className="grid p-0">
-          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
+          <form className="p-2" onSubmit={handleSubmit(onSubmit)}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="font-heading text-3xl font-bold">

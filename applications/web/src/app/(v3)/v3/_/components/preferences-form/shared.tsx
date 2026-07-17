@@ -27,8 +27,6 @@ export const SearchContext = createContext<SearchContextValue>({
   isMatch: () => false,
 })
 
-// wraps a settings section so it hides when a search doesn't match it and
-// gets a ring highlight when it does (mirrors settings-form's SettingsSection)
 export function PreferencesSection({
   tab,
   section,
@@ -46,7 +44,8 @@ export function PreferencesSection({
   return (
     <div
       className={cn(
-        query && matches && "ring-primary/50 rounded-lg ring-1 ring-offset-0",
+        "max-w-3xl rounded-2xl",
+        query && matches && "ring-primary/50 ring-1 ring-offset-0",
       )}
     >
       {children}

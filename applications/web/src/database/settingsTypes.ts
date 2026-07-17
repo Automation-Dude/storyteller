@@ -8,6 +8,7 @@ import {
 } from "@storyteller-platform/ghost-story/constants"
 
 import { Providers } from "@/auth/providers"
+import { PreferenceDefaultsSchema } from "@/database/userPreferencesTypes"
 
 export const TranscriptionEngineSchema = z.enum(RECOGNITION_ENGINES)
 export type TranscriptionEngine = RecognitionEngine
@@ -232,6 +233,8 @@ export const SettingsSchema = z.object({
   deleteRuleUuids: z.array(z.string()).optional(),
   // Cache cleanup
   cleanCacheAfterReadaloud: z.boolean(),
+  // Admin-set default preferences applied to users who haven't overridden them
+  preferenceDefaults: PreferenceDefaultsSchema.optional(),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 

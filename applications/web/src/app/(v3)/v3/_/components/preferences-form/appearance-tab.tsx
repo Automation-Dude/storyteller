@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@v3/_/components/ui/card"
-import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
+import { Field, FieldDescription } from "@v3/_/components/ui/field"
 import { Slider } from "@v3/_/components/ui/slider"
 import { Switch } from "@v3/_/components/ui/switch"
 import { useTranslation } from "@v3/_/hooks/use-translation"
@@ -18,6 +18,7 @@ import { ColorModes } from "@/database/userPreferencesTypes"
 
 import { AccentColorPicker } from "./accent-color-picker"
 import { ColorfulnessPreview } from "./colorfulness-preview"
+import { SettingLabel, useLibraryDefaultValue } from "./library-defaults"
 import {
   type PreferencesFormType,
   PreferencesSection,
@@ -38,6 +39,8 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
     name: "colorIntensity",
   })
 
+  const accentDefault = useLibraryDefaultValue("accentColor")
+
   return (
     <div className="space-y-6">
       <PreferencesSection tab="appearance" section="accent">
@@ -52,7 +55,9 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel>{t("accent.label")}</FieldLabel>
+                  <SettingLabel field="accentColor">
+                    {t("accent.label")}
+                  </SettingLabel>
                   <FieldDescription>{t("accent.hint")}</FieldDescription>
                   <AccentColorPicker
                     value={field.value ?? null}
@@ -61,6 +66,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
                     }}
                     defaultLabel={t("accent.useDefault")}
                     customLabel={t("accent.custom")}
+                    defaultColor={accentDefault ?? null}
                   />
                 </Field>
               )}
@@ -81,7 +87,9 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel>{t("colorfulness.label")}</FieldLabel>
+                  <SettingLabel field="colorMode">
+                    {t("colorfulness.label")}
+                  </SettingLabel>
                   <FieldDescription>{t("colorfulness.hint")}</FieldDescription>
                   <SegmentedControl
                     value={field.value}
@@ -99,7 +107,9 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
               control={form.control}
               render={({ field }) => (
                 <Field data-disabled={colorMode === "minimal"}>
-                  <FieldLabel>{t("colorfulness.intensity.label")}</FieldLabel>
+                  <SettingLabel field="colorIntensity">
+                    {t("colorfulness.intensity.label")}
+                  </SettingLabel>
                   <FieldDescription>
                     {t("colorfulness.intensity.hint")}
                   </FieldDescription>
@@ -134,9 +144,11 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
               name="layoutAnimations"
               control={form.control}
               render={({ field }) => (
-                <Field orientation="horizontal">
+                <Field orientation="vertical">
                   <div className="flex flex-col gap-1">
-                    <FieldLabel>{t("motion.label")}</FieldLabel>
+                    <SettingLabel field="layoutAnimations">
+                      {t("motion.label")}
+                    </SettingLabel>
                     <FieldDescription>{t("motion.hint")}</FieldDescription>
                   </div>
                   <Switch
@@ -150,9 +162,11 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
               name="animatePanelOpen"
               control={form.control}
               render={({ field }) => (
-                <Field orientation="horizontal">
+                <Field orientation="vertical">
                   <div className="flex flex-col gap-1">
-                    <FieldLabel>{t("motion.panelLabel")}</FieldLabel>
+                    <SettingLabel field="animatePanelOpen">
+                      {t("motion.panelLabel")}
+                    </SettingLabel>
                     <FieldDescription>{t("motion.panelHint")}</FieldDescription>
                   </div>
                   <Switch

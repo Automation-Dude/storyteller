@@ -518,9 +518,9 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
                 <DropdownMenuTrigger
                   render={
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
-                      className="text-muted-foreground hover:text-foreground text-xs"
+                      className="hover:text-foreground sticky bottom-0 z-10 text-xs"
                     >
                       <icon.Add className="mr-1 size-3" />
                       {t("add")}

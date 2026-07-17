@@ -9,6 +9,7 @@ import { fetchApiRoute } from "@/app/fetchApiRoute"
 import { createConfig, nextAuth } from "@/auth/auth"
 import { type PublicProvider } from "@/auth/providers"
 import { getCookieDomain, getCookieSecure } from "@/cookies"
+import { getSetting } from "@/database/settings"
 import { getUsers } from "@/database/users"
 
 import { LoginForm, type LoginFormData } from "./LoginForm"
@@ -132,11 +133,21 @@ export default async function LoginPage() {
     }
   }
 
+  const pref = await getSetting("preferenceDefaults")
+  const accentColor = pref?.accentColor
+
   const { credentials: _, ...providers } =
     await fetchApiRoute<Record<string, PublicProvider>>("/auth/providers")
 
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+    <div
+      className="bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10"
+      style={
+        accentColor
+          ? ({ "--primary": accentColor } as React.CSSProperties)
+          : undefined
+      }
+    >
       <div className="w-full max-w-sm md:max-w-4xl">
         <LoginForm
           oauthLoginAction={oauthLogin}

@@ -886,6 +886,14 @@
     "settingsPage": "Algemene instellingen",
     "savedSuccessfully": "Voorkeuren opgeslagen",
     "failedToSave": "Voorkeuren opslaan mislukt",
+    "libraryDefault": {
+      "setAsDefault": "Als standaard voor iedereen instellen",
+      "isDefault": "Huidige standaard",
+      "saved": "Opgeslagen als standaard voor alle gebruikers",
+      "failed": "Kon de standaard niet opslaan",
+      "locked": "Ingesteld in config",
+      "lockedHint": "Deze standaard wordt beheerd door het serverconfiguratiebestand en kan hier niet worden gewijzigd."
+    },
     "searchPreferences": "Voorkeuren zoeken...",
     "sidebar": {
       "user": "Gebruiker",

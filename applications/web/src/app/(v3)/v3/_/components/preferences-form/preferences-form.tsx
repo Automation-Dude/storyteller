@@ -36,6 +36,7 @@ import {
   useTranslation,
 } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
+  type PreferenceDefaults,
   type UserPreferences,
   UserPreferencesSchema,
 } from "@/database/userPreferencesTypes"
@@ -46,6 +47,7 @@ import { useUpdateUserSettingsMutation } from "@/store/api"
 import { AppearanceTab } from "./appearance-tab"
 import { BooksTab } from "./books-tab"
 import { GeneralTab } from "./general-tab"
+import { LibraryDefaultsProvider } from "./library-defaults"
 import { ProfileTab } from "./profile-tab"
 import { type IsMatch, SearchContext } from "./shared"
 import { type PreferenceTab, type SectionKeywords, type Tab } from "./tabs"
@@ -64,6 +66,8 @@ export function PreferencesForm({
   linkedAccounts,
   providers,
   disablePasswordLogin,
+  preferenceDefaults,
+  preferenceDefaultsLocked,
 }: {
   user: User
   preferences: UserPreferences
@@ -71,6 +75,8 @@ export function PreferencesForm({
   linkedAccounts: Array<{ provider: string; providerAccountId: string }>
   providers: Array<{ id: string; name: string }>
   disablePasswordLogin: boolean
+  preferenceDefaults: PreferenceDefaults
+  preferenceDefaultsLocked: boolean
 }) {
   const t = useTranslation("PreferencesPage")
   const c = useCommon()
@@ -86,13 +92,25 @@ export function PreferencesForm({
     useUpdateUserSettingsMutation()
 
   const onSubmit = async (data: z.output<typeof UserPreferencesSchema>) => {
-    try {
-      await updateSettings(data).unwrap()
+    // only persist fields the user actually changed, so untouched preferences
+    // stay absent and keep inheriting the org default (see resolveUserPreferences)
+    const dirty = form.formState.dirtyFields
+    const changed = Object.keys(dirty) as (keyof UserPreferences)[]
+    const payload = Object.fromEntries(
+      changed.map((key) => [key, data[key]]),
+    ) as Partial<UserPreferences>
 
-      if (data.locale) {
+    try {
+      if (changed.length > 0) {
+        await updateSettings(payload).unwrap()
+      }
+
+      if (dirty.locale && data.locale) {
         await changeLocaleAction(data.locale as Locale)
       }
 
+      // reset the dirty baseline to the just-saved values
+      form.reset(data)
       toast.success(t("savedSuccessfully"))
     } catch {
       toast.error(t("failedToSave"))
@@ -198,7 +216,12 @@ export function PreferencesForm({
   const showSaveButton = activeTab !== "profile"
 
   const tabContent = (
-    <>
+    <LibraryDefaultsProvider
+      control={form.control}
+      canManage={canUpdateSettings ?? false}
+      locked={preferenceDefaultsLocked}
+      defaults={preferenceDefaults}
+    >
       {activeTab === "profile" && (
         <ProfileTab
           user={user}
@@ -210,7 +233,7 @@ export function PreferencesForm({
       {activeTab === "general" && <GeneralTab form={form} />}
       {activeTab === "appearance" && <AppearanceTab form={form} />}
       {activeTab === "books" && <BooksTab form={form} />}
-    </>
+    </LibraryDefaultsProvider>
   )
 
   const headerActions = (
@@ -369,21 +392,19 @@ function PreferencesSidebar({
           </NavSidebarGroup>
         )}
 
-        {prefSidebarTabs.length > 0 && (
-          <NavSidebarGroup label={t("sidebar.preferences")}>
-            <NavSidebarSearch
-              placeholder={t("searchPreferences")}
-              value={searchQuery}
-              onChange={onSearchChange}
-            />
+        <NavSidebarGroup label={t("sidebar.preferences")}>
+          <NavSidebarSearch
+            placeholder={t("searchPreferences")}
+            value={searchQuery}
+            onChange={onSearchChange}
+          />
 
-            <NavSidebarList
-              tabs={prefSidebarTabs}
-              activeTab={activeTab}
-              onTabChange={onTabChange}
-            />
-          </NavSidebarGroup>
-        )}
+          <NavSidebarList
+            tabs={prefSidebarTabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
+        </NavSidebarGroup>
       </NavSidebarBody>
 
       {canUpdateSettings && (

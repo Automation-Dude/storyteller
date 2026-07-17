@@ -14,6 +14,10 @@ import {
   ImportRuleSchema,
   type Settings,
 } from "./settingsTypes"
+import {
+  type PreferenceDefaults,
+  PreferenceDefaultsSchema,
+} from "./userPreferencesTypes"
 
 export function formatTranscriptionEngineDetails(settings: Settings) {
   let details = settings.transcriptionEngine ?? "whisper.cpp"
@@ -248,6 +252,48 @@ export async function updateSettings(settings: Settings) {
   }
 
   await getScheduler().refresh()
+}
+
+// admin-set default preferences. stored as a single JSON row; absent means "{}"
+// (getSetting throws when the row is missing, so query directly here).
+export async function getPreferenceDefaults(): Promise<PreferenceDefaults> {
+  const { settings: configSettings, keys } = loadConfigFile()
+
+  if (keys.has("preferenceDefaults")) {
+    return configSettings["preferenceDefaults"] ?? {}
+  }
+
+  const row = await db
+    .selectFrom("settings")
+    .select(["value"])
+    .where("name", "=", "preferenceDefaults")
+    .orderBy("createdAt", "desc")
+    .executeTakeFirst()
+
+  if (!row) return {}
+
+  const parsed: unknown =
+    typeof row.value === "string" ? JSON.parse(row.value) : row.value
+
+  const result = PreferenceDefaultsSchema.safeParse(parsed)
+  return result.success ? result.data : {}
+}
+
+export function isPreferenceDefaultsLocked(): boolean {
+  return getConfigLockedKeys().has("preferenceDefaults")
+}
+
+export async function setPreferenceDefaults(update: PreferenceDefaults) {
+  const merged = { ...(await getPreferenceDefaults()), ...update }
+  const value = JSON.stringify(merged)
+
+  await db
+    .insertInto("settings")
+    .values({ name: "preferenceDefaults", value })
+    .onConflict((oc) => oc.column("name").doUpdateSet({ value }))
+    .execute()
+
+  return merged
 }
 
 // validate and cache config file on startup (never re-read after this)

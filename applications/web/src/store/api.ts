@@ -74,7 +74,10 @@ import {
 } from "@/database/sidebar"
 import { type Status } from "@/database/statuses"
 import { type AddTagInput, type Tag } from "@/database/tags"
-import { type UserPreferences } from "@/database/userPreferencesTypes"
+import {
+  type PreferenceDefaults,
+  type UserPreferences,
+} from "@/database/userPreferencesTypes"
 import { type UserBookRating } from "@/database/userRatings"
 import { type UserPermissionSet } from "@/database/users"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
@@ -221,6 +224,17 @@ export const api = createApi({
         body: settings,
       }),
       invalidatesTags: ["MaxUploadChunkSize", "Settings"],
+    }),
+    updatePreferenceDefaults: build.mutation<
+      PreferenceDefaults,
+      PreferenceDefaults
+    >({
+      query: (body) => ({
+        url: "/settings/preference-defaults",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Settings"],
     }),
     getGpuBuildWarning: build.query<
       | {
@@ -2227,6 +2241,7 @@ export const {
   useUpdateSeriesMutation,
   useGetSettingsQuery,
   useUpdateSettingsMutation,
+  useUpdatePreferenceDefaultsMutation,
   useUpdateStatusMutation,
   useUpdateStatusLabelMutation,
   useCreateStatusMutation,

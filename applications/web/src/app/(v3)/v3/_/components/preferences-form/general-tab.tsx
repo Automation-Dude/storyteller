@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@v3/_/components/ui/card"
-import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
+import { Field, FieldDescription } from "@v3/_/components/ui/field"
 import {
   Select,
   SelectContent,
@@ -19,9 +19,9 @@ import {
 } from "@v3/_/components/ui/select"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { ViewKinds } from "@/database/userPreferencesTypes"
 import { locales } from "@/i18n/locales"
 
+import { SettingLabel } from "./library-defaults"
 import { type PreferencesFormType, PreferencesSection } from "./shared"
 
 const localeOptions = Object.entries(locales).map(([key, locale]) => ({
@@ -38,11 +38,6 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
     { value: "epub", label: t("reading.modes.epub") },
   ]
 
-  const viewOptions = ViewKinds.map((key) => ({
-    value: key,
-    label: t(`view.kinds.${key}`),
-  }))
-
   return (
     <div className="space-y-6">
       <PreferencesSection tab="general" section="language">
@@ -57,7 +52,9 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel>{t("language.label")}</FieldLabel>
+                  <SettingLabel field="locale">
+                    {t("language.label")}
+                  </SettingLabel>
                   <FieldDescription>{t("language.hint")}</FieldDescription>
                   <Select
                     items={localeOptions}
@@ -96,7 +93,9 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel>{t("reading.label")}</FieldLabel>
+                  <SettingLabel field="defaultReadingMode">
+                    {t("reading.label")}
+                  </SettingLabel>
                   <FieldDescription>{t("reading.hint")}</FieldDescription>
                   <Select
                     items={readingModeOptions}
@@ -110,45 +109,6 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
                     </SelectTrigger>
                     <SelectContent>
                       {readingModeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
-            />
-          </CardContent>
-        </Card>
-      </PreferencesSection>
-
-      <PreferencesSection tab="general" section="view">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("view.title")}</CardTitle>
-            <CardDescription>{t("view.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Controller
-              name="defaultView"
-              control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <FieldLabel>{t("view.label")}</FieldLabel>
-                  <FieldDescription>{t("view.hint")}</FieldDescription>
-                  <Select
-                    items={viewOptions}
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value)
-                    }}
-                  >
-                    <SelectTrigger className="w-60">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {viewOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>

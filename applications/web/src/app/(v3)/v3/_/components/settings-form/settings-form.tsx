@@ -242,8 +242,16 @@ export function SettingsForm({
   const errorCount = Object.keys(formState.errors).length
 
   const onSubmit = async (data: z.output<typeof SettingsSchema>) => {
+    const changed = Object.keys(formState.dirtyFields) as (keyof Settings)[]
+    const payload = Object.fromEntries(
+      changed.map((key) => [key, data[key]]),
+    ) as Settings
+
     try {
-      await updateSettings(data).unwrap()
+      if (changed.length > 0) {
+        await updateSettings(payload).unwrap()
+      }
+      form.reset(data)
       toast.success(t("settingsSavedSuccessfully"))
     } catch {
       toast.error(t("failedToSaveSettings"))

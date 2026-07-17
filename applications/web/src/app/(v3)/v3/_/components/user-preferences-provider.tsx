@@ -3,6 +3,7 @@
 import { createContext, useContext, useMemo } from "react"
 
 import {
+  type PreferenceDefaults,
   type UserPreferences,
   defaultUserPreferences,
   resolveUserPreferences,
@@ -13,21 +14,21 @@ const UserPreferencesContext = createContext<UserPreferences>(
   defaultUserPreferences,
 )
 
-// the live query takes over once it resolves; until then we render with the
-// server-resolved values so there's no flash (see "server-resolve initial data")
 export function UserPreferencesProvider({
   initialPreferences,
+  preferenceDefaults = {},
   children,
 }: {
   initialPreferences: UserPreferences
+  preferenceDefaults?: PreferenceDefaults
   children: React.ReactNode
 }) {
   const { data: rawSettings } = useGetUserSettingsQuery()
 
   const preferences = useMemo(() => {
     if (!rawSettings) return initialPreferences
-    return resolveUserPreferences(rawSettings)
-  }, [rawSettings, initialPreferences])
+    return resolveUserPreferences(rawSettings, preferenceDefaults)
+  }, [rawSettings, initialPreferences, preferenceDefaults])
 
   return (
     <UserPreferencesContext.Provider value={preferences}>

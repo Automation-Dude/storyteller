@@ -8,6 +8,7 @@ import { UserPreferencesProvider } from "@v3/_/components/user-preferences-provi
 
 import { assertAuthenticatedUser } from "@/auth/auth"
 import { getPendingAnnouncements } from "@/database/announcements"
+import { getPreferenceDefaults } from "@/database/settings"
 import { ensureSidebarDefaults, getSidebarGroups } from "@/database/sidebar"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
@@ -28,7 +29,11 @@ export default async function AppLayout({
   await ensureSidebarDefaults(user.id)
   const sidebarGroups = await getSidebarGroups(user.id)
 
-  const preferences = resolveUserPreferences(await getUserSettings(user.id))
+  const preferenceDefaults = await getPreferenceDefaults()
+  const preferences = resolveUserPreferences(
+    await getUserSettings(user.id),
+    preferenceDefaults,
+  )
 
   const pendingAnnouncements = await getPendingAnnouncements(user.id)
 
@@ -36,11 +41,15 @@ export default async function AppLayout({
     ? ({
         "--primary": preferences.accentColor,
         "--sidebar-primary": preferences.accentColor,
+        "--sidebar-accent": `color-mix(in oklab, ${preferences.accentColor} 60%, var(--sidebar))`,
       } as React.CSSProperties)
     : {}
 
   return (
-    <UserPreferencesProvider initialPreferences={preferences}>
+    <UserPreferencesProvider
+      initialPreferences={preferences}
+      preferenceDefaults={preferenceDefaults}
+    >
       <SidebarProvider
         defaultOpen={defaultOpen}
         className="z-50"
