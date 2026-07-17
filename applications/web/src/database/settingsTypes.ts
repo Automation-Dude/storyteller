@@ -216,6 +216,8 @@ export const SettingsSchema = z.object({
   opdsEnabled: z.boolean().nullable(),
   opdsPageSize: z.number().nullable(),
   opdsFormat: OpdsFormatSchema.nullable(),
+  // Kobo sync settings
+  koboSyncEnabled: z.boolean().nullable(),
   // Scanning settings
   scanCronExpression: z.string().nullable(),
   // Backup settings; optional so setting rows written before these keys

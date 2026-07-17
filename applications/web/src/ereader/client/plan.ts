@@ -1,0 +1,168 @@
+// Pure helpers for planning what gets written to a Kobo. No browser APIs, so
+// they can be unit tested in Node; the browser-only writing lives in install.ts.
+
+/**
+ * Map a KOReader Kobo-zip entry to its path on the device. The zip's top level
+ * is `koreader/` and `koreader.png`, both of which belong under `.adds/`.
+ */
+export function koreaderEntryToDevicePath(entryPath: string): string {
+  return `.adds/${entryPath.replace(/^\/+/, "")}`
+}
+
+/**
+ * The KFMon installer, which Nickel unpacks and then reboots to apply. KFMon's
+ * package is already laid out relative to the USB root (`.kobo/`,
+ * `.adds/kfmon/`, `koreader.png`), so unlike KOReader's zip its entries are
+ * written verbatim.
+ */
+export const KFMON_INSTALLER_PATH = ".kobo/KoboRoot.tgz"
+
+/**
+ * Where KFMon reads its watches from on the user partition.
+ *
+ * The browser never writes these. Chromium refuses to create files whose
+ * extension it treats as dangerous on Windows, and KFMon is configured purely
+ * through .ini files, so `getFileHandle` throws "Name is not allowed" and the
+ * launcher ends up installed with nothing to launch. They are folded into
+ * KoboRoot.tgz server-side instead and laid down by the device itself on the
+ * reboot that follows setup. Skipped on every platform, so there is one
+ * install path rather than a Windows-only branch.
+ */
+export const KFMON_CONFIG_DIR = ".adds/kfmon/config/"
+
+/** True for files the device installs for us, which the browser must skip. */
+export function isDeviceInstalledConfig(path: string): boolean {
+  return path.startsWith(KFMON_CONFIG_DIR)
+}
+
+/**
+ * Order KFMon's entries so the installer is written last.
+ *
+ * Nickel processes KoboRoot.tgz and reboots when the device is ejected. The
+ * trigger icon (`koreader.png`) and its watch config must already be on disk by
+ * then, or the device reboots into a KFMon with nothing to launch and the
+ * reader appears to have simply not installed.
+ */
+export function kfmonEntriesInWriteOrder(paths: string[]): string[] {
+  return [
+    ...paths.filter((path) => path !== KFMON_INSTALLER_PATH),
+    ...paths.filter((path) => path === KFMON_INSTALLER_PATH),
+  ]
+}
+
+/**
+ * The oldest Nickel KFMon supports. Upstream is explicit that this is its only
+ * device requirement: it is otherwise device-agnostic and works across the Kobo
+ * range, including unreleased models.
+ */
+export const MINIMUM_FIRMWARE = "2.9.0"
+
+function versionParts(version: string): number[] | null {
+  const parts = version.trim().split(".").map(Number)
+  if (!parts.length || parts.some((part) => !Number.isFinite(part))) return null
+  return parts
+}
+
+/**
+ * Whether a device's firmware is new enough to install the launcher onto.
+ *
+ * Setup replaces the device's startup script, so it must not run on firmware
+ * upstream does not support, and it must refuse rather than guess when the
+ * version cannot be read at all: this is the one step that touches anything
+ * outside the user partition.
+ */
+export function isFirmwareSupported(firmware: string): boolean {
+  const parts = versionParts(firmware)
+  const minimum = versionParts(MINIMUM_FIRMWARE)
+  if (!parts || !minimum) return false
+
+  for (let i = 0; i < Math.max(parts.length, minimum.length); i++) {
+    const difference = (parts[i] ?? 0) - (minimum[i] ?? 0)
+    if (difference !== 0) return difference > 0
+  }
+  return true
+}
+
+/**
+ * Point a Kobo's store at Storyteller by rewriting one line of its config.
+ *
+ * This is the whole install. A Kobo reads its library from a store rather than
+ * from the files on its USB partition, so redirecting api_endpoint is what
+ * makes a book put on its shelf appear in the device's own library, in its own
+ * reader, with nothing installed and no reboot. It touches a text file on the
+ * user partition and nothing else.
+ *
+ * The previous value is preserved as a comment so the device can be put back
+ * to the real Kobo store by hand, without needing us.
+ */
+export function patchKoboApiEndpoint(
+  existing: string | null,
+  apiEndpoint: string,
+): string {
+  const line = `api_endpoint=${apiEndpoint}`
+  const text = existing ?? ""
+
+  const current = /^api_endpoint=(.*)$/m.exec(text)
+  if (current) {
+    if (current[1] === apiEndpoint) return text // already ours, leave it be
+    // Keep the old endpoint alongside, once: re-running setup must not bury
+    // the original Kobo store behind a stack of our own previous values.
+    const withBackup = /^#\s*storyteller-previous-api_endpoint=/m.test(text)
+      ? text
+      : text.replace(
+          /^api_endpoint=(.*)$/m,
+          (_match, previous: string) =>
+            `# storyteller-previous-api_endpoint=${previous}\napi_endpoint=${previous}`,
+        )
+    // Replace via a function: a "$" in the url is a substitution in a string
+    // replacement, and this writes to her device's own config.
+    return withBackup.replace(/^api_endpoint=(.*)$/m, () => line)
+  }
+
+  if (/^\[OneStoreServices\]/m.test(text)) {
+    return text.replace(
+      /^\[OneStoreServices\][^\n]*$/m,
+      () => `[OneStoreServices]\n${line}`,
+    )
+  }
+
+  const prefix = text.length && !text.endsWith("\n") ? `${text}\n` : text
+  return `${prefix}[OneStoreServices]\n${line}\n`
+}
+
+/** Restore the device to the Kobo store, using the value setup preserved. */
+export function unpatchKoboApiEndpoint(existing: string | null): string {
+  const text = existing ?? ""
+  const previous = /^#\s*storyteller-previous-api_endpoint=(.*)$/m.exec(text)
+  if (!previous) return text
+
+  const restored = `api_endpoint=${previous[1]}`
+  return text
+    .replace(/^api_endpoint=(.*)$/m, () => restored)
+    .replace(/^#\s*storyteller-previous-api_endpoint=.*\n?/m, "")
+}
+
+export const EXCLUDE_LINE = "ExcludeSyncFolders=\\.(?:adds|kobo)"
+
+/**
+ * Ensure Nickel does not index KOReader's folders as books. Adds the
+ * ExcludeSyncFolders line under [FeatureSettings] only if it is absent, never
+ * overwriting a value the user already set.
+ */
+export function patchEReaderConf(existing: string | null): string {
+  const text = existing ?? ""
+
+  if (/^ExcludeSyncFolders=/m.test(text)) {
+    return text // respect an existing value
+  }
+
+  if (/^\[FeatureSettings\]/m.test(text)) {
+    return text.replace(
+      /^\[FeatureSettings\][^\n]*$/m,
+      `[FeatureSettings]\n${EXCLUDE_LINE}`,
+    )
+  }
+
+  const prefix = text.length && !text.endsWith("\n") ? `${text}\n` : text
+  return `${prefix}[FeatureSettings]\n${EXCLUDE_LINE}\n`
+}

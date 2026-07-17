@@ -322,6 +322,27 @@ export interface Job {
   uuid: Generated<import("@/uuid").UUID>
 }
 
+export interface KoboDevice {
+  collectionUuid: import("@/uuid").UUID | null
+  createdAt: Generated<string>
+  label: string
+  lastSyncedAt: string | null
+  revokedAt: string | null
+  serial: string | null
+  tokenHash: string
+  updatedAt: Generated<string>
+  userId: string
+  uuid: Generated<string>
+  wholeLibrary: Generated<number>
+}
+
+export interface KoboSyncedBook {
+  bookUuid: import("@/uuid").UUID
+  createdAt: Generated<string>
+  koboDeviceUuid: string
+  uuid: Generated<string>
+}
+
 export interface Migration {
   createdAt: Generated<string>
   hash: string
@@ -581,6 +602,8 @@ export interface DB {
   importRule: ImportRule
   importRuleToCollection: ImportRuleToCollection
   job: Job
+  koboDevice: KoboDevice
+  koboSyncedBook: KoboSyncedBook
   migration: Migration
   position: Position
   readaloud: Readaloud
