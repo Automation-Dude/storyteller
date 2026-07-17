@@ -41,7 +41,9 @@ export const GET = withHasPermission<Params>("bookProcess")(async (
   const book = await getBook(bookUuid, request.auth.user.id)
 
   const overrides = report.overrides
-    ? (JSON.parse(report.overrides) as AlignmentOverrides)
+    ? typeof report.overrides === "string"
+      ? (JSON.parse(report.overrides) as AlignmentOverrides)
+      : report.overrides
     : null
 
   const view = buildReportView({

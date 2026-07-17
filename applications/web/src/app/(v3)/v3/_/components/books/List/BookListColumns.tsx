@@ -107,9 +107,10 @@ export function ColumnValue({
       return book.alignmentSummary?.mutedChapters != null
         ? `${book.alignmentSummary.mutedChapters}`
         : "\u2014"
-    case "alignmentMissingChapters":
-      // not carried in alignmentSummary (no client column)
-      return "\u2014"
+    // case "alignmentMissingChapters":
+    //   return book.alignmentSummary?.unalignedAudio != null
+    //     ? `${book.alignmentSummary.unalignedAudio}`
+    //     : "\u2014"
     case "title":
       return book.title
     case "alignedAt":
@@ -154,7 +155,7 @@ export const columnWidths: Record<DisplayField, number> = {
   narrators: 80,
   translators: 80,
   creators: 80,
-  alignmentMissingChapters: 60,
+  // alignmentMissingChapters: 60,
   duration: 40,
   pageCount: 40,
   fileSize: 40,

@@ -327,8 +327,8 @@ function buildIsEmptyExpression(
     case "alignmentMutedChapters":
       return eb(latestReportColumn("muted_chapters"), "is", null)
 
-    case "alignmentMissingChapters":
-      return eb(latestReportColumn("missing_chapters"), "is", null)
+    // case "alignmentMissingChapters":
+    //   return eb(latestReportColumn("unaligned_audio"), "is", null)
 
     case "alignedAt":
       return eb("book.alignedAt", "is", null)
@@ -1144,8 +1144,8 @@ export function buildSortExpression(
       return latestReportColumn("missing_sentences")
     case "alignmentMutedChapters":
       return latestReportColumn("muted_chapters")
-    case "alignmentMissingChapters":
-      return latestReportColumn("missing_chapters")
+    // case "alignmentMissingChapters":
+    //   return latestReportColumn("unaligned_audio")
     case "alignmentGrade":
       return sql`case ${latestReportColumn("grade")} ${sql.join(
         ALIGNMENT_GRADES.map(

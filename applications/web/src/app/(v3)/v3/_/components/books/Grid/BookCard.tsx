@@ -199,12 +199,12 @@ export function SecondaryText({
       ) : (
         none
       )
-    case "alignmentMissingChapters":
-      return book.alignmentSummary?.unalignedAudio != null ? (
-        <span>{book.alignmentSummary.unalignedAudio}</span>
-      ) : (
-        none
-      )
+    // case "alignmentMissingChapters":
+    //   return book.alignmentSummary?.unalignedAudio != null ? (
+    //     <span>{book.alignmentSummary.unalignedAudio}</span>
+    //   ) : (
+    //     none
+    //   )
     default: {
       const _exhaustive: never = field
       return null

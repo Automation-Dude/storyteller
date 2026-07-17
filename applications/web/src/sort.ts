@@ -95,7 +95,7 @@ const COMPACT_DISPLAY_FIELDS: ReadonlySet<DisplayField> = new Set([
   "alignmentGrade",
   "alignmentMissingSentences",
   "alignmentMutedChapters",
-  "alignmentMissingChapters",
+  // "alignmentMissingChapters",
 ])
 
 const MAX_COMPACT_PER_ROW = 2
@@ -171,8 +171,8 @@ function sortValue(
       return book.alignmentSummary?.missingSentences ?? null
     case "alignmentMutedChapters":
       return book.alignmentSummary?.mutedChapters ?? null
-    case "alignmentMissingChapters":
-      return null
+    // case "alignmentMissingChapters":
+    //   return book.alignmentSummary?.unalignedAudio ?? null
     case "alignedAt":
       return book.alignedAt
     case "lastRead":

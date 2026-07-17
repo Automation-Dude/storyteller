@@ -17,7 +17,7 @@ const ALIGNMENT_DISPLAY_FIELDS: DisplayField[] = [
   "alignmentScore",
   "alignmentMissingSentences",
   "alignmentMutedChapters",
-  "alignmentMissingChapters",
+  // "alignmentMissingChapters",
 ]
 
 export default function QualityPage() {
