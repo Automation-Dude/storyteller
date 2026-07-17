@@ -4,6 +4,7 @@ import {
   IconBook2,
   IconBook,
   IconClipboardCheck,
+  IconDeviceTablet,
   IconHelpCircle,
   IconHome,
   IconList,
@@ -185,6 +186,11 @@ export function AppSidebar({
             },
           ]
         : []),
+      {
+        title: t("setUpEreader"),
+        url: "/set-up-ereader",
+        icon: IconDeviceTablet,
+      },
     ]
 
   const navSecondary: NavSecondaryItem[] = [
