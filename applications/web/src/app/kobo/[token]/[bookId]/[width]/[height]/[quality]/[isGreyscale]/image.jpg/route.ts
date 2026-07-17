@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 
 import { getExtractedCover } from "@/assets/covers"
-import { getBook } from "@/database/books"
+import { getCachedCoverImage, writeCachedCoverImage } from "@/assets/fs"
+import { type BookWithRelations, getBook } from "@/database/books"
+import { optimizeImage } from "@/images"
 import { getKoboDeviceByToken } from "@/kobo/devices"
 import { type UUID } from "@/uuid"
 
@@ -20,6 +22,55 @@ type Params = Promise<{
 const KOBO_IMAGE_HOST = "https://cdn.kobo.com/book-images"
 
 /**
+ * The cover at the size the device asked for, resized once and kept.
+ *
+ * A Kobo asks for a thumbnail and will happily accept the full sized cover,
+ * which is how this used to answer. That makes her device pull a megapixel
+ * JPEG over wifi and downscale it on an e-ink CPU, once per book, and with a
+ * library this size that is the difference between a shelf that fills in and
+ * one that crawls. Resizing costs us once per book and size; not resizing
+ * costs her every time she scrolls.
+ *
+ * This is the same cache the web reader fills, so a cover sized for her Kobo
+ * is not re-rendered for the app, or the other way round.
+ */
+async function coverForDevice(
+  book: BookWithRelations,
+  height: number,
+  width: number,
+) {
+  for (const [cacheKind, coverKind] of [
+    ["text", "ebook"],
+    ["audio", "audiobook"],
+  ] as const) {
+    if (height && width) {
+      const cached = await getCachedCoverImage(
+        book.uuid,
+        cacheKind,
+        height,
+        width,
+      )
+      if (cached) return cached
+    }
+
+    const cover = await getExtractedCover(book, coverKind)
+    if (!cover) continue
+    if (!height || !width) return cover
+
+    cover.data = await optimizeImage({
+      buffer: cover.data,
+      height,
+      width,
+      contentType: cover.mimeType,
+    })
+    await writeCachedCoverImage(book.uuid, cacheKind, height, width, cover)
+    return cover
+  }
+
+  return null
+}
+
+/**
  * @summary Book cover for a Kobo
  * @desc The device builds this URL itself from the CoverImageId in a book's
  *       metadata, which is why the size and greyscale flags are in the path
@@ -31,9 +82,8 @@ const KOBO_IMAGE_HOST = "https://cdn.kobo.com/book-images"
  *       answered with a blank: claiming the image host must not cost her the
  *       covers of her own books.
  *
- *       The dimensions are accepted and ignored: the device scales what it is
- *       given, and resizing here would cost CPU on every cover of every sync
- *       to produce something it is about to resize anyway.
+ *       The greyscale flag is ignored on purpose: her Kobo is a colour device,
+ *       and it can grey down a colour cover if it ever wants one.
  */
 export async function GET(_request: Request, context: { params: Params }) {
   const { token, bookId, width, height } = await context.params
@@ -50,10 +100,13 @@ export async function GET(_request: Request, context: { params: Params }) {
   const book = await getBook(bookId as UUID, device.userId as UUID)
   if (!book) return kobosOwn
 
-  // Prefer the ebook's own cover; a Kobo only ever shows ebooks.
-  const cover =
-    (await getExtractedCover(book, "ebook")) ??
-    (await getExtractedCover(book, "audiobook"))
+  const requestedHeight = Number.parseInt(height, 10)
+  const requestedWidth = Number.parseInt(width, 10)
+  const cover = await coverForDevice(
+    book,
+    Number.isNaN(requestedHeight) ? 0 : requestedHeight,
+    Number.isNaN(requestedWidth) ? 0 : requestedWidth,
+  )
   if (!cover) return kobosOwn
 
   return new NextResponse(new Uint8Array(cover.data), {
