@@ -119,6 +119,7 @@ import {
   IconServer,
   IconSettings2,
   IconSettings,
+  IconSettingsUp,
   IconShield,
   IconSortAscending,
   IconSortDescending,
@@ -180,6 +181,7 @@ export const Merge = /*#__PURE__*/ styled(IconArrowMerge)
 export const GitMerge = /*#__PURE__*/ styled(IconGitMerge)
 export const Copy = /*#__PURE__*/ styled(IconCopy)
 export const Replace = /*#__PURE__*/ styled(IconReplace)
+export const Upgrade = /*#__PURE__*/ styled(IconSettingsUp)
 export const Scan = /*#__PURE__*/ styled(IconScan)
 export const Pointer = /*#__PURE__*/ styled(IconPointer)
 export const Logout = /*#__PURE__*/ styled(IconLogout)

@@ -139,7 +139,7 @@ function FormatFileRow({
                   className="text-muted-foreground font-thin"
                   aria-label={`Replace ${format} file`}
                 >
-                  <icon.Refresh className="h-3.5 w-3.5 stroke-[1.5]" />
+                  <icon.Replace className="h-3.5 w-3.5 stroke-[1.5]" />
                 </TooltipButton>
               }
             />

@@ -394,7 +394,7 @@ export function useBookActionItems({
     entries.push({
       key: "upgradeEpub",
       label: t.plain("upgradeEpub"),
-      icon: <icon.Replace className="size-4" />,
+      icon: <icon.Upgrade className="size-4" />,
       onSelect: (modifiers) => {
         upgradeAction.confirm(modifiers)
       },
@@ -403,8 +403,6 @@ export function useBookActionItems({
 
   if (canProcess) {
     const singleBook = mode === "single" ? books[0] : undefined
-    // to process a book we need both source formats present (backend rejects
-    // otherwise), or an existing readaloud to continue/re-sync.
     const hasProcessable =
       mode === "bulk"
         ? books.some((b) => b.audiobook || b.ebook)
