@@ -9,7 +9,7 @@ import { fetchApiRoute } from "@/app/fetchApiRoute"
 import { createConfig, nextAuth } from "@/auth/auth"
 import { type PublicProvider } from "@/auth/providers"
 import { getCookieDomain, getCookieSecure } from "@/cookies"
-import { getSetting } from "@/database/settings"
+import { getPreferenceDefaults } from "@/database/settings"
 import { getUsers } from "@/database/users"
 
 import { LoginForm, type LoginFormData } from "./LoginForm"
@@ -133,8 +133,8 @@ export default async function LoginPage() {
     }
   }
 
-  const pref = await getSetting("preferenceDefaults")
-  const accentColor = pref?.accentColor
+  const pref = await getPreferenceDefaults()
+  const accentColor = pref.accentColor
 
   const { credentials: _, ...providers } =
     await fetchApiRoute<Record<string, PublicProvider>>("/auth/providers")
