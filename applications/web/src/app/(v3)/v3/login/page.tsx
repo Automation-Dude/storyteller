@@ -9,6 +9,7 @@ import { fetchApiRoute } from "@/app/fetchApiRoute"
 import { createConfig, nextAuth } from "@/auth/auth"
 import { type PublicProvider } from "@/auth/providers"
 import { getCookieDomain, getCookieSecure } from "@/cookies"
+import { getUsers } from "@/database/users"
 
 import { LoginForm, type LoginFormData } from "./LoginForm"
 
@@ -32,6 +33,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LoginPage() {
+  // check if there are users at all
+  const users = await getUsers()
+
+  if (users.length === 0) {
+    redirect("/v3/init")
+  }
+
   async function credentialsLogin(data: LoginFormData, callbackUrl?: string) {
     "use server"
 

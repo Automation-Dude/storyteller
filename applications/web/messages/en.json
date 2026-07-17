@@ -27,6 +27,18 @@
     "invalidUsernameOrPassword": "Invalid username or password",
     "loggingIn": "Logging in..."
   },
+  "InitPage": {
+    "title": "Setup",
+    "welcomeToStoryteller": "Welcome to Storyteller!",
+    "createYourAdminAccount": "Create your admin account to get started",
+    "email": "Email",
+    "fullName": "Full name",
+    "username": "Username",
+    "password": "Password",
+    "createAdminUser": "Create admin user",
+    "creatingAdminUser": "Creating admin user...",
+    "somethingWentWrongPleaseTryAgain": "Something went wrong. Please try again."
+  },
   "HomePage": {
     "title": "Home",
     "hero": {

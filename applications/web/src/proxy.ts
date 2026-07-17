@@ -14,6 +14,7 @@ const V3_ROUTES = [
   "/collections",
   "/settings",
   "/login",
+  "/init",
   "/preferences",
   "/collections",
   "/shelves",
