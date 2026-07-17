@@ -256,141 +256,147 @@ export function useBookActionItems({
 
   const entries: BookActionEntry[] = []
 
-  if (canUpdate) {
-    entries.push({
-      key: "collections",
-      label: t.plain("editCollections"),
-      icon: <icon.Folder className="size-4" />,
-      submenuSearchable: true,
-      submenuSearchPlaceholder: t.plain("search"),
-      submenu: () => (
-        <RelationEditList
-          source="collections"
-          bookUuids={bookUuids}
-          membership={membershipFromBooks(books, "collections")}
-          enabled
-          {...(canCreateCollection && {
-            onCreate: (name: string) => {
-              setCreateCollectionName(name)
-              setCreateCollectionOpen(true)
-            },
-            createLabel: () => t.plain("newCollection"),
-          })}
-        />
-      ),
-    })
+  if (mode === "bulk") {
+    if (canUpdate) {
+      entries.push({
+        key: "collections",
+        label: t.plain("editCollections"),
+        icon: <icon.Folder className="size-4" />,
+        submenuSearchable: true,
+        submenuSearchPlaceholder: t.plain("search"),
+        submenu: () => (
+          <RelationEditList
+            source="collections"
+            bookUuids={bookUuids}
+            membership={membershipFromBooks(books, "collections")}
+            enabled
+            {...(canCreateCollection && {
+              onCreate: (name: string) => {
+                setCreateCollectionName(name)
+                setCreateCollectionOpen(true)
+              },
+              createLabel: () => t.plain("newCollection"),
+            })}
+          />
+        ),
+      })
+
+      entries.push({
+        key: "series",
+        label: t.plain("editSeries"),
+        icon: <icon.Library className="size-4" />,
+        submenuSearchable: true,
+        submenuSearchPlaceholder: t.plain("search"),
+        submenu: () => (
+          <RelationEditList
+            source="series"
+            bookUuids={bookUuids}
+            membership={membershipFromBooks(books, "series")}
+            enabled
+            onCreate={(name) => {
+              setCreateSeriesName(name)
+              setCreateSeriesOpen(true)
+            }}
+            createLabel={() => t.plain("newSeries")}
+          />
+        ),
+      })
+
+      entries.push({
+        key: "tags",
+        label: t.plain("editTags"),
+        icon: <icon.TagAdd className="size-4" />,
+        submenuSearchable: true,
+        submenuSearchPlaceholder: t.plain("search"),
+        submenu: () => (
+          <RelationEditList
+            source="tags"
+            bookUuids={bookUuids}
+            membership={membershipFromBooks(books, "tags")}
+            enabled
+            onCreate={(name) => {
+              setCreateTagName(name)
+              setCreateTagOpen(true)
+            }}
+            createLabel={() => t.plain("newTag")}
+          />
+        ),
+      })
+
+      entries.push({
+        key: "authors",
+        label: t.plain("editAuthors"),
+        icon: <icon.User className="size-4" />,
+        submenuSearchable: true,
+        submenuSearchPlaceholder: t.plain("search"),
+        submenu: () => (
+          <RelationEditList
+            source="authors"
+            bookUuids={bookUuids}
+            membership={membershipFromBooks(books, "authors")}
+            enabled
+            createLabel={(s) => t.plain("newAuthor", { input: `"${s}"` })}
+          />
+        ),
+      })
+
+      entries.push({
+        key: "narrators",
+        label: t.plain("editNarrators"),
+        icon: <icon.Microphone className="size-4" />,
+        submenuSearchable: true,
+        submenuSearchPlaceholder: t.plain("search"),
+        submenu: () => (
+          <RelationEditList
+            source="narrators"
+            bookUuids={bookUuids}
+            membership={membershipFromBooks(books, "narrators")}
+            enabled
+            createLabel={(s) => t.plain("newNarrator", { input: `"${s}"` })}
+          />
+        ),
+      })
+
+      entries.push({
+        key: "translators",
+        label: t.plain("editTranslators"),
+        icon: <icon.Language className="size-4" />,
+        submenuSearchable: true,
+        submenuSearchPlaceholder: t.plain("search"),
+        submenu: () => (
+          <RelationEditList
+            source="translators"
+            bookUuids={bookUuids}
+            membership={membershipFromBooks(books, "translators")}
+            enabled
+            createLabel={(s) => t.plain("newTranslator", { input: `"${s}"` })}
+          />
+        ),
+      })
+    }
 
     entries.push({
-      key: "series",
-      label: t.plain("editSeries"),
-      icon: <icon.Library className="size-4" />,
+      key: "statuses",
+      label: t.plain("setStatus"),
+      icon: <icon.BookAlt className="size-4" />,
       submenuSearchable: true,
       submenuSearchPlaceholder: t.plain("search"),
       submenu: () => (
         <RelationEditList
-          source="series"
+          source="statuses"
           bookUuids={bookUuids}
-          membership={membershipFromBooks(books, "series")}
+          membership={membershipFromBooks(books, "statuses")}
           enabled
-          onCreate={(name) => {
-            setCreateSeriesName(name)
-            setCreateSeriesOpen(true)
-          }}
-          createLabel={() => t.plain("newSeries")}
-        />
-      ),
-    })
-
-    entries.push({
-      key: "tags",
-      label: t.plain("editTags"),
-      icon: <icon.TagAdd className="size-4" />,
-      submenuSearchable: true,
-      submenuSearchPlaceholder: t.plain("search"),
-      submenu: () => (
-        <RelationEditList
-          source="tags"
-          bookUuids={bookUuids}
-          membership={membershipFromBooks(books, "tags")}
-          enabled
-          onCreate={(name) => {
-            setCreateTagName(name)
-            setCreateTagOpen(true)
-          }}
-          createLabel={() => t.plain("newTag")}
-        />
-      ),
-    })
-
-    entries.push({
-      key: "authors",
-      label: t.plain("editAuthors"),
-      icon: <icon.User className="size-4" />,
-      submenuSearchable: true,
-      submenuSearchPlaceholder: t.plain("search"),
-      submenu: () => (
-        <RelationEditList
-          source="authors"
-          bookUuids={bookUuids}
-          membership={membershipFromBooks(books, "authors")}
-          enabled
-          createLabel={(s) => t.plain("newAuthor", { input: `"${s}"` })}
-        />
-      ),
-    })
-
-    entries.push({
-      key: "narrators",
-      label: t.plain("editNarrators"),
-      icon: <icon.Microphone className="size-4" />,
-      submenuSearchable: true,
-      submenuSearchPlaceholder: t.plain("search"),
-      submenu: () => (
-        <RelationEditList
-          source="narrators"
-          bookUuids={bookUuids}
-          membership={membershipFromBooks(books, "narrators")}
-          enabled
-          createLabel={(s) => t.plain("newNarrator", { input: `"${s}"` })}
-        />
-      ),
-    })
-
-    entries.push({
-      key: "translators",
-      label: t.plain("editTranslators"),
-      icon: <icon.Language className="size-4" />,
-      submenuSearchable: true,
-      submenuSearchPlaceholder: t.plain("search"),
-      submenu: () => (
-        <RelationEditList
-          source="translators"
-          bookUuids={bookUuids}
-          membership={membershipFromBooks(books, "translators")}
-          enabled
-          createLabel={(s) => t.plain("newTranslator", { input: `"${s}"` })}
         />
       ),
     })
   }
 
-  entries.push({
-    key: "statuses",
-    label: t.plain("setStatus"),
-    icon: <icon.BookAlt className="size-4" />,
-    submenuSearchable: true,
-    submenuSearchPlaceholder: t.plain("search"),
-    submenu: () => (
-      <RelationEditList
-        source="statuses"
-        bookUuids={bookUuids}
-        membership={membershipFromBooks(books, "statuses")}
-        enabled
-      />
-    ),
-  })
-
-  if (canUpdate && epubBooks.length > 0) {
+  if (
+    canUpdate &&
+    epubBooks.length > 0 &&
+    epubBooks.some((b) => b.ebook?.isEpub2 || b.readaloud?.isEpub2)
+  ) {
     entries.push({
       key: "upgradeEpub",
       label: t.plain("upgradeEpub"),
