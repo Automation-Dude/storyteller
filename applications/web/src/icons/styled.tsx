@@ -35,6 +35,9 @@ export function styled(Icon: ComponentType<any>): StyledIcon {
   function StyledIcon({ className, size, weight, ...props }: StyledIconProps) {
     return (
       <Icon
+        // icon should not be shown to screen readers
+        // a11y tools will be mad
+        aria-hidden="true"
         {...props}
         className={cn(iconVariants({ size, weight }), className)}
       />

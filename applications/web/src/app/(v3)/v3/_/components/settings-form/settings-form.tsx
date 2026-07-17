@@ -624,21 +624,19 @@ function SettingsSidebar({
   return (
     <NavSidebar>
       <NavSidebarBody>
-        {settingsTabs.length > 0 && (
-          <NavSidebarGroup label={t("sidebar.settings")}>
-            <NavSidebarSearch
-              placeholder={t("searchSettings")}
-              value={searchQuery}
-              onChange={onSearchChange}
-            />
+        <NavSidebarGroup label={t("sidebar.settings")}>
+          <NavSidebarSearch
+            placeholder={t("searchSettings")}
+            value={searchQuery}
+            onChange={onSearchChange}
+          />
 
-            <NavSidebarList
-              tabs={settingsTabs}
-              activeTab={activeTab}
-              onTabChange={onTabChange}
-            />
-          </NavSidebarGroup>
-        )}
+          <NavSidebarList
+            tabs={settingsTabs}
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+          />
+        </NavSidebarGroup>
 
         {administrationTabs.length > 0 && (
           <NavSidebarGroup label={t("sidebar.administration")}>
