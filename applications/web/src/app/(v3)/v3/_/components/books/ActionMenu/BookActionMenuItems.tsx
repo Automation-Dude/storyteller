@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, type ReactNode, useCallback, useState } from "react"
+import { Fragment, type ReactNode, useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import {
@@ -131,13 +131,10 @@ export function useBookActionItems({
   const [clearCache] = useClearBooksCacheMutation()
   const [upgradeEpub] = useUpgradeBookEpubMutation()
   const [deleteBooks, { isLoading: isDeleting }] = useDeleteBooksMutation()
-  const [mergeBooks] = useMergeBooksMutation()
+  const [mergeBooks, { isLoading: isMerging }] = useMergeBooksMutation()
 
   const processingRun = useProcessingRun(
     mode === "single" ? books[0] : undefined,
-  )
-  const [mergeTarget, _setMergeTarget] = useState<BookWithRelations | null>(
-    null,
   )
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false)
   const [createCollectionName, setCreateCollectionName] = useState("")
@@ -186,41 +183,88 @@ export function useBookActionItems({
     toast.success(t("upgradeStarted"))
   }, [upgradeEpub, epubBooks, t])
 
-  const handleMerge = useCallback(async () => {
-    if (!mergeTarget) return
+  const canMerge = useMemo(() => {
+    return (
+      mode === "bulk" &&
+      books.length === 2 &&
+      books.some((b) => b.audiobook) &&
+      books.some((b) => b.ebook)
+    )
+  }, [books, mode])
 
-    const creators: CreatorRelation[] = [
-      ...mergeTarget.authors,
-      ...mergeTarget.narrators,
-      ...mergeTarget.creators,
+  const handleMerge = useCallback(async () => {
+    if (!canMerge) return
+
+    const ebookBook = books.find((b) => b.ebook)
+    const audiobookBook = books.find((b) => b.audiobook)
+    if (!ebookBook || !audiobookBook) return
+
+    const allCreators = [
+      ...books.flatMap((b) => b.authors),
+      ...books.flatMap((b) => b.narrators),
+      ...books.flatMap((b) => b.creators),
     ]
 
-    await mergeBooks({
-      update: {
-        title: mergeTarget.title,
-        subtitle: mergeTarget.subtitle,
-        language: mergeTarget.language,
-        description: mergeTarget.description,
-        publicationDate: mergeTarget.publicationDate,
+    const uniqueCreators = allCreators.reduce<Record<UUID, CreatorRelation>>(
+      (acc, curr) => {
+        acc[curr.uuid] = curr
+        return acc
       },
-      relations: {
-        creators,
-        series: mergeTarget.series,
-        collections: mergeTarget.collections.map((c) => c.uuid),
-        tags: mergeTarget.tags.map((tag) => tag.name),
-        ...(mergeTarget.status &&
-          currentUser && {
-            status: {
-              statusUuid: mergeTarget.status.uuid,
-              userId: currentUser.id,
-            },
-          }),
-      },
-      from: bookUuids,
-    }).unwrap()
+      {},
+    )
+
+    const uniqueCollections = [
+      ...new Set(books.flatMap((b) => b.collections.map((c) => c.uuid))),
+    ]
+    const uniqueTags = [
+      ...new Set(books.flatMap((b) => b.tags.map((t) => t.name))),
+    ]
+    const uniqueSeries = [
+      ...new Set(books.flatMap((b) => b.series.map((s) => ({ name: s.name })))),
+    ]
+
+    try {
+      await mergeBooks({
+        update: {
+          title: ebookBook.title || audiobookBook.title,
+          subtitle: ebookBook.subtitle || audiobookBook.subtitle,
+          language: ebookBook.language || audiobookBook.language,
+          description: ebookBook.description || audiobookBook.description,
+          publicationDate:
+            ebookBook.publicationDate || audiobookBook.publicationDate,
+        },
+        relations: {
+          creators: Object.values(uniqueCreators),
+          series: uniqueSeries,
+          collections: uniqueCollections,
+          tags: uniqueTags,
+          ...((ebookBook.status || audiobookBook.status) &&
+            currentUser && {
+              status: {
+                statusUuid: (ebookBook.status?.uuid ||
+                  audiobookBook.status?.uuid) as UUID,
+                userId: currentUser.id,
+              },
+            }),
+        },
+        from: bookUuids,
+      }).unwrap()
+      toast.success(t("mergeSuccess"))
+    } catch (error) {
+      console.error(error)
+      toast.error(t("mergeFailed"), { description: (error as Error).message })
+    }
 
     onAfterDestructive?.()
-  }, [mergeBooks, mergeTarget, currentUser, bookUuids, onAfterDestructive])
+  }, [
+    canMerge,
+    books,
+    onAfterDestructive,
+    mergeBooks,
+    currentUser,
+    bookUuids,
+    t,
+  ])
 
   const clearCacheAction = useConfirmAction({
     onConfirm: handleClearCache,
@@ -246,9 +290,16 @@ export function useBookActionItems({
 
   const mergeAction = useConfirmAction({
     onConfirm: handleMerge,
-    title: mergeTarget
-      ? t("mergeTitle", { target: mergeTarget.title })
-      : t("merge"),
+    title:
+      books.length === 2
+        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          t("mergeTitle", {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            target1: books[0]!.title,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            target2: books[1]!.title,
+          })
+        : t("merge"),
     description: t("mergeDescription"),
     confirmLabel: t("merge"),
     variant: "destructive",
@@ -390,6 +441,17 @@ export function useBookActionItems({
         />
       ),
     })
+
+    if (canMerge) {
+      entries.push({
+        key: "merge",
+        label: t.plain("merge"),
+        icon: <icon.Merge className="size-4" />,
+        onSelect: (modifiers) => {
+          mergeAction.confirm(modifiers)
+        },
+      })
+    }
   }
 
   if (
@@ -512,7 +574,7 @@ export function useBookActionItems({
       <ConfirmDialog {...clearCacheAction.dialogProps} />
       <ConfirmDialog {...processAction.dialogProps} />
       <ConfirmDialog {...upgradeAction.dialogProps} />
-      <ConfirmDialog {...mergeAction.dialogProps} />
+      <ConfirmDialog {...mergeAction.dialogProps} isLoading={isMerging} />
 
       {canCreateCollection && (
         <CreateCollectionDialog

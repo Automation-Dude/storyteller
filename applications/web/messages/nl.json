@@ -285,7 +285,7 @@
     "createShelfWith": "Plank maken met selectie",
     "deleteTitle": "{count} {entity} verwijderen?",
     "deleteDescription": "Dit verwijdert de geselecteerde items en ontkoppelt ze van alle boeken. Dit kan niet ongedaan worden.",
-    "mergeTitle": "{count} items samenvoegen naar \"{target}\"?",
+    "mergeTitle": "{target1} + {target2} samenvoegen?",
     "mergeDescription": "Alle boeken van de andere geselecteerde items worden toegewezen aan het doel. De andere items worden verwijderd.",
     "shiftSkipHint": "houd shift ingedrukt om dit de volgende keer over te slaan",
     "editTag": "Label bewerken",
@@ -1154,7 +1154,7 @@
     "editing": "Bezig met bewerken…",
     "saveFailed": "Opslaan mislukt",
     "review": {
-      "title": "Mijn notities & recensie",
+      "title": "Mijn beoordeling & recensie",
       "addReview": "Schrijf recensie",
       "yourRating": "Jouw beoordeling",
       "yourReview": "Jouw recensie",

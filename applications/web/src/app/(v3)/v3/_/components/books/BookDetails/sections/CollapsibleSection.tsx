@@ -60,7 +60,7 @@ export function CollapsibleSection({
             className="flex h-full w-full cursor-pointer items-center justify-between gap-3"
             aria-label={"Toggle section"}
           >
-            <span className="section-label flex flex-1 items-center gap-2">
+            <span className="section-label flex flex-1 items-center gap-2 truncate whitespace-nowrap">
               {icon}
               {title}
             </span>
