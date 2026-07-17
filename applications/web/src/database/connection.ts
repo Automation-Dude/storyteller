@@ -58,3 +58,14 @@ function createDatabase() {
 export function replaceDatabase(newDb: Kysely<DB>) {
   db = newDb
 }
+
+/**
+ * Copy the live database to `destinationPath`.
+ *
+ * Uses better-sqlite3's own backup, which is safe to run against the open,
+ * WAL-mode database, so a bulk write (e.g. a library repair) can take a
+ * snapshot first that is easy to restore by copying back.
+ */
+export async function backupDatabase(destinationPath: string): Promise<void> {
+  await sqlite.backup(destinationPath)
+}
