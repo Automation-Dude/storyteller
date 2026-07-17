@@ -42,6 +42,28 @@ export async function imageStats(
   }
 }
 
+/**
+ * Resize a cover for an e-reader and encode it as JPEG.
+ *
+ * optimizeImage encodes to WebP, which the web app and its cache want, but an
+ * e-ink reader (a Kobo) may not render WebP and its own covers are JPEG. This
+ * keeps the resize (so the device pulls a thumbnail, not a full cover) while
+ * staying in the format such devices always support. Dimensions are doubled
+ * for higher-density screens, as optimizeImage does.
+ */
+export async function resizeCoverForReader(
+  buffer: Buffer,
+  width: number,
+  height: number,
+): Promise<Buffer> {
+  const sharp = await getSharp()
+  return sharp(buffer)
+    .timeout({ seconds: 7 })
+    .resize(Math.round(width * 2), Math.round(height * 2))
+    .jpeg({ quality: 75, mozjpeg: true })
+    .toBuffer()
+}
+
 export async function optimizeImage({
   buffer,
   contentType,

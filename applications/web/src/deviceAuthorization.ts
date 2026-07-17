@@ -90,7 +90,7 @@ export async function getDeviceQrCodeUrl({
   ).toString()
 }
 
-async function getDeviceVerificationBaseUrl(fallbackOrigin?: string) {
+export async function getDeviceVerificationBaseUrl(fallbackOrigin?: string) {
   const configuredWebUrl = (await getSettings()).webUrl
 
   const candidates =

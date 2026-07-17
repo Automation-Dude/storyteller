@@ -801,3 +801,43 @@ CREATE TABLE import_rule_to_collection (
   collection_uuid text NOT NULL REFERENCES collection (uuid) ON DELETE CASCADE,
   PRIMARY KEY (import_rule_uuid, collection_uuid)
 );
+
+CREATE TABLE kobo_device (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  collection_uuid TEXT REFERENCES collection (uuid) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_synced_at TEXT,
+  revoked_at TEXT,
+  serial TEXT,
+  whole_library INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE INDEX idx_kobo_device_user_id ON kobo_device (user_id);
+
+CREATE UNIQUE INDEX idx_kobo_device_user_serial ON kobo_device (user_id, serial)
+WHERE
+  serial IS NOT NULL;
+
+CREATE TRIGGER kobo_device_update_trigger AFTER
+UPDATE ON kobo_device FOR EACH ROW BEGIN
+UPDATE kobo_device
+SET
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  uuid = OLD.uuid;
+
+END;
+
+CREATE TABLE kobo_synced_book (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  kobo_device_uuid TEXT NOT NULL REFERENCES kobo_device (uuid) ON DELETE CASCADE,
+  book_uuid TEXT NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (kobo_device_uuid, book_uuid)
+);
+
+CREATE INDEX idx_kobo_synced_book_device ON kobo_synced_book (kobo_device_uuid);
