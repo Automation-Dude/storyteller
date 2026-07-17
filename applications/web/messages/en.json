@@ -331,6 +331,40 @@
       "NO-AUTHOR": "No author",
       "NO-LANG": "No language",
       "NO-DESC": "No description"
+    },
+    "repair": {
+      "action": "Repair",
+      "title": "Repair book",
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "searching": "Searching Open Library…",
+      "bestMatch": "Best match",
+      "noMatch": "No confident match found. Search by hand below, or edit the fields.",
+      "authorsPlaceholder": "Author, second author",
+      "language": "Language",
+      "coverUrl": "Cover URL",
+      "description": "Description",
+      "current": "Current",
+      "proposed": "Proposed",
+      "manualSearch": "Search Open Library by hand",
+      "manualSearchPlaceholder": "Title or title and author",
+      "openExternally": "Open on Open Library",
+      "use": "Use",
+      "nothingToApply": "Nothing to apply. Fill in at least one field.",
+      "applied": "Book repaired.",
+      "failed": "Could not repair the book."
+    },
+    "autoRepair": {
+      "button": "Auto-repair",
+      "title": "Auto-repair the library",
+      "description": "Every flagged book is looked up on Open Library. Confident matches are listed below for you to review before anything is written. A database backup is taken first.",
+      "scanning": "Scanning {scanned} of {total} books…",
+      "noConfident": "No confident matches were found. Repair these books one at a time.",
+      "selected": "{count} selected",
+      "apply": "Apply {count} repairs",
+      "appliedSummary": "Repaired {applied} books.",
+      "done": "Repaired {applied} books.",
+      "someFailed": "{failed} books could not be repaired."
     }
   },
   "AppSidebar": {

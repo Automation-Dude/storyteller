@@ -1,9 +1,11 @@
 "use client"
 
-import { IconRefresh } from "@tabler/icons-react"
+import { IconRefresh, IconWand } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
+import { useState } from "react"
 
 import {
+  type AuditBook,
   type AuditIssue,
   type LibraryAudit as AuditData,
 } from "@/database/auditLibrary"
@@ -19,6 +21,9 @@ import {
   CardTitle,
 } from "@v3/_/components/ui/card"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
+
+import { AutoRepairDialog } from "./auto-repair-dialog"
+import { RepairDialog } from "./repair-dialog"
 
 /**
  * The issues in the order they are shown, with how loud each one should look.
@@ -45,6 +50,9 @@ export function LibraryAudit() {
   const t = useTranslations("LibraryAuditPage")
   const { data, isFetching, isError, refetch } = useGetLibraryAuditQuery()
 
+  const [repairing, setRepairing] = useState<AuditBook | null>(null)
+  const [autoRepairOpen, setAutoRepairOpen] = useState(false)
+
   const label = (issue: AuditIssue) => t(`issues.${issue}`)
 
   return (
@@ -56,15 +64,28 @@ export function LibraryAudit() {
             {t("subheading")}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void refetch()}
-          disabled={isFetching}
-        >
-          <IconRefresh className={isFetching ? "animate-spin" : undefined} />
-          {t("rescan")}
-        </Button>
+        <div className="flex shrink-0 gap-2">
+          {data && data.books.length > 0 ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                setAutoRepairOpen(true)
+              }}
+            >
+              <IconWand />
+              {t("autoRepair.button")}
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+          >
+            <IconRefresh className={isFetching ? "animate-spin" : undefined} />
+            {t("rescan")}
+          </Button>
+        </div>
       </div>
 
       {isError ? (
@@ -87,9 +108,32 @@ export function LibraryAudit() {
               </CardHeader>
             </Card>
           ) : (
-            <FlaggedTable data={data} label={label} t={t} />
+            <FlaggedTable
+              data={data}
+              label={label}
+              t={t}
+              onRepair={setRepairing}
+            />
           )}
         </>
+      ) : null}
+
+      {repairing ? (
+        <RepairDialog
+          book={repairing}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setRepairing(null)
+          }}
+        />
+      ) : null}
+
+      {data ? (
+        <AutoRepairDialog
+          books={data.books}
+          open={autoRepairOpen}
+          onOpenChange={setAutoRepairOpen}
+        />
       ) : null}
     </div>
   )
@@ -147,10 +191,12 @@ function FlaggedTable({
   data,
   label,
   t,
+  onRepair,
 }: {
   data: AuditData
   label: (issue: AuditIssue) => string
   t: ReturnType<typeof useTranslations>
+  onRepair: (book: AuditBook) => void
 }) {
   // Sort the most-broken books to the top: they are the ones worth fixing first.
   const books = data.books
@@ -169,6 +215,7 @@ function FlaggedTable({
                   {t("colAuthor")}
                 </th>
                 <th className="px-4 py-3 font-medium">{t("colIssues")}</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -200,6 +247,17 @@ function FlaggedTable({
                         </Badge>
                       ))}
                     </div>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        onRepair(book)
+                      }}
+                    >
+                      {t("repair.action")}
+                    </Button>
                   </td>
                 </tr>
               ))}

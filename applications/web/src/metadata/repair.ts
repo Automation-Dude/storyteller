@@ -207,7 +207,8 @@ export async function applyRepair(
     description?: string
   } = {}
   if (choice.title?.trim()) update.title = choice.title.trim()
-  if (choice.language?.trim()) update.language = choice.language.trim()
+  if (choice.language?.trim())
+    update.language = normalizeLanguage(choice.language.trim())
   if (choice.description?.trim())
     update.description = asHtml(choice.description)
 

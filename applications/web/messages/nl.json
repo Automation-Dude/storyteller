@@ -323,6 +323,40 @@
       "NO-AUTHOR": "Geen auteur",
       "NO-LANG": "Geen taal",
       "NO-DESC": "Geen beschrijving"
+    },
+    "repair": {
+      "action": "Herstellen",
+      "title": "Boek herstellen",
+      "apply": "Toepassen",
+      "cancel": "Annuleren",
+      "searching": "Open Library doorzoeken…",
+      "bestMatch": "Beste overeenkomst",
+      "noMatch": "Geen zekere overeenkomst gevonden. Zoek hieronder handmatig of pas de velden aan.",
+      "authorsPlaceholder": "Auteur, tweede auteur",
+      "language": "Taal",
+      "coverUrl": "Omslag-URL",
+      "description": "Beschrijving",
+      "current": "Huidig",
+      "proposed": "Voorgesteld",
+      "manualSearch": "Open Library handmatig doorzoeken",
+      "manualSearchPlaceholder": "Titel of titel en auteur",
+      "openExternally": "Openen op Open Library",
+      "use": "Gebruiken",
+      "nothingToApply": "Niets om toe te passen. Vul minstens één veld in.",
+      "applied": "Boek hersteld.",
+      "failed": "Kon het boek niet herstellen."
+    },
+    "autoRepair": {
+      "button": "Automatisch herstellen",
+      "title": "Bibliotheek automatisch herstellen",
+      "description": "Elk gemarkeerd boek wordt opgezocht op Open Library. Zekere overeenkomsten staan hieronder ter controle voordat er iets wordt weggeschreven. Er wordt eerst een back-up van de database gemaakt.",
+      "scanning": "{scanned} van {total} boeken scannen…",
+      "noConfident": "Geen zekere overeenkomsten gevonden. Herstel deze boeken één voor één.",
+      "selected": "{count} geselecteerd",
+      "apply": "{count} herstellingen toepassen",
+      "appliedSummary": "{applied} boeken hersteld.",
+      "done": "{applied} boeken hersteld.",
+      "someFailed": "{failed} boeken konden niet worden hersteld."
     }
   },
   "AppSidebar": {
