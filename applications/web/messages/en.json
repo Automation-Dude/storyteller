@@ -308,6 +308,31 @@
       }
     }
   },
+  "LibraryAuditPage": {
+    "title": "Library audit",
+    "heading": "Library audit",
+    "subheading": "Books an e-reader shelf shows badly: a missing, blank or tiny cover, a missing author, language or description, or a filename-like title.",
+    "rescan": "Rescan",
+    "scanning": "Scanning every book's cover and metadata. This can take a moment on a large library.",
+    "errorTitle": "Could not run the audit",
+    "errorBody": "Something went wrong reading the library. Try rescanning.",
+    "allClearTitle": "Everything looks good",
+    "allClearBody": "Every book has a real cover, an author, a language, a description and a proper title.",
+    "flaggedLabel": "Books flagged",
+    "colTitle": "Title",
+    "colAuthor": "Author",
+    "colIssues": "Issues",
+    "noAuthorCell": "No author",
+    "issues": {
+      "NO-COVER": "No cover",
+      "BLANK-COVER": "Blank cover",
+      "TINY-COVER": "Tiny cover",
+      "BAD-TITLE": "Filename title",
+      "NO-AUTHOR": "No author",
+      "NO-LANG": "No language",
+      "NO-DESC": "No description"
+    }
+  },
   "AppSidebar": {
     "home": "Home",
     "books": "Books",
@@ -315,6 +340,7 @@
     "collections": "Collections",
     "allCollections": "All collections",
     "series": "Series",
+    "libraryAudit": "Library audit",
     "search": "Search",
     "settings": "Settings",
     "documentation": "Documentation",

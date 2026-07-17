@@ -3,6 +3,7 @@
 import {
   IconBook2,
   IconBook,
+  IconClipboardCheck,
   IconHelpCircle,
   IconHome,
   IconList,
@@ -174,6 +175,16 @@ export function AppSidebar({
         url: "/series",
         icon: IconList,
       },
+      // Admin-only: a whole-library scan, not per-user data.
+      ...(user.permissions?.settingsUpdate
+        ? [
+            {
+              title: t("libraryAudit"),
+              url: "/library-audit",
+              icon: IconClipboardCheck,
+            },
+          ]
+        : []),
     ]
 
   const navSecondary: NavSecondaryItem[] = [

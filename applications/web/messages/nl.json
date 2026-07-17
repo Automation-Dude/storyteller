@@ -300,6 +300,31 @@
       }
     }
   },
+  "LibraryAuditPage": {
+    "title": "Bibliotheekcontrole",
+    "heading": "Bibliotheekcontrole",
+    "subheading": "Boeken die een e-reader slecht toont: een ontbrekende, lege of te kleine omslag, een ontbrekende auteur, taal of beschrijving, of een titel die op een bestandsnaam lijkt.",
+    "rescan": "Opnieuw scannen",
+    "scanning": "Elke omslag en metadata wordt gescand. Bij een grote bibliotheek kan dit even duren.",
+    "errorTitle": "Controle kon niet worden uitgevoerd",
+    "errorBody": "Er ging iets mis bij het lezen van de bibliotheek. Probeer opnieuw te scannen.",
+    "allClearTitle": "Alles ziet er goed uit",
+    "allClearBody": "Elk boek heeft een echte omslag, een auteur, een taal, een beschrijving en een nette titel.",
+    "flaggedLabel": "Gemarkeerde boeken",
+    "colTitle": "Titel",
+    "colAuthor": "Auteur",
+    "colIssues": "Problemen",
+    "noAuthorCell": "Geen auteur",
+    "issues": {
+      "NO-COVER": "Geen omslag",
+      "BLANK-COVER": "Lege omslag",
+      "TINY-COVER": "Te kleine omslag",
+      "BAD-TITLE": "Bestandsnaamtitel",
+      "NO-AUTHOR": "Geen auteur",
+      "NO-LANG": "Geen taal",
+      "NO-DESC": "Geen beschrijving"
+    }
+  },
   "AppSidebar": {
     "home": "Start",
     "books": "Boeken",
@@ -307,6 +332,7 @@
     "collections": "Verzamelingen",
     "allCollections": "Alle verzamelingen",
     "series": "Series",
+    "libraryAudit": "Bibliotheekcontrole",
     "search": "Zoeken",
     "settings": "Instellingen",
     "documentation": "Documentatie",

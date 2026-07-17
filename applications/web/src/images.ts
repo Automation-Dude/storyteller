@@ -19,6 +19,26 @@ export function optimizedContentType(inputContentType: string): string {
   return inputContentType === GIF ? PNG : inputContentType
 }
 
+/**
+ * Size and busy-ness of an image, for telling a real cover from a blank one.
+ *
+ * `entropy` is near zero for a solid or near-solid image and rises with detail,
+ * so a very low value is a strong sign the "cover" is blank. Width and height
+ * catch the covers that are really postage-stamp thumbnails.
+ */
+export async function imageStats(
+  buffer: Buffer,
+): Promise<{ width: number; height: number; entropy: number }> {
+  const sharp = await getSharp()
+  const image = sharp(buffer)
+  const [meta, stats] = await Promise.all([image.metadata(), image.stats()])
+  return {
+    width: meta.width,
+    height: meta.height,
+    entropy: stats.entropy,
+  }
+}
+
 async function getSharp() {
   if (_sharp) {
     return _sharp

@@ -9,6 +9,7 @@ import {
   type User,
 } from "@/apiModels"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
+import { type LibraryAudit } from "@/database/auditLibrary"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
@@ -69,6 +70,7 @@ export const api = createApi({
     "UserSettings",
     "Identifiers",
     "BookIdentifiers",
+    "LibraryAudit",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -673,6 +675,10 @@ export const api = createApi({
           id: collection.uuid,
         })) ?? [{ type: "Collections" }],
     }),
+    getLibraryAudit: build.query<LibraryAudit, void>({
+      query: () => "/library-audit",
+      providesTags: ["LibraryAudit"],
+    }),
     deleteCollection: build.mutation<void, { uuid: UUID }>({
       query: ({ uuid }) => ({
         url: `/collections/${uuid}`,
@@ -1007,6 +1013,7 @@ export const {
   useListCreatorsQuery,
   useListBooksQuery,
   useListCollectionsQuery,
+  useGetLibraryAuditQuery,
   useListInvitesQuery,
   useListSeriesQuery,
   useListStatusesQuery,

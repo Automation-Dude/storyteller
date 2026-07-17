@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises"
 
 import { getExtractedCover } from "@/assets/covers"
+import { imageStats } from "@/images"
 import { logger } from "@/logging"
+import { type UUID } from "@/uuid"
 
 import { getBooks } from "./books"
 
@@ -24,7 +26,38 @@ import { getBooks } from "./books"
  * exact path getExtractedCover would look in, so the two agree.
  */
 
-type Issue = "NO-COVER" | "NO-AUTHOR" | "NO-LANG" | "NO-DESC" | "BAD-TITLE"
+/** The problems the audit reports, in the order it lists them. */
+export const AUDIT_ISSUES = [
+  "NO-COVER",
+  "BLANK-COVER",
+  "TINY-COVER",
+  "NO-AUTHOR",
+  "NO-LANG",
+  "NO-DESC",
+  "BAD-TITLE",
+] as const
+
+export type AuditIssue = (typeof AUDIT_ISSUES)[number]
+
+export type AuditBook = {
+  uuid: UUID
+  title: string
+  authors: string[]
+  issues: AuditIssue[]
+}
+
+export type LibraryAudit = {
+  total: number
+  flagged: number
+  counts: Record<AuditIssue, number>
+  books: AuditBook[]
+}
+
+// A cover this near a solid colour is blank in all but name; a cover this small
+// is a thumbnail, not artwork. Tuned against the actual library (e.g. Wicked at
+// entropy 0.31, Watership Down at 38x54).
+const BLANK_COVER_ENTROPY = 1.5
+const TINY_COVER_PX = 200
 
 const PLACEHOLDER_TITLES = new Set(["unknown", "untitled", "unknown title"])
 
@@ -68,43 +101,73 @@ async function loadCoverSet(path: string): Promise<Set<string>> {
   )
 }
 
-export async function auditLibrary() {
+export async function auditLibrary(): Promise<LibraryAudit> {
   const coversFile = process.env["COVERS_PRESENT_FILE"]
   const coverSet = coversFile ? await loadCoverSet(coversFile) : null
 
   const books = await getBooks()
 
-  async function hasCover(book: (typeof books)[number]): Promise<boolean> {
-    if (coverSet) return !!book.assetDir && coverSet.has(book.assetDir)
-    // In-environment: ask the same function the Kobo cover route asks.
-    const ebook = await getExtractedCover(book, "ebook")
-    if (ebook) return true
-    return !!(await getExtractedCover(book, "audiobook"))
+  /**
+   * Cover problems for a book, checking ebook then audiobook, so a book with a
+   * cover in either place is never called blank.
+   *
+   * Off-box (COVERS_PRESENT_FILE) we only know presence, not quality. In the
+   * real environment we read the same cover the app serves and measure it.
+   */
+  async function coverIssues(
+    book: (typeof books)[number],
+  ): Promise<AuditIssue[]> {
+    if (coverSet) {
+      return book.assetDir && coverSet.has(book.assetDir) ? [] : ["NO-COVER"]
+    }
+    const cover =
+      (await getExtractedCover(book, "ebook")) ??
+      (await getExtractedCover(book, "audiobook"))
+    if (!cover) return ["NO-COVER"]
+
+    try {
+      const { width, height, entropy } = await imageStats(cover.data)
+      const issues: AuditIssue[] = []
+      if (entropy < BLANK_COVER_ENTROPY) issues.push("BLANK-COVER")
+      if (Math.min(width, height) < TINY_COVER_PX) issues.push("TINY-COVER")
+      return issues
+    } catch {
+      // Present but unreadable by sharp: it is still a cover, so do not call it
+      // blank on the strength of not being able to measure it.
+      return []
+    }
   }
 
-  const rows: { issues: Issue[]; title: string; uuid: string }[] = []
-  const counts: Record<Issue, number> = {
-    "NO-COVER": 0,
-    "NO-AUTHOR": 0,
-    "NO-LANG": 0,
-    "NO-DESC": 0,
-    "BAD-TITLE": 0,
-  }
+  const auditBooks: AuditBook[] = []
+  const counts = Object.fromEntries(
+    AUDIT_ISSUES.map((issue) => [issue, 0]),
+  ) as Record<AuditIssue, number>
 
   for (const book of books) {
-    const issues: Issue[] = []
+    const issues: AuditIssue[] = [...(await coverIssues(book))]
 
-    if (!(await hasCover(book))) issues.push("NO-COVER")
     if (book.authors.length === 0) issues.push("NO-AUTHOR")
     if (!book.language || !book.language.trim()) issues.push("NO-LANG")
     if (!book.description || !book.description.trim()) issues.push("NO-DESC")
     if (titleIsBad(book.title)) issues.push("BAD-TITLE")
 
     for (const issue of issues) counts[issue]++
-    if (issues.length) rows.push({ issues, title: book.title, uuid: book.uuid })
+    if (issues.length) {
+      auditBooks.push({
+        uuid: book.uuid,
+        title: book.title,
+        authors: book.authors.map((author) => author.name),
+        issues,
+      })
+    }
   }
 
-  return { total: books.length, counts, rows }
+  return {
+    total: books.length,
+    flagged: auditBooks.length,
+    counts,
+    books: auditBooks,
+  }
 }
 
 function pad(s: string, n: number): string {
@@ -112,35 +175,29 @@ function pad(s: string, n: number): string {
 }
 
 export async function main() {
-  const { total, counts, rows } = await auditLibrary()
+  const { total, flagged, counts, books } = await auditLibrary()
 
   const lines: string[] = []
   lines.push(
     "================= STORYTELLER METADATA AUDIT =====================",
   )
   lines.push(`books total          : ${total}`)
-  lines.push(`books with any issue : ${rows.length}`)
+  lines.push(`books with any issue : ${flagged}`)
   lines.push(
     "-----------------------------------------------------------------",
   )
-  for (const issue of [
-    "NO-COVER",
-    "NO-AUTHOR",
-    "NO-LANG",
-    "NO-DESC",
-    "BAD-TITLE",
-  ] as const) {
-    lines.push(`${pad(issue, 10)} : ${counts[issue]}`)
+  for (const issue of AUDIT_ISSUES) {
+    lines.push(`${pad(issue, 11)} : ${counts[issue]}`)
   }
   lines.push(
     "============== worst first (issues | title) =====================",
   )
-  rows
+  books
     .slice()
     .sort((a, b) => b.issues.length - a.issues.length)
     .slice(0, 60)
-    .forEach((r) => {
-      lines.push(`${pad(r.issues.join(" "), 34)} | ${r.title.slice(0, 52)}`)
+    .forEach((b) => {
+      lines.push(`${pad(b.issues.join(" "), 40)} | ${b.title.slice(0, 46)}`)
     })
   lines.push(
     "=================================================================",
@@ -149,13 +206,12 @@ export async function main() {
   // eslint-disable-next-line no-console
   console.log(lines.join("\n"))
 
-  // The full list as TSV on stderr, so stdout stays the readable summary.
-  for (const r of rows) {
+  for (const b of books) {
     logger.info({
       msg: "audit",
-      issues: r.issues.join(" "),
-      title: r.title,
-      uuid: r.uuid,
+      issues: b.issues.join(" "),
+      title: b.title,
+      uuid: b.uuid,
     })
   }
 }

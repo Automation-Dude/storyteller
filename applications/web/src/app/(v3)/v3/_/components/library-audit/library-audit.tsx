@@ -1,0 +1,212 @@
+"use client"
+
+import { IconRefresh } from "@tabler/icons-react"
+import { useTranslations } from "next-intl"
+
+import {
+  type AuditIssue,
+  type LibraryAudit as AuditData,
+} from "@/database/auditLibrary"
+import { useGetLibraryAuditQuery } from "@/store/api"
+
+import { Badge } from "@v3/_/components/ui/badge"
+import { Button } from "@v3/_/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@v3/_/components/ui/card"
+import { Skeleton } from "@v3/_/components/ui/skeleton"
+
+/**
+ * The issues in the order they are shown, with how loud each one should look.
+ * A missing or blank cover and a filename title are the ones that make a shelf
+ * look broken, so they are "destructive"; a missing language or description is
+ * real but quieter.
+ */
+const ISSUE_ORDER: {
+  issue: AuditIssue
+  variant: "destructive" | "secondary" | "outline"
+}[] = [
+  { issue: "NO-COVER", variant: "destructive" },
+  { issue: "BLANK-COVER", variant: "destructive" },
+  { issue: "TINY-COVER", variant: "outline" },
+  { issue: "BAD-TITLE", variant: "destructive" },
+  { issue: "NO-AUTHOR", variant: "destructive" },
+  { issue: "NO-LANG", variant: "secondary" },
+  { issue: "NO-DESC", variant: "secondary" },
+]
+
+const VARIANT_OF = new Map(ISSUE_ORDER.map((i) => [i.issue, i.variant]))
+
+export function LibraryAudit() {
+  const t = useTranslations("LibraryAuditPage")
+  const { data, isFetching, isError, refetch } = useGetLibraryAuditQuery()
+
+  const label = (issue: AuditIssue) => t(`issues.${issue}`)
+
+  return (
+    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("heading")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {t("subheading")}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+        >
+          <IconRefresh className={isFetching ? "animate-spin" : undefined} />
+          {t("rescan")}
+        </Button>
+      </div>
+
+      {isError ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("errorTitle")}</CardTitle>
+            <CardDescription>{t("errorBody")}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : isFetching && !data ? (
+        <ScanningState message={t("scanning")} />
+      ) : data ? (
+        <>
+          <SummaryCards data={data} label={label} />
+          {data.books.length === 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("allClearTitle")}</CardTitle>
+                <CardDescription>{t("allClearBody")}</CardDescription>
+              </CardHeader>
+            </Card>
+          ) : (
+            <FlaggedTable data={data} label={label} t={t} />
+          )}
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function ScanningState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-muted-foreground text-sm">{message}</p>
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full rounded-md" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SummaryCards({
+  data,
+  label,
+}: {
+  data: AuditData
+  label: (issue: AuditIssue) => string
+}) {
+  const t = useTranslations("LibraryAuditPage")
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <Card className="bg-muted/40">
+        <CardHeader className="gap-1 py-4">
+          <CardDescription>{t("flaggedLabel")}</CardDescription>
+          <CardTitle className="text-2xl">
+            {data.flagged}
+            <span className="text-muted-foreground ml-1 text-base font-normal">
+              / {data.total}
+            </span>
+          </CardTitle>
+        </CardHeader>
+      </Card>
+      {ISSUE_ORDER.filter(({ issue }) => data.counts[issue] > 0).map(
+        ({ issue }) => (
+          <Card key={issue}>
+            <CardHeader className="gap-1 py-4">
+              <CardDescription>{label(issue)}</CardDescription>
+              <CardTitle className="text-2xl">{data.counts[issue]}</CardTitle>
+            </CardHeader>
+          </Card>
+        ),
+      )}
+    </div>
+  )
+}
+
+function FlaggedTable({
+  data,
+  label,
+  t,
+}: {
+  data: AuditData
+  label: (issue: AuditIssue) => string
+  t: ReturnType<typeof useTranslations>
+}) {
+  // Sort the most-broken books to the top: they are the ones worth fixing first.
+  const books = data.books
+    .slice()
+    .sort((a, b) => b.issues.length - a.issues.length)
+
+  return (
+    <Card className="overflow-hidden py-0">
+      <CardContent className="px-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-muted-foreground border-b text-left">
+                <th className="px-4 py-3 font-medium">{t("colTitle")}</th>
+                <th className="hidden px-4 py-3 font-medium sm:table-cell">
+                  {t("colAuthor")}
+                </th>
+                <th className="px-4 py-3 font-medium">{t("colIssues")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {books.map((book) => (
+                <tr
+                  key={book.uuid}
+                  className="hover:bg-muted/40 border-b last:border-0"
+                >
+                  <td className="max-w-[24rem] px-4 py-3">
+                    <span className="line-clamp-2 font-medium">
+                      {book.title}
+                    </span>
+                  </td>
+                  <td className="text-muted-foreground hidden px-4 py-3 sm:table-cell">
+                    {book.authors.length ? (
+                      book.authors.join(", ")
+                    ) : (
+                      <span className="italic">{t("noAuthorCell")}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {book.issues.map((issue) => (
+                        <Badge
+                          key={issue}
+                          variant={VARIANT_OF.get(issue) ?? "secondary"}
+                        >
+                          {label(issue)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
