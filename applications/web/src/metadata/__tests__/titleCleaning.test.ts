@@ -1,0 +1,114 @@
+import assert from "node:assert"
+import { describe, it } from "node:test"
+
+import {
+  authorsMatch,
+  normalizeForSearch,
+  scoreMatch,
+  titleSimilarity,
+} from "@/metadata/titleCleaning"
+
+void describe("normalizeForSearch", () => {
+  void it("strips ingestion junk to a searchable title", () => {
+    const cases: [string, string][] = [
+      ["02 - Dune - Frank Herbert - 1965", "Dune Frank Herbert"],
+      ["DP19 - Treasure of Khan", "Treasure of Khan"],
+      ["18 - Sharpe's Siege", "Sharpe's Siege"],
+      ["08 Executive Orders", "Executive Orders"],
+      ["The Hobbit (Disc 01)", "The Hobbit"],
+      ["The road [A85UyqsZ]", "The road"],
+      ["2. Winter of the World", "Winter of the World"],
+    ]
+    for (const [raw, expected] of cases) {
+      assert.strictEqual(normalizeForSearch(raw), expected, raw)
+    }
+  })
+
+  void it("keeps a numeric title that is the whole title", () => {
+    // The junk filters must never eat the title itself.
+    assert.strictEqual(normalizeForSearch("1984"), "1984")
+    assert.strictEqual(
+      normalizeForSearch("2001: A Space Odyssey"),
+      "2001: A Space Odyssey",
+    )
+  })
+
+  void it("drops a year only when it is set off, not when it is the title", () => {
+    assert.strictEqual(normalizeForSearch("Book (1965)"), "Book")
+    assert.strictEqual(normalizeForSearch("1984"), "1984")
+  })
+})
+
+void describe("titleSimilarity", () => {
+  void it("is 1 for the same title regardless of case, punctuation, articles", () => {
+    assert.strictEqual(titleSimilarity("The Road", "the road"), 1)
+    assert.strictEqual(titleSimilarity("Wicked", "wicked!"), 1)
+  })
+
+  void it("is low for unrelated titles", () => {
+    assert.ok(titleSimilarity("Dune", "Executive Orders") < 0.2)
+  })
+})
+
+void describe("authorsMatch", () => {
+  void it("matches on a shared surname", () => {
+    assert.ok(authorsMatch("Cornwell", "Bernard Cornwell"))
+    assert.ok(authorsMatch("Frank Herbert", "Herbert, Frank"))
+  })
+
+  void it("does not match different authors", () => {
+    assert.ok(!authorsMatch("Frank Herbert", "Tom Clancy"))
+    assert.ok(!authorsMatch("Top 100 Sci-Fi Books", "Frank Herbert"))
+  })
+})
+
+void describe("scoreMatch", () => {
+  void it("scores an exact title + author near the top", () => {
+    const score = scoreMatch(
+      { title: "Wicked", authorNames: ["Gregory Maguire"], editionCount: 54 },
+      "Wicked",
+      "Gregory Maguire",
+    )
+    assert.ok(score > 0.9, `expected > 0.9, got ${score}`)
+  })
+
+  void it("pushes down a study guide / adaptation of the right title", () => {
+    const real = scoreMatch(
+      { title: "1984", authorNames: ["George Orwell"], editionCount: 8 },
+      "1984",
+      "George Orwell",
+    )
+    const adaptation = scoreMatch(
+      {
+        title: "1984 (adaptation)",
+        authorNames: ["Michael Dean", "George Orwell"],
+        editionCount: 4,
+      },
+      "1984",
+      "George Orwell",
+    )
+    assert.ok(
+      real > adaptation,
+      `real ${real} should beat adaptation ${adaptation}`,
+    )
+  })
+
+  void it("still ranks the right book first when the stored author is wrong", () => {
+    // "02 - Dune" carries a bogus author; the real book must still win.
+    const dune = scoreMatch(
+      { title: "Dune", authorNames: ["Frank Herbert"], editionCount: 120 },
+      "Dune Frank Herbert",
+      "Top 100 Sci-Fi Books",
+    )
+    const unrelated = scoreMatch(
+      {
+        title: "Executive Orders",
+        authorNames: ["Tom Clancy"],
+        editionCount: 8,
+      },
+      "Dune Frank Herbert",
+      "Top 100 Sci-Fi Books",
+    )
+    assert.ok(dune > unrelated, `${dune} vs ${unrelated}`)
+  })
+})
