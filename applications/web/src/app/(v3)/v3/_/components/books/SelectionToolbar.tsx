@@ -75,7 +75,7 @@ export function SelectionToolbar({
     <>
       <div
         className={cn(
-          "@container pointer-events-none sticky inset-x-0 bottom-0 z-40 flex w-full justify-center px-2",
+          "@container pointer-events-none fixed bottom-0 z-40 flex w-[100cqw] justify-center px-2",
           className,
         )}
       >
