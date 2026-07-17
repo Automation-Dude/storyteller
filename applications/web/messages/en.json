@@ -73,7 +73,28 @@
       "save": "Save Changes",
       "hideFromHome": "Hide from home",
       "deletePermanently": "Delete shelf permanently",
-      "customShelf": "Custom shelf"
+      "deletePermanentlyDescription": "This will permanently delete this shelf. All books will remain in your library.",
+      "customShelf": "Custom shelf",
+      "sectionMenu": "Section options",
+      "hideSection": "Hide this section",
+      "editShelf": "Edit shelf",
+      "deleteShelf": "Delete shelf"
+    },
+    "getStarted": {
+      "title": "Get started",
+      "description": "Add books to your library and organize them into shelves.",
+      "uploadBook": "Upload a book",
+      "importBook": "Import a book",
+      "createShelf": "Create a shelf",
+      "importSettings": "Setup import rules",
+      "dismiss": "Dismiss",
+      "farewell": {
+        "title": "Good luck!",
+        "body": "You can add this section back by clicking the customize icon in the top right of this page again."
+      }
+    },
+    "addSection": {
+      "label": "Add a section or shelf"
     },
     "kinds": {
       "hero": {
@@ -99,6 +120,14 @@
       "custom": {
         "name": "Custom Shelf",
         "description": "Custom shelf"
+      },
+      "getStarted": {
+        "name": "Get Started",
+        "description": "Quick actions to add books and shelves"
+      },
+      "addSection": {
+        "name": "Add Section",
+        "description": "A button to add a new section or shelf"
       }
     }
   },

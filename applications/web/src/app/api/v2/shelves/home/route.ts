@@ -4,8 +4,8 @@ import { withHasPermission } from "@/auth/auth"
 import {
   type HomeSectionInput,
   addHomeSection,
+  ensureHomeSectionDefaults,
   getHomeSections,
-  initializeDefaultHomeSections,
   setHomeSections,
 } from "@/database/shelves"
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic"
 
 export const GET = withHasPermission("bookList")(async (request) => {
   const user = request.auth.user
-  await initializeDefaultHomeSections(user.id)
+  await ensureHomeSectionDefaults(user.id)
   const sections = await getHomeSections(user.id)
 
   return NextResponse.json(sections)

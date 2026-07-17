@@ -48,6 +48,8 @@ export function NavUser({
               <SidebarMenuButton
                 size="default"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-1!"
+                style={{ scrollbarWidth: "none" }}
+                aria-label={t("account")}
               >
                 <div className="grid w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden data-[state=open]:w-auto">
                   <span className="truncate font-medium">{displayName}</span>

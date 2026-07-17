@@ -163,9 +163,6 @@ export function EditableText({
           },
         }
 
-        // inline edit lives inside the floating chrome card, which supplies the
-        // frame -- so the input drops its box for a dashed underline. global edit
-        // keeps the boxed, in-flow look.
         const inputClassName = inlineMode
           ? cn(
               "border-input focus-visible:border-ring aria-invalid:border-destructive w-full border-0 border-b border-dashed bg-transparent px-0 py-0.5 outline-none",
@@ -224,8 +221,6 @@ export function EditableText({
         // single-field inline edit wears its own chrome.
         if (!inlineMode) return editor
 
-        // reserve the field's original footprint so the floating card can overlay
-        // it (and the content below) without shifting the layout.
         return (
           <InlineFieldChrome name={name} size={size}>
             {editor}

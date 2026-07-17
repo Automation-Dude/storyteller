@@ -31,7 +31,7 @@ export function InlineEditChrome({
   return (
     <div
       className={cn(
-        "border-border bg-background z-50 flex overflow-hidden rounded-xl border shadow-lg",
+        "tint-surface border-border bg-background z-50 flex overflow-hidden rounded-xl border shadow-lg",
         floating ? "absolute top-0 left-0 min-w-full" : "w-full",
         className,
       )}

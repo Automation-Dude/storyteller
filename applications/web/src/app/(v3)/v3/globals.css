@@ -182,7 +182,12 @@
   --secondary: oklch(0.96 0.008 58);
   --secondary-foreground: oklch(0.21 0.006 50);
   --muted: oklch(0.965 0.008 58);
-  --muted-foreground: oklch(0.553 0.013 58.071);
+  --muted-foreground: oklch(0.5 0.0119 58.04);
+  /* immutable copies of the base text tokens, captured once at the theme root so
+     opaque surfaces layered over a tinted hero can restore them (the hero
+     overrides --foreground / --muted-foreground for text drawn on the tint) */
+  --base-foreground: var(--foreground);
+  --base-muted-foreground: var(--muted-foreground);
   --accent: oklch(0.965 0.008 58);
   --accent-foreground: oklch(0.216 0.006 56.043);
   --destructive: oklch(0.577 0.245 27.325);
@@ -296,6 +301,8 @@
   --secondary-foreground: oklch(0.985 0.005 60);
   --muted: oklch(0.269 0.008 50);
   --muted-foreground: oklch(0.708 0.008 55);
+  --base-foreground: var(--foreground);
+  --base-muted-foreground: var(--muted-foreground);
   --accent: oklch(0.371 0.01 50);
   --accent-foreground: oklch(0.985 0.005 60);
   --destructive: oklch(0.704 0.191 22.216);

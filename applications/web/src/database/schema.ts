@@ -247,6 +247,8 @@ export interface HomeSection {
     | "nextUpInSeries"
     | "recentlyAdded"
     | "custom"
+    | "getStarted"
+    | "addSection"
   >
   position: number
   shelfUuid: import("@/uuid").UUID | null

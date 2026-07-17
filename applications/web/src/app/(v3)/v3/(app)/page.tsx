@@ -1,9 +1,7 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 
-import { SiteHeader } from "@v3/_/components/site-header"
-
-import { HomeSections, HomeSectionsActions } from "./HomeSections"
+import { HomePage } from "./HomePage"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("HomePage")
@@ -13,14 +11,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function Index() {
-  return (
-    <div className="scroll-y relative">
-      <SiteHeader
-        breadcrumbs={[]}
-        actions={<HomeSectionsActions />}
-        className="bg-transparent"
-      />
-      <HomeSections />
-    </div>
-  )
+  return <HomePage />
 }

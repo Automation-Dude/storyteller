@@ -94,6 +94,7 @@ export function LanguageEdit() {
         }}
         className={cn(
           SEAMLESS_BOX,
+          "py-0",
           "block w-fit border-transparent text-left text-sm",
           "hover:border-input hover:bg-input/10 cursor-pointer",
           !language && "text-muted-foreground italic",

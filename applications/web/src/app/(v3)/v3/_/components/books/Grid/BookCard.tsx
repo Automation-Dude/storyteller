@@ -84,7 +84,7 @@ export function SecondaryText({
   const locale = useLocale()
   const formatDuration = useFormatDuration()
 
-  const none = <span className="text-muted-foreground/80">{"\u2014"}</span>
+  const none = <span className="text-muted-foreground">{"\u2014"}</span>
 
   switch (field) {
     case "userRating":
@@ -252,7 +252,7 @@ export function CreatorsLine({
   const linkBase = CREATOR_LINK_BASE[field]
 
   return (
-    <p className="text-muted-foreground/80 line-clamp-1 text-xs">
+    <p className="text-muted-foreground line-clamp-1 text-xs">
       {visible.map((person, index) => (
         <Fragment key={person.uuid}>
           {linkBase ? (
@@ -426,7 +426,7 @@ export const BookCard = memo(function BookCard({
             return (
               <p
                 key={row.join("+")}
-                className="text-muted-foreground/80 line-clamp-1 text-xs tabular-nums"
+                className="text-muted-foreground line-clamp-1 text-xs tabular-nums"
               >
                 {row.map((f, i) => (
                   <Fragment key={f}>

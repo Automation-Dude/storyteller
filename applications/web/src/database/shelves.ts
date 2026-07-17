@@ -409,6 +409,19 @@ export async function removeHomeSection(uuid: UUID, userId: UUID) {
     .execute()
 }
 
+export async function setHomeSectionEnabled(
+  uuid: UUID,
+  userId: UUID,
+  enabled: boolean,
+) {
+  await db
+    .updateTable("homeSection")
+    .set({ enabled: enabled ? 1 : 0 })
+    .where("uuid", "=", uuid)
+    .where("userId", "=", userId)
+    .execute()
+}
+
 export async function reorderHomeSections(userId: UUID, uuids: UUID[]) {
   await db.transaction().execute(async (tr) => {
     for (let i = 0; i < uuids.length; i++) {
@@ -423,21 +436,41 @@ export async function reorderHomeSections(userId: UUID, uuids: UUID[]) {
   })
 }
 
-export async function initializeDefaultHomeSections(userId: UUID) {
+// the full set a brand-new user starts with. getStarted leads so an empty
+// library sees a call to action (the content shelves below self-hide when
+// empty); addSection always trails as the "add a section/shelf" footer.
+const DEFAULT_HOME_SECTIONS: HomeSectionInput[] = [
+  { kind: "getStarted" },
+  { kind: "hero" },
+  { kind: "stats" },
+  { kind: "currentlyReading" },
+  { kind: "recentlyAdded" },
+  { kind: "addSection" },
+]
+
+// always-on builtins that must appear even for users whose rows predate them.
+// reconciled on read (never re-added once a row exists, hidden or not), same
+// guarantee as the sidebar's ensureSidebarDefaults.
+const RECONCILABLE_BUILTINS: HomeSectionKind[] = ["getStarted", "addSection"]
+
+export async function ensureHomeSectionDefaults(userId: UUID) {
   const existing = await db
     .selectFrom("homeSection")
-    .select(["uuid"])
+    .select(["kind"])
     .where("userId", "=", userId)
-    .executeTakeFirst()
+    .execute()
 
-  if (existing) return
+  if (existing.length === 0) {
+    await setHomeSections(userId, DEFAULT_HOME_SECTIONS)
+    return
+  }
 
-  await setHomeSections(userId, [
-    { kind: "hero" },
-    { kind: "stats" },
-    { kind: "currentlyReading" },
-    { kind: "recentlyAdded" },
-  ])
+  const existingKinds = new Set(existing.map((row) => row.kind))
+  const missing = RECONCILABLE_BUILTINS.filter((k) => !existingKinds.has(k))
+
+  for (const kind of missing) {
+    await addHomeSection(userId, { kind })
+  }
 }
 
 // ---------------------------------------------------------------------------

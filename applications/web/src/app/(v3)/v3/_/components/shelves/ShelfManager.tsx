@@ -32,11 +32,10 @@ import {
 import { type UUID } from "@/uuid"
 
 import { ShelfEditor } from "./ShelfEditor"
+import { ConfirmDialog, useConfirmAction } from "../ui/confirm-dialog"
 
 type ShelfManagerProps = {
   className?: string
-  // override the default trigger button (e.g. when opening the home customizer
-  // from another menu). nativeButton must stay false for non-button triggers.
   trigger?: ReactElement
 }
 
@@ -81,6 +80,7 @@ type LocalHomeShelf = {
   shelfUuid: UUID | null
   kind: HomeSectionKind
   name: string | null
+  enabled: boolean
   isNew?: boolean
 }
 
@@ -91,6 +91,8 @@ const BUILT_IN_KINDS: HomeSectionKind[] = [
   "currentlyReading",
   "nextUpInSeries",
   "recentlyAdded",
+  "getStarted",
+  "addSection",
 ]
 
 function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
@@ -109,6 +111,8 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   const [shelfEditorOpen, setShelfEditorOpen] = useState(false)
   const [editingShelf, setEditingShelf] = useState<ShelfWithBooks | null>(null)
 
+  // the full ordered list, enabled + disabled (hidden). disabled rows are kept
+  // so hiding stays reversible; they surface in the "hidden" collapsible below.
   const shelves: LocalHomeShelf[] =
     localShelves ??
     (homeShelves ?? []).map((hs) => ({
@@ -116,46 +120,65 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
       shelfUuid: hs.shelfUuid,
       kind: hs.kind,
       name: hs.name ?? t(`kinds.${hs.kind}.name`),
+      enabled: hs.enabled,
     }))
 
-  const shownBuiltInTypes = shelves
+  const shownShelves = shelves.filter((s) => s.enabled)
+  const disabledShelves = shelves.filter((s) => !s.enabled)
+
+  const presentBuiltInTypes = shelves
     .filter((s) => s.kind !== "custom")
     .map((s) => s.kind)
 
-  const shownCustomShelfUuids = shelves
+  const presentCustomShelfUuids = shelves
     .filter(
       (s): s is LocalHomeShelf & { shelfUuid: string; kind: "custom" } =>
         s.kind === "custom" && !!s.shelfUuid,
     )
     .map((s) => s.shelfUuid)
 
+  // built-in kinds / custom shelves that have no row at all (vs disabledShelves
+  // which have a row but are toggled off).
   const hiddenBuiltInTypes = BUILT_IN_KINDS.filter(
-    (t) => !shownBuiltInTypes.includes(t),
+    (t) => !presentBuiltInTypes.includes(t),
   )
 
   const hiddenCustomShelves = userShelves.filter(
-    (s: ShelfWithBooks) => !shownCustomShelfUuids.includes(s.uuid),
+    (s: ShelfWithBooks) => !presentCustomShelfUuids.includes(s.uuid),
   )
 
   const hasHiddenShelves =
-    hiddenBuiltInTypes.length > 0 || hiddenCustomShelves.length > 0
+    disabledShelves.length > 0 ||
+    hiddenBuiltInTypes.length > 0 ||
+    hiddenCustomShelves.length > 0
+
+  // reorder only touches the shown list; disabled rows trail on save.
+  const commitShown = (nextShown: LocalHomeShelf[]) => {
+    setLocalShelves([...nextShown, ...disabledShelves])
+  }
 
   const moveShelf = (index: number, direction: "up" | "down") => {
     const newIndex = direction === "up" ? index - 1 : index + 1
 
-    if (newIndex < 0 || newIndex >= shelves.length) return
+    if (newIndex < 0 || newIndex >= shownShelves.length) return
 
-    const newShelves = [...shelves]
-    const [moved] = newShelves.splice(index, 1)
+    const newShown = [...shownShelves]
+    const [moved] = newShown.splice(index, 1)
     if (!moved) return
 
-    newShelves.splice(newIndex, 0, moved)
-    setLocalShelves(newShelves)
+    newShown.splice(newIndex, 0, moved)
+    commitShown(newShown)
+  }
+
+  const setEnabled = (uuid: string, enabled: boolean) => {
+    setLocalShelves(
+      shelves.map((s) => (s.uuid === uuid ? { ...s, enabled } : s)),
+    )
   }
 
   const hideShelf = (uuid: string) => {
-    if (shelves.length <= 1) return
-    setLocalShelves(shelves.filter((s) => s.uuid !== uuid))
+    if (shownShelves.length <= 1) return
+    setEnabled(uuid, false)
   }
 
   const showBuiltInShelf = (kind: HomeSectionKind) => {
@@ -166,6 +189,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         shelfUuid: null,
         kind,
         name: t(`kinds.${kind}.name`),
+        enabled: true,
       },
     ])
   }
@@ -178,6 +202,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
         shelfUuid: userShelf.uuid,
         kind: "custom",
         name: userShelf.name,
+        enabled: true,
       },
     ])
   }
@@ -191,6 +216,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     const shelvesToSave = shelves.map((shelf) => ({
       shelfUuid: shelf.shelfUuid,
       kind: shelf.kind,
+      enabled: shelf.enabled,
     }))
 
     await setHomeShelves(shelvesToSave).unwrap()
@@ -223,6 +249,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
           shelfUuid: saved.uuid,
           kind: "custom",
           name: saved.name,
+          enabled: true,
         },
       ])
     }
@@ -239,23 +266,23 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
   return (
     <>
       <Reorder.Group
-        values={shelves}
-        onReorder={setLocalShelves}
+        values={shownShelves}
+        onReorder={commitShown}
         className={cn("flex flex-col gap-2")}
       >
-        {shelves.map((shelf, index) => (
+        {shownShelves.map((shelf, index) => (
           <ShelfItem
             key={shelf.uuid}
             shelf={shelf}
             index={index}
-            total={shelves.length}
+            total={shownShelves.length}
             onMove={(dir) => {
               moveShelf(index, dir)
             }}
             onHide={() => {
               hideShelf(shelf.uuid)
             }}
-            canHide={shelves.length > 1}
+            canHide={shownShelves.length > 1}
             {...(shelf.shelfUuid
               ? {
                   onEdit: () => {
@@ -295,7 +322,10 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
                   )}
                 />
                 {t("sections.hidden", {
-                  count: hiddenBuiltInTypes.length + hiddenCustomShelves.length,
+                  count:
+                    disabledShelves.length +
+                    hiddenBuiltInTypes.length +
+                    hiddenCustomShelves.length,
                 })}
               </button>
             }
@@ -303,6 +333,27 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
 
           <CollapsibleContent className="mt-2">
             <div className="flex flex-col gap-2">
+              {disabledShelves.map((shelf) => (
+                <HiddenShelfItem
+                  key={shelf.uuid}
+                  name={shelf.name ?? t(`kinds.${shelf.kind}.name`)}
+                  description={
+                    shelf.kind === "custom"
+                      ? t("sections.customShelf")
+                      : t(`kinds.${shelf.kind}.description`)
+                  }
+                  onShow={() => {
+                    setEnabled(shelf.uuid, true)
+                  }}
+                  {...(shelf.kind === "custom" && shelf.shelfUuid
+                    ? {
+                        onDelete: () =>
+                          handleDeleteCustomShelf(shelf.shelfUuid as UUID),
+                      }
+                    : {})}
+                />
+              ))}
+
               {hiddenBuiltInTypes.map((kind) => (
                 <HiddenShelfItem
                   key={kind}
@@ -477,6 +528,16 @@ function HiddenShelfItem({
   onDelete,
 }: HiddenShelfItemProps) {
   const t = useTranslation("HomePage")
+  const c = useCommon()
+
+  const deleteAction = useConfirmAction({
+    onConfirm: onDelete ?? (() => {}),
+    title: t("sections.deletePermanently"),
+    description: t("sections.deletePermanentlyDescription"),
+    confirmLabel: c("actions.delete"),
+    variant: "destructive",
+  })
+
   return (
     <div className="bg-muted/50 flex items-center gap-2 rounded-lg border p-2">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -490,16 +551,22 @@ function HiddenShelfItem({
       </Button>
 
       {onDelete && (
+        // <ConfirmDialog
+        // {...deleteAction}
+
+        // />
+
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={onDelete}
+          onClick={deleteAction.confirm}
           className="text-destructive hover:text-destructive"
           title={t("sections.deletePermanently")}
         >
           <icon.Trash className="size-4" />
         </Button>
       )}
+      <ConfirmDialog {...deleteAction.dialogProps} />
     </div>
   )
 }

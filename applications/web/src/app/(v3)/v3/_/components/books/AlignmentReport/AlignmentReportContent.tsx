@@ -524,7 +524,7 @@ function Masthead({ view }: { view: BookAlignmentReportView }) {
           <p className="text-muted-foreground dark:text-foreground mt-1.5 max-w-prose text-sm leading-relaxed">
             {verdict.body}
           </p>
-          <p className="text-muted-foreground/80 dark:text-foreground/80 mt-2.5 font-mono text-[11px]">
+          <p className="text-muted-foreground dark:text-foreground/80 mt-2.5 font-mono text-[11px]">
             {t("lastGraded", { date: formatDate(view.createdAt) })}
           </p>
         </div>

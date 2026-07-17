@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { type ReactNode, useMemo, useRef } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -23,9 +23,12 @@ import {
 type ShelfRowProps = {
   shelf: HomeSectionWithDetails
   className?: string | undefined
+  // rendered in the header's right cluster (next to the scroll buttons), used
+  // for the per-section menu.
+  actions?: ReactNode
 }
 
-export function ShelfRow({ shelf, className }: ShelfRowProps) {
+export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
   const t = useTranslation("HomePage")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -87,6 +90,8 @@ export function ShelfRow({ shelf, className }: ShelfRowProps) {
           <Button variant="ghost" size="icon-sm" onClick={scrollRight}>
             <icon.ChevronRight className="size-4" />
           </Button>
+
+          {actions}
         </div>
       </div>
 

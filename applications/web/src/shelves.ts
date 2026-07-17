@@ -585,6 +585,8 @@ export const HomeSectionKind = [
   "nextUpInSeries",
   "recentlyAdded",
   "custom",
+  "getStarted",
+  "addSection",
 ] as const
 
 export type AlignmentGrade = (typeof ALIGNMENT_GRADES)[number]

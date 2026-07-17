@@ -61,7 +61,27 @@
       "save": "Wijzigingen opslaan",
       "hideFromHome": "Verbergen van startpagina",
       "deletePermanently": "Plank permanent verwijderen",
-      "customShelf": "Aangepaste plank"
+      "customShelf": "Aangepaste plank",
+      "sectionMenu": "Sectie-opties",
+      "hideSection": "Deze sectie verbergen",
+      "editShelf": "Plank bewerken",
+      "deleteShelf": "Plank verwijderen"
+    },
+    "getStarted": {
+      "title": "Aan de slag",
+      "description": "Voeg boeken toe aan je bibliotheek en orden ze in planken.",
+      "uploadBook": "Boek uploaden",
+      "importBook": "Boek importeren",
+      "createShelf": "Plank maken",
+      "importSettings": "Importinstellingen",
+      "dismiss": "Sluiten",
+      "farewell": {
+        "title": "Veel succes!",
+        "body": "Je kunt deze sectie weer toevoegen door rechtsboven op deze pagina op het aanpasicoon te klikken."
+      }
+    },
+    "addSection": {
+      "label": "Sectie of plank toevoegen"
     },
     "kinds": {
       "hero": {
@@ -87,6 +107,14 @@
       "custom": {
         "name": "Aangepaste plank",
         "description": "Aangepaste plank"
+      },
+      "getStarted": {
+        "name": "Aan de slag",
+        "description": "Snelle acties om boeken en planken toe te voegen"
+      },
+      "addSection": {
+        "name": "Sectie toevoegen",
+        "description": "Een knop om een nieuwe sectie of plank toe te voegen"
       }
     }
   },

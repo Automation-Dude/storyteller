@@ -1682,6 +1682,17 @@ export const api = createApi({
       invalidatesTags: ["UserSettings"],
     }),
 
+    // generic escape hatch for settings keys outside the typed UserPreferences
+    // schema (onboarding flags etc.); the settings store is a free-form kv.
+    setUserSettingRaw: build.mutation<void, { name: string; value: unknown }>({
+      query: ({ name, value }) => ({
+        url: `/user/settings`,
+        method: "PUT",
+        body: { [name]: value },
+      }),
+      invalidatesTags: ["UserSettings"],
+    }),
+
     listIdentifierTypes: build.query<IdentifierType[], void>({
       query: () => "/identifiers",
       providesTags: (identifiers) =>
@@ -1822,6 +1833,18 @@ export const api = createApi({
         url: "/shelves/home",
         method: "POST",
         body,
+      }),
+      invalidatesTags: ["HomeShelves"],
+    }),
+
+    updateHomeShelf: build.mutation<
+      HomeSectionWithDetails,
+      { uuid: string; enabled: boolean }
+    >({
+      query: ({ uuid, enabled }) => ({
+        url: `/shelves/home/${uuid}`,
+        method: "PATCH",
+        body: { enabled },
       }),
       invalidatesTags: ["HomeShelves"],
     }),
@@ -2265,6 +2288,7 @@ export const {
   useListHomeShelvesQuery,
   useSetHomeShelvesMutation,
   useAddHomeShelfMutation,
+  useUpdateHomeShelfMutation,
   useRemoveHomeShelfMutation,
   useListSidebarGroupsQuery,
   useSetSidebarGroupsMutation,
@@ -2278,6 +2302,7 @@ export const {
   useGetUserSettingsQuery,
   useUpdateUserSettingsMutation,
   useSetUserSettingMutation,
+  useSetUserSettingRawMutation,
   useDismissAnnouncementMutation,
   useCreateTagMutation,
   useUpdateTagMutation,
