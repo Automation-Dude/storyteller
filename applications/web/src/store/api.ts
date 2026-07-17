@@ -9,6 +9,7 @@ import {
   type User,
 } from "@/apiModels"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
+import { type LibraryAudit } from "@/database/auditLibrary"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
@@ -45,6 +46,8 @@ import { type UserSettingValue } from "@/database/userSettings"
 import { type UserPermissionSet } from "@/database/users"
 import { type BookEvent } from "@/events"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
+import { type OpenLibraryCandidate } from "@/metadata/openLibrary"
+import { type RepairChoice, type RepairProposal } from "@/metadata/repair"
 import { type UUID } from "@/uuid"
 
 export const api = createApi({
@@ -69,6 +72,7 @@ export const api = createApi({
     "UserSettings",
     "Identifiers",
     "BookIdentifiers",
+    "LibraryAudit",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -673,6 +677,45 @@ export const api = createApi({
           id: collection.uuid,
         })) ?? [{ type: "Collections" }],
     }),
+    getLibraryAudit: build.query<LibraryAudit, void>({
+      query: () => "/library-audit",
+      providesTags: ["LibraryAudit"],
+    }),
+    suggestRepairs: build.mutation<
+      { proposals: RepairProposal[] },
+      { bookUuids: UUID[] }
+    >({
+      query: ({ bookUuids }) => ({
+        url: "/library-audit/suggest",
+        method: "POST",
+        body: { bookUuids },
+      }),
+    }),
+    applyRepairs: build.mutation<
+      {
+        backupPath: string
+        applied: number
+        failed: number
+        results: { bookUuid: UUID; ok: boolean; message?: string }[]
+      },
+      { repairs: (RepairChoice & { bookUuid: UUID })[] }
+    >({
+      query: ({ repairs }) => ({
+        url: "/library-audit/repair",
+        method: "POST",
+        body: { repairs },
+      }),
+      invalidatesTags: ["LibraryAudit", "Creators", "Authors"],
+    }),
+    searchMetadata: build.query<
+      { candidates: OpenLibraryCandidate[] },
+      { q: string; author?: string }
+    >({
+      query: ({ q, author }) => ({
+        url: "/library-audit/search",
+        params: { q, ...(author ? { author } : {}) },
+      }),
+    }),
     deleteCollection: build.mutation<void, { uuid: UUID }>({
       query: ({ uuid }) => ({
         url: `/collections/${uuid}`,
@@ -1007,6 +1050,11 @@ export const {
   useListCreatorsQuery,
   useListBooksQuery,
   useListCollectionsQuery,
+  useGetLibraryAuditQuery,
+  useSuggestRepairsMutation,
+  useApplyRepairsMutation,
+  useSearchMetadataQuery,
+  useLazySearchMetadataQuery,
   useListInvitesQuery,
   useListSeriesQuery,
   useListStatusesQuery,
