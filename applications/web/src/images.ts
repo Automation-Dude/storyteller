@@ -6,6 +6,18 @@ const AVIF = "image/avif"
 const WEBP = "image/webp"
 const PNG = "image/png"
 const JPEG = "image/jpeg"
+const GIF = "image/gif"
+
+/**
+ * The content type {@link optimizeImage} produces for a given input.
+ *
+ * A GIF is turned into a PNG: some readers (a Kobo among them) will not render
+ * a GIF cover, and an animated one makes no sense as a cover anyway. Everything
+ * else keeps its type.
+ */
+export function optimizedContentType(inputContentType: string): string {
+  return inputContentType === GIF ? PNG : inputContentType
+}
 
 async function getSharp() {
   if (_sharp) {
@@ -64,6 +76,10 @@ export async function optimizeImage({
     transformer.png({ quality })
   } else if (contentType === JPEG) {
     transformer.jpeg({ quality, mozjpeg: true })
+  } else if (contentType === GIF) {
+    // A cover is a still image; take the first frame and encode it as a PNG
+    // so every reader can display it. See optimizedContentType.
+    transformer.png({ quality })
   }
 
   const optimizedBuffer = await transformer.toBuffer()

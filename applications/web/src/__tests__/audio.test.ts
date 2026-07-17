@@ -1,8 +1,13 @@
 import assert from "node:assert"
-import { join } from "node:path"
+import { extname, join } from "node:path"
 import { describe, it } from "node:test"
 
-import { getTrackDuration, isAudioFile } from "@/audio"
+import {
+  COVER_IMAGE_FILE_EXTENSIONS,
+  getTrackDuration,
+  isAudioFile,
+} from "@/audio"
+import { optimizedContentType } from "@/images"
 
 void describe("getTrackInfo", () => {
   void it("can get track duration from an mp3 file", async () => {
@@ -57,5 +62,38 @@ void describe("isAudioFile", () => {
     assert.ok(!isAudioFile("cover.png"))
     assert.ok(!isAudioFile("A Book.epub"))
     assert.ok(!isAudioFile("README.txt"))
+  })
+})
+
+void describe("cover images", () => {
+  void it("recognizes a GIF as a cover, so a GIF-only book is not blank", () => {
+    // A book whose extracted cover is a GIF used to read as having no cover at
+    // all, because this list left GIF out.
+    assert.ok(COVER_IMAGE_FILE_EXTENSIONS.includes(".gif"))
+    assert.ok(COVER_IMAGE_FILE_EXTENSIONS.includes(extname("cover.gif")))
+  })
+
+  void it("still recognizes the ordinary formats", () => {
+    for (const ext of [".jpeg", ".jpg", ".png", ".svg"]) {
+      assert.ok(COVER_IMAGE_FILE_EXTENSIONS.includes(ext), ext)
+    }
+  })
+})
+
+void describe("optimizedContentType", () => {
+  void it("turns a GIF into a PNG, which every reader can show", () => {
+    assert.strictEqual(optimizedContentType("image/gif"), "image/png")
+  })
+
+  void it("leaves every other type alone", () => {
+    for (const type of [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/avif",
+      "image/svg+xml",
+    ]) {
+      assert.strictEqual(optimizedContentType(type), type)
+    }
   })
 })

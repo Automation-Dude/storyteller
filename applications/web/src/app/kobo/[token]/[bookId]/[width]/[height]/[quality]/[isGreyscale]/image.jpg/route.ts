@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 import { getExtractedCover } from "@/assets/covers"
 import { getCachedCoverImage, writeCachedCoverImage } from "@/assets/fs"
 import { type BookWithRelations, getBook } from "@/database/books"
-import { optimizeImage } from "@/images"
+import { optimizeImage, optimizedContentType } from "@/images"
 import { getKoboDeviceByToken } from "@/kobo/devices"
+import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"
@@ -57,13 +58,24 @@ async function coverForDevice(
     if (!cover) continue
     if (!height || !width) return cover
 
-    cover.data = await optimizeImage({
-      buffer: cover.data,
-      height,
-      width,
-      contentType: cover.mimeType,
-    })
-    await writeCachedCoverImage(book.uuid, cacheKind, height, width, cover)
+    try {
+      cover.data = await optimizeImage({
+        buffer: cover.data,
+        height,
+        width,
+        contentType: cover.mimeType,
+      })
+      // A GIF is re-encoded as PNG; keep the type honest so the device is not
+      // told PNG bytes are a GIF (or the reverse).
+      cover.mimeType = optimizedContentType(cover.mimeType)
+      await writeCachedCoverImage(book.uuid, cacheKind, height, width, cover)
+    } catch (error) {
+      // A cover we cannot resize (a format sharp will not decode) is still a
+      // cover: serve the original rather than fall through to no cover at all.
+      logger.warn(
+        `Kobo cover: could not resize ${cover.filename} for ${book.uuid}: ${String(error)}`,
+      )
+    }
     return cover
   }
 
