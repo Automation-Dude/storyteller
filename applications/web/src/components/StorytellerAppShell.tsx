@@ -17,6 +17,7 @@ import { useDisclosure } from "@mantine/hooks"
 import {
   IconBook2,
   IconBooks,
+  IconClipboardCheck,
   IconDeviceLaptop,
   IconDeviceTablet,
   IconHome,
@@ -132,7 +133,10 @@ export function StorytellerAppShell({
         withBorder={false}
         padding="md"
         navbar={{
-          width: 40,
+          // On a phone the nav is a slide-out opened by the burger, so it needs
+          // a real width to show its labels; a 40px sliver looked like nothing
+          // happened. From sm up it is the icon rail that expands on hover.
+          width: { base: 240, sm: 40 },
           breakpoint: "sm",
           collapsed: { mobile: !opened },
         }}
@@ -272,6 +276,16 @@ export function StorytellerAppShell({
                 leftSection={<IconSettings />}
                 label="Settings"
                 active={pathname === "/settings"}
+              />
+            ) : null}
+            {permissions?.settingsUpdate ? (
+              <NavLink
+                onClick={close}
+                component={NextLink}
+                href="/v3/library-audit"
+                leftSection={<IconClipboardCheck />}
+                label="Library audit"
+                active={pathname === "/v3/library-audit"}
               />
             ) : null}
             <NavLink
