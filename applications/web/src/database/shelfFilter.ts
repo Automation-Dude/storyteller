@@ -1114,6 +1114,7 @@ export function buildBookSearchExpression(
         .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
         .where(sql`lower(series.name)`, "like", searchTerm),
     ),
+    eb(sql`lower(book.description)`, "like", searchTerm),
   ])
 }
 

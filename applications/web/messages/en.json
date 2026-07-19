@@ -151,7 +151,7 @@
     "addBook": "Add Book",
     "uploadBook": "Upload Book",
     "importBook": "Import Book from server",
-    "seachBooksPlaceholder": "Search books, authors, series...",
+    "seachBooksPlaceholder": "Search books, authors, series, description...",
     "filters": {
       "filters": "Filters",
       "search": "Search",
