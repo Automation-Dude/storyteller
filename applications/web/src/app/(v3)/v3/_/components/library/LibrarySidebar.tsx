@@ -44,7 +44,7 @@ import * as icon from "@/icons"
 import { type ShelfFilterNode } from "@/shelves"
 import { type UUID } from "@/uuid"
 
-const SIDEBAR_ROW_HEIGHT = 30
+const SIDEBAR_ROW_HEIGHT = 32
 
 export type SidebarSortMode = "name" | "count"
 
@@ -415,7 +415,8 @@ function SidebarItemList({
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => scrollElement,
-    estimateSize: () => SIDEBAR_ROW_HEIGHT,
+    // 1px gap
+    estimateSize: () => SIDEBAR_ROW_HEIGHT + 1,
     overscan: 15,
     scrollMargin,
   })
@@ -598,7 +599,7 @@ function SidebarRow({
 
         {canSelect && (
           <SelectionCheckbox
-            showCheckbox={false}
+            showCheckbox
             checked={isChecked}
             onSelectRange={onSelectRange}
             onToggle={onToggle}
