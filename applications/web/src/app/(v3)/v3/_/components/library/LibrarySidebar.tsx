@@ -114,55 +114,10 @@ export function LibrarySidebar({
   const [menuTarget, setMenuTarget] = useState<FacetValue | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
 
-  const handleMenuOpen = useCallback((open: boolean) => {
-    if (open) {
-      setMenuOpen(true)
-      return
-    }
-
-    setMenuOpen(false)
-    setMenuTarget(null)
-    setMenuAnchor(null)
-  }, [])
-
-  const handleOpenItemMenu = useCallback(
-    (item: FacetValue, anchor: HTMLElement) => {
-      setMenuTarget(item)
-      setMenuAnchor(anchor)
-      setMenuOpen(true)
-    },
-    [],
-  )
-
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editItem, setEditItem] = useState<FacetValue | null>(null)
-
-  const handleEditItem = useCallback((item: FacetValue) => {
-    setEditItem(item)
-    setEditDialogOpen(true)
-  }, [])
-
-  const { canCreate, createLabel } = useCreateEntity(entityType)
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-
-  const { pinShelf } = usePinShelf()
-  const canPin = !!toShelfFilter
-
-  const handlePinItem = useCallback(
-    (item: FacetValue) => {
-      if (!toShelfFilter) return
-      void pinShelf(item.name, toShelfFilter(item.key))
-    },
-    [toShelfFilter, pinShelf],
-  )
-
   const deleteEntity = useDeleteEntity(entityType)
-  console.log("menuTarget", menuTarget)
 
   const handleRowDelete = useCallback(async () => {
-    console.log("handleRowDelete", menuTarget)
     if (!menuTarget) return
-    console.log("deleting entity", menuTarget.key)
     await deleteEntity(menuTarget.key as UUID)
     setMenuOpen(false)
   }, [menuTarget, deleteEntity])
@@ -183,6 +138,53 @@ export function LibrarySidebar({
     confirmLabel: c("actions.delete"),
     variant: "destructive",
   })
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editItem, setEditItem] = useState<FacetValue | null>(null)
+
+  const handleMenuOpen = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setMenuOpen(true)
+        return
+      }
+
+      setMenuOpen(false)
+      setMenuAnchor(null)
+      // otherwise it will not delete item
+      if (rowDeleteAction.dialogProps.open || editDialogOpen) return
+      setMenuTarget(null)
+    },
+    [rowDeleteAction.dialogProps.open, editDialogOpen],
+  )
+
+  const handleOpenItemMenu = useCallback(
+    (item: FacetValue, anchor: HTMLElement) => {
+      setMenuTarget(item)
+      setMenuAnchor(anchor)
+      setMenuOpen(true)
+    },
+    [],
+  )
+
+  const handleEditItem = useCallback((item: FacetValue) => {
+    setEditItem(item)
+    setEditDialogOpen(true)
+  }, [])
+
+  const { canCreate, createLabel } = useCreateEntity(entityType)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+
+  const { pinShelf } = usePinShelf()
+  const canPin = !!toShelfFilter
+
+  const handlePinItem = useCallback(
+    (item: FacetValue) => {
+      if (!toShelfFilter) return
+      void pinShelf(item.name, toShelfFilter(item.key))
+    },
+    [toShelfFilter, pinShelf],
+  )
 
   return (
     <div className="relative h-full">
@@ -249,9 +251,10 @@ export function LibrarySidebar({
           >
             {entityType && menuTarget && (
               <DropdownMenuItem
+                closeOnClick={false}
                 onClick={() => {
                   handleEditItem(menuTarget)
-                  setMenuOpen(false)
+                  // setMenuOpen(false)
                 }}
               >
                 <icon.Edit className="mr-2 h-4 w-4" />
@@ -281,9 +284,10 @@ export function LibrarySidebar({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    closeOnClick={false}
                     onClick={(event) => {
                       rowDeleteAction.confirm(event)
-                      setMenuOpen(false)
+                      // setMenuOpen(false)
                     }}
                     className="text-destructive focus:text-destructive"
                   >

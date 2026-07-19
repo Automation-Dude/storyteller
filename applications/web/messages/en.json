@@ -419,7 +419,9 @@
     "upgradeTitle": "Upgrade EPUB for {count, number} book(s)?",
     "upgradeDescription": "Converts EPUB 2 files to EPUB 3 in place.",
     "upgradeStarted": "EPUB upgrade started",
-    "mergeTitle": "Merge into \"{target}\"?",
+    "mergeTitle": "Merge {target1} + {target2}?",
+    "mergeSuccess": "Books merged successfully",
+    "mergeFailed": "Failed to merge books",
     "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone."
   },
   "ShelfPage": {
