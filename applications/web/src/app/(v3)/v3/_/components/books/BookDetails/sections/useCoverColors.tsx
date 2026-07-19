@@ -227,12 +227,6 @@ export function useHeroContrast(
     if (!hasColors || !showTint) return {}
 
     const surface = isDark ? DARK_SURFACE : LIGHT_SURFACE
-    // the hero paints a cover-header -> cover-well gradient (see the
-    // [data-cover-tint] blocks in globals.css), each stop mixed toward the cover
-    // color and then drawn at a partial alpha over the page. mirror that
-    // compositing rather than a single fudge factor so the flip decision matches
-    // what's actually on screen. header/well fractions and stop alpha track the
-    // css per mode.
     const alpha = isDark ? 0.7 : 0.8
     const headerFrac = Math.min((isDark ? 0.8 : 0.5) * intensity, 0.96)
     const wellFrac = Math.min((isDark ? 0.7 : 0.3) * intensity, 0.96)
@@ -240,7 +234,6 @@ export function useHeroContrast(
       const colorLum = surface + (primary.luminance - surface) * frac
       return surface * (1 - alpha) + colorLum * alpha
     }
-    // content spans the whole gradient, so estimate with the mean of both ends
     const heroLum = (blend(headerFrac) + blend(wellFrac)) / 2
 
     const tinted = ensureContrastAgainst(primary, heroLum)
@@ -249,11 +242,12 @@ export function useHeroContrast(
     return {
       "--tinted-foreground": tinted.solid,
       "--tinted-foreground-strong": heroIsDark ? "#fff" : "#000",
-      // plain body/muted text inside the hero also has to clear the blend
-      "--foreground": heroIsDark ? "oklch(0.98 0 0)" : "oklch(0.15 0 0)",
-      "--muted-foreground": heroIsDark
-        ? "oklch(0.85 0 0 / 0.85)"
-        : "oklch(0.3 0 0 / 0.85)",
+      "--tinted-foreground-subtle": heroIsDark ? "#fff" : "#000",
+      // // plain body/muted text inside the hero also has to clear the blend
+      // "--foreground": heroIsDark ? "oklch(0.98 0 0)" : "oklch(0.15 0 0)",
+      // "--muted-foreground": heroIsDark
+      //   ? "oklch(0.85 0 0 / 0.85)"
+      //   : "oklch(0.3 0 0 / 0.85)",
     } as React.CSSProperties
   }, [hasColors, showTint, primary, intensity, isDark])
 }

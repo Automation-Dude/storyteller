@@ -107,9 +107,11 @@ export function LanguageEdit() {
 
   const commit = () => {
     if (!inlineMode) return
-    // an empty or valid code commits; a non-empty invalid one reverts so we
-    // never persist garbage.
-    if (!language.trim() || info.maximized) {
+    if (
+      (!language.trim() || info.maximized) &&
+      form.getFieldState("language").isDirty &&
+      JSON.stringify(language) !== JSON.stringify(form.getValues("language"))
+    ) {
       void commitField("language")
     } else {
       form.resetField("language")

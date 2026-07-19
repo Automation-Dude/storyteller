@@ -149,7 +149,7 @@ export function HeroSection({
               name="title"
               as="h1"
               className={cn(
-                "font-heading w-full text-center text-xl leading-tight font-normal tracking-tight text-balance",
+                "text-tinted-subtle font-heading w-full text-center text-xl leading-tight font-normal tracking-tight text-balance",
                 `@xl/book:w-auto @xl/book:text-left`,
               )}
               placeholder={c.plain("fields.label.title")}
@@ -169,33 +169,23 @@ export function HeroSection({
             ) : (
               authors.length > 0 && (
                 <p
-                  role={canEdit ? "button" : undefined}
-                  tabIndex={canEdit ? 0 : undefined}
-                  onClick={
-                    canEdit
-                      ? () => {
-                          setEditingField("authors")
-                        }
-                      : undefined
-                  }
                   className={cn(
-                    "text-muted-foreground mt-0.5 flex flex-wrap justify-center gap-x-1 text-xs",
+                    "text-tinted group/authors relative mt-0.5 flex flex-wrap justify-center gap-x-1 text-xs",
                     `@xl/book:justify-start`,
                     canEdit && "cursor-pointer",
                   )}
                 >
-                  <span className="text-tinted font-serif">
-                    {t("writtenBy")}
-                  </span>
+                  <span className="font-serif">{t("writtenBy")}</span>
 
                   {visibleAuthors.map((author, idx) => (
-                    <span
+                    <V3Link
                       key={author.uuid}
-                      className="hover:text-tinted-strong text-foreground font-serif font-medium hover:underline"
+                      className="hover:text-tinted-strong text-tinted font-serif font-medium hover:underline"
+                      href={`/authors?item=${author.uuid}&book=${book.uuid}`}
                     >
                       {author.name.trim()}
                       {idx < visibleAuthors.length - 1 && <span>,</span>}
-                    </span>
+                    </V3Link>
                   ))}
 
                   {!authorsExpanded && hiddenAuthorCount > 0 && (
@@ -210,6 +200,22 @@ export function HeroSection({
                       +{hiddenAuthorCount} more
                     </button>
                   )}
+
+                  {canEdit && (
+                    <TooltipButton
+                      type="button"
+                      size="icon-sm"
+                      variant="real-ghost"
+                      className="hover:text-foreground absolute top-0 -right-6 h-4 underline opacity-0 transition-opacity group-hover/authors:opacity-100"
+                      onClick={() => {
+                        setEditingField("authors")
+                      }}
+                      tooltip={c("actions.edit")}
+                      aria-label={c("actions.edit")}
+                    >
+                      <icon.Pencil className="size-3.5 stroke-[1.5]" />
+                    </TooltipButton>
+                  )}
                 </p>
               )
             )}
@@ -219,33 +225,23 @@ export function HeroSection({
             ) : (
               narrators.length > 0 && (
                 <p
-                  role={canEdit ? "button" : undefined}
-                  tabIndex={canEdit ? 0 : undefined}
-                  onClick={
-                    canEdit
-                      ? () => {
-                          setEditingField("narrators")
-                        }
-                      : undefined
-                  }
                   className={cn(
-                    "text-muted-foreground flex flex-wrap justify-center gap-x-1 text-xs",
+                    "text-tinted group/narrators relative flex flex-wrap justify-center gap-x-1 text-xs",
                     `@xl/book:justify-start`,
                     canEdit && "cursor-pointer",
                   )}
                 >
-                  <span className="text-tinted font-heading italic">
-                    {t("narratedBy")}
-                  </span>
+                  <span className="font-heading italic">{t("narratedBy")}</span>
 
                   {visibleNarrators.map((narrator, idx) => (
-                    <span
+                    <V3Link
                       key={narrator.uuid}
-                      className="hover:text-tinted-strong text-foreground hover:underline"
+                      className="hover:text-tinted-strong text-tinted hover:underline"
+                      href={`/narrators?item=${narrator.uuid}&book=${book.uuid}`}
                     >
                       {narrator.name.trim()}
                       {idx < visibleNarrators.length - 1 && <span>,</span>}
-                    </span>
+                    </V3Link>
                   ))}
 
                   {!narratorsExpanded && hiddenNarratorCount > 0 && (
@@ -259,6 +255,21 @@ export function HeroSection({
                     >
                       +{hiddenNarratorCount} more
                     </button>
+                  )}
+                  {canEdit && (
+                    <TooltipButton
+                      type="button"
+                      size="icon-sm"
+                      variant="real-ghost"
+                      className="hover:text-foreground absolute top-0 -right-6 h-4 underline opacity-0 transition-opacity group-hover/narrators:opacity-100"
+                      onClick={() => {
+                        setEditingField("narrators")
+                      }}
+                      tooltip={c("actions.edit")}
+                      aria-label={c("actions.edit")}
+                    >
+                      <icon.Pencil className="size-3.5 stroke-[1.5]" />
+                    </TooltipButton>
                   )}
                 </p>
               )

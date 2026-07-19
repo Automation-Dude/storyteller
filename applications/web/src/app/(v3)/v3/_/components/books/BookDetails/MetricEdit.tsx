@@ -88,13 +88,19 @@ export function PageCountEdit({ className }: { className?: string }) {
           shouldDirty: true,
         })
       }}
-      onBlur={() => {
-        if (inlineMode) void commitField("pageCount")
-      }}
+      // onBlur={() => {
+      //   if (inlineMode) void commitField("pageCount")
+      // }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.preventDefault()
-          if (inlineMode) void commitField("pageCount")
+          const value = e.currentTarget.value
+          if (
+            form.getFieldState("pageCount").isDirty &&
+            JSON.stringify(override) !== JSON.stringify(value) &&
+            inlineMode
+          )
+            void commitField("pageCount")
         }
         if (e.key === "Escape") {
           e.preventDefault()
@@ -105,11 +111,10 @@ export function PageCountEdit({ className }: { className?: string }) {
       placeholder="Pages"
       className={cn(
         inlineMode
-          ? // bare inside the floating chrome, which supplies the frame
-            "border-input focus-visible:border-ring w-full border-0 border-b border-dashed bg-transparent px-0 py-0.5 tabular-nums outline-none"
+          ? "border-input focus-visible:border-ring text-foreground! w-full border-0 border-b border-dashed bg-transparent px-0 py-0.5 tabular-nums outline-none dark:text-white!"
           : cn(
               SEAMLESS_BOX,
-              "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-20 tabular-nums outline-none focus-visible:ring-2",
+              "text-foreground! border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-20 tabular-nums outline-none focus-visible:ring-2",
             ),
         className,
       )}
@@ -133,8 +138,6 @@ function splitDuration(total: number) {
   }
 }
 
-// duration override edited as hours / minutes / seconds; display falls back
-// through the format-specific durations (book > audiobook > readaloud).
 export function DurationEdit({ className }: { className?: string }) {
   const {
     book,
@@ -149,8 +152,6 @@ export function DurationEdit({ className }: { className?: string }) {
   const active = isFieldActive("duration")
   const inlineMode = active && !isEditing
 
-  // local h/m/s seeded from the effective duration so the user can tweak from
-  // the current value without it counting as a change until they touch it.
   const effective = bookDuration(book)
   const [parts, setParts] = useState(() => splitDuration(effective ?? 0))
   const firstRef = useRef<HTMLInputElement>(null)
@@ -195,7 +196,7 @@ export function DurationEdit({ className }: { className?: string }) {
   }
 
   const fieldClass =
-    "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-12 rounded-md border px-1 py-0.5 text-center tabular-nums outline-none focus-visible:ring-2"
+    "border-input text-muted-foreground bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-12 rounded-md border px-1 py-0.5 text-center tabular-nums outline-none focus-visible:ring-2"
 
   const onPartChange =
     (key: "h" | "m" | "s") => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,8 +209,17 @@ export function DurationEdit({ className }: { className?: string }) {
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault()
-      if (inlineMode) void commitField("duration")
+
+      if (
+        form.getFieldState("duration").isDirty &&
+        JSON.stringify(override) !== JSON.stringify(parts) &&
+        inlineMode
+      ) {
+        void commitField("duration")
+        setEditingField(null)
+      }
     }
+
     if (e.key === "Escape") {
       e.preventDefault()
       form.resetField("duration")
@@ -224,7 +234,14 @@ export function DurationEdit({ className }: { className?: string }) {
         if (!inlineMode) return
         // commit only when focus leaves the whole h/m/s group
         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          void commitField("duration")
+          if (
+            form.getFieldState("duration").isDirty &&
+            JSON.stringify(override) !== JSON.stringify(parts)
+          ) {
+            void commitField("duration")
+          } else {
+            setEditingField(null)
+          }
         }
       }}
     >
