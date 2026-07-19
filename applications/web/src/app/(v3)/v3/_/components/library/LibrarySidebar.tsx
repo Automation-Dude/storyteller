@@ -157,9 +157,12 @@ export function LibrarySidebar({
   )
 
   const deleteEntity = useDeleteEntity(entityType)
+  console.log("menuTarget", menuTarget)
 
   const handleRowDelete = useCallback(async () => {
+    console.log("handleRowDelete", menuTarget)
     if (!menuTarget) return
+    console.log("deleting entity", menuTarget.key)
     await deleteEntity(menuTarget.key as UUID)
     setMenuOpen(false)
   }, [menuTarget, deleteEntity])

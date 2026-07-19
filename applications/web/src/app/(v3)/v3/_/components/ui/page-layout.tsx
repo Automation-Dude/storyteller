@@ -33,7 +33,7 @@ function PageLayout({
   return (
     <div
       data-slot="page-layout"
-      className={cn("flex h-screen overflow-hidden", className)}
+      className={cn("relative flex h-screen overflow-hidden", className)}
       {...props}
     >
       {children}
@@ -51,6 +51,11 @@ function PageMain({
       data-slot="page-main"
       className={cn(
         "bg-surface-base flex min-w-0 flex-1 flex-col overflow-hidden [--page-surface:var(--surface-base)]",
+        // while the detail panel slides as an overlay, in-flow chrome (header,
+        // filters, anything that isn't the scroll content) tracks the panel
+        // edge through the --panel-reveal var the width driver animates. at
+        // rest the var is 0px and this is a no-op.
+        "[&>*:not([data-slot=page-content])]:max-w-[calc(100%-var(--panel-reveal,0px))]",
         className,
       )}
       {...props}
@@ -147,6 +152,7 @@ export const PANEL_CONTENT_MIN_WIDTH = 300
 function PagePanel({
   open,
   width,
+  phase = null,
   panelRef,
   onResizeStart,
   dragging,
@@ -157,6 +163,10 @@ function PagePanel({
 }: React.ComponentProps<"div"> & {
   open: boolean
   width: number
+  // open/close slide in progress (transform mode): the panel leaves flex flow
+  // and overlays the content while translateX moves it, so the layout only
+  // changes once, at rest
+  phase?: "opening" | "closing" | null
   panelRef?: React.Ref<HTMLDivElement>
   // pointer-down on the resize handle. width changes are driven externally
   onResizeStart?: (e: React.PointerEvent) => void
@@ -164,6 +174,8 @@ function PagePanel({
   colors?: CoverScopeProps
 }) {
   if (!open) return null
+
+  const overlay = phase !== null
 
   return (
     <>
@@ -173,7 +185,9 @@ function PagePanel({
           {...(dragging !== undefined && { dragging })}
           onPointerDown={onResizeStart}
           {...colors}
-          className="border-l-primary/30"
+          // keeps its 1px border space during the slide so the swap into flex
+          // only changes the layout by the panel width itself
+          className={cn("border-l-primary/30", overlay && "invisible")}
         />
       )}
 
@@ -181,7 +195,10 @@ function PagePanel({
         ref={panelRef}
         data-slot="page-panel"
         className={cn(
-          "bg-surface-raised relative shrink-0 overflow-hidden",
+          "bg-surface-raised shrink-0 overflow-hidden",
+          overlay
+            ? "border-l-primary/30 absolute inset-y-0 right-0 z-40 border-l"
+            : "relative",
           className,
         )}
         {...props}
@@ -189,6 +206,7 @@ function PagePanel({
           {
             width,
             "--panel-content-min": `${PANEL_CONTENT_MIN_WIDTH}px`,
+            ...(overlay ? colors?.style : {}),
             ...props.style,
           } as React.CSSProperties
         }

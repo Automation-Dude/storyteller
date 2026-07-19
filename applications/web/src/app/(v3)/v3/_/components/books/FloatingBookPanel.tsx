@@ -18,6 +18,10 @@ import {
   MIN_PANEL_WIDTH,
 } from "@v3/_/components/ui/page-layout"
 import { useBookInSidePanel } from "@v3/_/hooks/use-open-book"
+import {
+  PANEL_SLIDE_DURATION,
+  PANEL_SLIDE_EASING,
+} from "@v3/_/hooks/use-panel-width-driver"
 
 import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
 import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
@@ -69,7 +73,8 @@ export function FloatingBookPanelProvider({
   )
 }
 
-const CLOSE_DURATION_MS = 250
+// matches the docked panel's slide so both feel like the same surface
+const CLOSE_DURATION_MS = PANEL_SLIDE_DURATION
 
 function FloatingBookPanel({ suppressed }: { suppressed: boolean }) {
   const isMobile = useIsMobile()
@@ -147,10 +152,14 @@ function FloatingBookPanel({ suppressed }: { suppressed: boolean }) {
       aria-label="Book details"
       className={cn(
         "bg-surface-raised fixed inset-y-2 right-2 z-50 flex max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl shadow-2xl",
-        "transition-transform duration-250 ease-out",
+        "transition-transform",
         slidIn ? "translate-x-0" : "translate-x-[calc(100%+1rem)]",
       )}
-      style={{ width }}
+      style={{
+        width,
+        transitionDuration: `${PANEL_SLIDE_DURATION}ms`,
+        transitionTimingFunction: PANEL_SLIDE_EASING,
+      }}
     >
       <DynamicBookDetailsContent
         uuid={shownUuid as UUID}

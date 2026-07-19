@@ -19,8 +19,8 @@ import {
   BookDetailDrawer,
   SkipToBooksLink,
 } from "@v3/_/components/books/BookListLayout"
-import { useClaimBookPanel } from "@v3/_/components/books/FloatingBookPanel"
 import { BooksView } from "@v3/_/components/books/BooksView"
+import { useClaimBookPanel } from "@v3/_/components/books/FloatingBookPanel"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import {
   BOOK_COLLECTION_ID,
@@ -85,7 +85,7 @@ import { BookCountIndicator } from "./BookCountIndicator"
 import { BookDetailsSkeleton } from "./BookDetails/BookDetailsSkeleton"
 import { useCoverScope } from "./BookDetails/sections/CoverScope"
 import { GRID_CARD_WIDTHS, GRID_SPACING_PX } from "./Grid/BookGrid"
-import { PanelDraggingProvider } from "./panel-resize-context"
+import { PanelResizeProvider } from "./panel-resize-context"
 
 const DynamicBookDetailsContent = dynamic(
   () =>
@@ -603,9 +603,11 @@ function BookListPageInner({
     open: panelOpen && !isMobile,
     storedWidth: panelWidth,
     animate,
-    // `animate` keeps the grid FLIP on; this only toggles the open/close slide,
-    // so both feels can be compared from the preference.
     animateOpenClose: animate && animatePanelOpen,
+    slideMode: "transform",
+    // in-flow chrome + list rows track the slide via --panel-reveal on the
+    // layout root
+    chromeEl: pageLayoutRef,
     snapOnRelease:
       !animate && bookLayout === "grid" ? snapPanelWidth : undefined,
     commit: handlePanelWidthChange,
@@ -645,10 +647,6 @@ function BookListPageInner({
     ? selectedBook
     : lastSelectedRef.current?.book
 
-  // re-snap the stored panel width so the grid starts with whole columns. runs
-  // on mount, when the panel opens/closes, when the card size changes, or when
-  // the layout resizes (window resize, app sidebar toggle). animated mode
-  // skips this: the grid is fluid there, so any width yields full rows.
   const snapRef = useRef({
     panelWidth,
     sidebarWidth,
@@ -732,6 +730,21 @@ function BookListPageInner({
   const coverScopeProps = useCoverScope(shownBook)
   useHotkey("Escape", handleClosePanel, { ignoreInputs: true })
 
+  const panelResizeState = useMemo(
+    () => ({
+      live: driver.dragging || driver.sliding || sidebarResizing,
+      sliding: driver.phase !== null,
+      pendingWidthDelta: driver.phase === "opening" ? -panelWidth : 0,
+    }),
+    [
+      driver.dragging,
+      driver.sliding,
+      driver.phase,
+      sidebarResizing,
+      panelWidth,
+    ],
+  )
+
   if (isMobile) {
     return (
       <>
@@ -803,9 +816,7 @@ function BookListPageInner({
 
   return (
     <BookListPageContext.Provider value={contextValue}>
-      <PanelDraggingProvider
-        value={driver.dragging || driver.sliding || sidebarResizing}
-      >
+      <PanelResizeProvider value={panelResizeState}>
         <PageLayout ref={pageLayoutRef}>
           {sidebar && (
             <PageSidebar
@@ -828,23 +839,6 @@ function BookListPageInner({
                 afterTitle={countIndicator}
               />
             </PageHeader>
-
-            {/* <BookListLayout
-        headerBreadcrumbs={breadcrumbs}
-        headerActions={headerActions}
-        {...(sidebar
-          ? {
-              sidebar,
-              sidebarWidth,
-              onSidebarWidthChange: handleSidebarWidthChange,
-            }
-          : {})}
-        selectedBookUuid={selectedBookUuid}
-        selectedBook={selectedBook}
-        onClosePanel={handleClosePanel}
-        nextBook={goToNext}
-        previousBook={goToPrevious}
-      > */}
 
             {beforeFilters}
 
@@ -893,6 +887,7 @@ function BookListPageInner({
           <PagePanel
             open={driver.visible}
             width={panelWidth}
+            phase={driver.phase}
             panelRef={driver.panelRef}
             onResizeStart={driver.startDrag}
             dragging={driver.dragging}
@@ -919,7 +914,7 @@ function BookListPageInner({
             )}
           </PagePanel>
         </PageLayout>
-      </PanelDraggingProvider>
+      </PanelResizeProvider>
     </BookListPageContext.Provider>
   )
 }

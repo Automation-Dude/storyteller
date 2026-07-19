@@ -139,7 +139,7 @@ export function RelationChipEditor<T extends RelationItem>({
     <div
       className={cn(
         `group/${source}`,
-        "flex flex-wrap items-center gap-2",
+        "flex flex-wrap items-center justify-center gap-2",
         level !== "minimal" &&
           "*:data-[slot=badge]:border-primary *:data-[slot=badge]:text-primary! *:data-[slot=badge]:hover:bg-primary/10 *:data-[slot=badge]:bg-none *:data-[slot=badge]:font-medium!",
       )}

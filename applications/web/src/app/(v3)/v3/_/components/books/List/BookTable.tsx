@@ -129,7 +129,7 @@ export function BookTable({
   const tActions = useTranslation("BookActions")
   const tSel = useTranslation("SelectionToolbar")
   const dispatch = useAppDispatch()
-  const menu = useBookActionMenu(books)
+  const menu = useBookActionMenu(books, "bulk")
 
   const emptyMessage = props.emptyMessage ?? t("emptyState")
   const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")

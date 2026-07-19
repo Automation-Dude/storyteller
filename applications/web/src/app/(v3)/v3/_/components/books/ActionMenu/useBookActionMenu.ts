@@ -21,7 +21,10 @@ export function findScrollParent(node: HTMLElement | null): HTMLElement | null {
   return null
 }
 
-export function useBookActionMenu(books: BookWithRelations[]) {
+export function useBookActionMenu(
+  books: BookWithRelations[],
+  mode: "single" | "bulk" = "single",
+) {
   const selection = useOptionalBookSelection()
   const isSelecting = selection?.isSelecting ?? false
   const toggleSelection = selection?.toggleSelection
@@ -44,7 +47,7 @@ export function useBookActionMenu(books: BookWithRelations[]) {
 
   const { entries: menuEntries, dialogs: menuDialogs } = useBookActionItems({
     books: menuBook ? [menuBook] : [],
-    mode: "single",
+    mode,
   })
 
   const menuBookIsSelected = menuBook

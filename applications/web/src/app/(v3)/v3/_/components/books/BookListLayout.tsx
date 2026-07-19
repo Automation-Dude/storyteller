@@ -39,7 +39,7 @@ import {
   BOOK_COLLECTION_ID,
   BOOK_DETAIL_PANEL_ID,
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
-import { PanelDraggingProvider } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
+import { PanelResizeProvider } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
 import { type BookWithRelations } from "@/database/books"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { uiSettingsSlice } from "@/store/slices/uiSettingsSlice"
@@ -176,6 +176,8 @@ export function BookListLayout({
     // `animate` keeps the grid FLIP on; this only toggles the open/close slide,
     // so both feels can be compared from the preference.
     animateOpenClose: animate && animatePanelOpen,
+    slideMode: "transform",
+    chromeEl: pageLayoutRef,
     snapOnRelease:
       !animate && bookLayout === "grid" ? snapPanelWidth : undefined,
     commit: handlePanelWidthChange,
@@ -331,8 +333,12 @@ export function BookListLayout({
   }
 
   return (
-    <PanelDraggingProvider
-      value={driver.dragging || driver.sliding || sidebarResizing}
+    <PanelResizeProvider
+      value={{
+        live: driver.dragging || driver.sliding || sidebarResizing,
+        sliding: driver.phase !== null,
+        pendingWidthDelta: driver.phase === "opening" ? -panelWidth : 0,
+      }}
     >
       <PageLayout ref={pageLayoutRef}>
         {sidebar && (
@@ -387,7 +393,7 @@ export function BookListLayout({
           )}
         </PagePanel>
       </PageLayout>
-    </PanelDraggingProvider>
+    </PanelResizeProvider>
   )
 }
 

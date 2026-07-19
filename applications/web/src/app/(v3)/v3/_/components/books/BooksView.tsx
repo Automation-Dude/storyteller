@@ -50,9 +50,6 @@ type BooksViewProps = {
   onSortChange?: (field: SortField, direction: SortDirection) => void
 }
 
-// the one place a page's books render: switches on the device layout (grid /
-// list) and its per-layout view (cards / thumbnails, rows / table), fed from
-// uiSettings so every book list behaves identically.
 export function BooksView({
   displayFields,
   listDisplayFieldsOverride,
@@ -71,28 +68,30 @@ export function BooksView({
   const listShowThumbnail = useAppSelector(selectListShowThumbnail)
 
   if (layout === "list") {
-    if (listView === "table") {
-      return (
-        <BookTable
-          {...shared}
-          onBookClick={onBookClick}
-          onColumnClick={onColumnClick}
-          columns={listDisplayFields}
-          showThumbnail={listShowThumbnail}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSortChange={onSortChange}
-        />
-      )
-    }
-
+    // rows track the panel edge during the transform-mode open/close slide,
+    // same as PageMain's chrome rule (the var is 0px at rest)
     return (
-      <BookList
-        {...shared}
-        onBookClick={onBookClick}
-        displayFields={listDisplayFields}
-        showThumbnail={listShowThumbnail}
-      />
+      <div className="max-w-[calc(100%-var(--panel-reveal,0px))]">
+        {listView === "table" ? (
+          <BookTable
+            {...shared}
+            onBookClick={onBookClick}
+            onColumnClick={onColumnClick}
+            columns={listDisplayFields}
+            showThumbnail={listShowThumbnail}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortChange={onSortChange}
+          />
+        ) : (
+          <BookList
+            {...shared}
+            onBookClick={onBookClick}
+            displayFields={listDisplayFields}
+            showThumbnail={listShowThumbnail}
+          />
+        )}
+      </div>
     )
   }
 

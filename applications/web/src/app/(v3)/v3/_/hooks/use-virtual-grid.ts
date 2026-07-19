@@ -50,6 +50,11 @@ export type UseVirtualGridOptions = {
   flipDuration?: number
   flipEasing?: string
   liveResize?: boolean
+  // width change the container will undergo once an out-of-flow panel slide
+  // settles (e.g. -panelWidth while the detail panel opens). the grid
+  // pre-lays-out to (measured + delta) in a single commit + FLIP; the eventual
+  // real resize then matches and no-ops.
+  pendingWidthDelta?: number
 
   hasNextPage?: boolean
   isFetchingNextPage?: boolean
@@ -182,6 +187,7 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
     deferCoverLoads = false,
     pauseTailRows = DEFAULT_PAUSE_TAIL_ROWS,
     liveResize = false,
+    pendingWidthDelta = 0,
   } = options
 
   const sizerElRef = useRef<HTMLDivElement | null>(null)
@@ -579,6 +585,32 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
     [measureContainerTop, playFlip],
   )
 
+  // if we know eg the sidepanel is incoming w a certain width, we manually animate to that width
+  // this is much smoother than reacting to the panel slide
+  // as we cant imperatively drive that like we with the panel dragging
+  const pendingDeltaRef = useRef(pendingWidthDelta)
+  useLayoutEffect(() => {
+    if (pendingWidthDelta === pendingDeltaRef.current) return
+    pendingDeltaRef.current = pendingWidthDelta
+    const id = requestAnimationFrame(() => {
+      const sizer = sizerElRef.current
+      if (!sizer) return
+      const g = geometryRef.current
+      const target = Math.max(0, sizer.clientWidth + pendingDeltaRef.current)
+      const prevWidth = widthRef.current
+      if (target === prevWidth) return
+      const applied = appliedColsRef.current || metricsFor(prevWidth, g).cols
+      widthRef.current = target
+      commitColumns(
+        metricsForColumns(prevWidth, g, applied, itemCountRef.current),
+        metricsFor(target, g, itemCountRef.current),
+      )
+    })
+    return () => {
+      cancelAnimationFrame(id)
+    }
+  }, [pendingWidthDelta, commitColumns])
+
   const reflowColumns = useCallback(
     (basisWidth: number) => {
       const g = geometryRef.current
@@ -609,7 +641,10 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
     const sizer = sizerElRef.current
     if (!sizer) return
     const g = geometryRef.current
-    const width = sizer.clientWidth
+    // while a pre-layout delta is pending the container hasn't changed yet
+    // (the panel slides as an overlay), so fold the upcoming change into every
+    // measurement or a stray resize would revert the pre-layout
+    const width = Math.max(0, sizer.clientWidth + pendingDeltaRef.current)
     const prevWidth = widthRef.current
 
     // first non-zero width: apply the natural columns immediately (no freeze).

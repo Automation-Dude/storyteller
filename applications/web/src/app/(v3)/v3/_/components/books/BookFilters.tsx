@@ -128,10 +128,10 @@ export function BookFilters({
     () => (isAdvanced ? countConditions(userFilter) : 0),
     [isAdvanced, userFilter],
   )
-
   return (
     <div
       // DONT MAKE FLEX CONTAINER THE SEARCH INPUT WILL NOT BE THE CORRECT HEIGHT IT WILL HAUNT YOU
+      // panel-open tracking comes from PageMain's --panel-reveal rule, not here
       className={cn(
         "bg-surface-base sticky top-0 z-30 space-y-2 px-4 pb-3",
         className,

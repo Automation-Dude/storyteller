@@ -12,6 +12,7 @@ import {
 import { useGridNavigation } from "@v3/_/hooks/use-grid-navigation"
 import { useLayoutAnimations } from "@v3/_/hooks/use-layout-animations"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
+import { PANEL_SLIDE_DURATION } from "@v3/_/hooks/use-panel-width-driver"
 import { cn } from "@v3/_/lib/utils"
 
 import { ActionEntryList } from "@/app/(v3)/v3/_/components/books/ActionMenu/BookActionMenuItems"
@@ -26,7 +27,7 @@ import {
   type BookNavModel,
   bookItemDomId,
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
-import { usePanelDragging } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
+import { usePanelResize } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
 import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import {
   useCommon,
@@ -118,7 +119,7 @@ export function BookGrid({
   const books = rawBooks
 
   const t = useTranslation("BookList")
-  const menu = useBookActionMenu(books)
+  const menu = useBookActionMenu(books, "bulk")
 
   const emptyMessage = props.emptyMessage ?? t("emptyState")
   const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")
@@ -157,22 +158,24 @@ export function BookGrid({
     return i >= 0 ? i : null
   }, [books, selectedBookUuid])
 
-  // manual panel drag wants immediate column reflow; animated width changes
-  // (panel open/close, sidebar toggle) keep the settle-then-reflow.
-  const panelDragging = usePanelDragging()
+  // panel drag and open/close want immediate column reflow; untracked width
+  // changes keep the settle-then-reflow. during an open/close slide the FLIP
+  // matches the panel's transform timing so both read as one motion.
+  const panelResize = usePanelResize()
 
   const grid = useVirtualGrid({
     itemCount: books.length,
     geometry,
     anchorIndex,
     animate,
-    flipDuration: 500,
+    flipDuration: panelResize.sliding ? PANEL_SLIDE_DURATION : 500,
     hasNextPage,
     isFetchingNextPage,
     onFetchNextPage: fetchNextPage,
     deferCoverLoads: true,
     overscanRows: 4,
-    liveResize: panelDragging,
+    liveResize: panelResize.live,
+    pendingWidthDelta: panelResize.pendingWidthDelta,
   })
 
   // revisit

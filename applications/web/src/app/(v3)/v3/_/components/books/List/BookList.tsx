@@ -71,7 +71,7 @@ export function BookList({
   ...props
 }: BookListProps) {
   const t = useTranslation("BookList")
-  const menu = useBookActionMenu(books)
+  const menu = useBookActionMenu(books, "bulk")
 
   const emptyMessage = props.emptyMessage ?? t("emptyState")
   const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")

@@ -2,15 +2,22 @@
 
 import { createContext, useContext } from "react"
 
-// whether the detail panel is currently being drag-resized. the book grid reads
-// this to switch its virtualizer into live-resize mode (reflow columns
-// continuously for immediate feedback) instead of the settle-then-reflow it uses
-// for animated width changes (panel open/close, sidebar toggle). defaults false
-// so a grid rendered outside a BookListLayout just uses the settle behavior.
-const PanelDraggingContext = createContext(false)
+export type PanelResizeState = {
+  live: boolean
+  pendingWidthDelta: number
+  sliding: boolean
+}
 
-export const PanelDraggingProvider = PanelDraggingContext.Provider
+const IDLE: PanelResizeState = {
+  live: false,
+  pendingWidthDelta: 0,
+  sliding: false,
+}
 
-export function usePanelDragging(): boolean {
-  return useContext(PanelDraggingContext)
+const PanelResizeContext = createContext<PanelResizeState>(IDLE)
+
+export const PanelResizeProvider = PanelResizeContext.Provider
+
+export function usePanelResize(): PanelResizeState {
+  return useContext(PanelResizeContext)
 }

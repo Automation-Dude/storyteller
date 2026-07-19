@@ -48,8 +48,9 @@ function CreatorAddMenu({
             tooltip={c.plain("actions.add")}
             aria-label={c.plain("actions.add")}
             variant="ghost"
+            className="size-5"
           >
-            <icon.Plus size="sm" className="text-muted-foreground" />
+            <icon.Plus className="text-muted-foreground h-4" />
           </TooltipButton>
         }
       />
