@@ -19,6 +19,7 @@ import {
   BookDetailDrawer,
   SkipToBooksLink,
 } from "@v3/_/components/books/BookListLayout"
+import { useClaimBookPanel } from "@v3/_/components/books/FloatingBookPanel"
 import { BooksView } from "@v3/_/components/books/BooksView"
 import { SelectionToolbar } from "@v3/_/components/books/SelectionToolbar"
 import {
@@ -193,6 +194,9 @@ function BookListPageInner({
   emptyFilteredSubMessage,
 }: BookListPageProps) {
   const dispatch = useAppDispatch()
+
+  // this page renders its own `?book=` panel/drawer
+  useClaimBookPanel()
 
   const gridDisplayFields = useAppSelector(selectGridDisplayFields)
 

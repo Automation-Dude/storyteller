@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useMemo, useRef } from "react"
+import { type ReactNode, useCallback, useMemo, useRef } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -9,6 +9,8 @@ import { cn } from "@v3/_/lib/utils"
 
 import { BookCard } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
 import { BookCardSkeleton } from "@/app/(v3)/v3/_/components/books/Grid/BookCardSkeleton"
+import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
+import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import { type BookWithRelations } from "@/database/books"
 import { type HomeSectionWithDetails } from "@/database/shelves"
 import { STATUS_READ, STATUS_READING } from "@/database/statusKinds"
@@ -33,6 +35,17 @@ export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { books, isLoading, seeAllHref, displayField } = useShelfBooks(shelf)
+
+  // per the user preference a click either opens the floating side panel or
+  // falls through to the card's own link to the book page
+  const { bookOpenTarget } = useUserPreferences()
+  const { setSelectedBookUuid } = useBookInSidePanel()
+  const handleBookClick = useCallback(
+    (book: BookWithRelations) => {
+      void setSelectedBookUuid(book.uuid)
+    },
+    [setSelectedBookUuid],
+  )
 
   const scrollLeft = () => {
     if (!scrollContainerRef.current) return
@@ -76,18 +89,28 @@ export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
 
           <V3Link
             href={seeAllHref}
-            className="text-muted-foreground hover:text-foreground text-sm opacity-0 transition-colors transition-opacity group-hover/shelf:opacity-100"
+            className="text-muted-foreground hover:text-foreground text-sm opacity-100 transition-colors transition-opacity md:opacity-0 md:group-hover/shelf:opacity-100"
           >
             {t("shelf.seeAll")}
           </V3Link>
         </div>
 
-        <div className="flex gap-1 opacity-0 transition-opacity group-hover/shelf:opacity-100">
-          <Button variant="ghost" size="icon-sm" onClick={scrollLeft}>
+        <div className="-mr-2 flex gap-1 transition-opacity md:opacity-0 md:group-hover/shelf:opacity-100">
+          <Button
+            aria-label={t("actions.scrollLeft")}
+            variant="ghost"
+            size="icon-sm"
+            onClick={scrollLeft}
+          >
             <icon.ChevronLeft className="size-4" />
           </Button>
 
-          <Button variant="ghost" size="icon-sm" onClick={scrollRight}>
+          <Button
+            aria-label={t("actions.scrollRight")}
+            variant="ghost"
+            size="icon-sm"
+            onClick={scrollRight}
+          >
             <icon.ChevronRight className="size-4" />
           </Button>
 
@@ -107,6 +130,7 @@ export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
             <BookCard
               book={book}
               displayFields={[displayField ?? "authors", "title"]}
+              {...(bookOpenTarget === "panel" && { onClick: handleBookClick })}
             />
           </div>
         ))}

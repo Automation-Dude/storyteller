@@ -26,7 +26,8 @@ import {
 } from "@/store/api"
 
 import { CollapsibleSection } from "./CollapsibleSection"
-import { ensureContrast, useCoverColors, useIsDarkMode } from "./useCoverColors"
+import { ensureContrast, useCoverColors } from "./useCoverColors"
+import { useTheme } from "next-themes"
 
 function InlineRatingNumber({
   value,
@@ -128,7 +129,8 @@ export function ReviewSection({ className }: { className?: string }) {
     !!currentDimensions && Object.keys(currentDimensions).length > 0
 
   const { primary } = useCoverColors(book)
-  const isDark = useIsDarkMode()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
   const ratingColor = ensureContrast(primary, isDark).solid
 
   const [editing, setEditing] = useState(false)

@@ -29,6 +29,11 @@ export type DoubleCoverAlignment = (typeof DoubleCoverAlignments)[number]
 export const RatingIcons = ["star", "heart"] as const
 export type RatingIcon = (typeof RatingIcons)[number]
 
+// what clicking a book outside the library views (home shelves, search)
+// opens: the floating side panel or the full book page
+export const BookOpenTargets = ["panel", "page"] as const
+export type BookOpenTarget = (typeof BookOpenTargets)[number]
+
 export const UserPreferencesSchema = z.object({
   locale: z.string().nullable(),
   defaultReadingMode: z.enum(["readaloud", "audiobook", "epub"]).nullable(),
@@ -41,6 +46,7 @@ export const UserPreferencesSchema = z.object({
   bookDetailDisplay: z.enum(BookDetailDisplays),
   bookDetail3dView: z.number().int().min(0).nullable(),
   ratingIcon: z.enum(RatingIcons),
+  bookOpenTarget: z.enum(BookOpenTargets),
   accentColor: z
     .string()
     .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
@@ -91,6 +97,7 @@ export const defaultUserPreferences: UserPreferences = {
   bookDetailDisplay: "3d",
   bookDetail3dView: null,
   ratingIcon: "star",
+  bookOpenTarget: "panel",
   accentColor: null,
   ratingDimensions: DEFAULT_RATING_DIMENSIONS,
   defaultStatusUuid: null,

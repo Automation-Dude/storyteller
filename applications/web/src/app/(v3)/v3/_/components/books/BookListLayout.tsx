@@ -421,6 +421,23 @@ export function BookDetailDrawer({
   nextBook?: () => void
   previousBook?: () => void
 }) {
+  // keep the closing drawer's content mounted while it slides shut; vaul
+  // unmounts the portal itself once the exit animation finishes
+  const lastSelectedRef = useRef<{
+    uuid: string
+    book: BookWithRelations | undefined
+  } | null>(null)
+  useEffect(() => {
+    if (selectedBookUuid) {
+      lastSelectedRef.current = { uuid: selectedBookUuid, book: selectedBook }
+    }
+  }, [selectedBookUuid, selectedBook])
+
+  const shownUuid = selectedBookUuid ?? lastSelectedRef.current?.uuid ?? null
+  const shownBook = selectedBookUuid
+    ? selectedBook
+    : lastSelectedRef.current?.book
+
   return (
     <Drawer.Root
       open={!!selectedBookUuid}
@@ -439,10 +456,10 @@ export function BookDetailDrawer({
 
           <Drawer.Title className="sr-only">Book Details</Drawer.Title>
 
-          {selectedBookUuid && (
+          {shownUuid && (
             <DynamicBookDetailsContent
-              uuid={selectedBookUuid as UUID}
-              initialBook={selectedBook}
+              uuid={shownUuid as UUID}
+              initialBook={shownBook}
               compact
               onClose={onClose}
               nextBook={nextBook}

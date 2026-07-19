@@ -48,8 +48,8 @@ import {
   ensureContrast,
   useCoverColors,
   useHeroContrast,
-  useIsDarkMode,
 } from "./useCoverColors"
+import { useTheme } from "next-themes"
 
 const MAX_CREATORS = 5
 
@@ -111,7 +111,8 @@ export function HeroSection({
   }
 
   const { primary } = useCoverColors(book)
-  const isDark = useIsDarkMode()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
   const ratingColor = ensureContrast(primary, isDark).solid
 
   const heroContrast = useHeroContrast(book)

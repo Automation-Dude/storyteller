@@ -7,7 +7,7 @@ import { Drawer } from "vaul-base"
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
 
-import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
+import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import * as icon from "@/icons"
 
 import { useSidebarMaybe } from "./sidebar"

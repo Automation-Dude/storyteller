@@ -62,6 +62,10 @@
     "shelf": {
       "seeAll": "See all"
     },
+    "actions": {
+      "scrollLeft": "Scroll left",
+      "scrollRight": "Scroll right"
+    },
     "sections": {
       "empty": "No sections configured yet.",
       "customize": "Customize",
@@ -1074,6 +1078,16 @@
               "largest": "Largest"
             }
           },
+          "opening": {
+            "title": "Opening books",
+            "description": "What clicking a book on the home page or in search results does.",
+            "label": "Open books in",
+            "hint": "The side panel floats over the page for a quick look; the full book page is always one more click away. In the library's grid and list views a click always opens the side panel there.",
+            "options": {
+              "panel": "Side panel",
+              "page": "Book page"
+            }
+          },
           "detail": {
             "title": "Details display",
             "description": "How a book is shown on its details page.",
@@ -1182,7 +1196,14 @@
     "sectionBooks": "Books",
     "sectionSeries": "Series",
     "sectionCollections": "Collections",
-    "sectionShelves": "Shelves"
+    "sectionShelves": "Shelves",
+    "sectionRecent": "Jump back in",
+    "createShelfNamed": "Create shelf \"{name}\"",
+    "createCollectionNamed": "Create collection \"{name}\"",
+    "hintOpen": "Open",
+    "hintOpenPage": "Open page",
+    "hintOpenPanel": "Open panel",
+    "hintClose": "Close"
   },
   "SidebarManager": {
     "add": "Add",

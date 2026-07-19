@@ -10,8 +10,8 @@ import {
   ensureContrast,
   useColorPreferences,
   useCoverColors,
-  useIsDarkMode,
 } from "./useCoverColors"
+import { useTheme } from "next-themes"
 
 function channels(color: CoverColor): string {
   const { r, g, b } = color.rgb
@@ -32,7 +32,8 @@ export function useCoverScope(
     type: options?.type,
   })
   const { level, intensity } = useColorPreferences()
-  const isDark = useIsDarkMode()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
   const extraStyle = options?.style
 
   return useMemo(() => {

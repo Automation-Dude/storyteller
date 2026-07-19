@@ -153,7 +153,8 @@ export function ensureContrastAgainst(
   const lum = () => r * 0.2126 + g * 0.7152 + b * 0.0722
 
   for (let i = 0; i < 16; i++) {
-    if (contrastRatio(lum(), surface) >= MIN_CONTRAST) break
+    const cr = contrastRatio(lum(), surface)
+    if (cr >= MIN_CONTRAST) break
 
     if (surfaceIsDark) {
       // step toward white
@@ -173,11 +174,6 @@ export function ensureContrastAgainst(
     channels: `${r} ${g} ${b}`,
     onColor: lum() < 140 ? "#fff" : "#000",
   }
-}
-
-export function useIsDarkMode(): boolean {
-  const { resolvedTheme } = useTheme()
-  return resolvedTheme === "dark"
 }
 
 const MAX_INTENSITY_MULTIPLIER = 1.5
@@ -221,33 +217,43 @@ export function useHeroContrast(
 ): React.CSSProperties {
   const { primary, hasColors } = useCoverColors(book)
   const { intensity, showTint } = useColorPreferences()
-  const isDark = useIsDarkMode()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
 
-  return useMemo(() => {
-    if (!hasColors || !showTint) return {}
+  if (!hasColors || !showTint) return {}
 
-    const surface = isDark ? DARK_SURFACE : LIGHT_SURFACE
-    const alpha = isDark ? 0.7 : 0.8
-    const headerFrac = Math.min((isDark ? 0.8 : 0.5) * intensity, 0.96)
-    const wellFrac = Math.min((isDark ? 0.7 : 0.3) * intensity, 0.96)
-    const blend = (frac: number) => {
-      const colorLum = surface + (primary.luminance - surface) * frac
-      return surface * (1 - alpha) + colorLum * alpha
-    }
-    const heroLum = (blend(headerFrac) + blend(wellFrac)) / 2
+  const surface = isDark ? DARK_SURFACE : LIGHT_SURFACE
+  const alpha = isDark ? 0.7 : 0.8
+  const headerFrac = Math.min((isDark ? 0.8 : 0.5) * intensity, 0.96)
+  const wellFrac = Math.min((isDark ? 0.7 : 0.3) * intensity, 0.96)
+  const blend = (frac: number) => {
+    const colorLum = surface + (primary.luminance - surface) * frac
+    return surface * (1 - alpha) + colorLum * alpha
+  }
+  const heroLum = (blend(headerFrac) + blend(wellFrac)) / 2
 
-    const tinted = ensureContrastAgainst(primary, heroLum)
-    const heroIsDark = heroLum < 128
+  const tinted = ensureContrastAgainst(primary, heroLum)
+  const heroIsDark = heroLum < 128
 
-    return {
-      "--tinted-foreground": tinted.solid,
-      "--tinted-foreground-strong": heroIsDark ? "#fff" : "#000",
-      "--tinted-foreground-subtle": heroIsDark ? "#fff" : "#000",
-      // // plain body/muted text inside the hero also has to clear the blend
-      // "--foreground": heroIsDark ? "oklch(0.98 0 0)" : "oklch(0.15 0 0)",
-      // "--muted-foreground": heroIsDark
-      //   ? "oklch(0.85 0 0 / 0.85)"
-      //   : "oklch(0.3 0 0 / 0.85)",
-    } as React.CSSProperties
-  }, [hasColors, showTint, primary, intensity, isDark])
+  return {
+    "--tinted-foreground": `color-mix(in srgb, ${tinted.solid}, ${heroIsDark ? "#fff" : "#000"} ${heroIsDark ? 0.85 : 0.15})`,
+    // "--tinted-foreground": heroIsDark ? tinted.onColor : tinted.solid,
+    "--tinted-foreground-strong": heroIsDark ? "#fff" : "#000",
+    "--tinted-foreground-subtle": heroIsDark ? "#fff" : "#000",
+    // // plain body/muted text inside the hero also has to clear the blend
+    // "--foreground": heroIsDark ? "oklch(0.98 0 0)" : "oklch(0.15 0 0)",
+    // "--muted-foreground": heroIsDark
+    //   ? "oklch(0.85 0 0 / 0.85)"
+    //   : "oklch(0.3 0 0 / 0.85)",
+  } as React.CSSProperties
 }
+
+// i neeed to
+// - look at hero gradient
+// - check if its dark or light
+//   - if dark, it means the accent color is too dark. all text on top of it should be made lighter. in dark mode this is easy, bc the foreground color is already light. in light mode this is harder, bc the foreground color is already dark.
+// - vice versa for light mode
+// so i basically need a theme independent mode. not really, bc the header bg is diff in light and dark mode.
+// i just need to do the same checks in light as in dark mode
+// then theres the issue that i use eg the primary color for buttons later down the line
+// these liely also need to eb lightened/darkened

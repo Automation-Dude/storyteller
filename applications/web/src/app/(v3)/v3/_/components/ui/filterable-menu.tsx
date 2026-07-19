@@ -65,7 +65,23 @@ function itemMatches(query: string, text: string): boolean {
   return q === "" || text.toLowerCase().includes(q)
 }
 
-export type ActivationModifiers = { shiftKey: boolean }
+// scrolling shifts rows under a stationary cursor and browsers then fire
+// synthetic hover events; only coordinate changes count as real movement.
+function pointerMoved(
+  lastPointer: RefObject<{ x: number; y: number } | null>,
+  event: React.MouseEvent,
+): boolean {
+  const last = lastPointer.current
+  if (last && last.x === event.screenX && last.y === event.screenY) return false
+  lastPointer.current = { x: event.screenX, y: event.screenY }
+  return true
+}
+
+export type ActivationModifiers = {
+  shiftKey: boolean
+  ctrlKey?: boolean
+  metaKey?: boolean
+}
 
 type FilterableMenuItemMeta = {
   disabled: boolean
@@ -95,10 +111,14 @@ type FilterableMenuContextValue = {
   // the menu's search input, so a closing submenu can return focus to it
   // instead of the (non-focusable) submenu trigger.
   searchRef: RefObject<HTMLInputElement | null>
+  // keyboard scrolling shifts rows under a stationary cursor and the browser
+  // then fires synthetic hover events; items compare coords against this to
+  // only honor hover from real pointer movement.
+  lastPointer: RefObject<{ x: number; y: number } | null>
 }
 
 const noop = () => {}
-const FilterableMenuContext = createContext<FilterableMenuContextValue>({
+export const FilterableMenuContext = createContext<FilterableMenuContextValue>({
   query: "",
   searchable: false,
   activeId: null,
@@ -108,6 +128,7 @@ const FilterableMenuContext = createContext<FilterableMenuContextValue>({
   close: noop,
   registerNav: noop,
   searchRef: { current: null },
+  lastPointer: { current: null },
 })
 
 type FilterableMenuGroupContextValue = {
@@ -131,7 +152,7 @@ const FilterableMenuSubContext = createContext<FilterableMenuSubContextValue>({
   setOpen: noop,
 })
 
-const FilterableMenuRootContext = createContext<{ close: () => void }>({
+export const FilterableMenuRootContext = createContext<{ close: () => void }>({
   close: noop,
 })
 
@@ -169,7 +190,7 @@ function useFilterableMenuItem(
   }
 }
 
-function useMenuSurface({
+export function useMenuSurface({
   searchable,
   onClose,
   onExit,
@@ -181,17 +202,32 @@ function useMenuSurface({
   const [query, setQuery] = useState("")
   const [activeId, setActiveId] = useState<string | null>(null)
   const registryRef = useRef(new Map<string, FilterableMenuItemEntry>())
+  // bumped on register/unregister so the surface can re-pick a highlight when
+  // items mount asynchronously (e.g. server-fetched rows in a palette).
+  const [registryVersion, setRegistryVersion] = useState(0)
   const navRef = useRef<MenuNavApi | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const lastPointerRef = useRef<{ x: number; y: number } | null>(null)
+  // whether the user picked the highlight themselves (arrows/hover) since the
+  // last query change; if not, the highlight tracks the first item as async
+  // results mount, if so it stays put.
+  const userNavigatedRef = useRef(false)
   const resetQuery = useCallback(() => {
     setQuery("")
   }, [])
 
+  const setActiveIdUser = useCallback((id: string | null) => {
+    userNavigatedRef.current = true
+    setActiveId(id)
+  }, [])
+
   const register = useCallback((id: string, entry: FilterableMenuItemEntry) => {
     registryRef.current.set(id, entry)
+    setRegistryVersion((v) => v + 1)
   }, [])
   const unregister = useCallback((id: string) => {
     registryRef.current.delete(id)
+    setRegistryVersion((v) => v + 1)
   }, [])
   const registerNav = useCallback((api: MenuNavApi | null) => {
     navRef.current = api
@@ -214,22 +250,44 @@ function useMenuSurface({
 
   useEffect(() => {
     if (!searchable) return
+    userNavigatedRef.current = false
     setActiveId(orderedIds()[0] ?? null)
   }, [query, searchable, orderedIds])
+
+  // items registering after the query effect ran (async data) may change what
+  // the first item is; follow it until the user picks a highlight themselves.
+  useEffect(() => {
+    if (!searchable) return
+    setActiveId((prev) =>
+      userNavigatedRef.current && prev !== null && registryRef.current.has(prev)
+        ? prev
+        : orderedIds()[0] ?? null,
+    )
+  }, [registryVersion, searchable, orderedIds])
 
   const ctx = useMemo<FilterableMenuContextValue>(
     () => ({
       query,
       searchable,
       activeId,
-      setActiveId,
+      setActiveId: setActiveIdUser,
       register,
       unregister,
       close,
       registerNav,
       searchRef: inputRef,
+      lastPointer: lastPointerRef,
     }),
-    [query, searchable, activeId, register, unregister, close, registerNav],
+    [
+      query,
+      searchable,
+      activeId,
+      setActiveIdUser,
+      register,
+      unregister,
+      close,
+      registerNav,
+    ],
   )
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -241,6 +299,7 @@ function useMenuSurface({
       event.key === "Home" ||
       event.key === "End"
     ) {
+      userNavigatedRef.current = true
       if (nav) {
         event.preventDefault()
         nav.move(
@@ -264,7 +323,14 @@ function useMenuSurface({
       else if (event.key === "ArrowDown")
         next = current < ids.length - 1 ? current + 1 : 0
       else next = current > 0 ? current - 1 : ids.length - 1
-      setActiveId(ids[next] ?? null)
+      const nextId = ids[next] ?? null
+      setActiveId(nextId)
+      // keyboard moves keep the highlight visible; hover selection must not
+      // scroll, so this lives here rather than on the items.
+      if (nextId)
+        registryRef.current
+          .get(nextId)
+          ?.element.scrollIntoView({ block: "nearest" })
       return
     }
 
@@ -284,16 +350,21 @@ function useMenuSurface({
     }
 
     if (event.key === "Enter") {
+      const modifiers: ActivationModifiers = {
+        shiftKey: event.shiftKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+      }
       if (nav) {
         event.preventDefault()
-        nav.activate({ shiftKey: event.shiftKey })
+        nav.activate(modifiers)
         return
       }
       if (!activeId) return
       const entry = registryRef.current.get(activeId)
       if (!entry) return
       event.preventDefault()
-      entry.metaRef.current.onActivate({ shiftKey: event.shiftKey })
+      entry.metaRef.current.onActivate(modifiers)
       return
     }
 
@@ -328,28 +399,36 @@ function ResetQueryOnClose({ reset }: { reset: () => void }) {
   return null
 }
 
-function SearchBox({
+export function SearchBox({
   inputRef,
   query,
   setQuery,
   placeholder,
   className,
+  wrapperClassName,
+  autoFocus,
+  before,
 }: {
   inputRef: RefObject<HTMLInputElement | null>
   query: string
   setQuery: (value: string) => void
   placeholder?: string
   className?: string
+  wrapperClassName?: string
+  autoFocus?: boolean
+  before?: ReactNode
 }) {
   const c = useCommon()
   const placeholderDefault = c.plain("actions.search")
 
   return (
-    <div className="mb-1 border-b p-1">
+    <div className={cn("mb-1 border-b p-1", wrapperClassName)}>
+      {before}
       <input
         ref={inputRef}
         value={query}
         placeholder={placeholder ?? placeholderDefault}
+        autoFocus={autoFocus}
         onChange={(event) => {
           setQuery(event.target.value)
         }}
@@ -359,10 +438,6 @@ function SearchBox({
   )
 }
 
-// the menu root. a thin wrapper over `Popover.Root` that also exposes a `close`
-// so custom item rows (plain divs, not `Popover.Close`) can dismiss it whether
-// the menu is controlled or uncontrolled. compose a `FilterableMenuTrigger` and
-// a `FilterableMenuContent` inside it.
 export function FilterableMenu({
   children,
   open,
@@ -479,6 +554,58 @@ export function FilterableMenuContent({
   )
 }
 
+// hosts the filterable-menu primitives outside a popover (dialog palettes,
+// inline panels). owns the surface state and wires keyboard nav on its root;
+// mount it only while visible so query/highlight state resets on close.
+export function FilterableMenuSurface({
+  children,
+  searchable = true,
+  searchPlaceholder,
+  searchInputClassName,
+  searchWrapperClassName,
+  searchBefore,
+  className,
+  onClose,
+}: {
+  children: ReactNode | ((surface: { query: string }) => ReactNode)
+  searchable?: boolean
+  searchPlaceholder?: string
+  searchInputClassName?: string
+  searchWrapperClassName?: string
+  searchBefore?: ReactNode
+  className?: string
+  onClose: () => void
+}) {
+  const { ctx, query, setQuery, inputRef, handleKeyDown } = useMenuSurface({
+    searchable,
+    onClose,
+  })
+
+  return (
+    <div
+      data-slot="filterable-menu-surface"
+      className={className}
+      onKeyDown={handleKeyDown}
+    >
+      <FilterableMenuContext.Provider value={ctx}>
+        {searchable && (
+          <SearchBox
+            inputRef={inputRef}
+            query={query}
+            setQuery={setQuery}
+            placeholder={searchPlaceholder}
+            className={searchInputClassName}
+            wrapperClassName={searchWrapperClassName}
+            before={searchBefore}
+            autoFocus
+          />
+        )}
+        {typeof children === "function" ? children({ query }) : children}
+      </FilterableMenuContext.Provider>
+    </div>
+  )
+}
+
 export function FilterableMenuGroup({
   children,
   className,
@@ -553,6 +680,9 @@ export type FilterableMenuItemProps = {
   disabled?: boolean
   closeOnClick?: boolean
   className?: string
+  // pass false when the rows are already filtered upstream (e.g. server
+  // search results) so the query doesn't hide them again client-side.
+  filter?: boolean
 }
 
 export function FilterableMenuItem({
@@ -565,15 +695,16 @@ export function FilterableMenuItem({
   className,
   textValue,
   keywords,
+  filter = true,
 }: FilterableMenuItemProps) {
-  const { query, close } = useContext(FilterableMenuContext)
+  const { query, close, lastPointer } = useContext(FilterableMenuContext)
   const group = useContext(FilterableMenuGroupContext)
   const id = useId()
 
   const text = `${
     textValue ?? (typeof children === "string" ? children : "")
   } ${keywords ?? ""}`
-  const matches = group.groupMatches || itemMatches(query, text)
+  const matches = !filter || group.groupMatches || itemMatches(query, text)
 
   const { ref, active, setActive, activate } = useFilterableMenuItem(
     id,
@@ -598,11 +729,16 @@ export function FilterableMenuItem({
       data-disabled={disabled || undefined}
       data-variant={variant}
       className={cn(menuItemClassName, className)}
-      onMouseEnter={() => {
-        if (!disabled) setActive()
+      onMouseMove={(event) => {
+        if (!disabled && pointerMoved(lastPointer, event)) setActive()
       }}
       onClick={(event) => {
-        if (!disabled) activate({ shiftKey: event.shiftKey })
+        if (!disabled)
+          activate({
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+          })
       }}
     >
       {icon}
@@ -642,7 +778,7 @@ export function FilterableMenuSubTrigger({
   keywords?: string
 }) {
   const id = useId()
-  const { query } = useContext(FilterableMenuContext)
+  const { query, lastPointer } = useContext(FilterableMenuContext)
   const group = useContext(FilterableMenuGroupContext)
   const { open, setOpen } = useContext(FilterableMenuSubContext)
 
@@ -677,8 +813,8 @@ export function FilterableMenuSubTrigger({
           data-disabled={disabled || undefined}
           data-open={open || undefined}
           className={cn(menuSubTriggerClassName, className)}
-          onMouseEnter={() => {
-            if (!disabled) setActive()
+          onMouseMove={(event) => {
+            if (!disabled && pointerMoved(lastPointer, event)) setActive()
           }}
         >
           {icon}
@@ -793,7 +929,9 @@ export function VirtualizedFilterableMenuItems<T>({
   estimateSize?: number
 }) {
   const c = useCommon()
-  const { query, close, registerNav } = useContext(FilterableMenuContext)
+  const { query, close, registerNav, lastPointer } = useContext(
+    FilterableMenuContext,
+  )
   const scrollRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
 
@@ -904,11 +1042,15 @@ export function VirtualizedFilterableMenuItems<T>({
                   height: estimateSize,
                   transform: `translateY(${row.start}px)`,
                 }}
-                onMouseEnter={() => {
-                  setActive(row.index)
+                onMouseMove={(event) => {
+                  if (pointerMoved(lastPointer, event)) setActive(row.index)
                 }}
                 onClick={(event) => {
-                  onSelect(item, { shiftKey: event.shiftKey })
+                  onSelect(item, {
+                    shiftKey: event.shiftKey,
+                    ctrlKey: event.ctrlKey,
+                    metaKey: event.metaKey,
+                  })
                   if (closeOnSelect) close()
                 }}
               >
@@ -927,8 +1069,8 @@ export function VirtualizedFilterableMenuItems<T>({
             menuItemClassName,
             "text-primary data-highlighted:bg-accent w-full",
           )}
-          onMouseEnter={() => {
-            setActive(createIndex)
+          onMouseMove={(event) => {
+            if (pointerMoved(lastPointer, event)) setActive(createIndex)
           }}
           onClick={() => {
             create.onCreate(trimmed)

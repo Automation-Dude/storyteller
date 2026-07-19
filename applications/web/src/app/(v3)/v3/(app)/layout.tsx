@@ -2,6 +2,7 @@ import { cookies } from "next/headers"
 
 import { AnnouncementModal } from "@v3/_/components/announcements/announcement-modal"
 import { AppSidebar } from "@v3/_/components/app-sidebar"
+import { FloatingBookPanelProvider } from "@v3/_/components/books/FloatingBookPanel"
 import { ProcessingToast } from "@v3/_/components/processing/ProcessingToast"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
 import { UserPreferencesProvider } from "@v3/_/components/user-preferences-provider"
@@ -70,7 +71,9 @@ export default async function AppLayout({
           currentVersion={currentVersion}
           initialSidebarGroups={sidebarGroups}
         />
-        <SidebarInset className="overflow-x-hidden">{children}</SidebarInset>
+        <FloatingBookPanelProvider>
+          <SidebarInset className="overflow-x-hidden">{children}</SidebarInset>
+        </FloatingBookPanelProvider>
         {user.permissions.bookProcess && <ProcessingToast />}
         <AnnouncementModal pending={pendingAnnouncements} />
         {/* <ThemeTweaksPanel /> */}

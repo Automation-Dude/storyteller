@@ -88,9 +88,16 @@ export function PageCountEdit({ className }: { className?: string }) {
           shouldDirty: true,
         })
       }}
-      // onBlur={() => {
-      //   if (inlineMode) void commitField("pageCount")
-      // }}
+      onBlur={(e) => {
+        if (
+          inlineMode &&
+          form.getFieldState("pageCount").isDirty &&
+          JSON.stringify(override) !== JSON.stringify(e.target.value)
+        ) {
+          void commitField("pageCount")
+        }
+        setEditingField(null)
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.preventDefault()

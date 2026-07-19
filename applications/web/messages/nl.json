@@ -50,6 +50,10 @@
     "shelf": {
       "seeAll": "Alles bekijken"
     },
+    "actions": {
+      "scrollLeft": "Scroll naar links",
+      "scrollRight": "Scroll naar rechts"
+    },
     "sections": {
       "empty": "Nog geen secties ingesteld.",
       "customize": "Aanpassen",
@@ -1049,6 +1053,16 @@
               "largest": "Grootst"
             }
           },
+          "opening": {
+            "title": "Boeken openen",
+            "description": "Wat klikken op een boek op de startpagina of in zoekresultaten doet.",
+            "label": "Open boeken in",
+            "hint": "Het zijpaneel zweeft over de pagina voor een snelle blik; de volledige boekpagina is altijd één klik verder. In de raster- en lijstweergave van de bibliotheek opent een klik daar altijd het zijpaneel.",
+            "options": {
+              "panel": "Zijpaneel",
+              "page": "Boekpagina"
+            }
+          },
           "detail": {
             "title": "Detailsweergave",
             "description": "Hoe een boek op de detailpagina wordt getoond.",
@@ -1104,6 +1118,31 @@
         }
       }
     }
+  },
+  "CommandPalette": {
+    "searchPlaceholder": "Zoek of voer een opdracht uit...",
+    "empty": "Geen resultaten",
+    "createCollection": "Verzameling aanmaken",
+    "createShelf": "Plank aanmaken",
+    "organizeHome": "Startpagina indelen",
+    "continueReading": "Verder lezen in {title}",
+    "switchToList": "Wissel naar lijstweergave",
+    "switchToGrid": "Wissel naar rasterweergave",
+    "bookContext": "Boek · {title}",
+    "sectionActions": "Acties",
+    "sectionCommands": "Opdrachten",
+    "sectionGoto": "Ga naar",
+    "sectionBooks": "Boeken",
+    "sectionSeries": "Series",
+    "sectionCollections": "Verzamelingen",
+    "sectionShelves": "Planken",
+    "sectionRecent": "Ga verder",
+    "createShelfNamed": "Plank \"{name}\" aanmaken",
+    "createCollectionNamed": "Verzameling \"{name}\" aanmaken",
+    "hintOpen": "Openen",
+    "hintOpenPage": "Pagina openen",
+    "hintOpenPanel": "Paneel openen",
+    "hintClose": "Sluiten"
   },
   "AppSidebar": {
     "home": "Start",

@@ -27,6 +27,7 @@ import { RatingInput } from "@/app/(v3)/v3/_/components/books/RatingInput"
 import { statusDisplayLabel } from "@/database/statusKinds"
 import {
   BookDetailDisplays,
+  BookOpenTargets,
   DoubleCoverAlignments,
   GridCoverDisplays,
   RatingIcons,
@@ -66,6 +67,11 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
   const ratingIconOptions = RatingIcons.map((key) => ({
     value: key,
     label: t(`ratingIcon.options.${key}`),
+  }))
+
+  const openTargetOptions = BookOpenTargets.map((key) => ({
+    value: key,
+    label: t(`opening.options.${key}`),
   }))
 
   const gridCoverDisplay = useWatch({
@@ -166,6 +172,36 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
                 alignment={doubleCoverAlignment}
               />
             </div>
+          </CardContent>
+        </Card>
+      </PreferencesSection>
+
+      <PreferencesSection tab="books" section="opening">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("opening.title")}</CardTitle>
+            <CardDescription>{t("opening.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Controller
+              name="bookOpenTarget"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <SettingLabel field="bookOpenTarget">
+                    {t("opening.label")}
+                  </SettingLabel>
+                  <FieldDescription>{t("opening.hint")}</FieldDescription>
+                  <SegmentedControl
+                    value={field.value}
+                    onChange={(value) => {
+                      field.onChange(value)
+                    }}
+                    options={openTargetOptions}
+                  />
+                </Field>
+              )}
+            />
           </CardContent>
         </Card>
       </PreferencesSection>

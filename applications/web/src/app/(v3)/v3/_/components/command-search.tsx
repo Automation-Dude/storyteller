@@ -1,181 +1,478 @@
+"use client"
+
 import { useHotkey } from "@tanstack/react-hotkeys"
 import { useRouter } from "next/navigation"
-import { useCallback, useState } from "react"
-// import { BookOpen, FileText, Headphones, RefreshCw, Search } from "lucide-react"
+import { type ReactNode, useCallback, useMemo, useState } from "react"
 
-import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@v3/_/components/ui/command"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
+import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
+import { useVersionBasePath } from "@/app/(v3)/v3/_/components/version-context"
 import { useDebounce } from "@/app/(v3)/v3/_/hooks/use-debounce"
+import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
+import { cn } from "@/cn"
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
+import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
-import { api, getCoverUrl } from "@/store/api"
+import { type StyledIcon } from "@/icons"
+import { api } from "@/store/api"
 
-// import { useDebounce}
+import { BookCover } from "./books/BookCover"
+import { CreateCollectionDialog } from "./books/CreateCollectionDialog"
+import {
+  BUILTIN_SIDEBAR_ITEMS,
+  COLLECTION_ICON,
+  SHELF_ICON,
+} from "./nav/sidebar-items"
+import { ShelfEditor } from "./shelves/ShelfEditor"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "./ui/dialog"
+import {
+  type ActivationModifiers,
+  FilterableMenuGroup,
+  FilterableMenuItem,
+  FilterableMenuLabel,
+  FilterableMenuSurface,
+} from "./ui/filterable-menu"
+import { Skeleton } from "./ui/skeleton"
+
+type NavCommand = {
+  key: string
+  label: string
+  icon: StyledIcon
+  href: string
+}
+
+function useNavCommands(): NavCommand[] {
+  const tSidebar = useTranslation("AppSidebar")
+  const tLibrary = useTranslation("LibraryPage")
+  const c = useCommon()
+  const permissions = usePermissions()
+
+  return useMemo(
+    () => [
+      ...BUILTIN_SIDEBAR_ITEMS.filter(
+        (item) => !item.permission || !!permissions?.[item.permission],
+      ).map((item) => ({
+        key: item.key,
+        label:
+          item.labelNs === "AppSidebar"
+            ? tSidebar.plain(item.labelKey)
+            : tLibrary.plain(item.labelKey),
+        icon: item.icon,
+        href: item.href,
+      })),
+      {
+        key: "shelves",
+        label: c.plain("Nouns.shelf", { count: 2 }),
+        icon: SHELF_ICON,
+        href: "/shelves",
+      },
+      {
+        key: "collections",
+        label: tSidebar.plain("collections"),
+        icon: COLLECTION_ICON,
+        href: "/collections",
+      },
+      {
+        key: "settings",
+        label: tSidebar.plain("settings"),
+        icon: icon.Settings,
+        href: "/settings",
+      },
+      {
+        key: "preferences",
+        label: tSidebar.plain("account"),
+        icon: icon.AdjustmentsHorizontal,
+        href: "/preferences",
+      },
+    ],
+    [permissions, tSidebar, tLibrary, c],
+  )
+}
+
+const rowClassName = "gap-3 rounded-lg px-2 py-1.5"
+
+function BookRow({
+  book,
+  onSelect,
+}: {
+  book: BookWithRelations
+  onSelect: (book: BookWithRelations, modifiers?: ActivationModifiers) => void
+}) {
+  const isSynced = book.readaloud?.status === "ALIGNED"
+  const authors = book.authors.map((a) => a.name).join(", ")
+
+  return (
+    <FilterableMenuItem
+      filter={false}
+      textValue={book.title}
+      onSelect={(modifiers) => {
+        onSelect(book, modifiers)
+      }}
+      className={rowClassName}
+    >
+      <div className="flex h-12 w-9 shrink-0 items-center justify-center">
+        <BookCover book={book} width={36} disableHover />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="font-heading truncate text-sm">{book.title}</div>
+        {authors && (
+          <div className="text-muted-foreground truncate text-xs">
+            {authors}
+          </div>
+        )}
+      </div>
+
+      <div className="text-muted-foreground flex shrink-0 items-center gap-1.5">
+        {isSynced ? (
+          <IconReadaloud className="text-cover-accent size-3.5" />
+        ) : (
+          <>
+            {book.audiobook && <icon.Headphones className="size-3.5" />}
+            {book.ebook && <icon.BookAlt className="size-3.5" />}
+          </>
+        )}
+      </div>
+    </FilterableMenuItem>
+  )
+}
+
+function LoadingBookRows({ count = 3 }: { count?: number }) {
+  return (
+    <div aria-hidden>
+      {Array.from({ length: count }).map((_, idx) => (
+        <div
+          key={`loading-${idx}`}
+          className="flex items-center gap-3 px-2 py-1.5"
+        >
+          <Skeleton className="h-12 w-9 rounded" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-2/5" />
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Kbd({ children }: { children: ReactNode }) {
+  return (
+    <kbd className="bg-muted text-muted-foreground rounded px-1 py-px font-sans text-[0.625rem]">
+      {children}
+    </kbd>
+  )
+}
+
+function CommandPalette({
+  onClose,
+  onCreate,
+}: {
+  onClose: () => void
+  onCreate: (kind: "shelf" | "collection", name: string) => void
+}) {
+  const t = useTranslation("CommandPalette")
+  const router = useRouter()
+  const basePath = useVersionBasePath()
+  const navCommands = useNavCommands()
+
+  const { bookOpenTarget } = useUserPreferences()
+  const { setSelectedBookUuid } = useBookInSidePanel()
+
+  const openBook = useCallback(
+    (book: BookWithRelations, modifiers?: ActivationModifiers) => {
+      // shift inverts the configured target: panel users get the full page,
+      // page users get the side panel.
+      const inverted = modifiers?.shiftKey
+      const target =
+        (bookOpenTarget === "panel") !== !!inverted ? "panel" : "page"
+      if (target === "panel") {
+        void setSelectedBookUuid(book.uuid)
+      } else {
+        router.push(`${basePath}/books/${book.uuid}`)
+      }
+    },
+    [bookOpenTarget, setSelectedBookUuid, router, basePath],
+  )
+
+  const navigateTo = useCallback(
+    (href: string) => {
+      router.push(`${basePath}${href}`)
+    },
+    [router, basePath],
+  )
+
+  return (
+    <FilterableMenuSurface
+      onClose={onClose}
+      searchPlaceholder={t.plain("searchPlaceholder")}
+      searchBefore={
+        <icon.Search className="text-muted-foreground size-4 shrink-0" />
+      }
+      searchWrapperClassName="mb-0 flex items-center gap-2.5 px-3.5 py-1"
+      searchInputClassName="h-10 px-0 text-sm md:h-10 md:text-sm"
+      className="flex min-w-0 flex-col"
+    >
+      {({ query }) => (
+        <PaletteResults
+          query={query}
+          navCommands={navCommands}
+          openBook={openBook}
+          navigateTo={navigateTo}
+          onCreate={onCreate}
+        />
+      )}
+    </FilterableMenuSurface>
+  )
+}
+
+function PaletteResults({
+  query,
+  navCommands,
+  openBook,
+  navigateTo,
+  onCreate,
+}: {
+  query: string
+  navCommands: NavCommand[]
+  openBook: (book: BookWithRelations, modifiers?: ActivationModifiers) => void
+  navigateTo: (href: string) => void
+  onCreate: (kind: "shelf" | "collection", name: string) => void
+}) {
+  const t = useTranslation("CommandPalette")
+  const { bookOpenTarget } = useUserPreferences()
+
+  const trimmed = query.trim()
+  const debouncedSearch = useDebounce(trimmed, 200)
+  const searching = trimmed !== ""
+
+  const { data: searchData, isFetching: isSearchFetching } =
+    api.endpoints.listInfiniteBooks.useInfiniteQuery(
+      { search: debouncedSearch, limit: 8 },
+      { skip: !debouncedSearch },
+    )
+  const { data: recentData, isFetching: isRecentFetching } =
+    api.endpoints.listInfiniteBooks.useInfiniteQuery({
+      limit: 6,
+      orderBy: "lastRead",
+      orderDirection: "desc",
+    })
+
+  const books = searching
+    ? debouncedSearch
+      ? searchData?.pages.flat() ?? []
+      : []
+    : recentData?.pages.flat() ?? []
+  const isLoadingBooks = searching
+    ? isSearchFetching || debouncedSearch !== trimmed
+    : isRecentFetching && !recentData
+
+  const q = trimmed.toLowerCase()
+  const matchedNav = searching
+    ? navCommands
+        .filter((cmd) => cmd.label.toLowerCase().includes(q))
+        .sort(
+          (a, b) =>
+            Number(b.label.toLowerCase().startsWith(q)) -
+            Number(a.label.toLowerCase().startsWith(q)),
+        )
+    : navCommands
+
+  // a query that starts a nav label ("set" -> Settings) reads as navigation
+  // intent, so those outrank book matches; substring-only matches don't.
+  const navPrimary =
+    searching && matchedNav.some((cmd) => cmd.label.toLowerCase().startsWith(q))
+
+  // hide the books block when the search found nothing but nav still matches;
+  // keep it as the empty-state when nothing at all matched.
+  const showBooksSection =
+    !searching || isLoadingBooks || books.length > 0 || matchedNav.length === 0
+
+  const booksSection = showBooksSection && (
+    <>
+      <FilterableMenuGroup>
+        <FilterableMenuLabel>
+          {searching ? t("sectionBooks") : t("sectionRecent")}
+        </FilterableMenuLabel>
+      </FilterableMenuGroup>
+      <FilterableMenuGroup>
+        {isLoadingBooks ? (
+          <LoadingBookRows />
+        ) : books.length === 0 ? (
+          <div className="text-muted-foreground px-2 py-3 text-center text-xs">
+            {t("empty")}
+          </div>
+        ) : (
+          books.map((book) => (
+            <BookRow key={book.uuid} book={book} onSelect={openBook} />
+          ))
+        )}
+      </FilterableMenuGroup>
+    </>
+  )
+
+  const gotoSection = matchedNav.length > 0 && (
+    <FilterableMenuGroup>
+      <FilterableMenuLabel>{t("sectionGoto")}</FilterableMenuLabel>
+      {matchedNav.map((cmd) => (
+        <FilterableMenuItem
+          key={cmd.key}
+          filter={false}
+          icon={<cmd.icon className="text-muted-foreground" />}
+          onSelect={() => {
+            navigateTo(cmd.href)
+          }}
+          className={rowClassName}
+        >
+          <span className="truncate text-xs">{cmd.label}</span>
+        </FilterableMenuItem>
+      ))}
+    </FilterableMenuGroup>
+  )
+
+  const createSection = (
+    <FilterableMenuGroup>
+      <FilterableMenuLabel>{t("sectionActions")}</FilterableMenuLabel>
+      <FilterableMenuItem
+        filter={false}
+        icon={<icon.Plus className="text-muted-foreground" />}
+        onSelect={() => {
+          onCreate("shelf", trimmed)
+        }}
+        className={rowClassName}
+      >
+        <span className="truncate text-xs">
+          {trimmed
+            ? t("createShelfNamed", { name: trimmed })
+            : t("createShelf")}
+        </span>
+      </FilterableMenuItem>
+      <FilterableMenuItem
+        filter={false}
+        icon={<icon.Plus className="text-muted-foreground" />}
+        onSelect={() => {
+          onCreate("collection", trimmed)
+        }}
+        className={rowClassName}
+      >
+        <span className="truncate text-xs">
+          {trimmed
+            ? t("createCollectionNamed", { name: trimmed })
+            : t("createCollection")}
+        </span>
+      </FilterableMenuItem>
+    </FilterableMenuGroup>
+  )
+
+  return (
+    <>
+      <div className="scroll-y max-h-[min(26rem,60vh)] min-w-0 scroll-py-2 overflow-x-hidden overscroll-contain px-1.5 pb-1.5">
+        {/* create rows always sort last so the auto-highlight never lands on
+            them unless they're the only rows */}
+        {navPrimary ? (
+          <>
+            {gotoSection}
+            {booksSection}
+            {createSection}
+          </>
+        ) : searching ? (
+          <>
+            {booksSection}
+            {gotoSection}
+            {createSection}
+          </>
+        ) : (
+          <>
+            {booksSection}
+            {createSection}
+            {gotoSection}
+          </>
+        )}
+      </div>
+
+      <div className="text-muted-foreground flex items-center gap-3 border-t px-3.5 py-2 text-[0.6875rem]">
+        <span className="flex items-center gap-1">
+          <Kbd>↵</Kbd> {t("hintOpen")}
+        </span>
+        <span className="flex items-center gap-1">
+          <Kbd>⇧↵</Kbd>{" "}
+          {bookOpenTarget === "panel" ? t("hintOpenPage") : t("hintOpenPanel")}
+        </span>
+        <span className="ml-auto flex items-center gap-1">
+          <Kbd>esc</Kbd> {t("hintClose")}
+        </span>
+      </div>
+    </>
+  )
+}
 
 export function CommandSearch() {
   const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState("")
-  const debouncedSearch = useDebounce(search, 300)
-
-  const router = useRouter()
-  const { data, isFetching } = api.endpoints.listInfiniteBooks.useInfiniteQuery(
-    { search: debouncedSearch || undefined, limit: 10 },
-    { skip: !debouncedSearch },
-  )
+  const [pendingCreate, setPendingCreate] = useState<{
+    kind: "shelf" | "collection"
+    name: string
+  } | null>(null)
 
   useHotkey("Mod+K", () => {
     setOpen((prev) => !prev)
   })
-  // const [
-  //   triggerContentSearch,
-  //   { data: contentData, isFetching: isContentFetching },
-  // ] = useLazySearchContentQuery()
 
-  // useEffect(() => {
-  //   if (debouncedSearch && debouncedSearch.length >= 3) {
-  //     triggerContentSearch({ query: debouncedSearch, limit: 5 })
-  //   }
-  // }, [debouncedSearch, triggerContentSearch])
+  const close = useCallback(() => {
+    setOpen(false)
+  }, [])
 
-  const books = data?.pages.flatMap((page) => page) ?? []
-
-  const isLoading = isFetching
-  const hasNoResults = debouncedSearch && !isLoading && books.length === 0
-
-  const handleSelectBook = useCallback(
-    (book: BookWithRelations) => {
+  const handleCreate = useCallback(
+    (kind: "shelf" | "collection", name: string) => {
       setOpen(false)
-      setSearch("")
-      router.push(`/books/${book.uuid}`)
+      setPendingCreate({ kind, name })
     },
-    [router],
+    [],
   )
 
-  const handleOpenChange = useCallback((open: boolean) => {
-    setOpen(open)
-    if (!open) {
-      setSearch("")
-    }
+  const closeCreate = useCallback((nextOpen: boolean) => {
+    if (!nextOpen) setPendingCreate(null)
   }, [])
 
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={handleOpenChange}
-      title="Search"
-      description="Search for books by title, author, or content"
-    >
-      <Command shouldFilter={false}>
-        <CommandInput
-          placeholder="Search books, authors, or content..."
-          value={search}
-          onValueChange={setSearch}
-        />
-        <CommandList>
-          {!debouncedSearch && (
-            <CommandEmpty>
-              <div className="flex flex-col items-center gap-2 py-4">
-                <icon.Search className="text-muted-foreground h-8 w-8" />
-                <p>Start typing to search...</p>
-                <p className="text-muted-foreground text-xs">
-                  Search by title, author, or book content
-                </p>
-              </div>
-            </CommandEmpty>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          showCloseButton={false}
+          className={cn(
+            "top-14 translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-lg",
           )}
-          {hasNoResults && <CommandEmpty>No results found.</CommandEmpty>}
-          {books.length > 0 && (
-            <CommandGroup heading="Books">
-              {books.map((book) => (
-                <CommandItem
-                  key={book.uuid}
-                  value={`book-${book.uuid}`}
-                  onSelect={() => {
-                    handleSelectBook(book)
-                  }}
-                  className="flex items-center gap-3 py-2"
-                >
-                  <img
-                    src={getCoverUrl(book.uuid, {
-                      width: 40,
-                      height: 60,
-                      updatedAt: book.ebook?.updatedAt ?? book.updatedAt,
-                    })}
-                    alt=""
-                    className="h-12 w-8 rounded object-cover"
-                  />
-                  <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                    <span className="truncate font-medium">{book.title}</span>
-                    {book.authors.length > 0 && (
-                      <span className="text-muted-foreground truncate text-xs">
-                        {book.authors.map((a) => a.name).join(", ")}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    {book.readaloud && (
-                      <IconReadaloud className="h-3.5 w-3.5 text-orange-500" />
-                    )}
-                    {book.audiobook && !book.readaloud && (
-                      <icon.Headphones className="text-muted-foreground h-3.5 w-3.5" />
-                    )}
-                    {book.ebook && !book.readaloud && (
-                      <icon.BookAlt className="text-muted-foreground h-3.5 w-3.5" />
-                    )}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-          {/* {contentResults.length > 0 && (
-            <>
-              {books.length > 0 && <CommandSeparator />}
-              <CommandGroup heading="Content matches">
-                {contentResults.map((result, index) => (
-                  <CommandItem
-                    key={`content-${result.bookUuid}-${result.spineItemIndex}-${index}`}
-                    value={`content-${result.bookUuid}-${index}`}
-                    onSelect={() => handleSelectContent(result)}
-                    className="flex items-start gap-3 py-2"
-                  >
-                    <FileText className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-                    <div className="flex flex-1 flex-col gap-1 overflow-hidden">
-                      <span className="text-sm font-medium">
-                        {result.book.title}
-                      </span>
-                      <span
-                        className="text-muted-foreground line-clamp-2 text-xs"
-                        dangerouslySetInnerHTML={{ __html: result.snippet }}
-                      />
-                      {result.book.authors.length > 0 && (
-                        <span className="text-muted-foreground text-xs">
-                          {result.book.authors.map((a) => a.name).join(", ")}
-                        </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </>
-          )} */}
-        </CommandList>
-      </Command>
-    </CommandDialog>
+        >
+          <DialogTitle className="sr-only">Search</DialogTitle>
+          <DialogDescription className="sr-only">
+            Search for books or run a command
+          </DialogDescription>
+          {/* mounted only while open so query + highlight reset on close */}
+          {open && <CommandPalette onClose={close} onCreate={handleCreate} />}
+        </DialogContent>
+      </Dialog>
+
+      <ShelfEditor
+        open={pendingCreate?.kind === "shelf"}
+        onOpenChange={closeCreate}
+        initialName={pendingCreate?.name}
+      />
+      <CreateCollectionDialog
+        open={pendingCreate?.kind === "collection"}
+        onOpenChange={closeCreate}
+        initialName={pendingCreate?.name ?? ""}
+      />
+    </>
   )
 }
 
 export function useCommandSearch() {
-  const [, setOpen] = useState(false)
-
   const openSearch = useCallback(() => {
     const event = new KeyboardEvent("keydown", {
       key: "k",
@@ -185,5 +482,5 @@ export function useCommandSearch() {
     document.dispatchEvent(event)
   }, [])
 
-  return { openSearch, setOpen }
+  return { openSearch }
 }

@@ -27,6 +27,8 @@ import {
   selectShowProcessingBadge,
   selectShowReadaloudBadge,
 } from "@/store/slices/uiSettingsSlice"
+import { useRender } from "@base-ui/react/use-render"
+import { mergeProps } from "@base-ui/react/merge-props"
 
 function isCreatorField(
   field: DisplayField,
@@ -39,24 +41,7 @@ function isCreatorField(
   )
 }
 
-export const BookListItem = memo(function BookListItem({
-  book,
-  muted = false,
-  selected = false,
-  keyboardNav = false,
-  active = false,
-  isSelecting = false,
-  isBookSelected = false,
-  onToggleSelection,
-  onSelectRange,
-  onOpenMenu,
-  isMenuOpen = false,
-  onClick,
-  displayFields = ["authors"],
-  displayContext,
-  showThumbnail = true,
-  handle,
-}: {
+type BookListItemProps = {
   book: BookWithRelations
   muted?: boolean
   selected?: boolean
@@ -76,7 +61,29 @@ export const BookListItem = memo(function BookListItem({
   displayContext?: SortContext
   showThumbnail?: boolean
   handle?: Popover.Handle<unknown>
-}) {
+}
+export const BookListItem = memo(function BookListItem(
+  props: BookListItemProps,
+) {
+  const {
+    book,
+    muted = false,
+    selected = false,
+    keyboardNav = false,
+    active = false,
+    isSelecting = false,
+    isBookSelected = false,
+    onToggleSelection,
+    onSelectRange,
+    onOpenMenu,
+    isMenuOpen = false,
+    onClick,
+    displayFields = ["authors"],
+    displayContext,
+    showThumbnail = true,
+    handle,
+  } = props
+
   const isMobile = useIsMobile()
 
   const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)

@@ -55,7 +55,9 @@ export function CollapsibleSection({
   return (
     <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
       <div className="group/section">
-        <div className="relative mb-3 flex items-center gap-3">
+        <div
+          className={cn("relative flex items-center gap-3", isOpen && "mb-3")}
+        >
           <CollapsibleTrigger
             className="flex h-full w-full cursor-pointer items-center justify-between gap-3"
             aria-label={"Toggle section"}
