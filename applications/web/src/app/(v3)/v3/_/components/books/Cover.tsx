@@ -174,7 +174,10 @@ export const Cover = memo(function Cover({
         blurhash={book.audiobook.coverBlurhash}
         colors={book.audiobook.coverColors}
         type="audiobook"
-        className={cn("aspect-square shadow-sm", className)}
+        className={cn(
+          "aspect-square shadow-sm transition-transform duration-200 hover:translate-y-[-2px] hover:rotate-[-2deg]",
+          className,
+        )}
       />
     )
   }
@@ -192,7 +195,10 @@ export const Cover = memo(function Cover({
       blurhash={book.ebook?.coverBlurhash}
       colors={book.ebook?.coverColors}
       type="ebook"
-      className={cn("aspect-2/3 h-full shadow-sm", className)}
+      className={cn(
+        "aspect-2/3 h-full shadow-sm transition-transform duration-200 hover:translate-y-[-2px] hover:rotate-[-2deg]",
+        className,
+      )}
     />
   )
 })
