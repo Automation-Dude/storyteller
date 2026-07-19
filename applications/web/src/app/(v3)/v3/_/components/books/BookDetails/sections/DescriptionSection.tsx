@@ -64,6 +64,8 @@ function CollapsibleDescription({
           mustExpandFirst && "cursor-pointer",
           editableNow &&
             "hover:bg-input/10 -mx-1.5 cursor-text rounded-md px-1.5",
+          // prevents extra spacing at the top if desc is structured like <div><p>...</p></div>
+          "[&_p]:mt-0",
         )}
         style={{
           maxHeight: expanded
@@ -74,7 +76,7 @@ function CollapsibleDescription({
       />
 
       {mustExpandFirst && (
-        <div className="from-background pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t to-transparent" />
+        <div className="from-surface-raised pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t to-transparent" />
       )}
 
       {isOverflowing && (

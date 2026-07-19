@@ -1,4 +1,5 @@
 @import "tailwindcss" source("../v3/");
+@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 /* @import "shadcn/tailwind.css"; */
 
