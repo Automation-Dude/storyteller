@@ -87,3 +87,13 @@ export const logger = pino(
     { stream: fileStream, level: env.STORYTELLER_LOG_LEVEL },
   ]),
 )
+
+process.on("uncaughtException", (err) => {
+  logger.fatal({ err }, "uncaught exception")
+  fileStream.flushSync()
+  process.exit(1)
+})
+
+process.on("unhandledRejection", (reason) => {
+  logger.error({ err: reason }, "unhandled rejection")
+})
