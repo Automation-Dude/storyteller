@@ -26,17 +26,19 @@ export default async function AppLayout({
   const cookieStore = await cookies()
   const currentVersion = getCurrentVersion()
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
-
   await ensureSidebarDefaults(user.id)
-  const sidebarGroups = await getSidebarGroups(user.id)
 
-  const preferenceDefaults = await getPreferenceDefaults()
+  const [sidebarGroups, preferenceDefaults, pendingAnnouncements] =
+    await Promise.all([
+      getSidebarGroups(user.id),
+      getPreferenceDefaults(),
+      getPendingAnnouncements(user.id),
+    ])
+
   const preferences = resolveUserPreferences(
     await getUserSettings(user.id),
     preferenceDefaults,
   )
-
-  const pendingAnnouncements = await getPendingAnnouncements(user.id)
 
   const accentStyle: React.CSSProperties = preferences.accentColor
     ? ({
@@ -57,9 +59,7 @@ export default async function AppLayout({
         style={
           {
             "--sidebar-width": "calc(var(--spacing) * 56)",
-            // one shared 56px header line across every panel's header row
             "--header-height": "calc(var(--spacing) * 14)",
-            // "--sidebar-width-icon": "calc(var(--spacing) * 11)",
             ...accentStyle,
           } as React.CSSProperties
         }
@@ -76,7 +76,6 @@ export default async function AppLayout({
         </FloatingBookPanelProvider>
         {user.permissions.bookProcess && <ProcessingToast />}
         <AnnouncementModal pending={pendingAnnouncements} />
-        {/* <ThemeTweaksPanel /> */}
       </SidebarProvider>
     </UserPreferencesProvider>
   )
