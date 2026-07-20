@@ -1,12 +1,12 @@
 import { sql } from "kysely"
 
 import { type Role } from "@/components/books/edit/marcRelators"
-import { ALIGNMENT_GRADES } from "@/fields"
+import { ALIGNMENT_GRADES, FORMAT_VALUES } from "@/fields"
 import { type ShelfFilter } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
-import { buildFilterExpression } from "./shelfFilter"
+import { buildFilterExpression, formatPredicate } from "./shelfFilter"
 
 // a single row within a facet (one status, one rating bucket, one author). a
 // facet (aka section, see FacetSection) is the dimension; a FacetValue is one
@@ -403,58 +403,25 @@ async function ratingFacets(userId: UUID): Promise<FacetValue[]> {
   }))
 }
 
-// the exclusive format partition matching getFormatKey in library-sections.ts.
-const formatKeyExpr = sql<string>`
-  case
-    when exists (
-      select 1 from readaloud r
-      where r.book_uuid = book.uuid and r.status = 'ALIGNED'
-    ) then 'readaloud'
-    when exists (select 1 from audiobook a where a.book_uuid = book.uuid)
-     and exists (select 1 from ebook e where e.book_uuid = book.uuid)
-      then 'audiobook-ebook'
-    when exists (select 1 from audiobook a where a.book_uuid = book.uuid)
-      then 'audiobook-only'
-    when exists (select 1 from ebook e where e.book_uuid = book.uuid)
-      then 'ebook-only'
-    when exists (select 1 from readaloud r where r.missing = true) or exists (select 1 from audiobook a where a.missing = true) or exists (select 1 from ebook e where e.missing = true)
-      then 'missing-media'
-    else 'no-media'
-  end
-`
-
-// canonical format partition (matches FormatKey in library-sections.ts and the
-// non-else branches of formatKeyExpr, minus the edge 'missing-media' bucket which
-// has no filter mapping yet). the client relabels these keys via itemLabels.
-const FORMAT_VALUE_KEYS = [
-  "readaloud",
-  "audiobook-ebook",
-  "audiobook-only",
-  "ebook-only",
-  "no-media",
-] as const
-
+// one count per canonical format value. the values overlap (a fully synced
+// book has an ebook, an audiobook and a readaloud), so counts don't sum to
+// the library total; the semantics live in formatPredicate.
 async function formatFacets(userId: UUID): Promise<FacetValue[]> {
-  const rows = await visibleBooks(userId)
-    .select((eb) => [
-      formatKeyExpr.as("key"),
-      eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
-    ])
-    .groupBy(formatKeyExpr)
-    .execute()
+  const row = await visibleBooks(userId)
+    .select((eb) =>
+      FORMAT_VALUES.map((value) =>
+        sql<number>`count(distinct case when ${formatPredicate(eb, value)} then book.uuid end)`.as(
+          value,
+        ),
+      ),
+    )
+    .executeTakeFirst()
 
-  const counts = new Map(rows.map((r) => [r.key, r.bookCount]))
-
-  const canonical: FacetValue[] = FORMAT_VALUE_KEYS.map((key) => ({
-    key,
-    name: key,
-    bookCount: counts.get(key) ?? 0,
+  return FORMAT_VALUES.map((value) => ({
+    key: value,
+    name: value,
+    bookCount: row?.[value] ?? 0,
   }))
-  const extra: FacetValue[] = rows
-    .filter((r) => !(FORMAT_VALUE_KEYS as readonly string[]).includes(r.key))
-    .map((r) => ({ key: r.key, name: r.key, bookCount: r.bookCount }))
-
-  return [...canonical, ...extra]
 }
 
 const latestGradeExpr = sql<string>`(

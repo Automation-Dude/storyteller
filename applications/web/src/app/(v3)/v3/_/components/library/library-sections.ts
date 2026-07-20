@@ -2,7 +2,7 @@ import { GRADE_COLORS } from "@v3/_/components/books/grade-pill"
 
 import { type FacetSection } from "@/database/libraryCounts"
 import { isWellKnownStatus } from "@/database/statusKinds"
-import { type MediaTypeValue } from "@/fields"
+import { type FormatValue } from "@/fields"
 import { type ShelfFilterField, type ShelfFilterNode } from "@/shelves"
 import { GRADE_RANK, type SortDirection, type SortField } from "@/sort"
 import { type ListBooksQueryArg } from "@/store/api"
@@ -87,15 +87,6 @@ function emptyFilter(field: ShelfFilterField, role?: string): ShelfFilterNode {
     operator: "isEmpty",
     ...(role ? { role } : {}),
   }
-}
-
-// TODO: unify
-const FORMAT_KEY_TO_MEDIA_TYPE: Record<FormatKey, MediaTypeValue> = {
-  readaloud: "synced",
-  "audiobook-ebook": "missing-readaloud",
-  "audiobook-only": "audiobook-only",
-  "ebook-only": "ebook-only",
-  "no-media": "no-media",
 }
 
 const GRADED_FILTER: ShelfFilterNode = {
@@ -191,9 +182,9 @@ export const librarySections = {
     key: "formats" as const,
     toShelfFilter: (itemKey: string): ShelfFilterNode => ({
       type: "condition",
-      field: "mediaType",
+      field: "format",
       operator: "is",
-      value: FORMAT_KEY_TO_MEDIA_TYPE[itemKey as FormatKey],
+      value: itemKey as FormatValue,
     }),
   },
   grades: {
@@ -247,10 +238,3 @@ export function sectionSeedQueryArg(
 
   return section.toShelfFilter ? { filter: section.toShelfFilter(itemKey) } : {}
 }
-
-export type FormatKey =
-  | "readaloud"
-  | "audiobook-ebook"
-  | "audiobook-only"
-  | "ebook-only"
-  | "no-media"

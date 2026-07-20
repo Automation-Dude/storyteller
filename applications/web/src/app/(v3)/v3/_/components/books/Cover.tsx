@@ -51,8 +51,9 @@ const CoverLoadContext = createContext(true)
 export const CoverLoadProvider = CoverLoadContext.Provider
 
 export function isDual(book: BookWithRelations): boolean {
-  const synced = book.readaloud !== null && book.readaloud.status === "ALIGNED"
-  return synced || (book.ebook !== null && book.audiobook !== null)
+  const hasReadaloud =
+    book.readaloud !== null && book.readaloud.status === "ALIGNED"
+  return hasReadaloud || (book.ebook !== null && book.audiobook !== null)
 }
 
 // ── tile ────────────────────────────────────────────────────────────────────

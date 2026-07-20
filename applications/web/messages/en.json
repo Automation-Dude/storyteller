@@ -227,12 +227,6 @@
       "processingIcon": "Processing icon",
       "missingFiles": "Missing files"
     },
-    "mediaTypes": {
-      "all": "All",
-      "ebook": "Ebook",
-      "audiobook": "Audiobook",
-      "readaloud": "Readaloud"
-    },
     "count": {
       "summary": "{shown, number} of {total, number}",
       "allLoaded": "{total, number} books",
@@ -309,12 +303,7 @@
     },
     "Formats": {
       "plain": "Format",
-      "by": "By Format",
-      "readaloud": "Readaloud",
-      "audiobook-ebook": "Audiobook + Ebook",
-      "audiobook-only": "Audiobook only",
-      "ebook-only": "Ebook only",
-      "no-media": "No media"
+      "by": "By Format"
     },
     "BookReports": {
       "title": "Book Reports",
@@ -468,7 +457,7 @@
     "selectStatuses": "Search statuses...",
     "selectStatus": "Select status...",
     "selectMediaType": "Select...",
-    "searchMediaTypes": "Search media types...",
+    "searchFormats": "Search formats...",
     "operators": {
       "is": "is",
       "isNot": "is not",
@@ -519,7 +508,7 @@
       "highlyRated": "Highly rated (4+)",
       "audiobooksOnly": "Audiobooks only",
       "ebooksOnly": "Ebooks only",
-      "syncedOnly": "Synced books",
+      "hasReadaloud": "Has readaloud",
       "hasReview": "Has review",
       "unrated": "Unrated",
       "longBooks": "Long books (300+ pages)"
@@ -1418,7 +1407,7 @@
         "collections": "Collections",
         "series": "Series",
         "creators": "Other Creators",
-        "mediaType": "Format",
+        "format": "Format",
         "review": "My Review",
         "ratingDimension": "Rating Dimension",
         "search": "Search (any field)",
@@ -1427,13 +1416,15 @@
         "alignment": "Alignment"
       },
       "options": {
-        "mediaType": {
-          "ebook": "Has Ebook",
-          "audiobook": "Has Audiobook",
-          "synced": "Has Readaloud",
-          "ebook-only": "Only Ebook",
-          "audiobook-only": "Only Audiobook",
-          "missing-readaloud": "Not Aligned",
+        "format": {
+          "ebook": "Has ebook",
+          "audiobook": "Has audiobook",
+          "readaloud": "Has readaloud",
+          "ebook-only": "Ebook only",
+          "audiobook-only": "Audiobook only",
+          "readaloud-only": "Readaloud only",
+          "missing-readaloud": "Missing readaloud",
+          "missing-files": "Missing files",
           "no-media": "No media"
         },
         "alignmentGrade": {

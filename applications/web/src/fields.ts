@@ -121,17 +121,22 @@ export const RECENCY_DATE_PRESETS: DatePreset[] = [
   { label: "Last year", days: 365 },
 ]
 
-export const MEDIA_TYPE_VALUES = [
+// the values of the "format" filter field. the first three are "has X"
+// predicates (an aligned readaloud for "readaloud"); the rest are composites
+// over the same three assets. deliberately not mutually exclusive.
+export const FORMAT_VALUES = [
   "ebook",
   "audiobook",
-  "synced",
+  "readaloud",
   "ebook-only",
   "audiobook-only",
+  "readaloud-only",
   "missing-readaloud",
+  "missing-files",
   "no-media",
 ] as const
 
-export type MediaTypeValue = (typeof MEDIA_TYPE_VALUES)[number]
+export type FormatValue = (typeof FORMAT_VALUES)[number]
 
 export const FIELD_REGISTRY = {
   // -- text -----------------------------------------------------------------
@@ -290,13 +295,13 @@ export const FIELD_REGISTRY = {
   },
 
   // -- facets / enum --------------------------------------------------------
-  mediaType: {
+  format: {
     control: "enum",
     sortable: false,
     quick: true,
-    options: [...MEDIA_TYPE_VALUES],
+    options: [...FORMAT_VALUES],
     token: "format",
-    labelKey: "mediaType",
+    labelKey: "format",
     group: "media",
     type: "enum",
   },

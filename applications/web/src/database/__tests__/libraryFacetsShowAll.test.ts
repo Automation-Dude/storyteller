@@ -63,10 +63,15 @@ void describe("getSectionFacets show-all", () => {
     const facets = await getSectionFacets(userId, "formats")
     const byKey = Object.fromEntries(facets.map((f) => [f.key, f.bookCount]))
 
+    assert.strictEqual(facets.length, 9)
+    assert.strictEqual(byKey["ebook"], 2)
     assert.strictEqual(byKey["ebook-only"], 2)
+    assert.strictEqual(byKey["audiobook"], 0)
     assert.strictEqual(byKey["readaloud"], 0)
-    assert.strictEqual(byKey["audiobook-ebook"], 0)
     assert.strictEqual(byKey["audiobook-only"], 0)
+    assert.strictEqual(byKey["readaloud-only"], 0)
+    assert.strictEqual(byKey["missing-readaloud"], 0)
+    assert.strictEqual(byKey["missing-files"], 0)
     assert.strictEqual(byKey["no-media"], 0)
   })
 
@@ -151,7 +156,7 @@ void describe("getSectionFacets show-all", () => {
       children: [
         {
           type: "condition",
-          field: "mediaType",
+          field: "format",
           operator: "is",
           value: "ebook-only",
         },

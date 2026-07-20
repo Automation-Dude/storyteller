@@ -6,7 +6,13 @@ import {
 } from "kysely"
 
 import { type Role } from "@/components/books/edit/marcRelators"
-import { ALIGNMENT_GRADES, type AssetFormat, getFieldType } from "@/fields"
+import {
+  ALIGNMENT_GRADES,
+  type AssetFormat,
+  FORMAT_VALUES,
+  type FormatValue,
+  getFieldType,
+} from "@/fields"
 import {
   type ShelfFilter,
   type ShelfFilterCondition,
@@ -549,33 +555,8 @@ function buildIsEmptyExpression(
         ),
       )
 
-    case "mediaType":
-      return eb.and([
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("ebook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("ebook.bookUuid", "=", "book.uuid"),
-          ),
-        ),
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("audiobook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("audiobook.bookUuid", "=", "book.uuid"),
-          ),
-        ),
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("readaloud")
-              .select(sql.lit(1).as("one"))
-              .whereRef("readaloud.bookUuid", "=", "book.uuid"),
-          ),
-        ),
-      ])
+    case "format":
+      return formatPredicate(eb, "no-media")
     default: {
       const _exhaustive: never = field
       return eb.lit(true) as FilterExpression
@@ -680,7 +661,7 @@ function buildComparisonExpression(
         role,
       )
     case "enum":
-      return buildEnumComparison(eb, field as "mediaType", operator, value)
+      return buildEnumComparison(eb, field as "format", operator, value)
     default: {
       const _exhaustive: never = fieldType
       return eb.lit(true)
@@ -1624,12 +1605,12 @@ function buildCreatorComparison(
   }
 }
 
-function buildEnumComparison(
-  eb: EB,
-  _field: "mediaType",
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-): FilterExpression {
+/**
+ * the canonical semantics of every format value, shared by the shelf filter
+ * and the formats facet counts. "readaloud" means an aligned one; "only"
+ * excludes both other assets; "no-media" means no asset rows in any state.
+ */
+export function formatPredicate(eb: EB, value: FormatValue): FilterExpression {
   const hasEbook = eb.exists(
     eb
       .selectFrom("ebook")
@@ -1642,55 +1623,101 @@ function buildEnumComparison(
       .select(sql.lit(1).as("one"))
       .whereRef("audiobook.bookUuid", "=", "book.uuid"),
   )
-  const hasAligned = eb.exists(
+  const hasReadaloud = eb.exists(
     eb
       .selectFrom("readaloud")
       .select(sql.lit(1).as("one"))
       .whereRef("readaloud.bookUuid", "=", "book.uuid")
       .where("readaloud.status", "=", "ALIGNED"),
   )
+  const hasReadaloudRow = eb.exists(
+    eb
+      .selectFrom("readaloud")
+      .select(sql.lit(1).as("one"))
+      .whereRef("readaloud.bookUuid", "=", "book.uuid"),
+  )
+  const missingEbook = eb.exists(
+    eb
+      .selectFrom("ebook")
+      .select(sql.lit(1).as("one"))
+      .whereRef("ebook.bookUuid", "=", "book.uuid")
+      .where("ebook.missing", "=", true),
+  )
+  const missingAudiobook = eb.exists(
+    eb
+      .selectFrom("audiobook")
+      .select(sql.lit(1).as("one"))
+      .whereRef("audiobook.bookUuid", "=", "book.uuid")
+      .where("audiobook.missing", "=", true),
+  )
+  const missingReadaloud = eb.exists(
+    eb
+      .selectFrom("readaloud")
+      .select(sql.lit(1).as("one"))
+      .whereRef("readaloud.bookUuid", "=", "book.uuid")
+      .where("readaloud.missing", "=", true),
+  )
 
-  // the first three are broad (does the book have this asset at all); the rest
-  // are composites mirroring getFormatKey in library-sections.ts.
-  const mediaTypeCondition = (type: string): FilterExpression => {
-    switch (type) {
-      case "ebook":
-        return hasEbook
-      case "audiobook":
-        return hasAudiobook
-      case "synced":
-        return hasAligned
-      case "ebook-only":
-        return eb.and([hasEbook, eb.not(hasAudiobook)])
-      case "audiobook-only":
-        return eb.and([hasAudiobook, eb.not(hasEbook)])
-      case "missing-readaloud":
-        return eb.and([hasEbook, hasAudiobook, eb.not(hasAligned)])
-      case "no-media":
-        return eb.and([
-          eb.not(hasEbook),
-          eb.not(hasAudiobook),
-          eb.not(hasAligned),
-        ])
-      default:
-        return eb.lit(false)
+  switch (value) {
+    case "ebook":
+      return hasEbook
+    case "audiobook":
+      return hasAudiobook
+    case "readaloud":
+      return hasReadaloud
+    case "ebook-only":
+      return eb.and([hasEbook, eb.not(hasAudiobook), eb.not(hasReadaloud)])
+    case "audiobook-only":
+      return eb.and([hasAudiobook, eb.not(hasEbook), eb.not(hasReadaloud)])
+    case "readaloud-only":
+      return eb.and([hasReadaloud, eb.not(hasEbook), eb.not(hasAudiobook)])
+    case "missing-readaloud":
+      return eb.and([hasEbook, hasAudiobook, eb.not(hasReadaloud)])
+    case "missing-files":
+      return eb.or([missingEbook, missingAudiobook, missingReadaloud])
+    case "no-media":
+      return eb.and([
+        eb.not(hasEbook),
+        eb.not(hasAudiobook),
+        eb.not(hasReadaloudRow),
+      ])
+    default: {
+      const _exhaustive: never = value
+      return eb.lit(false)
     }
   }
+}
+
+function isFormatValue(value: unknown): value is FormatValue {
+  return (
+    typeof value === "string" &&
+    (FORMAT_VALUES as readonly string[]).includes(value)
+  )
+}
+
+function buildEnumComparison(
+  eb: EB,
+  _field: "format",
+  operator: ShelfFilterOperator,
+  value: ShelfFilterValue,
+): FilterExpression {
+  const condition = (v: unknown): FilterExpression =>
+    isFormatValue(v) ? formatPredicate(eb, v) : eb.lit(false)
 
   switch (operator) {
     case "is":
-      return mediaTypeCondition(String(value))
+      return condition(value)
 
     case "isNot":
-      return eb.not(mediaTypeCondition(String(value)))
+      return eb.not(condition(value))
 
     case "isAnyOf":
       if (!Array.isArray(value)) return eb.lit(true)
-      return eb.or(value.map((v) => mediaTypeCondition(String(v))))
+      return eb.or(value.map(condition))
 
     case "isNoneOf":
       if (!Array.isArray(value)) return eb.lit(true)
-      return eb.and(value.map((v) => eb.not(mediaTypeCondition(String(v)))))
+      return eb.and(value.map((v) => eb.not(condition(v))))
 
     default:
       return eb.lit(true)

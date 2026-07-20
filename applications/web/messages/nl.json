@@ -166,12 +166,6 @@
       "title": "Titel",
       "publicationDate": "Publicatie datum"
     },
-    "mediaTypes": {
-      "all": "Alle",
-      "ebook": "Ebook",
-      "audiobook": "Audioboek",
-      "readaloud": "<em>Readaloud</em>"
-    },
     "displayOptions": {
       "layout": "Layout",
       "view": "Weergave",
@@ -286,12 +280,7 @@
     },
     "Formats": {
       "plain": "Formaat",
-      "by": "Op Formaat",
-      "readaloud": "Readaloud",
-      "audiobook-ebook": "Luisterboek + E-book",
-      "audiobook-only": "Alleen luisterboek",
-      "ebook-only": "Alleen e-book",
-      "no-media": "Geen media"
+      "by": "Op Formaat"
     },
     "Shelves": {
       "plain": "Planken",
@@ -444,7 +433,7 @@
     "selectStatuses": "Zoek statussen...",
     "selectStatus": "Selecteer status...",
     "selectMediaType": "Selecteer...",
-    "searchMediaTypes": "Zoek mediatypes...",
+    "searchFormats": "Zoek formaten...",
     "operators": {
       "is": "is",
       "isNot": "is niet",
@@ -495,7 +484,7 @@
       "highlyRated": "Hoog beoordeeld (4+)",
       "audiobooksOnly": "Alleen audioboeken",
       "ebooksOnly": "Alleen e-books",
-      "syncedOnly": "Gesynchroniseerde boeken",
+      "hasReadaloud": "Heeft readaloud",
       "hasReview": "Heeft recensie",
       "unrated": "Onbeoordeeld",
       "longBooks": "Lange boeken (300+ pagina's)"
@@ -1492,7 +1481,7 @@
         "narrators": "Vertellers",
         "translators": "Vertalers",
         "creators": "Overige Betrokkenen",
-        "mediaType": "Formaat",
+        "format": "Formaat",
         "review": "Mijn recensie",
         "ratingDimension": "Beoordelingsdimensie",
         "search": "Zoek (alle velden)",
@@ -1525,13 +1514,15 @@
         "alignedByStorytellerVersion": "Versie"
       },
       "options": {
-        "mediaType": {
-          "ebook": "Heeft Ebook",
-          "audiobook": "Heeft Luisterboek",
-          "synced": "Heeft <em>Readaloud</em>",
-          "ebook-only": "Alleen Ebook",
-          "audiobook-only": "Alleen Luisterboek",
-          "missing-readaloud": "Niet gesynchroniseerd",
+        "format": {
+          "ebook": "Heeft ebook",
+          "audiobook": "Heeft audioboek",
+          "readaloud": "Heeft readaloud",
+          "ebook-only": "Alleen ebook",
+          "audiobook-only": "Alleen audioboek",
+          "readaloud-only": "Alleen readaloud",
+          "missing-readaloud": "Readaloud ontbreekt",
+          "missing-files": "Ontbrekende bestanden",
           "no-media": "Geen media"
         },
         "alignmentGrade": {

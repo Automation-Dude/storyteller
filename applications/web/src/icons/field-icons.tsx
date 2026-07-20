@@ -35,7 +35,7 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   narrators: { base: icon.Microphone },
   translators: { base: icon.Language },
   authors: { base: icon.User },
-  mediaType: { base: icon.BookAlt },
+  format: { base: icon.BookAlt },
   userRating: { base: icon.Star },
   ratingDimension: { base: icon.ChartRadar },
   pageCount: { base: icon.FileText },

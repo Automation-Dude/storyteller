@@ -1,3 +1,4 @@
+import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { type BookWithRelations } from "@/database/books"
@@ -17,6 +18,8 @@ type MissingBadgeProps = {
 }
 
 export function MissingBadge({ book, className, inline }: MissingBadgeProps) {
+  const t = useTranslation("BooksPage")
+
   if (!hasMissingMedia(book)) return null
 
   if (inline) {
@@ -26,7 +29,7 @@ export function MissingBadge({ book, className, inline }: MissingBadgeProps) {
           "inline-flex size-3.5 shrink-0 items-center justify-center rounded-full bg-red-500 text-white",
           className,
         )}
-        title="Missing files"
+        title={t.plain("displayOptions.missingFiles")}
       >
         <svg
           viewBox="0 0 16 16"
@@ -46,7 +49,7 @@ export function MissingBadge({ book, className, inline }: MissingBadgeProps) {
         "flex size-4.5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm",
         className,
       )}
-      title="Missing files"
+      title={t.plain("displayOptions.missingFiles")}
     >
       <svg
         viewBox="0 0 16 16"

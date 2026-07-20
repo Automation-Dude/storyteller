@@ -85,6 +85,9 @@ const jsMigrations: Record<string, () => Promise<void>> = {
   ).default,
   "105_v2_reconcile.sql": (await import("./migrations/105_v2_reconcile.sql"))
     .default,
+  "107_unify_format_filter.sql": (
+    await import("./migrations/107_unify_format_filter.sql")
+  ).default,
 }
 
 async function isFirstStartup() {

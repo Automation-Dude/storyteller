@@ -104,27 +104,27 @@ const FILTER_PRESETS: FilterPreset[] = [
     key: "audiobooksOnly",
     node: {
       type: "condition",
-      field: "mediaType",
+      field: "format",
       operator: "is",
-      value: "audiobook",
+      value: "audiobook-only",
     },
   },
   {
     key: "ebooksOnly",
     node: {
       type: "condition",
-      field: "mediaType",
+      field: "format",
       operator: "is",
-      value: "ebook",
+      value: "ebook-only",
     },
   },
   {
-    key: "syncedOnly",
+    key: "hasReadaloud",
     node: {
       type: "condition",
-      field: "mediaType",
+      field: "format",
       operator: "is",
-      value: "synced",
+      value: "readaloud",
     },
   },
   {
@@ -1145,13 +1145,13 @@ function ConditionValueInput({
     )
   }
 
-  // -- enum (mediaType, alignmentGrade): options + labels from the registry --
+  // -- enum (format, alignmentGrade): options + labels from the registry --
 
   if (def.control === "enum") {
     const options = def.options.map((v) => ({
       value: v,
       label: c.plain(
-        `fields.options.${field}.${v}` as "fields.options.mediaType.ebook",
+        `fields.options.${field}.${v}` as "fields.options.format.ebook",
       ),
     }))
 
@@ -1161,7 +1161,7 @@ function ConditionValueInput({
           options={options}
           value={Array.isArray(value) ? (value as string[]) : []}
           onChange={onChange}
-          placeholder={t.plain("searchMediaTypes")}
+          placeholder={t.plain("searchFormats")}
           emptyText={t.plain("noItemsFound")}
         />
       )

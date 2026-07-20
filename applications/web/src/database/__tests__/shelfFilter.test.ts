@@ -14,7 +14,7 @@ import {
 import {
   FIELDS,
   FIELD_REGISTRY,
-  MEDIA_TYPE_VALUES,
+  FORMAT_VALUES,
   getFieldDef,
   getFieldType,
 } from "@/fields"
@@ -271,7 +271,7 @@ void describe("getFieldType", () => {
   })
 
   void it("classifies enum fields", () => {
-    assert.strictEqual(getFieldType("mediaType"), "enum")
+    assert.strictEqual(getFieldType("format"), "enum")
   })
 })
 
@@ -626,10 +626,10 @@ void describe("strict condition schema", () => {
     assert.ok(!result.success)
   })
 
-  void it("rejects an invalid media type value", () => {
+  void it("rejects an invalid format value", () => {
     const result = shelfFilterConditionSchema.safeParse({
       type: "condition",
-      field: "mediaType",
+      field: "format",
       operator: "is",
       value: "paper",
     })
@@ -775,7 +775,7 @@ void describe("buildFilterExpression sql", () => {
       children: [
         {
           type: "condition",
-          field: "mediaType",
+          field: "format",
           operator: "isAnyOf",
           value: ["audiobook-only"],
         },
@@ -792,7 +792,7 @@ void describe("buildFilterExpression sql", () => {
       children: [
         {
           type: "condition",
-          field: "mediaType",
+          field: "format",
           operator: "isAnyOf",
           value: ["missing-readaloud"],
         },
@@ -1029,7 +1029,7 @@ void describe("field picker / registry coverage", () => {
   })
 })
 
-void describe("MEDIA_TYPE_VALUES / compiler coverage", () => {
+void describe("FORMAT_VALUES / compiler coverage", () => {
   const userId = "11111111-1111-1111-1111-111111111111" as UUID
   const testDb = createKyselyDb(new Database(":memory:"))
 
@@ -1043,7 +1043,7 @@ void describe("MEDIA_TYPE_VALUES / compiler coverage", () => {
           {
             type: "and",
             children: [
-              { type: "condition", field: "mediaType", operator: "is", value },
+              { type: "condition", field: "format", operator: "is", value },
             ],
           },
           userId,
@@ -1051,7 +1051,7 @@ void describe("MEDIA_TYPE_VALUES / compiler coverage", () => {
       )
       .compile().sql
 
-  for (const value of MEDIA_TYPE_VALUES) {
+  for (const value of FORMAT_VALUES) {
     void it(`compiles "${value}" to an asset-table predicate`, () => {
       const sql = compile(value)
       assert.match(sql, /ebook|audiobook|readaloud/)
