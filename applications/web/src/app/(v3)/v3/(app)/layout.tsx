@@ -6,6 +6,7 @@ import { FloatingBookPanelProvider } from "@v3/_/components/books/FloatingBookPa
 import { ProcessingToast } from "@v3/_/components/processing/ProcessingToast"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
 import { UserPreferencesProvider } from "@v3/_/components/user-preferences-provider"
+import { EscapeCascadeProvider } from "@v3/_/hooks/use-escape-cascade"
 
 import { assertAuthenticatedUser } from "@/auth/auth"
 import { getPendingAnnouncements } from "@/database/announcements"
@@ -71,9 +72,13 @@ export default async function AppLayout({
           currentVersion={currentVersion}
           initialSidebarGroups={sidebarGroups}
         />
-        <FloatingBookPanelProvider>
-          <SidebarInset className="overflow-x-hidden">{children}</SidebarInset>
-        </FloatingBookPanelProvider>
+        <EscapeCascadeProvider>
+          <FloatingBookPanelProvider>
+            <SidebarInset className="overflow-x-hidden">
+              {children}
+            </SidebarInset>
+          </FloatingBookPanelProvider>
+        </EscapeCascadeProvider>
         {user.permissions.bookProcess && <ProcessingToast />}
         <AnnouncementModal pending={pendingAnnouncements} />
       </SidebarProvider>

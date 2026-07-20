@@ -153,6 +153,7 @@ export function EditableText({
           ) => {
             if (e.key === "Escape") {
               e.preventDefault()
+              e.stopPropagation()
               form.resetField(name)
               setEditingField(null)
             }

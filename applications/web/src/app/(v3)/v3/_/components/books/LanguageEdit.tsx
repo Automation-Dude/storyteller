@@ -136,6 +136,7 @@ export function LanguageEdit() {
           }
           if (e.key === "Escape") {
             e.preventDefault()
+            e.stopPropagation()
             form.resetField("language")
             setEditingField(null)
           }

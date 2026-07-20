@@ -33,6 +33,10 @@ import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
 import { V3Link } from "@v3/_/components/v3-link"
 import { type BookFiltersController } from "@v3/_/hooks/use-book-filters"
 import { useDeleteEntity } from "@v3/_/hooks/use-delete-entity"
+import {
+  ESCAPE_PRIORITY,
+  useEscapeHandler,
+} from "@v3/_/hooks/use-escape-cascade"
 import { useItemSelection } from "@v3/_/hooks/use-item-selection"
 import { useBookInSidePanel } from "@v3/_/hooks/use-open-book"
 import { usePinShelf } from "@v3/_/hooks/use-pin-shelf"
@@ -94,6 +98,12 @@ export function LibrarySidebar({
   const c = useCommon()
 
   const itemSelection = useItemSelection()
+
+  useEscapeHandler(
+    ESCAPE_PRIORITY.sidebarSelection,
+    itemSelection.stopSelecting,
+    itemSelection.isSelecting,
+  )
 
   const pageState = useOptionalBookListPageState()
   const hoverDepsRef = useRef({

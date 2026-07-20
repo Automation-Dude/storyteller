@@ -1,6 +1,5 @@
 "use client"
 
-import { useHotkey } from "@tanstack/react-hotkeys"
 import dynamic from "next/dynamic"
 import {
   type ReactNode,
@@ -17,6 +16,10 @@ import {
   MAX_PANEL_WIDTH,
   MIN_PANEL_WIDTH,
 } from "@v3/_/components/ui/page-layout"
+import {
+  ESCAPE_PRIORITY,
+  useEscapeHandler,
+} from "@v3/_/hooks/use-escape-cascade"
 import { useBookInSidePanel } from "@v3/_/hooks/use-open-book"
 import {
   PANEL_SLIDE_DURATION,
@@ -94,13 +97,7 @@ function FloatingBookPanel({ suppressed }: { suppressed: boolean }) {
     void setSelectedBookUuid(null)
   }, [setSelectedBookUuid])
 
-  useHotkey(
-    "Escape",
-    () => {
-      if (open) handleClose()
-    },
-    { ignoreInputs: true },
-  )
+  useEscapeHandler(ESCAPE_PRIORITY.closePanel, handleClose, open)
 
   // keep the closing panel's content mounted while it slides shut
   const lastUuidRef = useRef<string | null>(null)

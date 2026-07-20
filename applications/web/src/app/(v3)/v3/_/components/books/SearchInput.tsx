@@ -35,6 +35,7 @@ export function SearchInput({
           if (e.key === "Escape") {
             e.currentTarget.blur()
             e.preventDefault()
+            e.stopPropagation()
           }
         }}
         onChange={(e) => {

@@ -111,6 +111,7 @@ export function PageCountEdit({ className }: { className?: string }) {
         }
         if (e.key === "Escape") {
           e.preventDefault()
+          e.stopPropagation()
           form.resetField("pageCount")
           setEditingField(null)
         }
@@ -229,6 +230,7 @@ export function DurationEdit({ className }: { className?: string }) {
 
     if (e.key === "Escape") {
       e.preventDefault()
+      e.stopPropagation()
       form.resetField("duration")
       setEditingField(null)
     }

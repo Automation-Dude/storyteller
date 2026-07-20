@@ -1,5 +1,3 @@
-import { useHotkey } from "@tanstack/react-hotkeys"
-
 import { ActionTray } from "@v3/_/components/ui/action-tray"
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -9,6 +7,10 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { useBookSelection } from "@v3/_/hooks/use-book-selection"
+import {
+  ESCAPE_PRIORITY,
+  useEscapeHandler,
+} from "@v3/_/hooks/use-escape-cascade"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
@@ -52,15 +54,7 @@ export function SelectionToolbar({
   const selectedBookObjects = allBooks.filter((book) =>
     selectedBooks.has(book.uuid),
   )
-  useHotkey(
-    "Escape",
-    () => {
-      stopSelecting()
-    },
-    {
-      conflictBehavior: "replace",
-    },
-  )
+  useEscapeHandler(ESCAPE_PRIORITY.listSelection, stopSelecting, isSelecting)
 
   const { entries, dialogs } = useBookActionItems({
     books: selectedBookObjects,

@@ -26,6 +26,10 @@ import {
 } from "@v3/_/components/ui/page-layout"
 import { useSidebar } from "@v3/_/components/ui/sidebar"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
+import {
+  ESCAPE_PRIORITY,
+  useEscapeHandler,
+} from "@v3/_/hooks/use-escape-cascade"
 import { useLayoutAnimations } from "@v3/_/hooks/use-layout-animations"
 import { useIsMobile } from "@v3/_/hooks/use-mobile"
 import { usePanelWidthDriver } from "@v3/_/hooks/use-panel-width-driver"
@@ -280,6 +284,8 @@ export function BookListLayout({
 
     if (e.key === "Escape") {
       e.preventDefault()
+      // returning focus is the cancel action; don't also close the panel
+      e.stopPropagation()
       returnFocus()
       return
     }
@@ -302,7 +308,7 @@ export function BookListLayout({
   }, [])
 
   const coverScopeProps = useCoverScope(shownBook)
-  useHotkey("Escape", onClosePanel, { ignoreInputs: true })
+  useEscapeHandler(ESCAPE_PRIORITY.closePanel, onClosePanel, panelOpen)
 
   if (isMobile) {
     return (

@@ -16,11 +16,16 @@ import { SiteHeader } from "@v3/_/components/site-header"
 import { ActionTray } from "@v3/_/components/ui/action-tray"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
+import {
+  ESCAPE_PRIORITY,
+  useEscapeHandler,
+} from "@v3/_/hooks/use-escape-cascade"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
 import { ButtonGroup } from "@/app/(v3)/v3/_/components/ui/button-group"
+import { Kbd } from "@/app/(v3)/v3/_/components/ui/kbd"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
@@ -161,7 +166,7 @@ function BookDetailsContentInner({
 }) {
   const permissions = usePermissions()
   const [localIsEditing, setLocalIsEditing] = useState(false)
-  const [reportMode, setReportMode] = useReportPanel()
+  const { reportMode, setReportMode } = useReportPanel()
 
   // only honor report mode when there is actually a report to show.
   const showReport = reportMode && !!book.alignmentSummary?.grade
@@ -329,7 +334,7 @@ function BookEditBar() {
   const t = useTranslation("BookDetailsPage")
   const c = useCommon()
 
-  const show = isEditing || editingCovers || editingField
+  const show = isEditing || editingCovers || !!editingField
 
   const handleDiscard = () => {
     if (editingCovers) {
@@ -338,6 +343,12 @@ function BookEditBar() {
       discard()
     }
   }
+
+  useEscapeHandler(
+    ESCAPE_PRIORITY.stopEditing,
+    handleDiscard,
+    isEditing || editingCovers,
+  )
 
   const handleSave = async () => {
     const ok = await submitForm()
@@ -370,8 +381,10 @@ function BookEditBar() {
           e.preventDefault()
           handleDiscard()
         }}
+        size="sm"
         disabled={isSaving}
       >
+        <Kbd>Esc</Kbd>
         <icon.Close className="size-4" />
       </TooltipButton>
 
@@ -382,9 +395,17 @@ function BookEditBar() {
           e.preventDefault()
           void handleSave()
         }}
+        size="sm"
         className="bg-primary text-primary-foreground rounded-full hover:opacity-90"
         disabled={isSaving}
+        shortcut={["Enter"]}
       >
+        <span
+          aria-hidden
+          className="border-primary-foreground/40 text-primary-foreground/60 inline-block rounded-sm border px-1 py-0.5"
+        >
+          ↵
+        </span>
         <icon.Check className="size-4" />
       </TooltipButton>
     </ActionTray>
@@ -417,18 +438,12 @@ function BookPanelHeader({
   const pill =
     "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
 
-  useHotkey(
-    "Escape",
+  useEscapeHandler(
+    ESCAPE_PRIORITY.closePanel,
     () => {
-      if (selection?.isSelecting) {
-        return
-      }
       onClose?.()
     },
-    {
-      conflictBehavior: "allow",
-      ignoreInputs: true,
-    },
+    !!onClose,
   )
   useHotkey("E", () => {
     setActionMenuOpen((prev) => !prev)

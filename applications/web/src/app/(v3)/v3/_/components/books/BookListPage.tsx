@@ -44,6 +44,10 @@ import {
   BookSelectionProvider,
   useBookSelection,
 } from "@v3/_/hooks/use-book-selection"
+import {
+  ESCAPE_PRIORITY,
+  useEscapeHandler,
+} from "@v3/_/hooks/use-escape-cascade"
 import { useBookInSidePanel } from "@v3/_/hooks/use-open-book"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
 import { useTranslation } from "@v3/_/hooks/use-translation"
@@ -706,6 +710,8 @@ function BookListPageInner({
 
     if (e.key === "Escape") {
       e.preventDefault()
+      // returning focus is the cancel action; don't also close the panel
+      e.stopPropagation()
       returnFocus()
       return
     }
@@ -728,7 +734,7 @@ function BookListPageInner({
   }, [])
 
   const coverScopeProps = useCoverScope(shownBook)
-  useHotkey("Escape", handleClosePanel, { ignoreInputs: true })
+  useEscapeHandler(ESCAPE_PRIORITY.closePanel, handleClosePanel, panelOpen)
 
   const panelResizeState = useMemo(
     () => ({

@@ -101,6 +101,7 @@ function InlineRatingNumber({
         }
         if (e.key === "Escape") {
           e.preventDefault()
+          e.stopPropagation()
           setEditing(false)
         }
       }}

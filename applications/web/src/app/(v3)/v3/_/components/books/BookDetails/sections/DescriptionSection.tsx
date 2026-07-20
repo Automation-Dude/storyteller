@@ -153,6 +153,7 @@ export function DescriptionSection({ className }: { className?: string }) {
                   onKeyDown={(e) => {
                     if (e.key === "Escape") {
                       e.preventDefault()
+                      e.stopPropagation()
                       form.resetField("description")
                       setEditingField(null)
                     }
