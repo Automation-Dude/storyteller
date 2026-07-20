@@ -295,13 +295,7 @@ function BookListPageInner({
     [data?.pages],
   )
 
-  // "X of Y" = books matching the active filters, out of the page's baseline.
-  // filtered uses the full effective query (seed + user filters + search);
-  // baseline uses only the page's default filter (the seed/chip + series/
-  // collection context), so on a facet page Y is that facet's total and on the
-  // all-books page Y is the whole library. shelf lists have no cheap count, so
-  // both come back undefined and the indicator hides the "of Y".
-  const baselineQueryArg = useMemo<ListBooksQueryArg>(() => {
+    const baselineQueryArg = useMemo<ListBooksQueryArg>(() => {
     if (!isBooksSource) return {}
     const arg: ListBooksQueryArg = {}
     if (source.seed) arg.filter = source.seed
@@ -364,21 +358,25 @@ function BookListPageInner({
   ) : null
 
   const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
-  const [, setReportMode] = useReportPanel()
-  const { isSelecting, toggleSelection } = useBookSelection()
+  const { setReportMode } = useReportPanel()
+  const { toggleSelection } = useBookSelection()
 
   const selectedBook = useMemo(
     () => books.find((b) => b.uuid === selectedBookUuid),
     [books, selectedBookUuid],
   )
 
+  /* be very careful adding things to this callback, it has 
+  a high chance of causing excessive re-renders
+  * it also isnt memoized automatically, so do not remove useCallback
+  */
   const handleBookClick = useCallback(
     (
-      book: { uuid: string },
-      isSelectingArg?: boolean,
-      isBookSelected?: boolean,
+      book: { uuid: UUID },
+      isSelectingArg: boolean,
+      isBookSelected: boolean,
     ) => {
-      if (isSelecting || isSelectingArg || isBookSelected) {
+      if (isSelectingArg || isBookSelected) {
         toggleSelection(book.uuid)
         return
       }
@@ -386,18 +384,12 @@ function BookListPageInner({
       void setReportMode(bookClickMode === "report")
       void setSelectedBookUuid(book.uuid)
     },
-    [
-      isSelecting,
-      toggleSelection,
-      setReportMode,
-      setSelectedBookUuid,
-      bookClickMode,
-    ],
+    [toggleSelection, setReportMode, setSelectedBookUuid, bookClickMode],
   )
 
   // alignment grade/score cell opens the panel straight into the report.
   const handleColumnClick = useCallback(
-    (book: { uuid: string }) => {
+    (book: { uuid: UUID }) => {
       void setReportMode(true)
       void setSelectedBookUuid(book.uuid)
     },
@@ -423,7 +415,8 @@ function BookListPageInner({
 
   // -- next/previous stepping from the detail panel ------------------------
 
-  const bookUuids = useMemo<string[]>(() => books.map((b) => b.uuid), [books])
+  const bookUuids = useMemo(() => books.map((b) => b.uuid), [books])
+
   const selectedIndex =
     enableBookStepping && selectedBookUuid
       ? bookUuids.indexOf(selectedBookUuid)

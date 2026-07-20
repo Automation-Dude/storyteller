@@ -27,8 +27,8 @@ export type FacetSource =
   | "narrators"
   | "translators"
   | "creators"
-  // the distinct stored values of the field's own book column (language,
-  // transcription engine, ...), fetched via the generic distinct endpoint
+  // distinct fields are "facets" from a book column, such as language or transcription engine
+  // we don't want to show all possible values
   | "distinct"
 
 export type FieldScale = {

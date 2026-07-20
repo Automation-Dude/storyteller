@@ -318,7 +318,7 @@ const GRADE_BADGE: Record<GradeTone, string> = {
 
 function AlignmentReportSummary({ book }: { book: BookWithRelations }) {
   const { data } = useGetBookAlignmentReportQuery({ uuid: book.uuid })
-  const [, setReportMode] = useReportPanel()
+  const { setReportMode } = useReportPanel()
   const tp = useTranslation("Processing")
   const tr = useTranslation("AlignmentReport")
   const tNouns = useTranslation("Common.Nouns")

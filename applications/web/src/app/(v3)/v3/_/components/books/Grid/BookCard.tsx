@@ -33,6 +33,7 @@ import {
   selectShowProcessingBadge,
   selectShowReadaloudBadge,
 } from "@/store/slices/uiSettingsSlice"
+import { type UUID } from "@/uuid"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -45,8 +46,8 @@ type BookCardProps = {
   active?: boolean
   isSelecting?: boolean
   isBookSelected?: boolean
-  onToggleSelection?: (uuid: string) => void
-  onSelectRange?: (uuid: string) => void
+  onToggleSelection?: (uuid: UUID) => void
+  onSelectRange?: (uuid: UUID, orderedUuids?: UUID[]) => void
   onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
   onClick?: (
     book: BookWithRelations,

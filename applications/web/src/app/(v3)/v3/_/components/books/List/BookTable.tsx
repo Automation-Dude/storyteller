@@ -67,7 +67,11 @@ type BookTableProps = {
   onClearFilters?: () => void
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
-  onBookClick?: (book: BookWithRelations) => void
+  onBookClick: (
+    book: BookWithRelations,
+    isSelecting: boolean,
+    isBookSelected: boolean,
+  ) => void
   // click on a specific column cell (e.g. the alignment grade) instead of the
   // row. when omitted, those cells fall through to the row click.
   onColumnClick?: (book: BookWithRelations, field: DisplayField) => void

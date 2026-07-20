@@ -44,6 +44,7 @@ type BookFiltersProps = {
 const searchHotKey = "/" as const
 const advancedHotKey = "Shift+F" as const
 const saveAsShelfHotKey = "Alt+Shift+S" as const
+const searchShortcut = [searchHotKey]
 
 function countConditions(node: ShelfFilterNode): number {
   if (node.type === "condition") return 1
@@ -128,6 +129,7 @@ export function BookFilters({
     () => (isAdvanced ? countConditions(userFilter) : 0),
     [isAdvanced, userFilter],
   )
+
   return (
     <div
       // DONT MAKE FLEX CONTAINER THE SEARCH INPUT WILL NOT BE THE CORRECT HEIGHT IT WILL HAUNT YOU
@@ -143,7 +145,7 @@ export function BookFilters({
           ref={searchRef}
           value={search}
           onChange={setSearch}
-          shortcut={[searchHotKey]}
+          shortcut={searchShortcut}
           className="h-8"
         />
 

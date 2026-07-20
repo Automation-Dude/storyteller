@@ -236,7 +236,7 @@ export function BookGrid({
   if (isLoading) {
     return (
       <div
-        className="grid"
+        className="grid w-full"
         style={{
           gap: gridGap,
           gridTemplateColumns: isMobile
@@ -311,6 +311,7 @@ export function BookGrid({
                   handle={menu.handle}
                   displayFields={displayFields}
                   displayContext={displayContext}
+                  onSelectRange={menu.handleSelectRange}
                 />
               )
             })}

@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation"
 import { createParser, parseAsString, useQueryState } from "nuqs"
-import { useCallback, useDeferredValue, useMemo } from "react"
+import { useCallback, useDeferredValue, useMemo, useState } from "react"
+import { useThrottledCallback } from "use-debounce"
 
 import {
   type ShelfFilterAnd,
@@ -26,7 +27,7 @@ import {
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
-import { useDebounce } from "./use-debounce"
+const EXCLUDED_SORT_SAVE_PAGES = ["shelves", "quality"]
 
 type UseBookFiltersOptions = {
   // a locked condition contributed by the page context (e.g. "series is Dune").
@@ -117,19 +118,24 @@ const defaultSortDefault = {
 
 export function useBookFilters(options: UseBookFiltersOptions = {}) {
   const pathName = usePathname()
-  const currentPage = pathName.split("/").pop()
+  const currentPage = pathName.split("/").shift()
   const defaultSorts = useAppSelector(selectDefaultSorts)
-  const defaultSort =
-    defaultSorts[currentPage ?? ""] ?? options.defaultSort ?? defaultSortDefault
+  const defaultSort = !EXCLUDED_SORT_SAVE_PAGES.includes(currentPage ?? "")
+    ? defaultSorts[currentPage ?? ""] ??
+      options.defaultSort ??
+      defaultSortDefault
+    : undefined
 
   const [userFilter, setUserFilterRaw] = useQueryState("f", filterParser)
-  const [search, setSearchRaw] = useQueryState(
+  const [searchQueryParam, setSearchQueryParam] = useQueryState(
     "search",
     parseAsString.withDefault("").withOptions({
       shallow: true,
       history: "replace",
     }),
   )
+  const [searchValue, setSearchValue] = useState(searchQueryParam)
+
   const [sort, setSortRaw] = useQueryState(
     "sort",
     sortParser.withDefault({
@@ -137,11 +143,10 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
       direction: defaultSort.direction,
     }),
   )
-  const debouncedSearch = useDebounce(search, 200)
-  const deferredSearch = useDeferredValue(debouncedSearch)
-  const isSearching = debouncedSearch !== deferredSearch
+  const deferredSearch = useDeferredValue(searchQueryParam)
+  const isSearching = searchValue !== deferredSearch
 
-  const simpleConditions = useMemo(() => asSimpleAnd(userFilter), [userFilter])
+  const simpleConditions = asSimpleAnd(userFilter)
   const isAdvanced = simpleConditions === null
 
   const activeFields = useMemo(() => {
@@ -189,11 +194,16 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     [setUserFilterRaw],
   )
 
+  // throttle feels a bit nicer than debounce for this use case
+  const setSearchThrottled = useThrottledCallback((value: string) => {
+    void setSearchQueryParam(value)
+  }, 500)
   const setSearch = useCallback(
     (value: string) => {
-      void setSearchRaw(value)
+      setSearchValue(value)
+      setSearchThrottled(value)
     },
-    [setSearchRaw],
+    [setSearchValue, setSearchThrottled],
   )
 
   const dispatch = useAppDispatch()
@@ -201,8 +211,8 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     (field: SortField, direction: SortDirection) => {
       // get the current page, dont want to depend on usePathname tho
       void setSortRaw({ field, direction })
-      const currentPage = window.location.pathname.split("/").pop()
-      if (currentPage && currentPage !== "shelves") {
+      const currentPage = window.location.pathname.split("/").shift()
+      if (currentPage && !EXCLUDED_SORT_SAVE_PAGES.includes(currentPage)) {
         void dispatch(
           uiSettingsSlice.actions.setDefaultSort({
             page: currentPage,
@@ -216,8 +226,9 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
 
   const clearAll = useCallback(() => {
     void setUserFilterRaw(EMPTY_FILTER)
-    void setSearchRaw("")
-  }, [setUserFilterRaw, setSearchRaw])
+    setSearchValue("")
+    void setSearchQueryParam("")
+  }, [setUserFilterRaw, setSearchValue, setSearchQueryParam])
 
   const userHasContent =
     userFilter.type !== "and" || userFilter.children.length > 0
@@ -252,7 +263,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
 
   const activeFilterCount = isAdvanced
     ? 1
-    : activeFields.length + (search ? 1 : 0)
+    : activeFields.length + (searchQueryParam ? 1 : 0)
 
   const isDefaultSort =
     sort.field === (options.defaultSort?.field ?? "createdAt") &&
@@ -268,7 +279,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     setConditionsForField,
     removeField,
     setUserFilter,
-    search,
+    search: searchValue,
     setSearch,
     sort,
     setSort,

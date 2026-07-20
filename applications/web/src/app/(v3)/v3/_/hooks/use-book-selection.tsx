@@ -11,16 +11,18 @@ import {
 
 import { useSelectionState } from "@v3/_/hooks/use-selection-state"
 
+import { type UUID } from "@/uuid"
+
 type BookSelectionContextValue = {
-  selectedBooks: Set<string>
+  selectedBooks: Set<UUID>
   isSelecting: boolean
-  lastSelectedUuid: string | null
-  toggleSelection: (uuid: string) => void
-  selectRange: (targetUuid: string, orderedUuids: string[]) => void
-  selectAll: (uuids: string[]) => void
+  lastSelectedUuid: UUID | null
+  toggleSelection: (uuid: UUID) => void
+  selectRange: (targetUuid: UUID, orderedUuids: UUID[]) => void
+  selectAll: (uuids: UUID[]) => void
   selectNone: () => void
-  invertSelection: (allUuids: string[]) => void
-  isSelected: (uuid: string) => boolean
+  invertSelection: (allUuids: UUID[]) => void
+  isSelected: (uuid: UUID) => boolean
   startSelecting: () => void
   stopSelecting: () => void
 }

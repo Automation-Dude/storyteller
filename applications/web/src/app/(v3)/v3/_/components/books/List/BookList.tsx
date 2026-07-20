@@ -44,7 +44,11 @@ type BookListProps = {
   onClearFilters?: () => void
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
-  onBookClick?: (book: BookWithRelations) => void
+  onBookClick: (
+    book: BookWithRelations,
+    isSelecting: boolean,
+    isBookSelected: boolean,
+  ) => void
   // the list layout's selected fields, rendered below each title
   displayFields?: DisplayField[]
   displayContext?: SortContext

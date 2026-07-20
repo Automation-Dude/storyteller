@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from "react"
 import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
 
 import { type BookWithRelations } from "@/database/books"
+import { type UUID } from "@/uuid"
 
 import { useBookActionItems } from "./BookActionMenuItems"
 
@@ -32,7 +33,7 @@ export function useBookActionMenu(
   const orderedUuids = useMemo(() => books.map((b) => b.uuid), [books])
 
   const handleSelectRange = useCallback(
-    (uuid: string) => {
+    (uuid: UUID) => {
       selection?.selectRange(uuid, orderedUuids)
     },
     [selection, orderedUuids],
