@@ -13,7 +13,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core"
-import { useDisclosure } from "@mantine/hooks"
+import { useDisclosure, useMediaQuery } from "@mantine/hooks"
 import {
   IconBook2,
   IconBooks,
@@ -80,6 +80,11 @@ export function StorytellerAppShell({
   }, [dispatch, initialCurrentUser])
 
   const [opened, { close, toggle }] = useDisclosure(false)
+  // Drive the navbar width off matchMedia rather than a Mantine responsive
+  // width object: the object width did not apply on iOS Safari, so the phone
+  // drawer opened unusably narrow. undefined (SSR/first paint) falls back to
+  // the desktop rail, which is fine because the phone drawer starts collapsed.
+  const isMobileWidth = useMediaQuery("(max-width: 47.99em)")
   const [
     isCreateCollectionOpen,
     { close: closeCreateCollection, open: openCreateCollection },
@@ -133,10 +138,11 @@ export function StorytellerAppShell({
         withBorder={false}
         padding="md"
         navbar={{
-          // On a phone the nav is a slide-out opened by the burger, so it needs
-          // a real width to show its labels; a 40px sliver looked like nothing
-          // happened. From sm up it is the icon rail that expands on hover.
-          width: { base: 240, sm: 40 },
+          // 240 on a phone so the burger opens a readable drawer; 40 from sm up
+          // for the icon rail that expands on hover. A plain number per
+          // breakpoint (not a responsive object) is what actually applies on
+          // iOS Safari.
+          width: isMobileWidth ? 240 : 40,
           breakpoint: "sm",
           collapsed: { mobile: !opened },
         }}
@@ -282,10 +288,10 @@ export function StorytellerAppShell({
               <NavLink
                 onClick={close}
                 component={NextLink}
-                href="/v3/library-audit"
+                href="/library-audit"
                 leftSection={<IconClipboardCheck />}
                 label="Library audit"
-                active={pathname === "/v3/library-audit"}
+                active={pathname === "/library-audit"}
               />
             ) : null}
             <NavLink
