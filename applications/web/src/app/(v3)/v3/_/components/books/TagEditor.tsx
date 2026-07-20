@@ -1,17 +1,15 @@
 import { useCallback, useMemo } from "react"
 
-import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { usePermission } from "@/hooks/usePermission"
-import * as icon from "@/icons"
 import {
   useAddTagsToBooksMutation,
   useRemoveTagsFromBooksMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-import { RelationChipEditor } from "./RelationChipEditor"
+import { RelationAddButton, RelationChipEditor } from "./RelationChipEditor"
 import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
 
 type TagEditorProps = {
@@ -35,7 +33,6 @@ export function TagEditor({
   const t = useTranslation("BookDetailsPage.tags")
   const tActions = useTranslation("BookActions")
   const tLabels = useTranslation("Labels")
-  const c = useCommon()
   const canUpdate = usePermission("bookUpdate")
   const canInteract = editMode || canUpdate
 
@@ -81,15 +78,7 @@ export function TagEditor({
           createLabel={(s) =>
             tLabels.plain("create.withInput", { input: `"${s}"` })
           }
-          trigger={
-            <TooltipButton
-              tooltip={c.plain("actions.add")}
-              aria-label={c.plain("actions.add")}
-              variant="ghost"
-            >
-              <icon.Add className="size-4" />
-            </TooltipButton>
-          }
+          trigger={<RelationAddButton />}
         />
       )}
     </RelationChipEditor>

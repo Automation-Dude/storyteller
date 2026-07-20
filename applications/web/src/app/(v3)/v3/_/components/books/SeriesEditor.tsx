@@ -18,16 +18,14 @@ import {
 import { Input } from "@v3/_/components/ui/input"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
-import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { usePermission } from "@/hooks/usePermission"
-import * as icon from "@/icons"
 import {
   useAddBooksToSeriesMutation,
   useRemoveBooksFromSeriesMutation,
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-import { RelationChipEditor } from "./RelationChipEditor"
+import { RelationAddButton, RelationChipEditor } from "./RelationChipEditor"
 import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
 
 type SeriesWithPosition = {
@@ -199,15 +197,7 @@ export function SeriesEditor({
             createLabel={(s) =>
               tLabels.plain("create.withInput", { input: `"${s}"` })
             }
-            trigger={
-              <TooltipButton
-                tooltip={c.plain("actions.add")}
-                aria-label={c.plain("actions.add")}
-                variant="ghost"
-              >
-                <icon.Add className="size-4" />
-              </TooltipButton>
-            }
+            trigger={<RelationAddButton />}
           />
         )}
       </RelationChipEditor>

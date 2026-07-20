@@ -5,13 +5,14 @@ import { type ReactNode } from "react"
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
 import * as icon from "@/icons"
 
 import { useColorPreferences } from "./BookDetails/sections/useCoverColors"
+import { TooltipButton } from "../ui/tooltip-button"
 
 type RelationItem = {
   uuid: string
@@ -167,5 +168,29 @@ export function RelationChipEditor<T extends RelationItem>({
 
       {children}
     </div>
+  )
+}
+
+export function RelationAddButton({
+  tooltip,
+  ariaLabel,
+  variant,
+  className,
+}: {
+  tooltip?: string
+  ariaLabel?: string
+  variant?: "ghost" | "outline" | "secondary" | "destructive"
+  className?: string
+}) {
+  const c = useCommon()
+  return (
+    <TooltipButton
+      tooltip={tooltip ?? c.plain("actions.add")}
+      aria-label={ariaLabel ?? c.plain("actions.add")}
+      variant={variant ?? "ghost"}
+      className={cn("h-5", className)}
+    >
+      <icon.Add className="text-muted-foreground size-4" />
+    </TooltipButton>
   )
 }

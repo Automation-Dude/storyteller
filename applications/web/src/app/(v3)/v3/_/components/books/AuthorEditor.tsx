@@ -9,12 +9,11 @@ import {
 } from "@v3/_/components/ui/filterable-menu"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
-import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import * as icon from "@/icons"
 import { useListAuthorsQuery, useListNarratorsQuery } from "@/store/api"
 
 import { useBookForm } from "./BookDetails/BookFormProvider"
-import { RelationChipEditor } from "./RelationChipEditor"
+import { RelationAddButton, RelationChipEditor } from "./RelationChipEditor"
 import { RelationSelectList } from "./relation-picker/RelationSelectList"
 
 function CreatorAddMenu({
@@ -31,7 +30,6 @@ function CreatorAddMenu({
   searchPlaceholder: string
 }) {
   const [open, setOpen] = useState(false)
-  const c = useCommon()
   const tLabels = useTranslation("Labels")
 
   const applied = useMemo(() => new Set(values), [values])
@@ -42,18 +40,7 @@ function CreatorAddMenu({
 
   return (
     <FilterableMenu open={open} onOpenChange={setOpen}>
-      <FilterableMenuTrigger
-        render={
-          <TooltipButton
-            tooltip={c.plain("actions.add")}
-            aria-label={c.plain("actions.add")}
-            variant="ghost"
-            className="size-5"
-          >
-            <icon.Plus className="text-muted-foreground h-4" />
-          </TooltipButton>
-        }
-      />
+      <FilterableMenuTrigger render={<RelationAddButton />} />
       <FilterableMenuContent searchPlaceholder={searchPlaceholder}>
         <RelationSelectList
           items={items}

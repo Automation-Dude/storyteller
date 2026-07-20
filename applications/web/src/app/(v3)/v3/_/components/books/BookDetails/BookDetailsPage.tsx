@@ -181,18 +181,6 @@ function BookDetailsContentInner({
   )
 
   const scope = useCoverScope(book)
-  // return (
-  //   <BookFormProvider book={book} isEditing={isEditing}>
-  //     <div className="relative h-full w-full">
-  //       <BookPanelHeader
-  //         onClose={onClose}
-  //         nextBook={nextBook}
-  //         previousBook={previousBook}
-  //       />
-  //       Book Details
-  //     </div>
-  //   </BookFormProvider>
-  // )
 
   return (
     <BookFormProvider
@@ -329,6 +317,7 @@ function BookPageHeader() {
 function BookEditBar() {
   const {
     isEditing,
+    editingField,
     isSaving,
     editingCovers,
     setIsEditing,
@@ -340,7 +329,7 @@ function BookEditBar() {
   const t = useTranslation("BookDetailsPage")
   const c = useCommon()
 
-  const show = isEditing || editingCovers
+  const show = isEditing || editingCovers || editingField
 
   const handleDiscard = () => {
     if (editingCovers) {

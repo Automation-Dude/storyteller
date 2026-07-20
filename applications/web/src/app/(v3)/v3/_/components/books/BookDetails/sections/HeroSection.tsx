@@ -166,7 +166,7 @@ export function HeroSection({
             )}
 
             {isEditing || isFieldActive("authors") ? (
-              <AuthorEditor className="justify-center" />
+              <AuthorEditor className="[&_svg]:text-tinted justify-center" />
             ) : (
               authors.length > 0 && (
                 <p
@@ -337,7 +337,7 @@ export function HeroSection({
                   }))}
                   onUpdate={() => {}}
                   editMode={isEditing}
-                  className="justify-center"
+                  className="[&_svg]:text-tinted justify-center"
                 />
               </div>
             )}
