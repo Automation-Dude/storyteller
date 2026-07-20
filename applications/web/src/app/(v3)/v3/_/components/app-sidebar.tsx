@@ -51,7 +51,7 @@ import { usePermission } from "@/hooks/usePermission"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
 import {
-  useGetLatestVersionQuery,
+  useGetLatestChangelogQuery,
   useListCollectionsQuery,
   useListSidebarGroupsQuery,
   useListUserShelvesQuery,
@@ -153,7 +153,7 @@ export function AppSidebar({
     void setSidebarGroupsMut(updated)
   }
 
-  const { data: latestVersionData } = useGetLatestVersionQuery(
+  const { data: latestChangelog } = useGetLatestChangelogQuery(
     {
       component: "web",
       beta: BETA_TAGS.some((tag) => currentVersion.includes(tag)),
@@ -161,7 +161,7 @@ export function AppSidebar({
     { pollingInterval: THIRTY_MINUTES },
   )
 
-  const latestVersion = latestVersionData?.version ?? null
+  const latestVersion = latestChangelog?.version ?? null
 
   const hasUpdate = useMemo(() => {
     if (!latestVersion) return false
@@ -191,6 +191,7 @@ export function AppSidebar({
       onDismiss: () => {
         localStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
       },
+      description: latestChangelog?.description ?? undefined,
       action: {
         label: "View changelog",
         onClick: () => {
@@ -200,7 +201,7 @@ export function AppSidebar({
       },
       duration: Infinity,
     })
-  }, [hasUpdate, latestVersion])
+  }, [hasUpdate, latestVersion, latestChangelog])
 
   const { openSearch } = useCommandSearch()
 

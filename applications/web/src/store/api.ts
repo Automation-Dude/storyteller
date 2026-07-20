@@ -1798,8 +1798,12 @@ export const api = createApi({
       },
     }),
 
-    getLatestVersion: build.query<
-      { version: string | null },
+    getLatestChangelog: build.query<
+      {
+        version: string
+        description: string | null
+        releasedAt: string
+      } | null,
       { component?: string; beta?: boolean }
     >({
       query: ({ component = "web", beta = false }) =>
@@ -2272,7 +2276,7 @@ export const {
   useSetLibraryDefaultStatusMutation,
   useUpdateUserMutation,
   useGetChangelogQuery,
-  useGetLatestVersionQuery,
+  useGetLatestChangelogQuery,
   useUpgradeBookEpubMutation,
   useGetImportRulesQuery,
   useGetUserImportRulesQuery,

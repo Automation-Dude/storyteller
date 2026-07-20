@@ -15,7 +15,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type ChangelogEntry } from "@/database/changelog"
 import * as icon from "@/icons"
-import { api, useGetLatestVersionQuery } from "@/store/api"
+import { api, useGetLatestChangelogQuery } from "@/store/api"
 import { BETA_TAGS, compareVersions } from "@/versions"
 
 export const DISMISSED_VERSION_KEY = "storyteller_dismissed_changelog_version"
@@ -87,7 +87,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
 
   const t = useTranslation("SettingsPage.changelog")
 
-  const { data: latestVersionData } = useGetLatestVersionQuery({
+  const { data: latestVersionData } = useGetLatestChangelogQuery({
     component: "web",
   })
 
