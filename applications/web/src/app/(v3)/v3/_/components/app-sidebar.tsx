@@ -37,6 +37,7 @@ import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useLibraryCounts } from "@v3/_/hooks/use-library-counts"
+import { useSidebarPrefetch } from "@v3/_/hooks/use-sidebar-prefetch"
 import { useTheme } from "@v3/_/hooks/use-theme"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -51,7 +52,6 @@ import { usePermission } from "@/hooks/usePermission"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
 import {
-  api,
   useGetLatestChangelogQuery,
   useListCollectionsQuery,
   useListSidebarGroupsQuery,
@@ -121,6 +121,8 @@ export function AppSidebar({
     useListSidebarGroupsQuery()
 
   const libraryCounts = useLibraryCounts()
+  const { handlePointerEnter: prefetchOnEnter, handlePointerLeave: prefetchOnLeave } =
+    useSidebarPrefetch()
   const [editMode, setEditMode] = useState(false)
   const [editingShelfUuid, setEditingShelfUuid] = useState<string | null>(null)
   const [creatingCollection, setCreatingCollection] = useState(false)
@@ -371,6 +373,8 @@ export function AppSidebar({
                     group={group}
                     startIndex={startIndex}
                     libraryCounts={libraryCounts}
+                    onPrefetchEnter={prefetchOnEnter}
+                    onPrefetchLeave={prefetchOnLeave}
                     onEditShelf={(uuid) => {
                       setEditingShelfUuid(uuid)
                     }}
@@ -439,6 +443,8 @@ function SidebarNavGroup({
   group,
   startIndex,
   libraryCounts,
+  onPrefetchEnter,
+  onPrefetchLeave,
   onEditShelf,
   onHideItem,
   onHideAll,
@@ -450,6 +456,8 @@ function SidebarNavGroup({
     { count: number | undefined; isLoading: boolean }
   >
   startIndex: number
+  onPrefetchEnter: (item: SidebarItemDetail) => void
+  onPrefetchLeave: () => void
   onEditShelf: (shelfUuid: string) => void
   onHideItem: (itemUuid: string) => void
   onHideAll: () => void
@@ -494,6 +502,8 @@ function SidebarNavGroup({
       item={item}
       builtinTitle={builtinTitle}
       libraryCounts={libraryCounts}
+      onPrefetchEnter={onPrefetchEnter}
+      onPrefetchLeave={onPrefetchLeave}
       onEdit={
         item.kind === "shelf" && item.shelfUuid
           ? () => {
@@ -632,6 +642,8 @@ function SidebarNavItem({
   item,
   builtinTitle,
   libraryCounts,
+  onPrefetchEnter,
+  onPrefetchLeave,
   onEdit,
   onRemove,
 }: {
@@ -642,6 +654,8 @@ function SidebarNavItem({
     string,
     { count: number | undefined; isLoading: boolean }
   >
+  onPrefetchEnter: (item: SidebarItemDetail) => void
+  onPrefetchLeave: () => void
   onEdit?: () => void
   onRemove?: () => void
 }) {
@@ -688,7 +702,12 @@ function SidebarNavItem({
   const isEntity = item.kind === "shelf" || item.kind === "collection"
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem
+      onPointerEnter={() => {
+        if (!isActive) onPrefetchEnter(item)
+      }}
+      onPointerLeave={onPrefetchLeave}
+    >
       <Tooltip
         open={tooltipOpen || isAltHeld}
         delay={500}
