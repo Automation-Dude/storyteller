@@ -167,7 +167,7 @@ function RunConfigForm({
     <SettingsFormProvider form={form} lockedSettings={new Set()}>
       <form
         onSubmit={form.handleSubmit((values) => start(values, false))}
-        className="flex min-h-0 flex-1 flex-col"
+        className="relative flex min-h-0 flex-1 flex-col"
       >
         <div className="min-h-0 flex-1 overflow-y-auto px-px">
           <div className="flex flex-col gap-4 py-1">
@@ -210,7 +210,7 @@ function RunConfigForm({
           </div>
         )}
 
-        <DialogFooter className="bg-background sticky bottom-0 mt-0 border-t pt-3">
+        <DialogFooter className="bg-background absolute bottom-0 mt-0 w-full border-t pt-3">
           <ButtonGroup>
             <Button disabled={busy} type="submit">
               {busy ? t("starting") : t("start")}
