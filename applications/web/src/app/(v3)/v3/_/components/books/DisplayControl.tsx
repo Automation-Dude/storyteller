@@ -210,22 +210,6 @@ export function DisplayControl({
                     {t("displayOptions.table")}
                     {listView === "table" && <icon.Check className="ml-auto" />}
                   </FilterableMenuItem>
-
-                  <FilterableMenuItem
-                    closeOnClick={false}
-                    textValue={t("displayOptions.thumbnails")}
-                    icon={<icon.Book className="size-4" />}
-                    onSelect={() => {
-                      dispatch(
-                        uiSettingsSlice.actions.setListShowThumbnail(
-                          !listShowThumbnail,
-                        ),
-                      )
-                    }}
-                  >
-                    {t("displayOptions.thumbnails")}
-                    {listShowThumbnail && <icon.Check className="ml-auto" />}
-                  </FilterableMenuItem>
                 </>
               )}
             </FilterableMenuGroup>
@@ -257,7 +241,7 @@ export function DisplayControl({
             {isGrid ? t("displayOptions.card") : t("displayOptions.row")}
           </FilterableMenuLabel>
 
-          {isGrid && (
+          {isGrid ? (
             <>
               <FilterableMenuSub>
                 <FilterableMenuSubTrigger
@@ -317,6 +301,22 @@ export function DisplayControl({
                 </FilterableMenuSubContent>
               </FilterableMenuSub>
             </>
+          ) : (
+            <FilterableMenuItem
+              closeOnClick={false}
+              textValue={t("displayOptions.thumbnails")}
+              icon={<icon.Book className="size-4" />}
+              onSelect={() => {
+                dispatch(
+                  uiSettingsSlice.actions.setListShowThumbnail(
+                    !listShowThumbnail,
+                  ),
+                )
+              }}
+            >
+              {t("displayOptions.thumbnails")}
+              {listShowThumbnail && <icon.Check className="ml-auto" />}
+            </FilterableMenuItem>
           )}
 
           <FilterableMenuItem
