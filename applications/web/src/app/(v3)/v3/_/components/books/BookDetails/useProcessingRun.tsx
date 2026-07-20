@@ -43,17 +43,21 @@ export function buildProcessingPositions(
     ]
   }
 
-  const aligned = !!book.readaloud.filepath
+  const aligned = book.readaloud.status === "ALIGNED"
   const currentStageOrder = STAGE_ORDER[book.readaloud.currentStage]
 
   return [
-    {
-      key: "continue",
-      labelKey: aligned ? "resync" : "continue",
-      icon: <icon.Progress className="mr-2 size-4" />,
-      restart: false,
-      disabled: false,
-    },
+    ...(!aligned
+      ? [
+          {
+            key: "continue",
+            labelKey: "continue",
+            icon: <icon.Progress className="mr-2 size-4" />,
+            restart: false,
+            disabled: false,
+          } as const,
+        ]
+      : []),
     {
       key: "sync",
       labelKey: "fromSync",
