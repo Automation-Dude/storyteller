@@ -1,6 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useHotkey } from "@tanstack/react-hotkeys"
 import {
   createContext,
   useCallback,
@@ -12,10 +13,13 @@ import {
 import { type FieldPath, type UseFormReturn, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
+import { useTranslation } from "@v3/_/hooks/use-translation"
+
 import { type Role } from "@/components/books/edit/marcRelators"
 import { type BookWithRelations } from "@/database/books"
 import { usePermission } from "@/hooks/usePermission"
 import { useUpdateBookMutation } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 import { type BookFormValues, bookFormSchema } from "./schema"
 
@@ -33,6 +37,14 @@ function bookToFormValues(book: BookWithRelations): BookFormValues {
     creators: book.creators
       .filter((c) => c.role !== "aut" && c.role !== "nrt")
       .map((c) => ({ name: c.name, role: c.role ?? "" })),
+    tags: book.tags.map((t) => t.name),
+    collections: book.collections.map((c) => ({ uuid: c.uuid, name: c.name })),
+    series: book.series.map((s) => ({
+      uuid: s.uuid,
+      name: s.name,
+      position: s.position,
+      featured: s.featured,
+    })),
     textCover: null,
     audioCover: null,
   }
@@ -56,8 +68,15 @@ type BookFormContextValue = {
   editingCovers: boolean
   setEditingCovers: (value: boolean) => void
   submitForm: () => Promise<boolean>
-  /** validate + save a single field, then leave inline edit mode for it */
+  /** save the whole form and exit every edit mode; toasts on failure */
+  saveAndClose: () => Promise<boolean>
+  /**
+   * commit a single field: no-ops (and exits inline edit) when the field is
+   * clean, validates + saves otherwise
+   */
   commitField: (name: FieldPath<BookFormValues>) => Promise<boolean>
+  /** revert a single field and exit its inline edit */
+  cancelField: (name: FieldPath<BookFormValues>) => void
   /** revert all unsaved changes and exit any inline edit */
   discard: () => void
   /** drop pending cover uploads and exit cover edit mode */
@@ -95,15 +114,17 @@ export function BookFormProvider({
   const [editingField, setEditingFieldState] =
     useState<FieldPath<BookFormValues> | null>(null)
   const [editingCovers, setEditingCoversState] = useState(false)
+  const t = useTranslation("BookDetailsPage")
 
   const form = useForm<BookFormValues>({
     resolver: zodResolver(bookFormSchema),
     defaultValues: bookToFormValues(book),
   })
 
-  // keep form in sync with book data when the underlying book changes
+  // sync in server changes without clobbering what the user is mid-editing:
+  // an SSE-driven refetch while a field is dirty must not wipe staged edits.
   useEffect(() => {
-    form.reset(bookToFormValues(book))
+    form.reset(bookToFormValues(book), { keepDirtyValues: true })
   }, [book, form])
 
   const submitFormValues = useCallback(
@@ -127,20 +148,37 @@ export function BookFormProvider({
               fileAs: c.name,
               role: (c.role || "oth") as Role,
             })),
+          tags: values.tags,
+          collections: values.collections.map((c) => c.uuid as UUID),
+          series: values.series.map((s) => ({
+            uuid: s.uuid as UUID | undefined,
+            name: s.name,
+            position: s.position,
+            featured: s.featured,
+          })),
           // rating is per-user and submitted separately via setBookRating
         },
         textCover: values.textCover,
         audioCover: values.audioCover,
       })
 
+      if (result.error == null) {
+        // mark the form clean so the post-save refetch (keepDirtyValues reset
+        // above) fully applies the server's normalized values
+        form.reset(values)
+      }
+
       return result.error == null
     },
-    [book.uuid, updateBook],
+    [book.uuid, updateBook, form],
   )
 
   const submitForm = useCallback(async (): Promise<boolean> => {
-    let success = false
+    if (!form.formState.isDirty) {
+      return true
+    }
 
+    let success = false
     await form.handleSubmit(async (values) => {
       success = await submitFormValues(values)
     })()
@@ -163,6 +201,12 @@ export function BookFormProvider({
 
   const commitField = useCallback(
     async (name: FieldPath<BookFormValues>): Promise<boolean> => {
+      // untouched fields exit edit mode without a network call
+      if (!form.getFieldState(name).isDirty) {
+        setEditingFieldState(null)
+        return true
+      }
+
       const valid = await form.trigger(name)
       if (!valid) return false
 
@@ -173,6 +217,14 @@ export function BookFormProvider({
       return success
     },
     [form, submitFormValues],
+  )
+
+  const cancelField = useCallback(
+    (name: FieldPath<BookFormValues>) => {
+      form.resetField(name)
+      setEditingFieldState(null)
+    },
+    [form],
   )
 
   const setIsEditing = useCallback(
@@ -199,6 +251,36 @@ export function BookFormProvider({
     form.resetField("audioCover")
     setEditingCoversState(false)
   }, [form])
+
+  const saveAndClose = useCallback(async (): Promise<boolean> => {
+    const ok = await submitForm()
+    if (ok) {
+      setEditingFieldState(null)
+      setEditingCoversState(false)
+      onEditingChange(false)
+      return true
+    }
+
+    toast.error(t("saveFailed"))
+    return false
+  }, [submitForm, onEditingChange, t])
+
+  // one place decides what cmd+enter means: commit the inline field if there is
+  // one, otherwise save the whole book and leave edit mode.
+  useHotkey(
+    "Mod+Enter",
+    () => {
+      if (!canEdit) return
+      if (editingField) {
+        void commitField(editingField)
+        return
+      }
+      if (isEditing || editingCovers) {
+        void saveAndClose()
+      }
+    },
+    { ignoreInputs: false },
+  )
 
   const isFieldActive = useCallback(
     (name: FieldPath<BookFormValues>) =>
@@ -232,7 +314,9 @@ export function BookFormProvider({
       editingCovers,
       setEditingCovers,
       submitForm,
+      saveAndClose,
       commitField,
+      cancelField,
       discard,
       discardCovers,
     }),
@@ -249,7 +333,9 @@ export function BookFormProvider({
       editingCovers,
       setEditingCovers,
       submitForm,
+      saveAndClose,
       commitField,
+      cancelField,
       discard,
       discardCovers,
     ],

@@ -82,9 +82,6 @@ export function HeroSection({
   const [authorsExpanded, setAuthorsExpanded] = useState(false)
   const [narratorsExpanded, setNarratorsExpanded] = useState(false)
   const [ratingOverrideActive, setRatingOverrideActive] = useState(false)
-  // series isn't part of the book form (separate mutations), so adding when
-  // empty is gated on a local flag instead of editingField
-  const [addingSeries, setAddingSeries] = useState(false)
 
   const visibleAuthors = authorsExpanded
     ? authors
@@ -164,6 +161,41 @@ export function HeroSection({
                 placeholder={c.plain("fields.label.subtitle")}
               />
             )}
+
+            {isFieldActive("series") ? (
+              <div>
+                <SeriesEditor className="[&_svg]:text-tinted justify-center" />
+              </div>
+            ) : book.series.length > 0 ? (
+              <p className="text-tinted group/series relative flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
+                {book.series.map((s, idx) => (
+                  <V3Link
+                    href={`/series?item=${s.uuid}&book=${book.uuid}`}
+                    key={s.uuid}
+                    className="hover:text-tinted-strong text-tinted font-serif font-medium hover:underline"
+                  >
+                    {s.name.trim()} {s.position ? `#${s.position}` : ""}
+                    {idx < book.series.length - 1 && <span>,</span>}
+                  </V3Link>
+                ))}
+
+                {canEdit && (
+                  <TooltipButton
+                    type="button"
+                    size="icon-sm"
+                    variant="real-ghost"
+                    className="hover:text-foreground absolute top-0 -right-6 h-4 underline opacity-0 transition-opacity group-hover/series:opacity-100"
+                    onClick={() => {
+                      setEditingField("series")
+                    }}
+                    tooltip={c("actions.edit")}
+                    aria-label={c("actions.edit")}
+                  >
+                    <icon.Pencil className="size-3.5 stroke-[1.5]" />
+                  </TooltipButton>
+                )}
+              </p>
+            ) : null}
 
             {isEditing || isFieldActive("authors") ? (
               <AuthorEditor className="[&_svg]:text-tinted justify-center" />
@@ -324,23 +356,6 @@ export function HeroSection({
                 />
               )}
             </div>
-
-            {(book.series.length > 0 || isEditing || addingSeries) && (
-              <div>
-                <SeriesEditor
-                  bookUuid={book.uuid}
-                  series={book.series.map((s) => ({
-                    uuid: s.uuid,
-                    name: s.name,
-                    position: s.position,
-                    featured: s.featured,
-                  }))}
-                  onUpdate={() => {}}
-                  editMode={isEditing}
-                  className="[&_svg]:text-tinted justify-center"
-                />
-              </div>
-            )}
           </div>
 
           <div
@@ -472,7 +487,9 @@ export function HeroSection({
                   showNarrators={
                     narrators.length === 0 && !isFieldActive("narrators")
                   }
-                  showSeries={book.series.length === 0 && !addingSeries}
+                  showSeries={
+                    book.series.length === 0 && !isFieldActive("series")
+                  }
                   onAddSubtitle={() => {
                     setEditingField("subtitle")
                   }}
@@ -480,7 +497,7 @@ export function HeroSection({
                     setEditingField("narrators")
                   }}
                   onAddSeries={() => {
-                    setAddingSeries(true)
+                    setEditingField("series")
                   }}
                 />
               )}

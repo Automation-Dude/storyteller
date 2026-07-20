@@ -1,21 +1,14 @@
 "use client"
 
 import { useLocale } from "next-intl"
-import { useEffect, useRef, useState } from "react"
+import { useRef } from "react"
 import { useWatch } from "react-hook-form"
 
 import { cn } from "@/cn"
 
-import { useBookForm } from "./BookDetails/BookFormProvider"
 import { SEAMLESS_BOX } from "./BookDetails/EditableText"
 import { InlineFieldChrome } from "./BookDetails/InlineEditChrome"
-
-type Size = { width: number; height: number } | null
-
-function measure(el: HTMLElement | null): Size {
-  const rect = el?.getBoundingClientRect()
-  return rect ? { width: rect.width, height: rect.height } : null
-}
+import { useInlineField } from "./BookDetails/use-inline-field"
 
 type LanguageInfo = {
   // the localized display name in the user's locale, e.g. "Dutch"
@@ -45,30 +38,12 @@ function describeLanguage(code: string, locale: string): LanguageInfo {
 }
 
 export function LanguageEdit() {
-  const {
-    form,
-    canEdit,
-    isEditing,
-    editingField,
-    setEditingField,
-    commitField,
-  } = useBookForm()
+  const { form, canEdit, active, inlineMode, size, beginEdit } =
+    useInlineField("language")
   const locale = useLocale()
 
   const language = useWatch({ control: form.control, name: "language" }) ?? ""
-  const active = canEdit && (isEditing || editingField === "language")
-  const inlineMode = editingField === "language" && !isEditing
-
-  const inputRef = useRef<HTMLInputElement>(null)
   const displayRef = useRef<HTMLButtonElement>(null)
-  const [size, setSize] = useState<Size>(null)
-
-  useEffect(() => {
-    if (inlineMode) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
-    }
-  }, [inlineMode])
 
   const info = describeLanguage(language, locale)
 
@@ -89,14 +64,13 @@ export function LanguageEdit() {
         ref={displayRef}
         type="button"
         onClick={() => {
-          setSize(measure(displayRef.current))
-          setEditingField("language")
+          beginEdit(displayRef.current)
         }}
         className={cn(
           SEAMLESS_BOX,
           "py-0",
           "block w-fit border-transparent text-left text-sm",
-          "hover:border-input hover:bg-input/10 cursor-pointer",
+          "hover:border-input hover:bg-input/10 cursor-text",
           !language && "text-muted-foreground italic",
         )}
       >
@@ -105,47 +79,19 @@ export function LanguageEdit() {
     )
   }
 
-  const commit = () => {
-    if (!inlineMode) return
-    if (
-      (!language.trim() || info.maximized) &&
-      form.getFieldState("language").isDirty &&
-      JSON.stringify(language) !== JSON.stringify(form.getValues("language"))
-    ) {
-      void commitField("language")
-    } else {
-      form.resetField("language")
-      setEditingField(null)
-    }
-  }
-
   const editor = (
     <div className="flex flex-col gap-1">
       <input
-        ref={inputRef}
         value={language}
         placeholder="e.g. en, pt-BR, zh-Hans"
         onChange={(e) => {
           form.setValue("language", e.target.value, { shouldDirty: true })
         }}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault()
-            commit()
-          }
-          if (e.key === "Escape") {
-            e.preventDefault()
-            e.stopPropagation()
-            form.resetField("language")
-            setEditingField(null)
-          }
-        }}
         className={cn(
           "text-sm outline-none",
           inlineMode
             ? // bare inside the floating chrome, which supplies the frame
-              "border-input focus-visible:border-ring w-full border-0 border-b border-dashed bg-transparent px-0 py-0.5"
+              "border-input focus-visible:border-ring w-30 border-0 border-b border-dashed bg-transparent px-0 py-0.5"
             : cn(
                 SEAMLESS_BOX,
                 "border-input bg-input/20 dark:bg-input/30 focus-visible:border-ring focus-visible:ring-ring/30 w-40 focus-visible:ring-2",
@@ -182,7 +128,8 @@ export function LanguageEdit() {
   )
 
   // global edit mode keeps the boxed input in flow; single-field inline edit
-  // floats the shared chrome over the value.
+  // floats the shared chrome over the value (which owns keyboard/blur/focus;
+  // invalid codes are blocked by the schema refine when committing).
   if (!inlineMode) return editor
 
   return (

@@ -1,14 +1,14 @@
 "use client"
 
-import { type ElementType, useEffect, useRef, useState } from "react"
+import { type ElementType, useRef } from "react"
 import { Controller, type FieldPath, useWatch } from "react-hook-form"
 
 import { Field, FieldError } from "@v3/_/components/ui/field"
 import { cn } from "@v3/_/lib/utils"
 
-import { useBookForm } from "./BookFormProvider"
 import { InlineFieldChrome } from "./InlineEditChrome"
 import { type BookFormValues } from "./schema"
+import { useInlineField } from "./use-inline-field"
 
 // display and editor share this box so swapping between them never shifts
 // layout: identical padding + a 1px border (transparent when displaying).
@@ -44,35 +44,12 @@ export function EditableText({
   renderDisplay,
   fieldClassName,
 }: EditableTextProps) {
-  const {
-    form,
-    canEdit,
-    isEditing,
-    editingField,
-    setEditingField,
-    commitField,
-  } = useBookForm()
+  const { form, canEdit, active, inlineMode, size, beginEdit } =
+    useInlineField(name)
 
   const value = useWatch({ control: form.control, name }) as string | null
-  const active = canEdit && (isEditing || editingField === name)
-
-  const inlineMode = editingField === name && !isEditing
 
   const originalRef = useRef<HTMLDivElement | null>(null)
-  const ref = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
-  const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null,
-  )
-
-  // focus when entering single-field inline mode
-  useEffect(() => {
-    if (inlineMode && ref.current) {
-      ref.current.focus()
-      if (ref.current instanceof HTMLInputElement && type === "text") {
-        ref.current.select()
-      }
-    }
-  }, [inlineMode, type])
 
   if (!active) {
     const text = typeof value === "string" ? value.trim() : ""
@@ -91,13 +68,7 @@ export function EditableText({
         onClick={
           canEdit
             ? () => {
-                setEditingField(name)
-                setSize(
-                  originalRef.current?.getBoundingClientRect() ?? {
-                    width: 0,
-                    height: 0,
-                  },
-                )
+                beginEdit(originalRef.current)
               }
             : undefined
         }
@@ -106,13 +77,7 @@ export function EditableText({
             ? (e: React.KeyboardEvent) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault()
-                  setEditingField(name)
-                  setSize(
-                    originalRef.current?.getBoundingClientRect() ?? {
-                      width: 0,
-                      height: 0,
-                    },
-                  )
+                  beginEdit(originalRef.current)
                 }
               }
             : undefined
@@ -135,33 +100,6 @@ export function EditableText({
           placeholder,
           "aria-invalid": fieldState.invalid || undefined,
           onChange: field.onChange,
-          onBlur: () => {
-            field.onBlur()
-            if (inlineMode) {
-              if (
-                form.getFieldState(name).isDirty &&
-                JSON.stringify(field.value) !== JSON.stringify(value)
-              ) {
-                void commitField(name)
-              } else {
-                setEditingField(null)
-              }
-            }
-          },
-          onKeyDown: (
-            e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-          ) => {
-            if (e.key === "Escape") {
-              e.preventDefault()
-              e.stopPropagation()
-              form.resetField(name)
-              setEditingField(null)
-            }
-            if (e.key === "Enter" && !multiline) {
-              e.preventDefault()
-              if (inlineMode) void commitField(name)
-            }
-          },
         }
 
         const inputClassName = inlineMode
@@ -190,10 +128,7 @@ export function EditableText({
             {type === "text" ? (
               <textarea
                 {...commonProps}
-                ref={(el) => {
-                  field.ref(el)
-                  ref.current = el
-                }}
+                ref={field.ref}
                 // single line for scalar fields, taller for multiline ones.
                 // when we measured the display box (inline edit) the size below
                 // takes over; in global edit there is nothing to measure, so we
@@ -208,10 +143,7 @@ export function EditableText({
                 type={type}
                 style={inputStyle}
                 className={inputClassName}
-                ref={(el) => {
-                  field.ref(el)
-                  ref.current = el
-                }}
+                ref={field.ref}
               />
             )}
             <FieldError errors={[fieldState.error]} />
@@ -219,11 +151,12 @@ export function EditableText({
         )
 
         // in global edit mode the bottom edit bar owns save/discard; only the
-        // single-field inline edit wears its own chrome.
+        // single-field inline edit wears the chrome (which also owns keyboard,
+        // blur and focus behavior).
         if (!inlineMode) return editor
 
         return (
-          <InlineFieldChrome name={name} size={size}>
+          <InlineFieldChrome name={name} size={size} commitOnEnter={!multiline}>
             {editor}
           </InlineFieldChrome>
         )

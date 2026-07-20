@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 
-import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { InlineFieldChrome } from "@v3/_/components/books/BookDetails/InlineEditChrome"
+import { useInlineField } from "@v3/_/components/books/BookDetails/use-inline-field"
 import { Field, FieldError } from "@v3/_/components/ui/field"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -98,27 +98,14 @@ function CollapsibleDescription({
 export function DescriptionSection({ className }: { className?: string }) {
   const t = useTranslation("BookDetailsPage")
   const c = useCommon()
-  const {
-    form,
-    canEdit,
-    isEditing,
-    editingField,
-    setEditingField,
-    commitField,
-  } = useBookForm()
+  const { form, canEdit, active, inlineMode, size, beginEdit } =
+    useInlineField("description")
 
   const value = useWatch({ control: form.control, name: "description" })
-  const active = canEdit && (isEditing || editingField === "description")
-  const inlineMode = editingField === "description" && !isEditing
 
   const readRef = useRef<HTMLDivElement>(null)
-  const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null,
-  )
   const startEdit = () => {
-    const rect = readRef.current?.getBoundingClientRect()
-    setSize(rect ? { width: rect.width, height: rect.height } : null)
-    setEditingField("description")
+    beginEdit(readRef.current)
   }
 
   return (
@@ -135,29 +122,13 @@ export function DescriptionSection({ className }: { className?: string }) {
             const editor = (
               <Field orientation="vertical" className="gap-1">
                 <textarea
-                  {...field}
+                  name={field.name}
+                  ref={field.ref}
+                  onChange={field.onChange}
                   value={field.value ?? ""}
-                  autoFocus={inlineMode}
                   rows={6}
                   placeholder={t("noDescriptionAvailable")}
                   aria-invalid={fieldState.invalid || undefined}
-                  onBlur={() => {
-                    field.onBlur()
-                    if (!inlineMode) return
-                    if (form.getFieldState("description").isDirty) {
-                      void commitField("description")
-                    } else {
-                      setEditingField(null)
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      form.resetField("description")
-                      setEditingField(null)
-                    }
-                  }}
                   className={cn(
                     "field-sizing-content w-full resize-y font-serif text-xs outline-none",
                     inlineMode
@@ -172,7 +143,11 @@ export function DescriptionSection({ className }: { className?: string }) {
             if (!inlineMode) return editor
 
             return (
-              <InlineFieldChrome name="description" size={size}>
+              <InlineFieldChrome
+                name="description"
+                size={size}
+                commitOnEnter={false}
+              >
                 {editor}
               </InlineFieldChrome>
             )

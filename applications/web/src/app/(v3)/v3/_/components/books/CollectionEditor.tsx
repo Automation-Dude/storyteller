@@ -1,116 +1,65 @@
-import { useCallback, useMemo, useState } from "react"
+import { useState } from "react"
 
-import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { usePermission } from "@/hooks/usePermission"
-import {
-  useAddBooksToCollectionsMutation,
-  useListCollectionsQuery,
-  useRemoveBooksFromCollectionsMutation,
-} from "@/store/api"
-import { type UUID } from "@/uuid"
+import { useListCollectionsQuery } from "@/store/api"
 
+import { useBookForm } from "./BookDetails/BookFormProvider"
 import { CreateCollectionDialog } from "./CreateCollectionDialog"
-import { RelationAddButton, RelationChipEditor } from "./RelationChipEditor"
-import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
+import { RelationFormField } from "./RelationFormField"
 
-type CollectionEditorProps = {
-  bookUuid: string
-  collections: Array<{ uuid: string; name: string }>
-  onUpdate: () => void
-  editMode?: boolean
-  className?: string
-}
-
-export function CollectionEditor({
-  bookUuid,
-  collections,
-  onUpdate,
-  editMode = false,
-  className,
-}: CollectionEditorProps) {
-  const { data: allCollections = [] } = useListCollectionsQuery()
-  const [addToCollections] = useAddBooksToCollectionsMutation()
-  const [removeFromCollections] = useRemoveBooksFromCollectionsMutation()
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [createDialogInitialName, setCreateDialogInitialName] = useState("")
-
-  const t = useTranslation("BookDetailsPage.collections")
+// form-backed collection editor. collections are referenced by uuid, so a
+// brand-new one is created (entity) immediately via the dialog and only *staged*
+// onto the book in form state; it attaches when the book is saved.
+export function CollectionEditor({ className }: { className?: string }) {
+  const { form } = useBookForm()
   const tActions = useTranslation("BookActions")
-  const tLabels = useTranslation("Labels")
-  const c = useCommon()
-  const canUpdate = usePermission("bookUpdate")
-  const canInteract = editMode || canUpdate
 
-  const handleRemove = useCallback(
-    async (item: { uuid: string }) => {
-      await removeFromCollections({
-        collections: [item.uuid as UUID],
-        books: [bookUuid as UUID],
-      })
-      onUpdate()
-    },
-    [removeFromCollections, bookUuid, onUpdate],
-  )
-
-  const collectionItems = collections.map((collection) => {
-    const full = allCollections.find((c) => c.uuid === collection.uuid)
-    return {
-      uuid: collection.uuid,
-      name: collection.name,
-      url: `/collections?item=${collection.uuid}`,
-      icon: full?.icon ?? null,
-      color: full?.color ?? null,
-    }
-  })
-
-  const membership = useMemo(
-    () => new Map(collections.map((collection) => [collection.uuid, 1])),
-    [collections],
-  )
+  const { data: allCollections = [] } = useListCollectionsQuery()
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [createName, setCreateName] = useState("")
 
   return (
-    <>
+    <RelationFormField
+      name="collections"
+      source="collections"
+      entryId={(collection) => collection.uuid}
+      itemId={(item) => item.uuid}
+      toChip={(collection) => {
+        const full = allCollections.find((c) => c.uuid === collection.uuid)
+        return {
+          uuid: collection.uuid,
+          name: collection.name,
+          icon: full?.icon ?? null,
+          color: full?.color ?? null,
+        }
+      }}
+      entryFromPick={(item) => ({ uuid: item.uuid, name: item.name })}
+      badgeVariant="secondary"
+      searchPlaceholder={tActions.plain("search")}
+      className={className}
+      onCreate={(name) => {
+        setCreateName(name)
+        setShowCreateDialog(true)
+      }}
+    >
       <CreateCollectionDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        initialName={createDialogInitialName}
+        initialName={createName}
         onCreated={(uuid) => {
-          void addToCollections({
-            collections: [uuid as UUID],
-            books: [bookUuid as UUID],
-          })
-          onUpdate()
+          // the dialog resolves after arbitrary user time, so read the list at
+          // event time rather than from a render closure
+          const current = form.getValues("collections")
+          if (!current.some((c) => c.uuid === uuid)) {
+            form.setValue(
+              "collections",
+              [...current, { uuid, name: createName }],
+              { shouldDirty: true },
+            )
+          }
         }}
       />
-
-      <RelationChipEditor
-        items={collectionItems}
-        badgeVariant="secondary"
-        source="collections"
-        editMode={editMode}
-        emptyText={t("notInAnyCollections")}
-        onRemoveItem={handleRemove}
-        canInteract={!!canInteract}
-        className={className}
-      >
-        {canUpdate && (
-          <RelationEditMenu
-            source="collections"
-            bookUuids={[bookUuid as UUID]}
-            membership={membership}
-            searchPlaceholder={tActions.plain("search")}
-            onCreate={(name) => {
-              setCreateDialogInitialName(name)
-              setShowCreateDialog(true)
-            }}
-            createLabel={(s) =>
-              tLabels.plain("create.withInput", { input: `"${s}"` })
-            }
-            trigger={<RelationAddButton />}
-          />
-        )}
-      </RelationChipEditor>
-    </>
+    </RelationFormField>
   )
 }

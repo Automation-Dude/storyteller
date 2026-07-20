@@ -1,86 +1,24 @@
-import { useCallback, useMemo } from "react"
-
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { usePermission } from "@/hooks/usePermission"
-import {
-  useAddTagsToBooksMutation,
-  useRemoveTagsFromBooksMutation,
-} from "@/store/api"
-import { type UUID } from "@/uuid"
+import { RelationFormField } from "./RelationFormField"
 
-import { RelationAddButton, RelationChipEditor } from "./RelationChipEditor"
-import { RelationEditMenu } from "./relation-picker/RelationEditMenu"
-
-type TagEditorProps = {
-  bookUuid: string
-  tags: Array<{ uuid: string; name: string }>
-  onUpdate: () => void
-  editMode?: boolean
-  className?: string
-}
-
-export function TagEditor({
-  bookUuid,
-  tags,
-  onUpdate,
-  editMode = false,
-  className,
-}: TagEditorProps) {
-  const [addTags] = useAddTagsToBooksMutation()
-  const [removeTags] = useRemoveTagsFromBooksMutation()
-
-  const t = useTranslation("BookDetailsPage.tags")
+// form-backed tag editor: picks/creates only mutate form state; the full tag set
+// is written on save via updateBook. new tags (by name) are created in that loop.
+export function TagEditor({ className }: { className?: string }) {
   const tActions = useTranslation("BookActions")
-  const tLabels = useTranslation("Labels")
-  const canUpdate = usePermission("bookUpdate")
-  const canInteract = editMode || canUpdate
-
-  const handleRemove = useCallback(
-    async (tag: { uuid: string }) => {
-      await removeTags({ tags: [tag.uuid as UUID], books: [bookUuid as UUID] })
-      onUpdate()
-    },
-    [removeTags, bookUuid, onUpdate],
-  )
-
-  const handleCreate = useCallback(
-    (name: string) => {
-      void addTags({ tags: [{ name }], books: [bookUuid as UUID] })
-      onUpdate()
-    },
-    [addTags, bookUuid, onUpdate],
-  )
-
-  const membership = useMemo(
-    () => new Map(tags.map((tag) => [tag.uuid, 1])),
-    [tags],
-  )
 
   return (
-    <RelationChipEditor
-      items={tags}
-      badgeVariant="outline"
+    <RelationFormField
+      name="tags"
       source="tags"
-      editMode={editMode}
-      emptyText={t("notInAnyTags")}
-      onRemoveItem={handleRemove}
-      canInteract={!!canInteract}
+      entryId={(name) => name}
+      itemId={(item) => item.name}
+      toChip={(name) => ({ uuid: name, name })}
+      entryFromPick={(item) => item.name}
+      createEntry={(name) => name}
+      badgeVariant="outline"
+      searchPlaceholder={tActions.plain("search")}
       className={className}
-    >
-      {canUpdate && (
-        <RelationEditMenu
-          source="tags"
-          bookUuids={[bookUuid as UUID]}
-          membership={membership}
-          searchPlaceholder={tActions.plain("search")}
-          onCreate={handleCreate}
-          createLabel={(s) =>
-            tLabels.plain("create.withInput", { input: `"${s}"` })
-          }
-          trigger={<RelationAddButton />}
-        />
-      )}
-    </RelationChipEditor>
+    />
   )
 }

@@ -2,48 +2,35 @@
 
 import { type UUID } from "crypto"
 
-import { useHotkey } from "@tanstack/react-hotkeys"
-import { AnimatePresence, motion } from "motion/react"
 import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
-import { toast } from "sonner"
 
-import { BookActionsMenu } from "@v3/_/components/books/ActionMenu/BookActionsMenu"
-import { CollectionEditor } from "@v3/_/components/books/CollectionEditor"
-import { TagEditor } from "@v3/_/components/books/TagEditor"
 import { SiteHeader } from "@v3/_/components/site-header"
-import { ActionTray } from "@v3/_/components/ui/action-tray"
-import { Checkbox } from "@v3/_/components/ui/checkbox"
-import { useOptionalBookSelection } from "@v3/_/hooks/use-book-selection"
-import {
-  ESCAPE_PRIORITY,
-  useEscapeHandler,
-} from "@v3/_/hooks/use-escape-cascade"
 import { useReportPanel } from "@v3/_/hooks/use-report-panel"
-import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { BookDetailsSkeleton } from "@/app/(v3)/v3/_/components/books/BookDetails/BookDetailsSkeleton"
-import { ButtonGroup } from "@/app/(v3)/v3/_/components/ui/button-group"
-import { Kbd } from "@/app/(v3)/v3/_/components/ui/kbd"
-import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import { cn } from "@/cn"
 import { type BookWithRelations } from "@/database/books"
 import { usePermissions } from "@/hooks/usePermissions"
-import * as icon from "@/icons"
 import { api, useGetBookQuery } from "@/store/api"
 import { useAppDispatch } from "@/store/appState"
 
-import { BookFormProvider, useBookForm } from "./BookFormProvider"
+import { BookEditBar } from "./BookEditBar"
+import { BookFormProvider } from "./BookFormProvider"
+import { BookPageHeader, BookPanelHeader } from "./BookHeaders"
 import { DeleteBookModal } from "./DeleteBookModal"
 import { ProcessingSection } from "./ProcessingSection"
-import { CollapsibleSection } from "./sections/CollapsibleSection"
 import { ContributorsSection } from "./sections/ContributorsSection"
 import { useCoverScope } from "./sections/CoverScope"
 import { DescriptionSection } from "./sections/DescriptionSection"
 import { DetailsSection } from "./sections/DetailsSection"
 import { FileSection } from "./sections/FileSection"
 import { HeroSection } from "./sections/HeroSection"
+import {
+  CollectionsSection,
+  TagsSection,
+} from "./sections/RelationSections"
 import { ReviewSection } from "./sections/ReviewSection"
 
 const DynamicAlignmentReport = dynamic(
@@ -213,7 +200,7 @@ function BookDetailsContentInner({
         <BookEditBar />
 
         <div className="@container-size scroll-y @container/book h-full flex-1">
-          {/* this is some fucked up structure but its necessary in order to get full width background 
+          {/* this is some fucked up structure but its necessary in order to get full width background
         for full page view
          */}
           <HeroSection
@@ -265,326 +252,5 @@ function BookDetailsContentInner({
         </div>
       </article>
     </BookFormProvider>
-  )
-}
-
-function BookPageHeader() {
-  const { book, isEditing, setIsEditing } = useBookForm()
-  const router = useRouter()
-
-  const [actionMenuOpen, setActionMenuOpen] = useState(false)
-
-  useHotkey("E", () => {
-    setActionMenuOpen((prev) => !prev)
-  })
-
-  useHotkey("Shift+ArrowLeft", () => {
-    router.back()
-  })
-
-  const pill =
-    "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
-
-  return (
-    <div className="absolute top-0 z-20 flex h-(--header-height) w-full shrink-0 items-center justify-between gap-2 px-4">
-      <div className="flex min-w-0 items-center gap-2">
-        <TooltipButton
-          variant="ghost"
-          size="icon-sm"
-          className={cn(pill)}
-          tooltip="Back"
-          aria-label="Back"
-          onClick={() => {
-            router.back()
-          }}
-          shortcut={["Shift+ArrowLeft"]}
-        >
-          <icon.ArrowLeft className="size-3.5 stroke-[1.5]" />
-        </TooltipButton>
-      </div>
-
-      <BookActionsMenu
-        open={actionMenuOpen}
-        onOpenChange={setActionMenuOpen}
-        book={book}
-        onEdit={() => {
-          setIsEditing(!isEditing)
-        }}
-        onDeleted={() => {
-          router.back()
-        }}
-        className={cn(pill)}
-      />
-    </div>
-  )
-}
-
-function BookEditBar() {
-  const {
-    isEditing,
-    editingField,
-    isSaving,
-    editingCovers,
-    setIsEditing,
-    setEditingCovers,
-    submitForm,
-    discard,
-    discardCovers,
-  } = useBookForm()
-  const t = useTranslation("BookDetailsPage")
-  const c = useCommon()
-
-  const show = isEditing || editingCovers || !!editingField
-
-  const handleDiscard = () => {
-    if (editingCovers) {
-      discardCovers()
-    } else {
-      discard()
-    }
-  }
-
-  useEscapeHandler(
-    ESCAPE_PRIORITY.stopEditing,
-    handleDiscard,
-    isEditing || editingCovers,
-  )
-
-  const handleSave = async () => {
-    const ok = await submitForm()
-    if (ok) {
-      setIsEditing(false)
-      setEditingCovers(false)
-      return
-    }
-
-    toast.error(t("saveFailed"))
-  }
-
-  return (
-    <ActionTray
-      show={show}
-      className="absolute bottom-0 left-1/2 z-50 -translate-x-1/2 gap-2 pr-1.5 pl-3"
-    >
-      <span className="font-serif text-sm whitespace-nowrap">
-        {isSaving ? c("states.saving") : t("editing")}
-      </span>
-
-      <div className="flex-1" />
-      <div className="bg-border mx-0.5 h-5 w-px" />
-
-      <TooltipButton
-        tooltip={c("actions.discard")}
-        aria-label={c("actions.discard")}
-        variant="real-ghost"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          handleDiscard()
-        }}
-        size="sm"
-        disabled={isSaving}
-      >
-        <Kbd>Esc</Kbd>
-        <icon.Close className="size-4" />
-      </TooltipButton>
-
-      <TooltipButton
-        tooltip={isSaving ? c("states.saving") : c("actions.save")}
-        aria-label={c("actions.save")}
-        onMouseDown={(e) => {
-          e.preventDefault()
-          void handleSave()
-        }}
-        size="sm"
-        className="bg-primary text-primary-foreground rounded-full hover:opacity-90"
-        disabled={isSaving}
-        shortcut={["Enter"]}
-      >
-        <span
-          aria-hidden
-          className="border-primary-foreground/40 text-primary-foreground/60 inline-block rounded-sm border px-1 py-0.5"
-        >
-          ↵
-        </span>
-        <icon.Check className="size-4" />
-      </TooltipButton>
-    </ActionTray>
-  )
-}
-
-function BookPanelHeader({
-  onClose,
-  nextBook,
-  previousBook,
-}: {
-  onClose: (() => void) | undefined
-  nextBook?: () => void
-  previousBook?: () => void
-}) {
-  const { book, isEditing, setIsEditing } = useBookForm()
-
-  const selection = useOptionalBookSelection()
-  const isSelected = selection?.isSelected(book.uuid) ?? false
-  const showCheckbox = !!selection && (selection.isSelecting || isSelected)
-
-  const [actionMenuOpen, setActionMenuOpen] = useState(false)
-
-  const handleToggleSelection = () => {
-    if (!selection) return
-    if (!selection.isSelecting) selection.startSelecting()
-    selection.toggleSelection(book.uuid)
-  }
-
-  const pill =
-    "flex items-center gap-0.5 rounded-full bg-background/55 p-0.5 shadow-sm ring-1 ring-black/5 backdrop-blur-md dark:ring-white/10"
-
-  useEscapeHandler(
-    ESCAPE_PRIORITY.closePanel,
-    () => {
-      onClose?.()
-    },
-    !!onClose,
-  )
-  useHotkey("E", () => {
-    setActionMenuOpen((prev) => !prev)
-  })
-
-  useHotkey("Shift+ArrowRight", () => {
-    nextBook?.()
-  })
-  useHotkey("Shift+ArrowLeft", () => {
-    previousBook?.()
-  })
-
-  return (
-    <>
-      <AnimatePresence>
-        {showCheckbox && (
-          <motion.div
-            className={cn("absolute top-4 left-3 z-50 p-1", pill)}
-            initial={{ x: 0, opacity: 0 }}
-            animate={{ x: 3, opacity: 1 }}
-            exit={{ x: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Checkbox
-              aria-label="Toggle selection"
-              checked={isSelected}
-              onCheckedChange={handleToggleSelection}
-              className={cn(
-                "size-5 rounded-full",
-                isSelected &&
-                  "bg-cover-accent text-cover-accent-foreground border-cover-accent",
-              )}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {(nextBook || previousBook) && (
-        <ButtonGroup
-          className={cn(
-            "absolute top-3 left-3 z-50",
-            "transition-[left]",
-            selection?.isSelecting && "left-12",
-            pill,
-          )}
-        >
-          {previousBook && (
-            <TooltipButton
-              variant="real-ghost"
-              size="icon-sm"
-              onClick={previousBook}
-              shortcut={["Shift+ArrowLeft"]}
-              aria-label="Previous"
-              tooltip="Previous"
-            >
-              <icon.ArrowLeft className="size-3.5 stroke-[1.5]" />
-            </TooltipButton>
-          )}
-          {nextBook && (
-            <TooltipButton
-              variant="real-ghost"
-              size="icon-sm"
-              onClick={nextBook}
-              tooltip="Next"
-              aria-label="Next"
-              shortcut={["Shift+ArrowRight"]}
-            >
-              <icon.ArrowRight className="size-3.5 stroke-[1.5]" />
-            </TooltipButton>
-          )}
-        </ButtonGroup>
-      )}
-
-      <div className={cn("absolute top-2.5 right-3 z-50", pill)}>
-        <BookActionsMenu
-          book={book}
-          open={actionMenuOpen}
-          onOpenChange={setActionMenuOpen}
-          showOpenFullPage
-          onEdit={() => {
-            setIsEditing(!isEditing)
-          }}
-          onDeleted={onClose}
-        />
-
-        {onClose && (
-          <TooltipButton
-            variant="real-ghost"
-            size="icon-sm"
-            onClick={onClose}
-            tooltip="Close"
-            aria-label="Close"
-            shortcut={["Escape"]}
-          >
-            <icon.Close className="size-3.5 stroke-[1.5]" />
-          </TooltipButton>
-        )}
-      </div>
-    </>
-  )
-}
-
-function TagsSection() {
-  const { book, isEditing } = useBookForm()
-  const c = useCommon()
-
-  return (
-    <CollapsibleSection
-      title={c("fields.label.tags")}
-      sectionKey="tags"
-      icon={<icon.Tag className="size-3.5 stroke-[1.5]" />}
-    >
-      <TagEditor
-        bookUuid={book.uuid}
-        tags={book.tags.map((t) => ({ uuid: t.uuid, name: t.name }))}
-        onUpdate={() => {}}
-        editMode={isEditing}
-      />
-    </CollapsibleSection>
-  )
-}
-
-function CollectionsSection() {
-  const { book, isEditing } = useBookForm()
-  const c = useCommon()
-
-  return (
-    <CollapsibleSection
-      title={c("fields.label.collections")}
-      sectionKey="collections"
-      icon={<icon.Folder className="size-3.5 stroke-[1.5]" />}
-    >
-      <CollectionEditor
-        bookUuid={book.uuid}
-        collections={book.collections.map((c) => ({
-          uuid: c.uuid,
-          name: c.name,
-        }))}
-        onUpdate={() => {}}
-        editMode={isEditing}
-      />
-    </CollapsibleSection>
   )
 }

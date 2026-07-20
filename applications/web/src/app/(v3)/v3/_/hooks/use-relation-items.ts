@@ -1,6 +1,7 @@
 import { useLocale } from "next-intl"
 import { useMemo } from "react"
 
+import { type Role } from "@/components/books/edit/marcRelators"
 import { type FacetSource, type Field } from "@/fields"
 import {
   useListAuthorsQuery,
@@ -13,29 +14,28 @@ import {
   useListTagsQuery,
   useListTranslatorsQuery,
 } from "@/store/api"
+import { type UUID } from "@/uuid"
 
-// a "relation" is one of the many-to-many, per-table things a book can have
-// several of and add/remove freely. the vocabulary is exactly the registry's
-// facet sources, so a picker can never drift from the field it backs.
 export type RelationSource = FacetSource
 
 export type RelationItem = {
+  // needs to be a bit looser than UUID to support distinct values (eg language codes)
   uuid: string
   name: string
   icon?: string | null
   color?: string | null
-  // MARC relator codes the person holds (only present for the creators source)
-  roles?: readonly string[]
+  // MARC relator codes the person
+  roles?: readonly Role[]
 }
 
 // a permissive shape every list query's rows satisfy; icon/color/roles are only
 // present on some sources.
 type RelationRow = {
-  uuid: string
+  uuid: UUID
   name: string
   icon?: string | null
   color?: string | null
-  roles?: readonly string[]
+  roles?: readonly Role[]
 }
 
 // display name for a raw distinct value; only language codes get special
@@ -61,8 +61,6 @@ function distinctValueName(
 export function useRelationItems(
   source: RelationSource | undefined,
   enabled: boolean,
-  // the registry field backing a "distinct" source (its own column supplies
-  // the option values); unused for the entity-table sources.
   field?: Field,
 ): { items: RelationItem[]; loading: boolean } {
   const locale = useLocale()

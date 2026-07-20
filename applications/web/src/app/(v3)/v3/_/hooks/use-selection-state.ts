@@ -2,28 +2,26 @@
 
 import { useCallback, useMemo, useState } from "react"
 
-// the reducer core shared by book selection (a page-wide context) and item
-// selection (local sidebar state). both are "a Set of string ids with an anchor
-// for shift-range"; only the delivery (context vs local) and the isSelecting
-// semantics differ, so those live in the wrappers.
+import { type UUID } from "@/uuid"
+
 export type SelectionState = {
-  selected: Set<string>
-  lastSelectedId: string | null
-  toggle: (id: string) => void
-  selectRange: (targetId: string, orderedIds: string[]) => void
-  selectAll: (ids: string[]) => void
+  selected: Set<UUID>
+  lastSelectedId: UUID | null
+  toggle: (id: UUID) => void
+  selectRange: (targetId: UUID, orderedIds: UUID[]) => void
+  selectAll: (ids: UUID[]) => void
   selectNone: () => void
-  invert: (allIds: string[]) => void
-  isSelected: (id: string) => boolean
+  invert: (allIds: UUID[]) => void
+  isSelected: (id: UUID) => boolean
   // clear both the selection and the anchor
   reset: () => void
 }
 
 export function useSelectionState(): SelectionState {
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<UUID>>(new Set())
+  const [lastSelectedId, setLastSelectedId] = useState<UUID | null>(null)
 
-  const toggle = useCallback((id: string) => {
+  const toggle = useCallback((id: UUID) => {
     setLastSelectedId(id)
     setSelected((prev) => {
       const next = new Set(prev)
@@ -36,11 +34,8 @@ export function useSelectionState(): SelectionState {
     })
   }, [])
 
-  // toggle the inclusive range between the anchor (last-selected id) and the
-  // target. if the anchor is currently selected the range selects, if it was
-  // deselected the range deselects.
   const selectRange = useCallback(
-    (targetId: string, orderedIds: string[]) => {
+    (targetId: UUID, orderedIds: UUID[]) => {
       const anchorId = lastSelectedId
 
       if (!anchorId) {
@@ -81,7 +76,7 @@ export function useSelectionState(): SelectionState {
     [lastSelectedId],
   )
 
-  const selectAll = useCallback((ids: string[]) => {
+  const selectAll = useCallback((ids: UUID[]) => {
     setSelected(new Set(ids))
   }, [])
 
@@ -89,11 +84,11 @@ export function useSelectionState(): SelectionState {
     setSelected(new Set())
   }, [])
 
-  const invert = useCallback((allIds: string[]) => {
+  const invert = useCallback((allIds: UUID[]) => {
     setSelected((prev) => new Set(allIds.filter((id) => !prev.has(id))))
   }, [])
 
-  const isSelected = useCallback((id: string) => selected.has(id), [selected])
+  const isSelected = useCallback((id: UUID) => selected.has(id), [selected])
 
   const reset = useCallback(() => {
     setSelected(new Set())

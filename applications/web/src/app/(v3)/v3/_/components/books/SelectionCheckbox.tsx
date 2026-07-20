@@ -6,6 +6,7 @@ import { Checkbox } from "@v3/_/components/ui/checkbox"
 
 import { cn } from "@/cn"
 import * as icon from "@/icons"
+import { type UUID } from "@/uuid"
 
 export function SelectionCheckbox({
   uuid,
@@ -16,11 +17,11 @@ export function SelectionCheckbox({
   className,
   showCheckbox = true,
 }: {
-  uuid: string
+  uuid: UUID
   checked: boolean
   isSelecting: boolean
-  onToggle: (uuid: string) => void
-  onSelectRange?: (uuid: string) => void
+  onToggle: (uuid: UUID) => void
+  onSelectRange?: (uuid: UUID, orderedUuids?: UUID[]) => void
   className?: string
   showCheckbox?: boolean
 }) {
@@ -29,6 +30,7 @@ export function SelectionCheckbox({
     e.preventDefault()
 
     if (e.shiftKey && onSelectRange) {
+      // prevent normal selection behavior
       window.getSelection()?.empty()
       onSelectRange(uuid)
       return
