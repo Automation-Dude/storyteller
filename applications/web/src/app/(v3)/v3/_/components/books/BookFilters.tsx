@@ -10,6 +10,7 @@ import { ShelfFilterEditor } from "@/app/(v3)/v3/_/components/shelves/ShelfFilte
 import * as icon from "@/icons"
 import { type ShelfFilterNode } from "@/shelves"
 import { type DisplayField, type SortField } from "@/sort"
+import { type BookLayout } from "@/store/slices/uiSettingsSlice"
 
 import { DisplayControl } from "./DisplayControl"
 import { FilterControl } from "./FilterControl"
@@ -38,6 +39,10 @@ type BookFiltersProps = {
   // book list gets them; opt out for contexts where saving makes no sense.
   enableAdvanced?: boolean
 
+  // when set, the layout toggle is hidden and the display control reflects
+  // the forced layout instead of the global preference
+  forceLayout?: BookLayout
+
   children?: ReactNode
 }
 
@@ -62,6 +67,7 @@ export function BookFilters({
   onDisplayOverridesChange,
   currentFields,
   enableAdvanced = true,
+  forceLayout,
   children,
 }: BookFiltersProps) {
   const t = useTranslation("BooksPage")
@@ -175,6 +181,7 @@ export function BookFilters({
           currentFields={currentFields}
           open={displayMenuOpen}
           onOpenChange={setDisplayMenuOpen}
+          forceLayout={forceLayout}
         />
       </div>
 

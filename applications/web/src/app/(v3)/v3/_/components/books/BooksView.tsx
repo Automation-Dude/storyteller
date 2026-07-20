@@ -3,6 +3,7 @@
 import { BookGrid } from "@/app/(v3)/v3/_/components/books/Grid/BookGrid"
 import { BookList } from "@/app/(v3)/v3/_/components/books/List/BookList"
 import { BookTable } from "@/app/(v3)/v3/_/components/books/List/BookTable"
+import { useIsMobile } from "@/app/(v3)/v3/_/hooks/use-mobile"
 import { type BookWithRelations } from "@/database/books"
 import {
   type DisplayField,
@@ -12,6 +13,7 @@ import {
 } from "@/sort"
 import { useAppSelector } from "@/store/appState"
 import {
+  type BookLayout,
   selectBookLayout,
   selectGridView,
   selectListDisplayFields,
@@ -31,23 +33,19 @@ type BooksViewProps = {
   onClearFilters?: () => void
   hasActiveFilters?: boolean
   selectedBookUuid?: string | null
-  // grid cards pass the selection flags; list/table rows pass just the book
-  onBookClick?: (
+  onBookClick: (
     book: BookWithRelations,
-    isSelecting?: boolean,
-    isBookSelected?: boolean,
+    isSelecting: boolean,
+    isBookSelected: boolean,
   ) => void
-  // click on a specific column cell (table view only, e.g. alignment grade)
   onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
-  // the grid layout's resolved display fields (auto or manual)
   displayFields?: DisplayField[]
-  // forces the list/table columns for this page, overriding the global
-  // listDisplayFields preference (e.g. quality shows only alignment fields)
   listDisplayFieldsOverride?: DisplayField[]
   displayContext?: SortContext
   sortField?: SortField
   sortDirection?: SortDirection
   onSortChange?: (field: SortField, direction: SortDirection) => void
+  forceLayout?: BookLayout
 }
 
 export function BooksView({
@@ -58,21 +56,24 @@ export function BooksView({
   sortField,
   sortDirection,
   onSortChange,
+  forceLayout,
   ...shared
 }: BooksViewProps) {
-  const layout = useAppSelector(selectBookLayout)
+  const storedLayout = useAppSelector(selectBookLayout)
   const gridView = useAppSelector(selectGridView)
   const listView = useAppSelector(selectListView)
   const listDisplayFieldsPref = useAppSelector(selectListDisplayFields)
-  const listDisplayFields = listDisplayFieldsOverride ?? listDisplayFieldsPref
   const listShowThumbnail = useAppSelector(selectListShowThumbnail)
+  const isMobile = useIsMobile()
+
+  const layout = forceLayout ?? storedLayout
+  const listDisplayFields = listDisplayFieldsOverride ?? listDisplayFieldsPref
+  const resolvedListView = isMobile && listView === "table" ? "list" : listView
 
   if (layout === "list") {
-    // rows track the panel edge during the transform-mode open/close slide,
-    // same as PageMain's chrome rule (the var is 0px at rest)
     return (
       <div className="max-w-[calc(100%-var(--panel-reveal,0px))]">
-        {listView === "table" ? (
+        {resolvedListView === "table" ? (
           <BookTable
             {...shared}
             onBookClick={onBookClick}
@@ -99,8 +100,6 @@ export function BooksView({
     <BookGrid
       {...shared}
       onBookClick={onBookClick}
-      // the thumbnail view is the card view with no meta below the cover; the
-      // user's field selection is kept for switching back
       displayFields={gridView === "thumbnail" ? [] : displayFields}
     />
   )

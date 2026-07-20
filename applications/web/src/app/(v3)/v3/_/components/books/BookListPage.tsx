@@ -79,6 +79,7 @@ import {
 } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
+  type BookLayout,
   selectAlwaysLoadAllBooks,
   selectGridDisplayFields,
   uiSettingsSlice,
@@ -149,6 +150,14 @@ type BookListPageProps = {
   emptySubMessage?: string
   // shown when the list is empty because of an active search/filter
   emptyFilteredSubMessage?: string
+  forceDisplayMode?: ForceDisplayMode
+}
+
+export type ForceDisplayMode = {
+  layout: BookLayout
+  displayFields: DisplayField[]
+  sortMode: SortField
+  sortDirection: SortDirection
 }
 
 type BookListPageState = {
@@ -196,6 +205,7 @@ function BookListPageInner({
   emptyMessage,
   emptySubMessage,
   emptyFilteredSubMessage,
+  forceDisplayMode,
 }: BookListPageProps) {
   const dispatch = useAppDispatch()
 
@@ -295,7 +305,7 @@ function BookListPageInner({
     [data?.pages],
   )
 
-    const baselineQueryArg = useMemo<ListBooksQueryArg>(() => {
+  const baselineQueryArg = useMemo<ListBooksQueryArg>(() => {
     if (!isBooksSource) return {}
     const arg: ListBooksQueryArg = {}
     if (source.seed) arg.filter = source.seed
@@ -769,6 +779,7 @@ function BookListPageInner({
               displayOverrides={gridDisplayFields}
               onDisplayOverridesChange={handleDisplayFieldsChange}
               currentFields={displayFields}
+              forceLayout={forceDisplayMode?.layout}
             />
 
             {afterFilters}
@@ -796,6 +807,7 @@ function BookListPageInner({
                 sortField={sort.field}
                 sortDirection={sort.direction}
                 onSortChange={handleColumnSort}
+                forceLayout={forceDisplayMode?.layout}
               />
             </PageContent>
           </PageMain>
@@ -850,6 +862,7 @@ function BookListPageInner({
               displayOverrides={gridDisplayFields}
               onDisplayOverridesChange={handleDisplayFieldsChange}
               currentFields={displayFields}
+              forceLayout={forceDisplayMode?.layout}
             />
 
             {afterFilters}
@@ -871,11 +884,22 @@ function BookListPageInner({
                 selectedBookUuid={selectedBookUuid}
                 onBookClick={handleBookClick}
                 onColumnClick={handleColumnClick}
-                displayFields={displayFields}
+                displayFields={
+                  forceDisplayMode
+                    ? forceDisplayMode.displayFields
+                    : displayFields
+                }
                 listDisplayFieldsOverride={listDisplayFields}
                 displayContext={displayContext}
-                sortField={sort.field}
-                sortDirection={sort.direction}
+                sortField={
+                  forceDisplayMode ? forceDisplayMode.sortMode : sort.field
+                }
+                sortDirection={
+                  forceDisplayMode
+                    ? forceDisplayMode.sortDirection
+                    : sort.direction
+                }
+                forceLayout={forceDisplayMode?.layout}
                 onSortChange={handleColumnSort}
               />
 

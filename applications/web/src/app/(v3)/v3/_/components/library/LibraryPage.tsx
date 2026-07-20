@@ -13,6 +13,7 @@ import {
 import {
   BookListPage,
   type BookListSource,
+  type ForceDisplayMode,
 } from "@v3/_/components/books/BookListPage"
 import { EntityActionsMenu } from "@v3/_/components/library/EntityActionsMenu"
 import {
@@ -61,6 +62,7 @@ type LibraryPageProps = {
   // force the list/table layout's columns for this page, overriding the global
   // listDisplayFields preference (e.g. quality shows only alignment fields).
   listDisplayFields?: DisplayField[]
+  forceDisplayMode?: ForceDisplayMode
 }
 
 export function LibraryPage({
@@ -77,6 +79,7 @@ export function LibraryPage({
   emptyMessage,
   emptyFilteredSubMessage,
   listDisplayFields,
+  forceDisplayMode,
 }: LibraryPageProps) {
   const t = useTranslation("LibraryPage")
   const c = useCommon()
@@ -271,6 +274,7 @@ export function LibraryPage({
   return (
     <>
       <BookListPage
+        forceDisplayMode={forceDisplayMode}
         source={source}
         skip={!selectedItem}
         seedLabel={selectedItemName}

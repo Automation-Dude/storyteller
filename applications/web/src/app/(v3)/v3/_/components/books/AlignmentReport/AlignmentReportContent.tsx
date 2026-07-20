@@ -306,7 +306,7 @@ function ReportHeader({
             >
               <icon.Briefcase className="size-3.5" />{" "}
               {t("createdByJob", {
-                relativeTime: relativeTime(view.createdAt),
+                relativeTime: relativeTime(view.createdAt, { now: new Date() }),
               })}
             </V3Link>
           )}
