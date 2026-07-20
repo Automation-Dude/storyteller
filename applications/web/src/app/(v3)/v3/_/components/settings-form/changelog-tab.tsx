@@ -98,9 +98,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
     component: "web",
   })
 
-  const isBeta = BETA_TAGS.some((tag) =>
-    latestVersionData?.version.includes(tag),
-  )
+  const isBeta = BETA_TAGS.some((tag) => currentVersion.includes(tag))
   const [showBeta, setShowBeta] = useState(isBeta)
 
   const filteredData =
