@@ -79,12 +79,14 @@ function CreatorChipField({
   searchPlaceholder,
   items,
   allItems,
+  className,
 }: {
   field: "authors" | "narrators"
   label: string
   searchPlaceholder: string
   items: { uuid: string; name: string }[]
   allItems: { uuid: string; name: string }[]
+  className?: string
 }) {
   const { form, isEditing, editingField, setEditingField, commitField } =
     useBookForm()
@@ -124,6 +126,7 @@ function CreatorChipField({
         onRemoveItem={(item) => {
           setValues(values.filter((name) => name !== item.name))
         }}
+        className={className}
       >
         <CreatorAddMenu
           allItems={allItems}
@@ -164,7 +167,7 @@ function CreatorChipField({
   )
 }
 
-export function AuthorEditor() {
+export function AuthorEditor({ className }: { className?: string }) {
   const { form } = useBookForm()
   const t = useTranslation()
   const c = useCommon()
@@ -190,11 +193,12 @@ export function AuthorEditor() {
       searchPlaceholder={t.plain("BookDetailsPage.addAuthor")}
       items={authorItems}
       allItems={allAuthors}
+      className={className}
     />
   )
 }
 
-export function NarratorEditor() {
+export function NarratorEditor({ className }: { className?: string }) {
   const { form } = useBookForm()
   const t = useTranslation()
 
@@ -219,6 +223,7 @@ export function NarratorEditor() {
       searchPlaceholder={t.plain("BookDetailsPage.addNarrator")}
       items={narratorItems}
       allItems={allNarrators}
+      className={className}
     />
   )
 }

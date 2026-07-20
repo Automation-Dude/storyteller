@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "motion/react"
+import { useTheme } from "next-themes"
 import { useState } from "react"
 
 import {
@@ -49,7 +50,6 @@ import {
   useCoverColors,
   useHeroContrast,
 } from "./useCoverColors"
-import { useTheme } from "next-themes"
 
 const MAX_CREATORS = 5
 
@@ -166,7 +166,7 @@ export function HeroSection({
             )}
 
             {isEditing || isFieldActive("authors") ? (
-              <AuthorEditor />
+              <AuthorEditor className="justify-center" />
             ) : (
               authors.length > 0 && (
                 <p
@@ -222,7 +222,7 @@ export function HeroSection({
             )}
 
             {isEditing || isFieldActive("narrators") ? (
-              <NarratorEditor />
+              <NarratorEditor className="justify-center" />
             ) : (
               narrators.length > 0 && (
                 <p
@@ -337,6 +337,7 @@ export function HeroSection({
                   }))}
                   onUpdate={() => {}}
                   editMode={isEditing}
+                  className="justify-center"
                 />
               </div>
             )}

@@ -21,6 +21,7 @@ type CollectionEditorProps = {
   collections: Array<{ uuid: string; name: string }>
   onUpdate: () => void
   editMode?: boolean
+  className?: string
 }
 
 export function CollectionEditor({
@@ -28,6 +29,7 @@ export function CollectionEditor({
   collections,
   onUpdate,
   editMode = false,
+  className,
 }: CollectionEditorProps) {
   const { data: allCollections = [] } = useListCollectionsQuery()
   const [addToCollections] = useAddBooksToCollectionsMutation()
@@ -92,6 +94,7 @@ export function CollectionEditor({
         emptyText={t("notInAnyCollections")}
         onRemoveItem={handleRemove}
         canInteract={!!canInteract}
+        className={className}
       >
         {canUpdate && (
           <RelationEditMenu

@@ -19,6 +19,7 @@ type TagEditorProps = {
   tags: Array<{ uuid: string; name: string }>
   onUpdate: () => void
   editMode?: boolean
+  className?: string
 }
 
 export function TagEditor({
@@ -26,6 +27,7 @@ export function TagEditor({
   tags,
   onUpdate,
   editMode = false,
+  className,
 }: TagEditorProps) {
   const [addTags] = useAddTagsToBooksMutation()
   const [removeTags] = useRemoveTagsFromBooksMutation()
@@ -67,6 +69,7 @@ export function TagEditor({
       emptyText={t("notInAnyTags")}
       onRemoveItem={handleRemove}
       canInteract={!!canInteract}
+      className={className}
     >
       {canUpdate && (
         <RelationEditMenu

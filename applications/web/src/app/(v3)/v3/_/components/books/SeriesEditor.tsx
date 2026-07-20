@@ -42,6 +42,7 @@ type SeriesEditorProps = {
   series: SeriesWithPosition[]
   onUpdate: () => void
   editMode?: boolean
+  className?: string
 }
 
 // the series the user picked but hasn't committed yet, while they set a position
@@ -57,6 +58,7 @@ export function SeriesEditor({
   series,
   onUpdate,
   editMode = false,
+  className,
 }: SeriesEditorProps) {
   const [addToSeries] = useAddBooksToSeriesMutation()
   const [removeFromSeries] = useRemoveBooksFromSeriesMutation()
@@ -177,6 +179,7 @@ export function SeriesEditor({
             </button>
           )
         }}
+        className={className}
       >
         {canUpdate && (
           // series keeps its position dialog: the picker only picks (existing or
