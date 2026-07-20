@@ -51,6 +51,7 @@ import { usePermission } from "@/hooks/usePermission"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
 import {
+  api,
   useGetLatestChangelogQuery,
   useListCollectionsQuery,
   useListSidebarGroupsQuery,
@@ -307,22 +308,30 @@ export function AppSidebar({
     <>
       <Sidebar variant="inset" collapsible="icon" {...props}>
         <SidebarHeader className="flex h-(--header-height) flex-row items-center justify-between gap-2">
-          <V3Link
-            href="/"
-            className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded-md p-0 pl-2"
-          >
-            <img
-              loading="eager"
-              src="/Storyteller_Logo.png"
-              width={28}
-              height={28}
-              alt="Storyteller"
-              className="h-7! max-h-7! w-7! max-w-7! shrink-0"
-            />
-            <span className="w-auto font-[Young_Serif] text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
-              Storyteller
-            </span>
-          </V3Link>
+          <TooltipButton
+            size="sm"
+            variant="real-ghost"
+            tooltip={`Version: ${currentVersion}`}
+            aria-label={`Storyteller version ${currentVersion}`}
+            render={
+              <V3Link
+                href="/"
+                className="hover:bg-sidebar-accent hover:text-primary flex items-center gap-2 rounded-md p-0 pl-2"
+              >
+                <img
+                  loading="eager"
+                  src="/Storyteller_Logo.png"
+                  width={28}
+                  height={28}
+                  alt="Storyteller"
+                  className="h-7! max-h-7! w-7! max-w-7! shrink-0"
+                />
+                <span className="w-auto font-[Young_Serif] text-base opacity-100 group-data-[collapsible=icon]:hidden group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+                  Storyteller
+                </span>
+              </V3Link>
+            }
+          />
 
           <div className="relative flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
             <TooltipButton
