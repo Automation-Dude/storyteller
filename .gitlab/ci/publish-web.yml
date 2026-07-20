@@ -155,9 +155,33 @@ prerelease-web:
       "$CI_API_V4_URL/projects/$CI_PROJECT_ID/releases" | jq -r "first(.[] |
       select(.tag_name | startswith(\"$package\")) | .commit.short_id)")'
     - to_sha=$CI_COMMIT_SHORT_SHA
-    - 'curl -H "PRIVATE-TOKEN: $CI_API_TOKEN"
-      "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/changelog?version=${version}&from=${from_sha}&to=${to_sha}&trailer=Changelog-web"
-      | jq -r .notes > release_notes.md'
+    - |
+      : > release_notes.md
+
+      if [ -n "$CI_COMMIT_TAG_MESSAGE" ]; then
+        printf '%s\n\n' "$CI_COMMIT_TAG_MESSAGE" >> release_notes.md
+      fi
+
+      changelog=$(curl -s -H "PRIVATE-TOKEN: $CI_API_TOKEN" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/changelog?version=${version}&from=${from_sha}&to=${to_sha}&trailer=Changelog-web" \
+        | jq -r .notes)
+
+      has_entries=false
+      if echo "$changelog" | grep -q '^- '; then
+        has_entries=true
+        echo "$changelog" >> release_notes.md
+      fi
+
+      # for prereleases with no tag message and no changelog entries, fall back to commit log
+      if [ -z "$CI_COMMIT_TAG_MESSAGE" ] && [ "$has_entries" = "false" ]; then
+        if echo "$CI_COMMIT_TAG" | grep -qE '\-(alpha|beta|rc|experimental|dev|test|preview)'; then
+          echo "## Changes" >> release_notes.md
+          echo "" >> release_notes.md
+          curl -s -H "PRIVATE-TOKEN: $CI_API_TOKEN" \
+            "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/compare?from=${from_sha}&to=${to_sha}" \
+            | jq -r '.commits | reverse | .[] | "- \(.title)"' >> release_notes.md
+        fi
+      fi
   artifacts:
     paths:
       - release_notes.md
