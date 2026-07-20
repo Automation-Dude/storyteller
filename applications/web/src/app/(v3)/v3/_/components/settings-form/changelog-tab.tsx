@@ -30,6 +30,15 @@ function formatDate(dateString: string): string {
   })
 }
 
+export function formatChangelogDescription(description?: string | null) {
+  if (!description) return
+
+  const descriptionWithoutHeader = description
+    .replace(/<h2+ .*<\/h2>/gm, "")
+    .replaceAll('href="/', 'href="https://gitlab.com/')
+  return descriptionWithoutHeader
+}
+
 function ChangelogEntryCard({
   entry,
   currentVersion,
@@ -39,9 +48,7 @@ function ChangelogEntryCard({
 }) {
   const v = compareVersions(entry.version, currentVersion)
 
-  const descriptionWithoutHeader = entry.description
-    ?.replace(/<h2+ .*<\/h2>/gm, "")
-    .replaceAll('href="/', 'href="https://gitlab.com/')
+  const descriptionWithoutHeader = formatChangelogDescription(entry.description)
 
   const t = useTranslation("SettingsPage.changelog")
 
@@ -92,7 +99,7 @@ export function ChangelogTab({ currentVersion }: { currentVersion: string }) {
   })
 
   const isBeta = BETA_TAGS.some((tag) =>
-    latestVersionData?.version?.includes(tag),
+    latestVersionData?.version.includes(tag),
   )
   const [showBeta, setShowBeta] = useState(isBeta)
 

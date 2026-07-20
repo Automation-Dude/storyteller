@@ -75,7 +75,10 @@ import {
   COLLECTION_ICON,
   SHELF_ICON,
 } from "./nav/sidebar-items"
-import { DISMISSED_VERSION_KEY } from "./settings-form/changelog-tab"
+import {
+  DISMISSED_VERSION_KEY,
+  formatChangelogDescription,
+} from "./settings-form/changelog-tab"
 import { ShelfEditor } from "./shelves/ShelfEditor"
 import {
   Collapsible,
@@ -185,13 +188,24 @@ export function AppSidebar({
 
     toastShownRef.current = true
 
+    const cleanedDescription = formatChangelogDescription(
+      latestChangelog?.description,
+    )
+
     toast.info(`A new version (v${latestVersion}) is available`, {
       dismissible: true,
       closeButton: true,
       onDismiss: () => {
         localStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
       },
-      description: latestChangelog?.description ?? undefined,
+      description: cleanedDescription ? (
+        <div
+          className="prose prose-sm"
+          dangerouslySetInnerHTML={{
+            __html: cleanedDescription,
+          }}
+        />
+      ) : undefined,
       action: {
         label: "View changelog",
         onClick: () => {
