@@ -223,7 +223,7 @@ export function LibraryPage({
 
   const handleItemClick = useCallback(
     (key: string) => {
-      void setSelectedItem((current) => (key === current ? null : key))
+      void setSelectedItem(key)
     },
     [setSelectedItem],
   )
