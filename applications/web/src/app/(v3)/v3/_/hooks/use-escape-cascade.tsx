@@ -18,7 +18,9 @@ export const ESCAPE_PRIORITY = {
   closePanel: 10,
 } as const
 
-// returning false means "not mine, pass down"
+/**
+ * returning falsy means "not mine, pass down"
+ */
 type EscapeHandler = () => unknown
 
 type Entry = { priority: number; handler: EscapeHandler }
