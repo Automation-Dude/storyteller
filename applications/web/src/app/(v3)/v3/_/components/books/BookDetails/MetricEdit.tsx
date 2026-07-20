@@ -89,7 +89,7 @@ function splitDuration(total: number) {
   return {
     h: Math.floor(total / 3600),
     m: Math.floor((total % 3600) / 60),
-    s: Math.floor(total % 60),
+    // s: Math.floor(total % 60),
   }
 }
 
@@ -142,7 +142,7 @@ export function DurationEdit({ className }: { className?: string }) {
       const value = Math.max(0, Number(e.target.value) || 0)
       const next = { ...parts, [key]: value }
       setParts(next)
-      commitParts(next)
+      commitParts({ ...next, s: 0 })
     }
 
   const group = (
@@ -168,7 +168,7 @@ export function DurationEdit({ className }: { className?: string }) {
         aria-label="Minutes"
       />
       <span className="text-muted-foreground">m</span>
-      <input
+      {/* <input
         type="number"
         min={0}
         max={59}
@@ -178,7 +178,7 @@ export function DurationEdit({ className }: { className?: string }) {
         className={fieldClass}
         aria-label="Seconds"
       />
-      <span className="text-muted-foreground">s</span>
+      <span className="text-muted-foreground">s</span> */}
     </span>
   )
 
