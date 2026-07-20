@@ -1,6 +1,7 @@
 import { type ScheduledTask } from "node-cron"
 
 import { scanLibrary } from "@/assets/library/scanner/scan"
+import { scheduleAuditRecompute } from "@/database/auditLibrary"
 import { getSetting } from "@/database/settings"
 import { logger } from "@/logging"
 
@@ -31,6 +32,8 @@ export class Scheduler {
             options: { concurrency: 8 },
             signal: controller.signal,
           })
+          // The library changed, refresh the audit in the background.
+          scheduleAuditRecompute()
         } catch (error) {
           logger.error({
             msg: "Scheduled full scan failed",

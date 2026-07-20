@@ -9,7 +9,7 @@ import {
   type User,
 } from "@/apiModels"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
-import { type LibraryAudit } from "@/database/auditLibrary"
+import { type CachedLibraryAudit } from "@/database/auditLibrary"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
@@ -677,9 +677,13 @@ export const api = createApi({
           id: collection.uuid,
         })) ?? [{ type: "Collections" }],
     }),
-    getLibraryAudit: build.query<LibraryAudit, void>({
+    getLibraryAudit: build.query<CachedLibraryAudit, void>({
       query: () => "/library-audit",
       providesTags: ["LibraryAudit"],
+    }),
+    rescanLibraryAudit: build.mutation<CachedLibraryAudit, void>({
+      query: () => ({ url: "/library-audit", method: "POST" }),
+      invalidatesTags: ["LibraryAudit"],
     }),
     suggestRepairs: build.mutation<
       { proposals: RepairProposal[] },
@@ -1051,6 +1055,7 @@ export const {
   useListBooksQuery,
   useListCollectionsQuery,
   useGetLibraryAuditQuery,
+  useRescanLibraryAuditMutation,
   useSuggestRepairsMutation,
   useApplyRepairsMutation,
   useSearchMetadataQuery,

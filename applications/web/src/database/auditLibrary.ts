@@ -101,65 +101,80 @@ async function loadCoverSet(path: string): Promise<Set<string>> {
   )
 }
 
+type AuditBookRow = Awaited<ReturnType<typeof getBooks>>[number]
+
+/**
+ * Cover problems for a book, checking ebook then audiobook, so a book with a
+ * cover in either place is never called blank.
+ *
+ * Off-box (COVERS_PRESENT_FILE) we only know presence, not quality. In the
+ * real environment we read the same cover the app serves and measure it.
+ */
+async function coverIssuesFor(
+  book: AuditBookRow,
+  coverSet: Set<string> | null,
+): Promise<AuditIssue[]> {
+  if (coverSet) {
+    return book.assetDir && coverSet.has(book.assetDir) ? [] : ["NO-COVER"]
+  }
+  const cover =
+    (await getExtractedCover(book, "ebook")) ??
+    (await getExtractedCover(book, "audiobook"))
+  if (!cover) return ["NO-COVER"]
+
+  try {
+    const { width, height, entropy } = await imageStats(cover.data)
+    const issues: AuditIssue[] = []
+    if (entropy < BLANK_COVER_ENTROPY) issues.push("BLANK-COVER")
+    if (Math.min(width, height) < TINY_COVER_PX) issues.push("TINY-COVER")
+    return issues
+  } catch {
+    // Present but unreadable by sharp: it is still a cover, so do not call it
+    // blank on the strength of not being able to measure it.
+    return []
+  }
+}
+
+async function computeBookIssues(
+  book: AuditBookRow,
+  coverSet: Set<string> | null,
+): Promise<AuditIssue[]> {
+  const issues: AuditIssue[] = [...(await coverIssuesFor(book, coverSet))]
+  if (book.authors.length === 0) issues.push("NO-AUTHOR")
+  if (!book.language || !book.language.trim()) issues.push("NO-LANG")
+  if (!book.description || !book.description.trim()) issues.push("NO-DESC")
+  if (titleIsBad(book.title)) issues.push("BAD-TITLE")
+  return issues
+}
+
+function emptyCounts(): Record<AuditIssue, number> {
+  return Object.fromEntries(AUDIT_ISSUES.map((issue) => [issue, 0])) as Record<
+    AuditIssue,
+    number
+  >
+}
+
+function auditBookFrom(book: AuditBookRow, issues: AuditIssue[]): AuditBook {
+  return {
+    uuid: book.uuid,
+    title: book.title,
+    authors: book.authors.map((author) => author.name),
+    issues,
+  }
+}
+
 export async function auditLibrary(): Promise<LibraryAudit> {
   const coversFile = process.env["COVERS_PRESENT_FILE"]
   const coverSet = coversFile ? await loadCoverSet(coversFile) : null
-
   const books = await getBooks()
 
-  /**
-   * Cover problems for a book, checking ebook then audiobook, so a book with a
-   * cover in either place is never called blank.
-   *
-   * Off-box (COVERS_PRESENT_FILE) we only know presence, not quality. In the
-   * real environment we read the same cover the app serves and measure it.
-   */
-  async function coverIssues(
-    book: (typeof books)[number],
-  ): Promise<AuditIssue[]> {
-    if (coverSet) {
-      return book.assetDir && coverSet.has(book.assetDir) ? [] : ["NO-COVER"]
-    }
-    const cover =
-      (await getExtractedCover(book, "ebook")) ??
-      (await getExtractedCover(book, "audiobook"))
-    if (!cover) return ["NO-COVER"]
-
-    try {
-      const { width, height, entropy } = await imageStats(cover.data)
-      const issues: AuditIssue[] = []
-      if (entropy < BLANK_COVER_ENTROPY) issues.push("BLANK-COVER")
-      if (Math.min(width, height) < TINY_COVER_PX) issues.push("TINY-COVER")
-      return issues
-    } catch {
-      // Present but unreadable by sharp: it is still a cover, so do not call it
-      // blank on the strength of not being able to measure it.
-      return []
-    }
-  }
-
   const auditBooks: AuditBook[] = []
-  const counts = Object.fromEntries(
-    AUDIT_ISSUES.map((issue) => [issue, 0]),
-  ) as Record<AuditIssue, number>
+  const counts = emptyCounts()
 
   for (const book of books) {
-    const issues: AuditIssue[] = [...(await coverIssues(book))]
-
-    if (book.authors.length === 0) issues.push("NO-AUTHOR")
-    if (!book.language || !book.language.trim()) issues.push("NO-LANG")
-    if (!book.description || !book.description.trim()) issues.push("NO-DESC")
-    if (titleIsBad(book.title)) issues.push("BAD-TITLE")
-
+    const issues = await computeBookIssues(book, coverSet)
     for (const issue of issues) counts[issue]++
-    if (issues.length) {
-      auditBooks.push({
-        uuid: book.uuid,
-        title: book.title,
-        authors: book.authors.map((author) => author.name),
-        issues,
-      })
-    }
+    if (issues.length) auditBooks.push(auditBookFrom(book, issues))
   }
 
   return {
@@ -168,6 +183,108 @@ export async function auditLibrary(): Promise<LibraryAudit> {
     counts,
     books: auditBooks,
   }
+}
+
+// ---- Background, chunked, cached audit ------------------------------------
+//
+// Auditing reads every book's cover off disk, far too slow to do on a page
+// load. A background pass computes it in chunks of AUDIT_CHUNK, storing the
+// result in memory after each chunk; the API serves that cached result
+// instantly. The pass runs on boot, after each library scan, and on an
+// explicit rescan, so the answer is ready before anyone opens the page.
+
+export type AuditRunStatus = "never" | "computing" | "ready"
+
+export type CachedLibraryAudit = LibraryAudit & {
+  status: AuditRunStatus
+  computedAt: string | null
+  scanned: number
+}
+
+declare global {
+  // eslint-disable-next-line no-var
+  var _libraryAuditCache: CachedLibraryAudit | undefined
+  // eslint-disable-next-line no-var
+  var _libraryAuditRunning: boolean | undefined
+}
+
+const AUDIT_CHUNK = 25
+
+export function getCachedAudit(): CachedLibraryAudit {
+  return (
+    globalThis._libraryAuditCache ?? {
+      total: 0,
+      flagged: 0,
+      counts: emptyCounts(),
+      books: [],
+      status: globalThis._libraryAuditRunning ? "computing" : "never",
+      computedAt: null,
+      scanned: 0,
+    }
+  )
+}
+
+/**
+ * Recompute the audit in chunks of {@link AUDIT_CHUNK}, publishing the cached
+ * result after each chunk (so progress is visible) and yielding between chunks
+ * (so it never blocks the event loop). Only one pass runs at a time.
+ */
+export async function recomputeAuditInBackground(): Promise<void> {
+  if (globalThis._libraryAuditRunning) return
+  globalThis._libraryAuditRunning = true
+
+  const previousComputedAt = globalThis._libraryAuditCache?.computedAt ?? null
+  try {
+    const coversFile = process.env["COVERS_PRESENT_FILE"]
+    const coverSet = coversFile ? await loadCoverSet(coversFile) : null
+    const books = await getBooks()
+
+    const auditBooks: AuditBook[] = []
+    const counts = emptyCounts()
+
+    const publish = (scanned: number, status: AuditRunStatus): void => {
+      globalThis._libraryAuditCache = {
+        total: books.length,
+        flagged: auditBooks.length,
+        counts: { ...counts },
+        books: [...auditBooks],
+        status,
+        computedAt:
+          status === "ready" ? new Date().toISOString() : previousComputedAt,
+        scanned,
+      }
+    }
+
+    publish(0, "computing")
+
+    for (let i = 0; i < books.length; i += AUDIT_CHUNK) {
+      const chunk = books.slice(i, i + AUDIT_CHUNK)
+      for (const book of chunk) {
+        const issues = await computeBookIssues(book, coverSet)
+        for (const issue of issues) counts[issue]++
+        if (issues.length) auditBooks.push(auditBookFrom(book, issues))
+      }
+      publish(Math.min(i + AUDIT_CHUNK, books.length), "computing")
+      await new Promise((resolve) => setImmediate(resolve))
+    }
+
+    publish(books.length, "ready")
+    logger.info({
+      msg: "Library audit recomputed",
+      total: books.length,
+      flagged: auditBooks.length,
+    })
+  } catch (error) {
+    logger.error({ msg: "Library audit recompute failed", err: error })
+  } finally {
+    globalThis._libraryAuditRunning = false
+  }
+}
+
+/** Start a recompute without waiting. Safe to call repeatedly (no-op if one is
+ * already running). Used by the boot hook and the post-scan hook. */
+export function scheduleAuditRecompute(): void {
+  void recomputeAuditInBackground()
 }
 
 function pad(s: string, n: number): string {

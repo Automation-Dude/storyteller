@@ -49,6 +49,15 @@ export async function register() {
   }
 
   try {
+    // Compute the library audit in the background now, so the audit page has a
+    // ready answer before an admin opens it.
+    const { scheduleAuditRecompute } = await import("./database/auditLibrary")
+    scheduleAuditRecompute()
+  } catch (err) {
+    logger.error({ msg: "Failed to start initial library audit", err })
+  }
+
+  try {
     await syncChangelog()
   } catch (err) {
     logger.error("Failed to sync changelog from GitLab")

@@ -15,14 +15,17 @@ import {
   Title,
 } from "@mantine/core"
 import { IconRefresh, IconWand } from "@tabler/icons-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import {
   type AuditBook,
   type AuditIssue,
-  type LibraryAudit as AuditData,
+  type CachedLibraryAudit as AuditData,
 } from "@/database/auditLibrary"
-import { useGetLibraryAuditQuery } from "@/store/api"
+import {
+  useGetLibraryAuditQuery,
+  useRescanLibraryAuditMutation,
+} from "@/store/api"
 
 import { AutoRepairDialog } from "./AutoRepairDialog"
 import { RepairDialog } from "./RepairDialog"
@@ -52,11 +55,36 @@ export const ISSUE_LABELS: Record<AuditIssue, string> = {
   "NO-DESC": "No description",
 }
 
+function relativeTime(iso: string): string {
+  const secs = Math.max(
+    0,
+    Math.round((Date.now() - new Date(iso).getTime()) / 1000),
+  )
+  if (secs < 60) return "just now"
+  const mins = Math.round(secs / 60)
+  if (mins < 60) return `${mins} minute${mins === 1 ? "" : "s"} ago`
+  const hours = Math.round(mins / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`
+  return `${Math.round(hours / 24)} day(s) ago`
+}
+
 export function LibraryAudit() {
-  const { data, isFetching, isError, refetch } = useGetLibraryAuditQuery()
+  const [pollInterval, setPollInterval] = useState(2000)
+  const { data, isError } = useGetLibraryAuditQuery(undefined, {
+    pollingInterval: pollInterval,
+  })
+  const [rescan] = useRescanLibraryAuditMutation()
 
   const [repairing, setRepairing] = useState<AuditBook | null>(null)
   const [autoRepairOpen, setAutoRepairOpen] = useState(false)
+
+  const ready = data?.status === "ready"
+  const computing = !ready
+
+  // Poll only while the background pass is running; stop once it is ready.
+  useEffect(() => {
+    setPollInterval(data && data.status !== "ready" ? 2000 : 0)
+  }, [data])
 
   return (
     <Stack gap="lg">
@@ -67,9 +95,14 @@ export function LibraryAudit() {
             Books an e-reader shelf shows badly: missing, blank or tiny covers,
             no author or language, or a filename-like title.
           </Text>
+          {ready && data.computedAt ? (
+            <Text size="xs" c="dimmed" mt={4}>
+              Last scanned {relativeTime(data.computedAt)}
+            </Text>
+          ) : null}
         </Box>
         <Group gap="sm" wrap="nowrap">
-          {data && data.books.length > 0 ? (
+          {ready && data.books.length > 0 ? (
             <Button
               size="sm"
               leftSection={<IconWand size={16} />}
@@ -86,11 +119,11 @@ export function LibraryAudit() {
             leftSection={
               <IconRefresh
                 size={16}
-                className={isFetching ? "animate-spin" : undefined}
+                className={computing ? "animate-spin" : undefined}
               />
             }
-            onClick={() => void refetch()}
-            disabled={isFetching}
+            onClick={() => void rescan()}
+            disabled={computing}
           >
             Rescan
           </Button>
@@ -98,32 +131,39 @@ export function LibraryAudit() {
       </Group>
 
       {isError ? (
-        <Alert color="red" title="Couldn't scan the library">
-          The audit failed to run. Try Rescan; if it keeps failing, check the
-          server logs.
+        <Alert color="red" title="Couldn't load the audit">
+          The audit could not be loaded. Try Rescan; if it keeps failing, check
+          the server logs.
         </Alert>
-      ) : isFetching && !data ? (
+      ) : !data || (computing && data.total === 0) ? (
         <Stack gap="sm">
           <Text size="sm" c="dimmed">
-            Scanning every book&apos;s cover and metadata, this can take a
-            moment on a large library.
+            Preparing the audit in the background...
           </Text>
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} height={44} radius="sm" />
           ))}
         </Stack>
-      ) : data ? (
+      ) : (
         <>
+          {computing ? (
+            <Alert color="blue" variant="light" title="Scanning">
+              Checking every book&apos;s cover and metadata, {data.scanned} of{" "}
+              {data.total} so far. Results fill in as it goes.
+            </Alert>
+          ) : null}
           <SummaryCards data={data} />
           {data.books.length === 0 ? (
-            <Alert color="green" title="All clear">
-              Every book has a real cover, an author and a sensible title.
-            </Alert>
+            ready ? (
+              <Alert color="green" title="All clear">
+                Every book has a real cover, an author and a sensible title.
+              </Alert>
+            ) : null
           ) : (
             <FlaggedTable data={data} onRepair={setRepairing} />
           )}
         </>
-      ) : null}
+      )}
 
       {repairing ? (
         <RepairDialog
