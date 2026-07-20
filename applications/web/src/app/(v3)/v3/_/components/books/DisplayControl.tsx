@@ -22,6 +22,7 @@ import { DISPLAY_FIELDS, type DisplayField, insertDisplayField } from "@/sort"
 import { useSetUserSettingMutation } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
+  type BookLayout,
   type GridSpacing,
   selectBookLayout,
   selectGridSpacing,
@@ -29,6 +30,7 @@ import {
   selectListDisplayFields,
   selectListShowThumbnail,
   selectListView,
+  selectShowMissingBadge,
   selectShowProcessingBadge,
   selectShowReadaloudBadge,
   uiSettingsSlice,
@@ -45,6 +47,7 @@ export function DisplayControl({
   open,
   onOpenChange,
   showLayout = true,
+  forceLayout,
 }: {
   // null = auto (derived from sort/filter); an explicit array is the user's own
   // choice (an empty array shows nothing under the cover).
@@ -56,6 +59,7 @@ export function DisplayControl({
   open: boolean
   onOpenChange: (open: boolean) => void
   showLayout?: boolean
+  forceLayout?: BookLayout
 }) {
   const tLabels = useTranslation("Common.fields.label")
   const t = useTranslation("BooksPage")
@@ -74,6 +78,7 @@ export function DisplayControl({
   const gridCardSize = useAppSelector((state) => state.uiSettings.gridCardSize)
   const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)
   const showProcessingBadge = useAppSelector(selectShowProcessingBadge)
+  const showMissingBadge = useAppSelector(selectShowMissingBadge)
 
   useHotkeys([
     {
@@ -84,7 +89,8 @@ export function DisplayControl({
     },
   ])
 
-  const isGrid = bookLayout === "grid"
+  const effectiveLayout = forceLayout ?? bookLayout
+  const isGrid = effectiveLayout === "grid"
 
   const shown = isGrid ? displayOverrides ?? currentFields : listDisplayFields
 
@@ -122,35 +128,37 @@ export function DisplayControl({
         {/* ---- layout + per-layout view ---- */}
         {showLayout && (
           <>
-            <FilterableMenuGroup>
-              <FilterableMenuLabel>
-                {t("displayOptions.layout")}
-              </FilterableMenuLabel>
+            {!forceLayout && (
+              <FilterableMenuGroup>
+                <FilterableMenuLabel>
+                  {t("displayOptions.layout")}
+                </FilterableMenuLabel>
 
-              <FilterableMenuItem
-                closeOnClick={false}
-                textValue={t("displayOptions.grid")}
-                icon={<icon.LayoutGrid className="size-4" />}
-                onSelect={() => {
-                  dispatch(uiSettingsSlice.actions.setBookLayout("grid"))
-                }}
-              >
-                {t("displayOptions.grid")}
-                {isGrid && <icon.Check className="ml-auto" />}
-              </FilterableMenuItem>
+                <FilterableMenuItem
+                  closeOnClick={false}
+                  textValue={t("displayOptions.grid")}
+                  icon={<icon.LayoutGrid className="size-4" />}
+                  onSelect={() => {
+                    dispatch(uiSettingsSlice.actions.setBookLayout("grid"))
+                  }}
+                >
+                  {t("displayOptions.grid")}
+                  {isGrid && <icon.Check className="ml-auto" />}
+                </FilterableMenuItem>
 
-              <FilterableMenuItem
-                closeOnClick={false}
-                textValue={t("displayOptions.list")}
-                icon={<icon.LayoutList className="size-4" />}
-                onSelect={() => {
-                  dispatch(uiSettingsSlice.actions.setBookLayout("list"))
-                }}
-              >
-                {t("displayOptions.list")}
-                {!isGrid && <icon.Check className="ml-auto" />}
-              </FilterableMenuItem>
-            </FilterableMenuGroup>
+                <FilterableMenuItem
+                  closeOnClick={false}
+                  textValue={t("displayOptions.list")}
+                  icon={<icon.LayoutList className="size-4" />}
+                  onSelect={() => {
+                    dispatch(uiSettingsSlice.actions.setBookLayout("list"))
+                  }}
+                >
+                  {t("displayOptions.list")}
+                  {!isGrid && <icon.Check className="ml-auto" />}
+                </FilterableMenuItem>
+              </FilterableMenuGroup>
+            )}
 
             <FilterableMenuGroup>
               <FilterableMenuLabel>
@@ -236,13 +244,69 @@ export function DisplayControl({
 
         <FilterableMenuSeparator />
 
+        {/* ---- badges (shared between grid and list) ---- */}
         <FilterableMenuGroup>
           <FilterableMenuLabel>
-            {isGrid ? t("displayOptions.card") : t("displayOptions.row")}
+            {t("displayOptions.badges")}
           </FilterableMenuLabel>
 
-          {isGrid ? (
-            <>
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue={t("displayOptions.readaloudIcon")}
+            icon={<icon.Readaloud className="size-4" />}
+            onSelect={() => {
+              dispatch(
+                uiSettingsSlice.actions.setShowReadaloudBadge(
+                  !showReadaloudBadge,
+                ),
+              )
+            }}
+          >
+            {t("displayOptions.readaloudIcon")}
+            {showReadaloudBadge && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
+
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue={t("displayOptions.processingIcon")}
+            icon={<icon.Loader className="size-4" />}
+            onSelect={() => {
+              dispatch(
+                uiSettingsSlice.actions.setShowProcessingBadge(
+                  !showProcessingBadge,
+                ),
+              )
+            }}
+          >
+            {t("displayOptions.processingIcon")}
+            {showProcessingBadge && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
+
+          <FilterableMenuItem
+            closeOnClick={false}
+            textValue={t("displayOptions.missingFiles")}
+            icon={<icon.AlertCircle className="size-4" />}
+            onSelect={() => {
+              dispatch(
+                uiSettingsSlice.actions.setShowMissingBadge(!showMissingBadge),
+              )
+            }}
+          >
+            {t("displayOptions.missingFiles")}
+            {showMissingBadge && <icon.Check className="ml-auto" />}
+          </FilterableMenuItem>
+        </FilterableMenuGroup>
+
+        <FilterableMenuSeparator />
+
+        {/* ---- card (grid only) ---- */}
+        {isGrid && (
+          <>
+            <FilterableMenuGroup>
+              <FilterableMenuLabel>
+                {t("displayOptions.card")}
+              </FilterableMenuLabel>
+
               <FilterableMenuSub>
                 <FilterableMenuSubTrigger
                   icon={<icon.Readaloud className="size-4" />}
@@ -300,59 +364,40 @@ export function DisplayControl({
                   />
                 </FilterableMenuSubContent>
               </FilterableMenuSub>
-            </>
-          ) : (
-            <FilterableMenuItem
-              closeOnClick={false}
-              textValue={t("displayOptions.thumbnails")}
-              icon={<icon.Book className="size-4" />}
-              onSelect={() => {
-                dispatch(
-                  uiSettingsSlice.actions.setListShowThumbnail(
-                    !listShowThumbnail,
-                  ),
-                )
-              }}
-            >
-              {t("displayOptions.thumbnails")}
-              {listShowThumbnail && <icon.Check className="ml-auto" />}
-            </FilterableMenuItem>
-          )}
+            </FilterableMenuGroup>
 
-          <FilterableMenuItem
-            closeOnClick={false}
-            textValue={t("displayOptions.readaloudIcon")}
-            icon={<icon.Readaloud className="size-4" />}
-            onSelect={() => {
-              dispatch(
-                uiSettingsSlice.actions.setShowReadaloudBadge(
-                  !showReadaloudBadge,
-                ),
-              )
-            }}
-          >
-            {t("displayOptions.readaloudIcon")}
-            {showReadaloudBadge && <icon.Check className="ml-auto" />}
-          </FilterableMenuItem>
+            <FilterableMenuSeparator />
+          </>
+        )}
 
-          <FilterableMenuItem
-            closeOnClick={false}
-            textValue={t("displayOptions.processingIcon")}
-            icon={<icon.Loader className="size-4" />}
-            onSelect={() => {
-              dispatch(
-                uiSettingsSlice.actions.setShowProcessingBadge(
-                  !showProcessingBadge,
-                ),
-              )
-            }}
-          >
-            {t("displayOptions.processingIcon")}
-            {showProcessingBadge && <icon.Check className="ml-auto" />}
-          </FilterableMenuItem>
-        </FilterableMenuGroup>
+        {/* ---- row (list only) ---- */}
+        {!isGrid && (
+          <>
+            <FilterableMenuGroup>
+              <FilterableMenuLabel>
+                {t("displayOptions.row")}
+              </FilterableMenuLabel>
 
-        <FilterableMenuSeparator />
+              <FilterableMenuItem
+                closeOnClick={false}
+                textValue={t("displayOptions.thumbnails")}
+                icon={<icon.Book className="size-4" />}
+                onSelect={() => {
+                  dispatch(
+                    uiSettingsSlice.actions.setListShowThumbnail(
+                      !listShowThumbnail,
+                    ),
+                  )
+                }}
+              >
+                {t("displayOptions.thumbnails")}
+                {listShowThumbnail && <icon.Check className="ml-auto" />}
+              </FilterableMenuItem>
+            </FilterableMenuGroup>
+
+            <FilterableMenuSeparator />
+          </>
+        )}
 
         {/* ---- show on card ---- */}
         <FilterableMenuGroup>

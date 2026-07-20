@@ -122,7 +122,11 @@ import {
   IconSettingsUp,
   IconShield,
   IconSortAscending,
+  IconSortAscendingLetters,
+  IconSortAscendingNumbers,
   IconSortDescending,
+  IconSortDescendingLetters,
+  IconSortDescendingNumbers,
   IconSquare,
   IconSquareCheck,
   IconStack2,
@@ -305,6 +309,18 @@ export const Certificate = /*#__PURE__*/ styled(IconCertificate)
 export const ArrowsSort = /*#__PURE__*/ styled(IconArrowsSort)
 export const SortAscending = /*#__PURE__*/ styled(IconSortAscending)
 export const SortDescending = /*#__PURE__*/ styled(IconSortDescending)
+export const SortAlphabeticalAscending = /*#__PURE__*/ styled(
+  IconSortAscendingLetters,
+)
+export const SortAlphabeticalDescending = /*#__PURE__*/ styled(
+  IconSortDescendingLetters,
+)
+export const SortNumericAscending = /*#__PURE__*/ styled(
+  IconSortAscendingNumbers,
+)
+export const SortNumericDescending = /*#__PURE__*/ styled(
+  IconSortDescendingNumbers,
+)
 
 // settings & preferences
 export const Settings = /*#__PURE__*/ styled(IconSettings)

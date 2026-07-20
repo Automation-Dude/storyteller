@@ -28,6 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 import { DynamicIcon } from "@v3/_/components/ui/dynamic-icon"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -50,7 +51,10 @@ import { type UUID } from "@/uuid"
 
 const SIDEBAR_ROW_HEIGHT = 32
 
+const HOVER_PREFETCH_DELAY_MS = 50
+
 export type SidebarSortMode = "name" | "count"
+export type SidebarSortDirection = "asc" | "desc"
 
 function findScrollParent(node: HTMLElement | null): HTMLElement | null {
   let el = node?.parentElement ?? null
@@ -72,7 +76,8 @@ export function LibrarySidebar({
   search,
   onSearchChange,
   sortMode,
-  onSortModeChange,
+  sortDirection,
+  onSortChange,
   onItemClick,
   onHoverItem,
   entityType,
@@ -85,7 +90,8 @@ export function LibrarySidebar({
   search: string
   onSearchChange: (value: string) => void
   sortMode: SidebarSortMode
-  onSortModeChange: (mode: SidebarSortMode) => void
+  sortDirection: SidebarSortDirection
+  onSortChange: (mode: SidebarSortMode, direction: SidebarSortDirection) => void
   onItemClick: (key: string) => void
   // the page's live filter controller rides along so the handler can warm the
   // exact query the click would run (same sort + search = same cache key)
@@ -111,14 +117,21 @@ export function LibrarySidebar({
     controller: pageState?.controller,
   })
   hoverDepsRef.current = { onHoverItem, controller: pageState?.controller }
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleHoverItem = useCallback((key: string) => {
-    const { onHoverItem: handler, controller } = hoverDepsRef.current
-    handler?.(key, controller)
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+    hoverTimerRef.current = setTimeout(() => {
+      const { onHoverItem: handler, controller } = hoverDepsRef.current
+      handler?.(key, controller)
+      hoverTimerRef.current = null
+    }, HOVER_PREFETCH_DELAY_MS)
   }, [])
-
-  const toggleSort = useCallback(() => {
-    onSortModeChange(sortMode === "name" ? "count" : "name")
-  }, [sortMode, onSortModeChange])
+  const cancelHoverItem = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+  }, [])
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuTarget, setMenuTarget] = useState<FacetValue | null>(null)
@@ -218,18 +231,73 @@ export function LibrarySidebar({
                 </Button>
               )}
 
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={toggleSort}
-                title={sortMode === "name" ? t("sortByCount") : t("sortByName")}
-              >
-                {sortMode === "name" ? (
-                  <icon.SortAscending className="h-4 w-4" />
-                ) : (
-                  <icon.SortDescending className="h-4 w-4" />
-                )}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="ghost" size="icon-sm">
+                      {sortMode === "name" ? (
+                        sortDirection === "asc" ? (
+                          <icon.SortAlphabeticalAscending className="size-4" />
+                        ) : (
+                          <icon.SortAlphabeticalDescending className="size-4" />
+                        )
+                      ) : sortDirection === "asc" ? (
+                        <icon.SortNumericAscending className="size-4" />
+                      ) : (
+                        <icon.SortNumericDescending className="size-4" />
+                      )}
+                    </Button>
+                  }
+                />
+
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    closeOnClick={false}
+                    onClick={() => {
+                      if (sortMode === "name") {
+                        onSortChange(
+                          "name",
+                          sortDirection === "asc" ? "desc" : "asc",
+                        )
+                      } else {
+                        onSortChange("name", "asc")
+                      }
+                    }}
+                  >
+                    <icon.SortAlphabeticalAscending className="size-4" />
+                    {t("sortByName")}
+
+                    {sortMode === "name" && (
+                      <span className="text-muted-foreground text-xs">
+                        {sortDirection === "asc" ? "\u2191" : "\u2193"}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    closeOnClick={false}
+                    onClick={() => {
+                      if (sortMode === "count") {
+                        onSortChange(
+                          "count",
+                          sortDirection === "asc" ? "desc" : "asc",
+                        )
+                      } else {
+                        onSortChange("count", "desc")
+                      }
+                    }}
+                  >
+                    <icon.SortNumericAscending className="size-4" />
+                    {t("sortByCount")}
+
+                    {sortMode === "count" && (
+                      <span className="text-muted-foreground text-xs">
+                        {sortDirection === "asc" ? "\u2191" : "\u2193"}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -246,6 +314,7 @@ export function LibrarySidebar({
           selectedKey={selectedKey}
           onItemClick={onItemClick}
           onHoverItem={handleHoverItem}
+          onCancelHover={cancelHoverItem}
           isLoading={isLoading}
           entityType={entityType}
           itemSelection={itemSelection}
@@ -348,6 +417,7 @@ function SidebarItemList({
   selectedKey,
   onItemClick,
   onHoverItem,
+  onCancelHover,
   isLoading,
   entityType,
   itemSelection,
@@ -358,6 +428,7 @@ function SidebarItemList({
   selectedKey: string | null
   onItemClick: (key: string) => void
   onHoverItem?: (key: string) => void
+  onCancelHover?: () => void
   isLoading: boolean
   entityType?: LibraryEntityType | undefined
   itemSelection?: ReturnType<typeof useItemSelection>
@@ -376,6 +447,7 @@ function SidebarItemList({
   const callbacksRef = useRef({
     onItemClick,
     onHoverItem,
+    onCancelHover,
     onOpenItemMenu,
     itemSelection,
     orderedKeys,
@@ -384,6 +456,7 @@ function SidebarItemList({
   callbacksRef.current = {
     onItemClick,
     onHoverItem,
+    onCancelHover,
     onOpenItemMenu,
     itemSelection,
     orderedKeys,
@@ -398,6 +471,10 @@ function SidebarItemList({
 
   const handleRowHover = useCallback((key: string) => {
     callbacksRef.current.onHoverItem?.(key)
+  }, [])
+
+  const handleRowHoverLeave = useCallback(() => {
+    callbacksRef.current.onCancelHover?.()
   }, [])
 
   const handleRowToggle = useCallback((key: string) => {
@@ -498,6 +575,7 @@ function SidebarItemList({
                 hasRowActions={hasRowActions && item.key !== NONE_KEY}
                 onItemClick={handleRowClick}
                 onHover={handleRowHover}
+                onHoverLeave={handleRowHoverLeave}
                 onToggle={handleRowToggle}
                 onSelectRange={handleRowSelectRange}
                 onOpenMenu={handleRowMenu}
@@ -521,6 +599,7 @@ function SidebarRow({
   isMenuTarget,
   onItemClick,
   onHover,
+  onHoverLeave,
   onToggle,
   onSelectRange,
   onOpenMenu,
@@ -534,6 +613,7 @@ function SidebarRow({
   isMenuTarget: boolean
   onItemClick: (key: string) => void
   onHover: (key: string) => void
+  onHoverLeave: () => void
   onToggle: (key: string) => void
   onSelectRange: (key: string) => void
   onOpenMenu: (item: FacetValue, anchor: HTMLElement) => void
@@ -558,6 +638,7 @@ function SidebarRow({
         onPointerEnter={() => {
           onHover(item.key)
         }}
+        onPointerLeave={onHoverLeave}
         onClick={(e) => {
           e.preventDefault()
           if (canSelect && e.shiftKey) {

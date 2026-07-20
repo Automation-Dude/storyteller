@@ -2,6 +2,7 @@
 
 import { Popover } from "@base-ui/react/popover"
 import {
+  Cell,
   type ColumnDef,
   type ColumnSizingState,
   type Header,
@@ -28,7 +29,11 @@ import {
   findScrollParent,
   useBookActionMenu,
 } from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
-import { BookCover } from "@/app/(v3)/v3/_/components/books/BookCover"
+import {
+  MissingBadge,
+  hasMissingMedia,
+} from "@/app/(v3)/v3/_/components/books/MissingBadge"
+import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
 import {
   SelectionBullet,
   SelectionCheckbox,
@@ -42,18 +47,25 @@ import {
   TableRow,
 } from "@/app/(v3)/v3/_/components/ui/table"
 import { V3Link } from "@/app/(v3)/v3/_/components/v3-link"
+import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { type BookWithRelations } from "@/database/books"
 import { getFieldDef } from "@/fields"
 import * as icon from "@/icons"
 import { type DisplayField, type SortDirection, type SortField } from "@/sort"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import {
+  selectShowMissingBadge,
+  selectShowProcessingBadge,
+  selectShowReadaloudBadge,
   selectTableColumnOrder,
   selectTableColumnWidths,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
 
+import { Cover } from "../Cover"
 import { ColumnValue, columnWidths } from "./BookListColumns"
+import { useCoverScope } from "../BookDetails/sections/CoverScope"
+import { UUID } from "@/uuid"
 
 type BookTableProps = {
   books: BookWithRelations[]
@@ -134,6 +146,10 @@ export function BookTable({
   const tSel = useTranslation("SelectionToolbar")
   const dispatch = useAppDispatch()
   const menu = useBookActionMenu(books, "bulk")
+
+  const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)
+  const showProcessingBadge = useAppSelector(selectShowProcessingBadge)
+  const showMissingBadge = useAppSelector(selectShowMissingBadge)
 
   const emptyMessage = props.emptyMessage ?? t("emptyState")
   const emptySubMessage = props.emptySubMessage ?? t("emptyStateSub")
@@ -601,132 +617,27 @@ export function BookTable({
                 menu.selection?.isSelected(book.uuid) ?? false
 
               return (
-                <TableRow
-                  key={row.id}
-                  data-index={virtualRow.index}
-                  data-book-uuid={book.uuid}
-                  className={cn(
-                    "group hover:bg-tint absolute top-0 left-0 grid w-full cursor-pointer items-center gap-3 rounded-md transition-colors",
-                    isBookSelected &&
-                      "bg-tint/50 ring-cover-header ring-1 ring-inset",
-                    book.uuid === selectedBookUuid &&
-                      "bg-tint/70 ring-cover-header ring-1 ring-inset",
-                  )}
-                  style={{
-                    gridTemplateColumns: "var(--book-table-cols)",
-                    height: rowHeight,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                  onClick={() => {
-                    onBookClick?.(book)
-                  }}
-                >
-                  {menu.toggleSelection && (
-                    <TableCell>
-                      <SelectionCheckbox
-                        uuid={book.uuid}
-                        checked={isBookSelected}
-                        isSelecting={menu.isSelecting}
-                        onToggle={menu.toggleSelection}
-                        onSelectRange={menu.handleSelectRange}
-                        className="shrink-0"
-                      />
-                    </TableCell>
-                  )}
-                  {/* title cell */}
-                  <TableCell className="line-clamp-2 flex h-full items-center gap-2 pl-1 hyphens-auto whitespace-normal">
-                    {showThumbnail && (
-                      <div className="relative flex h-11 w-8 shrink-0 items-center justify-center">
-                        <BookCover
-                          book={book}
-                          width={32}
-                          disableHover
-                          onLoadingChange={() => {}}
-                        />
-                      </div>
-                    )}
-                    <V3Link
-                      href={`/books/${book.uuid}`}
-                      prefetch={false}
-                      className={cn(
-                        showThumbnail ? "line-clamp-2" : "line-clamp-1",
-                      )}
-                      onClick={(e) => {
-                        if (onBookClick) e.preventDefault()
-                      }}
-                    >
-                      <span
-                        className={cn(
-                          "group-hover:text-tinted-strong font-heading text-sm",
-                          book.uuid === selectedBookUuid &&
-                            "text-tinted-strong",
-                        )}
-                      >
-                        {book.title}
-                      </span>
-                    </V3Link>
-                  </TableCell>
-
-                  {/* data cells */}
-                  {row.getVisibleCells().map((cell) => {
-                    const field = cell.column.id as DisplayField
-                    const isClickable =
-                      !!onColumnClick &&
-                      (field === "alignmentGrade" ||
-                        field === "alignmentScore") &&
-                      book.alignmentSummary?.grade != null
-
-                    return (
-                      <TableCell
-                        key={cell.id}
-                        data-col={field}
-                        className={cn(
-                          "text-muted-foreground group-hover:text-tinted h-full min-w-0 truncate text-right text-xs hyphens-auto whitespace-normal tabular-nums",
-                          isClickable && "hover:text-foreground cursor-pointer",
-                        )}
-                        onClick={
-                          isClickable
-                            ? (e) => {
-                                e.stopPropagation()
-                                onColumnClick(book, field)
-                              }
-                            : undefined
-                        }
-                      >
-                        <div className="flex h-full items-center justify-end">
-                          <span
-                            className={cn(
-                              showThumbnail ? "line-clamp-2" : "line-clamp-1",
-                            )}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </span>
-                        </div>
-                      </TableCell>
-                    )
-                  })}
-
-                  {/* slack track */}
-                  <TableCell aria-hidden className="p-0" />
-
-                  {/* actions */}
-                  <TableCell className="flex items-center justify-end pr-2">
-                    <Popover.Trigger
-                      handle={menu.handle}
-                      aria-label="Open menu"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        menu.handleOpenMenu(book)
-                      }}
-                      className="text-muted-foreground hover:text-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
-                    >
-                      <icon.DotsVertical className="size-3.5" />
-                    </Popover.Trigger>
-                  </TableCell>
-                </TableRow>
+                <BookRow
+                  key={book.uuid}
+                  book={book}
+                  isBookSelected={isBookSelected}
+                  selectedBookUuid={selectedBookUuid}
+                  rowHeight={rowHeight}
+                  start={virtualRow.start}
+                  toggleSelection={menu.toggleSelection}
+                  handleSelectRange={menu.handleSelectRange}
+                  onBookClick={onBookClick}
+                  index={virtualRow.index}
+                  isSelecting={menu.isSelecting}
+                  showThumbnail={showThumbnail}
+                  showReadaloudBadge={showReadaloudBadge}
+                  showProcessingBadge={showProcessingBadge}
+                  showMissingBadge={showMissingBadge}
+                  cells={row.getVisibleCells()}
+                  onColumnClick={onColumnClick}
+                  handle={menu.handle}
+                  handleOpenMenu={menu.handleOpenMenu}
+                />
               )
             })}
           </TableBody>
@@ -764,7 +675,8 @@ export function BookTable({
                     : c.plain("actions.select")
                 }
                 onSelect={() => {
-                  menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
+                  if (!menu.menuBook) return
+                  menu.toggleSelection?.(menu.menuBook.uuid)
                 }}
               >
                 {menu.menuBookIsSelected
@@ -1033,5 +945,205 @@ function BookTableHeader({
         )}
       />
     </Reorder.Item>
+  )
+}
+
+function BookRow({
+  book,
+  isBookSelected,
+  selectedBookUuid,
+  rowHeight,
+  start,
+  toggleSelection,
+  handleSelectRange,
+  onBookClick,
+  index,
+  isSelecting,
+  showThumbnail,
+  showReadaloudBadge,
+  showProcessingBadge,
+  showMissingBadge,
+  cells,
+  onColumnClick,
+  handle,
+  handleOpenMenu,
+}: {
+  book: BookWithRelations
+  isBookSelected: boolean
+  selectedBookUuid?: string | null
+  rowHeight: number
+  start: number
+  toggleSelection?: (uuid: UUID) => void
+  handleSelectRange?: (uuid: UUID) => void
+  onBookClick?: (
+    book: BookWithRelations,
+    isSelecting: boolean,
+    isBookSelected: boolean,
+  ) => void
+  index: number
+  isSelecting: boolean
+  showThumbnail: boolean
+  showReadaloudBadge: boolean
+  showProcessingBadge: boolean
+  showMissingBadge: boolean
+  cells: Cell<BookWithRelations, unknown>[]
+  onColumnClick?: (book: BookWithRelations, field: DisplayField) => void
+  handle: Popover.Handle<unknown>
+  handleOpenMenu: (book: BookWithRelations) => void
+}) {
+  const scope = useCoverScope(book)
+
+  return (
+    <TableRow
+      key={book.uuid}
+      data-index={index}
+      data-book-uuid={book.uuid}
+      className={cn(
+        "group hover:bg-tint absolute top-0 left-0 grid w-full cursor-pointer items-center gap-3 rounded-md transition-colors",
+        isBookSelected && "bg-tint/50 ring-cover-header ring-1 ring-inset",
+        book.uuid === selectedBookUuid &&
+          "bg-tint/70 ring-cover-header ring-1 ring-inset",
+      )}
+      style={{
+        gridTemplateColumns: "var(--book-table-cols)",
+        height: rowHeight,
+        transform: `translateY(${start}px)`,
+        ...scope.style,
+      }}
+      onClick={() => {
+        onBookClick?.(book, isSelecting, isBookSelected)
+      }}
+    >
+      {toggleSelection && (
+        <TableCell>
+          <SelectionCheckbox
+            uuid={book.uuid}
+            checked={isBookSelected}
+            isSelecting={isSelecting}
+            onToggle={toggleSelection}
+            onSelectRange={handleSelectRange}
+            className="shrink-0"
+          />
+        </TableCell>
+      )}
+      {/* title cell */}
+      <TableCell className="line-clamp-2 flex h-full items-center gap-2 pl-1 hyphens-auto whitespace-normal">
+        {showThumbnail ? (
+          <div
+            className="relative flex h-11 w-8 shrink-0 items-center justify-center"
+            style={
+              {
+                "--radius-cover": "2px",
+              } as React.CSSProperties
+            }
+          >
+            <Cover book={book} width={32} interactive={false} />
+
+            {showReadaloudBadge && book.readaloud?.status === "ALIGNED" && (
+              <div className="bg-primary absolute -top-0.5 -right-0.5 z-30 flex size-3 shrink-0 items-center justify-center rounded-full">
+                <IconReadaloud className="size-2.5 text-white" />
+              </div>
+            )}
+
+            {showProcessingBadge &&
+              (book.readaloud?.status === "PROCESSING" ||
+                book.readaloud?.status === "QUEUED") && (
+                <ProcessingIndicator
+                  book={book}
+                  size={14}
+                  className="absolute -right-0.5 -bottom-0.5 z-30"
+                />
+              )}
+
+            {showMissingBadge && hasMissingMedia(book) && (
+              <MissingBadge
+                book={book}
+                className="absolute -right-0.5 -bottom-0.5 z-30 size-3"
+              />
+            )}
+          </div>
+        ) : showReadaloudBadge ? (
+          <IconReadaloud className="text-cover-accent size-3 shrink-0" />
+        ) : showProcessingBadge ? (
+          <ProcessingIndicator book={book} size={14} className="shrink-0" />
+        ) : null}
+
+        <V3Link
+          href={`/books/${book.uuid}`}
+          prefetch={false}
+          className={cn(showThumbnail ? "line-clamp-2" : "line-clamp-1")}
+          onClick={(e) => {
+            if (onBookClick) e.preventDefault()
+          }}
+        >
+          <span
+            className={cn(
+              "group-hover:text-tinted-strong font-heading text-sm",
+              book.uuid === selectedBookUuid && "text-tinted-strong",
+            )}
+          >
+            {book.title}
+          </span>
+        </V3Link>
+
+        {!showThumbnail && showMissingBadge && hasMissingMedia(book) && (
+          <MissingBadge book={book} inline />
+        )}
+      </TableCell>
+
+      {/* data cells */}
+      {cells.map((cell) => {
+        const field = cell.column.id as DisplayField
+        const isClickable =
+          !!onColumnClick &&
+          (field === "alignmentGrade" || field === "alignmentScore") &&
+          book.alignmentSummary?.grade != null
+
+        return (
+          <TableCell
+            key={cell.id}
+            data-col={field}
+            className={cn(
+              "text-muted-foreground group-hover:text-tinted h-full min-w-0 truncate text-right text-xs hyphens-auto whitespace-normal tabular-nums",
+              isClickable && "hover:text-foreground cursor-pointer",
+            )}
+            onClick={
+              isClickable
+                ? (e) => {
+                    e.stopPropagation()
+                    onColumnClick(book, field)
+                  }
+                : undefined
+            }
+          >
+            <div className="flex h-full items-center justify-end">
+              <span
+                className={cn(showThumbnail ? "line-clamp-2" : "line-clamp-1")}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </span>
+            </div>
+          </TableCell>
+        )
+      })}
+
+      {/* slack track */}
+      <TableCell aria-hidden className="p-0" />
+
+      {/* actions */}
+      <TableCell className="flex items-center justify-end pr-2">
+        <Popover.Trigger
+          handle={handle}
+          aria-label="Open menu"
+          onClick={(e) => {
+            e.stopPropagation()
+            handleOpenMenu(book)
+          }}
+          className="text-muted-foreground hover:text-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+        >
+          <icon.DotsVertical className="size-3.5" />
+        </Popover.Trigger>
+      </TableCell>
+    </TableRow>
   )
 }

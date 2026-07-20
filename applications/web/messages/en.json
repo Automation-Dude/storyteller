@@ -220,10 +220,12 @@
       "thumbnails": "Thumbnails",
       "appearance": "Appearance",
       "intensity": "Intensity",
+      "badges": "Badges",
       "card": "Card",
       "row": "Row",
       "readaloudIcon": "Readaloud icon",
-      "processingIcon": "Processing icon"
+      "processingIcon": "Processing icon",
+      "missingFiles": "Missing files"
     },
     "mediaTypes": {
       "all": "All",

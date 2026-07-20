@@ -1,6 +1,7 @@
 import { GRADE_COLORS } from "@v3/_/components/books/grade-pill"
 
 import { type FacetSection } from "@/database/libraryCounts"
+import { isWellKnownStatus } from "@/database/statusKinds"
 import { type MediaTypeValue } from "@/fields"
 import { type ShelfFilterField, type ShelfFilterNode } from "@/shelves"
 import { GRADE_RANK, type SortDirection, type SortField } from "@/sort"
@@ -46,6 +47,9 @@ export type LibrarySectionDef = {
   /* replaces the alphabetical "name" ordering in the sidebar when facet names
   have a domain order (grades sort by rank, not by text) */
   compareItems?: (a: FacetValue, b: FacetValue) => number
+  /* when present, matching items are pinned to the top of the sidebar
+  regardless of the active sort mode */
+  pinItem?: (item: FacetValue) => boolean
   /* a signature colour per facet value, keyed by facet key (grades → their
   grade-pill colour). takes precedence over any entity colour. */
   itemColor?: (itemKey: string) => string | null | undefined
@@ -151,6 +155,7 @@ export const librarySections = {
       value: itemKey,
     }),
     noneFilter: emptyFilter("status"),
+    pinItem: (item) => !!item.kind && isWellKnownStatus(item.kind),
   },
   publicationYears: {
     key: "publicationYears" as const,

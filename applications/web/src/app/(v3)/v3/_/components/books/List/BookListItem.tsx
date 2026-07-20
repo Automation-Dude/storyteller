@@ -7,6 +7,10 @@ import {
   CreatorsLine,
   SecondaryText,
 } from "@/app/(v3)/v3/_/components/books/Grid/BookCard"
+import {
+  MissingBadge,
+  hasMissingMedia,
+} from "@/app/(v3)/v3/_/components/books/MissingBadge"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
 import {
   ProgressDisplayBar,
@@ -24,11 +28,11 @@ import * as icon from "@/icons"
 import { type DisplayField, type SortContext } from "@/sort"
 import { useAppSelector } from "@/store/appState"
 import {
+  selectShowMissingBadge,
   selectShowProcessingBadge,
   selectShowReadaloudBadge,
 } from "@/store/slices/uiSettingsSlice"
-import { useRender } from "@base-ui/react/use-render"
-import { mergeProps } from "@base-ui/react/merge-props"
+import { Cover } from "../Cover"
 
 function isCreatorField(
   field: DisplayField,
@@ -88,6 +92,7 @@ export const BookListItem = memo(function BookListItem(
 
   const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)
   const showProcessingBadge = useAppSelector(selectShowProcessingBadge)
+  const showMissingBadge = useAppSelector(selectShowMissingBadge)
 
   const isSynced =
     book.readaloud !== null &&
@@ -97,6 +102,7 @@ export const BookListItem = memo(function BookListItem(
     (book.readaloud?.status === "PROCESSING" ||
       book.readaloud?.status === "QUEUED") &&
     showProcessingBadge
+  const isMissing = showMissingBadge && hasMissingMedia(book)
 
   const progress = getReadingProgress(book)
 
@@ -162,19 +168,35 @@ export const BookListItem = memo(function BookListItem(
       {showThumbnail && (
         <div className="bg-cover-well relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
           <div className="relative flex h-12 w-10 items-center justify-center">
-            <BookCover
+            <Cover
               book={book}
               width={50}
-              disableHover
-              onLoadingChange={() => {}}
+              interactive={false}
+              // onLoadingChange={() => {}}
             />
-
-            {isSynced && (
-              <div className="bg-cover-accent absolute -top-1 -right-1.5 z-30 flex size-3 shrink-0 items-center justify-center rounded-full">
-                <IconReadaloud className="size-2.5 text-white" />
-              </div>
-            )}
           </div>
+
+          {isSynced && (
+            <div className="bg-cover-accent absolute -right-0.5 -bottom-0.5 z-30 flex size-3.5 shrink-0 items-center justify-center rounded-full">
+              <IconReadaloud className="size-2.5 text-white" />
+            </div>
+          )}
+
+          {isProcessing && (
+            <ProcessingIndicator
+              book={book}
+              size={16}
+              className="absolute -right-0.5 -bottom-0.5 z-30"
+            />
+          )}
+
+          {isMissing && (
+            <MissingBadge
+              book={book}
+              className="absolute -right-0.5 -bottom-0.5 z-30"
+            />
+          )}
+
           {progress !== null && progress > 0 && (
             <div className="absolute right-0 bottom-0 left-0">
               <ProgressDisplayBar
@@ -207,8 +229,12 @@ export const BookListItem = memo(function BookListItem(
             <IconReadaloud className="text-cover-accent size-3.5 shrink-0" />
           )}
 
-          {isProcessing && (
+          {!showThumbnail && isProcessing && (
             <ProcessingIndicator book={book} size={16} className="shrink-0" />
+          )}
+
+          {!showThumbnail && isMissing && (
+            <MissingBadge book={book} inline className="shrink-0" />
           )}
         </div>
 

@@ -48,6 +48,7 @@ export type UISettings = {
   tableColumnWidths: Record<string, number>
   showReadaloudBadge: boolean
   showProcessingBadge: boolean
+  showMissingBadge: boolean
   logDisplay: LogDisplayPrefs
   collapsedSidebarGroups: Record<string, boolean>
   collapsedDetailSections: Record<string, boolean>
@@ -89,6 +90,7 @@ const defaults: UISettings = {
   tableColumnWidths: {},
   showReadaloudBadge: true,
   showProcessingBadge: true,
+  showMissingBadge: true,
   logDisplay: defaultLogDisplay,
   collapsedSidebarGroups: {},
   collapsedDetailSections: {},
@@ -286,6 +288,11 @@ export const uiSettingsSlice = createSlice({
       saveToCookie(state)
     },
 
+    setShowMissingBadge: (state, action: PayloadAction<boolean>) => {
+      state.showMissingBadge = action.payload
+      saveToCookie(state)
+    },
+
     setTheme: (state, action: PayloadAction<"light" | "dark" | "system">) => {
       state.theme = action.payload
       saveToCookie(state)
@@ -375,6 +382,9 @@ export const selectShowReadaloudBadge = (state: { uiSettings: UISettings }) =>
 
 export const selectShowProcessingBadge = (state: { uiSettings: UISettings }) =>
   state.uiSettings.showProcessingBadge
+
+export const selectShowMissingBadge = (state: { uiSettings: UISettings }) =>
+  state.uiSettings.showMissingBadge
 
 export const selectLogDisplayPrefs = (state: { uiSettings: UISettings }) =>
   state.uiSettings.logDisplay

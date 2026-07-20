@@ -236,7 +236,7 @@ export function useHeroContrast(
   const heroIsDark = heroLum < 128
 
   return {
-    "--tinted-foreground": `color-mix(in srgb, ${tinted.solid}, ${heroIsDark ? "#fff" : "#000"} ${heroIsDark ? 0.85 : 0.15})`,
+    "--tinted-foreground": tinted.solid,
     // "--tinted-foreground": heroIsDark ? tinted.onColor : tinted.solid,
     "--tinted-foreground-strong": heroIsDark ? "#fff" : "#000",
     "--tinted-foreground-subtle": heroIsDark ? "#fff" : "#000",

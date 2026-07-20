@@ -59,15 +59,18 @@ export function useSidebarPrefetch() {
 
           // also prefetch books for sections that have a known default sort,
           // since the first facet auto-selects and triggers a books fetch
-          const section =
-            librarySections[sectionKey as keyof typeof librarySections]
+          const section = librarySections[sectionKey]
 
-          if (section?.sort) {
+          const defaultSort = defaultSorts[sectionKey]
+
+          const sectionSort = defaultSort ?? section.sort
+
+          if (sectionSort) {
             void dispatch(
               api.endpoints.listInfiniteBooks.initiate(
                 {
-                  orderBy: section.sort.field,
-                  orderDirection: section.sort.direction,
+                  orderBy: sectionSort.field,
+                  orderDirection: sectionSort.direction,
                 },
                 { subscribe: false },
               ),

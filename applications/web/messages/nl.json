@@ -208,10 +208,12 @@
       "thumbnails": "Thumbnails",
       "appearance": "Uiterlijk",
       "intensity": "Kleurintensiteit",
+      "badges": "Badges",
       "card": "Kaart",
       "row": "Rij",
       "readaloudIcon": "Readaloudicoon",
-      "processingIcon": "Verwerkingsicoon"
+      "processingIcon": "Verwerkingsicoon",
+      "missingFiles": "Ontbrekende bestanden"
     },
     "count": {
       "summary": "{shown, number} van {total, number}",

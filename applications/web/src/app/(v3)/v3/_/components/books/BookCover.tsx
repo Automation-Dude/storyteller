@@ -169,12 +169,12 @@ export function FallbackCover({
     >
       {type === "audiobook" ? (
         <icon.HeadphonesFilled
-          className="h-12 w-12"
+          className="size-[20%]"
           style={{ color: primary.onColor }}
         />
       ) : (
         <icon.BookFilled
-          className="h-12 w-12"
+          className="size-[20%]"
           style={{ color: primary.onColor }}
         />
       )}

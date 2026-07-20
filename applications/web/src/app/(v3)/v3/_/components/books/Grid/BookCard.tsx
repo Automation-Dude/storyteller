@@ -30,10 +30,12 @@ import {
 } from "@/sort"
 import { useAppSelector } from "@/store/appState"
 import {
+  selectShowMissingBadge,
   selectShowProcessingBadge,
   selectShowReadaloudBadge,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
+import { hasMissingMedia, MissingBadge } from "../MissingBadge"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -315,6 +317,7 @@ export const BookCard = memo(function BookCard({
 
   const showReadaloudBadge = useAppSelector(selectShowReadaloudBadge)
   const showProcessingBadge = useAppSelector(selectShowProcessingBadge)
+  const showMissingBadge = useAppSelector(selectShowMissingBadge)
 
   const hasReadaloud = book.readaloud !== null
   const isSynced =
@@ -323,6 +326,7 @@ export const BookCard = memo(function BookCard({
     (book.readaloud?.status === "PROCESSING" ||
       book.readaloud?.status === "QUEUED") &&
     showProcessingBadge
+  const isMissing = showMissingBadge && hasMissingMedia(book)
   const hasDualFormat = isDual(book)
 
   const displayRows = useMemo(
@@ -376,6 +380,13 @@ export const BookCard = memo(function BookCard({
               <IconReadaloud className="size-[110%] text-white" />
             </div>
           </div>
+        )}
+
+        {isMissing && (
+          <MissingBadge
+            book={book}
+            className="absolute right-1.5 bottom-1.5 z-20 size-5!"
+          />
         )}
 
         {onOpenMenu && handle && (

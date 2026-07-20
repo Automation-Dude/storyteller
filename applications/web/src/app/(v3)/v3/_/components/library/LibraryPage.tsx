@@ -18,6 +18,7 @@ import {
 import { EntityActionsMenu } from "@v3/_/components/library/EntityActionsMenu"
 import {
   LibrarySidebar,
+  type SidebarSortDirection,
   type SidebarSortMode,
 } from "@v3/_/components/library/LibrarySidebar"
 import {
@@ -96,6 +97,18 @@ export function LibraryPage({
   const [sidebarSearch, setSidebarSearch] = useState("")
   const [sidebarSort, setSidebarSort] =
     useState<SidebarSortMode>(defaultSidebarSort)
+  const [sidebarSortDirection, setSidebarSortDirection] =
+    useState<SidebarSortDirection>(
+      defaultSidebarSort === "count" ? "desc" : "asc",
+    )
+
+  const handleSortChange = useCallback(
+    (mode: SidebarSortMode, direction: SidebarSortDirection) => {
+      setSidebarSort(mode)
+      setSidebarSortDirection(direction)
+    },
+    [],
+  )
 
   const isSeriesSection = section.entityType === "series"
 
@@ -149,17 +162,37 @@ export function LibraryPage({
     const allFirst = (a: FacetValue, b: FacetValue) =>
       Number(b.key === ALL_KEY) - Number(a.key === ALL_KEY)
 
+    const pinned = section.pinItem
+      ? (a: FacetValue, b: FacetValue) =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unsafe-call
+          Number(section.pinItem!(b)) - Number(section.pinItem!(a))
+      : () => 0
+
+    const dir = sidebarSortDirection === "asc" ? 1 : -1
+
     if (sidebarSort === "name") {
-      items = [...items].sort((a, b) => allFirst(a, b) || compareNames(a, b))
+      items = [...items].sort(
+        (a, b) => allFirst(a, b) || pinned(a, b) || dir * compareNames(a, b),
+      )
     } else {
       items = [...items].sort(
         (a, b) =>
-          allFirst(a, b) || b.bookCount - a.bookCount || compareNames(a, b),
+          allFirst(a, b) ||
+          pinned(a, b) ||
+          dir * (a.bookCount - b.bookCount) ||
+          compareNames(a, b),
       )
     }
 
     return items
-  }, [allItems, sidebarSearch, sidebarSort, section.compareItems])
+  }, [
+    allItems,
+    sidebarSearch,
+    sidebarSort,
+    sidebarSortDirection,
+    section.compareItems,
+    section.pinItem,
+  ])
 
   const didAutoSelectRef = useRef(false)
 
@@ -263,7 +296,8 @@ export function LibraryPage({
       search={sidebarSearch}
       onSearchChange={setSidebarSearch}
       sortMode={sidebarSort}
-      onSortModeChange={setSidebarSort}
+      sortDirection={sidebarSortDirection}
+      onSortChange={handleSortChange}
       onItemClick={handleItemClick}
       onHoverItem={handleHoverItem}
       entityType={section.entityType}

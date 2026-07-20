@@ -7,6 +7,7 @@ import { BookDetailsContent } from "@/app/(v3)/v3/_/components/books/BookDetails
 import { getBook } from "@/database/books"
 import { ASSETS_DIR } from "@/directories"
 import { type UUID } from "@/uuid"
+import { BookPageClient } from "./BookPageClient"
 
 export type BookDetailsPageProps = {
   params: Promise<{
@@ -62,11 +63,7 @@ export default withPageAuth<BookDetailsPageProps>(["bookRead"])(
     // }
 
     return (
-      <BookDetailsContent
-        uuid={uuid}
-        assetsDir={ASSETS_DIR}
-        initialBook={book}
-      />
+      <BookPageClient uuid={uuid} assetsDir={ASSETS_DIR} initialBook={book} />
     )
   },
 )
