@@ -189,7 +189,13 @@ export function AppSidebar({
   const toastShownRef = useRef(false)
 
   useEffect(() => {
-    if (!hasUpdate || !latestVersion || toastShownRef.current) return
+    if (
+      !hasUpdate ||
+      !latestVersion ||
+      toastShownRef.current ||
+      !canAccessSettings
+    )
+      return
 
     toastShownRef.current = true
 
@@ -220,7 +226,7 @@ export function AppSidebar({
       },
       duration: Infinity,
     })
-  }, [hasUpdate, latestVersion, latestChangelog])
+  }, [hasUpdate, latestVersion, latestChangelog, canAccessSettings])
 
   const { openSearch } = useCommandSearch()
 
