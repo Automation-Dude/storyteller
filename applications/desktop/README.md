@@ -58,6 +58,25 @@ Useful env overrides for the shell:
 - `STORYTELLER_DESKTOP_SERVER_URL` — attach to an already-running server instead
   of spawning one.
 - `STORYTELLER_DESKTOP_RUNTIME_DIR` — use a pre-extracted runtime tree.
+- `STORYTELLER_DESKTOP_PORT` — pin the server port.
+
+## Configuration
+
+The server port defaults to 8756 (falling back to a random free port). To pin
+it, either set `STORYTELLER_DESKTOP_PORT` or create `desktop.json` in the app
+data dir:
+
+```json
+{ "port": 12345 }
+```
+
+A pinned port that is already taken is a startup error, not a silent fallback.
+
+## Navigation
+
+The webview has no browser chrome; the History menu provides Back
+(`Cmd/Ctrl+[`), Forward (`Cmd/Ctrl+]`), Reload (`Cmd/Ctrl+R`), and Go to Library
+(`Cmd/Ctrl+Shift+H`) so you can always get out of a dead end.
 
 ## Windows notes
 

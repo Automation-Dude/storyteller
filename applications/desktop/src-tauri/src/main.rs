@@ -16,6 +16,7 @@ use tauri::{path::BaseDirectory, Emitter, Manager, RunEvent};
 struct ServerState {
     child: Mutex<Option<Child>>,
     shutting_down: Mutex<bool>,
+    server_url: Mutex<Option<String>>,
 }
 
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
@@ -32,8 +33,11 @@ fn main() {
         .manage(ServerState {
             child: Mutex::new(None),
             shutting_down: Mutex::new(false),
+            server_url: Mutex::new(None),
         })
         .setup(|app| {
+            setup_menu(app.handle())?;
+
             // in dev the window points straight at the next dev server
             // (build.devUrl); set STORYTELLER_DESKTOP_BOOT=1 to exercise the
             // full boot flow from a debug build
@@ -54,6 +58,71 @@ fn main() {
         });
 }
 
+/// the webview has no browser chrome, so back/forward/reload live in the
+/// native menu (with the usual browser accelerators); appended to the default
+/// menu so Edit/copy-paste etc. stay intact
+fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
+    use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+
+    let menu = Menu::default(app)?;
+    let history = Submenu::with_items(
+        app,
+        "History",
+        true,
+        &[
+            &MenuItem::with_id(app, "nav-back", "Back", true, Some("CmdOrCtrl+BracketLeft"))?,
+            &MenuItem::with_id(
+                app,
+                "nav-forward",
+                "Forward",
+                true,
+                Some("CmdOrCtrl+BracketRight"),
+            )?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(app, "nav-reload", "Reload Page", true, Some("CmdOrCtrl+R"))?,
+            &MenuItem::with_id(
+                app,
+                "nav-home",
+                "Go to Library",
+                true,
+                Some("CmdOrCtrl+Shift+H"),
+            )?,
+        ],
+    )?;
+    menu.append(&history)?;
+    app.set_menu(menu)?;
+
+    app.on_menu_event(|app, event| {
+        let Some(window) = app.get_webview_window("main") else {
+            return;
+        };
+        match event.id().as_ref() {
+            "nav-back" => {
+                let _ = window.eval("history.back()");
+            }
+            "nav-forward" => {
+                let _ = window.eval("history.forward()");
+            }
+            "nav-reload" => {
+                let _ = window.eval("location.reload()");
+            }
+            "nav-home" => {
+                let url = app
+                    .state::<ServerState>()
+                    .server_url
+                    .lock()
+                    .unwrap()
+                    .clone();
+                if let Some(url) = url {
+                    let _ = navigate(app, &url);
+                }
+            }
+            _ => {}
+        }
+    });
+    Ok(())
+}
+
 fn boot(app: tauri::AppHandle) {
     if let Err(err) = boot_inner(&app) {
         emit_status(&app, "error", &format!("{err:#}"));
@@ -63,6 +132,7 @@ fn boot(app: tauri::AppHandle) {
 fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
     // attach to an externally managed server instead of spawning one
     if let Ok(url) = std::env::var("STORYTELLER_DESKTOP_SERVER_URL") {
+        *app.state::<ServerState>().server_url.lock().unwrap() = Some(url.clone());
         return navigate(app, &url);
     }
 
@@ -75,7 +145,7 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
 
     let secret_file = ensure_secret(&app_data)?;
 
-    let port = pick_port(8756);
+    let port = resolve_port(&app_data)?;
     let readium_port = pick_port(8757);
 
     emit_status(app, "starting", "Starting Storyteller…");
@@ -112,7 +182,55 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
         std::thread::sleep(Duration::from_millis(300));
     }
 
-    navigate(app, &format!("http://127.0.0.1:{port}"))
+    let url = format!("http://127.0.0.1:{port}");
+    *app.state::<ServerState>().server_url.lock().unwrap() = Some(url.clone());
+    navigate(app, &url)
+}
+
+/// port preference order: STORYTELLER_DESKTOP_PORT env, then "port" in
+/// app_data/desktop.json, then 8756 with an ephemeral fallback. a pinned port
+/// that is already taken is a hard error rather than a silent fallback.
+fn resolve_port(app_data: &Path) -> Result<u16> {
+    let config_path = app_data.join("desktop.json");
+    let pinned = match std::env::var("STORYTELLER_DESKTOP_PORT") {
+        Ok(value) => Some((
+            value
+                .parse::<u16>()
+                .context("STORYTELLER_DESKTOP_PORT is not a valid port")?,
+            "STORYTELLER_DESKTOP_PORT".to_string(),
+        )),
+        Err(_) => match fs::read_to_string(&config_path) {
+            Ok(raw) => {
+                let config: serde_json::Value = serde_json::from_str(&raw)
+                    .with_context(|| format!("invalid json in {}", config_path.display()))?;
+                match config.get("port") {
+                    Some(value) => {
+                        let port = value
+                            .as_u64()
+                            .and_then(|p| u16::try_from(p).ok())
+                            .with_context(|| {
+                                format!("invalid \"port\" in {}", config_path.display())
+                            })?;
+                        Some((port, format!("\"port\" in {}", config_path.display())))
+                    }
+                    None => None,
+                }
+            }
+            Err(_) => None,
+        },
+    };
+
+    match pinned {
+        Some((port, source)) => {
+            if TcpListener::bind(("127.0.0.1", port)).is_err() {
+                return Err(anyhow!(
+                    "port {port} (from {source}) is already in use — free it or pick another"
+                ));
+            }
+            Ok(port)
+        }
+        None => Ok(pick_port(8756)),
+    }
 }
 
 fn emit_status(app: &tauri::AppHandle, state: &str, message: &str) {

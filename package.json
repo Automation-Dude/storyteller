@@ -20,6 +20,7 @@
     "check:types": "tsc --build",
     "check": "yarn check:types && yarn check:lint && yarn check:format",
     "deps": "yarn install && npm rebuild --build-from-source sqlite3",
+    "desktop:build": "yarn workspace @storyteller-platform/desktop build",
     "dev:docs": "yarn workspace @storyteller-platform/docs start",
     "dev:web": "yarn workspace @storyteller-platform/web dev",
     "fix:format": "yarn prettier --write . && yarn workspace @storyteller-platform/mobile prettier --write .",
