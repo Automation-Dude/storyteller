@@ -332,8 +332,12 @@ export async function resolveBook(
     need.series
   ) {
     const folder = combine(book.title, book.assetDir, undefined)
-    const baseTitle =
-      firstNonGarbage(local.title, folder.title, book.title) ?? book.title
+    // A healthy stored title is the curated truth; tag and folder titles only
+    // matter when the stored one is broken. Preferring a tag title over a
+    // clean stored title sent searches for \"Dune\" off after tag garbage.
+    const baseTitle = !titleIsBad(book.title)
+      ? book.title
+      : (firstNonGarbage(local.title, folder.title, book.title) ?? book.title)
     // A known-bad stored author must not narrow the search or score the
     // match; it penalises the right book for not matching garbage.
     const authorCandidates = [
@@ -374,12 +378,15 @@ export async function resolveBook(
       // With no usable author to confirm against, an exact title on a work
       // the world has printed many times is its own confirmation; without
       // this, a garbage-author book can never reach confidence at all.
+      const titleWords = baseTitle.trim().split(/\s+/).length
       const canonicalConfirmed = Boolean(
         !author &&
           best &&
           titleSimilarity(best.title, baseTitle) >= 0.95 &&
-          best.editionCount >= 10 &&
-          baseTitle.trim().split(/\s+/).length >= 2,
+          // A one-word title needs a much larger body of editions before it
+          // can vouch for itself; \"Dune\" qualifies, an obscure one-worder
+          // does not.
+          best.editionCount >= (titleWords >= 2 ? 10 : 30),
       )
       resolution.confidence = best
         ? best.score >= AUTO_APPLY_SCORE || authorConfirmed || canonicalConfirmed

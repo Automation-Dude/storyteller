@@ -667,3 +667,49 @@ void describe("author quality guards", () => {
     assert.strictEqual(res.sources.authors, "openlibrary")
   })
 })
+
+void describe("search base title", () => {
+  void it("a healthy stored title outranks tag titles for the search", async () => {
+    const book = fakeBook({
+      title: "Dune",
+      authors: ["Top 100 Sci-Fi Books"],
+      language: "en",
+      description: "Long enough description so authors are the only problem.",
+      series: [{ name: "Dune" }],
+    })
+    const queries: string[] = []
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          // tags carry a mangled rip title AND a garbage author
+          readLocal: async () => ({
+            title: "01 - Dune - Frank Herbert - 1965",
+            authors: ["Top 100 Sci-Fi Books"],
+          }),
+          search: async (title) => {
+            queries.push(title)
+            if (title === "Dune") {
+              return [
+                candidate({
+                  title: "Dune",
+                  authors: ["Frank Herbert"],
+                  editionCount: 120,
+                  score: 0.75,
+                }),
+              ]
+            }
+            return [candidate({ title: "The notebooks of Dune", score: 0.45 })]
+          },
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.ok(queries.includes("Dune"), `searched: ${queries.join("; ")}`)
+    // no usable author + exact title on a canonical work = confident
+    assert.strictEqual(res.confidence, "high")
+    assert.deepStrictEqual(res.choice.authors, ["Frank Herbert"])
+  })
+})
