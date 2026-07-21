@@ -320,7 +320,7 @@ export function AppSidebar({
             render={
               <V3Link
                 href="/"
-                className="hover:bg-sidebar-accent hover:text-primary flex items-center gap-2 rounded-md p-0 pl-2"
+                className="hover:bg-sidebar-accent hover:text-primary flex items-center gap-2 rounded-md p-0 pl-1"
               >
                 <img
                   loading="eager"
