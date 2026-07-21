@@ -1,0 +1,25 @@
+[package]
+name = "storyteller-desktop"
+version = "2.14.13"
+description = "Storyteller — a platform for immersive reading with synced audiobooks and ebooks"
+license = "MIT"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-single-instance = "2"
+serde_json = "1"
+tar = "0.4"
+flate2 = "1"
+rand = "0.8"
+anyhow = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[profile.release]
+strip = true
+lto = true

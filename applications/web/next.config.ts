@@ -65,6 +65,10 @@ const nextConfig: import("next").NextConfig = {
   ],
   output: "standalone",
   outputFileTracingRoot: resolve(new URL(import.meta.url).pathname, "../../.."),
+  // test fixtures otherwise get traced into the standalone output (~740 MB)
+  outputFileTracingExcludes: {
+    "*": ["./applications/web/src/__fixtures__/**"],
+  },
   reactCompiler: true,
   productionBrowserSourceMaps: true,
   experimental: {

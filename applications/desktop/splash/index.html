@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Storyteller</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #14100d;
+        color: #ede4d8;
+      }
+      main {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 1.6rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        margin: 0;
+      }
+      .spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid rgba(237, 228, 216, 0.2);
+        border-top-color: #ede4d8;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #status {
+        font-size: 0.95rem;
+        opacity: 0.75;
+      }
+      #error {
+        display: none;
+        max-width: 42rem;
+        width: 100%;
+      }
+      #error.visible {
+        display: block;
+      }
+      #error h2 {
+        font-size: 1.05rem;
+        color: #e8a1a1;
+        margin: 0 0 0.5rem;
+      }
+      #error pre {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(237, 228, 216, 0.15);
+        border-radius: 8px;
+        padding: 1rem;
+        font-size: 0.75rem;
+        line-height: 1.5;
+        max-height: 40vh;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      body.errored .spinner {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Storyteller</h1>
+      <div class="spinner"></div>
+      <div id="status">Starting…</div>
+      <div id="error">
+        <h2>Storyteller could not start</h2>
+        <pre id="error-details"></pre>
+      </div>
+    </main>
+    <script>
+      const status = document.getElementById("status")
+      const error = document.getElementById("error")
+      const errorDetails = document.getElementById("error-details")
+      const messages = {
+        extracting: "Preparing application files…",
+        starting: "Starting Storyteller…",
+      }
+      window.__TAURI__?.event.listen("boot-status", ({ payload }) => {
+        if (payload.state === "error") {
+          document.body.classList.add("errored")
+          status.textContent = "Something went wrong."
+          errorDetails.textContent = payload.message
+          error.classList.add("visible")
+        } else {
+          status.textContent = messages[payload.state] ?? payload.message
+        }
+      })
+    </script>
+  </body>
+</html>
