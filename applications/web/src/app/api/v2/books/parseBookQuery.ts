@@ -40,11 +40,16 @@ export function parseGetBooksOptions(
   if (offsetParam) opts.offset = parseInt(offsetParam)
 
   const orderByParam = searchParams.get("orderBy")
-  if (
-    orderByParam &&
-    (SORTABLE_FIELDS as readonly string[]).includes(orderByParam)
-  ) {
-    opts.orderBy = orderByParam as SortField
+  if (orderByParam) {
+    if ((SORTABLE_FIELDS as readonly string[]).includes(orderByParam)) {
+      opts.orderBy = orderByParam as SortField
+    } else if (
+      // context-scoped sort: only meaningful inside a series
+      orderByParam === "seriesPosition" &&
+      searchParams.get("series")
+    ) {
+      opts.orderBy = "seriesPosition"
+    }
   }
 
   const orderDirectionParam = searchParams.get("orderDirection")

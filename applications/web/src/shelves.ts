@@ -15,6 +15,7 @@ import {
   FORMAT_VALUES,
   type FieldType,
   NUMBER_FIELDS,
+  type NumberField,
   STRING_FIELDS,
   UUID_FIELDS,
   getFieldDef,
@@ -142,10 +143,16 @@ const stringListCondition = z
   })
   .describe("membership test on a string field (is any of / is none of)")
 
+// ratingDimension has its own variants below that require the axis id; keep it
+// out of the generic numeric conditions so a dimension-less one is rejected
+const GENERIC_NUMBER_FIELDS = NUMBER_FIELDS.filter(
+  (f) => f !== "ratingDimension",
+) as [NumberField, ...NumberField[]]
+
 const numberCompareCondition = z
   .object({
     type: TYPE,
-    field: z.enum(NUMBER_FIELDS),
+    field: z.enum(GENERIC_NUMBER_FIELDS),
     operator: z.enum(NUMBER_COMPARE_OPERATORS),
     value: z.number().describe("the number to compare against"),
     format: z
@@ -160,7 +167,7 @@ const numberCompareCondition = z
 const numberRangeCondition = z
   .object({
     type: TYPE,
-    field: z.enum(NUMBER_FIELDS),
+    field: z.enum(GENERIC_NUMBER_FIELDS),
     operator: z.enum(RANGE_OPERATORS),
     value: z
       .tuple([z.number(), z.number()])

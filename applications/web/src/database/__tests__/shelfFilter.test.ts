@@ -590,17 +590,21 @@ void describe("FIELD_REGISTRY", () => {
     // string/number/date/uuid. guards against a registry entry drifting from
     // getFieldType.
     for (const field of shelfFilterFieldSchema.options) {
-      const { control } = FIELD_REGISTRY[field]
+      const def = FIELD_REGISTRY[field]
       const type = getFieldType(field)
-      // facet pickers cover both array relations (tags/series/...) and the uuid
-      // status field; both are entity-list selectors.
-      if (control === "facet") {
-        assert.ok(
-          type === "array" || type === "uuid",
-          `${field}: facet control expects array/uuid, got ${type}`,
-        )
+      // facet pickers cover array relations (tags/series/...), the uuid status
+      // field, and distinct-value facets over string book columns (language)
+      if (def.control === "facet") {
+        if (def.source === "distinct") {
+          assert.equal(type, "string", field)
+        } else {
+          assert.ok(
+            type === "array" || type === "uuid",
+            `${field}: facet control expects array/uuid, got ${type}`,
+          )
+        }
       }
-      if (control === "enum") assert.equal(type, "enum", field)
+      if (def.control === "enum") assert.equal(type, "enum", field)
     }
   })
 })

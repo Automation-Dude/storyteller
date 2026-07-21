@@ -1,6 +1,6 @@
 "use client"
 
-import { type ReactNode, useCallback, useMemo, useRef } from "react"
+import { type ReactNode, useCallback, useRef } from "react"
 
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -13,11 +13,12 @@ import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-
 import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import { type BookWithRelations } from "@/database/books"
 import { type HomeSectionWithDetails } from "@/database/shelves"
-import { STATUS_READ, STATUS_READING } from "@/database/statusKinds"
+import { STATUS_READING } from "@/database/statusKinds"
 import * as icon from "@/icons"
 import { type DisplayField } from "@/sort"
 import {
-  useListBooksQuery,
+  useListInfiniteBooksInfiniteQuery,
+  useListNextUpBooksQuery,
   useListShelfBooksQuery,
   useListStatusesQuery,
 } from "@/store/api"
@@ -146,6 +147,8 @@ type UseShelfBooksResult = {
   displayField?: DisplayField
 }
 
+const SHELF_LIMIT = 20
+
 function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
   const isCustomShelf = shelf.kind === "custom" && shelf.shelfUuid !== null
 
@@ -154,53 +157,45 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
       {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         shelfUuid: shelf.shelfUuid!,
-        limit: 20,
+        limit: SHELF_LIMIT,
         orderBy: "createdAt",
         orderDirection: "desc",
       },
       { skip: !isCustomShelf },
     )
 
-  const { data: allBooks = [], isLoading: isLoadingAllBooks } =
-    useListBooksQuery(undefined, {
-      skip:
-        shelf.kind !== "currentlyReading" &&
-        shelf.kind !== "nextUpInSeries" &&
-        shelf.kind !== "recentlyAdded",
-    })
+  const { data: recentlyAdded, isLoading: isLoadingRecentlyAdded } =
+    useListInfiniteBooksInfiniteQuery(
+      { limit: SHELF_LIMIT, orderBy: "createdAt", orderDirection: "desc" },
+      { skip: shelf.kind !== "recentlyAdded" },
+    )
 
   const { data: statuses } = useListStatusesQuery(undefined, {
     skip: shelf.kind !== "currentlyReading",
   })
-
   const readingStatus = statuses?.find((s) => s.name === STATUS_READING)
 
-  const currentlyReadingBooks = useMemo(() => {
-    if (shelf.kind !== "currentlyReading") return []
+  const { data: currentlyReading, isLoading: isLoadingCurrentlyReading } =
+    useListInfiniteBooksInfiniteQuery(
+      {
+        limit: SHELF_LIMIT,
+        orderBy: "lastRead",
+        orderDirection: "desc",
+        filter: {
+          type: "condition",
+          field: "status",
+          operator: "is",
+          // the query is skipped until the status resolves; null never runs
+          value: readingStatus?.uuid ?? null,
+        },
+      },
+      { skip: shelf.kind !== "currentlyReading" || !readingStatus },
+    )
 
-    return allBooks
-      .filter((book) => book.status?.name === STATUS_READING)
-      .sort(
-        (a, b) => (b.position?.timestamp ?? 0) - (a.position?.timestamp ?? 0),
-      )
-  }, [allBooks, shelf.kind])
-
-  const nextUpBooks = useMemo(() => {
-    if (shelf.kind !== "nextUpInSeries") return []
-    return computeNextUpInSeries(allBooks)
-  }, [allBooks, shelf.kind])
-
-  const recentlyAddedBooks = useMemo(() => {
-    if (shelf.kind !== "recentlyAdded") return []
-
-    return allBooks
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),
-      )
-      .slice(0, 20)
-  }, [allBooks, shelf.kind])
+  const { data: nextUpBooks = [], isLoading: isLoadingNextUp } =
+    useListNextUpBooksQuery(undefined, {
+      skip: shelf.kind !== "nextUpInSeries",
+    })
 
   if (isCustomShelf) {
     return {
@@ -212,8 +207,8 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
 
   if (shelf.kind === "recentlyAdded") {
     return {
-      books: recentlyAddedBooks,
-      isLoading: isLoadingAllBooks,
+      books: recentlyAdded?.pages[0] ?? [],
+      isLoading: isLoadingRecentlyAdded,
       seeAllHref: "/books?sort=createdAt:desc",
       displayField: "createdAt",
     }
@@ -221,8 +216,8 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
 
   if (shelf.kind === "currentlyReading") {
     return {
-      books: currentlyReadingBooks,
-      isLoading: isLoadingAllBooks,
+      books: currentlyReading?.pages[0] ?? [],
+      isLoading: isLoadingCurrentlyReading || !readingStatus,
       seeAllHref: readingStatus
         ? `/statuses?item=${readingStatus.uuid}`
         : "/books",
@@ -232,8 +227,9 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
   if (shelf.kind === "nextUpInSeries") {
     return {
       books: nextUpBooks,
-      isLoading: isLoadingAllBooks,
+      isLoading: isLoadingNextUp,
       seeAllHref: "/series",
+      displayField: "seriesPosition",
     }
   }
 
@@ -242,56 +238,4 @@ function useShelfBooks(shelf: HomeSectionWithDetails): UseShelfBooksResult {
     isLoading: false,
     seeAllHref: "/books",
   }
-}
-
-function computeNextUpInSeries(
-  books: BookWithRelations[],
-): BookWithRelations[] {
-  type UUID = string
-  const latestReadInSeries = new Map<UUID, BookWithRelations>()
-  const resultSet = new Set<UUID>()
-
-  for (const book of books) {
-    if (!book.series.length) continue
-
-    for (const s of book.series) {
-      const latestRead = latestReadInSeries.get(s.uuid)
-
-      if (!latestRead) {
-        if (book.status?.name === STATUS_READ) {
-          latestReadInSeries.set(s.uuid, book)
-        }
-        continue
-      }
-
-      const latestSeriesPos =
-        latestRead.series.find((ls) => ls.uuid === s.uuid)?.position ?? 0
-
-      if (latestSeriesPos < (s.position ?? 0)) {
-        if (book.status?.name === STATUS_READ) {
-          latestReadInSeries.set(s.uuid, book)
-        } else if (!resultSet.has(book.uuid)) {
-          resultSet.add(book.uuid)
-        }
-      }
-    }
-  }
-
-  return books
-    .filter((book) => resultSet.has(book.uuid))
-    .sort((a, b) => {
-      const latestA = a.series
-        .map((s) => latestReadInSeries.get(s.uuid))
-        .filter((book): book is BookWithRelations => !!book)[0]
-
-      const latestB = b.series
-        .map((s) => latestReadInSeries.get(s.uuid))
-        .filter((book): book is BookWithRelations => !!book)[0]
-
-      if (!latestA || !latestB) return 0
-
-      return (
-        (latestB.position?.timestamp ?? 0) - (latestA.position?.timestamp ?? 0)
-      )
-    })
 }

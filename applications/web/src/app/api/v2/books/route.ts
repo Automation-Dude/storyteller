@@ -32,7 +32,6 @@ export const GET = withHasPermission("bookList")(async (request) => {
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
-
   const books = await getBooks(null, request.auth.user.id, {
     ...parsed.opts,
     includeManifest: false,

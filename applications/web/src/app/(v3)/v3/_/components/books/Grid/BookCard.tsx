@@ -100,15 +100,25 @@ export function SecondaryText({
         none
       )
     case "seriesPosition": {
-      if (!ctx?.seriesUuid) return null
+      // if (!ctx?.seriesUuid) return null
+      let series = book.series[0]
+      for (const s of book.series) {
+        if (s.featured) {
+          series = s
+          break
+        }
+        if (s.uuid === ctx?.seriesUuid) {
+          series = s
+          break
+        }
+      }
 
-      const s = book.series.find((x) => x.uuid === ctx.seriesUuid)
-      if (!s || s.position == null) return none
+      if (!series || series.position == null) return none
 
       return (
         // TODO: localize
         <span>
-          #{s.position} in {s.name}
+          #{series.position} in {series.name}
         </span>
       )
     }

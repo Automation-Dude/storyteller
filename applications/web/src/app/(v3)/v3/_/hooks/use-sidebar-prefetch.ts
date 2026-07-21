@@ -1,9 +1,7 @@
 import { useCallback, useRef } from "react"
 
-import { librarySections } from "@v3/_/components/library/library-sections"
-
-import { type SidebarItemDetail } from "@/database/sidebar"
 import { type FacetSection } from "@/database/libraryCounts"
+import { type SidebarItemDetail } from "@/database/sidebar"
 import { api } from "@/store/api"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { selectDefaultSorts } from "@/store/slices/uiSettingsSlice"
@@ -57,25 +55,25 @@ export function useSidebarPrefetch() {
             ),
           )
 
-          // also prefetch books for sections that have a known default sort,
-          // since the first facet auto-selects and triggers a books fetch
-          const section = librarySections[sectionKey]
+          // also prefetch books for sections that have a known default sort
+          // TODO: figure out the correct way to do this
+          // const section = librarySections[sectionKey]
 
-          const defaultSort = defaultSorts[sectionKey]
+          // const defaultSort = defaultSorts[sectionKey]
 
-          const sectionSort = defaultSort ?? section.sort
+          // const sectionSort = defaultSort ?? section.sort
 
-          if (sectionSort) {
-            void dispatch(
-              api.endpoints.listInfiniteBooks.initiate(
-                {
-                  orderBy: sectionSort.field,
-                  orderDirection: sectionSort.direction,
-                },
-                { subscribe: false },
-              ),
-            )
-          }
+          // if (sectionSort) {
+          //   void dispatch(
+          //     api.endpoints.listInfiniteBooks.initiate(
+          //       {
+          //         orderBy: sectionSort.field,
+          //         orderDirection: sectionSort.direction,
+          //       },
+          //       { subscribe: false },
+          //     ),
+          //   )
+          // }
 
           return
         }

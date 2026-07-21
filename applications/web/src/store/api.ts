@@ -508,6 +508,10 @@ export const api = createApi({
         unsubscribe()
       },
     }),
+    listNextUpBooks: build.query<BookWithRelations[], void>({
+      query: () => "/books/next-up",
+      providesTags: ["Books"],
+    }),
     listInfiniteBooks: build.infiniteQuery<
       BookWithRelations[],
       ListBooksQueryArg,
@@ -2229,6 +2233,7 @@ export const {
   useListCreatorsQuery,
   useListDistinctFieldValuesQuery,
   useListBooksQuery,
+  useListNextUpBooksQuery,
   useListInfiniteBooksInfiniteQuery,
   useListCollectionsQuery,
   useListInvitesQuery,

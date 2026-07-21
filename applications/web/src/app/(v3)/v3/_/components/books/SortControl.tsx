@@ -15,7 +15,12 @@ import {
   useCommon,
   useTranslation,
 } from "@/app/(v3)/v3/_/hooks/use-translation"
-import { type Field, type FieldGroupKey, getFieldDef } from "@/fields"
+import {
+  FIELD_REGISTRY,
+  type Field,
+  type FieldGroupKey,
+  getFieldDef,
+} from "@/fields"
 import * as icon from "@/icons"
 import { FieldIcon } from "@/icons"
 
@@ -62,25 +67,26 @@ export function SortControl({
   const label = options.find((o) => o.value === field)?.label ?? field
 
   const grouped = useMemo(() => {
-    return options.reduce(
-      (acc, option) => {
-        const fieldDef = getFieldDef(option.value as Field)
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!fieldDef) return acc
-
-        const group = fieldDef.group
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!acc[group]) {
-          acc[group] = []
-        }
-        acc[group].push({ ...option, defaultSort: fieldDef.defaultSort })
-        return acc
-      },
-      {} as Record<
-        FieldGroupKey,
+    const acc: Partial<
+      Record<
+        // "context" holds page-scoped sorts outside the registry
+        // (seriesPosition); extras lead the options so it renders first
+        FieldGroupKey | "context",
         { value: SortField; label: string; defaultSort?: "asc" | "desc" }[]
-      >,
-    )
+      >
+    > = {}
+    for (const option of options) {
+      const fieldDef =
+        option.value in FIELD_REGISTRY
+          ? getFieldDef(option.value as Field)
+          : undefined
+      const group = fieldDef?.group ?? "context"
+      ;(acc[group] ??= []).push({
+        ...option,
+        defaultSort: fieldDef?.defaultSort ?? "asc",
+      })
+    }
+    return acc
   }, [options])
 
   return (
