@@ -66,6 +66,7 @@ function baseDeps(
     },
     fetchDescription: async () => null,
     fetchEditionSeries: async () => null,
+    fetchWorkSeries: async () => null,
     hasCover: async () => false,
     ...over,
   }
@@ -413,5 +414,121 @@ void describe("applicableChoice", () => {
       applicableChoice({ ...proposal, confidence: "low" }),
       {},
     )
+  })
+})
+
+void describe("progressive discovery", () => {
+  void it("walks cleaner title variants until the match is confident", async () => {
+    const book = fakeBook({
+      title: "Raising Steam: (Discworld novel 40) (Discworld series)",
+      authors: ["Terry Pratchett"],
+      language: "en",
+      description: "Long enough description so only the series is missing.",
+    })
+    const queries: string[] = []
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async (title) => {
+            queries.push(title)
+            // The cluttered form matches poorly; the stripped form is exact.
+            if (title.includes("novel")) {
+              return [candidate({ title: "Raising Steam", score: 0.55 })]
+            }
+            return [
+              candidate({
+                title: "Raising Steam",
+                authors: ["Terry Pratchett"],
+                score: 0.95,
+              }),
+            ]
+          },
+          fetchEditionSeries: async () => ({ name: "Discworld", position: 40 }),
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.ok(
+      queries.length >= 2,
+      `expected a ladder, got ${queries.join("; ")}`,
+    )
+    assert.strictEqual(res.confidence, "high")
+    assert.deepStrictEqual(res.choice.series, {
+      name: "Discworld",
+      position: 40,
+    })
+  })
+
+  void it("treats an author-confirmed overlap as confident despite a cluttered score", async () => {
+    const book = fakeBook({
+      title: "Witches Abroad",
+      authors: ["Terry Pratchett"],
+      language: "en",
+      description: "Long enough description so only the series is missing.",
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "Witches Abroad",
+              authors: ["Terry Pratchett"],
+              score: 0.6, // composite dragged down, but author + title agree
+            }),
+          ],
+          fetchEditionSeries: async () => null,
+          fetchWorkSeries: async () => ({ name: "Discworld", position: 12 }),
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.strictEqual(res.confidence, "high")
+    assert.deepStrictEqual(res.choice.series, {
+      name: "Discworld",
+      position: 12,
+    })
+  })
+
+  void it("does not let the ladder invent confidence for a wrong book", async () => {
+    const book = fakeBook({
+      title: "Some Obscure Memoir",
+      authors: ["Nobody Famous"],
+      language: "en",
+      description: "Long enough description so only the series is missing.",
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "A Different Book Entirely",
+              authors: ["Someone Else"],
+              score: 0.55,
+            }),
+          ],
+          fetchEditionSeries: async () => {
+            throw new Error("must not fetch series for an unconfirmed match")
+          },
+          fetchWorkSeries: async () => {
+            throw new Error("must not fetch series for an unconfirmed match")
+          },
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.strictEqual(res.confidence, "low")
+    assert.strictEqual(res.choice.series, undefined)
   })
 })

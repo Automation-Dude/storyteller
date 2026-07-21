@@ -24,6 +24,7 @@ import {
   type OpenLibraryCandidate,
   fetchOpenLibraryDescription,
   fetchOpenLibraryEditionSeries,
+  fetchOpenLibraryWorkSeries,
   searchOpenLibrary,
 } from "./openLibrary"
 import {
@@ -33,7 +34,7 @@ import {
   SUGGEST_SCORE,
   normalizeLanguage,
 } from "./repair"
-import { normalizeForSearch } from "./titleCleaning"
+import { authorsMatch, queryVariants, titleSimilarity } from "./titleCleaning"
 
 /**
  * Resolve one book's missing metadata in a single pass.
@@ -170,6 +171,9 @@ export type ResolveDeps = {
   fetchEditionSeries: (
     editionKey: string,
   ) => Promise<{ name: string; position: number | null } | null>
+  fetchWorkSeries: (
+    workKey: string,
+  ) => Promise<{ name: string; position: number | null } | null>
   hasCover: (book: BookWithRelations) => Promise<boolean>
 }
 
@@ -181,6 +185,7 @@ const defaultDeps: ResolveDeps = {
   search: (title, author) => searchOpenLibrary(title, author, 10),
   fetchDescription: fetchOpenLibraryDescription,
   fetchEditionSeries: fetchOpenLibraryEditionSeries,
+  fetchWorkSeries: fetchOpenLibraryWorkSeries,
   hasCover: async (book) =>
     Boolean(
       (await getExtractedCover(book, "ebook")) ??
@@ -281,28 +286,49 @@ export async function resolveBook(
     need.series
   ) {
     const folder = combine(book.title, book.assetDir, undefined)
-    const queryTitle = normalizeForSearch(
-      firstNonGarbage(local.title, folder.title, book.title) ?? book.title,
-    )
-    if (queryTitle && !isGarbageTitle(queryTitle)) {
-      const author =
-        book.authors[0]?.name.replace(/^by\s+/i, "") ??
-        local.authors?.[0] ??
-        folder.author ??
-        undefined
+    const baseTitle =
+      firstNonGarbage(local.title, folder.title, book.title) ?? book.title
+    const author =
+      book.authors[0]?.name.replace(/^by\s+/i, "") ??
+      local.authors?.[0] ??
+      folder.author ??
+      undefined
+
+    // Progressive discovery: a stored title often buries the real one under
+    // series clutter, so each cleaner variant is tried until a match is
+    // confident. The best attempt across all rungs is kept either way.
+    let best: OpenLibraryCandidate | null = null
+    for (const queryTitle of queryVariants(baseTitle)) {
+      if (isGarbageTitle(queryTitle)) continue
       const candidates = await deps.search(queryTitle, author)
-      const best = candidates[0] ?? null
-      resolution.candidates = candidates
+      const rung = candidates[0] ?? null
+      if (rung && (!best || rung.score > best.score)) {
+        best = rung
+        resolution.candidates = candidates
+      }
+      if (best && best.score >= AUTO_APPLY_SCORE) break
+    }
+    {
       resolution.best = best
+      // A matching author is the strongest confirmation there is: when the
+      // book's own author agrees with the match and the titles overlap, the
+      // match is confident even if clutter dragged the composite score down.
+      const authorConfirmed = Boolean(
+        author &&
+          best &&
+          best.score >= SUGGEST_SCORE &&
+          best.authors.some((name) => authorsMatch(name, author)) &&
+          titleSimilarity(best.title, baseTitle) >= 0.5,
+      )
       resolution.confidence = best
-        ? best.score >= AUTO_APPLY_SCORE
+        ? best.score >= AUTO_APPLY_SCORE || authorConfirmed
           ? "high"
           : best.score >= SUGGEST_SCORE
             ? "low"
             : "none"
         : "none"
 
-      if (best && best.score >= SUGGEST_SCORE) {
+      if (best && resolution.confidence !== "none") {
         if (need.title && best.title && !isGarbageTitle(best.title)) {
           resolution.choice.title = best.title
           resolution.sources.title = "openlibrary"
@@ -328,11 +354,15 @@ export async function resolveBook(
             resolution.sources.description = "openlibrary"
           }
         }
-        // The matched edition often names its series; only a high-confidence
-        // match may file a book into a series, a guess here is worse than a
-        // gap.
-        if (need.series && best.editionKey && best.score >= AUTO_APPLY_SCORE) {
-          const editionSeries = await deps.fetchEditionSeries(best.editionKey)
+        // Series discovery ladder: the matched edition first, then a vote
+        // across ALL of the work's editions (one edition often omits the
+        // series a dozen others name). Only a confident match may file a book
+        // into a series; a guess here is worse than a gap.
+        if (need.series && resolution.confidence === "high") {
+          const editionSeries =
+            (best.editionKey
+              ? await deps.fetchEditionSeries(best.editionKey)
+              : null) ?? (await deps.fetchWorkSeries(best.workKey))
           if (editionSeries) {
             resolution.choice.series = editionSeries
             resolution.sources.series = "openlibrary"

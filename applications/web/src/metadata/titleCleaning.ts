@@ -86,6 +86,31 @@ export function normalizeForSearch(rawTitle: string): string {
   )
 }
 
+/**
+ * The queries worth trying for a title, most faithful first.
+ *
+ * A stored title often buries the real one under series clutter:
+ * "Raising Steam: (Discworld novel 40) (Discworld series)". The full form
+ * matches nothing well; the form with parentheticals and series suffixes
+ * stripped matches exactly. Searching is cheap, so the resolver walks these
+ * until a match is confident.
+ */
+export function queryVariants(rawTitle: string): string[] {
+  const variants: string[] = []
+  const push = (value: string) => {
+    const query = normalizeForSearch(value)
+    if (query && !variants.includes(query)) variants.push(query)
+  }
+  push(rawTitle)
+  push(rawTitle.replace(/\s*[([][^)\]]*[)\]]/g, " "))
+  // Colon-form subtitle clutter: "Title: A Novel of the Something Saga".
+  const beforeColon = rawTitle.split(":")[0]
+  if (beforeColon && beforeColon.trim().split(/\s+/).length >= 2) {
+    push(beforeColon)
+  }
+  return variants
+}
+
 /** Lowercase, drop punctuation and articles, for comparing two titles. */
 export function normalizeForCompare(value: string): string {
   return collapseWhitespace(

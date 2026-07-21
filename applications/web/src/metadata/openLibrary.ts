@@ -203,10 +203,30 @@ export async function fetchOpenLibraryCover(
 }
 
 /**
- * The series an edition claims, when it claims one. Open Library editions
- * write series as loose strings ("Wheel of Time (9)", "The Camel Club #3",
- * "Cradle ; bk. 8"), so the name and number are picked apart here.
+ * Pick a series name and number out of an edition's loose series string
+ * ("Wheel of Time (9)", "The Camel Club #3", "Cradle ; bk. 8").
  */
+export function parseSeriesString(
+  raw: string | undefined,
+): { name: string; position: number | null } | null {
+  const value = raw?.trim()
+  if (!value) return null
+  const match =
+    /^(.*?)\s*(?:[(;#,]|bk\.?|book|vol\.?|volume)\s*(\d+(?:\.\d+)?)\s*\)?\s*$/i.exec(
+      value,
+    )
+  const name = (match?.[1] ?? value)
+    .replace(/[\s\-–—:,;#]+$/, "")
+    // "Discworld series" and "Discworld" are the same series; the suffix only
+    // splits the vote and hides the numbered form.
+    .replace(/\s+(series|saga|cycle)$/i, "")
+    .trim()
+  if (name.length < 3) return null
+  const position = match?.[2] ? Number.parseFloat(match[2]) : null
+  return { name, position: Number.isFinite(position) ? position : null }
+}
+
+/** The series an edition claims, when it claims one. */
 export async function fetchOpenLibraryEditionSeries(
   editionKey: string,
 ): Promise<{ name: string; position: number | null } | null> {
@@ -214,16 +234,56 @@ export async function fetchOpenLibraryEditionSeries(
     const edition = (await fetchJson(`${WORK_URL}${editionKey}.json`)) as {
       series?: string[]
     }
-    const raw = edition.series?.[0]?.trim()
-    if (!raw) return null
-    const match =
-      /^(.*?)\s*(?:[(;#,]|bk\.?|book|vol\.?|volume)\s*(\d+(?:\.\d+)?)\s*\)?\s*$/i.exec(
-        raw,
-      )
-    const name = (match?.[1] ?? raw).replace(/[\s\-–—:,;#]+$/, "").trim()
-    if (name.length < 3) return null
-    const position = match?.[2] ? Number.parseFloat(match[2]) : null
-    return { name, position: Number.isFinite(position) ? position : null }
+    return parseSeriesString(edition.series?.[0])
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The series a work belongs to, judged across ALL of its editions.
+ *
+ * A single edition often omits the series, but a work with dozens of editions
+ * usually has several that name it ("Discworld #12"). The most commonly named
+ * series wins, and the first edition that also numbers it supplies the
+ * position. One extra request per book, only asked for when nothing local
+ * answered the question.
+ */
+export async function fetchOpenLibraryWorkSeries(
+  workKey: string,
+): Promise<{ name: string; position: number | null } | null> {
+  try {
+    const body = (await fetchJson(
+      `${WORK_URL}${workKey}/editions.json?limit=50`,
+    )) as { entries?: { series?: string[] }[] }
+    const votes = new Map<string, { count: number; position: number | null }>()
+    for (const entry of body.entries ?? []) {
+      const parsed = parseSeriesString(entry.series?.[0])
+      if (!parsed) continue
+      const key = parsed.name.toLowerCase()
+      const vote = votes.get(key) ?? { count: 0, position: null }
+      vote.count += 1
+      vote.position ??= parsed.position
+      votes.set(key, vote)
+    }
+    let best: { name: string; position: number | null; count: number } | null =
+      null
+    for (const [key, vote] of votes) {
+      if (!best || vote.count > best.count) {
+        best = { name: key, position: vote.position, count: vote.count }
+      }
+    }
+    // One edition claiming a series is how a standalone ends up filed under a
+    // publisher's collection name; a real series is named by several editions.
+    if (!best || best.count < 2) return null
+    // Recover the original casing from any edition that used this name.
+    for (const entry of body.entries ?? []) {
+      const parsed = parseSeriesString(entry.series?.[0])
+      if (parsed && parsed.name.toLowerCase() === best.name) {
+        return { name: parsed.name, position: best.position }
+      }
+    }
+    return null
   } catch {
     return null
   }
