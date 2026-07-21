@@ -109,6 +109,10 @@ type TrackInfo = {
  * @returns Whether the file *may* contain audio
  */
 export function isAudioFile(filenameOrExt: string): boolean {
+  // An OS metadata file ("._Track 01.mp3") wears an audio extension but does
+  // not contain audio; answering true here breaks every caller that feeds the
+  // file to ffprobe. Rejecting it centrally covers them all.
+  if (isJunkFile(filenameOrExt)) return false
   // Rips from older tools arrive with uppercase extensions (".MP3"); the
   // extension's casing says nothing about the contents.
   const lowered = filenameOrExt.toLowerCase()

@@ -66,6 +66,13 @@ void describe("isAudioFile", () => {
     assert.ok(!isAudioFile("README.txt"))
   })
 
+  void it("rejects OS metadata files even when they wear an audio extension", () => {
+    // Every caller that collects "audio files" feeds them to ffprobe, so the
+    // AppleDouble case has to be settled here, once, for all of them.
+    assert.ok(!isAudioFile("._Track 01.mp3"))
+    assert.ok(!isAudioFile("/library/A Book/._Track 01.mp3"))
+  })
+
   void it("ignores extension casing, which rips from older tools vary", () => {
     // "Track 01.MP3" is the same audio as "Track 01.mp3"; a case-sensitive
     // check silently dropped every track of an uppercase rip.
