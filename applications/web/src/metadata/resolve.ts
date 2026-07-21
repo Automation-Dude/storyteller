@@ -19,7 +19,13 @@ import { isEpubVersionError } from "@/epub"
 import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
 
-import { combine, isGarbageTitle, seriesFromTitle } from "./localSignals"
+import {
+  authorNameIsBad,
+  cleanAuthorName,
+  combine,
+  isGarbageTitle,
+  seriesFromTitle,
+} from "./localSignals"
 import {
   type OpenLibraryCandidate,
   fetchOpenLibraryDescription,
@@ -52,7 +58,11 @@ import { authorsMatch, queryVariants, titleSimilarity } from "./titleCleaning"
  * here; the caller reviews a RepairChoice and applies it through applyRepair.
  */
 
-export type FieldSource = "file" | "openlibrary"
+/**
+ * Where a proposed fill came from: the book's own files, the catalogue, or a
+ * deterministic cleanup of data the book already had ("derived").
+ */
+export type FieldSource = "file" | "openlibrary" | "derived"
 
 export type BookResolution = {
   bookUuid: UUID
@@ -214,7 +224,9 @@ export async function resolveBook(
 
   const need = {
     title: titleIsBad(book.title),
-    authors: book.authors.length === 0,
+    authors:
+      book.authors.length === 0 ||
+      book.authors.some((a) => authorNameIsBad(a.name)),
     language: !book.language?.trim(),
     description: !book.description?.trim(),
     series: book.series.length === 0,
@@ -259,6 +271,27 @@ export async function resolveBook(
     resolution.choice.description = local.description.trim()
     resolution.sources.description = "file"
     need.description = false
+  }
+  if (need.authors && book.authors.length > 0) {
+    // The names on the book may just be damaged forms of the right person
+    // ("Narrated by X", "Cornwell, Bernard"); a deterministic cleanup is
+    // always safe to propose, and the catalogue can still improve on it.
+    const cleaned = book.authors
+      // A narration credit never contained the author's name, so cleaning it
+      // would crown the narrator; those wait for the file or the catalogue.
+      .filter((a) => !/^(narrated by|read by|performed by)\s/i.test(a.name))
+      .map((a) => cleanAuthorName(a.name))
+      .filter((name, index, all) => name && all.indexOf(name) === index)
+    if (
+      cleaned.length &&
+      !cleaned.every(authorNameIsBad) &&
+      JSON.stringify(cleaned) !==
+        JSON.stringify(book.authors.map((a) => a.name))
+    ) {
+      resolution.choice.authors = cleaned
+      resolution.sources.authors = "derived"
+      need.authors = false
+    }
   }
   if (need.series) {
     // The epub's OPF names the series outright; failing that, the title

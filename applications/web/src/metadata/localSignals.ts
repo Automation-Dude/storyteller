@@ -95,6 +95,39 @@ export function cleanTitle(raw: string | null | undefined): string {
   return t.replace(/\s+/g, " ").replace(/^[\s\-_]+|[\s\-_]+$/g, "")
 }
 
+/**
+ * Signals that a stored author name is an ingestion artifact, not a person:
+ * a narration credit ("Narrated by William Gaminara"), a "By " prefix,
+ * underscores from a filename, or a file-as form ("Cornwell, Bernard") that
+ * leaked into the display name.
+ */
+export function authorNameIsBad(name: string): boolean {
+  const n = (name || "").trim()
+  if (!n) return true
+  if (/^(by|written by|narrated by|read by|performed by)\s+/i.test(n))
+    return true
+  if (n.includes("_")) return true
+  if (/^[A-Z][a-zA-Z.'’]+,\s+[A-Z]/.test(n)) return true // "Cornwell, Bernard"
+  if (/https?:|\.com|\d{3,}/.test(n)) return true
+  return false
+}
+
+/**
+ * The person's name recovered from a damaged author string. Deterministic
+ * cleanup only: strips credit prefixes, turns underscores into spaces, and
+ * un-reverses a single "Last, First" form. Returns the input trimmed when
+ * nothing recognizable is wrong.
+ */
+export function cleanAuthorName(name: string): string {
+  let n = (name || "").replace(/_/g, " ").trim()
+  n = n.replace(/^(by|written by|narrated by|read by|performed by)\s+/i, "")
+  const reversed = /^([A-Z][a-zA-Z.'’]+),\s+([A-Z][a-zA-Z .'’]+)$/.exec(n)
+  if (reversed?.[1] && reversed[2]) {
+    n = `${reversed[2].trim()} ${reversed[1].trim()}`
+  }
+  return n.replace(/\s+/g, " ").trim()
+}
+
 export type SeriesGuess = { name: string; position: number | null }
 
 function seriesPosition(raw: string | undefined): number | null {

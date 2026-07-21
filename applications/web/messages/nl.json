@@ -323,7 +323,8 @@
       "NO-AUTHOR": "Geen auteur",
       "NO-LANG": "Geen taal",
       "NO-DESC": "Geen beschrijving",
-      "NO-SERIES": "Geen serie"
+      "NO-SERIES": "Geen serie",
+      "BAD-AUTHOR": "Kapotte auteursnaam"
     },
     "repair": {
       "action": "Herstellen",

@@ -532,3 +532,51 @@ void describe("progressive discovery", () => {
     assert.strictEqual(res.choice.series, undefined)
   })
 })
+
+void describe("author repair", () => {
+  void it("derives the clean author from a damaged name, no network needed", async () => {
+    const book = fakeBook({
+      title: "Sharpe's Fortress",
+      authors: ["By Bernard_Cornwell"],
+      language: "en",
+      description: "Long enough description so authors are the only problem.",
+      series: [{ name: "Sharpe" }],
+    })
+    const res = await resolveBook(BOOK_UUID, undefined, baseDeps({}, book))
+    assert.ok(res)
+    assert.deepStrictEqual(res.choice.authors, ["Bernard Cornwell"])
+    assert.strictEqual(res.sources.authors, "derived")
+    // derived fills are safe for bulk apply regardless of catalogue confidence
+    assert.deepStrictEqual(applicableChoice(res).authors, ["Bernard Cornwell"])
+  })
+
+  void it("never crowns the narrator: a narration credit waits for the catalogue", async () => {
+    const book = fakeBook({
+      title: "Sharpe's Devil",
+      authors: ["Narrated by William Gaminara"],
+      language: "en",
+      description: "Long enough description so authors are the only problem.",
+      series: [{ name: "Sharpe" }],
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "Sharpe's Devil",
+              authors: ["Bernard Cornwell"],
+              score: 0.9,
+            }),
+          ],
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.deepStrictEqual(res.choice.authors, ["Bernard Cornwell"])
+    assert.strictEqual(res.sources.authors, "openlibrary")
+  })
+})

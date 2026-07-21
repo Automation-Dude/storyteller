@@ -40,6 +40,7 @@ const ISSUE_ORDER: {
   { issue: "TINY-COVER", variant: "outline" },
   { issue: "BAD-TITLE", variant: "destructive" },
   { issue: "NO-AUTHOR", variant: "destructive" },
+  { issue: "BAD-AUTHOR", variant: "secondary" },
   { issue: "NO-LANG", variant: "secondary" },
   { issue: "NO-DESC", variant: "secondary" },
   { issue: "NO-SERIES", variant: "secondary" },

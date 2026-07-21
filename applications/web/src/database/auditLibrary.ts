@@ -3,7 +3,9 @@ import { readFile } from "node:fs/promises"
 import { getExtractedCover } from "@/assets/covers"
 import { imageStats } from "@/images"
 import { logger } from "@/logging"
+import { authorNameIsBad } from "@/metadata/localSignals"
 import { type UUID } from "@/uuid"
+
 
 import { getBooks } from "./books"
 
@@ -35,6 +37,7 @@ export const AUDIT_ISSUES = [
   "NO-LANG",
   "NO-DESC",
   "BAD-TITLE",
+  "BAD-AUTHOR",
   "NO-SERIES",
 ] as const
 
@@ -145,6 +148,8 @@ export async function computeBookIssues(
   if (!book.language || !book.language.trim()) issues.push("NO-LANG")
   if (!book.description || !book.description.trim()) issues.push("NO-DESC")
   if (titleIsBad(book.title)) issues.push("BAD-TITLE")
+  if (book.authors.some((author) => authorNameIsBad(author.name)))
+    issues.push("BAD-AUTHOR")
   if (book.series.length === 0) issues.push("NO-SERIES")
   return issues
 }

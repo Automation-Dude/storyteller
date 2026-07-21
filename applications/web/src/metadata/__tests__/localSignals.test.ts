@@ -2,6 +2,8 @@ import assert from "node:assert"
 import { describe, it } from "node:test"
 
 import {
+  authorNameIsBad,
+  cleanAuthorName,
   cleanTitle,
   combine,
   isGarbageTitle,
@@ -173,5 +175,40 @@ void describe("localSignals guards", () => {
         `expected kept: ${good} -> ${cleaned}`,
       )
     }
+  })
+})
+
+void describe("author name repair", () => {
+  void it("flags damaged author strings", () => {
+    for (const bad of [
+      "By Bernard Cornwell",
+      "Narrated by William Gaminara",
+      "Bernard_Cornwell",
+      "Cornwell, Bernard",
+      "",
+    ]) {
+      assert.ok(authorNameIsBad(bad), bad)
+    }
+  })
+
+  void it("leaves real names alone", () => {
+    for (const good of [
+      "Bernard Cornwell",
+      "J. K. Rowling",
+      "Ursula K. Le Guin",
+      "Madeline Miller",
+    ]) {
+      assert.ok(!authorNameIsBad(good), good)
+    }
+  })
+
+  void it("recovers the person from a damaged form", () => {
+    assert.strictEqual(
+      cleanAuthorName("By Bernard Cornwell"),
+      "Bernard Cornwell",
+    )
+    assert.strictEqual(cleanAuthorName("Bernard_Cornwell"), "Bernard Cornwell")
+    assert.strictEqual(cleanAuthorName("Cornwell, Bernard"), "Bernard Cornwell")
+    assert.strictEqual(cleanAuthorName("  J. K. Rowling "), "J. K. Rowling")
   })
 })

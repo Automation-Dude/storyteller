@@ -51,6 +51,7 @@ export const ISSUE_LABELS: Record<AuditIssue, string> = {
   "TINY-COVER": "Tiny cover",
   "BAD-TITLE": "Filename title",
   "NO-AUTHOR": "No author",
+  "BAD-AUTHOR": "Broken author name",
   "NO-LANG": "No language",
   "NO-DESC": "No description",
   "NO-SERIES": "No series",

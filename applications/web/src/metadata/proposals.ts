@@ -17,7 +17,9 @@ export function applicableChoice(proposal: RepairProposal): RepairChoice {
   const out: RepairChoice = {}
   const confident = proposal.confidence === "high"
   const usable = (field: keyof RepairChoice) =>
-    proposal.sources[field] === "file" || confident
+    proposal.sources[field] === "file" ||
+    proposal.sources[field] === "derived" ||
+    confident
   if (proposal.choice.title && usable("title"))
     out.title = proposal.choice.title
   if (proposal.choice.authors && usable("authors"))

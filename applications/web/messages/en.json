@@ -331,7 +331,8 @@
       "NO-AUTHOR": "No author",
       "NO-LANG": "No language",
       "NO-DESC": "No description",
-      "NO-SERIES": "No series"
+      "NO-SERIES": "No series",
+      "BAD-AUTHOR": "Broken author name"
     },
     "repair": {
       "action": "Repair",
