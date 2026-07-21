@@ -7,6 +7,7 @@ import {
   normalizeForSearch,
   queryVariants,
   scoreMatch,
+  seriesNamesMatch,
   titleSimilarity,
 } from "@/metadata/titleCleaning"
 
@@ -76,6 +77,21 @@ void describe("authorsMatch", () => {
   void it("does not match different authors", () => {
     assert.ok(!authorsMatch("Frank Herbert", "Tom Clancy"))
     assert.ok(!authorsMatch("Top 100 Sci-Fi Books", "Frank Herbert"))
+  })
+})
+
+void describe("seriesNamesMatch", () => {
+  void it("matches the same series through articles and suffixes", () => {
+    assert.ok(seriesNamesMatch("The Wheel of Time", "Wheel of Time"))
+    assert.ok(seriesNamesMatch("Discworld series", "Discworld"))
+    assert.ok(seriesNamesMatch("Dune Chronicles", "Dune"))
+    assert.ok(seriesNamesMatch("Sharpe", "the Sharpe books"))
+  })
+
+  void it("rejects different series and empty names", () => {
+    assert.ok(!seriesNamesMatch("The Wheel of Time", "Discworld"))
+    assert.ok(!seriesNamesMatch("", "Discworld"))
+    assert.ok(!seriesNamesMatch("The", "A"))
   })
 })
 
@@ -156,7 +172,6 @@ void describe("scoreMatch", () => {
   })
 })
 
-
 void describe("queryVariants for series-prefixed titles", () => {
   void it("adds the bare title so the real book can be found", () => {
     const variants = queryVariants("Artemis Fowl 07 - The Atlantis Complex")
@@ -167,12 +182,13 @@ void describe("queryVariants for series-prefixed titles", () => {
   })
 })
 
-
 void describe("bestTitleSimilarity ignores a series parenthetical", () => {
   void it("matches a work catalogued with its series against the bare title", () => {
     assert.ok(
-      bestTitleSimilarity("The Diamond Throne (The Elenium)", "The Diamond Throne") >=
-        0.95,
+      bestTitleSimilarity(
+        "The Diamond Throne (The Elenium)",
+        "The Diamond Throne",
+      ) >= 0.95,
     )
   })
 })

@@ -171,6 +171,20 @@ export function authorsMatch(a: string, b: string): boolean {
   return false
 }
 
+/** True if two series names plausibly name the same series. */
+export function seriesNamesMatch(a: string, b: string): boolean {
+  const clean = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/\b(the|a|an|series|saga|cycle|novels?|books?)\b/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+  const ca = clean(a)
+  const cb = clean(b)
+  if (ca.length < 3 || cb.length < 3) return ca.length > 0 && ca === cb
+  return ca === cb || ca.includes(cb) || cb.includes(ca)
+}
+
 /** Titles that signal a result is not the book itself. */
 const NOT_THE_BOOK =
   /\b(adaptation|study guide|summary|analysis|sparknotes|cliffsnotes|workbook|companion|boxed set|box set)\b/i

@@ -45,6 +45,7 @@ import {
   authorsMatch,
   bestTitleSimilarity,
   queryVariants,
+  seriesNamesMatch,
 } from "./titleCleaning"
 
 /**
@@ -341,7 +342,7 @@ export async function resolveBook(
     // clean stored title sent searches for \"Dune\" off after tag garbage.
     const baseTitle = !titleIsBad(book.title)
       ? book.title
-      : (firstNonGarbage(local.title, folder.title, book.title) ?? book.title)
+      : firstNonGarbage(local.title, folder.title, book.title) ?? book.title
     // A known-bad stored author must not narrow the search or score the
     // match; it penalises the right book for not matching garbage.
     const authorCandidates = [
@@ -352,6 +353,14 @@ export async function resolveBook(
     const author = authorCandidates.find(
       (name) => name && !authorNameIsBad(name),
     )
+    // Every usable author signal the book carries, not just the one the query
+    // uses: the stored row, the file tags, and the folder name each name an
+    // author independently, so ANY of them agreeing with a match confirms it
+    // even when the signal the search used was the wrong one.
+    const authorSignals = authorCandidates
+      .map((name) => cleanAuthorName(name))
+      .filter((name, index, all) => name && all.indexOf(name) === index)
+      .filter((name) => !authorNameIsBad(name))
 
     // Progressive discovery: a stored title often buries the real one under
     // series clutter, so each cleaner variant is tried until a match is
@@ -369,22 +378,24 @@ export async function resolveBook(
     }
     {
       resolution.best = best
-      // A matching author is the strongest confirmation there is: when the
-      // book's own author agrees with the match and the titles overlap, the
-      // match is confident even if clutter dragged the composite score down.
+      // A matching author is the strongest confirmation there is: when ANY of
+      // the book's own author signals (stored, file tag, folder) agrees with
+      // the match and the titles overlap, the match is confident even if
+      // clutter dragged the composite score down.
       const authorConfirmed = Boolean(
-        author &&
-          best &&
+        best &&
           best.score >= SUGGEST_SCORE &&
-          best.authors.some((name) => authorsMatch(name, author)) &&
-          bestTitleSimilarity(best.title, baseTitle) >= 0.5,
+          bestTitleSimilarity(best.title, baseTitle) >= 0.5 &&
+          authorSignals.some((signal) =>
+            best.authors.some((name) => authorsMatch(name, signal)),
+          ),
       )
       // With no usable author to confirm against, an exact title on a work
       // the world has printed many times is its own confirmation; without
       // this, a garbage-author book can never reach confidence at all.
       const titleWords = baseTitle.trim().split(/\s+/).length
       const canonicalConfirmed = Boolean(
-        !author &&
+        authorSignals.length === 0 &&
           best &&
           bestTitleSimilarity(best.title, baseTitle) >= 0.95 &&
           // A one-word title needs a much larger body of editions before it
@@ -393,12 +404,39 @@ export async function resolveBook(
           best.editionCount >= (titleWords >= 2 ? 10 : 30),
       )
       resolution.confidence = best
-        ? best.score >= AUTO_APPLY_SCORE || authorConfirmed || canonicalConfirmed
+        ? best.score >= AUTO_APPLY_SCORE ||
+          authorConfirmed ||
+          canonicalConfirmed
           ? "high"
           : best.score >= SUGGEST_SCORE
             ? "low"
             : "none"
         : "none"
+
+      // A series clue in the book's own data agreeing with the catalogue's
+      // series for the matched work is two independent sources naming the
+      // same thing; that confirms a match the score alone left uncertain.
+      let confirmedSeries: { name: string; position: number | null } | null =
+        null
+      if (best && resolution.confidence === "low") {
+        const expectedSeries =
+          book.series[0]?.name ??
+          local.series?.name ??
+          seriesFromTitle(local.title ?? "")?.name ??
+          seriesFromTitle(book.title)?.name
+        if (expectedSeries) {
+          confirmedSeries =
+            (best.editionKey
+              ? await deps.fetchEditionSeries(best.editionKey)
+              : null) ?? (await deps.fetchWorkSeries(best.workKey))
+          if (
+            confirmedSeries &&
+            seriesNamesMatch(confirmedSeries.name, expectedSeries)
+          ) {
+            resolution.confidence = "high"
+          }
+        }
+      }
 
       if (best && resolution.confidence !== "none") {
         if (need.title && best.title && !isGarbageTitle(best.title)) {
@@ -452,9 +490,11 @@ export async function resolveBook(
         // into a series; a guess here is worse than a gap.
         if (need.series && resolution.confidence === "high") {
           const editionSeries =
+            confirmedSeries ??
             (best.editionKey
               ? await deps.fetchEditionSeries(best.editionKey)
-              : null) ?? (await deps.fetchWorkSeries(best.workKey))
+              : null) ??
+            (await deps.fetchWorkSeries(best.workKey))
           if (editionSeries) {
             resolution.choice.series = editionSeries
             resolution.sources.series = "openlibrary"

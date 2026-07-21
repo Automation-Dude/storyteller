@@ -497,6 +497,120 @@ void describe("progressive discovery", () => {
     })
   })
 
+  void it("lets a file-tag author confirm the match when the stored author is wrong", async () => {
+    const book = fakeBook({
+      title: "New Spring",
+      authors: ["Wrong Person"], // plausible-looking, so it drives the query
+      language: "en",
+      description: null,
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({ authors: ["Robert Jordan"] }),
+          search: async () => [
+            candidate({
+              title: "New Spring",
+              authors: ["Robert Jordan"],
+              // The wrong query author dragged the composite score down.
+              score: 0.55,
+            }),
+          ],
+          fetchDescription: async () =>
+            "A prequel novel of the Wheel of Time, long before the Dragon.",
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.strictEqual(
+      res.confidence,
+      "high",
+      "the file tag agreeing with the match confirms it",
+    )
+    assert.ok(res.choice.description?.startsWith("A prequel"))
+  })
+
+  void it("promotes a low match when the book's series clue agrees with the catalogue", async () => {
+    const book = fakeBook({
+      title: "The Fires of Heaven",
+      authors: [],
+      language: "en",
+      description: null,
+      series: [{ name: "The Wheel of Time" }],
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "The Fires of Heaven (Wheel of Time, Book 5)",
+              authors: ["Robert Jordan"],
+              // Too few editions for canonical confirmation, no author signal.
+              editionCount: 3,
+              ratingsCount: 0,
+              score: 0.5,
+            }),
+          ],
+          fetchEditionSeries: async () => null,
+          fetchWorkSeries: async () => ({
+            name: "Wheel of Time",
+            position: 5,
+          }),
+          fetchDescription: async () =>
+            "The fifth entry of the Wheel of Time, long enough to keep.",
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.strictEqual(
+      res.confidence,
+      "high",
+      "series agreement is independent confirmation",
+    )
+    assert.deepStrictEqual(res.choice.authors, ["Robert Jordan"])
+  })
+
+  void it("does not promote when the catalogue's series disagrees", async () => {
+    const book = fakeBook({
+      title: "The Fires of Heaven",
+      authors: [],
+      language: "en",
+      description: null,
+      series: [{ name: "The Wheel of Time" }],
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "The Fires of Heaven (Wheel of Time, Book 5)",
+              authors: ["Robert Jordan"],
+              editionCount: 3,
+              ratingsCount: 0,
+              score: 0.5,
+            }),
+          ],
+          fetchEditionSeries: async () => null,
+          fetchWorkSeries: async () => ({ name: "Discworld", position: 12 }),
+          fetchDescription: async () => "Long enough description to keep here.",
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.strictEqual(res.confidence, "low")
+  })
+
   void it("does not let the ladder invent confidence for a wrong book", async () => {
     const book = fakeBook({
       title: "Some Obscure Memoir",
