@@ -259,6 +259,7 @@ export function AppSidebar({
                 <SidebarMenuButton
                   onClick={toggleTheme}
                   className="flex items-center gap-2"
+                  size="sm"
                   suppressHydrationWarning
                 >
                   {theme === "dark" ? (
@@ -286,11 +287,14 @@ export function AppSidebar({
         <SidebarMenuItem>
           <SidebarMenuButton
             onClick={openSearch}
+            size="sm"
             className="flex justify-between gap-2"
           >
             <icon.Search />
-            <span className="grow">{t("search")}</span>
-            <KeyboardShortcut shortcut={["Mod+K"]} />
+            <span className="flex grow justify-between">
+              {t("search")}
+              <KeyboardShortcut shortcut={["Mod+K"]} />
+            </span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       ),
@@ -575,7 +579,7 @@ function SidebarNavGroup({
                   )}
                 />
                 {totalCount != null && (
-                  <span className="text-muted-foreground mr-2 flex h-5 min-w-5 items-center justify-center text-[12px] tabular-nums transition-opacity group-hover/group-header:opacity-0 group-has-data-popup-open/group-header:opacity-0">
+                  <span className="text-sidebar-foreground/60 mr-2 flex h-5 min-w-5 items-center justify-center text-[11px] tabular-nums transition-opacity group-hover/group-header:opacity-0 group-has-data-popup-open/group-header:opacity-0">
                     {totalCount}
                   </span>
                 )}

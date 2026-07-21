@@ -1,6 +1,6 @@
 "use client"
 
-import { useHotkey } from "@tanstack/react-hotkeys"
+import { parseHotkey, useHotkey } from "@tanstack/react-hotkeys"
 import { useRouter } from "next/navigation"
 import { type ReactNode, useCallback, useMemo, useState } from "react"
 
@@ -47,6 +47,9 @@ type NavCommand = {
   icon: StyledIcon
   href: string
 }
+
+export const COMMAND_SEARCH_HOTKEY = "Mod+K"
+export const COMMAND_SEARCH_HOTKEY_PARSED = parseHotkey(COMMAND_SEARCH_HOTKEY)
 
 function useNavCommands(): NavCommand[] {
   const tSidebar = useTranslation("AppSidebar")
@@ -420,7 +423,7 @@ export function CommandSearch() {
     name: string
   } | null>(null)
 
-  useHotkey("Mod+K", () => {
+  useHotkey(COMMAND_SEARCH_HOTKEY, () => {
     setOpen((prev) => !prev)
   })
 
@@ -475,8 +478,11 @@ export function CommandSearch() {
 export function useCommandSearch() {
   const openSearch = useCallback(() => {
     const event = new KeyboardEvent("keydown", {
-      key: "k",
-      metaKey: true,
+      key: COMMAND_SEARCH_HOTKEY_PARSED.key,
+      metaKey: COMMAND_SEARCH_HOTKEY_PARSED.meta,
+      shiftKey: COMMAND_SEARCH_HOTKEY_PARSED.shift,
+      altKey: COMMAND_SEARCH_HOTKEY_PARSED.alt,
+      ctrlKey: COMMAND_SEARCH_HOTKEY_PARSED.ctrl,
       bubbles: true,
     })
     document.dispatchEvent(event)
