@@ -2,6 +2,7 @@ import { type Selectable, sql } from "kysely"
 
 import { BookEvents } from "@/events"
 import type { UUID } from "@/uuid"
+import { queueWritesToFiles } from "@/writeToFiles/fileWriteDistributor"
 
 import { type TagUpdate, getBooks } from "./books"
 import { db } from "./connection"
@@ -203,6 +204,8 @@ export async function addTagsToBooks(bookUuids: UUID[], tags: AddTagInput[]) {
       bookUuid: book.uuid,
       payload: { tags: merged },
     })
+
+    void queueWritesToFiles(book.uuid)
   })
 }
 
@@ -232,6 +235,8 @@ export async function removeTagsFromBooks(bookUuids: UUID[], tagUuids: UUID[]) {
         tags: book.tags.filter((t) => !tagUuids.includes(t.uuid)),
       },
     })
+
+    void queueWritesToFiles(book.uuid)
   })
 }
 

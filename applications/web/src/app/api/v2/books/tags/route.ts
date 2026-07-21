@@ -5,7 +5,6 @@ import {
   removeTagsFromBooks,
 } from "@/database/tags"
 import { type UUID } from "@/uuid"
-import { queueWritesToFiles } from "@/writeToFiles/fileWriteDistributor"
 
 export const POST = withHasPermission("bookUpdate")(async (request) => {
   const body = (await request.json()) as {
@@ -20,10 +19,6 @@ export const POST = withHasPermission("bookUpdate")(async (request) => {
   )
   await addTagsToBooks(books, normalized)
 
-  for (const book of books) {
-    void queueWritesToFiles(book)
-  }
-
   return new Response(null, { status: 204 })
 })
 
@@ -34,10 +29,6 @@ export const DELETE = withHasPermission("bookUpdate")(async (request) => {
   }
   const { tags, books } = body
   await removeTagsFromBooks(books, tags)
-
-  for (const book of books) {
-    void queueWritesToFiles(book)
-  }
 
   return new Response(null, { status: 204 })
 })

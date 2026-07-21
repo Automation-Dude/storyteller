@@ -323,6 +323,7 @@ export default async function processBook({
           await writeMetadataToEpub(book, epub, {
             includeAlignmentMetadata: true,
             ...(audioCover && { audioCover }),
+            format: "readaloud",
           })
           logger.info(
             `Successfully wrote metadata to file (title: ${await epub.getTitle(true)})`,
