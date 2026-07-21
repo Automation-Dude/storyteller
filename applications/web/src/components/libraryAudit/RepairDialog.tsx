@@ -37,6 +37,8 @@ type Fields = {
   language: string
   description: string
   coverUrl: string
+  seriesName: string
+  seriesPosition: string
 }
 
 const EMPTY: Fields = {
@@ -45,15 +47,33 @@ const EMPTY: Fields = {
   language: "",
   description: "",
   coverUrl: "",
+  seriesName: "",
+  seriesPosition: "",
 }
 
 function fillFromCandidate(candidate: OpenLibraryCandidate): Partial<Fields> {
   return {
     title: candidate.title,
     authors: candidate.authors.join(", "),
-    language: candidate.languages[0] ?? "",
+    // The language list spans every edition; only claim English when an
+    // English edition actually exists, never a random translation's code.
+    language: candidate.languages.includes("eng") ? "en" : "",
     coverUrl: candidate.coverUrl ?? "",
+    ...(candidate.description && { description: candidate.description }),
   }
+}
+
+/** "1989 · 42 editions · rated 3.9" - whichever parts the match has. */
+function matchDetail(candidate: OpenLibraryCandidate): string {
+  const parts: string[] = []
+  if (candidate.firstPublishYear) parts.push(String(candidate.firstPublishYear))
+  if (candidate.editionCount)
+    parts.push(
+      `${candidate.editionCount} edition${candidate.editionCount === 1 ? "" : "s"}`,
+    )
+  if (candidate.ratingsAverage)
+    parts.push(`rated ${candidate.ratingsAverage.toFixed(1)}`)
+  return parts.join(" · ")
 }
 
 export function RepairDialog({
@@ -90,15 +110,25 @@ export function RepairDialog({
     void suggest({ bookUuids: [book.uuid] })
       .unwrap()
       .then((result) => {
-        const best = result.proposals[0]?.best
-        if (!best) return
-        const filled = fillFromCandidate(best)
+        // The resolver already worked out the complete fill for the fields
+        // this book is missing (file metadata first, then the catalogue
+        // match, description included); prefill exactly that.
+        const choice = result.proposals[0]?.choice
+        if (!choice) return
         setFields((prev) => ({
           ...prev,
-          ...(book.issues.includes("BAD-TITLE") && { title: filled.title }),
-          ...(book.issues.includes("NO-AUTHOR") && { authors: filled.authors }),
-          ...(book.issues.includes("NO-LANG") && { language: filled.language }),
-          ...(needsCover && { coverUrl: filled.coverUrl }),
+          ...(choice.title && { title: choice.title }),
+          ...(choice.authors?.length && { authors: choice.authors.join(", ") }),
+          ...(choice.language && { language: choice.language }),
+          ...(choice.description && { description: choice.description }),
+          ...(choice.coverUrl && { coverUrl: choice.coverUrl }),
+          ...(choice.series && {
+            seriesName: choice.series.name,
+            seriesPosition:
+              choice.series.position != null
+                ? String(choice.series.position)
+                : "",
+          }),
         }))
       })
       .catch(() => undefined)
@@ -113,7 +143,10 @@ export function RepairDialog({
 
   async function onApply() {
     setError(null)
-    const choice: Record<string, string | string[]> = {}
+    const choice: Record<
+      string,
+      string | string[] | { name: string; position?: number }
+    > = {}
     if (fields.title.trim()) choice["title"] = fields.title.trim()
     if (fields.authors.trim())
       choice["authors"] = fields.authors
@@ -124,6 +157,13 @@ export function RepairDialog({
     if (fields.description.trim())
       choice["description"] = fields.description.trim()
     if (fields.coverUrl.trim()) choice["coverUrl"] = fields.coverUrl.trim()
+    if (fields.seriesName.trim()) {
+      const position = Number.parseFloat(fields.seriesPosition)
+      choice["series"] = {
+        name: fields.seriesName.trim(),
+        ...(Number.isFinite(position) && { position }),
+      }
+    }
 
     if (Object.keys(choice).length === 0) {
       setError("Fill in at least one field to apply.")
@@ -174,6 +214,12 @@ export function RepairDialog({
                 </Text>
                 {best.authors[0] ? ` / ${best.authors[0]}` : ""} (
                 {Math.round(best.score * 100)}%)
+                {matchDetail(best) ? (
+                  <Text span c="dimmed">
+                    {" "}
+                    · {matchDetail(best)}
+                  </Text>
+                ) : null}
               </Text>
             ) : (
               <Text size="sm" c="dimmed">
@@ -224,6 +270,30 @@ export function RepairDialog({
                       setFields((f) => ({
                         ...f,
                         coverUrl: e.currentTarget.value,
+                      }))
+                    }}
+                  />
+                </Group>
+                <Group grow align="flex-start">
+                  <TextInput
+                    label="Series"
+                    value={fields.seriesName}
+                    placeholder="e.g. Cradle"
+                    onChange={(e) => {
+                      setFields((f) => ({
+                        ...f,
+                        seriesName: e.currentTarget.value,
+                      }))
+                    }}
+                  />
+                  <TextInput
+                    label="Book number"
+                    value={fields.seriesPosition}
+                    placeholder="e.g. 8"
+                    onChange={(e) => {
+                      setFields((f) => ({
+                        ...f,
+                        seriesPosition: e.currentTarget.value,
                       }))
                     }}
                   />
@@ -377,9 +447,8 @@ function ManualSearch({
                 {candidate.title}
                 <Text span c="dimmed">
                   {candidate.authors[0] ? ` / ${candidate.authors[0]}` : ""}
-                  {candidate.firstPublishYear
-                    ? ` (${candidate.firstPublishYear})`
-                    : ""}
+                  {matchDetail(candidate) ? ` · ${matchDetail(candidate)}` : ""}
+                  {candidate.description ? " · has description" : ""}
                 </Text>
               </Text>
               <Group gap={4} wrap="nowrap">

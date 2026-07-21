@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { withHasPermission } from "@/auth/auth"
-import { proposeForBooks } from "@/metadata/repair"
+import { proposeForBooks } from "@/metadata/resolve"
 import { type UUID } from "@/uuid"
 
 export const dynamic = "force-dynamic"

@@ -47,7 +47,8 @@ import { type UserPermissionSet } from "@/database/users"
 import { type BookEvent } from "@/events"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import { type OpenLibraryCandidate } from "@/metadata/openLibrary"
-import { type RepairChoice, type RepairProposal } from "@/metadata/repair"
+import { type RepairChoice } from "@/metadata/repair"
+import { type RepairProposal } from "@/metadata/resolve"
 import { type UUID } from "@/uuid"
 
 export const api = createApi({

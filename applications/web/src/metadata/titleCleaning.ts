@@ -49,6 +49,22 @@ export function normalizeForSearch(rawTitle: string): string {
   let value = rawTitle.replace(/_/g, " ")
   // A leading track/disc/catalogue number: "08 ", "02 - ", "DP19 - ", "cd01-".
   value = value.replace(/^\s*(?:\d{1,3}|[a-z]{1,3}\d{1,3})[\s.\-_]+/i, "")
+  // Series / volume suffixes dilute a title match: a parenthetical "(Cradle
+  // Book 9)", a colon-form "A Clash of Kings: A Song of Ice and Fire, Book II",
+  // or a trailing "..., Book 4". Only a real volume marker (book/vol/part +
+  // number, Arabic or Roman) triggers it, so "2001: A Space Odyssey" survives.
+  value = value.replace(
+    /\s*[([][^)\]]*\b(?:book|bk\.?|vol(?:ume)?|part)\s*(?:\d+|[ivxlcdm]{1,7})[^)\]]*[)\]]/gi,
+    " ",
+  )
+  value = value.replace(
+    /\s*:\s*.*\b(?:book|bk\.?|vol(?:ume)?|part)\s*(?:\d+|[ivxlcdm]{1,7})\b.*$/i,
+    "",
+  )
+  value = value.replace(
+    /\s*,?\s*\b(?:book|bk\.?|vol(?:ume)?|part)\s*(?:\d+|[ivxlcdm]{1,7})\b\.?\s*$/i,
+    "",
+  )
   for (const noise of INLINE_NOISE) value = value.replace(noise, " ")
   // Empty brackets left where noise used to be: "The Hobbit ( )".
   value = value.replace(/\(\s*\)|\[\s*\]/g, " ")
@@ -115,6 +131,8 @@ export type MatchInput = {
   title: string
   authorNames: string[]
   editionCount: number
+  /** How many Open Library ratings the work has; 0 when unknown. */
+  ratingsCount?: number
 }
 
 /**
@@ -144,10 +162,25 @@ export function scoreMatch(
   // Canonical works accumulate editions; log so 5 vs 50 matters, 500 vs 550 not.
   const editionScore = Math.min(Math.log10(candidate.editionCount + 1) / 2, 1)
 
-  const penalty = NOT_THE_BOOK.test(candidate.title) ? 0.4 : 0
+  // Readers rate the real book, not an orphaned catalogue double; a small
+  // nudge so the popular work outranks a same-title ghost record.
+  const ratingsScore = Math.min(
+    Math.log10((candidate.ratingsCount ?? 0) + 1) / 2,
+    1,
+  )
+
+  // An omnibus / box set lists several works in one title ("A / B / C / D"); it
+  // is not the single book we are resolving, so push it well down.
+  const isCompilation = (candidate.title.match(/\s\/\s/g) ?? []).length >= 2
+  const penalty =
+    (NOT_THE_BOOK.test(candidate.title) ? 0.4 : 0) + (isCompilation ? 0.4 : 0)
 
   const score =
-    titleScore * 0.6 + authorScore * 0.25 + editionScore * 0.15 - penalty
+    titleScore * 0.6 +
+    authorScore * 0.25 +
+    editionScore * 0.1 +
+    ratingsScore * 0.05 -
+    penalty
 
   return Math.max(0, Math.min(1, score))
 }

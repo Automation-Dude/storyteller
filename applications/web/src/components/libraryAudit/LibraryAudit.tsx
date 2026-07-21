@@ -53,6 +53,7 @@ export const ISSUE_LABELS: Record<AuditIssue, string> = {
   "NO-AUTHOR": "No author",
   "NO-LANG": "No language",
   "NO-DESC": "No description",
+  "NO-SERIES": "No series",
 }
 
 function relativeTime(iso: string): string {

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { type AuditBook } from "@/database/auditLibrary"
-import { type RepairProposal } from "@/metadata/repair"
+import { type RepairChoice } from "@/metadata/repair"
 import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -22,42 +22,24 @@ import {
 import { Spinner } from "@v3/_/components/ui/spinner"
 
 const BATCH = 25
-const COVER_ISSUES = new Set(["NO-COVER", "BLANK-COVER", "TINY-COVER"])
 
-type Change = {
-  title?: string
-  authors?: string[]
-  coverUrl?: string
-  language?: string
-}
-
-/** Map a confident match to the fields the book actually needs fixed. */
-function changeFor(
-  book: AuditBook,
-  best: RepairProposal["best"],
-): Change | null {
-  if (!best) return null
-  const change: Change = {}
-  if (book.issues.includes("BAD-TITLE")) change.title = best.title
-  if (book.issues.includes("NO-AUTHOR") && best.authors.length)
-    change.authors = best.authors
-  if (book.issues.includes("NO-LANG") && best.languages[0])
-    change.language = best.languages[0]
-  if (book.issues.some((i) => COVER_ISSUES.has(i)) && best.coverUrl)
-    change.coverUrl = best.coverUrl
-  return Object.keys(change).length ? change : null
-}
-
-function summarise(change: Change): string {
+function summarise(choice: RepairChoice): string {
   const parts: string[] = []
-  if (change.title) parts.push(`"${change.title}"`)
-  if (change.authors) parts.push(change.authors.join(", "))
-  if (change.coverUrl) parts.push("cover")
-  if (change.language) parts.push(change.language)
+  if (choice.title) parts.push(`"${choice.title}"`)
+  if (choice.authors) parts.push(choice.authors.join(", "))
+  if (choice.language) parts.push(choice.language)
+  if (choice.series)
+    parts.push(
+      choice.series.position != null
+        ? `${choice.series.name} #${choice.series.position}`
+        : choice.series.name,
+    )
+  if (choice.description) parts.push("description")
+  if (choice.coverUrl) parts.push("cover")
   return parts.join(" · ")
 }
 
-type Row = { book: AuditBook; change: Change; checked: boolean }
+type Row = { book: AuditBook; change: RepairChoice; checked: boolean }
 
 export function AutoRepairDialog({
   books,
@@ -105,8 +87,10 @@ export function AutoRepairDialog({
             if (proposal.confidence !== "high") continue
             const book = byUuid.get(proposal.bookUuid)
             if (!book) continue
-            const change = changeFor(book, proposal.best)
-            if (change) found.push({ book, change, checked: true })
+            const change = proposal.choice
+            if (Object.keys(change).length) {
+              found.push({ book, change, checked: true })
+            }
           }
         } catch {
           // A failed batch just contributes no suggestions; keep going.

@@ -322,7 +322,8 @@
       "BAD-TITLE": "Bestandsnaamtitel",
       "NO-AUTHOR": "Geen auteur",
       "NO-LANG": "Geen taal",
-      "NO-DESC": "Geen beschrijving"
+      "NO-DESC": "Geen beschrijving",
+      "NO-SERIES": "Geen serie"
     },
     "repair": {
       "action": "Herstellen",

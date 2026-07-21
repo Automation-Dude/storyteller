@@ -8,20 +8,16 @@ import { imageStats } from "@/images"
 import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
 
-import {
-  type OpenLibraryCandidate,
-  fetchOpenLibraryDescription,
-  searchOpenLibrary,
-} from "./openLibrary"
+import { fetchOpenLibraryDescription } from "./openLibrary"
 
 /**
- * Turn the library audit's findings into concrete repairs from Open Library,
- * and apply the ones a person accepts.
+ * Apply the repairs a person accepts to a book, and the supporting bits the
+ * audit flow needs (language normalisation, cover fetch, database backup).
  *
- * The split is deliberate: the server finds and scores matches (a proposal),
- * a person decides what to write, and the server makes the change. A confident
- * match can be accepted in bulk; a shaky one is left to a person, who can also
- * search by hand. Nothing is written without a database backup first.
+ * The book's metadata is resolved elsewhere (see resolve.ts, which finds and
+ * scores matches); this module is the write side: a person decides what to
+ * write and the server makes the change. Nothing is written without a database
+ * backup first.
  */
 
 /** At or above this score, a match is confident enough to pre-accept. */
@@ -30,15 +26,6 @@ export const AUTO_APPLY_SCORE = 0.85
 export const SUGGEST_SCORE = 0.3
 
 export type RepairConfidence = "high" | "low" | "none"
-
-export type RepairProposal = {
-  bookUuid: UUID
-  currentTitle: string
-  currentAuthors: string[]
-  candidates: OpenLibraryCandidate[]
-  best: OpenLibraryCandidate | null
-  confidence: RepairConfidence
-}
 
 /** What a person chose to write to a book. Every field is optional. */
 export type RepairChoice = {
@@ -50,66 +37,8 @@ export type RepairChoice = {
   description?: string
   /** An image URL (Open Library or pasted) to install as the ebook cover. */
   coverUrl?: string
-}
-
-function confidenceOf(best: OpenLibraryCandidate | null): RepairConfidence {
-  if (!best || best.score < SUGGEST_SCORE) return "none"
-  return best.score >= AUTO_APPLY_SCORE ? "high" : "low"
-}
-
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const queue = items.map((item, index) => ({ item, index }))
-  const results: R[] = []
-  async function worker() {
-    for (;;) {
-      const job = queue.shift()
-      if (!job) return
-      results[job.index] = await fn(job.item)
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
-  )
-  return results
-}
-
-/**
- * Look each book up on Open Library and return a scored proposal.
- *
- * Kept to a few requests at a time to be a good citizen of a free service.
- */
-export async function proposeForBooks(
-  bookUuids: UUID[],
-  userId?: UUID,
-): Promise<RepairProposal[]> {
-  return mapWithConcurrency(bookUuids, 4, async (bookUuid) => {
-    const book = await getBook(bookUuid, userId)
-    if (!book) {
-      return {
-        bookUuid,
-        currentTitle: "",
-        currentAuthors: [],
-        candidates: [],
-        best: null,
-        confidence: "none" as const,
-      }
-    }
-    const author = book.authors[0]?.name.replace(/^by\s+/i, "")
-    const candidates = await searchOpenLibrary(book.title, author)
-    const best = candidates[0] ?? null
-    return {
-      bookUuid,
-      currentTitle: book.title,
-      currentAuthors: book.authors.map((a) => a.name),
-      candidates,
-      best,
-      confidence: confidenceOf(best),
-    }
-  })
+  /** The series this book belongs to; created on the fly when it is new. */
+  series?: { name: string; position?: number | null }
 }
 
 // Open Library reports language as a 3-letter code; the library's own values
@@ -232,13 +161,27 @@ export async function applyRepair(
     creators = [...kept, ...authors]
   }
 
+  // updateBook creates a series that does not exist yet and links the book,
+  // so a repair can both invent "Cradle" on first use and file book 8 into it.
+  const series = choice.series?.name.trim()
+    ? [
+        {
+          name: choice.series.name.trim(),
+          featured: true,
+          ...(choice.series.position != null && {
+            position: choice.series.position,
+          }),
+        },
+      ]
+    : undefined
+
   try {
     const updated =
-      Object.keys(update).length || creators
+      Object.keys(update).length || creators || series
         ? await updateBook(
             bookUuid,
             Object.keys(update).length ? update : null,
-            creators ? { creators } : {},
+            { ...(creators && { creators }), ...(series && { series }) },
             userId,
           )
         : book
@@ -268,6 +211,7 @@ export async function backupBeforeRepair(): Promise<string> {
 /** Best-effort description lookup for a book that has none. */
 export async function lookupDescription(
   workKey: string,
+  editionKey?: string | null,
 ): Promise<string | null> {
-  return fetchOpenLibraryDescription(workKey)
+  return fetchOpenLibraryDescription(workKey, editionKey)
 }

@@ -35,6 +35,7 @@ export const AUDIT_ISSUES = [
   "NO-LANG",
   "NO-DESC",
   "BAD-TITLE",
+  "NO-SERIES",
 ] as const
 
 export type AuditIssue = (typeof AUDIT_ISSUES)[number]
@@ -84,7 +85,7 @@ const BAD_TITLE_PATTERNS: RegExp[] = [
   /\((un)?abridged\)|\(full[- ]cast/i, // edition noise in place of a title
 ]
 
-function titleIsBad(title: string | null): boolean {
+export function titleIsBad(title: string | null): boolean {
   const t = (title ?? "").trim()
   if (!t) return true
   if (PLACEHOLDER_TITLES.has(t.toLowerCase())) return true
@@ -135,7 +136,7 @@ async function coverIssuesFor(
   }
 }
 
-async function computeBookIssues(
+export async function computeBookIssues(
   book: AuditBookRow,
   coverSet: Set<string> | null,
 ): Promise<AuditIssue[]> {
@@ -144,6 +145,7 @@ async function computeBookIssues(
   if (!book.language || !book.language.trim()) issues.push("NO-LANG")
   if (!book.description || !book.description.trim()) issues.push("NO-DESC")
   if (titleIsBad(book.title)) issues.push("BAD-TITLE")
+  if (book.series.length === 0) issues.push("NO-SERIES")
   return issues
 }
 

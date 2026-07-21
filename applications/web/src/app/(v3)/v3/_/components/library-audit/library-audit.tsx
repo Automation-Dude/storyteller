@@ -42,6 +42,7 @@ const ISSUE_ORDER: {
   { issue: "NO-AUTHOR", variant: "destructive" },
   { issue: "NO-LANG", variant: "secondary" },
   { issue: "NO-DESC", variant: "secondary" },
+  { issue: "NO-SERIES", variant: "secondary" },
 ]
 
 const VARIANT_OF = new Map(ISSUE_ORDER.map((i) => [i.issue, i.variant]))

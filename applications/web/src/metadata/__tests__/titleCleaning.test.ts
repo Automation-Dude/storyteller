@@ -24,6 +24,21 @@ void describe("normalizeForSearch", () => {
     }
   })
 
+  void it("strips series/volume suffixes so the real title is searched", () => {
+    const cases: [string, string][] = [
+      ["A Clash of Kings: A Song of Ice and Fire, Book II", "A Clash of Kings"],
+      ["Bloodline (Cradle Book 9)", "Bloodline"],
+      ["Blue Mars (Mars Trilogy Book 3)", "Blue Mars"],
+      [
+        "A Game of Thrones: A Song of Ice and Fire, Book I",
+        "A Game of Thrones",
+      ],
+    ]
+    for (const [raw, expected] of cases) {
+      assert.strictEqual(normalizeForSearch(raw), expected, raw)
+    }
+  })
+
   void it("keeps a numeric title that is the whole title", () => {
     // The junk filters must never eat the title itself.
     assert.strictEqual(normalizeForSearch("1984"), "1984")
@@ -90,6 +105,32 @@ void describe("scoreMatch", () => {
     assert.ok(
       real > adaptation,
       `real ${real} should beat adaptation ${adaptation}`,
+    )
+  })
+
+  void it("pushes an omnibus / box set below the individual book", () => {
+    const single = scoreMatch(
+      {
+        title: "A Dance with Dragons",
+        authorNames: ["George R. R. Martin"],
+        editionCount: 40,
+      },
+      "A Dance With Dragons",
+      "George R. R. Martin",
+    )
+    const omnibus = scoreMatch(
+      {
+        title:
+          "A Song of Ice and Fire (A Game of Thrones / A Clash of Kings / A Storm of Swords / A Feast for Crows / A Dance with Dragons)",
+        authorNames: ["George R. R. Martin"],
+        editionCount: 60,
+      },
+      "A Dance With Dragons",
+      "George R. R. Martin",
+    )
+    assert.ok(
+      single > omnibus,
+      `single ${single} should beat omnibus ${omnibus}`,
     )
   })
 
