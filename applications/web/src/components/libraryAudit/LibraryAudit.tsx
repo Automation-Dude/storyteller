@@ -39,8 +39,10 @@ const ISSUE_ORDER: { issue: AuditIssue; color: string }[] = [
   { issue: "TINY-COVER", color: "yellow" },
   { issue: "BAD-TITLE", color: "red" },
   { issue: "NO-AUTHOR", color: "red" },
+  { issue: "BAD-AUTHOR", color: "gray" },
   { issue: "NO-LANG", color: "gray" },
   { issue: "NO-DESC", color: "gray" },
+  { issue: "NO-SERIES", color: "gray" },
 ]
 
 const COLOR_OF = new Map(ISSUE_ORDER.map((i) => [i.issue, i.color]))
@@ -127,7 +129,7 @@ export function LibraryAudit() {
             onClick={() => void rescan()}
             disabled={computing}
           >
-            Rescan
+            {computing ? "Scanning..." : "Rescan"}
           </Button>
         </Group>
       </Group>

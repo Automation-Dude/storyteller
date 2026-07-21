@@ -51,7 +51,10 @@ function changeParts(row: Row): { label: string; detail?: string }[] {
     const before = proposal.currentAuthors.join(", ")
     const after = change.authors.join(", ")
     parts.push({
-      label: before && before !== after ? `author: ${before} -> ${after}` : `author: ${after}`,
+      label:
+        before && before !== after
+          ? `author: ${before} -> ${after}`
+          : `author: ${after}`,
     })
   }
   if (change.language) parts.push({ label: `language: ${change.language}` })
@@ -87,9 +90,9 @@ export function AutoRepairDialog({
   const [suggest] = useSuggestRepairsMutation()
   const [applyRepairs] = useApplyRepairsMutation()
 
-  const [phase, setPhase] = useState<"scanning" | "review" | "applying" | "done">(
-    "scanning",
-  )
+  const [phase, setPhase] = useState<
+    "scanning" | "review" | "applying" | "done"
+  >("scanning")
   const [scanned, setScanned] = useState(0)
   const [checking, setChecking] = useState<string | null>(null)
   const [rows, setRows] = useState<Row[]>([])
@@ -165,7 +168,9 @@ export function AutoRepairDialog({
         const fixed = new Set(chunk.map((r) => r.book.uuid))
         // Mark the chunk fixed so each one turns green as it lands.
         setRows((prev) =>
-          prev.map((r) => (fixed.has(r.book.uuid) ? { ...r, applied: true } : r)),
+          prev.map((r) =>
+            fixed.has(r.book.uuid) ? { ...r, applied: true } : r,
+          ),
         )
         setApplied(done)
       } catch {
@@ -281,7 +286,7 @@ export function AutoRepairDialog({
                         <li key={i} className="text-muted-foreground text-xs">
                           <span className="text-foreground">{part.label}</span>
                           {part.detail ? (
-                            <span className="italic"> — {part.detail}</span>
+                            <span className="italic"> - {part.detail}</span>
                           ) : null}
                         </li>
                       ))}
@@ -299,7 +304,12 @@ export function AutoRepairDialog({
               <span className="text-muted-foreground mr-auto self-center text-sm">
                 {t("autoRepair.selected", { count: checkedRows.length })}
               </span>
-              <Button variant="ghost" onClick={() => { onOpenChange(false) }}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  onOpenChange(false)
+                }}
+              >
                 {t("repair.cancel")}
               </Button>
               <Button
@@ -312,7 +322,9 @@ export function AutoRepairDialog({
           ) : (
             <Button
               variant="outline"
-              onClick={() => { onOpenChange(false) }}
+              onClick={() => {
+                onOpenChange(false)
+              }}
               disabled={phase === "applying"}
             >
               {phase === "done" ? t("autoRepair.close") : t("repair.cancel")}
