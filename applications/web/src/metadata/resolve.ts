@@ -25,6 +25,7 @@ import {
   combine,
   editDistance,
   isGarbageTitle,
+  pathSignals,
   seriesFromTitle,
 } from "./localSignals"
 import {
@@ -249,6 +250,15 @@ export async function resolveBook(
 
   // Tier 1: the book's own files, authoritative.
   const local = await deps.readLocal(book)
+  // Where the book lives on disk is metadata too: a curated tree names the
+  // author and the title in the directories and the filename themselves.
+  const paths = [
+    pathSignals(book.ebook?.filepath),
+    pathSignals(book.audiobook?.filepath),
+  ]
+  const pathAuthors = paths.flatMap((p) => p.authors)
+  const pathTitles = paths.flatMap((p) => p.titles)
+  const pathYears = paths.flatMap((p) => p.years)
   if (
     need.title &&
     local.title &&
@@ -311,6 +321,17 @@ export async function resolveBook(
       need.authors = false
     }
   }
+  if (need.authors && pathAuthors.length) {
+    // The library tree itself names the author ("books/Sarah J Maas/...");
+    // deterministic to read, safe to propose, and the catalogue can still
+    // improve the spelling on a confident match.
+    const [pathAuthor] = pathAuthors.filter((name) => !authorNameIsBad(name))
+    if (pathAuthor) {
+      resolution.choice.authors = [pathAuthor]
+      resolution.sources.authors = "derived"
+      need.authors = false
+    }
+  }
   if (need.series) {
     // The epub's OPF names the series outright; failing that, the title
     // itself often wraps it ("Wintersteel (Cradle Book 8)").
@@ -342,12 +363,14 @@ export async function resolveBook(
     // clean stored title sent searches for \"Dune\" off after tag garbage.
     const baseTitle = !titleIsBad(book.title)
       ? book.title
-      : firstNonGarbage(local.title, folder.title, book.title) ?? book.title
+      : firstNonGarbage(local.title, folder.title, ...pathTitles, book.title) ??
+        book.title
     // A known-bad stored author must not narrow the search or score the
     // match; it penalises the right book for not matching garbage.
     const authorCandidates = [
       ...book.authors.map((a) => a.name.replace(/^by\s+/i, "")),
       ...(local.authors ?? []),
+      ...pathAuthors,
       folder.author ?? "",
     ]
     const author = authorCandidates.find(
@@ -403,10 +426,23 @@ export async function resolveBook(
           // does not.
           best.editionCount >= (titleWords >= 2 ? 10 : 30),
       )
+      // A publication year in the book's own path agreeing with the work's
+      // first-publish year is one more independent voice; it only ever
+      // promotes a match whose title already overlaps strongly.
+      const yearConfirmed = Boolean(
+        best &&
+          best.score >= SUGGEST_SCORE &&
+          best.firstPublishYear !== null &&
+          pathYears.some(
+            (year) => Math.abs(year - (best.firstPublishYear ?? 0)) <= 1,
+          ) &&
+          bestTitleSimilarity(best.title, baseTitle) >= 0.7,
+      )
       resolution.confidence = best
         ? best.score >= AUTO_APPLY_SCORE ||
           authorConfirmed ||
-          canonicalConfirmed
+          canonicalConfirmed ||
+          yearConfirmed
           ? "high"
           : best.score >= SUGGEST_SCORE
             ? "low"

@@ -22,6 +22,8 @@ function fakeBook(over: {
   description?: string | null
   assetDir?: string | null
   series?: { name: string }[]
+  ebook?: { filepath: string }
+  audiobook?: { filepath: string }
 }): BookWithRelations {
   return {
     uuid: BOOK_UUID,
@@ -31,6 +33,8 @@ function fakeBook(over: {
     description: over.description ?? null,
     assetDir: over.assetDir ?? null,
     series: over.series ?? [],
+    ebook: over.ebook ? { ...over.ebook, missing: false } : null,
+    audiobook: over.audiobook ? { ...over.audiobook, missing: false } : null,
   } as unknown as BookWithRelations
 }
 
@@ -644,6 +648,101 @@ void describe("progressive discovery", () => {
     assert.ok(res)
     assert.strictEqual(res.confidence, "low")
     assert.strictEqual(res.choice.series, undefined)
+  })
+})
+
+void describe("path signals in resolution", () => {
+  void it("finds the author in the library tree when the row and tags have none", async () => {
+    const book = fakeBook({
+      title: "New Spring",
+      authors: [],
+      language: "en",
+      description: null,
+      ebook: {
+        filepath: "/data/books/Robert Jordan/New Spring (12)/New Spring.epub",
+      },
+    })
+    let searchedAuthor: string | undefined
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async (_title, author) => {
+            searchedAuthor = author
+            return [
+              candidate({
+                title: "New Spring",
+                authors: ["Robert Jordan"],
+                editionCount: 3,
+                ratingsCount: 0,
+                score: 0.55,
+              }),
+            ]
+          },
+          fetchDescription: async () =>
+            "A prequel of the Wheel of Time, long enough to keep here.",
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.strictEqual(
+      searchedAuthor,
+      "Robert Jordan",
+      "the tree's author directory anchors the search",
+    )
+    assert.deepStrictEqual(res.choice.authors, ["Robert Jordan"])
+    assert.strictEqual(res.sources.authors, "derived")
+    assert.strictEqual(
+      res.confidence,
+      "high",
+      "the path author agreeing with the match confirms it",
+    )
+  })
+
+  void it("a publication year in the path confirms an uncertain match", async () => {
+    const book = fakeBook({
+      title: "The Time Machine",
+      authors: [],
+      language: "en",
+      description: null,
+      ebook: {
+        filepath:
+          "/data/assets/The Time Machine (1895)/text/The Time Machine.epub",
+      },
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "The Time Machine",
+              authors: ["H. G. Wells"],
+              firstPublishYear: 1895,
+              // Too few editions for canonical confirmation on its own.
+              editionCount: 3,
+              ratingsCount: 0,
+              score: 0.5,
+            }),
+          ],
+          fetchDescription: async () =>
+            "A Victorian scientist travels to the year 802701.",
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.strictEqual(
+      res.confidence,
+      "high",
+      "year agreement is independent confirmation",
+    )
+    assert.deepStrictEqual(res.choice.authors, ["H. G. Wells"])
   })
 })
 

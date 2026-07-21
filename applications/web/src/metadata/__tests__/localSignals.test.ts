@@ -7,9 +7,67 @@ import {
   cleanTitle,
   combine,
   isGarbageTitle,
+  pathSignals,
   seriesFromTitle,
   seriesPrefixTitle,
 } from "@/metadata/localSignals"
+
+// Real path shapes from the production library, verbatim.
+void describe("pathSignals", () => {
+  void it("reads author and title from a curated tree with a by-filename", () => {
+    const signals = pathSignals(
+      "/data/books/Sarah J Maas/A Court of Mist and Fury/A_Court_of_Mist_and_Fury_by_Sarah_J_Maas.epub",
+    )
+    assert.ok(signals.authors.includes("Sarah J Maas"), signals.authors.join())
+    assert.ok(
+      signals.titles.includes("A Court of Mist and Fury"),
+      signals.titles.join(),
+    )
+  })
+
+  void it("splits a dash filename using the author directory as the anchor", () => {
+    const signals = pathSignals(
+      "/data/books/Audrey Niffenegger/The Time Traveler's Wife (150)/The Time Traveler's Wife - Audrey Niffenegger.epub",
+    )
+    assert.deepStrictEqual(signals.authors, ["Audrey Niffenegger"])
+    assert.ok(
+      signals.titles.includes("The Time Traveler's Wife"),
+      signals.titles.join(),
+    )
+  })
+
+  void it("reads an audiobook directory path, stripping the id suffix", () => {
+    const signals = pathSignals(
+      "/data/books/William Gibson/Neuromancer (303)/audio",
+    )
+    assert.deepStrictEqual(signals.authors, ["William Gibson"])
+    assert.deepStrictEqual(signals.titles, ["Neuromancer"])
+  })
+
+  void it("never crowns a title as the author in a flat assets tree", () => {
+    const signals = pathSignals(
+      "/data/assets/The Black Prism/text/The Black Prism.epub",
+    )
+    assert.deepStrictEqual(signals.authors, [])
+    assert.deepStrictEqual(signals.titles, ["The Black Prism"])
+  })
+
+  void it("captures a publication year set off in parentheses", () => {
+    const signals = pathSignals(
+      "/data/books/H G Wells/The Time Machine (1895)/The Time Machine.epub",
+    )
+    assert.deepStrictEqual(signals.years, [1895])
+    assert.ok(signals.titles.includes("The Time Machine"))
+  })
+
+  void it("returns nothing for an empty path", () => {
+    assert.deepStrictEqual(pathSignals(null), {
+      authors: [],
+      titles: [],
+      years: [],
+    })
+  })
+})
 
 // The same real problematic samples the Python prototype was proven against,
 // so the ported logic can't silently drift from what was validated on the server.
@@ -214,7 +272,6 @@ void describe("author name repair", () => {
   })
 })
 
-
 void describe("series from a ripped-folder title", () => {
   void it("reads the series, number and real title from '<Series> NN - Title'", () => {
     assert.deepStrictEqual(
@@ -232,13 +289,17 @@ void describe("series from a ripped-folder title", () => {
   })
 
   void it("does not invent a series for a standalone book", () => {
-    for (const standalone of ["Yes Please", "The Diamond Throne", "Catch 22", "1984"]) {
+    for (const standalone of [
+      "Yes Please",
+      "The Diamond Throne",
+      "Catch 22",
+      "1984",
+    ]) {
       assert.strictEqual(seriesFromTitle(standalone), null, standalone)
       assert.strictEqual(seriesPrefixTitle(standalone), null, standalone)
     }
   })
 })
-
 
 void describe("handle-style authors are not names", () => {
   void it("flags a username with an internal dot", () => {
@@ -246,7 +307,12 @@ void describe("handle-style authors are not names", () => {
     assert.ok(authorNameIsBad("nobody.xyz"))
   })
   void it("leaves real names, including dotted and single-token pen names", () => {
-    for (const good of ["J. K. Rowling", "J.R.R. Tolkien", "pirateaba", "Homer"]) {
+    for (const good of [
+      "J. K. Rowling",
+      "J.R.R. Tolkien",
+      "pirateaba",
+      "Homer",
+    ]) {
       assert.ok(!authorNameIsBad(good), good)
     }
   })
