@@ -121,8 +121,10 @@ export function AppSidebar({
     useListSidebarGroupsQuery()
 
   const libraryCounts = useLibraryCounts()
-  const { handlePointerEnter: prefetchOnEnter, handlePointerLeave: prefetchOnLeave } =
-    useSidebarPrefetch()
+  const {
+    handlePointerEnter: prefetchOnEnter,
+    handlePointerLeave: prefetchOnLeave,
+  } = useSidebarPrefetch()
   const [editMode, setEditMode] = useState(false)
   const [editingShelfUuid, setEditingShelfUuid] = useState<string | null>(null)
   const [creatingCollection, setCreatingCollection] = useState(false)
@@ -203,7 +205,7 @@ export function AppSidebar({
       },
       description: cleanedDescription ? (
         <div
-          className="prose prose-sm"
+          className="prose prose-sm dark:prose-invert"
           dangerouslySetInnerHTML={{
             __html: cleanedDescription,
           }}
