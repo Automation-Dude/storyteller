@@ -5,10 +5,10 @@ import { describe, it } from "node:test"
 
 import { type BookWithRelations } from "@/database/books"
 import { type OpenLibraryCandidate } from "@/metadata/openLibrary"
+import { applicableChoice } from "@/metadata/proposals"
 import {
   type RepairProposal,
   type ResolveDeps,
-  applicableChoice,
   resolveBook,
 } from "@/metadata/resolve"
 import { type UUID } from "@/uuid"

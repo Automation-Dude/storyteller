@@ -5,8 +5,8 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { type AuditBook } from "@/database/auditLibrary"
+import { applicableChoice } from "@/metadata/proposals"
 import { type RepairChoice } from "@/metadata/repair"
-import { applicableChoice } from "@/metadata/resolve"
 import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"

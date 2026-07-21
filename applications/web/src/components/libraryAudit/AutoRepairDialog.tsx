@@ -13,8 +13,8 @@ import {
 import { useEffect, useState } from "react"
 
 import { type AuditBook } from "@/database/auditLibrary"
+import { applicableChoice } from "@/metadata/proposals"
 import { type RepairChoice } from "@/metadata/repair"
-import { applicableChoice } from "@/metadata/resolve"
 import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 import { ISSUE_LABELS } from "./LibraryAudit"
