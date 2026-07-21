@@ -305,6 +305,7 @@
     "heading": "Bibliotheekcontrole",
     "subheading": "Boeken die een e-reader slecht toont: een ontbrekende, lege of te kleine omslag, een ontbrekende auteur, taal of beschrijving, of een titel die op een bestandsnaam lijkt.",
     "rescan": "Opnieuw scannen",
+      "lastScanned": "Laatst gescand {when}",
     "scanning": "Elke omslag en metadata wordt gescand. Bij een grote bibliotheek kan dit even duren.",
     "errorTitle": "Controle kon niet worden uitgevoerd",
     "errorBody": "Er ging iets mis bij het lezen van de bibliotheek. Probeer opnieuw te scannen.",

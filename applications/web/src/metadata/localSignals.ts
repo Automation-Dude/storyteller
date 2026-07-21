@@ -246,7 +246,31 @@ export function seriesFromTitle(rawTitle: string): SeriesGuess | null {
     if (name) return { name, position: seriesPosition(suffix[2]) }
   }
 
+  // "Artemis Fowl 07 - The Atlantis Complex" / "Discworld 40 - Raising Steam":
+  // the ripped-audiobook folder form, series then a small number then the real
+  // title. Requires the trailing " - Title" so a bare "Catch 22" is left alone.
+  const leading = LEADING_SERIES.exec(t)
+  if (leading?.[1] && leading[3]) {
+    const name = cleanSeriesName(leading[1])
+    if (name) return { name, position: seriesPosition(leading[2]) }
+  }
+
   return null
+}
+
+// Leading "<Series> <n> - <Title>" with a letter in both the series and the
+// title, and a position of at most two digits so a year cannot pose as one.
+const LEADING_SERIES =
+  /^([^\d].*?[a-z].*?)\s+(\d{1,2})\s*[-–—.]\s+(.*[a-z].*)$/i
+
+/**
+ * The real title hiding in a "<Series> <n> - <Title>" folder name, or null.
+ * Lets the catalogue search look up "The Atlantis Complex" instead of
+ * "Artemis Fowl 07 The Atlantis Complex", which matches nothing.
+ */
+export function seriesPrefixTitle(rawTitle: string): string | null {
+  const match = LEADING_SERIES.exec((rawTitle || "").trim())
+  return match?.[3] ? match[3].trim() : null
 }
 
 /** A title is junk if it is a bare disc/track/catalogue label with no real word. */

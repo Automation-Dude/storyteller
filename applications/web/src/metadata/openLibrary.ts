@@ -95,6 +95,10 @@ async function runSearch(params: URLSearchParams): Promise<SearchDoc[]> {
  * search finds nothing (badly mangled titles), it falls back to the loose
  * keyword form.
  */
+// Below this match score a candidate is too weak to trust; it mirrors the
+// suggest threshold in repair.ts, kept local here to avoid a circular import.
+const WEAK_MATCH_SCORE = 0.3
+
 export async function searchOpenLibrary(
   rawTitle: string,
   author?: string,
@@ -113,64 +117,86 @@ export async function searchOpenLibrary(
   // wrong stored author (a collection name, an uploader) cannot hide the book.
   if (author?.trim()) fielded.set("author", author.trim())
 
-  let docs: SearchDoc[]
+  const toCandidates = (docs: SearchDoc[]): OpenLibraryCandidate[] =>
+    docs
+      .filter((doc): doc is SearchDoc & { key: string; title: string } =>
+        Boolean(doc.key && doc.title),
+      )
+      .map((doc) => {
+        const edition = doc.editions?.docs?.[0] ?? null
+        const editionCoverId = edition?.covers?.[0] ?? null
+        const coverId = editionCoverId ?? doc.cover_i ?? null
+        return {
+          workKey: doc.key,
+          title: doc.title,
+          authors: doc.author_name ?? [],
+          firstPublishYear: doc.first_publish_year ?? null,
+          coverId,
+          coverUrl: coverId ? `${COVER_URL}/${coverId}-L.jpg` : null,
+          isbn: doc.isbn?.[0] ?? null,
+          languages: doc.language ?? [],
+          editionCount: doc.edition_count ?? 0,
+          editionKey: edition?.key ?? null,
+          ratingsAverage: doc.ratings_average ?? null,
+          ratingsCount: doc.ratings_count ?? 0,
+          score: scoreMatch(
+            {
+              title: doc.title,
+              authorNames: doc.author_name ?? [],
+              editionCount: doc.edition_count ?? 0,
+              ratingsCount: doc.ratings_count ?? 0,
+            },
+            query,
+            author,
+          ),
+        }
+      })
+
   try {
-    docs = await runSearch(fielded)
-    if (docs.length === 0 && author?.trim()) {
+    let candidates = toCandidates(await runSearch(fielded))
+    // A wrong or handle-style stored author ("NYC.HarDCorE") narrows the
+    // fielded search onto junk, and the old code only retried without it when
+    // there were zero results, so any junk hit locked the real book out. When
+    // the best author-fielded hit is weak, search again without the author and
+    // keep both result sets, so the book found by title alone can still win.
+    if (author?.trim() && (candidates[0]?.score ?? 0) < WEAK_MATCH_SCORE) {
       fielded.delete("author")
-      docs = await runSearch(fielded)
+      candidates = dedupeByWork([
+        ...candidates,
+        ...toCandidates(await runSearch(fielded)),
+      ])
     }
-    if (docs.length === 0) {
-      docs = await runSearch(
-        new URLSearchParams({
-          q: query,
-          lang: "en",
-          fields: SEARCH_FIELDS,
-          limit: String(limit),
-        }),
+    if (candidates.length === 0) {
+      candidates = toCandidates(
+        await runSearch(
+          new URLSearchParams({
+            q: query,
+            lang: "en",
+            fields: SEARCH_FIELDS,
+            limit: String(limit),
+          }),
+        ),
       )
     }
+    return candidates.sort((a, b) => b.score - a.score)
   } catch (error) {
     logger.warn(
       `Open Library search failed for "${rawTitle}": ${String(error)}`,
     )
     return []
   }
+}
 
-  return docs
-    .filter((doc): doc is SearchDoc & { key: string; title: string } =>
-      Boolean(doc.key && doc.title),
-    )
-    .map((doc) => {
-      const edition = doc.editions?.docs?.[0] ?? null
-      const editionCoverId = edition?.covers?.[0] ?? null
-      const coverId = editionCoverId ?? doc.cover_i ?? null
-      return {
-        workKey: doc.key,
-        title: doc.title,
-        authors: doc.author_name ?? [],
-        firstPublishYear: doc.first_publish_year ?? null,
-        coverId,
-        coverUrl: coverId ? `${COVER_URL}/${coverId}-L.jpg` : null,
-        isbn: doc.isbn?.[0] ?? null,
-        languages: doc.language ?? [],
-        editionCount: doc.edition_count ?? 0,
-        editionKey: edition?.key ?? null,
-        ratingsAverage: doc.ratings_average ?? null,
-        ratingsCount: doc.ratings_count ?? 0,
-        score: scoreMatch(
-          {
-            title: doc.title,
-            authorNames: doc.author_name ?? [],
-            editionCount: doc.edition_count ?? 0,
-            ratingsCount: doc.ratings_count ?? 0,
-          },
-          query,
-          author,
-        ),
-      }
-    })
-    .sort((a, b) => b.score - a.score)
+/** Keep the highest-scoring candidate per work when result sets are merged. */
+function dedupeByWork(
+  candidates: OpenLibraryCandidate[],
+): OpenLibraryCandidate[] {
+  const best = new Map<string, OpenLibraryCandidate>()
+  for (const candidate of candidates) {
+    const prev = best.get(candidate.workKey)
+    if (!prev || candidate.score > prev.score) best.set(candidate.workKey, candidate)
+  }
+  return [...best.values()]
 }
 
 /** The single best match, or null if nothing was returned. */

@@ -2,14 +2,17 @@
 
 import { IconRefresh, IconWand } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import {
   type AuditBook,
   type AuditIssue,
   type LibraryAudit as AuditData,
 } from "@/database/auditLibrary"
-import { useGetLibraryAuditQuery } from "@/store/api"
+import {
+  useGetLibraryAuditQuery,
+  useRescanLibraryAuditMutation,
+} from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -48,12 +51,35 @@ const ISSUE_ORDER: {
 
 const VARIANT_OF = new Map(ISSUE_ORDER.map((i) => [i.issue, i.variant]))
 
+/** "5 minutes ago" style stamp so a finished rescan is visibly fresh. */
+function relativeTime(iso: string): string {
+  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return "just now"
+  const minutes = seconds / 60
+  if (minutes < 60) return `${Math.round(minutes)} minute(s) ago`
+  const hours = minutes / 60
+  if (hours < 24) return `${Math.round(hours)} hour(s) ago`
+  return `${Math.round(hours / 24)} day(s) ago`
+}
+
 export function LibraryAudit() {
   const t = useTranslations("LibraryAuditPage")
-  const { data, isFetching, isError, refetch } = useGetLibraryAuditQuery()
+  const [pollInterval, setPollInterval] = useState(2000)
+  const { data, isError } = useGetLibraryAuditQuery(undefined, {
+    pollingInterval: pollInterval,
+  })
+  const [rescan] = useRescanLibraryAuditMutation()
 
   const [repairing, setRepairing] = useState<AuditBook | null>(null)
   const [autoRepairOpen, setAutoRepairOpen] = useState(false)
+
+  const ready = data?.status === "ready"
+  const computing = !ready
+
+  // Poll only while the background pass is running; stop once it is ready.
+  useEffect(() => {
+    setPollInterval(data && data.status !== "ready" ? 2000 : 0)
+  }, [data])
 
   const label = (issue: AuditIssue) => t(`issues.${issue}`)
 
@@ -67,7 +93,7 @@ export function LibraryAudit() {
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          {data && data.books.length > 0 ? (
+          {ready && data.books.length > 0 ? (
             <Button
               size="sm"
               onClick={() => {
@@ -81,14 +107,19 @@ export function LibraryAudit() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void refetch()}
-            disabled={isFetching}
+            onClick={() => void rescan()}
+            disabled={computing}
           >
-            <IconRefresh className={isFetching ? "animate-spin" : undefined} />
+            <IconRefresh className={computing ? "animate-spin" : undefined} />
             {t("rescan")}
           </Button>
         </div>
       </div>
+      {ready && data.computedAt ? (
+        <p className="text-muted-foreground -mt-4 text-xs">
+          {t("lastScanned", { when: relativeTime(data.computedAt) })}
+        </p>
+      ) : null}
 
       {isError ? (
         <Card>
@@ -97,9 +128,9 @@ export function LibraryAudit() {
             <CardDescription>{t("errorBody")}</CardDescription>
           </CardHeader>
         </Card>
-      ) : isFetching && !data ? (
+      ) : !data || (computing && data.total === 0) ? (
         <ScanningState message={t("scanning")} />
-      ) : data ? (
+      ) : (
         <>
           <SummaryCards data={data} label={label} />
           {data.books.length === 0 ? (
@@ -118,7 +149,7 @@ export function LibraryAudit() {
             />
           )}
         </>
-      ) : null}
+      )}
 
       {repairing ? (
         <RepairDialog

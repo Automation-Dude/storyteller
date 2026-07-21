@@ -8,6 +8,7 @@ import {
   combine,
   isGarbageTitle,
   seriesFromTitle,
+  seriesPrefixTitle,
 } from "@/metadata/localSignals"
 
 // The same real problematic samples the Python prototype was proven against,
@@ -210,5 +211,30 @@ void describe("author name repair", () => {
     assert.strictEqual(cleanAuthorName("Bernard_Cornwell"), "Bernard Cornwell")
     assert.strictEqual(cleanAuthorName("Cornwell, Bernard"), "Bernard Cornwell")
     assert.strictEqual(cleanAuthorName("  J. K. Rowling "), "J. K. Rowling")
+  })
+})
+
+
+void describe("series from a ripped-folder title", () => {
+  void it("reads the series, number and real title from '<Series> NN - Title'", () => {
+    assert.deepStrictEqual(
+      seriesFromTitle("Artemis Fowl 07 - The Atlantis Complex"),
+      { name: "Artemis Fowl", position: 7 },
+    )
+    assert.deepStrictEqual(seriesFromTitle("Discworld 40 - Raising Steam"), {
+      name: "Discworld",
+      position: 40,
+    })
+    assert.strictEqual(
+      seriesPrefixTitle("Artemis Fowl 07 - The Atlantis Complex"),
+      "The Atlantis Complex",
+    )
+  })
+
+  void it("does not invent a series for a standalone book", () => {
+    for (const standalone of ["Yes Please", "The Diamond Throne", "Catch 22", "1984"]) {
+      assert.strictEqual(seriesFromTitle(standalone), null, standalone)
+      assert.strictEqual(seriesPrefixTitle(standalone), null, standalone)
+    }
   })
 })

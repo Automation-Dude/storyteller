@@ -313,6 +313,7 @@
     "heading": "Library audit",
     "subheading": "Books an e-reader shelf shows badly: a missing, blank or tiny cover, a missing author, language or description, or a filename-like title.",
     "rescan": "Rescan",
+      "lastScanned": "Last scanned {when}",
     "scanning": "Scanning every book's cover and metadata. This can take a moment on a large library.",
     "errorTitle": "Could not run the audit",
     "errorBody": "Something went wrong reading the library. Try rescanning.",

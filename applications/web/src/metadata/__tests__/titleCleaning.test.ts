@@ -4,6 +4,7 @@ import { describe, it } from "node:test"
 import {
   authorsMatch,
   normalizeForSearch,
+  queryVariants,
   scoreMatch,
   titleSimilarity,
 } from "@/metadata/titleCleaning"
@@ -151,5 +152,16 @@ void describe("scoreMatch", () => {
       "Top 100 Sci-Fi Books",
     )
     assert.ok(dune > unrelated, `${dune} vs ${unrelated}`)
+  })
+})
+
+
+void describe("queryVariants for series-prefixed titles", () => {
+  void it("adds the bare title so the real book can be found", () => {
+    const variants = queryVariants("Artemis Fowl 07 - The Atlantis Complex")
+    assert.ok(
+      variants.includes("The Atlantis Complex"),
+      `variants: ${variants.join("; ")}`,
+    )
   })
 })

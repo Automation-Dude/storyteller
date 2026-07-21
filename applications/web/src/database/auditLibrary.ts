@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises"
 import { getExtractedCover } from "@/assets/covers"
 import { imageStats } from "@/images"
 import { logger } from "@/logging"
-import { authorNameIsBad } from "@/metadata/localSignals"
+import { authorNameIsBad, seriesFromTitle } from "@/metadata/localSignals"
 import { type UUID } from "@/uuid"
 
 
@@ -182,7 +182,12 @@ export async function computeBookIssues(
   if (titleIsBad(book.title)) issues.push("BAD-TITLE")
   if (book.authors.some((author) => authorNameIsBad(author.name)))
     issues.push("BAD-AUTHOR")
-  if (book.series.length === 0) issues.push("NO-SERIES")
+  // Only flag a missing series when the title itself shows the book belongs to
+  // one ("Artemis Fowl 07 - ..."). A standalone book like "Yes Please" has no
+  // series and never should, so flagging every seriesless book made the audit
+  // cry wolf on hundreds of them and drowned the repairable ones.
+  if (book.series.length === 0 && seriesFromTitle(book.title) !== null)
+    issues.push("NO-SERIES")
   return issues
 }
 

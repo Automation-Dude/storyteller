@@ -11,6 +11,8 @@
  * right book from the results.
  */
 
+import { seriesPrefixTitle } from "./localSignals"
+
 /** Junk segments that are never part of a real title. */
 const JUNK_SEGMENT =
   /^(?:\d+|book\s*\d+|vol(?:ume)?\.?\s*\d+|d\d{1,2}|dp\d{1,2}|cd\d+|disc\s*\d+|part\s*\d+|(?:19|20)\d{2}|unabridged|abridged)$/i
@@ -108,6 +110,9 @@ export function queryVariants(rawTitle: string): string[] {
   if (beforeColon && beforeColon.trim().split(/\s+/).length >= 2) {
     push(beforeColon)
   }
+  // "Artemis Fowl 07 - The Atlantis Complex" only matches under its real title.
+  const bare = seriesPrefixTitle(rawTitle)
+  if (bare) push(bare)
   return variants
 }
 
