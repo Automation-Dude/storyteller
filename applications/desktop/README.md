@@ -96,7 +96,30 @@ The webview has no browser chrome; the History menu provides Back
 - Shutdown uses `taskkill /T /F` (no POSIX signals); whisper/okmain specifics
   are handled on a separate branch.
 
+## Distributing macOS builds
+
+Unsigned builds only run on the machine that built them — on any other Mac the
+quarantined download is rejected as "damaged". Recipients can bypass it with
+`xattr -cr /Applications/Storyteller.app`, but the real fix is Developer ID
+signing + notarization, which requires an Apple Developer Program membership
+and a "Developer ID Application" certificate (an "Apple Development"
+certificate is not valid for distribution).
+
+With the certificate in the keychain, `tauri build` signs and notarizes
+automatically when these env vars are set — no config changes needed
+(entitlements are already wired up):
+
+```sh
+export APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+# notarization (either apple id...)
+export APPLE_ID="you@example.com"
+export APPLE_PASSWORD="app-specific-password"   # appleid.apple.com → app passwords
+export APPLE_TEAM_ID="TEAMID"
+# ...or an App Store Connect API key instead:
+# export APPLE_API_ISSUER=... APPLE_API_KEY=... APPLE_API_KEY_PATH=...
+yarn workspace @storyteller-platform/desktop build
+```
+
 ## Not yet done
 
-- CI jobs per platform, codesigning/notarization (entitlements are already in
-  `src-tauri/Entitlements.plist`), auto-updates, `.epub` file associations.
+- CI jobs per platform, auto-updates, `.epub` file associations.

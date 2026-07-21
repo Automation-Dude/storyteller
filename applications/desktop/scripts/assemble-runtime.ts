@@ -16,11 +16,14 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  readlinkSync,
   renameSync,
   rmSync,
+  symlinkSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs"
-import { dirname, join, resolve } from "node:path"
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { getTarget, hostTriple } from "./targets.ts"
@@ -209,6 +212,49 @@ const sqliteBinding = join(
 )
 if (!existsSync(sqliteBinding)) {
   throw new Error(`better-sqlite3 native binding missing at ${sqliteBinding}`)
+}
+
+// next writes turbopack's hashed external packages (.next/node_modules/<pkg>-<hash>)
+// as symlinks with absolute targets into the build machine's repo, and the
+// @parcel copy carries .bin links of the same kind. they dangle on every other
+// machine, so remap each one to a relative link at the target's staged
+// location (windows gets real copies: symlink extraction needs privileges)
+const symlinkSourceRoots: [string, string][] = [
+  [join(webRoot, ".next", "standalone"), stagingDir],
+  [repoRoot, stagingDir],
+]
+function* findSymlinks(dir: string): Generator<string> {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name)
+    if (entry.isSymbolicLink()) yield path
+    else if (entry.isDirectory()) yield* findSymlinks(path)
+  }
+}
+for (const link of [...findSymlinks(stagingDir)]) {
+  const rawTarget = readlinkSync(link)
+  const absTarget = isAbsolute(rawTarget)
+    ? rawTarget
+    : resolve(dirname(link), rawTarget)
+  if (absTarget.startsWith(stagingDir + sep)) continue
+  const staged = symlinkSourceRoots
+    .map(([from, to]) =>
+      absTarget.startsWith(from + sep)
+        ? join(to, absTarget.slice(from.length + 1))
+        : null,
+    )
+    .find((mapped) => mapped !== null && existsSync(mapped))
+  if (staged != null && target.platform !== "win32") {
+    unlinkSync(link)
+    symlinkSync(relative(dirname(link), staged), link)
+  } else if (existsSync(absTarget)) {
+    unlinkSync(link)
+    cpSync(absTarget, link, { recursive: true })
+  } else {
+    throw new Error(
+      `symlink ${relative(stagingDir, link)} -> ${rawTarget} has no staged or on-disk target`,
+    )
+  }
+  console.log(`remapped symlink ${relative(stagingDir, link)}`)
 }
 
 mkdirSync(join(webStaging, ".next", "cache"), { recursive: true })
