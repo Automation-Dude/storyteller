@@ -35,8 +35,14 @@ fn main() {
             shutting_down: Mutex::new(false),
             server_url: Mutex::new(None),
         })
+        .invoke_handler(tauri::generate_handler![set_titlebar_color])
         .setup(|app| {
             setup_menu(app.handle())?;
+
+            // match the splash background until the web app takes over
+            if let Some(window) = app.get_webview_window("main") {
+                set_window_background(&window, 0.078, 0.063, 0.051);
+            }
 
             // in dev the window points straight at the next dev server
             // (build.devUrl); set STORYTELLER_DESKTOP_BOOT=1 to exercise the
@@ -121,6 +127,38 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
         }
     });
     Ok(())
+}
+
+/// the web app calls this (via @tauri-apps/api invoke) with the resolved
+/// sidebar color so the transparent native title bar always matches the ui,
+/// including theme switches
+#[tauri::command]
+fn set_titlebar_color(window: tauri::WebviewWindow, red: f64, green: f64, blue: f64) {
+    set_window_background(&window, red, green, blue);
+}
+
+/// with titleBarStyle Transparent the macOS title bar shows the NSWindow
+/// background color; other platforms keep their native chrome for now
+fn set_window_background(window: &tauri::WebviewWindow, red: f64, green: f64, blue: f64) {
+    #[cfg(target_os = "macos")]
+    {
+        let Ok(ns_window_ptr) = window.ns_window() else {
+            return;
+        };
+        let ns_window_ptr = ns_window_ptr as usize;
+        let _ = window.run_on_main_thread(move || {
+            use objc2_app_kit::{NSColor, NSWindow};
+            unsafe {
+                let ns_window = &*(ns_window_ptr as *const NSWindow);
+                let color = NSColor::colorWithSRGBRed_green_blue_alpha(red, green, blue, 1.0);
+                ns_window.setBackgroundColor(Some(&color));
+            }
+        });
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (window, red, green, blue);
+    }
 }
 
 fn boot(app: tauri::AppHandle) {

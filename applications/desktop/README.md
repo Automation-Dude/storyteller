@@ -72,6 +72,17 @@ data dir:
 
 A pinned port that is already taken is a startup error, not a silent fallback.
 
+## Title bar
+
+On macOS the window uses a transparent native title bar
+(`titleBarStyle: "Transparent"`, hidden title) whose color is the `NSWindow`
+background. The web app drives it: `desktop-titlebar-sync.tsx` (v3 layout)
+resolves the `--sidebar` CSS variable and calls the `set_titlebar_color` command
+via `@tauri-apps/api`, re-syncing on theme switches. IPC for the locally served
+app is granted by the `remote` block in `capabilities/default.json`
+(`http://127.0.0.1:*`). Windows/Linux keep their native chrome for now (Windows
+could use `DWMWA_CAPTION_COLOR` later).
+
 ## Navigation
 
 The webview has no browser chrome; the History menu provides Back

@@ -15712,6 +15712,7 @@ __metadata:
     "@tanstack/react-hotkeys": "npm:^0.10.0"
     "@tanstack/react-table": "npm:^8.21.3"
     "@tanstack/react-virtual": "npm:^3.14.5"
+    "@tauri-apps/api": "npm:^2.5.0"
     "@tsconfig/strictest": "npm:^2.0.5"
     "@tus/file-store": "npm:^2.0.0"
     "@tus/server": "npm:^2.2.0"
@@ -16990,6 +16991,13 @@ __metadata:
   version: 3.17.3
   resolution: "@tanstack/virtual-core@npm:3.17.3"
   checksum: 10c0/e6199a0c25d1780e62f57c9f72432342e2cabd5b1197cf66b0f2250c9c0bbecbd0c53e7bb639804c4c7931f9cfa57efa80f6a64fefe6614bf14871f682c17aa3
+  languageName: node
+  linkType: hard
+
+"@tauri-apps/api@npm:^2.5.0":
+  version: 2.11.1
+  resolution: "@tauri-apps/api@npm:2.11.1"
+  checksum: 10c0/78a08a64ee7eab9d34bd4ba1bdc3a2440c7e9cc5737b3f1d77bd80fa38b0cb5e9601efe04da40c947c5da2ca38dc702bec21b4ae96b18ee5f3e82980d1f0b325
   languageName: node
   linkType: hard
 
