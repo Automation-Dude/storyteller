@@ -2,6 +2,7 @@
 
 import { Reorder, motion, useDragControls } from "motion/react"
 import { type ReactElement, useState } from "react"
+import { v4 as uuidv4 } from "uuid"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -31,8 +32,9 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-import { ShelfEditor } from "./ShelfEditor"
 import { ConfirmDialog, useConfirmAction } from "../ui/confirm-dialog"
+
+import { ShelfEditor } from "./ShelfEditor"
 
 type ShelfManagerProps = {
   className?: string
@@ -185,7 +187,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     setLocalShelves([
       ...shelves,
       {
-        uuid: crypto.randomUUID() as UUID,
+        uuid: uuidv4() as UUID,
         shelfUuid: null,
         kind,
         name: t(`kinds.${kind}.name`),
@@ -198,7 +200,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
     setLocalShelves([
       ...shelves,
       {
-        uuid: crypto.randomUUID() as UUID,
+        uuid: uuidv4() as UUID,
         shelfUuid: userShelf.uuid,
         kind: "custom",
         name: userShelf.name,
@@ -245,7 +247,7 @@ function ShelfManagerContent({ onClose }: ShelfManagerContentProps) {
       setLocalShelves([
         ...shelves,
         {
-          uuid: crypto.randomUUID() as UUID,
+          uuid: uuidv4() as UUID,
           shelfUuid: saved.uuid,
           kind: "custom",
           name: saved.name,

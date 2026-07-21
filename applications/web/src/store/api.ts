@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-invalid-void-type */
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
+import { v4 as uuidv4 } from "uuid"
 
 import { type JsColor } from "@storyteller-platform/okmain"
 
@@ -1257,7 +1258,7 @@ export const api = createApi({
 
         const now = new Date().toISOString()
         const seriesEntry = {
-          uuid: (seriesUuid ?? crypto.randomUUID()) as UUID,
+          uuid: (seriesUuid ?? uuidv4()) as UUID,
           name: series.name,
           createdAt: existingSeries?.createdAt ?? now,
           updatedAt: existingSeries?.updatedAt ?? now,

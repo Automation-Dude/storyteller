@@ -2,6 +2,7 @@
 
 import { Reorder, motion, useDragControls } from "motion/react"
 import { useEffect, useRef, useState } from "react"
+import { v4 as uuidv4 } from "uuid"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -487,15 +488,13 @@ function LogicalBlockEditor({
 }) {
   const t = useTranslation("ShelfFilterEditor")
 
-  const idsRef = useRef<string[]>(block.children.map(() => crypto.randomUUID()))
+  const idsRef = useRef<string[]>(block.children.map(() => uuidv4()))
 
   // keep ids in sync when children are added externally (e.g. presets)
   if (idsRef.current.length < block.children.length) {
     idsRef.current = [
       ...idsRef.current,
-      ...block.children
-        .slice(idsRef.current.length)
-        .map(() => crypto.randomUUID()),
+      ...block.children.slice(idsRef.current.length).map(() => uuidv4()),
     ]
   } else if (idsRef.current.length > block.children.length) {
     idsRef.current = idsRef.current.slice(0, block.children.length)
@@ -532,14 +531,14 @@ function LogicalBlockEditor({
     newChildren.splice(index + 1, 0, copy)
 
     const newIds = [...idsRef.current]
-    newIds.splice(index + 1, 0, crypto.randomUUID())
+    newIds.splice(index + 1, 0, uuidv4())
     idsRef.current = newIds
 
     onChange({ ...block, children: newChildren })
   }
 
   const handleAddNode = (node: ShelfFilterNode) => {
-    idsRef.current = [...idsRef.current, crypto.randomUUID()]
+    idsRef.current = [...idsRef.current, uuidv4()]
     onChange({ ...block, children: [...block.children, node] })
   }
 
