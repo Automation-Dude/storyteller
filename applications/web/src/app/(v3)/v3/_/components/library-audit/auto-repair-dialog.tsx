@@ -33,6 +33,13 @@ type Row = {
   proposal: RepairProposal
   change: RepairChoice
   checked: boolean
+  /**
+   * "ready" is safe unattended (file-sourced or a confident catalogue match);
+   * "review" matched below auto-apply confidence and waits for a person to
+   * endorse it. Hiding those entirely made the scan look like it found
+   * nothing on books it had actually matched.
+   */
+  kind: "ready" | "review"
   applied?: boolean
 }
 
@@ -125,9 +132,25 @@ export function AutoRepairDialog({
           for (const proposal of proposals) {
             const book = byUuid.get(proposal.bookUuid)
             if (!book) continue
-            const change = applicableChoice(proposal)
-            if (Object.keys(change).length) {
-              found.push({ book, proposal, change, checked: true })
+            const applicable = applicableChoice(proposal)
+            if (Object.keys(applicable).length) {
+              found.push({
+                book,
+                proposal,
+                change: applicable,
+                checked: true,
+                kind: "ready",
+              })
+            } else if (Object.keys(proposal.choice).length) {
+              // A below-confidence match is a lead, not a write: list it
+              // unchecked with what it matched, so a person can endorse it.
+              found.push({
+                book,
+                proposal,
+                change: proposal.choice,
+                checked: false,
+                kind: "review",
+              })
             }
           }
           // Show the fixes the moment the batch returns, so the list grows live.
@@ -150,6 +173,15 @@ export function AutoRepairDialog({
   }, [open, books, suggest])
 
   const checkedRows = rows.filter((r) => r.checked)
+  const readyRows = rows.filter((r) => r.kind === "ready")
+  const reviewRows = rows.filter((r) => r.kind === "review")
+  const nothingCount = Math.max(0, scanned - rows.length)
+
+  const toggleRow = (uuid: AuditBook["uuid"], checked: boolean) => {
+    setRows((prev) =>
+      prev.map((r) => (r.book.uuid === uuid ? { ...r, checked } : r)),
+    )
+  }
 
   async function onApply() {
     setPhase("applying")
@@ -191,6 +223,64 @@ export function AutoRepairDialog({
     ? Math.round((applied / checkedRows.length) * 100)
     : 0
 
+  const rowItem = (row: Row) => (
+    <li
+      key={row.book.uuid}
+      className={`flex items-start gap-3 py-2 ${row.applied ? "opacity-60" : ""}`}
+    >
+      {phase === "review" ? (
+        <Checkbox
+          checked={row.checked}
+          onCheckedChange={(checked) => {
+            toggleRow(row.book.uuid, checked)
+          }}
+          className="mt-1"
+        />
+      ) : (
+        <span className="mt-1 w-4 text-center text-xs">
+          {row.applied ? "OK" : ""}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-medium">{row.book.title}</span>
+          {row.kind === "review" ? (
+            <Badge variant="secondary" className="shrink-0 text-[10px]">
+              {t("autoRepair.reviewBadge")}
+            </Badge>
+          ) : null}
+          {row.book.issues.map((issue) => (
+            <Badge
+              key={issue}
+              variant="outline"
+              className="shrink-0 text-[10px]"
+            >
+              {t(`issues.${issue}`)}
+            </Badge>
+          ))}
+        </div>
+        {row.kind === "review" && row.proposal.best ? (
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {t("autoRepair.matchedAs", {
+              title: row.proposal.best.title,
+              authors: row.proposal.best.authors.join(", "),
+            })}
+          </p>
+        ) : null}
+        <ul className="mt-1 flex flex-col gap-0.5">
+          {changeParts(row).map((part, i) => (
+            <li key={i} className="text-muted-foreground text-xs">
+              <span className="text-foreground">{part.label}</span>
+              {part.detail ? (
+                <span className="italic"> - {part.detail}</span>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </li>
+  )
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
@@ -225,6 +315,15 @@ export function AutoRepairDialog({
               {t("autoRepair.checking", { title: checking })}
             </div>
           ) : null}
+          {phase === "scanning" || phase === "review" ? (
+            <div className="text-muted-foreground text-xs">
+              {t("autoRepair.tally", {
+                ready: readyRows.length,
+                review: reviewRows.length,
+                none: nothingCount,
+              })}
+            </div>
+          ) : null}
           <div className="bg-muted h-2 w-full overflow-hidden rounded">
             <div
               className="bg-primary h-full transition-all duration-300"
@@ -243,58 +342,19 @@ export function AutoRepairDialog({
                 : t("autoRepair.noConfident")}
             </p>
           ) : (
-            <ul className="flex flex-col divide-y">
-              {rows.map((row, index) => (
-                <li
-                  key={row.book.uuid}
-                  className={`flex items-start gap-3 py-2 ${row.applied ? "opacity-60" : ""}`}
-                >
-                  {phase === "review" ? (
-                    <Checkbox
-                      checked={row.checked}
-                      onCheckedChange={(checked) => {
-                        setRows((prev) =>
-                          prev.map((r, i) =>
-                            i === index ? { ...r, checked } : r,
-                          ),
-                        )
-                      }}
-                      className="mt-1"
-                    />
-                  ) : (
-                    <span className="mt-1 w-4 text-center text-xs">
-                      {row.applied ? "OK" : ""}
-                    </span>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium">
-                        {row.book.title}
-                      </span>
-                      {row.book.issues.map((issue) => (
-                        <Badge
-                          key={issue}
-                          variant="outline"
-                          className="shrink-0 text-[10px]"
-                        >
-                          {t(`issues.${issue}`)}
-                        </Badge>
-                      ))}
-                    </div>
-                    <ul className="mt-1 flex flex-col gap-0.5">
-                      {changeParts(row).map((part, i) => (
-                        <li key={i} className="text-muted-foreground text-xs">
-                          <span className="text-foreground">{part.label}</span>
-                          {part.detail ? (
-                            <span className="italic"> - {part.detail}</span>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="flex flex-col">
+              <ul className="flex flex-col divide-y">
+                {readyRows.map((row) => rowItem(row))}
+              </ul>
+              {reviewRows.length > 0 ? (
+                <p className="mt-3 mb-1 text-xs font-medium">
+                  {t("autoRepair.reviewHeading")}
+                </p>
+              ) : null}
+              <ul className="flex flex-col divide-y">
+                {reviewRows.map((row) => rowItem(row))}
+              </ul>
+            </div>
           )}
         </div>
 

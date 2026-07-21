@@ -32,6 +32,13 @@ type Row = {
   proposal: RepairProposal
   change: RepairChoice
   checked: boolean
+  /**
+   * "ready" is safe unattended (file-sourced or a confident catalogue match);
+   * "review" matched below auto-apply confidence and waits for a person to
+   * endorse it. Hiding those entirely made the scan look like it found
+   * nothing on books it had actually matched.
+   */
+  kind: "ready" | "review"
   applied?: boolean
 }
 
@@ -127,12 +134,28 @@ export function AutoRepairDialog({
           for (const proposal of proposals) {
             const book = byUuid.get(proposal.bookUuid)
             if (!book) continue
-            const change = applicableChoice(proposal)
-            if (Object.keys(change).length) {
-              found.push({ book, proposal, change, checked: true })
+            const applicable = applicableChoice(proposal)
+            if (Object.keys(applicable).length) {
+              found.push({
+                book,
+                proposal,
+                change: applicable,
+                checked: true,
+                kind: "ready",
+              })
+            } else if (Object.keys(proposal.choice).length) {
+              // A below-confidence match is a lead, not a write: list it
+              // unchecked with what it matched, so a person can endorse it.
+              found.push({
+                book,
+                proposal,
+                change: proposal.choice,
+                checked: false,
+                kind: "review",
+              })
             }
           }
-          // Show the fixes the moment the batch returns, so the list grows live.
+          // Show the finds the moment the batch returns, so the list grows live.
           if (found.length && !stopped()) setRows((prev) => [...prev, ...found])
         } catch {
           // A failed batch just contributes no suggestions; keep going.
@@ -152,6 +175,15 @@ export function AutoRepairDialog({
   }, [opened, books, suggest])
 
   const checkedRows = rows.filter((r) => r.checked)
+  const readyRows = rows.filter((r) => r.kind === "ready")
+  const reviewRows = rows.filter((r) => r.kind === "review")
+  const nothingCount = Math.max(0, scanned - rows.length)
+
+  const toggleRow = (uuid: AuditBook["uuid"], checked: boolean) => {
+    setRows((prev) =>
+      prev.map((r) => (r.book.uuid === uuid ? { ...r, checked } : r)),
+    )
+  }
 
   async function onApply() {
     setPhase("applying")
@@ -190,6 +222,80 @@ export function AutoRepairDialog({
     ? Math.round((applied / checkedRows.length) * 100)
     : 0
 
+  const rowItem = (row: Row, first: boolean) => (
+    <Group
+      key={row.book.uuid}
+      align="flex-start"
+      gap="sm"
+      py="xs"
+      wrap="nowrap"
+      style={{
+        opacity: row.applied ? 0.6 : undefined,
+        borderTop: first
+          ? undefined
+          : "1px solid var(--mantine-color-default-border)",
+      }}
+    >
+      {phase === "review" ? (
+        <Checkbox
+          mt={2}
+          checked={row.checked}
+          onChange={(e) => {
+            toggleRow(row.book.uuid, e.currentTarget.checked)
+          }}
+        />
+      ) : (
+        <Text size="xs" mt={2} w={20} ta="center">
+          {row.applied ? "OK" : ""}
+        </Text>
+      )}
+      <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+        <Group gap={6} wrap="nowrap">
+          <Text size="sm" fw={500} truncate>
+            {row.book.title}
+          </Text>
+          {row.kind === "review" ? (
+            <Badge color="yellow" size="xs" style={{ flexShrink: 0 }}>
+              review
+            </Badge>
+          ) : null}
+          {row.book.issues.map((issue) => (
+            <Badge
+              key={issue}
+              variant="outline"
+              color="gray"
+              size="xs"
+              style={{ flexShrink: 0 }}
+            >
+              {ISSUE_LABELS[issue]}
+            </Badge>
+          ))}
+        </Group>
+        {row.kind === "review" && row.proposal.best ? (
+          <Text size="xs" c="dimmed">
+            Matched: {row.proposal.best.title} by{" "}
+            {row.proposal.best.authors.join(", ")}
+          </Text>
+        ) : null}
+        <Stack gap={2}>
+          {changeParts(row).map((part, i) => (
+            <Text key={i} size="xs" c="dimmed">
+              <Text span size="xs" c="var(--mantine-color-text)">
+                {part.label}
+              </Text>
+              {part.detail ? (
+                <Text span size="xs" fs="italic">
+                  {" "}
+                  - {part.detail}
+                </Text>
+              ) : null}
+            </Text>
+          ))}
+        </Stack>
+      </Stack>
+    </Group>
+  )
+
   return (
     <Modal
       opened={opened}
@@ -211,19 +317,25 @@ export function AutoRepairDialog({
             ) : null}
             <Text size="sm" c="dimmed">
               {phase === "scanning"
-                ? `Scanning ${scanned} of ${total} books - ${rows.length} fixes found`
+                ? `Scanning ${scanned} of ${total} books - ${rows.length} matches found`
                 : phase === "applying"
                   ? `Applying fixes: ${applied} of ${checkedRows.length} done`
                   : phase === "done"
                     ? `Applied ${applied} book${applied === 1 ? "" : "s"}.${
                         failed > 0 ? ` ${failed} failed.` : ""
                       }`
-                    : `${rows.length} fixes ready to apply`}
+                    : `${rows.length} matches found`}
             </Text>
           </Group>
           {phase === "scanning" && checking ? (
             <Text size="xs" c="dimmed" truncate>
               Checking: {checking}
+            </Text>
+          ) : null}
+          {phase === "scanning" || phase === "review" ? (
+            <Text size="xs" c="dimmed">
+              {readyRows.length} ready to apply, {reviewRows.length} need your
+              review, {nothingCount} nothing to fix
             </Text>
           ) : null}
           <Progress
@@ -239,78 +351,18 @@ export function AutoRepairDialog({
             <Text size="sm" c="dimmed" py="md">
               {phase === "scanning"
                 ? "Looking each flagged book up and gathering fixes..."
-                : "No confident matches to apply automatically. Use per-book Repair for the rest."}
+                : "No matches to apply automatically. Use per-book Repair for the rest."}
             </Text>
           ) : (
             <Stack gap={0}>
-              {rows.map((row, index) => (
-                <Group
-                  key={row.book.uuid}
-                  align="flex-start"
-                  gap="sm"
-                  py="xs"
-                  wrap="nowrap"
-                  style={{
-                    opacity: row.applied ? 0.6 : undefined,
-                    borderTop:
-                      index === 0
-                        ? undefined
-                        : "1px solid var(--mantine-color-default-border)",
-                  }}
-                >
-                  {phase === "review" ? (
-                    <Checkbox
-                      mt={2}
-                      checked={row.checked}
-                      onChange={(e) => {
-                        const checked = e.currentTarget.checked
-                        setRows((prev) =>
-                          prev.map((r, i) =>
-                            i === index ? { ...r, checked } : r,
-                          ),
-                        )
-                      }}
-                    />
-                  ) : (
-                    <Text size="xs" mt={2} w={20} ta="center">
-                      {row.applied ? "OK" : ""}
-                    </Text>
-                  )}
-                  <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                    <Group gap={6} wrap="nowrap">
-                      <Text size="sm" fw={500} truncate>
-                        {row.book.title}
-                      </Text>
-                      {row.book.issues.map((issue) => (
-                        <Badge
-                          key={issue}
-                          variant="outline"
-                          color="gray"
-                          size="xs"
-                          style={{ flexShrink: 0 }}
-                        >
-                          {ISSUE_LABELS[issue]}
-                        </Badge>
-                      ))}
-                    </Group>
-                    <Stack gap={2}>
-                      {changeParts(row).map((part, i) => (
-                        <Text key={i} size="xs" c="dimmed">
-                          <Text span size="xs" c="var(--mantine-color-text)">
-                            {part.label}
-                          </Text>
-                          {part.detail ? (
-                            <Text span size="xs" fs="italic">
-                              {" "}
-                              - {part.detail}
-                            </Text>
-                          ) : null}
-                        </Text>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </Group>
-              ))}
+              {readyRows.map((row, index) => rowItem(row, index === 0))}
+              {reviewRows.length > 0 ? (
+                <Text size="xs" fw={500} mt="sm" mb={4}>
+                  Lower-confidence matches: check the change, then tick to
+                  include
+                </Text>
+              ) : null}
+              {reviewRows.map((row, index) => rowItem(row, index === 0))}
             </Stack>
           )}
         </Box>
