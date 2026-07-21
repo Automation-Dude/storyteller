@@ -1,6 +1,7 @@
 import { join } from "node:path"
 
 import { persistCover } from "@/assets/covers"
+import { invalidateAuditCover } from "@/database/auditLibrary"
 import { type CreatorRelation, getBook, updateBook } from "@/database/books"
 import { backupDatabase } from "@/database/connection"
 import { DATA_DIR } from "@/directories"
@@ -190,6 +191,9 @@ export async function applyRepair(
       const cover = await fetchCoverImage(choice.coverUrl)
       if (!cover) return { ok: false, message: "Could not fetch the cover" }
       await persistCover(updated, "ebook", cover)
+      // Installing a cover does not touch the book row, so the audit's cached
+      // cover verdict must be dropped by hand.
+      invalidateAuditCover(bookUuid)
     }
     return { ok: true }
   } catch (error) {

@@ -114,6 +114,27 @@ type AuditBookRow = Awaited<ReturnType<typeof getBooks>>[number]
  * Off-box (COVERS_PRESENT_FILE) we only know presence, not quality. In the
  * real environment we read the same cover the app serves and measure it.
  */
+type CoverCacheEntry = { updatedAt: string; issues: AuditIssue[] }
+
+declare global {
+  // eslint-disable-next-line no-var
+  var _auditCoverCache: Map<UUID, CoverCacheEntry> | undefined
+}
+
+function coverCache(): Map<UUID, CoverCacheEntry> {
+  globalThis._auditCoverCache ??= new Map()
+  return globalThis._auditCoverCache
+}
+
+/**
+ * Forget a book's cached cover verdict. Called when something changes a cover
+ * without touching the book row (installing a cover during a repair), which
+ * the updatedAt key cannot see.
+ */
+export function invalidateAuditCover(bookUuid: UUID): void {
+  coverCache().delete(bookUuid)
+}
+
 async function coverIssuesFor(
   book: AuditBookRow,
   coverSet: Set<string> | null,
@@ -121,22 +142,33 @@ async function coverIssuesFor(
   if (coverSet) {
     return book.assetDir && coverSet.has(book.assetDir) ? [] : ["NO-COVER"]
   }
+  // Reading and measuring a cover is the audit's entire cost; a book that has
+  // not changed since the last pass keeps its verdict, which turns a full
+  // rescan from tens of minutes into seconds.
+  const cached = coverCache().get(book.uuid)
+  if (cached && cached.updatedAt === book.updatedAt) {
+    return cached.issues
+  }
   const cover =
     (await getExtractedCover(book, "ebook")) ??
     (await getExtractedCover(book, "audiobook"))
-  if (!cover) return ["NO-COVER"]
-
-  try {
-    const { width, height, entropy } = await imageStats(cover.data)
-    const issues: AuditIssue[] = []
-    if (entropy < BLANK_COVER_ENTROPY) issues.push("BLANK-COVER")
-    if (Math.min(width, height) < TINY_COVER_PX) issues.push("TINY-COVER")
-    return issues
-  } catch {
-    // Present but unreadable by sharp: it is still a cover, so do not call it
-    // blank on the strength of not being able to measure it.
-    return []
+  let issues: AuditIssue[]
+  if (!cover) {
+    issues = ["NO-COVER"]
+  } else {
+    try {
+      const { width, height, entropy } = await imageStats(cover.data)
+      issues = []
+      if (entropy < BLANK_COVER_ENTROPY) issues.push("BLANK-COVER")
+      if (Math.min(width, height) < TINY_COVER_PX) issues.push("TINY-COVER")
+    } catch {
+      // Present but unreadable by sharp: it is still a cover, so do not call
+      // it blank on the strength of not being able to measure it.
+      issues = []
+    }
   }
+  coverCache().set(book.uuid, { updatedAt: book.updatedAt, issues })
+  return issues
 }
 
 export async function computeBookIssues(
