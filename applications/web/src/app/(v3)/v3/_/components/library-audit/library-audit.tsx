@@ -8,10 +8,13 @@ import { toast } from "sonner"
 import {
   type AuditBook,
   type AuditIssue,
-  type LibraryAudit as AuditData,
+  type CachedLibraryAudit as AuditData,
 } from "@/database/auditLibrary"
+import { type SeriesReport, type UnlinkedMember } from "@/metadata/seriesAudit"
 import {
+  useApplyRepairsMutation,
   useGetLibraryAuditQuery,
+  useLookupSeriesPartsMutation,
   useRescanLibraryAuditMutation,
 } from "@/store/api"
 
@@ -169,6 +172,7 @@ export function LibraryAudit() {
               onRepair={setRepairing}
             />
           )}
+          <SeriesSection series={data.series} />
         </>
       )}
 
@@ -238,6 +242,153 @@ function SummaryCards({
         ),
       )}
     </div>
+  )
+}
+
+function SeriesSection({ series }: { series: SeriesReport[] }) {
+  const t = useTranslations("LibraryAuditPage")
+  // A complete, fully-linked series has nothing to say; show the ones with a
+  // hole in the run or a stray book on the shelf that belongs in them.
+  const actionable = series.filter(
+    (s) => s.missingPositions.length > 0 || s.unlinked.length > 0,
+  )
+  if (actionable.length === 0) return null
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-lg font-semibold">{t("series.heading")}</h2>
+        <p className="text-muted-foreground mt-1 text-sm">
+          {t("series.subheading")}
+        </p>
+      </div>
+      {actionable.map((report) => (
+        <SeriesCard key={report.name} report={report} />
+      ))}
+    </div>
+  )
+}
+
+function SeriesCard({ report }: { report: SeriesReport }) {
+  const t = useTranslations("LibraryAuditPage")
+  const [lookup, lookupState] = useLookupSeriesPartsMutation()
+  const [applyRepairs] = useApplyRepairsMutation()
+  const [named, setNamed] = useState<Map<number, string> | null>(null)
+  const [lookupFailed, setLookupFailed] = useState(false)
+  const [linking, setLinking] = useState<string | null>(null)
+
+  const highest = report.havePositions[report.havePositions.length - 1]
+
+  async function onName() {
+    try {
+      const { result } = await lookup({
+        name: report.name,
+        author: report.authorHint,
+      }).unwrap()
+      const parts = result?.parts ?? []
+      if (parts.length === 0) {
+        setLookupFailed(true)
+        return
+      }
+      setNamed(
+        new Map(
+          parts
+            .filter((part) => part.ordinal !== null)
+            .map((part) => [part.ordinal as number, part.title]),
+        ),
+      )
+    } catch {
+      setLookupFailed(true)
+    }
+  }
+
+  async function onLink(member: UnlinkedMember) {
+    setLinking(member.uuid)
+    try {
+      await applyRepairs({
+        repairs: [
+          {
+            bookUuid: member.uuid,
+            series: { name: member.clueName, position: member.position },
+          },
+        ],
+      }).unwrap()
+    } catch {
+      // The audit refetch will show the row again; nothing else to do here.
+    }
+    setLinking(null)
+  }
+
+  return (
+    <Card className="py-4">
+      <CardContent className="flex flex-col gap-2 px-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate font-semibold">{report.name}</p>
+            <p className="text-muted-foreground text-xs">
+              {highest
+                ? t("series.count", {
+                    count: report.members.length,
+                    highest,
+                  })
+                : t("series.countUnnumbered", {
+                    count: report.members.length,
+                  })}
+              {report.authorHint ? ` - ${report.authorHint}` : ""}
+            </p>
+          </div>
+          {report.missingPositions.length > 0 && !named && !lookupFailed ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void onName()}
+              disabled={lookupState.isLoading}
+            >
+              {t("series.nameMissing")}
+            </Button>
+          ) : null}
+        </div>
+        {report.missingPositions.length > 0 ? (
+          <p className="text-sm">
+            {t("series.missing", {
+              list: report.missingPositions.map((n) => `#${n}`).join(", "),
+            })}
+          </p>
+        ) : null}
+        {named ? (
+          <ul className="flex flex-col gap-0.5">
+            {report.missingPositions.map((n) => (
+              <li key={n} className="text-muted-foreground text-xs">
+                #{n}: {named.get(n) ?? t("series.notListed")}
+              </li>
+            ))}
+          </ul>
+        ) : lookupFailed ? (
+          <p className="text-muted-foreground text-xs">
+            {t("series.lookupFailed")}
+          </p>
+        ) : null}
+        {report.unlinked.length > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-medium">{t("series.unlinkedHeading")}</p>
+            {report.unlinked.map((member) => (
+              <div key={member.uuid} className="flex items-center gap-3">
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {member.title}
+                  {member.position != null ? ` (#${member.position})` : ""}
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => void onLink(member)}
+                  disabled={linking === member.uuid}
+                >
+                  {t("series.add")}
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   )
 }
 

@@ -22,8 +22,11 @@ import {
   type AuditIssue,
   type CachedLibraryAudit as AuditData,
 } from "@/database/auditLibrary"
+import { type SeriesReport, type UnlinkedMember } from "@/metadata/seriesAudit"
 import {
+  useApplyRepairsMutation,
   useGetLibraryAuditQuery,
+  useLookupSeriesPartsMutation,
   useRescanLibraryAuditMutation,
 } from "@/store/api"
 
@@ -166,6 +169,7 @@ export function LibraryAudit() {
           ) : (
             <FlaggedTable data={data} onRepair={setRepairing} />
           )}
+          <SeriesSection series={data.series} />
         </>
       )}
 
@@ -219,6 +223,147 @@ function SummaryCards({ data }: { data: AuditData }) {
         ),
       )}
     </SimpleGrid>
+  )
+}
+
+function SeriesSection({ series }: { series: SeriesReport[] }) {
+  // A complete, fully-linked series has nothing to say; show the ones with a
+  // hole in the run or a stray book on the shelf that belongs in them.
+  const actionable = series.filter(
+    (s) => s.missingPositions.length > 0 || s.unlinked.length > 0,
+  )
+  if (actionable.length === 0) return null
+  return (
+    <Stack gap="sm">
+      <Box>
+        <Title order={3}>Series</Title>
+        <Text size="sm" c="dimmed" mt={4}>
+          Numbered runs with holes, and books on the shelf that belong to a
+          series but are not filed in it.
+        </Text>
+      </Box>
+      {actionable.map((report) => (
+        <SeriesCard key={report.name} report={report} />
+      ))}
+    </Stack>
+  )
+}
+
+function SeriesCard({ report }: { report: SeriesReport }) {
+  const [lookup, lookupState] = useLookupSeriesPartsMutation()
+  const [applyRepairs] = useApplyRepairsMutation()
+  const [named, setNamed] = useState<Map<number, string> | null>(null)
+  const [lookupFailed, setLookupFailed] = useState(false)
+  const [linking, setLinking] = useState<string | null>(null)
+
+  const highest = report.havePositions[report.havePositions.length - 1]
+
+  async function onName() {
+    try {
+      const { result } = await lookup({
+        name: report.name,
+        author: report.authorHint,
+      }).unwrap()
+      const parts = result?.parts ?? []
+      if (parts.length === 0) {
+        setLookupFailed(true)
+        return
+      }
+      setNamed(
+        new Map(
+          parts
+            .filter((part) => part.ordinal !== null)
+            .map((part) => [part.ordinal as number, part.title]),
+        ),
+      )
+    } catch {
+      setLookupFailed(true)
+    }
+  }
+
+  async function onLink(member: UnlinkedMember) {
+    setLinking(member.uuid)
+    try {
+      await applyRepairs({
+        repairs: [
+          {
+            bookUuid: member.uuid,
+            series: { name: member.clueName, position: member.position },
+          },
+        ],
+      }).unwrap()
+    } catch {
+      // The audit refetch will show the row again; nothing else to do here.
+    }
+    setLinking(null)
+  }
+
+  return (
+    <Card withBorder padding="md">
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <Box style={{ minWidth: 0 }}>
+          <Text fw={600} truncate>
+            {report.name}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {report.members.length} book
+            {report.members.length === 1 ? "" : "s"}
+            {highest ? `, numbered to #${highest}` : ""}
+            {report.authorHint ? ` - ${report.authorHint}` : ""}
+          </Text>
+        </Box>
+        {report.missingPositions.length > 0 && !named && !lookupFailed ? (
+          <Button
+            size="xs"
+            variant="default"
+            onClick={() => void onName()}
+            loading={lookupState.isLoading}
+          >
+            Name the missing books
+          </Button>
+        ) : null}
+      </Group>
+      {report.missingPositions.length > 0 ? (
+        <Text size="sm" mt={6}>
+          Missing {report.missingPositions.map((n) => `#${n}`).join(", ")}
+        </Text>
+      ) : null}
+      {named ? (
+        <Stack gap={2} mt={4}>
+          {report.missingPositions.map((n) => (
+            <Text key={n} size="xs" c="dimmed">
+              #{n}: {named.get(n) ?? "not listed on Wikidata"}
+            </Text>
+          ))}
+        </Stack>
+      ) : lookupFailed ? (
+        <Text size="xs" c="dimmed" mt={4}>
+          Wikidata does not list this series&apos; volumes.
+        </Text>
+      ) : null}
+      {report.unlinked.length > 0 ? (
+        <Stack gap={4} mt="sm">
+          <Text size="xs" fw={500}>
+            In your library, not filed in the series:
+          </Text>
+          {report.unlinked.map((member) => (
+            <Group key={member.uuid} gap="sm" wrap="nowrap">
+              <Text size="sm" style={{ flex: 1, minWidth: 0 }} truncate>
+                {member.title}
+                {member.position != null ? ` (#${member.position})` : ""}
+              </Text>
+              <Button
+                size="xs"
+                onClick={() => void onLink(member)}
+                loading={linking === member.uuid}
+              >
+                Add to series
+              </Button>
+            </Group>
+          ))}
+        </Stack>
+      ) : null}
+    </Card>
   )
 }
 

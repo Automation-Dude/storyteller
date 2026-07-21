@@ -721,6 +721,21 @@ export const api = createApi({
         params: { q, ...(author ? { author } : {}) },
       }),
     }),
+    lookupSeriesParts: build.mutation<
+      {
+        result: {
+          entityLabel: string
+          parts: { ordinal: number | null; title: string }[]
+        } | null
+      },
+      { name: string; author?: string | null }
+    >({
+      query: ({ name, author }) => ({
+        url: "/library-audit/series",
+        method: "POST",
+        body: { name, ...(author ? { author } : {}) },
+      }),
+    }),
     deleteCollection: build.mutation<void, { uuid: UUID }>({
       query: ({ uuid }) => ({
         url: `/collections/${uuid}`,
@@ -1061,6 +1076,7 @@ export const {
   useApplyRepairsMutation,
   useSearchMetadataQuery,
   useLazySearchMetadataQuery,
+  useLookupSeriesPartsMutation,
   useListInvitesQuery,
   useListSeriesQuery,
   useListStatusesQuery,

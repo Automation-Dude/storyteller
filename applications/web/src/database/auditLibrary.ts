@@ -4,8 +4,8 @@ import { getExtractedCover } from "@/assets/covers"
 import { imageStats } from "@/images"
 import { logger } from "@/logging"
 import { authorNameIsBad, seriesFromTitle } from "@/metadata/localSignals"
+import { type SeriesReport, auditSeries } from "@/metadata/seriesAudit"
 import { type UUID } from "@/uuid"
-
 
 import { getBooks } from "./books"
 
@@ -55,6 +55,8 @@ export type LibraryAudit = {
   flagged: number
   counts: Record<AuditIssue, number>
   books: AuditBook[]
+  /** Series-level findings: gaps in numbered runs and unlinked members. */
+  series: SeriesReport[]
 }
 
 // A cover this near a solid colour is blank in all but name; a cover this small
@@ -226,6 +228,7 @@ export async function auditLibrary(): Promise<LibraryAudit> {
     flagged: auditBooks.length,
     counts,
     books: auditBooks,
+    series: auditSeries(books),
   }
 }
 
@@ -261,6 +264,7 @@ export function getCachedAudit(): CachedLibraryAudit {
       flagged: 0,
       counts: emptyCounts(),
       books: [],
+      series: [],
       status: globalThis._libraryAuditRunning ? "computing" : "never",
       computedAt: null,
       scanned: 0,
@@ -278,6 +282,7 @@ export async function recomputeAuditInBackground(): Promise<void> {
   globalThis._libraryAuditRunning = true
 
   const previousComputedAt = globalThis._libraryAuditCache?.computedAt ?? null
+  const previousSeries = globalThis._libraryAuditCache?.series ?? []
   try {
     const coversFile = process.env["COVERS_PRESENT_FILE"]
     const coverSet = coversFile ? await loadCoverSet(coversFile) : null
@@ -292,6 +297,9 @@ export async function recomputeAuditInBackground(): Promise<void> {
         flagged: auditBooks.length,
         counts: { ...counts },
         books: [...auditBooks],
+        // Series structure reads every book at once; it is pure and cheap,
+        // so it is computed when the pass completes rather than per chunk.
+        series: status === "ready" ? auditSeries(books) : previousSeries,
         status,
         computedAt:
           status === "ready" ? new Date().toISOString() : previousComputedAt,

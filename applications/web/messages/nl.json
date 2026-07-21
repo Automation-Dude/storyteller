@@ -374,7 +374,19 @@
     "rescanStarted": "Bibliotheek opnieuw scannen...",
     "rescanDone": "Scan voltooid: {flagged} boeken gemarkeerd",
     "rescanning": "Scannen...",
-    "scanningBanner": "Je bibliotheek wordt gescand, dit werkt live bij."
+    "scanningBanner": "Je bibliotheek wordt gescand, dit werkt live bij.",
+    "series": {
+      "heading": "Series",
+      "subheading": "Genummerde reeksen met gaten, en boeken op de plank die bij een serie horen maar er niet in staan.",
+      "count": "{count} boeken, genummerd tot #{highest}",
+      "countUnnumbered": "{count} boeken",
+      "missing": "Ontbreekt: {list}",
+      "nameMissing": "Benoem de ontbrekende boeken",
+      "notListed": "niet vermeld op Wikidata",
+      "lookupFailed": "Wikidata vermeldt de delen van deze serie niet.",
+      "unlinkedHeading": "In je bibliotheek, niet in de serie opgenomen:",
+      "add": "Aan serie toevoegen"
+    }
   },
   "AppSidebar": {
     "home": "Start",

@@ -382,7 +382,19 @@
     "rescanStarted": "Rescanning your library...",
     "rescanDone": "Scan complete: {flagged} books flagged",
     "rescanning": "Scanning...",
-    "scanningBanner": "Scanning your library, this updates as it goes."
+    "scanningBanner": "Scanning your library, this updates as it goes.",
+    "series": {
+      "heading": "Series",
+      "subheading": "Numbered runs with holes, and books on the shelf that belong to a series but are not filed in it.",
+      "count": "{count} books, numbered to #{highest}",
+      "countUnnumbered": "{count} books",
+      "missing": "Missing {list}",
+      "nameMissing": "Name the missing books",
+      "notListed": "not listed on Wikidata",
+      "lookupFailed": "Wikidata does not list this series' volumes.",
+      "unlinkedHeading": "In your library, not filed in the series:",
+      "add": "Add to series"
+    }
   },
   "AppSidebar": {
     "home": "Home",
