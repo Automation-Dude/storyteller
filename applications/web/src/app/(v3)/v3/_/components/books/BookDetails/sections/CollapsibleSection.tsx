@@ -25,7 +25,7 @@ export function CollapsibleSection({
   rightElement,
 }: {
   title: string
-  sectionKey?: string
+  sectionKey: string
   icon?: React.ReactNode
   children: React.ReactNode
   defaultOpen?: boolean

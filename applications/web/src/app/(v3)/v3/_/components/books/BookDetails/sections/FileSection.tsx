@@ -221,6 +221,7 @@ export function FileSection({
 
   return (
     <CollapsibleSection
+      sectionKey="files"
       title={t("fileInformation.title")}
       icon={<icon.FileText className="size-3.5 stroke-1" />}
       className={className}
