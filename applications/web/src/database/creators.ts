@@ -58,3 +58,43 @@ export async function getCreators(userId?: UUID, role?: Role) {
     .selectAll("creator")
     .execute()
 }
+
+/**
+ * Every author-role creator with how many books it carries, for the
+ * creator-level repair that clusters near-identical spellings.
+ */
+export async function getAuthorCreatorsWithCounts() {
+  const rows = await db
+    .selectFrom("creator")
+    .innerJoin("bookToCreator", "bookToCreator.creatorUuid", "creator.uuid")
+    .where("bookToCreator.role", "=", "aut")
+    .select(({ fn }) => [
+      "creator.uuid",
+      "creator.name",
+      fn.count<number>("bookToCreator.bookUuid").as("bookCount"),
+    ])
+    .groupBy(["creator.uuid", "creator.name"])
+    .execute()
+  return rows.map((row) => ({
+    uuid: row.uuid,
+    name: row.name,
+    bookCount: Number(row.bookCount),
+  }))
+}
+
+/** The books credited to any of the given creators as author. */
+export async function getBookUuidsByCreators(
+  creatorUuids: UUID[],
+  limit: number,
+): Promise<UUID[]> {
+  if (creatorUuids.length === 0) return []
+  const rows = await db
+    .selectFrom("bookToCreator")
+    .where("bookToCreator.role", "=", "aut")
+    .where("bookToCreator.creatorUuid", "in", creatorUuids)
+    .select("bookToCreator.bookUuid")
+    .distinct()
+    .limit(limit)
+    .execute()
+  return rows.map((row) => row.bookUuid)
+}

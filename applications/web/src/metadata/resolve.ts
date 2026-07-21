@@ -334,11 +334,16 @@ export async function resolveBook(
     const folder = combine(book.title, book.assetDir, undefined)
     const baseTitle =
       firstNonGarbage(local.title, folder.title, book.title) ?? book.title
-    const author =
-      book.authors[0]?.name.replace(/^by\s+/i, "") ??
-      local.authors?.[0] ??
-      folder.author ??
-      undefined
+    // A known-bad stored author must not narrow the search or score the
+    // match; it penalises the right book for not matching garbage.
+    const authorCandidates = [
+      ...book.authors.map((a) => a.name.replace(/^by\s+/i, "")),
+      ...(local.authors ?? []),
+      folder.author ?? "",
+    ]
+    const author = authorCandidates.find(
+      (name) => name && !authorNameIsBad(name),
+    )
 
     // Progressive discovery: a stored title often buries the real one under
     // series clutter, so each cleaner variant is tried until a match is
@@ -366,8 +371,18 @@ export async function resolveBook(
           best.authors.some((name) => authorsMatch(name, author)) &&
           titleSimilarity(best.title, baseTitle) >= 0.5,
       )
+      // With no usable author to confirm against, an exact title on a work
+      // the world has printed many times is its own confirmation; without
+      // this, a garbage-author book can never reach confidence at all.
+      const canonicalConfirmed = Boolean(
+        !author &&
+          best &&
+          titleSimilarity(best.title, baseTitle) >= 0.95 &&
+          best.editionCount >= 10 &&
+          baseTitle.trim().split(/\s+/).length >= 2,
+      )
       resolution.confidence = best
-        ? best.score >= AUTO_APPLY_SCORE || authorConfirmed
+        ? best.score >= AUTO_APPLY_SCORE || authorConfirmed || canonicalConfirmed
           ? "high"
           : best.score >= SUGGEST_SCORE
             ? "low"
