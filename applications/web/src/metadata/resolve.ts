@@ -41,7 +41,11 @@ import {
   SUGGEST_SCORE,
   normalizeLanguage,
 } from "./repair"
-import { authorsMatch, queryVariants, titleSimilarity } from "./titleCleaning"
+import {
+  authorsMatch,
+  bestTitleSimilarity,
+  queryVariants,
+} from "./titleCleaning"
 
 /**
  * Resolve one book's missing metadata in a single pass.
@@ -373,7 +377,7 @@ export async function resolveBook(
           best &&
           best.score >= SUGGEST_SCORE &&
           best.authors.some((name) => authorsMatch(name, author)) &&
-          titleSimilarity(best.title, baseTitle) >= 0.5,
+          bestTitleSimilarity(best.title, baseTitle) >= 0.5,
       )
       // With no usable author to confirm against, an exact title on a work
       // the world has printed many times is its own confirmation; without
@@ -382,7 +386,7 @@ export async function resolveBook(
       const canonicalConfirmed = Boolean(
         !author &&
           best &&
-          titleSimilarity(best.title, baseTitle) >= 0.95 &&
+          bestTitleSimilarity(best.title, baseTitle) >= 0.95 &&
           // A one-word title needs a much larger body of editions before it
           // can vouch for itself; \"Dune\" qualifies, an obscure one-worder
           // does not.

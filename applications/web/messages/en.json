@@ -313,7 +313,7 @@
     "heading": "Library audit",
     "subheading": "Books an e-reader shelf shows badly: a missing, blank or tiny cover, a missing author, language or description, or a filename-like title.",
     "rescan": "Rescan",
-      "lastScanned": "Last scanned {when}",
+    "lastScanned": "Last scanned {when}",
     "scanning": "Scanning every book's cover and metadata. This can take a moment on a large library.",
     "errorTitle": "Could not run the audit",
     "errorBody": "Something went wrong reading the library. Try rescanning.",
@@ -367,8 +367,18 @@
       "apply": "Apply {count} repairs",
       "appliedSummary": "Repaired {applied} books.",
       "done": "Repaired {applied} books.",
-      "someFailed": "{failed} books could not be repaired."
-    }
+      "someFailed": "{failed} books could not be repaired.",
+      "scanningLive": "Scanning {scanned} of {total} books - {found} fixes found",
+      "applyingLive": "Applying fixes: {applied} of {total} done",
+      "readyLive": "{found} fixes ready to apply",
+      "checking": "Checking: {title}",
+      "scanningHint": "Looking each flagged book up and gathering fixes...",
+      "close": "Close"
+    },
+    "rescanStarted": "Rescanning your library...",
+    "rescanDone": "Scan complete: {flagged} books flagged",
+    "rescanning": "Scanning...",
+    "scanningBanner": "Scanning your library, this updates as it goes."
   },
   "AppSidebar": {
     "home": "Home",

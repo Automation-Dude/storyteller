@@ -3,6 +3,7 @@
 import { IconRefresh, IconWand } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 import {
   type AuditBook,
@@ -75,11 +76,26 @@ export function LibraryAudit() {
 
   const ready = data?.status === "ready"
   const computing = !ready
+  const [rescanning, setRescanning] = useState(false)
 
   // Poll only while the background pass is running; stop once it is ready.
   useEffect(() => {
     setPollInterval(data && data.status !== "ready" ? 2000 : 0)
   }, [data])
+
+  // When a rescan we started finishes, announce the result once.
+  useEffect(() => {
+    if (rescanning && ready) {
+      setRescanning(false)
+      toast.success(t("rescanDone", { flagged: data.flagged }))
+    }
+  }, [rescanning, ready, data, t])
+
+  const onRescan = () => {
+    setRescanning(true)
+    toast.info(t("rescanStarted"))
+    void rescan()
+  }
 
   const label = (issue: AuditIssue) => t(`issues.${issue}`)
 
@@ -107,15 +123,20 @@ export function LibraryAudit() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void rescan()}
+            onClick={onRescan}
             disabled={computing}
           >
             <IconRefresh className={computing ? "animate-spin" : undefined} />
-            {t("rescan")}
+            {computing ? t("rescanning") : t("rescan")}
           </Button>
         </div>
       </div>
-      {ready && data.computedAt ? (
+      {computing && data && data.total > 0 ? (
+        <div className="border-primary/30 bg-primary/5 text-primary -mt-4 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+          <IconRefresh className="animate-spin" size={16} />
+          {t("scanningBanner")}
+        </div>
+      ) : ready && data.computedAt ? (
         <p className="text-muted-foreground -mt-4 text-xs">
           {t("lastScanned", { when: relativeTime(data.computedAt) })}
         </p>

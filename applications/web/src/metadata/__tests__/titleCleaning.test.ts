@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 
 import {
   authorsMatch,
+  bestTitleSimilarity,
   normalizeForSearch,
   queryVariants,
   scoreMatch,
@@ -162,6 +163,16 @@ void describe("queryVariants for series-prefixed titles", () => {
     assert.ok(
       variants.includes("The Atlantis Complex"),
       `variants: ${variants.join("; ")}`,
+    )
+  })
+})
+
+
+void describe("bestTitleSimilarity ignores a series parenthetical", () => {
+  void it("matches a work catalogued with its series against the bare title", () => {
+    assert.ok(
+      bestTitleSimilarity("The Diamond Throne (The Elenium)", "The Diamond Throne") >=
+        0.95,
     )
   })
 })

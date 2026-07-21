@@ -141,6 +141,24 @@ export function titleSimilarity(a: string, b: string): number {
   return shared / (setA.size + setB.size - shared)
 }
 
+/**
+ * Title similarity that is not fooled by a series parenthetical on the
+ * candidate. A canonical work is often catalogued as "The Diamond Throne (The
+ * Elenium)"; comparing its base title too lets it match a stored "The Diamond
+ * Throne" exactly, so it is not beaten by a bare-title one-edition ghost.
+ * Taking the max means the strip can only ever help.
+ */
+export function bestTitleSimilarity(
+  candidateTitle: string,
+  queryTitle: string,
+): number {
+  const base = candidateTitle.replace(/\s*[([][^)\]]*[)\]]/g, " ")
+  return Math.max(
+    titleSimilarity(candidateTitle, queryTitle),
+    titleSimilarity(base, queryTitle),
+  )
+}
+
 /** True if two author strings plausibly name the same person. */
 export function authorsMatch(a: string, b: string): boolean {
   const setA = tokenSet(a.replace(/^by\s+/i, ""))
@@ -178,7 +196,7 @@ export function scoreMatch(
   queryTitle: string,
   queryAuthor?: string,
 ): number {
-  const titleScore = titleSimilarity(candidate.title, queryTitle)
+  const titleScore = bestTitleSimilarity(candidate.title, queryTitle)
 
   let authorScore = 0
   if (queryAuthor) {

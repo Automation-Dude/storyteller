@@ -238,3 +238,16 @@ void describe("series from a ripped-folder title", () => {
     }
   })
 })
+
+
+void describe("handle-style authors are not names", () => {
+  void it("flags a username with an internal dot", () => {
+    assert.ok(authorNameIsBad("NYC.HarDCorE"))
+    assert.ok(authorNameIsBad("nobody.xyz"))
+  })
+  void it("leaves real names, including dotted and single-token pen names", () => {
+    for (const good of ["J. K. Rowling", "J.R.R. Tolkien", "pirateaba", "Homer"]) {
+      assert.ok(!authorNameIsBad(good), good)
+    }
+  })
+})

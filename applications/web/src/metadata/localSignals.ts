@@ -109,6 +109,10 @@ export function authorNameIsBad(name: string): boolean {
   if (n.includes("_")) return true
   if (/^[A-Z][a-zA-Z.'’]+,\s+[A-Z]/.test(n)) return true // "Cornwell, Bernard"
   if (/https?:|\.com|\d{3,}/.test(n)) return true
+  // A username, not a name: a single token (no spaces) with an internal dot,
+  // e.g. "NYC.HarDCorE". A real dotted name always has spaces ("J. K. Rowling"),
+  // so this leaves those alone.
+  if (!/\s/.test(n) && /\w\.\w/.test(n)) return true
   return false
 }
 

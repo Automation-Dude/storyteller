@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { type AuditBook } from "@/database/auditLibrary"
 import { applicableChoice } from "@/metadata/proposals"
 import { type RepairChoice } from "@/metadata/repair"
+import { type RepairProposal } from "@/metadata/resolve"
 import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -22,25 +23,56 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
 
-const BATCH = 25
+// Small enough that fixes start appearing within a second or two, large enough
+// that a big library does not make hundreds of round trips.
+const SCAN_BATCH = 10
+const APPLY_BATCH = 10
 
-function summarise(choice: RepairChoice): string {
-  const parts: string[] = []
-  if (choice.title) parts.push(`"${choice.title}"`)
-  if (choice.authors) parts.push(choice.authors.join(", "))
-  if (choice.language) parts.push(choice.language)
-  if (choice.series)
-    parts.push(
-      choice.series.position != null
-        ? `${choice.series.name} #${choice.series.position}`
-        : choice.series.name,
-    )
-  if (choice.description) parts.push("description")
-  if (choice.coverUrl) parts.push("cover")
-  return parts.join(" · ")
+type Row = {
+  book: AuditBook
+  proposal: RepairProposal
+  change: RepairChoice
+  checked: boolean
+  applied?: boolean
 }
 
-type Row = { book: AuditBook; change: RepairChoice; checked: boolean }
+/** One "field: value" chip per thing the repair will change, before to after. */
+function changeParts(row: Row): { label: string; detail?: string }[] {
+  const { change, proposal } = row
+  const parts: { label: string; detail?: string }[] = []
+  if (change.title)
+    parts.push({
+      label:
+        proposal.currentTitle && proposal.currentTitle !== change.title
+          ? `title: ${proposal.currentTitle} -> ${change.title}`
+          : `title: ${change.title}`,
+    })
+  if (change.authors) {
+    const before = proposal.currentAuthors.join(", ")
+    const after = change.authors.join(", ")
+    parts.push({
+      label: before && before !== after ? `author: ${before} -> ${after}` : `author: ${after}`,
+    })
+  }
+  if (change.language) parts.push({ label: `language: ${change.language}` })
+  if (change.series)
+    parts.push({
+      label:
+        change.series.position != null
+          ? `series: ${change.series.name} #${change.series.position}`
+          : `series: ${change.series.name}`,
+    })
+  if (change.description)
+    parts.push({
+      label: "description",
+      detail:
+        change.description.length > 140
+          ? `${change.description.slice(0, 140)}...`
+          : change.description,
+    })
+  if (change.coverUrl) parts.push({ label: "cover" })
+  return parts
+}
 
 export function AutoRepairDialog({
   books,
@@ -53,10 +85,13 @@ export function AutoRepairDialog({
 }) {
   const t = useTranslations("LibraryAuditPage")
   const [suggest] = useSuggestRepairsMutation()
-  const [applyRepairs, apply] = useApplyRepairsMutation()
+  const [applyRepairs] = useApplyRepairsMutation()
 
-  const [phase, setPhase] = useState<"scanning" | "review" | "done">("scanning")
+  const [phase, setPhase] = useState<"scanning" | "review" | "applying" | "done">(
+    "scanning",
+  )
   const [scanned, setScanned] = useState(0)
+  const [checking, setChecking] = useState<string | null>(null)
   const [rows, setRows] = useState<Row[]>([])
   const [applied, setApplied] = useState(0)
 
@@ -64,41 +99,43 @@ export function AutoRepairDialog({
     if (!open) {
       setPhase("scanning")
       setScanned(0)
+      setChecking(null)
       setRows([])
       setApplied(0)
       return
     }
 
     const run = { cancelled: false }
-    // Read through a call so control-flow analysis cannot decide the flag is
-    // "always false": it is flipped later by the cleanup, during an await.
     const stopped = () => run.cancelled
     const byUuid = new Map(books.map((b) => [b.uuid, b]))
 
     async function scan() {
-      const found: Row[] = []
-      for (let i = 0; i < books.length; i += BATCH) {
+      for (let i = 0; i < books.length; i += SCAN_BATCH) {
         if (stopped()) return
-        const batch = books.slice(i, i + BATCH)
+        const batch = books.slice(i, i + SCAN_BATCH)
+        setChecking(batch[0]?.title ?? null)
         try {
           const { proposals } = await suggest({
             bookUuids: batch.map((b) => b.uuid),
           }).unwrap()
+          const found: Row[] = []
           for (const proposal of proposals) {
             const book = byUuid.get(proposal.bookUuid)
             if (!book) continue
             const change = applicableChoice(proposal)
             if (Object.keys(change).length) {
-              found.push({ book, change, checked: true })
+              found.push({ book, proposal, change, checked: true })
             }
           }
+          // Show the fixes the moment the batch returns, so the list grows live.
+          if (found.length && !stopped()) setRows((prev) => [...prev, ...found])
         } catch {
           // A failed batch just contributes no suggestions; keep going.
         }
-        if (!stopped()) setScanned(Math.min(i + BATCH, books.length))
+        if (!stopped()) setScanned(Math.min(i + SCAN_BATCH, books.length))
       }
       if (!stopped()) {
-        setRows(found)
+        setChecking(null)
         setPhase("review")
       }
     }
@@ -112,80 +149,149 @@ export function AutoRepairDialog({
   const checkedRows = rows.filter((r) => r.checked)
 
   async function onApply() {
-    const result = await applyRepairs({
-      repairs: checkedRows.map((r) => ({
-        bookUuid: r.book.uuid,
-        ...r.change,
-      })),
-    }).unwrap()
-    setApplied(result.applied)
+    setPhase("applying")
+    setApplied(0)
+    const targets = rows.filter((r) => r.checked)
+    let done = 0
+    let failures = 0
+    for (let i = 0; i < targets.length; i += APPLY_BATCH) {
+      const chunk = targets.slice(i, i + APPLY_BATCH)
+      try {
+        const result = await applyRepairs({
+          repairs: chunk.map((r) => ({ bookUuid: r.book.uuid, ...r.change })),
+        }).unwrap()
+        done += result.applied
+        failures += result.failed
+        const fixed = new Set(chunk.map((r) => r.book.uuid))
+        // Mark the chunk fixed so each one turns green as it lands.
+        setRows((prev) =>
+          prev.map((r) => (fixed.has(r.book.uuid) ? { ...r, applied: true } : r)),
+        )
+        setApplied(done)
+      } catch {
+        failures += chunk.length
+      }
+    }
     setPhase("done")
-    if (result.failed > 0) {
-      toast.warning(t("autoRepair.someFailed", { failed: result.failed }))
+    if (failures > 0) {
+      toast.warning(t("autoRepair.someFailed", { failed: failures }))
     } else {
-      toast.success(t("autoRepair.done", { applied: result.applied }))
+      toast.success(t("autoRepair.done", { applied: done }))
     }
   }
 
+  const total = books.length
+  const scanPct = total ? Math.round((scanned / total) * 100) : 0
+  const applyPct = checkedRows.length
+    ? Math.round((applied / checkedRows.length) * 100)
+    : 0
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("autoRepair.title")}</DialogTitle>
           <DialogDescription>{t("autoRepair.description")}</DialogDescription>
         </DialogHeader>
 
-        {phase === "scanning" ? (
-          <div className="text-muted-foreground flex items-center gap-3 py-8 text-sm">
-            <Spinner />
-            {t("autoRepair.scanning", { scanned, total: books.length })}
+        {/* Live status line + progress bar, always visible so there is motion. */}
+        <div className="flex flex-col gap-2">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
+            {phase === "scanning" || phase === "applying" ? <Spinner /> : null}
+            <span>
+              {phase === "scanning"
+                ? t("autoRepair.scanningLive", {
+                    scanned,
+                    total,
+                    found: rows.length,
+                  })
+                : phase === "applying"
+                  ? t("autoRepair.applyingLive", {
+                      applied,
+                      total: checkedRows.length,
+                    })
+                  : phase === "done"
+                    ? t("autoRepair.appliedSummary", { applied })
+                    : t("autoRepair.readyLive", { found: rows.length })}
+            </span>
           </div>
-        ) : phase === "done" ? (
-          <p className="py-6 text-sm">
-            {t("autoRepair.appliedSummary", { applied })}
-          </p>
-        ) : rows.length === 0 ? (
-          <p className="text-muted-foreground py-6 text-sm">
-            {t("autoRepair.noConfident")}
-          </p>
-        ) : (
-          <ul className="flex flex-col divide-y">
-            {rows.map((row, index) => (
-              <li key={row.book.uuid} className="flex items-start gap-3 py-2">
-                <Checkbox
-                  checked={row.checked}
-                  onCheckedChange={(checked) => {
-                    setRows((prev) =>
-                      prev.map((r, i) =>
-                        i === index ? { ...r, checked: checked } : r,
-                      ),
-                    )
-                  }}
-                  className="mt-1"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">
-                    {row.book.title}
+          {phase === "scanning" && checking ? (
+            <div className="text-muted-foreground truncate text-xs">
+              {t("autoRepair.checking", { title: checking })}
+            </div>
+          ) : null}
+          <div className="bg-muted h-2 w-full overflow-hidden rounded">
+            <div
+              className="bg-primary h-full transition-all duration-300"
+              style={{
+                width: `${phase === "applying" || phase === "done" ? applyPct : scanPct}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="-mx-2 min-h-0 flex-1 overflow-y-auto px-2">
+          {rows.length === 0 ? (
+            <p className="text-muted-foreground py-6 text-sm">
+              {phase === "scanning"
+                ? t("autoRepair.scanningHint")
+                : t("autoRepair.noConfident")}
+            </p>
+          ) : (
+            <ul className="flex flex-col divide-y">
+              {rows.map((row, index) => (
+                <li
+                  key={row.book.uuid}
+                  className={`flex items-start gap-3 py-2 ${row.applied ? "opacity-60" : ""}`}
+                >
+                  {phase === "review" ? (
+                    <Checkbox
+                      checked={row.checked}
+                      onCheckedChange={(checked) => {
+                        setRows((prev) =>
+                          prev.map((r, i) =>
+                            i === index ? { ...r, checked } : r,
+                          ),
+                        )
+                      }}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <span className="mt-1 w-4 text-center text-xs">
+                      {row.applied ? "OK" : ""}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium">
+                        {row.book.title}
+                      </span>
+                      {row.book.issues.map((issue) => (
+                        <Badge
+                          key={issue}
+                          variant="outline"
+                          className="shrink-0 text-[10px]"
+                        >
+                          {t(`issues.${issue}`)}
+                        </Badge>
+                      ))}
+                    </div>
+                    <ul className="mt-1 flex flex-col gap-0.5">
+                      {changeParts(row).map((part, i) => (
+                        <li key={i} className="text-muted-foreground text-xs">
+                          <span className="text-foreground">{part.label}</span>
+                          {part.detail ? (
+                            <span className="italic"> — {part.detail}</span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className="text-muted-foreground truncate text-xs">
-                    {summarise(row.change)}
-                  </div>
-                </div>
-                <div className="flex shrink-0 flex-wrap gap-1">
-                  {row.book.issues.map((issue) => (
-                    <Badge
-                      key={issue}
-                      variant="outline"
-                      className="text-[10px]"
-                    >
-                      {t(`issues.${issue}`)}
-                    </Badge>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <DialogFooter>
           {phase === "review" && rows.length > 0 ? (
@@ -193,30 +299,23 @@ export function AutoRepairDialog({
               <span className="text-muted-foreground mr-auto self-center text-sm">
                 {t("autoRepair.selected", { count: checkedRows.length })}
               </span>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  onOpenChange(false)
-                }}
-              >
+              <Button variant="ghost" onClick={() => { onOpenChange(false) }}>
                 {t("repair.cancel")}
               </Button>
               <Button
                 onClick={() => void onApply()}
-                disabled={apply.isLoading || checkedRows.length === 0}
+                disabled={checkedRows.length === 0}
               >
-                {apply.isLoading ? <Spinner /> : null}
                 {t("autoRepair.apply", { count: checkedRows.length })}
               </Button>
             </>
           ) : (
             <Button
               variant="outline"
-              onClick={() => {
-                onOpenChange(false)
-              }}
+              onClick={() => { onOpenChange(false) }}
+              disabled={phase === "applying"}
             >
-              {t("repair.cancel")}
+              {phase === "done" ? t("autoRepair.close") : t("repair.cancel")}
             </Button>
           )}
         </DialogFooter>
