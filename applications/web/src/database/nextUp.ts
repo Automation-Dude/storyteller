@@ -2,7 +2,7 @@ import { type UUID } from "@/uuid"
 
 import { type BookWithRelations, getBooks } from "./books"
 import { db } from "./connection"
-import { STATUS_TO_READ } from "./statusKinds"
+import { STATUS_READ, STATUS_READING, STATUS_TO_READ } from "./statusKinds"
 
 /**
  * one book per series the user has read into: the lowest-position book above
@@ -99,6 +99,24 @@ export async function getNextUpInSeries(
   // console.log("rrrrrrrrrrrr", r1)
 
   const r = await db
+    // all series the user is reading
+    // technically also those that are completed
+    // but will get filtered out by the next query
+    .with("readingSeries", (db) =>
+      db
+        .selectFrom("series")
+        .select("series.uuid")
+        .innerJoin("bookToSeries", "bookToSeries.seriesUuid", "series.uuid")
+        .innerJoin(
+          "bookToStatus",
+          "bookToStatus.bookUuid",
+          "bookToSeries.bookUuid",
+        )
+        .innerJoin("status", "status.uuid", "bookToStatus.statusUuid")
+        .selectAll("bookToSeries")
+        .where("bookToStatus.userId", "=", userId)
+        .where("status.name", "in", [STATUS_READ, STATUS_READING]),
+    )
     .with("candidates", (db) =>
       db
         .selectFrom("bookToSeries")
@@ -118,9 +136,12 @@ export async function getNextUpInSeries(
             )
             .as("rn"),
         ])
-        .where("bookToStatus.userId", "=", userId)
         .innerJoin("status", "status.uuid", "bookToStatus.statusUuid")
+        .where("bookToStatus.userId", "=", userId)
         .where("status.name", "=", STATUS_TO_READ)
+        .where("bookToSeries.seriesUuid", "in", (eb) =>
+          eb.selectFrom("readingSeries").select("seriesUuid"),
+        )
         .orderBy("bookToSeries.position", "asc"),
     )
     .selectFrom("candidates")
