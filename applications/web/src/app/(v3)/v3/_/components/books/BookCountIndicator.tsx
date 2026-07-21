@@ -13,10 +13,6 @@ import { cn } from "@v3/_/lib/utils"
 
 import * as icon from "@/icons"
 
-// "filtered X of all Y" next to a book list's title, with controls to pull the
-// rest of the pages or opt out of pagination. filtered = books matching the
-// active filters; total = the page's baseline (whole library, or a facet's own
-// total). both undefined for shelf lists (no cheap count) - then nothing shows.
 export function BookCountIndicator({
   loaded,
   filtered,

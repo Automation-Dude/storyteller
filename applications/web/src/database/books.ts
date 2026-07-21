@@ -36,6 +36,7 @@ import { type NewIdentifier } from "./identifiers"
 import type { DB } from "./schema"
 import type { NewSeries } from "./series"
 import {
+  bookVisibleTo,
   buildBookSearchExpression,
   buildFilterExpression,
   buildSortExpression,
@@ -820,28 +821,8 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
       ).as("processingJob"),
     ])
     .$if(!!userId, (qb) =>
-      qb
-        .leftJoin("bookToCollection", "book.uuid", "bookToCollection.bookUuid")
-        .leftJoin(
-          "collection",
-          "collection.uuid",
-          "bookToCollection.collectionUuid",
-        )
-        .leftJoin(
-          "collectionToUser",
-          "collectionToUser.collectionUuid",
-          "bookToCollection.collectionUuid",
-        )
-        .where((eb) =>
-          eb.or([
-            // The $if condition ensures that this only runs when userId
-            // is not null
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            eb("collectionToUser.userId", "=", userId!),
-            eb("collection.public", "=", true),
-            eb("collection.public", "is", null),
-          ]),
-        ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      qb.where((eb) => bookVisibleTo(eb, userId!)),
     )
     .groupBy("book.uuid")
 }
@@ -1031,6 +1012,8 @@ export async function countBooks(
     userId,
     opts,
   )
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    .$if(!!userId, (qb) => qb.where((eb) => bookVisibleTo(eb, userId!)))
     .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
     .executeTakeFirst()
 

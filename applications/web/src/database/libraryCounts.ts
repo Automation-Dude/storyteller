@@ -6,7 +6,11 @@ import { type ShelfFilter } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
-import { buildFilterExpression, formatPredicate } from "./shelfFilter"
+import {
+  bookVisibleTo,
+  buildFilterExpression,
+  formatPredicate,
+} from "./shelfFilter"
 
 // a single row within a facet (one status, one rating bucket, one author). a
 // facet (aka section, see FacetSection) is the dimension; a FacetValue is one
@@ -61,27 +65,8 @@ export type LibraryCounts = {
   shelves: Record<string, number>
 }
 
-function visibleBooks(userId: UUID, dab = db) {
-  return dab
-    .selectFrom("book")
-    .leftJoin("bookToCollection", "bookToCollection.bookUuid", "book.uuid")
-    .leftJoin(
-      "collection",
-      "collection.uuid",
-      "bookToCollection.collectionUuid",
-    )
-    .leftJoin(
-      "collectionToUser",
-      "collectionToUser.collectionUuid",
-      "bookToCollection.collectionUuid",
-    )
-    .where((eb) =>
-      eb.or([
-        eb("collectionToUser.userId", "=", userId),
-        eb("collection.public", "=", true),
-        eb("collection.public", "is", null),
-      ]),
-    )
+export function visibleBooks(userId: UUID, dab = db) {
+  return dab.selectFrom("book").where((eb) => bookVisibleTo(eb, userId))
 }
 
 async function countCreatorsByRole(userId: UUID, role: Role) {

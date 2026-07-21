@@ -188,6 +188,52 @@ export async function cleanShelfFiltersForDeletedEntity(
 type EB = ExpressionBuilder<DB, "book">
 type FilterExpression = ExpressionWrapper<DB, "book", SqlBool>
 
+// a book is visible to a user if 
+// - it is in no collection
+// - it is in a public collection
+// - it is in a collection the user belongs to
+export function bookVisibleTo(eb: EB, userId: UUID): FilterExpression {
+  return eb.or([
+    eb.not(
+      eb.exists(
+        eb
+          .selectFrom("bookToCollection")
+          .select(sql.lit(1).as("one"))
+          .whereRef("bookToCollection.bookUuid", "=", "book.uuid"),
+      ),
+    ),
+    eb.exists(
+      eb
+        .selectFrom("bookToCollection")
+        .innerJoin(
+          "collection",
+          "collection.uuid",
+          "bookToCollection.collectionUuid",
+        )
+        .select(sql.lit(1).as("one"))
+        .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
+        .where((e) =>
+          e.or([
+            e("collection.public", "=", true),
+            e("collection.public", "is", null),
+          ]),
+        ),
+    ),
+    eb.exists(
+      eb
+        .selectFrom("bookToCollection")
+        .innerJoin(
+          "collectionToUser",
+          "collectionToUser.collectionUuid",
+          "bookToCollection.collectionUuid",
+        )
+        .select(sql.lit(1).as("one"))
+        .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
+        .where("collectionToUser.userId", "=", userId),
+    ),
+  ])
+}
+
 function latestReportColumn(column: string) {
   return sql`(select ${sql.raw(column)} from alignment_report where book_uuid = book.uuid order by created_at desc limit 1)`
 }
