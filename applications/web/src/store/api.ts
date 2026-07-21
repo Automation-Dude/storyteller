@@ -1817,12 +1817,12 @@ export const api = createApi({
     // shelves
     getHomeStats: build.query<HomeStats, void>({
       query: () => "/home/stats",
-      providesTags: ["HomeStats"],
+      providesTags: ["HomeStats", "CurrentUser"],
     }),
 
     listHomeShelves: build.query<HomeSectionWithDetails[], void>({
       query: () => "/shelves/home",
-      providesTags: ["HomeShelves"],
+      providesTags: ["HomeShelves", "CurrentUser"],
     }),
 
     setHomeShelves: build.mutation<HomeSectionWithDetails[], HomeSectionBody[]>(
@@ -1867,7 +1867,7 @@ export const api = createApi({
 
     listSidebarGroups: build.query<SidebarGroupWithItems[], void>({
       query: () => "/sidebar",
-      providesTags: ["Sidebar"],
+      providesTags: ["Sidebar", "CurrentUser"],
     }),
 
     setSidebarGroups: build.mutation<
@@ -1884,7 +1884,7 @@ export const api = createApi({
 
     listUserShelves: build.query<ShelfWithBooks[], void>({
       query: () => "/shelves",
-      providesTags: ["UserShelves"],
+      providesTags: ["UserShelves", "CurrentUser"],
     }),
 
     createUserShelf: build.mutation<

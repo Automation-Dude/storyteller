@@ -22,6 +22,8 @@ import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import * as icon from "@/icons"
+import { useAppDispatch } from "@/store/appState"
+import { api } from "@/store/api"
 
 export function NavUser({
   user,
@@ -38,6 +40,7 @@ export function NavUser({
   const displayName = user.name ?? user.username ?? "User"
 
   const t = useTranslation("AppSidebar")
+  const dispatch = useAppDispatch()
 
   return (
     <SidebarMenu>
@@ -120,6 +123,9 @@ export function NavUser({
                   // lmao this would log you out otherwise
                   prefetch={false}
                   className="flex items-center gap-2"
+                  onClick={() => {
+                    dispatch(api.util.invalidateTags(["CurrentUser"]))
+                  }}
                 >
                   <icon.Logout />
                   {t("logout")}

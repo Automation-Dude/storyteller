@@ -27,6 +27,8 @@ import { cn } from "@v3/_/lib/utils"
 import { type Providers, type PublicProvider } from "@/auth/providers"
 import { FallbackIcon, ProviderIcons } from "@/components/icons/ProviderIcons"
 import * as icon from "@/icons"
+import { api } from "@/store/api"
+import { useAppDispatch } from "@/store/appState"
 
 const loginSchema = z.object({
   usernameOrEmail: z.string().min(1, "Username or email is required"),
@@ -52,6 +54,7 @@ export function LoginForm({
   providers: PublicProvider[]
 }) {
   const t = useTranslation("LoginPage")
+  const dispatch = useAppDispatch()
 
   const {
     register,
@@ -76,9 +79,15 @@ export function LoginForm({
         setIsLoading(false)
         return
       }
-    } catch {
+      // Next.js uses thrown errors to trigger redirects.
+      // We want to follow the redirect, but _first_ (after
+      // successfully logging in), we want to invalidate
+      // the current user cache, so that we retrieve the
+      // new current user and update the sidebar.
+    } catch (e) {
       setIsLoading(false)
-      // error is handled via the error state from useLoginMutation
+      dispatch(api.util.invalidateTags(["CurrentUser"]))
+      throw e
     }
   }
 

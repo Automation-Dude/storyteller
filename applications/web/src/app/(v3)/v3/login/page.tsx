@@ -6,10 +6,10 @@ import { getTranslations } from "next-intl/server"
 
 import { apiHost } from "@/app/apiHost"
 import { fetchApiRoute } from "@/app/fetchApiRoute"
-import { createConfig, nextAuth } from "@/auth/auth"
+import { createConfig, getCurrentUser, nextAuth } from "@/auth/auth"
 import { type PublicProvider } from "@/auth/providers"
 import { getCookieDomain, getCookieSecure } from "@/cookies"
-import { getPreferenceDefaults } from "@/database/settings"
+import { getPreferenceDefaults, getSettings } from "@/database/settings"
 import { getUsers } from "@/database/users"
 
 import { LoginForm, type LoginFormData } from "./LoginForm"
@@ -35,10 +35,20 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LoginPage() {
   // check if there are users at all
-  const users = await getUsers()
+  const [users, settings] = await Promise.all([getUsers(), getSettings()])
 
   if (users.length === 0) {
     redirect("/v3/init")
+  }
+
+  // oauth callbacks land back on /login (next-auth redirects to the Referer),
+  // so send anyone with a valid session on to the app instead of re-rendering
+  // the form
+  const currentUser = await getCurrentUser()
+  if (currentUser) {
+    const basePath =
+      (await headers()).get("x-v3-rewritten") === "1" ? "" : "/v3"
+    redirect(basePath || "/")
   }
 
   async function credentialsLogin(data: LoginFormData, callbackUrl?: string) {
@@ -119,11 +129,14 @@ export default async function LoginPage() {
 
   async function oauthLogin(providerId: string, callbackUrl?: string) {
     "use server"
+    // without an explicit redirectTo, next-auth falls back to the Referer
+    // header, which is this login page
+    const basePath =
+      (await headers()).get("x-v3-rewritten") === "1" ? "" : "/v3"
     try {
-      await nextAuth.signIn(
-        providerId,
-        callbackUrl === undefined ? callbackUrl : { redirectTo: callbackUrl },
-      )
+      await nextAuth.signIn(providerId, {
+        redirectTo: callbackUrl ?? (basePath || "/"),
+      })
     } catch (error) {
       if (error instanceof AuthError) {
         console.error(error)
@@ -153,6 +166,7 @@ export default async function LoginPage() {
           oauthLoginAction={oauthLogin}
           providers={Object.values(providers)}
           credentialsLoginAction={credentialsLogin}
+          disablePasswordLogin={settings.disablePasswordLogin}
         />
       </div>
     </div>
