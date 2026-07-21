@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { type AuditBook } from "@/database/auditLibrary"
 import { type RepairChoice } from "@/metadata/repair"
+import { applicableChoice } from "@/metadata/resolve"
 import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -84,10 +85,9 @@ export function AutoRepairDialog({
             bookUuids: batch.map((b) => b.uuid),
           }).unwrap()
           for (const proposal of proposals) {
-            if (proposal.confidence !== "high") continue
             const book = byUuid.get(proposal.bookUuid)
             if (!book) continue
-            const change = proposal.choice
+            const change = applicableChoice(proposal)
             if (Object.keys(change).length) {
               found.push({ book, change, checked: true })
             }

@@ -14,6 +14,7 @@ import { useEffect, useState } from "react"
 
 import { type AuditBook } from "@/database/auditLibrary"
 import { type RepairChoice } from "@/metadata/repair"
+import { applicableChoice } from "@/metadata/resolve"
 import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 import { ISSUE_LABELS } from "./LibraryAudit"
@@ -82,12 +83,9 @@ export function AutoRepairDialog({
             bookUuids: batch.map((b) => b.uuid),
           }).unwrap()
           for (const proposal of proposals) {
-            if (proposal.confidence !== "high") continue
             const book = byUuid.get(proposal.bookUuid)
             if (!book) continue
-            // resolveBook already computed the full, correct fill (description,
-            // language, cover, author) for the book's own missing fields.
-            const change = proposal.choice
+            const change = applicableChoice(proposal)
             if (Object.keys(change).length) {
               found.push({ book, change, checked: true })
             }

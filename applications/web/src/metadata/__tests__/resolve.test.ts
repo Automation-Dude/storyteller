@@ -5,7 +5,12 @@ import { describe, it } from "node:test"
 
 import { type BookWithRelations } from "@/database/books"
 import { type OpenLibraryCandidate } from "@/metadata/openLibrary"
-import { type ResolveDeps, resolveBook } from "@/metadata/resolve"
+import {
+  type RepairProposal,
+  type ResolveDeps,
+  applicableChoice,
+  resolveBook,
+} from "@/metadata/resolve"
 import { type UUID } from "@/uuid"
 
 const BOOK_UUID = "00000000-0000-0000-0000-000000000001" as UUID
@@ -358,6 +363,55 @@ void describe("resolveBook", () => {
       res.choice.coverUrl,
       undefined,
       "existing cover left alone",
+    )
+  })
+})
+
+void describe("applicableChoice", () => {
+  const base: RepairProposal = {
+    bookUuid: BOOK_UUID,
+    currentTitle: "A Book",
+    currentAuthors: [],
+    choice: {},
+    sources: {},
+    candidates: [],
+    best: null,
+    confidence: "none",
+  }
+
+  void it("keeps file-sourced fills even when the catalogue was unsure", () => {
+    // The catalogue's confidence says nothing about the book's own files; a
+    // proposal like this used to be dropped entirely, gutting auto-repair.
+    const applicable = applicableChoice({
+      ...base,
+      choice: {
+        description: "From the epub's own OPF.",
+        series: { name: "Cradle", position: 8 },
+        authors: ["Guessed Author"],
+      },
+      sources: { description: "file", series: "file", authors: "openlibrary" },
+      confidence: "low",
+    })
+    assert.deepStrictEqual(applicable, {
+      description: "From the epub's own OPF.",
+      series: { name: "Cradle", position: 8 },
+    })
+  })
+
+  void it("keeps catalogue fills only on a confident match", () => {
+    const proposal: RepairProposal = {
+      ...base,
+      choice: { description: "From the catalogue.", language: "en" },
+      sources: { description: "openlibrary", language: "openlibrary" },
+      confidence: "high",
+    }
+    assert.deepStrictEqual(applicableChoice(proposal), {
+      description: "From the catalogue.",
+      language: "en",
+    })
+    assert.deepStrictEqual(
+      applicableChoice({ ...proposal, confidence: "low" }),
+      {},
     )
   })
 })
