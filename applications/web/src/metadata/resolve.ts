@@ -12,7 +12,7 @@ import {
   getMetadataFromAudiobook,
   getMetadataFromEpub,
 } from "@/assets/metadata"
-import { isAudioFile } from "@/audio"
+import { isAudioFile, isJunkFile } from "@/audio"
 import { titleIsBad } from "@/database/auditLibrary"
 import { type BookWithRelations, getBook } from "@/database/books"
 import { isEpubVersionError } from "@/epub"
@@ -89,7 +89,7 @@ async function readLocalMetadata(
     try {
       const entries = await readdir(audio.filepath, { recursive: true })
       const tracks = entries
-        .filter((entry) => isAudioFile(entry))
+        .filter((entry) => isAudioFile(entry) && !isJunkFile(entry))
         .map((entry) => join(audio.filepath, entry)) as AudiobookInputs
       if (tracks.length) {
         using audiobook = await Audiobook.from(...tracks)

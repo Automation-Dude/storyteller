@@ -1,7 +1,7 @@
 import { exec } from "node:child_process"
 import { randomUUID } from "node:crypto"
 import { copyFile } from "node:fs/promises"
-import { extname } from "node:path"
+import { basename, extname } from "node:path"
 import { promisify } from "util"
 
 import memoize from "memoize"
@@ -109,11 +109,33 @@ type TrackInfo = {
  * @returns Whether the file *may* contain audio
  */
 export function isAudioFile(filenameOrExt: string): boolean {
-  return AUDIO_FILE_EXTENSIONS.some((ext) => filenameOrExt.endsWith(ext))
+  // Rips from older tools arrive with uppercase extensions (".MP3"); the
+  // extension's casing says nothing about the contents.
+  const lowered = filenameOrExt.toLowerCase()
+  return AUDIO_FILE_EXTENSIONS.some((ext) => lowered.endsWith(ext))
 }
 
 export function isZipArchive(filenameOrExt: string): boolean {
-  return filenameOrExt.endsWith(".zip")
+  return filenameOrExt.toLowerCase().endsWith(".zip")
+}
+
+/**
+ * Determines if a file is filesystem litter rather than book content.
+ *
+ * @remarks
+ * macOS leaves AppleDouble companion files ("._Track 01.mp3") and .DS_Store
+ * entries behind when a library lives on a non-Mac filesystem; Windows leaves
+ * Thumbs.db. An AppleDouble file copies the extension of the file it shadows,
+ * so it passes extension checks like {@link isAudioFile}, but it holds
+ * resource-fork data that ffprobe cannot read, which fails the import of an
+ * otherwise healthy book.
+ *
+ * @param filenameOrPath The filename (or full path) to check
+ * @returns Whether the file is OS metadata that should never be imported
+ */
+export function isJunkFile(filenameOrPath: string): boolean {
+  const name = basename(filenameOrPath)
+  return name.startsWith("._") || name === ".DS_Store" || name === "Thumbs.db"
 }
 
 /**

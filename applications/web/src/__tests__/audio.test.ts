@@ -6,6 +6,8 @@ import {
   COVER_IMAGE_FILE_EXTENSIONS,
   getTrackDuration,
   isAudioFile,
+  isJunkFile,
+  isZipArchive,
 } from "@/audio"
 import { optimizedContentType } from "@/images"
 
@@ -62,6 +64,44 @@ void describe("isAudioFile", () => {
     assert.ok(!isAudioFile("cover.png"))
     assert.ok(!isAudioFile("A Book.epub"))
     assert.ok(!isAudioFile("README.txt"))
+  })
+
+  void it("ignores extension casing, which rips from older tools vary", () => {
+    // "Track 01.MP3" is the same audio as "Track 01.mp3"; a case-sensitive
+    // check silently dropped every track of an uppercase rip.
+    assert.ok(isAudioFile("Track 01.MP3"))
+    assert.ok(isAudioFile("Track 01.Mp3"))
+    assert.ok(isAudioFile("book.M4B"))
+    assert.ok(isAudioFile(".FLAC"))
+    assert.ok(!isAudioFile("README.TXT"))
+  })
+})
+
+void describe("isZipArchive", () => {
+  void it("accepts .zip regardless of casing", () => {
+    assert.ok(isZipArchive("book.zip"))
+    assert.ok(isZipArchive("book.ZIP"))
+    assert.ok(!isZipArchive("book.epub"))
+  })
+})
+
+void describe("isJunkFile", () => {
+  void it("catches OS metadata files that shadow real audio names", () => {
+    // An AppleDouble companion ends in .mp3, so it passes isAudioFile, but it
+    // holds resource-fork data that ffprobe cannot read; one such file used to
+    // fail the import of the whole book.
+    assert.ok(isJunkFile("._Track 01.mp3"))
+    assert.ok(isJunkFile("/library/A Book/._Track 01.mp3"))
+    assert.ok(isJunkFile(".DS_Store"))
+    assert.ok(isJunkFile("/library/A Book/.DS_Store"))
+    assert.ok(isJunkFile("Thumbs.db"))
+  })
+
+  void it("leaves real files alone", () => {
+    assert.ok(!isJunkFile("Track 01.mp3"))
+    assert.ok(!isJunkFile("/library/A Book/Track 01.mp3"))
+    assert.ok(!isJunkFile("_underscore name.mp3"))
+    assert.ok(!isJunkFile(".hidden-but-real.mp3"))
   })
 })
 

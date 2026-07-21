@@ -6,7 +6,7 @@ import { Epub, MemoryAdapter } from "@storyteller-platform/epub"
 
 import { isInsideInternalDirectory } from "@/assets/library/internalDirs"
 import { isReadaloudEpub } from "@/assets/library/scanner/create-book"
-import { isAudioFile } from "@/audio"
+import { isAudioFile, isJunkFile } from "@/audio"
 import { type BookWithRelations } from "@/database/books"
 import { getIgnorePaths } from "@/database/importRules"
 import { getSetting } from "@/database/settings"
@@ -58,6 +58,7 @@ async function classifyFolder(
     if (!entry.isFile() && !entry.isSymbolicLink()) continue
 
     const name = entry.name
+    if (isJunkFile(name)) continue
     const fullPath = join(folder, name)
 
     const isInIgnorePath = Array.from(opts.ignorePaths).some((path) =>
@@ -351,6 +352,7 @@ export async function walkFolders(
     if (ctx.signal.aborted) return []
     if (!entry.isFile() && !entry.isSymbolicLink()) continue
     if (isInsideInternalDirectory(entry.parentPath)) continue
+    if (isJunkFile(entry.name)) continue
 
     const ext = extname(entry.name)
     if (ext !== ".epub" && !isAudioFile(ext)) continue

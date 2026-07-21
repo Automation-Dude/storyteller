@@ -18,6 +18,9 @@ const WATCHER_OPTIONS = {
     "**/*.watchman-cookie*",
     "**/*.json",
     "**/.DS_Store",
+    // macOS AppleDouble companions ("._Track 01.mp3") are OS metadata, not
+    // books; without this a Mac-managed library fires an event per junk file.
+    "**/._*",
     "**/.autoimport/**",
     "**/image-cache/**",
     "**/uploads/**",
