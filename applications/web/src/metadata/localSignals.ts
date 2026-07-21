@@ -128,6 +128,25 @@ export function cleanAuthorName(name: string): string {
   return n.replace(/\s+/g, " ").trim()
 }
 
+/** Levenshtein distance, for catching a typo'd author against a trusted one. */
+export function editDistance(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  let previous = Array.from({ length: n + 1 }, (_, j) => j)
+  for (let i = 1; i <= m; i++) {
+    const current = [i]
+    for (let j = 1; j <= n; j++) {
+      current[j] = Math.min(
+        (previous[j] ?? 0) + 1,
+        (current[j - 1] ?? 0) + 1,
+        (previous[j - 1] ?? 0) + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+    }
+    previous = current
+  }
+  return previous[n] ?? 0
+}
+
 export type SeriesGuess = { name: string; position: number | null }
 
 function seriesPosition(raw: string | undefined): number | null {

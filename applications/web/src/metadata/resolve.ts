@@ -23,6 +23,7 @@ import {
   authorNameIsBad,
   cleanAuthorName,
   combine,
+  editDistance,
   isGarbageTitle,
   seriesFromTitle,
 } from "./localSignals"
@@ -254,9 +255,18 @@ export async function resolveBook(
     need.title = false
   }
   if (need.authors && local.authors?.length) {
-    resolution.choice.authors = local.authors
-    resolution.sources.authors = "file"
-    need.authors = false
+    // Tags carry the same damage the database does (underscores, "By "
+    // prefixes, a collection name where the author belongs); clean before
+    // trusting, and never refill garbage.
+    const usable = local.authors
+      .map((name) => cleanAuthorName(name))
+      .filter((name, index, all) => name && all.indexOf(name) === index)
+      .filter((name) => !authorNameIsBad(name))
+    if (usable.length) {
+      resolution.choice.authors = usable
+      resolution.sources.authors = "file"
+      need.authors = false
+    }
   }
   if (need.language && local.language) {
     resolution.choice.language = normalizeLanguage(local.language)
@@ -282,6 +292,9 @@ export async function resolveBook(
       .filter((a) => !/^(narrated by|read by|performed by)\s/i.test(a.name))
       .map((a) => cleanAuthorName(a.name))
       .filter((name, index, all) => name && all.indexOf(name) === index)
+      // A collection name riding along a real author ("Dan Simmons; Top 100
+      // Sci-Fi Books") is dropped, not kept for company.
+      .filter((name, _, all) => !authorNameIsBad(name) || all.length === 1)
     if (
       cleaned.length &&
       !cleaned.every(authorNameIsBad) &&
@@ -369,6 +382,26 @@ export async function resolveBook(
         if (need.authors && best.authors.length) {
           resolution.choice.authors = best.authors
           resolution.sources.authors = "openlibrary"
+        }
+        // A stored author a keystroke away from the confident match's author
+        // is a typo ("Anne McCaffery"); the catalogue's spelling wins.
+        if (
+          !need.authors &&
+          resolution.confidence === "high" &&
+          !resolution.choice.authors &&
+          book.authors.length === 1 &&
+          best.authors[0]
+        ) {
+          const stored = book.authors[0]?.name ?? ""
+          const matched = best.authors[0]
+          const distance = editDistance(
+            stored.toLowerCase(),
+            matched.toLowerCase(),
+          )
+          if (distance > 0 && distance <= 2) {
+            resolution.choice.authors = [matched]
+            resolution.sources.authors = "openlibrary"
+          }
         }
         // Open Library's language list is every edition's language, so picking
         // one would tag an English audiobook Polish. Only fill when it confirms

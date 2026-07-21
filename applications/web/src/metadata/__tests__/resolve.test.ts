@@ -580,3 +580,90 @@ void describe("author repair", () => {
     assert.strictEqual(res.sources.authors, "openlibrary")
   })
 })
+
+void describe("author quality guards", () => {
+  void it("never refills garbage from tags: a collection name is not an author", async () => {
+    const book = fakeBook({
+      title: "Brave New World",
+      authors: ["Top 100 Sci-Fi Books"],
+      language: "en",
+      description: "Long enough description so authors are the only problem.",
+      series: [{ name: "None" }],
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          // tags carry the same garbage the database has
+          readLocal: async () => ({ authors: ["Top 100 Sci-Fi Books"] }),
+          search: async () => [
+            candidate({
+              title: "Brave New World",
+              authors: ["Aldous Huxley"],
+              score: 0.95,
+            }),
+          ],
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.deepStrictEqual(res.choice.authors, ["Aldous Huxley"])
+    assert.strictEqual(res.sources.authors, "openlibrary")
+  })
+
+  void it("cleans tag-sourced authors before trusting them", async () => {
+    const book = fakeBook({
+      title: "Vagabond",
+      authors: [],
+      language: "en",
+      description: "Long enough description so authors are the only problem.",
+      series: [{ name: "Grail Quest" }],
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        { readLocal: async () => ({ authors: ["Bernard_Cornwell"] }) },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.deepStrictEqual(res.choice.authors, ["Bernard Cornwell"])
+    assert.strictEqual(res.sources.authors, "file")
+  })
+
+  void it("adopts the catalogue spelling when the stored author is a typo away", async () => {
+    const book = fakeBook({
+      title: "Dragonsong",
+      authors: ["Anne McCaffery"],
+      language: "en",
+      description: "Long enough description so nothing else is missing here.",
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "Dragonsong",
+              authors: ["Anne McCaffrey"],
+              score: 0.95,
+            }),
+          ],
+          fetchEditionSeries: async () => ({
+            name: "Dragonriders of Pern",
+            position: 3,
+          }),
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.deepStrictEqual(res.choice.authors, ["Anne McCaffrey"])
+    assert.strictEqual(res.sources.authors, "openlibrary")
+  })
+})
