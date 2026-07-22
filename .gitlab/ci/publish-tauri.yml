@@ -38,6 +38,14 @@ publish-tauri-macos:
   script:
     - export VERSION="${CI_COMMIT_TAG#tauri-}"
     - export VERSION="${VERSION#v}"
+    # fail before the 5-minute build if the key never reached the job
+    # (protected variables are only injected on protected tags)
+    - |
+      if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+        echo "TAURI_SIGNING_PRIVATE_KEY is empty or unset — check that the CI/CD variable exists and that this tag is protected if the variable is"
+        exit 1
+      fi
+      echo "TAURI_SIGNING_PRIVATE_KEY length: ${#TAURI_SIGNING_PRIVATE_KEY}"
     # is important for auto-update
     - PKG_VERSION=$(node -p
       "require('./applications/tauri/package.json').version")
@@ -62,8 +70,9 @@ publish-tauri-macos:
     - yarn fetch-binaries
     - yarn assemble-runtime
     - yarn tauri build
-    - export TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY}
-    - export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD}
+    # set-but-empty password means "no password", unset would make tauri
+    # prompt interactively and hang the job
+    - export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD-}"
     # updater build instead of the plain one above (requires the signing key):
     - yarn tauri build --config '{"bundle":{"createUpdaterArtifacts":true}}'
     - cd "$CI_PROJECT_DIR"
