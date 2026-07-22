@@ -31,11 +31,12 @@ export type CreatorDisplayField =
   | "narrators"
   | "translators"
   | "creators"
-export const CREATOR_DISPLAY_FIELDS: readonly CreatorDisplayField[] = [
-  "narrators",
-  "translators",
-  "creators",
-]
+// the creator fields that aren't already sortable (authors is), derived from
+// the registry so a new creator field shows up automatically
+export const CREATOR_DISPLAY_FIELDS: readonly CreatorDisplayField[] =
+  Object.entries(FIELD_REGISTRY)
+    .filter(([, def]) => def.group === "creators" && !def.sortable)
+    .map(([field]) => field) as CreatorDisplayField[]
 
 export type DisplayField = SortField | CreatorDisplayField
 

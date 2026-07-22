@@ -39,6 +39,7 @@ import {
   FilterableMenuTrigger,
 } from "@/app/(v3)/v3/_/components/ui/filterable-menu"
 import { useRelationItems } from "@/app/(v3)/v3/_/hooks/use-relation-items"
+import { marcRelators } from "@/components/books/edit/marcRelators"
 import { type BookWithRelations } from "@/database/books"
 import { DEFAULT_RATING_DIMENSIONS } from "@/database/ratingDimensions"
 import { statusDisplayLabel } from "@/database/statusKinds"
@@ -46,11 +47,14 @@ import {
   FIELDS,
   type FacetSource,
   type FieldGroupKey,
+  type QualifierKind,
   getFieldDef,
 } from "@/fields"
 import { FieldIcon } from "@/icons"
 import * as icon from "@/icons"
 import {
+  NUMBER_COMPARE_OPERATORS,
+  RANGE_OPERATORS,
   type ShelfFilterAnd,
   type ShelfFilterCondition,
   type ShelfFilterField,
@@ -66,8 +70,13 @@ import {
   operatorRequiresArrayValue,
   operatorRequiresRangeValue,
   operatorRequiresValue,
+  shelfValueText,
 } from "@/shelves"
-import { getCoverUrl, useListStatusesQuery } from "@/store/api"
+import {
+  getCoverUrl,
+  useListIdentifierTypesQuery,
+  useListStatusesQuery,
+} from "@/store/api"
 
 const FIELD_GROUP_ORDER: FieldGroupKey[] = [
   "text",
@@ -153,6 +162,16 @@ const FILTER_PRESETS: FilterPreset[] = [
       field: "pageCount",
       operator: "greaterOrEqual",
       value: 300,
+    },
+  },
+  {
+    key: "authorIsNarrator",
+    node: {
+      type: "condition",
+      field: "creators",
+      qualifier: "aut",
+      operator: "intersects",
+      value: { ref: { qualifier: "nrt" } },
     },
   },
 ]
@@ -732,13 +751,18 @@ function ConditionEditor({
 }) {
   const t = useTranslation("ShelfFilterEditor")
   const c = useCommon()
-  const { ratingDimensions } = useUserPreferences()
 
-  const dimensions = ratingDimensions.length
-    ? ratingDimensions
-    : DEFAULT_RATING_DIMENSIONS
+  const def = getFieldDef(condition.field)
+  const qualifierKind = def.qualifier?.kind
+  const isCountable = !!def.countable
 
-  const operators = getOperatorsForField(condition.field)
+  const countOperators = [...NUMBER_COMPARE_OPERATORS, ...RANGE_OPERATORS]
+  const isCountableOperator = countOperators.some(
+    (op) => op === condition.operator,
+  )
+  const isCount = isCountable && isCountableOperator
+
+  const operators: ShelfFilterOperator[] = getOperatorsForField(condition.field)
   const needsValue = operatorRequiresValue(condition.operator)
   const needsArrayValue = operatorRequiresArrayValue(condition.operator)
   const needsRangeValue = operatorRequiresRangeValue(condition.operator)
@@ -752,26 +776,37 @@ function ConditionEditor({
 
   const handleFieldChange = (field: ShelfFilterField) => {
     const newOperators = getOperatorsForField(field)
-    const newOperator = newOperators.includes(condition.operator)
-      ? condition.operator
-      : newOperators[0] ?? "is"
+    const fieldDef = getFieldDef(field)
+    const newOperator =
+      fieldDef.defaultOperator ??
+      (newOperators.includes(condition.operator)
+        ? condition.operator
+        : newOperators[0] ?? "is")
 
     onChange({
       type: "condition",
       field,
       operator: newOperator,
       value: undefined,
-      ...(field === "ratingDimension"
-        ? { dimension: condition.dimension ?? dimensions[0]?.id }
-        : {}),
     })
   }
 
-  const handleDimensionChange = (dimension: string) => {
-    onChange({ ...condition, dimension })
+  const handleQualifierChange = (qualifier: string | undefined) => {
+    onChange({ ...condition, qualifier })
   }
 
   const handleOperatorChange = (operator: ShelfFilterOperator) => {
+    if (countOperators.some((op) => op === operator)) {
+      console.log("count operator", operator)
+      onChange({
+        ...condition,
+        aggregate: "count",
+        operator: operator,
+        value: operatorRequiresValue(operator) ? condition.value : undefined,
+      })
+      return
+    }
+
     onChange({
       ...condition,
       operator,
@@ -835,34 +870,29 @@ function ConditionEditor({
           </FilterableMenuContent>
         </FilterableMenu>
 
-        {condition.field === "ratingDimension" && (
-          <FilterableMenu>
-            <FilterableMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
-                >
-                  <icon.ChevronDown className="size-3" />
-                </Button>
-              }
-            />
-            <FilterableMenuContent searchable={false}>
-              {dimensions.map((d) => (
-                <FilterableMenuItem
-                  key={d.id}
-                  textValue={d.label}
-                  onSelect={() => {
-                    handleDimensionChange(d.id)
-                  }}
-                >
-                  {d.label}
-                </FilterableMenuItem>
-              ))}
-            </FilterableMenuContent>
-          </FilterableMenu>
+        {qualifierKind && (
+          <QualifierPicker
+            kind={qualifierKind}
+            value={condition.qualifier}
+            onChange={handleQualifierChange}
+          />
         )}
+
+        {/* {isCountable && (
+          <Button
+            variant="outline"
+            size="sm"
+            aria-pressed={isCount}
+            title={t.plain("countToggle")}
+            className={cn(
+              "bg-input/20 dark:bg-input/30 border-input rounded-md font-normal",
+              isCount && "border-primary/40 text-primary",
+            )}
+            onClick={handleToggleCount}
+          >
+            <icon.ListNumbers className="size-3" />
+          </Button>
+        )} */}
 
         <FilterableMenu>
           <FilterableMenuTrigger
@@ -889,6 +919,22 @@ function ConditionEditor({
                 {item.label}
               </FilterableMenuItem>
             ))}
+            {isCountable && (
+              <FilterableMenuGroup>
+                <FilterableMenuLabel>{t.plain("count")}</FilterableMenuLabel>
+                {countOperators.map((op) => (
+                  <FilterableMenuItem
+                    key={op}
+                    textValue={t.plain(`operators.${op}` as "operators.is")}
+                    onSelect={() => {
+                      handleOperatorChange(op)
+                    }}
+                  >
+                    {t.plain(`operators.${op}` as "operators.is")}
+                  </FilterableMenuItem>
+                ))}
+              </FilterableMenuGroup>
+            )}
           </FilterableMenuContent>
         </FilterableMenu>
 
@@ -898,6 +944,7 @@ function ConditionEditor({
               field={condition.field}
               isArray={needsArrayValue}
               isRange={needsRangeValue}
+              isCount={isCount}
               value={condition.value}
               onChange={handleValueChange}
             />
@@ -931,18 +978,91 @@ function ConditionEditor({
   )
 }
 
+// the sub-key selector for qualifiable fields: a rating axis for userRating,
+// an identifier type for identifiers, a marc relator role for creators. the
+// first entry clears the qualifier (= the whole field).
+function QualifierPicker({
+  kind,
+  value,
+  onChange,
+}: {
+  kind: QualifierKind
+  value: string | undefined
+  onChange: (qualifier: string | undefined) => void
+}) {
+  const t = useTranslation("ShelfFilterEditor")
+  const { ratingDimensions } = useUserPreferences()
+  const { data: identifierTypes = [] } = useListIdentifierTypesQuery(
+    undefined,
+    { skip: kind !== "identifierScheme" },
+  )
+
+  const anyLabel =
+    kind === "ratingAxis"
+      ? t.plain("qualifier.overall")
+      : kind === "identifierScheme"
+        ? t.plain("qualifier.anyType")
+        : t.plain("qualifier.anyRole")
+
+  const options: { id: string; label: string }[] =
+    kind === "ratingAxis"
+      ? (ratingDimensions.length
+          ? ratingDimensions
+          : DEFAULT_RATING_DIMENSIONS
+        ).map((d) => ({ id: d.id, label: d.label }))
+      : kind === "identifierScheme"
+        ? identifierTypes.map((i) => ({ id: i.uuid, label: i.name }))
+        : marcRelators.map((r) => ({ id: r.value, label: r.label }))
+
+  const current = options.find((o) => o.id === value)
+
+  return (
+    <FilterableMenu>
+      <FilterableMenuTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-input/20 dark:bg-input/30 border-input rounded-md font-normal"
+          >
+            {current?.label ?? anyLabel}
+            <icon.ChevronDown className="size-3" />
+          </Button>
+        }
+      />
+      <FilterableMenuContent searchable={options.length > 10}>
+        <FilterableMenuItem
+          textValue={anyLabel}
+          onSelect={() => {
+            onChange(undefined)
+          }}
+        >
+          {anyLabel}
+        </FilterableMenuItem>
+        {options.map((o) => (
+          <FilterableMenuItem
+            key={o.id}
+            textValue={o.label}
+            onSelect={() => {
+              onChange(o.id)
+            }}
+          >
+            {o.label}
+          </FilterableMenuItem>
+        ))}
+      </FilterableMenuContent>
+    </FilterableMenu>
+  )
+}
+
 type ConditionValueInputProps = {
   field: ShelfFilterField
   isArray: boolean
   isRange: boolean
-  value:
-    | string
-    | number
-    | (string | number)[]
-    | [string, string]
-    | [number, number]
-    | null
-    | undefined
+  isCount?: boolean
+  // ShelfFilterValue; field-ref values only appear in preset-built conditions
+  // and render through the generic inputs
+  value: ShelfFilterCondition["value"]
   onChange: (value: string | number | (string | number)[] | null) => void
 }
 
@@ -1004,6 +1124,7 @@ function ConditionValueInput({
   field,
   isArray,
   isRange,
+  isCount,
   value,
   onChange,
 }: ConditionValueInputProps) {
@@ -1012,6 +1133,45 @@ function ConditionValueInput({
   const def = getFieldDef(field)
 
   const { data: statuses = [] } = useListStatusesQuery()
+
+  // -- count aggregate: always a plain number, whatever the field is --------
+
+  if (isCount) {
+    if (isRange) {
+      const rangeValue = Array.isArray(value) ? value : [0, 10]
+      const lo = typeof rangeValue[0] === "number" ? rangeValue[0] : 0
+      const hi = typeof rangeValue[1] === "number" ? rangeValue[1] : 10
+
+      return (
+        <div className="flex items-center gap-2">
+          <NumericInput
+            className="h-7 w-20 text-xs"
+            value={lo}
+            onChange={(n) => {
+              onChange([n, hi])
+            }}
+          />
+          <span className="text-muted-foreground text-xs">{t.plain("to")}</span>
+          <NumericInput
+            className="h-7 w-20 text-xs"
+            value={hi}
+            onChange={(n) => {
+              onChange([lo, n])
+            }}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <NumericInput
+        className="h-7 w-20 text-xs"
+        value={typeof value === "number" ? value : ""}
+        onChange={onChange}
+        placeholder={t.plain("numericPlaceholders.default")}
+      />
+    )
+  }
 
   // -- duration: hours + minutes instead of raw seconds ---------------------
 
@@ -1024,7 +1184,10 @@ function ConditionValueInput({
           <DurationInput
             value={typeof rangeValue[0] === "number" ? rangeValue[0] : 0}
             onChange={(v) => {
-              onChange([v, rangeValue[1] ?? 36000])
+              onChange([
+                v,
+                typeof rangeValue[1] === "number" ? rangeValue[1] : 36000,
+              ])
             }}
           />
 
@@ -1033,7 +1196,10 @@ function ConditionValueInput({
           <DurationInput
             value={typeof rangeValue[1] === "number" ? rangeValue[1] : 36000}
             onChange={(v) => {
-              onChange([rangeValue[0] ?? 0, v])
+              onChange([
+                typeof rangeValue[0] === "number" ? rangeValue[0] : 0,
+                v,
+              ])
             }}
           />
         </div>
@@ -1059,7 +1225,10 @@ function ConditionValueInput({
           <FileSizeInput
             value={typeof rangeValue[0] === "number" ? rangeValue[0] : 0}
             onChange={(v) => {
-              onChange([v, rangeValue[1] ?? 1073741824])
+              onChange([
+                v,
+                typeof rangeValue[1] === "number" ? rangeValue[1] : 1073741824,
+              ])
             }}
           />
 
@@ -1070,7 +1239,10 @@ function ConditionValueInput({
               typeof rangeValue[1] === "number" ? rangeValue[1] : 1073741824
             }
             onChange={(v) => {
-              onChange([rangeValue[0] ?? 0, v])
+              onChange([
+                typeof rangeValue[0] === "number" ? rangeValue[0] : 0,
+                v,
+              ])
             }}
           />
         </div>
@@ -1089,8 +1261,13 @@ function ConditionValueInput({
 
   // a distinct-facet string field with a scalar text operator (is / contains /
   // starts with) edits as plain text below; only membership operators get the
-  // multi-select.
-  if (def.control === "facet" && (isArray || def.source !== "distinct")) {
+  // multi-select. identifiers never facet-pick their value: the value is the
+  // id text itself (the type is picked via the qualifier).
+  if (
+    def.control === "facet" &&
+    def.source !== "identifiers" &&
+    (isArray || def.source !== "distinct")
+  ) {
     const selected = Array.isArray(value) ? (value as string[]) : []
 
     // status is / isNot picks a single value: keep the plain select.
@@ -1245,7 +1422,10 @@ function ConditionValueInput({
             className="h-7 text-xs"
             value={typeof rangeValue[0] === "string" ? rangeValue[0] : ""}
             onChange={(e) => {
-              onChange([e.target.value, rangeValue[1] ?? ""])
+              onChange([
+                e.target.value,
+                typeof rangeValue[1] === "string" ? rangeValue[1] : "",
+              ])
             }}
           />
 
@@ -1256,7 +1436,10 @@ function ConditionValueInput({
             className="h-7 text-xs"
             value={typeof rangeValue[1] === "string" ? rangeValue[1] : ""}
             onChange={(e) => {
-              onChange([rangeValue[0] ?? "", e.target.value])
+              onChange([
+                typeof rangeValue[0] === "string" ? rangeValue[0] : "",
+                e.target.value,
+              ])
             }}
           />
         </div>
@@ -1279,7 +1462,9 @@ function ConditionValueInput({
   // a comma-separated list, everything else a single value ------------------
 
   if (isArray) {
-    const arrayValue = Array.isArray(value) ? value.join(", ") : ""
+    const arrayValue = Array.isArray(value)
+      ? value.map(shelfValueText).join(", ")
+      : ""
 
     return (
       <Input

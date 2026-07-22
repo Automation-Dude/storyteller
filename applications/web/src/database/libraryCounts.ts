@@ -1,16 +1,23 @@
 import { sql } from "kysely"
 
 import { type Role } from "@/components/books/edit/marcRelators"
-import { ALIGNMENT_GRADES, FORMAT_VALUES } from "@/fields"
+import {
+  BADGE_FACET_SECTIONS,
+  type BadgeFacetSection,
+  FACET_SECTION_REGISTRY,
+  type FacetSection,
+  type FacetSectionDef,
+  isFacetSection,
+} from "@/facet-sections"
+import { ALIGNMENT_GRADES, FORMAT_VALUES, resolveFieldAlias } from "@/fields"
 import { type ShelfFilter } from "@/shelves"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
-import {
-  bookVisibleTo,
-  buildFilterExpression,
-  formatPredicate,
-} from "./shelfFilter"
+import { FIELD_SQL, formatPredicate } from "./fieldSql"
+import { bookVisibleTo, buildFilterExpression } from "./shelfFilter"
+
+export { type FacetSection, isFacetSection }
 
 // a single row within a facet (one status, one rating bucket, one author). a
 // facet (aka section, see FacetSection) is the dimension; a FacetValue is one
@@ -26,60 +33,19 @@ export type FacetValue = {
   kind?: string
 }
 
-export const FACET_SECTIONS = [
-  "series",
-  "authors",
-  "narrators",
-  "translators",
-  "tags",
-  "collections",
-  "statuses",
-  "publicationYears",
-  "ratings",
-  "formats",
-  "grades",
-  "shelves",
-  "identifiers",
-] as const
-
-export type FacetSection = (typeof FACET_SECTIONS)[number]
-
-export function isFacetSection(value: string): value is FacetSection {
-  return (FACET_SECTIONS as readonly string[]).includes(value)
-}
-
 export const NONE_FACET_KEY = "__none__"
 
-export type LibraryCounts = {
+// per-collection / per-shelf counts stay keyed by entity uuid; the badge
+// sections contribute one distinct-value count each.
+export type LibraryCounts = Record<BadgeFacetSection, number> & {
   // total visible books in the whole library
   books: number
-  series: number
-  authors: number
-  narrators: number
-  translators: number
-  tags: number
-  statuses: number
-  publicationYears: number
-  ratings: number
-  // book counts per collection / shelf, keyed by the entity uuid.
   collections: Record<string, number>
   shelves: Record<string, number>
 }
 
 export function visibleBooks(userId: UUID, dab = db) {
   return dab.selectFrom("book").where((eb) => bookVisibleTo(eb, userId))
-}
-
-async function countCreatorsByRole(userId: UUID, role: Role) {
-  const row = await visibleBooks(userId)
-    .innerJoin("bookToCreator", "bookToCreator.bookUuid", "book.uuid")
-    .where("bookToCreator.role", "=", role)
-    .select((eb) =>
-      eb.fn.count<number>("bookToCreator.creatorUuid").distinct().as("count"),
-    )
-    .executeTakeFirst()
-
-  return row?.count ?? 0
 }
 
 async function countSmartShelf(userId: UUID, filter: ShelfFilter) {
@@ -96,50 +62,100 @@ function parseShelfFilter(raw: unknown): ShelfFilter {
   return (typeof raw === "string" ? JSON.parse(raw) : raw) as ShelfFilter
 }
 
-export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
-  const booksP = visibleBooks(userId)
-    .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
-    .executeTakeFirst()
+// ---------------------------------------------------------------------------
+// distinct-value counts (the sidebar badges)
+// ---------------------------------------------------------------------------
 
-  const seriesP = visibleBooks(userId)
-    .innerJoin("bookToSeries", "bookToSeries.bookUuid", "book.uuid")
+async function countCreatorsByRole(userId: UUID, role: Role) {
+  const row = await visibleBooks(userId)
+    .innerJoin("bookToCreator", "bookToCreator.bookUuid", "book.uuid")
+    .where("bookToCreator.role", "=", role)
     .select((eb) =>
-      eb.fn.count<number>("bookToSeries.seriesUuid").distinct().as("count"),
+      eb.fn.count<number>("bookToCreator.creatorUuid").distinct().as("count"),
     )
     .executeTakeFirst()
 
-  const tagsP = visibleBooks(userId)
-    .innerJoin("bookToTag", "bookToTag.bookUuid", "book.uuid")
-    .select((eb) =>
-      eb.fn.count<number>("bookToTag.tagUuid").distinct().as("count"),
-    )
-    .executeTakeFirst()
+  return row?.count ?? 0
+}
+
+const DISTINCT_COUNTS = {
+  series: async (userId) => {
+    const row = await visibleBooks(userId)
+      .innerJoin("bookToSeries", "bookToSeries.bookUuid", "book.uuid")
+      .select((eb) =>
+        eb.fn.count<number>("bookToSeries.seriesUuid").distinct().as("count"),
+      )
+      .executeTakeFirst()
+    return row?.count ?? 0
+  },
+
+  authors: (userId) => countCreatorsByRole(userId, "aut"),
+  narrators: (userId) => countCreatorsByRole(userId, "nrt"),
+  translators: (userId) => countCreatorsByRole(userId, "trl"),
+
+  tags: async (userId) => {
+    const row = await visibleBooks(userId)
+      .innerJoin("bookToTag", "bookToTag.bookUuid", "book.uuid")
+      .select((eb) =>
+        eb.fn.count<number>("bookToTag.tagUuid").distinct().as("count"),
+      )
+      .executeTakeFirst()
+    return row?.count ?? 0
+  },
+
+  statuses: async (userId) => {
+    const row = await db
+      .selectFrom("bookToStatus")
+      .where("bookToStatus.userId", "=", userId)
+      .select((eb) =>
+        eb.fn.count<number>("bookToStatus.statusUuid").distinct().as("count"),
+      )
+      .executeTakeFirst()
+    return row?.count ?? 0
+  },
 
   // distinct publication years over visible books. substr ignores nulls, so
   // books without a date don't add a phantom year.
-  const yearsP = visibleBooks(userId)
-    .select(
-      sql<number>`count(distinct substr(book.publication_date, 1, 4))`.as(
-        "count",
-      ),
-    )
-    .executeTakeFirst()
+  publicationYears: async (userId) => {
+    const row = await visibleBooks(userId)
+      .select(
+        sql<number>`count(distinct substr(book.publication_date, 1, 4))`.as(
+          "count",
+        ),
+      )
+      .executeTakeFirst()
+    return row?.count ?? 0
+  },
 
-  const statusesP = db
-    .selectFrom("bookToStatus")
-    .where("bookToStatus.userId", "=", userId)
-    .select((eb) =>
-      eb.fn.count<number>("bookToStatus.statusUuid").distinct().as("count"),
-    )
-    .executeTakeFirst()
+  ratings: async (userId) => {
+    const row = await db
+      .selectFrom("userBookRating")
+      .where("userBookRating.userId", "=", userId)
+      .where("userBookRating.rating", "is not", null)
+      .select((eb) =>
+        eb.fn.count<number>("userBookRating.rating").distinct().as("count"),
+      )
+      .executeTakeFirst()
+    return row?.count ?? 0
+  },
 
-  const ratingsP = db
-    .selectFrom("userBookRating")
-    .where("userBookRating.userId", "=", userId)
-    .where("userBookRating.rating", "is not", null)
-    .select((eb) =>
-      eb.fn.count<number>("userBookRating.rating").distinct().as("count"),
-    )
+  identifiers: async (userId) => {
+    const row = await visibleBooks(userId)
+      .innerJoin("identifier", "identifier.bookUuid", "book.uuid")
+      .select((eb) =>
+        eb.fn
+          .count<number>("identifier.identifierTypeUuid")
+          .distinct()
+          .as("count"),
+      )
+      .executeTakeFirst()
+    return row?.count ?? 0
+  },
+} as const satisfies Record<BadgeFacetSection, (userId: UUID) => Promise<number>>
+
+export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
+  const booksP = visibleBooks(userId)
+    .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
     .executeTakeFirst()
 
   const collectionRowsP = db
@@ -169,33 +185,16 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
     .where("shelf.filter", "is not", null)
     .execute()
 
-  const [
-    books,
-    series,
-    authors,
-    narrators,
-    translators,
-    tags,
-    years,
-    statuses,
-    ratings,
-    collectionRows,
-    manualShelfRows,
-    smartShelves,
-  ] = await Promise.all([
-    booksP,
-    seriesP,
-    countCreatorsByRole(userId, "aut"),
-    countCreatorsByRole(userId, "nrt"),
-    countCreatorsByRole(userId, "trl"),
-    tagsP,
-    yearsP,
-    statusesP,
-    ratingsP,
-    collectionRowsP,
-    manualShelfRowsP,
-    smartShelvesP,
-  ])
+  const [books, collectionRows, manualShelfRows, smartShelves, ...badgeCounts] =
+    await Promise.all([
+      booksP,
+      collectionRowsP,
+      manualShelfRowsP,
+      smartShelvesP,
+      ...BADGE_FACET_SECTIONS.map((section) =>
+        DISTINCT_COUNTS[section](userId),
+      ),
+    ])
 
   const collections: Record<string, number> = {}
   for (const row of collectionRows) collections[row.uuid] = row.count
@@ -211,20 +210,21 @@ export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
   )
   for (const [uuid, count] of smartCounts) shelves[uuid] = count
 
+  const badges = Object.fromEntries(
+    BADGE_FACET_SECTIONS.map((section, i) => [section, badgeCounts[i] ?? 0]),
+  ) as Record<BadgeFacetSection, number>
+
   return {
+    ...badges,
     books: books?.count ?? 0,
-    series: series?.count ?? 0,
-    authors,
-    narrators,
-    translators,
-    tags: tags?.count ?? 0,
-    statuses: statuses?.count ?? 0,
-    publicationYears: years?.count ?? 0,
-    ratings: ratings?.count ?? 0,
     collections,
     shelves,
   }
 }
+
+// ---------------------------------------------------------------------------
+// facet lists (one row per facet value, with book counts)
+// ---------------------------------------------------------------------------
 
 const creatorName = sql<string>`coalesce(nullif(creator.file_as, ''), creator.name)`
 
@@ -389,8 +389,10 @@ async function ratingFacets(userId: UUID): Promise<FacetValue[]> {
   }))
 }
 
+// one row per identifier type in use; the key is the type uuid, matching the
+// identifiers field's qualifier.
 async function identifierFacets(userId: UUID): Promise<FacetValue[]> {
-  return visibleBooks(userId)
+  const rows = await visibleBooks(userId)
     .innerJoin("identifier", "identifier.bookUuid", "book.uuid")
     .innerJoin(
       "identifierType",
@@ -398,13 +400,18 @@ async function identifierFacets(userId: UUID): Promise<FacetValue[]> {
       "identifier.identifierTypeUuid",
     )
     .select((eb) => [
-      "identifier.uuid as key",
+      "identifierType.uuid as key",
       "identifierType.name as name",
-      "identifier.value as value",
+      "identifierType.kind as kind",
       eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
     ])
-    .groupBy(["identifierType.name"])
+    .groupBy(["identifierType.uuid", "identifierType.name"])
     .execute()
+
+  return rows.map(({ kind, ...row }) => ({
+    ...row,
+    ...(kind ? { kind } : {}),
+  }))
 }
 
 // one count per canonical format value. the values overlap (a fully synced
@@ -486,130 +493,40 @@ async function shelfFacets(userId: UUID): Promise<FacetValue[]> {
   )
 }
 
-const NONE_CREATOR_ROLE: Partial<Record<FacetSection, Role>> = {
-  authors: "aut",
-  narrators: "nrt",
-  translators: "trl",
-}
+const FACET_IMPL = {
+  series: seriesFacets,
+  authors: (userId) => creatorFacets(userId, "aut"),
+  narrators: (userId) => creatorFacets(userId, "nrt"),
+  translators: (userId) => creatorFacets(userId, "trl"),
+  tags: tagFacets,
+  collections: collectionFacets,
+  statuses: statusFacets,
+  publicationYears: publicationYearFacets,
+  ratings: ratingFacets,
+  formats: formatFacets,
+  grades: gradeFacets,
+  shelves: shelfFacets,
+  identifiers: identifierFacets,
+} as const satisfies Record<
+  FacetSection,
+  (userId: UUID) => Promise<FacetValue[]>
+>
 
+// the "(no X)" bucket reuses the bound field's isEmpty from FIELD_SQL, so the
+// sidebar and the shelf filter can never disagree about what "none" means.
 async function countSectionNone(
   userId: UUID,
   section: FacetSection,
 ): Promise<number> {
-  const role = NONE_CREATOR_ROLE[section]
+  const none: FacetSectionDef["none"] = FACET_SECTION_REGISTRY[section].none
+  if (!none) return 0
+
+  const resolved = resolveFieldAlias(none.field)
+  const impl = FIELD_SQL[resolved.field as keyof typeof FIELD_SQL]
+  const qualifier = resolved.qualifier ?? none.qualifier
 
   const row = await visibleBooks(userId)
-    .where((eb) => {
-      switch (section) {
-        case "series":
-          return eb.not(
-            eb.exists(
-              eb
-                .selectFrom("bookToSeries")
-                .select(sql.lit(1).as("one"))
-                .whereRef("bookToSeries.bookUuid", "=", "book.uuid"),
-            ),
-          )
-        case "authors":
-        case "narrators":
-        case "translators":
-          return eb.not(
-            eb.exists(
-              eb
-                .selectFrom("bookToCreator")
-                .select(sql.lit(1).as("one"))
-                .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                .where("bookToCreator.role", "=", role!),
-            ),
-          )
-        case "tags":
-          return eb.not(
-            eb.exists(
-              eb
-                .selectFrom("bookToTag")
-                .select(sql.lit(1).as("one"))
-                .whereRef("bookToTag.bookUuid", "=", "book.uuid"),
-            ),
-          )
-        case "collections":
-          return eb.not(
-            eb.exists(
-              eb
-                .selectFrom("bookToCollection")
-                .select(sql.lit(1).as("one"))
-                .whereRef("bookToCollection.bookUuid", "=", "book.uuid"),
-            ),
-          )
-        case "statuses":
-          return eb.not(
-            eb.exists(
-              eb
-                .selectFrom("bookToStatus")
-                .select(sql.lit(1).as("one"))
-                .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
-                .where("bookToStatus.userId", "=", userId),
-            ),
-          )
-        case "ratings":
-          return eb.not(
-            eb.exists(
-              eb
-                .selectFrom("userBookRating")
-                .select(sql.lit(1).as("one"))
-                .whereRef("userBookRating.bookUuid", "=", "book.uuid")
-                .where("userBookRating.userId", "=", userId)
-                .where("userBookRating.rating", "is not", null),
-            ),
-          )
-        case "publicationYears":
-          return eb.or([
-            eb("book.publicationDate", "is", null),
-            eb("book.publicationDate", "=", ""),
-          ])
-
-        case "identifiers":
-          return eb.not(
-            eb.exists(
-              eb
-                .selectFrom("identifier")
-                .select(sql.lit(1).as("one"))
-                .innerJoin("book", "book.uuid", "identifier.bookUuid")
-                .leftJoin(
-                  "audiobook",
-                  "audiobook.uuid",
-                  "identifier.audiobookUuid",
-                )
-                .leftJoin(
-                  "readaloud",
-                  "readaloud.uuid",
-                  "identifier.readaloudUuid",
-                )
-                .leftJoin("ebook", "ebook.uuid", "identifier.ebookUuid")
-                .where((eb) =>
-                  eb.or([
-                    eb("identifier.bookUuid", "=", eb.ref("book.uuid")),
-                    eb(
-                      "identifier.audiobookUuid",
-                      "=",
-                      eb.ref("audiobook.uuid"),
-                    ),
-                    eb(
-                      "identifier.readaloudUuid",
-                      "=",
-                      eb.ref("readaloud.uuid"),
-                    ),
-                    eb("identifier.ebookUuid", "=", eb.ref("ebook.uuid")),
-                  ]),
-                ),
-            ),
-          )
-        case "formats":
-        case "grades":
-        case "shelves":
-          return eb.lit(false)
-      }
-    })
+    .where((eb) => impl.isEmpty(eb, { userId, qualifier }))
     .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
     .executeTakeFirst()
 
@@ -620,9 +537,7 @@ export async function getSectionFacets(
   userId: UUID,
   section: FacetSection,
 ): Promise<FacetValue[]> {
-  const facets = await getSectionFacetList(userId, section)
-
-  if (section === "formats" || section === "grades") return facets
+  const facets = await FACET_IMPL[section](userId)
 
   const none = await countSectionNone(userId, section)
   if (none > 0) {
@@ -630,38 +545,4 @@ export async function getSectionFacets(
   }
 
   return facets
-}
-
-function getSectionFacetList(
-  userId: UUID,
-  section: FacetSection,
-): Promise<FacetValue[]> {
-  switch (section) {
-    case "series":
-      return seriesFacets(userId)
-    case "authors":
-      return creatorFacets(userId, "aut")
-    case "narrators":
-      return creatorFacets(userId, "nrt")
-    case "translators":
-      return creatorFacets(userId, "trl")
-    case "tags":
-      return tagFacets(userId)
-    case "collections":
-      return collectionFacets(userId)
-    case "statuses":
-      return statusFacets(userId)
-    case "publicationYears":
-      return publicationYearFacets(userId)
-    case "ratings":
-      return ratingFacets(userId)
-    case "formats":
-      return formatFacets(userId)
-    case "grades":
-      return gradeFacets(userId)
-    case "shelves":
-      return shelfFacets(userId)
-    case "identifiers":
-      return identifierFacets(userId)
-  }
 }

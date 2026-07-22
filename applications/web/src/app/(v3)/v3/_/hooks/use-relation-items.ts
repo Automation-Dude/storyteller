@@ -8,6 +8,7 @@ import {
   useListCollectionsQuery,
   useListCreatorsQuery,
   useListDistinctFieldValuesQuery,
+  useListIdentifierTypesQuery,
   useListNarratorsQuery,
   useListSeriesQuery,
   useListStatusesQuery,
@@ -83,6 +84,10 @@ export function useRelationItems(
   // "creators" is everyone without a first-class role facet, so it filters the
   // full list client-side (there is no dedicated endpoint for it).
   const creators = useListCreatorsQuery(undefined, { skip: !on("creators") })
+  // the identifiers "relation" lists identifier types (isbn, asin, ...)
+  const identifiers = useListIdentifierTypesQuery(undefined, {
+    skip: !on("identifiers"),
+  })
   const distinct = useListDistinctFieldValuesQuery(
     { field: field ?? "" },
     { skip: !on("distinct") || !field },
@@ -106,6 +111,8 @@ export function useRelationItems(
         return translators
       case "creators":
         return creators
+      case "identifiers":
+        return identifiers
       case "distinct":
         return distinct
       default:

@@ -1,3 +1,4 @@
+import { BADGE_FACET_SECTIONS } from "@/facet-sections"
 import { useGetLibraryCountsQuery } from "@/store/api"
 
 export type CountResult = {
@@ -7,17 +8,7 @@ export type CountResult = {
 
 export type LibraryCounts = Record<string, CountResult>
 
-const NAV_FACET_KEYS = [
-  "books",
-  "series",
-  "authors",
-  "narrators",
-  "translators",
-  "tags",
-  "statuses",
-  "publicationYears",
-  "ratings",
-] as const
+const NAV_FACET_KEYS = ["books", ...BADGE_FACET_SECTIONS] as const
 
 export function useLibraryCounts(): LibraryCounts {
   const { data, isLoading } = useGetLibraryCountsQuery()

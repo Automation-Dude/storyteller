@@ -597,6 +597,13 @@ void describe("FIELD_REGISTRY", () => {
       if (def.control === "facet") {
         if (def.source === "distinct") {
           assert.equal(type, "string", field)
+        } else if ("qualifier" in def) {
+          // qualified facets (identifiers) facet over the qualifier values;
+          // the condition value itself may be plain text
+          assert.ok(
+            type === "array" || type === "uuid" || type === "string",
+            `${field}: qualified facet expects array/uuid/string, got ${type}`,
+          )
         } else {
           assert.ok(
             type === "array" || type === "uuid",
@@ -668,25 +675,107 @@ void describe("strict condition schema", () => {
     )
   })
 
-  void it("accepts a rating dimension condition carrying a dimension", () => {
+  void it("accepts a qualified rating condition (one axis)", () => {
     assert.ok(
       shelfFilterConditionSchema.safeParse({
         type: "condition",
-        field: "ratingDimension",
-        dimension: "plot",
+        field: "userRating",
+        qualifier: "plot",
         operator: "greaterOrEqual",
         value: 4,
       }).success,
     )
   })
 
-  void it("rejects a rating dimension condition without a dimension", () => {
+  void it("maps a legacy ratingDimension condition to a qualified userRating", () => {
+    const result = shelfFilterConditionSchema.safeParse({
+      type: "condition",
+      field: "ratingDimension",
+      dimension: "plot",
+      operator: "greaterOrEqual",
+      value: 4,
+    })
+    assert.ok(result.success)
+    const cond = result.data as { field: string; qualifier?: string }
+    assert.strictEqual(cond.field, "userRating")
+    assert.strictEqual(cond.qualifier, "plot")
+  })
+
+  void it("maps a legacy role key to the qualifier", () => {
+    const result = shelfFilterConditionSchema.safeParse({
+      type: "condition",
+      field: "creators",
+      operator: "includes",
+      value: ["33333333-3333-3333-3333-333333333333"],
+      role: "nrt",
+    })
+    assert.ok(result.success)
+    const cond = result.data as { qualifier?: string; role?: string }
+    assert.strictEqual(cond.qualifier, "nrt")
+    assert.ok(!("role" in cond))
+  })
+
+  void it("maps legacy identifierName/identifierValue to an identifiers presence test", () => {
+    const result = shelfFilterConditionSchema.safeParse({
+      type: "condition",
+      field: "identifierName",
+      operator: "is",
+      value: "ISBN-13",
+    })
+    assert.ok(result.success)
+    const cond = result.data as { field: string; operator: string }
+    assert.strictEqual(cond.field, "identifiers")
+    assert.strictEqual(cond.operator, "isNotEmpty")
+  })
+
+  void it("accepts a count aggregate on a countable relation", () => {
     assert.ok(
-      !shelfFilterConditionSchema.safeParse({
+      shelfFilterConditionSchema.safeParse({
         type: "condition",
-        field: "ratingDimension",
-        operator: "greaterOrEqual",
-        value: 4,
+        field: "creators",
+        aggregate: "count",
+        qualifier: "aut",
+        operator: "greaterThan",
+        value: 3,
+      }).success,
+    )
+  })
+
+  void it("accepts a field-ref between (duration within a margin of another format)", () => {
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "duration",
+        format: "readaloud",
+        operator: "between",
+        value: [
+          { ref: { format: "audiobook" }, factor: 0.8 },
+          { ref: { format: "audiobook" }, factor: 1.2 },
+        ],
+      }).success,
+    )
+  })
+
+  void it("accepts a relation overlap (author is also narrator)", () => {
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "creators",
+        qualifier: "aut",
+        operator: "intersects",
+        value: { ref: { qualifier: "nrt" } },
+      }).success,
+    )
+  })
+
+  void it("accepts a scheme-qualified identifier value match", () => {
+    assert.ok(
+      shelfFilterConditionSchema.safeParse({
+        type: "condition",
+        field: "identifiers",
+        qualifier: "44444444-4444-4444-4444-444444444444",
+        operator: "startsWith",
+        value: "978",
       }).success,
     )
   })
@@ -741,7 +830,25 @@ void describe("buildFilterExpression sql", () => {
     assert.match(sql, /review/)
   })
 
-  void it("uses json_extract for a rating dimension filter", () => {
+  void it("uses json_extract for a qualified rating filter", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "userRating",
+          qualifier: "plot",
+          operator: "greaterOrEqual",
+          value: 4,
+        },
+      ],
+    })
+    assert.match(sql, /json_extract/)
+  })
+
+  void it("uses json_extract for a legacy ratingDimension filter (raw json path)", () => {
+    // stored filters can bypass zod (plain JSON.parse), so the SQL layer maps
+    // legacy shapes itself
     const sql = compile({
       type: "and",
       children: [
@@ -751,7 +858,7 @@ void describe("buildFilterExpression sql", () => {
           dimension: "plot",
           operator: "greaterOrEqual",
           value: 4,
-        },
+        } as unknown as ShelfFilterNode,
       ],
     })
     assert.match(sql, /json_extract/)
@@ -808,7 +915,7 @@ void describe("buildFilterExpression sql", () => {
     assert.match(sql, /not exists.*from "readaloud"/s)
   })
 
-  void it("scopes a role-tagged creators include to that relator role", () => {
+  void it("scopes a qualified creators include to that relator role", () => {
     const sql = compile({
       type: "and",
       children: [
@@ -817,12 +924,119 @@ void describe("buildFilterExpression sql", () => {
           field: "creators",
           operator: "includes",
           value: ["33333333-3333-3333-3333-333333333333"],
-          role: "nrt",
+          qualifier: "nrt",
         },
       ],
     })
     assert.match(sql, /from "book_to_creator"/)
     assert.match(sql, /"book_to_creator"\."role"/)
+  })
+
+  void it("expands the authors alias to a role-scoped creators condition", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "authors",
+          operator: "includes",
+          value: ["33333333-3333-3333-3333-333333333333"],
+        },
+      ],
+    })
+    assert.match(sql, /from "book_to_creator"/)
+    assert.match(sql, /"book_to_creator"\."role"/)
+  })
+
+  void it("compiles a creator count condition to a count subquery", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "authors",
+          aggregate: "count",
+          operator: "greaterThan",
+          value: 3,
+        },
+      ],
+    })
+    assert.match(sql, /count\(\*\)/)
+    assert.match(sql, /book_to_creator/)
+  })
+
+  void it("scopes an identifier value match to the qualifier's type", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "identifiers",
+          qualifier: "44444444-4444-4444-4444-444444444444",
+          operator: "startsWith",
+          value: "978",
+        },
+      ],
+    })
+    assert.match(sql, /from "identifier"/)
+    assert.match(sql, /identifier_type_uuid/)
+    assert.match(sql, /"identifier"\."value"/)
+  })
+
+  void it("compiles a field-ref between to scaled cross-format subqueries", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "duration",
+          format: "readaloud",
+          operator: "between",
+          value: [
+            { ref: { format: "audiobook" }, factor: 0.8 },
+            { ref: { format: "audiobook" }, factor: 1.2 },
+          ],
+        },
+      ],
+    })
+    // both sides are asset-scoped duration subqueries, rhs scaled by factor
+    assert.match(sql, /from readaloud /)
+    assert.match(sql, /from audiobook /)
+    assert.match(sql, /\*/)
+  })
+
+  void it("compiles intersects to a same-person self-join across roles", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "creators",
+          qualifier: "aut",
+          operator: "intersects",
+          value: { ref: { qualifier: "nrt" } },
+        },
+      ],
+    })
+    assert.match(sql, /"book_to_creator" as "a"/)
+    assert.match(sql, /"book_to_creator" as "b"/)
+    assert.match(sql, /"b"\."creator_uuid" = "a"\."creator_uuid"/)
+  })
+
+  void it("compiles an identifiers presence test without joining book again", () => {
+    const sql = compile({
+      type: "and",
+      children: [
+        {
+          type: "condition",
+          field: "identifiers",
+          operator: "isNotEmpty",
+        },
+      ],
+    })
+    assert.match(sql, /exists.*from "identifier"/s)
+    // the subquery correlates to the outer book, it must not re-join book
+    assert.doesNotMatch(sql, /from "identifier".*join "book"/s)
   })
 
   void it("leaves a creators include unscoped when no role is given", () => {
@@ -841,7 +1055,7 @@ void describe("buildFilterExpression sql", () => {
     assert.doesNotMatch(sql, /"book_to_creator"\."role"/)
   })
 
-  void it("scopes a role-tagged creators isEmpty to that relator role", () => {
+  void it("scopes a qualified creators isEmpty to that relator role", () => {
     const sql = compile({
       type: "and",
       children: [
@@ -849,7 +1063,7 @@ void describe("buildFilterExpression sql", () => {
           type: "condition",
           field: "creators",
           operator: "isEmpty",
-          role: "aut",
+          qualifier: "aut",
         },
       ],
     })

@@ -452,6 +452,12 @@
     "matchCount": "{count, plural, one {# book matches} other {# books match}}",
     "to": "to",
     "axisDimension": "Axis...",
+    "qualifier": {
+      "overall": "Overall",
+      "anyType": "Any type",
+      "anyRole": "Any role"
+    },
+    "countToggle": "Filter by how many",
     "noItemsFound": "No items found",
     "commaSeparatedValues": "Comma-separated values...",
     "enterValue": "Enter value...",
@@ -516,7 +522,8 @@
       "hasReadaloud": "Has readaloud",
       "hasReview": "Has review",
       "unrated": "Unrated",
-      "longBooks": "Long books (300+ pages)"
+      "longBooks": "Long books (300+ pages)",
+      "authorIsNarrator": "Author is the narrator"
     },
     "durationHours": "h",
     "durationMinutes": "m",
@@ -1458,10 +1465,10 @@
         "collections": "Collections",
         "series": "Series",
         "creators": "Other Creators",
+        "identifiers": "Identifiers",
         "format": "Format",
         "review": "My Review",
-        "ratingDimension": "Rating Dimension",
-        "search": "Search (any field)",
+                "search": "Search (any field)",
         "narrators": "Narrators",
         "translators": "Translators",
         "alignment": "Alignment"

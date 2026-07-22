@@ -104,7 +104,7 @@ function PageContent({
   )
 }
 
-function ResizeHandle({
+export function ResizeHandle({
   side,
   dragging,
   onPointerDown,

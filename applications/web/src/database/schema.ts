@@ -430,7 +430,7 @@ export interface ShelfBook {
 
 export interface ShelfFilterReference {
   createdAt: Generated<string>
-  entityType: "tag" | "collection" | "series" | "status" | "creator"
+  entityType: import("@/fields").FilterEntityType
   entityUuid: import("@/uuid").UUID
   shelfUuid: import("@/uuid").UUID
   updatedAt: Generated<string>

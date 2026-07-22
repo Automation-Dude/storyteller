@@ -36,6 +36,7 @@ import {
   type ShelfFilterCondition,
   type ShelfFilterField,
   type ShelfFilterOperator,
+  shelfValueText,
 } from "@/shelves"
 
 import { unitDisplay } from "./filter-ui"
@@ -83,10 +84,10 @@ function writeFacet(
   inc: string[],
   exc: string[],
   ops: { inc: ShelfFilterOperator; exc: ShelfFilterOperator },
-  role?: string,
+  qualifier?: string,
 ): ShelfFilterCondition[] {
   const out: ShelfFilterCondition[] = []
-  const extra = role ? { role } : {}
+  const extra = qualifier ? { qualifier } : {}
   if (inc.length)
     out.push({
       type: "condition",
@@ -181,7 +182,7 @@ function summarize(
   }
   const c = conditions[0]
   if (!c) return ""
-  if (def.control === "text") return `: ${String(c.value ?? "")}`
+  if (def.control === "text") return `: ${shelfValueText(c.value)}`
   // ranges
   if (Array.isArray(c.value)) {
     const [a, b] = c.value as [number | string, number | string]
@@ -376,10 +377,10 @@ export function FacetEditor({
 
   const ops = facetOperators(field)
   const { inc, exc } = readFacet(conditions, ops)
-  const role = conditions[0]?.role
+  const qualifier = conditions[0]?.qualifier
 
   const apply = (nextInc: string[], nextExc: string[]) => {
-    onChange(writeFacet(field, nextInc, nextExc, ops, role))
+    onChange(writeFacet(field, nextInc, nextExc, ops, qualifier))
   }
 
   return (
@@ -508,7 +509,7 @@ function NumberRangeEditor({
 
   const controls = (
     <div className="flex flex-col gap-3">
-      {def.discriminator === "format" && (
+      {!!def.formats && (
         <div className="flex flex-wrap gap-1">
           {formatChips.map((f) => {
             const value = f === "any" ? undefined : f
@@ -622,9 +623,9 @@ function readDateRange(conditions: ShelfFilterCondition[]): {
   const c = conditions[0]
   if (!c) return { from: "", to: "" }
   if (c.operator === "between" && Array.isArray(c.value))
-    return { from: String(c.value[0]), to: String(c.value[1]) }
-  if (c.operator === "after") return { from: String(c.value), to: "" }
-  if (c.operator === "before") return { from: "", to: String(c.value) }
+    return { from: shelfValueText(c.value[0]), to: shelfValueText(c.value[1]) }
+  if (c.operator === "after") return { from: shelfValueText(c.value), to: "" }
+  if (c.operator === "before") return { from: "", to: shelfValueText(c.value) }
   return { from: "", to: "" }
 }
 
@@ -671,9 +672,9 @@ function readYearState(conditions: ShelfFilterCondition[]): {
       : { mode: "between", a: yearOf(from), b: yearOf(to) }
   }
   if (c.operator === "after")
-    return { mode: "after", a: yearOf(String(c.value)), b: "" }
+    return { mode: "after", a: yearOf(shelfValueText(c.value)), b: "" }
   if (c.operator === "before")
-    return { mode: "before", a: yearOf(String(c.value)), b: "" }
+    return { mode: "before", a: yearOf(shelfValueText(c.value)), b: "" }
   return { mode: "in", a: "", b: "" }
 }
 
@@ -861,7 +862,7 @@ function TextEditor({
   conditions: ShelfFilterCondition[]
   onChange: (next: ShelfFilterCondition[]) => void
 }) {
-  const value = String(conditions[0]?.value ?? "")
+  const value = shelfValueText(conditions[0]?.value)
   return (
     <div className="p-3">
       <Input

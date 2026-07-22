@@ -37,7 +37,6 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   authors: { base: icon.User },
   format: { base: icon.BookAlt },
   userRating: { base: icon.Star },
-  ratingDimension: { base: icon.ChartRadar },
   pageCount: { base: icon.FileText },
   duration: { base: icon.Clock },
   fileSize: { base: icon.Database },
@@ -54,8 +53,7 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   alignedByStorytellerVersion: { base: icon.Stack },
   lastRead: { base: icon.Eye },
   seriesPosition: { base: icon.ListNumbers },
-  identifierName: { base: icon.Link },
-  identifierValue: { base: icon.Link },
+  identifiers: { base: icon.Link },
 }
 
 export type { FieldIconKey }

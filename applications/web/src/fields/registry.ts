@@ -1,103 +1,7 @@
-import { type AcceptedKeys } from "./app/(v3)/v3/_/lib/mapping"
-import { type ShelfFilterOperator } from "./shelves"
+import { type AcceptedKeys } from "@/app/(v3)/v3/_/lib/mapping"
 
-export type FieldGroupKey =
-  | "text"
-  | "dates"
-  | "review"
-  | "relations"
-  | "media"
-  | "alignment"
-  | "creators"
+import { type DatePreset, type FieldDef, type FieldType } from "./types"
 
-export type FieldControl =
-  | "text"
-  | "number-range"
-  | "date-range"
-  | "duration-range"
-  | "facet"
-  | "enum"
-
-export type FacetSource =
-  | "tags"
-  | "collections"
-  | "series"
-  | "statuses"
-  | "authors"
-  | "narrators"
-  | "translators"
-  | "creators"
-  // distinct fields are "facets" from a book column, such as language or transcription engine
-  // we don't want to show all possible values
-  | "identifiers"
-  | "distinct"
-
-export type FieldScale = {
-  min?: number
-  max?: number
-  step?: number
-  unit?: "bytes" | "seconds" | "count" | "ratio" | "year"
-}
-export type FieldType = "string" | "number" | "date" | "uuid" | "array" | "enum"
-
-export type FieldDefBase = {
-  sortable: boolean
-  defaultSort?: "asc" | "desc"
-  quick: boolean
-  token: string
-  labelKey: string
-  group: FieldGroupKey
-  type: FieldType
-  extraOperators?: ShelfFilterOperator[]
-  defaultOperator?: ShelfFilterOperator
-}
-
-export type FieldDefText = FieldDefBase & {
-  control: "text"
-}
-
-export type FieldDefFacet = FieldDefBase & {
-  control: "facet"
-  source: FacetSource
-  discriminator?: "role"
-}
-
-export type FieldDefEnum = FieldDefBase & {
-  control: "enum"
-  options: string[]
-  discriminator?: "format"
-}
-
-export type FieldDefNumeric = FieldDefBase & {
-  control: "number-range"
-  scale?: FieldScale
-  discriminator?: "role" | "format"
-  options?: { min: number; max: number; label: string }[]
-  formats?: AssetFormat[]
-}
-
-export type FieldDefDate = FieldDefBase & {
-  control: "date-range"
-  scale?: FieldScale
-  discriminator?: "format"
-  presets?: DatePreset[]
-}
-
-export type FieldDefDuration = FieldDefBase & {
-  control: "duration-range"
-  scale: FieldScale
-  discriminator?: "format"
-  options?: { min: number; max: number; label: string }[]
-  formats?: AssetFormat[]
-}
-
-export type FieldDef =
-  | FieldDefFacet
-  | FieldDefEnum
-  | FieldDefNumeric
-  | FieldDefDate
-  | FieldDefDuration
-  | FieldDefText
 export const ALIGNMENT_GRADES = [
   "A+",
   "A",
@@ -108,11 +12,6 @@ export const ALIGNMENT_GRADES = [
   "D",
   "F",
 ] as const
-
-export const ASSET_FORMATS = ["ebook", "audiobook", "readaloud"] as const
-export type AssetFormat = (typeof ASSET_FORMATS)[number]
-
-export type DatePreset = { label: string; days: number }
 
 export const RECENCY_DATE_PRESETS: DatePreset[] = [
   { label: "Last 24 hours", days: 1 },
@@ -205,7 +104,6 @@ export const FIELD_REGISTRY = {
     sortable: true,
     defaultSort: "desc",
     quick: true,
-    discriminator: "format",
     formats: ["ebook", "readaloud"],
     scale: { min: 0, step: 1, unit: "count" },
     token: "pages",
@@ -224,7 +122,6 @@ export const FIELD_REGISTRY = {
     sortable: true,
     defaultSort: "desc",
     quick: true,
-    discriminator: "format",
     formats: ["audiobook", "readaloud"],
     scale: { min: 0, unit: "seconds" },
     token: "duration",
@@ -244,6 +141,7 @@ export const FIELD_REGISTRY = {
     sortable: true,
     quick: true,
     defaultSort: "desc",
+    qualifier: { kind: "datePart" },
     scale: { unit: "year" },
     token: "published",
     labelKey: "publicationDate",
@@ -255,6 +153,7 @@ export const FIELD_REGISTRY = {
     sortable: true,
     quick: true,
     defaultSort: "desc",
+    qualifier: { kind: "datePart" },
     token: "added",
     labelKey: "createdAt",
     presets: RECENCY_DATE_PRESETS,
@@ -266,6 +165,7 @@ export const FIELD_REGISTRY = {
     sortable: true,
     quick: true,
     defaultSort: "desc",
+    qualifier: { kind: "datePart" },
     token: "updated",
     labelKey: "updatedAt",
     presets: RECENCY_DATE_PRESETS,
@@ -277,7 +177,7 @@ export const FIELD_REGISTRY = {
     sortable: true,
     quick: true,
     defaultSort: "desc",
-    discriminator: "format",
+    formats: ["ebook", "audiobook", "readaloud"],
     scale: { min: 0, step: 500, unit: "bytes" },
     token: "size",
     labelKey: "fileSize",
@@ -315,6 +215,8 @@ export const FIELD_REGISTRY = {
     labelKey: "tags",
     group: "relations",
     type: "array",
+    entity: "tag",
+    countable: true,
   },
   collections: {
     control: "facet",
@@ -325,6 +227,8 @@ export const FIELD_REGISTRY = {
     labelKey: "collections",
     group: "relations",
     type: "array",
+    entity: "collection",
+    countable: true,
   },
   series: {
     control: "facet",
@@ -335,6 +239,8 @@ export const FIELD_REGISTRY = {
     labelKey: "series",
     group: "relations",
     type: "array",
+    entity: "series",
+    countable: true,
   },
   authors: {
     control: "facet",
@@ -342,67 +248,70 @@ export const FIELD_REGISTRY = {
     defaultSort: "asc",
     quick: true,
     source: "authors",
-    discriminator: "role",
     token: "author",
     labelKey: "authors",
     group: "creators",
     type: "array",
+    entity: "creator",
+    countable: true,
+    alias: { of: "creators", qualifier: "aut" },
   },
   narrators: {
     control: "facet",
     sortable: false,
     quick: true,
     source: "narrators",
-    discriminator: "role",
     token: "narrator",
     labelKey: "narrators",
     group: "creators",
     type: "array",
+    entity: "creator",
+    countable: true,
+    alias: { of: "creators", qualifier: "nrt" },
   },
   translators: {
     control: "facet",
     sortable: false,
     quick: true,
     source: "translators",
-    discriminator: "role",
     token: "translator",
     labelKey: "translators",
     group: "creators",
     type: "array",
+    entity: "creator",
+    countable: true,
+    alias: { of: "creators", qualifier: "trl" },
   },
   creators: {
     control: "facet",
     sortable: false,
     quick: true,
     source: "creators",
-    discriminator: "role",
+    qualifier: { kind: "role" },
     token: "author",
     labelKey: "creators",
     group: "creators",
     type: "array",
+    entity: "creator",
+    countable: true,
   },
-  identifierName: {
+  identifiers: {
     control: "facet",
     sortable: false,
     quick: false,
     source: "identifiers",
+    qualifier: { kind: "identifierScheme" },
+    formats: ["ebook", "audiobook", "readaloud"],
     token: "identifier",
     labelKey: "identifiers",
     group: "relations",
-    type: "array",
+    // the condition value is the identifier text (an ISBN, an ASIN), matched
+    // with string operators; the qualifier picks the identifier type.
+    type: "string",
+    countable: true,
+    qualifierEntity: "identifierType",
+    defaultOperator: "isNotEmpty",
   },
-  identifierValue: {
-    control: "facet",
-    sortable: false,
-    quick: false,
-    source: "identifiers",
-    token: "identifier",
-    labelKey: "identifiers",
-    group: "relations",
-    type: "array",
-  },
-
-  // -- numeric --------------------------------------------------------------
 
   status: {
     control: "facet",
@@ -413,12 +322,14 @@ export const FIELD_REGISTRY = {
     labelKey: "status",
     group: "relations",
     type: "uuid",
+    entity: "status",
   },
   userRating: {
     control: "number-range",
     sortable: true,
     defaultSort: "desc",
     quick: true,
+    qualifier: { kind: "ratingAxis" },
     scale: { min: 0, max: 5, step: 0.5, unit: "count" },
     token: "rating",
     labelKey: "userRating",
@@ -430,16 +341,6 @@ export const FIELD_REGISTRY = {
       { min: 4, max: 4.99, label: "★★★★☆" },
       { min: 5, max: 5, label: "★★★★★" },
     ],
-    group: "media",
-    type: "number",
-  },
-  ratingDimension: {
-    control: "number-range",
-    sortable: false,
-    quick: false,
-    scale: { min: 0, max: 5, step: 1, unit: "count" },
-    token: "axis",
-    labelKey: "ratingDimension",
     group: "media",
     type: "number",
   },
@@ -463,6 +364,7 @@ export const FIELD_REGISTRY = {
     sortable: true,
     defaultSort: "desc",
     quick: true,
+    qualifier: { kind: "datePart" },
     token: "read",
     labelKey: "lastRead",
     presets: RECENCY_DATE_PRESETS,
@@ -510,28 +412,12 @@ export const FIELD_REGISTRY = {
     group: "alignment",
     type: "number",
   },
-  // alignmentMissingChapters: {
-  //   control: "number-range",
-  //   sortable: true,
-  //   quick: true,
-  //   scale: { min: 0, unit: "count" },
-  //   options: [
-  //     { min: 1, max: Number.MAX_SAFE_INTEGER, label: "≥1" },
-  //     { min: 0, max: 3, label: "≤2" },
-  //     { min: 0, max: 6, label: "≤5" },
-  //     { min: 0, max: 10, label: "≤10" },
-  //     { min: 11, max: Number.MAX_SAFE_INTEGER, label: "> 10" },
-  //   ],
-  //   token: "missingChapters",
-  //   labelKey: "alignmentMissingChapters",
-  //   group: "alignment",
-  //   type: "number",
-  // },
   alignedAt: {
     control: "date-range",
     sortable: true,
     quick: true,
     token: "aligned",
+    qualifier: { kind: "datePart" },
     labelKey: "alignedAt",
     presets: RECENCY_DATE_PRESETS,
     group: "alignment",
@@ -571,7 +457,7 @@ export function getFieldDef(field: Field): FieldDef {
   return FIELD_REGISTRY[field]
 }
 
-export function getFieldType(field: Field) {
+export function getFieldType(field: Field): FieldType {
   return FIELD_REGISTRY[field].type
 }
 
@@ -611,19 +497,18 @@ export const ENUM_FIELDS = Object.keys(FIELD_REGISTRY).filter(
   (f) => FIELD_REGISTRY[f as Field].type === "enum",
 ) as EnumField[]
 
-export type CanBeEmptyField = AcceptedKeys<
-  typeof FIELD_REGISTRY,
-  { type: "string" | "number" | "date" | "uuid" | "enum" }
->
-// TODO: exclude search
-export const CAN_BE_EMPTY_FIELDS = Object.keys(FIELD_REGISTRY).filter((f) => {
-  const field = FIELD_REGISTRY[f as Field]
-  if (field.labelKey === "search") {
-    return false
-  }
+export type CanBeEmptyField = Exclude<Field, "search">
+export const CAN_BE_EMPTY_FIELDS = FIELDS.filter(
+  (f) => f !== "search",
+) as CanBeEmptyField[]
 
-  return true
-}) as CanBeEmptyField[]
+export type CountableField = AcceptedKeys<
+  typeof FIELD_REGISTRY,
+  { countable: true }
+>
+export const COUNTABLE_FIELDS = FIELDS.filter(
+  (f) => "countable" in FIELD_REGISTRY[f] && FIELD_REGISTRY[f].countable,
+) as CountableField[]
 
 export type QuickFilterField = AcceptedKeys<
   typeof FIELD_REGISTRY,

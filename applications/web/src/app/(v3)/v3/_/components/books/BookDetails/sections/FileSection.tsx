@@ -161,7 +161,7 @@ function FormatFileRow({
           <div className="flex flex-col gap-1">
             {identifiers.map((identifier) => (
               <div
-                key={identifier.id}
+                key={identifier.uuid}
                 className="flex items-center justify-between gap-1"
               >
                 <span className="text-xs font-medium">{identifier.name}</span>

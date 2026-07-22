@@ -1,65 +1,122 @@
-import {
-  type ExpressionBuilder,
-  type ExpressionWrapper,
-  type SqlBool,
-  sql,
-} from "kysely"
+import { type RawBuilder, sql } from "kysely"
 
-import { type Role } from "@/components/books/edit/marcRelators"
 import {
   ALIGNMENT_GRADES,
-  type AssetFormat,
-  FORMAT_VALUES,
-  type FormatValue,
-  getFieldType,
+  FIELD_REGISTRY,
+  type Field,
+  type FilterEntityType,
+  getFieldDef,
+  resolveFieldAlias,
 } from "@/fields"
 import {
   type ShelfFilter,
   type ShelfFilterCondition,
-  type ShelfFilterField,
   type ShelfFilterNode,
-  type ShelfFilterOperator,
   type ShelfFilterValue,
+  isFieldRefValue,
 } from "@/shelves"
 import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
-import { type DB } from "./schema"
+import {
+  type EB,
+  FIELD_SQL,
+  type FieldSqlCtx,
+  type FilterExpression,
+  assetNumericExpr,
+  buildBookSearchExpression,
+  formatPredicate,
+  numericExprComparison,
+} from "./fieldSql"
+
+export {
+  type EB,
+  type FilterExpression,
+  buildBookSearchExpression,
+  formatPredicate,
+}
+
+// ---------------------------------------------------------------------------
+// condition normalization
+// ---------------------------------------------------------------------------
+
+// stored filters can predate the qualifier model (role/dimension keys, the
+// ratingDimension and identifierName/identifierValue fields) and reach the
+// SQL layer without passing through the zod preprocess (plain JSON.parse), so
+// the same mapping is applied here. aliases expand to their base field.
+export function normalizeCondition(
+  condition: ShelfFilterCondition,
+): ShelfFilterCondition | null {
+  const legacy = condition as ShelfFilterCondition & {
+    role?: string
+    dimension?: string
+  }
+
+  let field = condition.field as string
+  let operator = condition.operator
+  let value = condition.value
+  let qualifier = condition.qualifier ?? legacy.role ?? legacy.dimension
+
+  if (field === "rating") field = "userRating"
+  if (field === "ratingDimension") field = "userRating"
+  if (field === "identifierName" || field === "identifierValue") {
+    field = "identifiers"
+    if (operator !== "isEmpty") operator = "isNotEmpty"
+    value = undefined
+  }
+
+  if (!(field in FIELD_REGISTRY)) return null
+
+  const resolved = resolveFieldAlias(field as Field)
+  qualifier = resolved.qualifier ?? qualifier
+
+  return {
+    type: "condition",
+    field: resolved.field,
+    operator,
+    value,
+    ...(qualifier !== undefined ? { qualifier } : {}),
+    ...(condition.format !== undefined ? { format: condition.format } : {}),
+    ...(condition.aggregate !== undefined
+      ? { aggregate: condition.aggregate }
+      : {}),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// entity references (shelf_filter_reference bookkeeping)
+// ---------------------------------------------------------------------------
 
 export function extractEntityReferences(filter: ShelfFilter): Array<{
-  entityType: "tag" | "collection" | "series" | "status" | "creator"
+  entityType: FilterEntityType
   entityUuid: UUID
 }> {
-  const refs: Array<{
-    entityType: "tag" | "collection" | "series" | "status" | "creator"
-    entityUuid: UUID
-  }> = []
+  const refs: Array<{ entityType: FilterEntityType; entityUuid: UUID }> = []
 
   function walk(node: ShelfFilterNode) {
     if (node.type === "condition") {
-      const fieldToEntityType: Partial<
-        Record<
-          ShelfFilterField,
-          "tag" | "collection" | "series" | "status" | "creator"
-        >
-      > = {
-        tags: "tag",
-        collections: "collection",
-        series: "series",
-        status: "status",
-        creators: "creator",
+      const normalized = normalizeCondition(node)
+      if (!normalized) return
+
+      const def = getFieldDef(normalized.field)
+
+      if (def.qualifierEntity && normalized.qualifier) {
+        refs.push({
+          entityType: def.qualifierEntity,
+          entityUuid: normalized.qualifier as UUID,
+        })
       }
 
-      const entityType = fieldToEntityType[node.field]
-      if (!entityType) return
+      if (!def.entity) return
+      if (normalized.value === undefined || normalized.value === null) return
 
-      if (node.value === undefined || node.value === null) return
-
-      const values = Array.isArray(node.value) ? node.value : [node.value]
+      const values = Array.isArray(normalized.value)
+        ? normalized.value
+        : [normalized.value]
       for (const v of values) {
         if (typeof v === "string") {
-          refs.push({ entityType, entityUuid: v as UUID })
+          refs.push({ entityType: def.entity, entityUuid: v as UUID })
         }
       }
 
@@ -82,27 +139,30 @@ export function extractEntityReferences(filter: ShelfFilter): Array<{
 
 export function removeDeletedEntityReferences(
   filter: ShelfFilter,
-  entityType: "tag" | "collection" | "series" | "status" | "creator",
+  entityType: FilterEntityType,
   entityUuid: string,
 ): ShelfFilter | null {
-  const entityTypeToField: Record<typeof entityType, ShelfFilterField> = {
-    tag: "tags",
-    collection: "collections",
-    series: "series",
-    status: "status",
-    creator: "creators",
-  }
-
-  const targetField = entityTypeToField[entityType]
-
   function walk(node: ShelfFilterNode): ShelfFilterNode | null {
     if (node.type === "condition") {
-      if (node.field !== targetField) return node
+      if (!(node.field in FIELD_REGISTRY)) return node
+      const def = getFieldDef(node.field)
+
+      // conditions scoped to a deleted qualifier entity (an identifier type)
+      // lose their meaning entirely
+      if (def.qualifierEntity === entityType) {
+        const normalized = normalizeCondition(node)
+        if (normalized?.qualifier === entityUuid) return null
+      }
+
+      if (def.entity !== entityType) return node
 
       if (node.value === undefined || node.value === null) return node
 
       if (Array.isArray(node.value)) {
-        const filtered = node.value.filter((v) => v !== entityUuid)
+        // entity-valued conditions hold plain uuid arrays
+        const filtered = (node.value as (string | number)[]).filter(
+          (v) => v !== entityUuid,
+        )
         if (filtered.length === 0) return null
         return { ...node, value: filtered }
       }
@@ -129,7 +189,7 @@ export function removeDeletedEntityReferences(
 }
 
 export async function cleanShelfFiltersForDeletedEntity(
-  entityType: "tag" | "collection" | "series" | "status" | "creator",
+  entityType: FilterEntityType,
   entityUuid: UUID,
 ) {
   const refs = await db
@@ -185,8 +245,9 @@ export async function cleanShelfFiltersForDeletedEntity(
   }
 }
 
-type EB = ExpressionBuilder<DB, "book">
-type FilterExpression = ExpressionWrapper<DB, "book", SqlBool>
+// ---------------------------------------------------------------------------
+// visibility
+// ---------------------------------------------------------------------------
 
 // a book is visible to a user if
 // - it is in no collection
@@ -234,9 +295,9 @@ export function bookVisibleTo(eb: EB, userId: UUID): FilterExpression {
   ])
 }
 
-function latestReportColumn(column: string) {
-  return sql`(select ${sql.raw(column)} from alignment_report where book_uuid = book.uuid order by created_at desc limit 1)`
-}
+// ---------------------------------------------------------------------------
+// filter tree -> SQL
+// ---------------------------------------------------------------------------
 
 export function buildFilterExpression(
   eb: EB,
@@ -264,935 +325,137 @@ export function buildFilterExpression(
   }
 }
 
-type ScalarField = Exclude<
-  ShelfFilterField,
-  "review" | "ratingDimension" | "search"
->
-
 function buildConditionExpression(
   eb: EB,
   condition: ShelfFilterCondition,
   userId?: UUID,
 ): FilterExpression {
-  const { field, operator, value, role, format } = condition
+  const normalized = normalizeCondition(condition)
+  if (!normalized) return eb.lit(true)
 
-  if (field === "review") {
-    return buildReviewComparison(eb, operator, value, userId)
+  const impl = FIELD_SQL[normalized.field as keyof typeof FIELD_SQL]
+  const ctx: FieldSqlCtx = {
+    userId,
+    qualifier: normalized.qualifier,
+    format: normalized.format,
   }
 
-  if (field === "ratingDimension") {
-    return buildRatingDimensionComparison(
+  if (normalized.aggregate === "count") {
+    if (!("count" in impl) || !impl.count) return eb.lit(true)
+    if (normalized.value === undefined || normalized.value === null)
+      return eb.lit(true)
+    return numericExprComparison(
       eb,
-      condition.dimension,
-      operator,
-      value,
-      userId,
+      impl.count(eb, ctx),
+      normalized.operator,
+      normalized.value,
     )
   }
 
-  if (field === "search") {
-    if (value === undefined || value === null) return eb.lit(true)
-    return buildBookSearchExpression(eb, String(value))
+  if (normalized.operator === "isEmpty") {
+    return impl.isEmpty(eb, ctx)
   }
 
-  if (operator === "isEmpty") {
-    return buildIsEmptyExpression(eb, field, userId, role)
+  if (normalized.operator === "isNotEmpty") {
+    return eb.not(impl.isEmpty(eb, ctx))
   }
 
-  if (operator === "isNotEmpty") {
-    return eb.not(buildIsEmptyExpression(eb, field, userId, role))
-  }
-
-  if (value === undefined || value === null) {
+  if (normalized.value === undefined || normalized.value === null) {
     return eb.lit(true)
   }
 
-  return buildComparisonExpression(
-    eb,
-    field,
-    operator,
-    value,
+  // field-to-field comparison: the value references another field address
+  // ("duration@readaloud between 0.8x and 1.2x of duration@audiobook").
+  // intersects carries a ref too but is a relation overlap, handled by the
+  // field's own compare.
+  if (
+    normalized.operator !== "intersects" &&
+    valueContainsRef(normalized.value)
+  ) {
+    return buildRefComparison(eb, normalized, impl, ctx)
+  }
+
+  return impl.compare(eb, normalized.operator, normalized.value, ctx)
+}
+
+function valueContainsRef(value: ShelfFilterValue): boolean {
+  if (isFieldRefValue(value)) return true
+  return Array.isArray(value) && value.some((v) => isFieldRefValue(v))
+}
+
+// resolve one side of a numeric comparison to a scalar expression: a literal
+// number, or another field's scalar (optionally scaled by a factor).
+function refOperand(
+  eb: EB,
+  baseField: string,
+  operand: unknown,
+  userId?: UUID,
+): RawBuilder<number> | null {
+  if (typeof operand === "number") return sql<number>`${operand}`
+  if (!isFieldRefValue(operand)) return null
+
+  const targetName = operand.ref.field ?? baseField
+  if (!(targetName in FIELD_REGISTRY)) return null
+
+  const resolved = resolveFieldAlias(targetName as Field)
+  const impl = FIELD_SQL[resolved.field as keyof typeof FIELD_SQL]
+  const expr = impl.scalar?.(eb, {
     userId,
-    role,
-    format,
-  )
+    qualifier: resolved.qualifier ?? operand.ref.qualifier,
+    format: operand.ref.format,
+  })
+  if (!expr) return null
+
+  return operand.factor != null
+    ? sql<number>`(${expr} * ${operand.factor})`
+    : expr
 }
 
-function buildIsEmptyExpression(
+function buildRefComparison(
   eb: EB,
-  field: ScalarField,
-  userId?: UUID,
-  role?: string,
+  condition: ShelfFilterCondition,
+  impl: (typeof FIELD_SQL)[keyof typeof FIELD_SQL],
+  ctx: FieldSqlCtx,
 ): FilterExpression {
-  switch (field) {
-    case "title":
-      return eb.or([eb("book.title", "is", null), eb("book.title", "=", "")])
+  const lhs = impl.scalar?.(eb, ctx)
+  if (!lhs) return eb.lit(true)
 
-    case "subtitle":
-      return eb.or([
-        eb("book.subtitle", "is", null),
-        eb("book.subtitle", "=", ""),
-      ])
-
-    case "description":
-      return eb.or([
-        eb("book.description", "is", null),
-        eb("book.description", "=", ""),
-      ])
-
-    case "language":
-      return eb.or([
-        eb("book.language", "is", null),
-        eb("book.language", "=", ""),
-      ])
-
-    case "alignedWith":
-      return eb.or([
-        eb("book.alignedWith", "is", null),
-        eb("book.alignedWith", "=", ""),
-      ])
-
-    case "alignedByStorytellerVersion":
-      return eb.or([
-        eb("book.alignedByStorytellerVersion", "is", null),
-        eb("book.alignedByStorytellerVersion", "=", ""),
-      ])
-
-    case "publicationDate":
-      return eb("book.publicationDate", "is", null)
-
-    case "createdAt":
-      return eb("book.createdAt", "is", null)
-
-    case "updatedAt":
-      return eb("book.updatedAt", "is", null)
-
-    case "alignmentGrade":
-      return eb(latestReportColumn("grade"), "is", null)
-
-    case "alignmentScore":
-      return eb(latestReportColumn("score"), "is", null)
-
-    case "alignmentMissingSentences":
-      return eb(latestReportColumn("missing_sentences"), "is", null)
-
-    case "alignmentMutedChapters":
-      return eb(latestReportColumn("muted_chapters"), "is", null)
-
-    // case "alignmentMissingChapters":
-    //   return eb(latestReportColumn("unaligned_audio"), "is", null)
-
-    case "alignedAt":
-      return eb("book.alignedAt", "is", null)
-
-    case "lastRead":
-      // no position row for this user = never read
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("position")
-            .select(sql.lit(1).as("one"))
-            .whereRef("position.bookUuid", "=", "book.uuid")
-            .$if(!!userId, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("position.userId", "=", userId!),
-            ),
-        ),
-      )
-
-    case "readingPosition":
-      // no position row, or one without a recorded total progression
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("position")
-            .select(sql.lit(1).as("one"))
-            .whereRef("position.bookUuid", "=", "book.uuid")
-            .$if(!!userId, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("position.userId", "=", userId!),
-            )
-            .where(
-              sql`json_extract(${sql.ref("position.locator")}, '$.locations.totalProgression')`,
-              "is not",
-              null,
-            ),
-        ),
-      )
-
-    case "userRating":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("userBookRating")
-            .select(sql.lit(1).as("one"))
-            .whereRef("userBookRating.bookUuid", "=", "book.uuid")
-            .$if(!!userId, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("userBookRating.userId", "=", userId!),
-            )
-            .where("userBookRating.rating", "is not", null),
-        ),
-      )
-
-    case "duration":
-      return eb.and([
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("audiobook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("audiobook.bookUuid", "=", "book.uuid")
-              .where("audiobook.duration", "is not", null),
-          ),
-        ),
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("readaloud")
-              .select(sql.lit(1).as("one"))
-              .whereRef("readaloud.bookUuid", "=", "book.uuid")
-              .where("readaloud.duration", "is not", null),
-          ),
-        ),
-        eb("book.duration", "is", null),
-      ])
-
-    case "pageCount":
-      return eb.and([
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("ebook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("ebook.bookUuid", "=", "book.uuid")
-              .where("ebook.pageCount", "is not", null),
-          ),
-        ),
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("readaloud")
-              .select(sql.lit(1).as("one"))
-              .whereRef("readaloud.bookUuid", "=", "book.uuid")
-              .where("readaloud.pageCount", "is not", null),
-          ),
-        ),
-        eb("book.pageCount", "is", null),
-      ])
-
-    case "fileSize":
-      return eb.and([
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("ebook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("ebook.bookUuid", "=", "book.uuid")
-              .where("ebook.fileSize", "is not", null),
-          ),
-        ),
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("audiobook")
-              .select(sql.lit(1).as("one"))
-              .whereRef("audiobook.bookUuid", "=", "book.uuid")
-              .where("audiobook.fileSize", "is not", null),
-          ),
-        ),
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom("readaloud")
-              .select(sql.lit(1).as("one"))
-              .whereRef("readaloud.bookUuid", "=", "book.uuid")
-              .where("readaloud.fileSize", "is not", null),
-          ),
-        ),
-      ])
-
-    case "status":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToStatus")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
-            .$if(!!userId, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("bookToStatus.userId", "=", userId!),
-            ),
-        ),
-      )
-
-    case "tags":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToTag")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToTag.bookUuid", "=", "book.uuid"),
-        ),
-      )
-
-    case "collections":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToCollection")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCollection.bookUuid", "=", "book.uuid"),
-        ),
-      )
-
-    case "series":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToSeries")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToSeries.bookUuid", "=", "book.uuid"),
-        ),
-      )
-
-    case "authors":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToCreator")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-            .where("bookToCreator.role", "=", "aut"),
-        ),
-      )
-    case "narrators":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToCreator")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-            .where("bookToCreator.role", "=", "nrt"),
-        ),
-      )
-    case "translators":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToCreator")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-            .where("bookToCreator.role", "=", "trl"),
-        ),
-      )
-
-    case "creators":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToCreator")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-            .$if(!!role, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("bookToCreator.role", "=", role! as Role),
-            ),
-        ),
-      )
-
-    case "format":
-      return formatPredicate(eb, "no-media")
-    case "identifierName":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("identifier")
-            .select(sql.lit(1).as("one"))
-            .innerJoin("book", "book.uuid", "identifier.bookUuid")
-            .where((eb) =>
-              eb.or([
-                eb("identifier.bookUuid", "=", eb.ref("book.uuid")),
-                eb(
-                  "identifier.audiobookUuid",
-                  "=",
-                  eb.ref("book.audiobookUuid"),
-                ),
-                eb(
-                  "identifier.readaloudUuid",
-                  "=",
-                  eb.ref("book.readaloudUuid"),
-                ),
-                eb("identifier.ebookUuid", "=", eb.ref("book.ebookUuid")),
-              ]),
-            ),
-        ),
-      )
-    case "identifierValue":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("identifier")
-            .select(sql.lit(1).as("one"))
-            .innerJoin("book", "book.uuid", "identifier.bookUuid")
-            .where((eb) =>
-              eb.or([
-                eb("identifier.bookUuid", "=", eb.ref("book.uuid")),
-                eb(
-                  "identifier.audiobookUuid",
-                  "=",
-                  eb.ref("book.audiobookUuid"),
-                ),
-                eb(
-                  "identifier.readaloudUuid",
-                  "=",
-                  eb.ref("book.readaloudUuid"),
-                ),
-                eb("identifier.ebookUuid", "=", eb.ref("book.ebookUuid")),
-              ]),
-            ),
-        ),
-      )
-    default: {
-      const _exhaustive: never = field
-      return eb.lit(true) as FilterExpression
-    }
-  }
-}
-
-function buildComparisonExpression(
-  eb: EB,
-  field: ScalarField,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-  userId?: UUID,
-  role?: string,
-  format?: AssetFormat,
-): FilterExpression {
-  const fieldType = getFieldType(field)
-
-  if (field === "userRating") {
-    return buildUserRatingComparison(eb, operator, value, userId)
-  }
-
-  if (field === "lastRead") {
-    return buildLastReadComparison(eb, operator, value, userId)
-  }
-
-  if (field === "readingPosition") {
-    return buildReadingPositionComparison(eb, operator, value, userId)
-  }
-
-  if (field === "alignmentScore") {
-    return buildNumericExprComparison(
-      eb,
-      latestReportColumn("score") as ReturnType<typeof sql<number>>,
-      operator,
-      value,
-    )
-  }
-
-  if (field === "alignmentMissingSentences") {
-    return buildNumericExprComparison(
-      eb,
-      latestReportColumn("missing_sentences") as ReturnType<typeof sql<number>>,
-      operator,
-      value,
-    )
-  }
-
-  if (field === "alignmentMutedChapters") {
-    return buildNumericExprComparison(
-      eb,
-      latestReportColumn("muted_chapters") as ReturnType<typeof sql<number>>,
-      operator,
-      value,
-    )
-  }
-
-  if (field === "alignmentGrade") {
-    return buildStringExprComparison(
-      eb,
-      latestReportColumn("grade"),
-      operator,
-      value,
-    )
-  }
-
-  const isAssetNumeric =
-    field === "fileSize" || field === "duration" || field === "pageCount"
-
-  if (isAssetNumeric) {
-    return buildAssetNumericComparison(eb, field, operator, value, format)
-  }
-
-  switch (fieldType) {
-    case "string":
-      return buildStringComparison(
-        eb,
-        field as StringBookColumnField,
-        operator,
-        value,
-      )
-    case "number":
-      // every numeric field is intercepted before the switch (userRating via
-      // its subquery; pageCount / duration / fileSize as asset numerics), so
-      // this branch is unreachable - kept only for switch exhaustiveness.
+  if (condition.operator === "between") {
+    if (!Array.isArray(condition.value) || condition.value.length !== 2)
       return eb.lit(true)
-    case "date":
-      return buildDateComparison(
-        eb,
-        field as "publicationDate" | "createdAt" | "updatedAt",
-        operator,
-        value,
-      )
-    case "uuid":
-      return buildUuidComparison(eb, field as "status", operator, value, userId)
-    case "array":
-      return buildArrayComparison(
-        eb,
-        field as "tags" | "collections" | "series" | "creators",
-        operator,
-        value,
-        role,
-      )
-    case "enum":
-      return buildEnumComparison(eb, field as "format", operator, value)
-    default: {
-      const _exhaustive: never = fieldType
-      return eb.lit(true)
-    }
+    const lo = refOperand(eb, condition.field, condition.value[0], ctx.userId)
+    const hi = refOperand(eb, condition.field, condition.value[1], ctx.userId)
+    if (!lo || !hi) return eb.lit(true)
+    return eb.and([eb(lhs, ">=", lo), eb(lhs, "<=", hi)])
   }
-}
 
-// string fields whose value lives in an identically-named book column
-type StringBookColumnField =
-  | "title"
-  | "subtitle"
-  | "description"
-  | "language"
-  | "alignedWith"
-  | "alignedByStorytellerVersion"
+  const rhs = refOperand(eb, condition.field, condition.value, ctx.userId)
+  if (!rhs) return eb.lit(true)
 
-function buildStringComparison(
-  eb: EB,
-  field: StringBookColumnField,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-): FilterExpression {
-  const column = `book.${field}` as const
-  const strValue = String(value)
-
-  switch (operator) {
+  switch (condition.operator) {
     case "is":
-      return eb(sql`lower(${sql.ref(column)})`, "=", strValue.toLowerCase())
-
+      return eb(lhs, "=", rhs)
     case "isNot":
-      return eb(sql`lower(${sql.ref(column)})`, "!=", strValue.toLowerCase())
-
-    case "contains":
-      return eb(
-        sql`lower(${sql.ref(column)})`,
-        "like",
-        `%${strValue.toLowerCase()}%`,
-      )
-
-    case "notContains":
-      return eb.or([
-        eb(column, "is", null),
-        eb.not(
-          eb(
-            sql`lower(${sql.ref(column)})`,
-            "like",
-            `%${strValue.toLowerCase()}%`,
-          ),
-        ),
-      ])
-
-    case "startsWith":
-      return eb(
-        sql`lower(${sql.ref(column)})`,
-        "like",
-        `${strValue.toLowerCase()}%`,
-      )
-
-    case "endsWith":
-      return eb(
-        sql`lower(${sql.ref(column)})`,
-        "like",
-        `%${strValue.toLowerCase()}`,
-      )
-
-    case "isAnyOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb(
-        sql`lower(${sql.ref(column)})`,
-        "in",
-        value.map((v) => String(v).toLowerCase()),
-      )
-
-    case "isNoneOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb.or([
-        eb(column, "is", null),
-        eb.not(
-          eb(
-            sql`lower(${sql.ref(column)})`,
-            "in",
-            value.map((v) => String(v).toLowerCase()),
-          ),
-        ),
-      ])
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildStringExprComparison(
-  eb: EB,
-  expr: ReturnType<typeof sql>,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-): FilterExpression {
-  const strValue = String(value)
-
-  switch (operator) {
-    case "is":
-      return eb(sql`lower(${expr})`, "=", strValue.toLowerCase())
-
-    case "isNot":
-      return eb(sql`lower(${expr})`, "!=", strValue.toLowerCase())
-
-    case "contains":
-      return eb(sql`lower(${expr})`, "like", `%${strValue.toLowerCase()}%`)
-
-    case "notContains":
-      return eb.or([
-        eb(expr, "is", null),
-        eb.not(eb(sql`lower(${expr})`, "like", `%${strValue.toLowerCase()}%`)),
-      ])
-
-    case "startsWith":
-      return eb(sql`lower(${expr})`, "like", `${strValue.toLowerCase()}%`)
-
-    case "endsWith":
-      return eb(sql`lower(${expr})`, "like", `%${strValue.toLowerCase()}`)
-
-    case "isAnyOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb(
-        sql`lower(${expr})`,
-        "in",
-        value.map((v) => String(v).toLowerCase()),
-      )
-
-    case "isNoneOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb.or([
-        eb(expr, "is", null),
-        eb.not(
-          eb(
-            sql`lower(${expr})`,
-            "in",
-            value.map((v) => String(v).toLowerCase()),
-          ),
-        ),
-      ])
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildUserRatingComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-  userId?: UUID,
-): FilterExpression {
-  // user rating lives in the userBookRating table, not on book directly
-  const ratingSubquery = eb
-    .selectFrom("userBookRating")
-    .select("userBookRating.rating")
-    .whereRef("userBookRating.bookUuid", "=", "book.uuid")
-    .$if(!!userId, (qb) =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      qb.where("userBookRating.userId", "=", userId!),
-    )
-
-  switch (operator) {
-    case "is":
-      return eb.exists(
-        ratingSubquery
-          .where("userBookRating.rating", "=", Number(value))
-          .select(sql.lit(1).as("one")),
-      )
-
-    case "isNot":
-      return eb.or([
-        eb.not(eb.exists(ratingSubquery.select(sql.lit(1).as("one")))),
-        eb.exists(
-          ratingSubquery
-            .where("userBookRating.rating", "!=", Number(value))
-            .select(sql.lit(1).as("one")),
-        ),
-      ])
-
+      return eb(lhs, "!=", rhs)
     case "greaterThan":
-      return eb.exists(
-        ratingSubquery
-          .where("userBookRating.rating", ">", Number(value))
-          .select(sql.lit(1).as("one")),
-      )
-
+      return eb(lhs, ">", rhs)
     case "lessThan":
-      return eb.exists(
-        ratingSubquery
-          .where("userBookRating.rating", "<", Number(value))
-          .select(sql.lit(1).as("one")),
-      )
-
+      return eb(lhs, "<", rhs)
     case "greaterOrEqual":
-      return eb.exists(
-        ratingSubquery
-          .where("userBookRating.rating", ">=", Number(value))
-          .select(sql.lit(1).as("one")),
-      )
-
+      return eb(lhs, ">=", rhs)
     case "lessOrEqual":
-      return eb.exists(
-        ratingSubquery
-          .where("userBookRating.rating", "<=", Number(value))
-          .select(sql.lit(1).as("one")),
-      )
-
-    case "between":
-      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
-      return eb.exists(
-        ratingSubquery
-          .where("userBookRating.rating", ">=", Number(value[0]))
-          .where("userBookRating.rating", "<=", Number(value[1]))
-          .select(sql.lit(1).as("one")),
-      )
-
+      return eb(lhs, "<=", rhs)
     default:
       return eb.lit(true)
   }
 }
 
-function buildLastReadComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-  userId?: UUID,
-): FilterExpression {
-  const base = eb
-    .selectFrom("position")
-    .select(sql.lit(1).as("one"))
-    .whereRef("position.bookUuid", "=", "book.uuid")
-    .$if(!!userId, (qb) =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      qb.where("position.userId", "=", userId!),
-    )
+// ---------------------------------------------------------------------------
+// sorting
+// ---------------------------------------------------------------------------
 
-  const col = "position.updatedAt" as const
-
-  switch (operator) {
-    case "is":
-      return eb.exists(base.where(col, "=", String(value)))
-    case "isNot":
-      return eb.not(eb.exists(base.where(col, "=", String(value))))
-    case "before":
-      return eb.exists(base.where(col, "<", String(value)))
-    case "after":
-      return eb.exists(base.where(col, ">", String(value)))
-    case "between":
-      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
-      return eb.exists(
-        base
-          .where(col, ">=", String(value[0]))
-          .where(col, "<=", String(value[1])),
-      )
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildReadingPositionComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-  userId?: UUID,
-): FilterExpression {
-  const progression = sql<number>`json_extract(${sql.ref("position.locator")}, '$.locations.totalProgression')`
-  const base = eb
-    .selectFrom("position")
-    .select(sql.lit(1).as("one"))
-    .whereRef("position.bookUuid", "=", "book.uuid")
-    .$if(!!userId, (qb) =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      qb.where("position.userId", "=", userId!),
-    )
-
-  switch (operator) {
-    case "is":
-      return eb.exists(base.where(progression, "=", Number(value)))
-    case "isNot":
-      return eb.not(eb.exists(base.where(progression, "=", Number(value))))
-    case "greaterThan":
-      return eb.exists(base.where(progression, ">", Number(value)))
-    case "lessThan":
-      return eb.exists(base.where(progression, "<", Number(value)))
-    case "greaterOrEqual":
-      return eb.exists(base.where(progression, ">=", Number(value)))
-    case "lessOrEqual":
-      return eb.exists(base.where(progression, "<=", Number(value)))
-    case "between":
-      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
-      return eb.exists(
-        base
-          .where(progression, ">=", Number(value[0]))
-          .where(progression, "<=", Number(value[1])),
-      )
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildReviewComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue | undefined,
-  userId?: UUID,
-): FilterExpression {
-  const base = eb
-    .selectFrom("userBookRating")
-    .select(sql.lit(1).as("one"))
-    .whereRef("userBookRating.bookUuid", "=", "book.uuid")
-    .$if(!!userId, (qb) =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      qb.where("userBookRating.userId", "=", userId!),
-    )
-
-  if (operator === "isEmpty") {
-    return eb.not(
-      eb.exists(base.where("userBookRating.review", "is not", null)),
-    )
-  }
-
-  if (operator === "isNotEmpty") {
-    return eb.exists(base.where("userBookRating.review", "is not", null))
-  }
-
-  if (value === undefined || value === null) return eb.lit(true)
-
-  const lower = sql`lower(${sql.ref("userBookRating.review")})`
-  const str = String(value).toLowerCase()
-
-  switch (operator) {
-    case "is":
-      return eb.exists(base.where(lower, "=", str))
-    case "isNot":
-      return eb.not(eb.exists(base.where(lower, "=", str)))
-    case "contains":
-      return eb.exists(base.where(lower, "like", `%${str}%`))
-    case "notContains":
-      return eb.not(eb.exists(base.where(lower, "like", `%${str}%`)))
-    case "startsWith":
-      return eb.exists(base.where(lower, "like", `${str}%`))
-    case "endsWith":
-      return eb.exists(base.where(lower, "like", `%${str}`))
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildRatingDimensionComparison(
-  eb: EB,
-  dimension: string | undefined,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue | undefined,
-  userId?: UUID,
-): FilterExpression {
-  if (!dimension) return eb.lit(true)
-
-  const path = `$.${dimension}`
-  const score = sql<number>`json_extract(${sql.ref("userBookRating.dimensions")}, ${path})`
-  const base = eb
-    .selectFrom("userBookRating")
-    .select(sql.lit(1).as("one"))
-    .whereRef("userBookRating.bookUuid", "=", "book.uuid")
-    .$if(!!userId, (qb) =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      qb.where("userBookRating.userId", "=", userId!),
-    )
-
-  if (operator === "isEmpty") {
-    return eb.not(eb.exists(base.where(score, "is not", null)))
-  }
-
-  if (operator === "isNotEmpty") {
-    return eb.exists(base.where(score, "is not", null))
-  }
-
-  if (value === undefined || value === null) return eb.lit(true)
-
-  switch (operator) {
-    case "is":
-      return eb.exists(base.where(score, "=", Number(value)))
-    case "isNot":
-      return eb.not(eb.exists(base.where(score, "=", Number(value))))
-    case "greaterThan":
-      return eb.exists(base.where(score, ">", Number(value)))
-    case "lessThan":
-      return eb.exists(base.where(score, "<", Number(value)))
-    case "greaterOrEqual":
-      return eb.exists(base.where(score, ">=", Number(value)))
-    case "lessOrEqual":
-      return eb.exists(base.where(score, "<=", Number(value)))
-    case "between":
-      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
-      return eb.exists(
-        base
-          .where(score, ">=", Number(value[0]))
-          .where(score, "<=", Number(value[1])),
-      )
-    default:
-      return eb.lit(true)
-  }
-}
-
-/**
- * generic free-text search across a book's title, authors and series.
- */
-export function buildBookSearchExpression(
-  eb: EB,
-  term: string,
-): FilterExpression {
-  const searchTerm = `%${term.toLowerCase()}%`
-
-  return eb.or([
-    eb(sql`lower(book.title)`, "like", searchTerm),
-    eb(sql`lower(book.subtitle)`, "like", searchTerm),
-    eb.exists(
-      eb
-        .selectFrom("creator")
-        .select(sql.lit(1).as("one"))
-        .innerJoin("bookToCreator", "bookToCreator.creatorUuid", "creator.uuid")
-        .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-        .where(sql`lower(creator.name)`, "like", searchTerm),
-    ),
-    eb.exists(
-      eb
-        .selectFrom("series")
-        .select(sql.lit(1).as("one"))
-        .innerJoin("bookToSeries", "bookToSeries.seriesUuid", "series.uuid")
-        .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
-        .where(sql`lower(series.name)`, "like", searchTerm),
-    ),
-    eb(sql`lower(book.description)`, "like", searchTerm),
-  ])
+function latestReportColumn(column: string) {
+  return sql`(select ${sql.raw(column)} from alignment_report where book_uuid = book.uuid order by created_at desc limit 1)`
 }
 
 export function buildSortExpression(
@@ -1222,8 +485,6 @@ export function buildSortExpression(
       return latestReportColumn("missing_sentences")
     case "alignmentMutedChapters":
       return latestReportColumn("muted_chapters")
-    // case "alignmentMissingChapters":
-    //   return latestReportColumn("unaligned_audio")
     case "alignmentGrade":
       return sql`case ${latestReportColumn("grade")} ${sql.join(
         ALIGNMENT_GRADES.map(
@@ -1249,573 +510,5 @@ export function buildSortExpression(
       const _exhaustive: never = field
       return sql.lit(true)
     }
-  }
-}
-
-function assetNumericExpr(
-  field: "fileSize" | "duration" | "pageCount",
-): ReturnType<typeof sql<number>> {
-  switch (field) {
-    case "pageCount":
-      return sql<number>`coalesce(
-        (select e.page_count from ebook e where e.book_uuid = book.uuid),
-        (select r.page_count from readaloud r where r.book_uuid = book.uuid),
-        book.page_count
-      )`
-
-    case "duration":
-      return sql<number>`coalesce(
-        (select a.duration from audiobook a where a.book_uuid = book.uuid),
-        (select r.duration from readaloud r where r.book_uuid = book.uuid),
-        book.duration
-      )`
-
-    case "fileSize":
-      return sql<number>`coalesce(
-        (select max(s.file_size) from (
-          select e.file_size from ebook e where e.book_uuid = book.uuid
-          union all
-          select a.file_size from audiobook a where a.book_uuid = book.uuid
-          union all
-          select r.file_size from readaloud r where r.book_uuid = book.uuid
-        ) s),
-        0
-      )`
-  }
-}
-
-function formatScopedNumericExpr(
-  field: "fileSize" | "duration" | "pageCount",
-  format: AssetFormat,
-): ReturnType<typeof sql<number>> {
-  switch (format) {
-    case "ebook":
-      if (field === "pageCount")
-        return sql<number>`(select e.page_count from ebook e where e.book_uuid = book.uuid limit 1)`
-      if (field === "fileSize")
-        return sql<number>`(select e.file_size from ebook e where e.book_uuid = book.uuid limit 1)`
-      return sql<number>`null`
-    case "audiobook":
-      if (field === "duration")
-        return sql<number>`(select a.duration from audiobook a where a.book_uuid = book.uuid limit 1)`
-      if (field === "fileSize")
-        return sql<number>`(select a.file_size from audiobook a where a.book_uuid = book.uuid limit 1)`
-      return sql<number>`null`
-    case "readaloud":
-      if (field === "pageCount")
-        return sql<number>`(select r.page_count from readaloud r where r.book_uuid = book.uuid limit 1)`
-      if (field === "duration")
-        return sql<number>`(select r.duration from readaloud r where r.book_uuid = book.uuid limit 1)`
-      return sql<number>`(select r.file_size from readaloud r where r.book_uuid = book.uuid limit 1)`
-  }
-}
-
-function buildAssetNumericComparison(
-  eb: EB,
-  field: "fileSize" | "duration" | "pageCount",
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-  format?: AssetFormat,
-): FilterExpression {
-  const expr = format
-    ? formatScopedNumericExpr(field, format)
-    : assetNumericExpr(field)
-  return buildNumericExprComparison(eb, expr, operator, value)
-}
-
-// numeric comparison against an arbitrary scalar expression (an asset coalesce,
-// or a plain book column like alignment_score).
-function buildNumericExprComparison(
-  eb: EB,
-  expr: ReturnType<typeof sql<number>>,
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-): FilterExpression {
-  switch (operator) {
-    case "is":
-      return eb(expr, "=", Number(value))
-
-    case "isNot":
-      return eb(expr, "!=", Number(value))
-
-    case "greaterThan":
-      return eb(expr, ">", Number(value))
-
-    case "lessThan":
-      return eb(expr, "<", Number(value))
-
-    case "greaterOrEqual":
-      return eb(expr, ">=", Number(value))
-
-    case "lessOrEqual":
-      return eb(expr, "<=", Number(value))
-
-    case "between":
-      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
-      return eb.and([
-        eb(expr, ">=", Number(value[0])),
-        eb(expr, "<=", Number(value[1])),
-      ])
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildDateComparison(
-  eb: EB,
-  field: "publicationDate" | "createdAt" | "updatedAt",
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-): FilterExpression {
-  const column = `book.${field}` as const
-
-  switch (operator) {
-    case "is":
-      return eb(column, "=", String(value))
-
-    case "isNot":
-      return eb(column, "!=", String(value))
-
-    case "before":
-      return eb(column, "<", String(value))
-
-    case "after":
-      return eb(column, ">", String(value))
-
-    case "between":
-      if (!Array.isArray(value) || value.length !== 2) return eb.lit(true)
-      return eb.and([
-        eb(column, ">=", String(value[0])),
-        eb(column, "<=", String(value[1])),
-      ])
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildUuidComparison(
-  eb: EB,
-  _field: "status",
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-  userId?: UUID,
-): FilterExpression {
-  switch (operator) {
-    case "is":
-      return eb.exists(
-        eb
-          .selectFrom("bookToStatus")
-          .select(sql.lit(1).as("one"))
-          .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
-          .where("bookToStatus.statusUuid", "=", String(value) as UUID)
-          .$if(!!userId, (qb) =>
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            qb.where("bookToStatus.userId", "=", userId!),
-          ),
-      )
-
-    case "isNot":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToStatus")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
-            .where("bookToStatus.statusUuid", "=", String(value) as UUID)
-            .$if(!!userId, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("bookToStatus.userId", "=", userId!),
-            ),
-        ),
-      )
-
-    case "isAnyOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb.exists(
-        eb
-          .selectFrom("bookToStatus")
-          .select(sql.lit(1).as("one"))
-          .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
-          .where(
-            "bookToStatus.statusUuid",
-            "in",
-            value.map((v) => String(v) as UUID),
-          )
-          .$if(!!userId, (qb) =>
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            qb.where("bookToStatus.userId", "=", userId!),
-          ),
-      )
-
-    case "isNoneOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToStatus")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToStatus.bookUuid", "=", "book.uuid")
-            .where(
-              "bookToStatus.statusUuid",
-              "in",
-              value.map((v) => String(v) as UUID),
-            )
-            .$if(!!userId, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("bookToStatus.userId", "=", userId!),
-            ),
-        ),
-      )
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildArrayComparison(
-  eb: EB,
-  field:
-    | "tags"
-    | "collections"
-    | "series"
-    | "creators"
-    | "authors"
-    | "narrators"
-    | "translators",
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-  role?: string,
-): FilterExpression {
-  if (!Array.isArray(value)) return eb.lit(true)
-
-  const uuids = value.map((v) => String(v) as UUID)
-
-  switch (field) {
-    case "tags":
-      return buildTagComparison(eb, operator, uuids)
-    case "collections":
-      return buildCollectionComparison(eb, operator, uuids)
-    case "series":
-      return buildSeriesComparison(eb, operator, uuids)
-    case "authors":
-      return buildCreatorComparison(eb, operator, uuids, "aut")
-    case "narrators":
-      return buildCreatorComparison(eb, operator, uuids, "nar")
-    case "translators":
-      return buildCreatorComparison(eb, operator, uuids, "trl")
-    case "creators":
-      return buildCreatorComparison(eb, operator, uuids, role)
-  }
-}
-
-function buildTagComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  uuids: UUID[],
-): FilterExpression {
-  switch (operator) {
-    case "includes":
-      return eb.exists(
-        eb
-          .selectFrom("bookToTag")
-          .select(sql.lit(1).as("one"))
-          .whereRef("bookToTag.bookUuid", "=", "book.uuid")
-          .where("bookToTag.tagUuid", "in", uuids),
-      )
-
-    case "includesAll":
-      return eb.and(
-        uuids.map((uuid) =>
-          eb.exists(
-            eb
-              .selectFrom("bookToTag")
-              .select(sql.lit(1).as("one"))
-              .whereRef("bookToTag.bookUuid", "=", "book.uuid")
-              .where("bookToTag.tagUuid", "=", uuid),
-          ),
-        ),
-      )
-
-    case "excludes":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToTag")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToTag.bookUuid", "=", "book.uuid")
-            .where("bookToTag.tagUuid", "in", uuids),
-        ),
-      )
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildCollectionComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  uuids: UUID[],
-): FilterExpression {
-  switch (operator) {
-    case "includes":
-      return eb.exists(
-        eb
-          .selectFrom("bookToCollection")
-          .select(sql.lit(1).as("one"))
-          .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
-          .where("bookToCollection.collectionUuid", "in", uuids),
-      )
-
-    case "includesAll":
-      return eb.and(
-        uuids.map((uuid) =>
-          eb.exists(
-            eb
-              .selectFrom("bookToCollection")
-              .select(sql.lit(1).as("one"))
-              .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
-              .where("bookToCollection.collectionUuid", "=", uuid),
-          ),
-        ),
-      )
-
-    case "excludes":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToCollection")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCollection.bookUuid", "=", "book.uuid")
-            .where("bookToCollection.collectionUuid", "in", uuids),
-        ),
-      )
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildSeriesComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  uuids: UUID[],
-): FilterExpression {
-  switch (operator) {
-    case "includes":
-      return eb.exists(
-        eb
-          .selectFrom("bookToSeries")
-          .select(sql.lit(1).as("one"))
-          .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
-          .where("bookToSeries.seriesUuid", "in", uuids),
-      )
-
-    case "includesAll":
-      return eb.and(
-        uuids.map((uuid) =>
-          eb.exists(
-            eb
-              .selectFrom("bookToSeries")
-              .select(sql.lit(1).as("one"))
-              .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
-              .where("bookToSeries.seriesUuid", "=", uuid),
-          ),
-        ),
-      )
-
-    case "excludes":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToSeries")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToSeries.bookUuid", "=", "book.uuid")
-            .where("bookToSeries.seriesUuid", "in", uuids),
-        ),
-      )
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-function buildCreatorComparison(
-  eb: EB,
-  operator: ShelfFilterOperator,
-  uuids: UUID[],
-  role?: string,
-): FilterExpression {
-  // scope the membership test to a single relator role (author / narrator /
-  // translator) when asked; absent role matches a person in any role.
-  switch (operator) {
-    case "includes":
-      return eb.exists(
-        eb
-          .selectFrom("bookToCreator")
-          .select(sql.lit(1).as("one"))
-          .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-          .where("bookToCreator.creatorUuid", "in", uuids)
-          .$if(!!role, (qb) =>
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            qb.where("bookToCreator.role", "=", role! as Role),
-          ),
-      )
-
-    case "includesAll":
-      return eb.and(
-        uuids.map((uuid) =>
-          eb.exists(
-            eb
-              .selectFrom("bookToCreator")
-              .select(sql.lit(1).as("one"))
-              .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-              .where("bookToCreator.creatorUuid", "=", uuid)
-              .$if(!!role, (qb) =>
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                qb.where("bookToCreator.role", "=", role! as Role),
-              ),
-          ),
-        ),
-      )
-
-    case "excludes":
-      return eb.not(
-        eb.exists(
-          eb
-            .selectFrom("bookToCreator")
-            .select(sql.lit(1).as("one"))
-            .whereRef("bookToCreator.bookUuid", "=", "book.uuid")
-            .where("bookToCreator.creatorUuid", "in", uuids)
-            .$if(!!role, (qb) =>
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              qb.where("bookToCreator.role", "=", role! as Role),
-            ),
-        ),
-      )
-
-    default:
-      return eb.lit(true)
-  }
-}
-
-/**
- * the canonical semantics of every format value, shared by the shelf filter
- * and the formats facet counts. "readaloud" means an aligned one; "only"
- * excludes both other assets; "no-media" means no asset rows in any state.
- */
-export function formatPredicate(eb: EB, value: FormatValue): FilterExpression {
-  const hasEbook = eb.exists(
-    eb
-      .selectFrom("ebook")
-      .select(sql.lit(1).as("one"))
-      .whereRef("ebook.bookUuid", "=", "book.uuid"),
-  )
-  const hasAudiobook = eb.exists(
-    eb
-      .selectFrom("audiobook")
-      .select(sql.lit(1).as("one"))
-      .whereRef("audiobook.bookUuid", "=", "book.uuid"),
-  )
-  const hasReadaloud = eb.exists(
-    eb
-      .selectFrom("readaloud")
-      .select(sql.lit(1).as("one"))
-      .whereRef("readaloud.bookUuid", "=", "book.uuid")
-      .where("readaloud.status", "=", "ALIGNED"),
-  )
-  const hasReadaloudRow = eb.exists(
-    eb
-      .selectFrom("readaloud")
-      .select(sql.lit(1).as("one"))
-      .whereRef("readaloud.bookUuid", "=", "book.uuid"),
-  )
-  const missingEbook = eb.exists(
-    eb
-      .selectFrom("ebook")
-      .select(sql.lit(1).as("one"))
-      .whereRef("ebook.bookUuid", "=", "book.uuid")
-      .where("ebook.missing", "=", true),
-  )
-  const missingAudiobook = eb.exists(
-    eb
-      .selectFrom("audiobook")
-      .select(sql.lit(1).as("one"))
-      .whereRef("audiobook.bookUuid", "=", "book.uuid")
-      .where("audiobook.missing", "=", true),
-  )
-  const missingReadaloud = eb.exists(
-    eb
-      .selectFrom("readaloud")
-      .select(sql.lit(1).as("one"))
-      .whereRef("readaloud.bookUuid", "=", "book.uuid")
-      .where("readaloud.missing", "=", true),
-  )
-
-  switch (value) {
-    case "ebook":
-      return hasEbook
-    case "audiobook":
-      return hasAudiobook
-    case "readaloud":
-      return hasReadaloud
-    case "ebook-only":
-      return eb.and([hasEbook, eb.not(hasAudiobook), eb.not(hasReadaloud)])
-    case "audiobook-only":
-      return eb.and([hasAudiobook, eb.not(hasEbook), eb.not(hasReadaloud)])
-    case "readaloud-only":
-      return eb.and([hasReadaloud, eb.not(hasEbook), eb.not(hasAudiobook)])
-    case "missing-readaloud":
-      return eb.and([hasEbook, hasAudiobook, eb.not(hasReadaloud)])
-    case "missing-files":
-      return eb.or([missingEbook, missingAudiobook, missingReadaloud])
-    case "no-media":
-      return eb.and([
-        eb.not(hasEbook),
-        eb.not(hasAudiobook),
-        eb.not(hasReadaloudRow),
-      ])
-    default: {
-      const _exhaustive: never = value
-      return eb.lit(false)
-    }
-  }
-}
-
-function isFormatValue(value: unknown): value is FormatValue {
-  return (
-    typeof value === "string" &&
-    (FORMAT_VALUES as readonly string[]).includes(value)
-  )
-}
-
-function buildEnumComparison(
-  eb: EB,
-  _field: "format",
-  operator: ShelfFilterOperator,
-  value: ShelfFilterValue,
-): FilterExpression {
-  const condition = (v: unknown): FilterExpression =>
-    isFormatValue(v) ? formatPredicate(eb, v) : eb.lit(false)
-
-  switch (operator) {
-    case "is":
-      return condition(value)
-
-    case "isNot":
-      return eb.not(condition(value))
-
-    case "isAnyOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb.or(value.map(condition))
-
-    case "isNoneOf":
-      if (!Array.isArray(value)) return eb.lit(true)
-      return eb.and(value.map((v) => eb.not(condition(v))))
-
-    default:
-      return eb.lit(true)
   }
 }

@@ -40,12 +40,16 @@ export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
   // per the user preference a click either opens the floating side panel or
   // falls through to the card's own link to the book page
   const { bookOpenTarget } = useUserPreferences()
-  const { setSelectedBookUuid } = useBookInSidePanel()
+  const { selectedBookUuid, setSelectedBookUuid } = useBookInSidePanel()
   const handleBookClick = useCallback(
     (book: BookWithRelations) => {
-      void setSelectedBookUuid(book.uuid)
+      if (selectedBookUuid === book.uuid) {
+        void setSelectedBookUuid(null)
+      } else {
+        void setSelectedBookUuid(book.uuid)
+      }
     },
-    [setSelectedBookUuid],
+    [selectedBookUuid, setSelectedBookUuid],
   )
 
   const scrollLeft = () => {

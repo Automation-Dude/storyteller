@@ -9,13 +9,13 @@ import {
   ASSET_FORMATS,
   type AssetFormat,
   CAN_BE_EMPTY_FIELDS,
+  COUNTABLE_FIELDS,
   DATE_FIELDS,
   ENUM_FIELDS,
   FIELDS,
   FORMAT_VALUES,
   type FieldType,
   NUMBER_FIELDS,
-  type NumberField,
   STRING_FIELDS,
   UUID_FIELDS,
   getFieldDef,
@@ -44,6 +44,7 @@ export const shelfFilterOperatorSchema = z.enum([
   "includes",
   "includesAll",
   "excludes",
+  "intersects",
   "isAnyOf",
   "isNoneOf",
   "isEmpty",
@@ -112,12 +113,46 @@ export type EnumOperators = (typeof OPERATORS_BY_FIELD_TYPE)["enum"][number]
 // value + condition schemas (strict)
 // ---------------------------------------------------------------------------
 
+// a condition value can reference another field address instead of a literal:
+// "duration@readaloud between 0.8x and 1.2x of duration@audiobook", or
+// "creators@aut intersects creators@nrt". field defaults to the condition's
+// own field, so cross-qualifier / cross-format comparisons stay terse.
+export const fieldRefSchema = z.object({
+  ref: z.object({
+    field: z
+      .string()
+      .optional()
+      .describe("the referenced field; defaults to the condition's own field"),
+    qualifier: z.string().optional(),
+    format: z.enum(ASSET_FORMATS).optional(),
+  }),
+  factor: z
+    .number()
+    .optional()
+    .describe("multiplier applied to the referenced value (0.8 = 80%)"),
+})
+
+export type ShelfFilterFieldRef = z.infer<typeof fieldRefSchema>
+
+export function isFieldRefValue(v: unknown): v is ShelfFilterFieldRef {
+  return typeof v === "object" && v !== null && !Array.isArray(v) && "ref" in v
+}
+
+/** a condition value (or one member of one) as text; refs/nulls become "". */
+export function shelfValueText(v: unknown): string {
+  return typeof v === "string" || typeof v === "number" ? String(v) : ""
+}
+
+const numberOrRef = z.union([z.number(), fieldRefSchema])
+
 export const shelfFilterValueSchema = z.union([
   z.string(),
   z.number(),
   z.array(z.union([z.string(), z.number()])),
   z.tuple([z.string(), z.string()]),
   z.tuple([z.number(), z.number()]),
+  fieldRefSchema,
+  z.tuple([numberOrRef, numberOrRef]),
   z.null(),
 ])
 
@@ -125,14 +160,39 @@ export type ShelfFilterValue = z.infer<typeof shelfFilterValueSchema>
 
 const TYPE = z.literal("condition")
 
+// a condition addresses a value by field x qualifier x format. the qualifier
+// narrows to one sub-key of the field (a marc relator role for creators, a
+// rating axis for userRating, an identifier type for identifiers); the format
+// scopes to one asset's copy of the value. which fields accept which axis is
+// declared in the field registry.
+const qualifierProp = {
+  qualifier: z
+    .string()
+    .optional()
+    .describe(
+      "sub-key of the field: a marc relator role (aut/nrt/trl) for creators, a rating axis id for userRating, an identifier type uuid for identifiers",
+    ),
+}
+
+const formatProp = {
+  format: z
+    .enum(ASSET_FORMATS)
+    .optional()
+    .describe(
+      "scope the value to one asset format (ebook/audiobook/readaloud)",
+    ),
+}
+
 const stringMatchCondition = z
   .object({
     type: TYPE,
     field: z.enum(STRING_FIELDS),
     operator: z.enum(TEXT_MATCH_OPERATORS),
     value: z.string().describe("the text to match against the field"),
+    ...qualifierProp,
+    ...formatProp,
   })
-  .describe("text match on a string field (title, subtitle, ...)")
+  .describe("text match on a string field (title, subtitle, identifiers, ...)")
 
 const stringListCondition = z
   .object({
@@ -140,44 +200,36 @@ const stringListCondition = z
     field: z.enum(STRING_FIELDS),
     operator: z.enum(TEXT_LIST_OPERATORS),
     value: z.array(z.string()).describe("the set of candidate values"),
+    ...qualifierProp,
+    ...formatProp,
   })
   .describe("membership test on a string field (is any of / is none of)")
-
-// ratingDimension has its own variants below that require the axis id; keep it
-// out of the generic numeric conditions so a dimension-less one is rejected
-const GENERIC_NUMBER_FIELDS = NUMBER_FIELDS.filter(
-  (f) => f !== "ratingDimension",
-) as [NumberField, ...NumberField[]]
 
 const numberCompareCondition = z
   .object({
     type: TYPE,
-    field: z.enum(GENERIC_NUMBER_FIELDS),
+    field: z.enum(NUMBER_FIELDS),
     operator: z.enum(NUMBER_COMPARE_OPERATORS),
-    value: z.number().describe("the number to compare against"),
-    format: z
-      .enum(ASSET_FORMATS)
-      .optional()
-      .describe(
-        "fileSize / duration / pageCount only: scope to one asset format",
-      ),
+    value: numberOrRef.describe(
+      "the number to compare against, or a reference to another field's value",
+    ),
+    ...qualifierProp,
+    ...formatProp,
   })
   .describe("scalar comparison on a numeric field")
 
 const numberRangeCondition = z
   .object({
     type: TYPE,
-    field: z.enum(GENERIC_NUMBER_FIELDS),
+    field: z.enum(NUMBER_FIELDS),
     operator: z.enum(RANGE_OPERATORS),
     value: z
-      .tuple([z.number(), z.number()])
-      .describe("inclusive [min, max] range"),
-    format: z
-      .enum(ASSET_FORMATS)
-      .optional()
+      .tuple([numberOrRef, numberOrRef])
       .describe(
-        "fileSize / duration / pageCount only: scope to one asset format",
+        "inclusive [min, max] range; bounds may reference other fields",
       ),
+    ...qualifierProp,
+    ...formatProp,
   })
   .describe("range (between) on a numeric field")
 
@@ -225,14 +277,23 @@ const arrayCondition = z
     field: z.enum(ARRAY_FIELDS),
     operator: z.enum(ARRAY_OPERATORS),
     value: z.array(z.string()).describe("the related entity uuids"),
-    role: z
-      .string()
-      .optional()
-      .describe(
-        "creators only: scope to a marc relator role (aut / nrt / trl)",
-      ),
+    ...qualifierProp,
   })
   .describe("relation membership (tags, collections, series, creators)")
+
+const relationOverlapCondition = z
+  .object({
+    type: TYPE,
+    field: z.enum(ARRAY_FIELDS),
+    operator: z.literal("intersects"),
+    value: fieldRefSchema.describe(
+      "the other side of the overlap, e.g. { ref: { qualifier: 'nrt' } }",
+    ),
+    ...qualifierProp,
+  })
+  .describe(
+    "the relation's values overlap another qualifier's values (the author is also the narrator)",
+  )
 
 // enum fields: format (format values) and alignmentGrade (letter grades)
 const ENUM_VALUES = [...FORMAT_VALUES, ...ALIGNMENT_GRADES] as const
@@ -266,43 +327,6 @@ const reviewCondition = z
   })
   .describe("text match on the user's review")
 
-const ratingDimensionScalarCondition = z
-  .object({
-    type: TYPE,
-    field: z.literal("ratingDimension"),
-    dimension: z
-      .string()
-      .describe(
-        "the rating axis id, e.g. plot or prose (see user preferences)",
-      ),
-    operator: z.enum(NUMBER_COMPARE_OPERATORS),
-    value: z.number().describe("the score (0-5) to compare against"),
-  })
-  .describe("scalar comparison on one multidimensional rating axis")
-
-const ratingDimensionRangeCondition = z
-  .object({
-    type: TYPE,
-    field: z.literal("ratingDimension"),
-    dimension: z
-      .string()
-      .describe(
-        "the rating axis id, e.g. plot or prose (see user preferences)",
-      ),
-    operator: z.enum(RANGE_OPERATORS),
-    value: z.tuple([z.number(), z.number()]).describe("inclusive [min, max]"),
-  })
-  .describe("range (between) on one multidimensional rating axis")
-
-const ratingDimensionUnaryCondition = z
-  .object({
-    type: TYPE,
-    field: z.literal("ratingDimension"),
-    dimension: z.string().describe("the rating axis id"),
-    operator: z.enum(UNARY_OPERATORS),
-  })
-  .describe("presence test on one multidimensional rating axis")
-
 const searchCondition = z
   .object({
     type: TYPE,
@@ -319,16 +343,31 @@ const unaryCondition = z
     type: TYPE,
     field: z.enum(CAN_BE_EMPTY_FIELDS),
     operator: z.enum(UNARY_OPERATORS),
-    role: z
-      .string()
-      .optional()
-      .describe(
-        "creators only: scope to a marc relator role (aut / nrt / trl)",
-      ),
+    ...qualifierProp,
+    ...formatProp,
   })
   .describe("presence test (is empty / is not empty)")
 
+const countCondition = z
+  .object({
+    type: TYPE,
+    field: z.enum(COUNTABLE_FIELDS),
+    aggregate: z.literal("count"),
+    operator: z.enum([...NUMBER_COMPARE_OPERATORS, ...RANGE_OPERATORS]),
+    value: z
+      .union([z.number(), z.tuple([z.number(), z.number()])])
+      .describe(
+        "how many related values (a number, or [min, max] for between)",
+      ),
+    ...qualifierProp,
+    ...formatProp,
+  })
+  .describe(
+    "compare how MANY related values a book has (more than 3 authors), not which ones",
+  )
+
 const conditionVariants = z.union([
+  countCondition,
   stringMatchCondition,
   stringListCondition,
   numberCompareCondition,
@@ -338,12 +377,10 @@ const conditionVariants = z.union([
   uuidMatchCondition,
   uuidListCondition,
   arrayCondition,
+  relationOverlapCondition,
   enumMatchCondition,
   enumListCondition,
   reviewCondition,
-  ratingDimensionScalarCondition,
-  ratingDimensionRangeCondition,
-  ratingDimensionUnaryCondition,
   searchCondition,
   unaryCondition,
 ])
@@ -355,6 +392,34 @@ export const shelfFilterConditionSchema = z.preprocess((val) => {
   // we dont look at the main rating field, only the user's rating
   if (obj["field"] === "rating") {
     obj = { ...obj, field: "userRating" }
+  }
+
+  // pre-qualifier filters carried the axis under bespoke keys; fold them into
+  // the canonical `qualifier`
+  if (obj["field"] === "ratingDimension") {
+    const { dimension, ...rest } = obj
+    obj = { ...rest, field: "userRating", qualifier: dimension }
+  }
+  if ("role" in obj) {
+    const { role, ...rest } = obj
+    obj = { ...rest, ...(role != null ? { qualifier: role } : {}) }
+  }
+  if ("dimension" in obj) {
+    const { dimension, ...rest } = obj
+    obj = { ...rest, ...(dimension != null ? { qualifier: dimension } : {}) }
+  }
+
+  // the short-lived identifierName/identifierValue split; both are now the
+  // identifiers field. old value payloads (type names) don't translate, so
+  // value-carrying conditions degrade to a presence test.
+  if (obj["field"] === "identifierName" || obj["field"] === "identifierValue") {
+    const op = obj["operator"]
+    const { value: _omit, ...rest } = obj
+    obj = {
+      ...rest,
+      field: "identifiers",
+      operator: op === "isEmpty" ? "isEmpty" : "isNotEmpty",
+    }
   }
 
   const op = obj["operator"]
@@ -371,9 +436,12 @@ export type ShelfFilterCondition = {
   field: ShelfFilterField
   operator: ShelfFilterOperator
   value?: ShelfFilterValue
-  dimension?: string
-  role?: string
+  /** sub-key of the field; see the registry's qualifier declaration. */
+  qualifier?: string
+  /** scope the value to one asset format. */
   format?: AssetFormat
+  /** compare the cardinality of a relation instead of its values. */
+  aggregate?: "count"
 }
 
 export type ShelfFilterAnd = {
@@ -451,6 +519,7 @@ export const OPERATOR_LABELS: Record<ShelfFilterOperator, string> = {
   includes: "includes any of",
   includesAll: "includes all of",
   excludes: "excludes",
+  intersects: "overlaps with",
   isAnyOf: "is any of",
   isNoneOf: "is none of",
   isEmpty: "is empty",
@@ -462,9 +531,6 @@ export function getOperatorsForField(
 ): ShelfFilterOperator[] {
   if (field === "review") {
     return [...TEXT_MATCH_OPERATORS, ...UNARY_OPERATORS]
-  }
-  if (field === "ratingDimension") {
-    return [...NUMBER_COMPARE_OPERATORS, ...RANGE_OPERATORS, ...UNARY_OPERATORS]
   }
   if (field === "search") {
     return [...SEARCH_OPERATORS]

@@ -423,6 +423,12 @@
     "matchCount": "{count, plural, one {# boek gevonden} other {# boeken gevonden}}",
     "to": "tot",
     "axisDimension": "As...",
+    "qualifier": {
+      "overall": "Algemeen",
+      "anyType": "Elk type",
+      "anyRole": "Elke rol"
+    },
+    "countToggle": "Filter op aantal",
     "noItemsFound": "Geen resultaten",
     "commaSeparatedValues": "Kommagescheiden waarden...",
     "enterValue": "Voer waarde in...",
@@ -487,7 +493,8 @@
       "hasReadaloud": "Heeft readaloud",
       "hasReview": "Heeft recensie",
       "unrated": "Onbeoordeeld",
-      "longBooks": "Lange boeken (300+ pagina's)"
+      "longBooks": "Lange boeken (300+ pagina's)",
+      "authorIsNarrator": "Auteur is de verteller"
     },
     "durationHours": "u",
     "durationMinutes": "m",
@@ -1527,10 +1534,10 @@
         "narrators": "Vertellers",
         "translators": "Vertalers",
         "creators": "Overige Betrokkenen",
+        "identifiers": "Identificatiecodes",
         "format": "Formaat",
         "review": "Mijn recensie",
-        "ratingDimension": "Beoordelingsdimensie",
-        "search": "Zoek (alle velden)",
+                "search": "Zoek (alle velden)",
         "alignment": "Synchronisatie"
       },
       "short": {

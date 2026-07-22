@@ -22,6 +22,8 @@ export function createCacheBustingFetch(options: CacheBustingOptions) {
           ? input
           : new URL(input.url)
 
+    console.log("url", url)
+
     // only add cache busting to our book reading API endpoints
     // maybe not necessary as this is the only place it's used, but just to be safe
     if (url.pathname.includes(`/api/v2/books/${book.uuid}/`)) {

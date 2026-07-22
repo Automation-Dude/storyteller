@@ -1,7 +1,11 @@
 import { GRADE_COLORS } from "@v3/_/components/books/grade-pill"
 
-import { type FacetSection } from "@/database/libraryCounts"
 import { isWellKnownStatus } from "@/database/statusKinds"
+import {
+  FACET_SECTION_REGISTRY,
+  type FacetSection,
+  type FacetSectionDef,
+} from "@/facet-sections"
 import { type FormatValue } from "@/fields"
 import { type ShelfFilterField, type ShelfFilterNode } from "@/shelves"
 import { GRADE_RANK, type SortDirection, type SortField } from "@/sort"
@@ -77,17 +81,28 @@ function creatorFilter(role: string): (itemKey: string) => ShelfFilterNode {
     field: "creators",
     operator: "includes",
     value: [itemKey],
-    role,
+    qualifier: role,
   })
 }
 
-function emptyFilter(field: ShelfFilterField, role?: string): ShelfFilterNode {
+function emptyFilter(
+  field: ShelfFilterField,
+  qualifier?: string,
+): ShelfFilterNode {
   return {
     type: "condition",
     field,
     operator: "isEmpty",
-    ...(role ? { role } : {}),
+    ...(qualifier ? { qualifier } : {}),
   }
+}
+
+// the "(no X)" filter derives from the section's none binding in
+// facet-sections.ts, the same binding the server's none count uses.
+function sectionNoneFilter(section: FacetSection): ShelfFilterNode | undefined {
+  const none: FacetSectionDef["none"] = FACET_SECTION_REGISTRY[section].none
+  if (!none) return undefined
+  return emptyFilter(none.field, none.qualifier)
 }
 
 const GRADED_FILTER: ShelfFilterNode = {
@@ -100,7 +115,7 @@ export const librarySections = {
   series: {
     key: "series" as const,
     toShelfFilter: entityFilter("series"),
-    noneFilter: emptyFilter("series"),
+    noneFilter: sectionNoneFilter("series"),
     entityType: "series" as const,
     sort: {
       field: "seriesPosition",
@@ -110,31 +125,31 @@ export const librarySections = {
   authors: {
     key: "authors" as const,
     toShelfFilter: creatorFilter("aut"),
-    noneFilter: emptyFilter("creators", "aut"),
+    noneFilter: sectionNoneFilter("authors"),
     entityType: "creator" as const,
   },
   narrators: {
     key: "narrators" as const,
     toShelfFilter: creatorFilter("nrt"),
-    noneFilter: emptyFilter("creators", "nrt"),
+    noneFilter: sectionNoneFilter("narrators"),
     entityType: "creator" as const,
   },
   translators: {
     key: "translators" as const,
     toShelfFilter: creatorFilter("trl"),
-    noneFilter: emptyFilter("creators", "trl"),
+    noneFilter: sectionNoneFilter("translators"),
     entityType: "creator" as const,
   },
   tags: {
     key: "tags" as const,
     toShelfFilter: entityFilter("tags"),
-    noneFilter: emptyFilter("tags"),
+    noneFilter: sectionNoneFilter("tags"),
     entityType: "tag" as const,
   },
   collections: {
     key: "collections" as const,
     toShelfFilter: entityFilter("collections"),
-    noneFilter: emptyFilter("collections"),
+    noneFilter: sectionNoneFilter("collections"),
     entityType: "collection" as const,
   },
   statuses: {
@@ -146,23 +161,20 @@ export const librarySections = {
       operator: "is",
       value: itemKey,
     }),
-    noneFilter: emptyFilter("status"),
+    noneFilter: sectionNoneFilter("statuses"),
     pinItem: (item) => !!item.kind && isWellKnownStatus(item.kind),
   },
+  // facet values are identifier types (isbn, asin, ...); picking one filters
+  // to books carrying any identifier of that type
   identifiers: {
     key: "identifiers" as const,
-    entityType: "identifier" as const,
     toShelfFilter: (itemKey: string): ShelfFilterNode => ({
       type: "condition",
-      field: "identifierName",
-      operator: "is",
-      value: itemKey,
+      field: "identifiers",
+      operator: "isNotEmpty",
+      qualifier: itemKey,
     }),
-    noneFilter: emptyFilter("identifierName"),
-    sort: {
-      field: "identifierValue",
-      direction: "asc",
-    },
+    noneFilter: sectionNoneFilter("identifiers"),
   },
   publicationYears: {
     key: "publicationYears" as const,
@@ -174,7 +186,7 @@ export const librarySections = {
       operator: "between",
       value: [itemKey, `${itemKey}-12-31`],
     }),
-    noneFilter: emptyFilter("publicationDate"),
+    noneFilter: sectionNoneFilter("publicationYears"),
   },
   ratings: {
     key: "ratings" as const,
@@ -192,7 +204,7 @@ export const librarySections = {
       field: "userRating",
       direction: "desc",
     },
-    noneFilter: emptyFilter("userRating"),
+    noneFilter: sectionNoneFilter("ratings"),
   },
   formats: {
     key: "formats" as const,
@@ -228,7 +240,7 @@ export const librarySections = {
     key: "shelves" as const,
     entityType: "shelf" as const,
   },
-} as const satisfies Record<string, LibrarySectionDef>
+} as const satisfies Record<FacetSection, LibrarySectionDef>
 
 export type LibrarySectionKey = keyof typeof librarySections
 
