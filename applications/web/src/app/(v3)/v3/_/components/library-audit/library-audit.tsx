@@ -2,7 +2,7 @@
 
 import { IconRefresh, IconWand } from "@tabler/icons-react"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import {
@@ -79,25 +79,40 @@ export function LibraryAudit() {
 
   const ready = data?.status === "ready"
   const computing = !ready
+  // Driven by the click, not the server status: a warm recompute can finish
+  // between polls, so the "computing" window is never seen and the button
+  // looks dead. This flag guarantees a visible cue the instant it is pressed.
   const [rescanning, setRescanning] = useState(false)
+  const rescanBaseline = useRef<string | null>(null)
+  const scanning = rescanning || computing
 
-  // Poll only while the background pass is running; stop once it is ready.
+  // Poll while our rescan is in flight or the server is still working.
   useEffect(() => {
-    setPollInterval(data && data.status !== "ready" ? 2000 : 0)
-  }, [data])
+    setPollInterval(rescanning || (data && data.status !== "ready") ? 1500 : 0)
+  }, [rescanning, data])
 
-  // When a rescan we started finishes, announce the result once.
+  // Announce completion once a genuinely new scan timestamp lands.
   useEffect(() => {
-    if (rescanning && ready) {
+    if (
+      rescanning &&
+      ready &&
+      data.computedAt &&
+      data.computedAt !== rescanBaseline.current
+    ) {
       setRescanning(false)
       toast.success(t("rescanDone", { flagged: data.flagged }))
     }
   }, [rescanning, ready, data, t])
 
   const onRescan = () => {
+    rescanBaseline.current = data?.computedAt ?? null
     setRescanning(true)
     toast.info(t("rescanStarted"))
-    void rescan()
+    rescan()
+      .unwrap()
+      .catch(() => {
+        setRescanning(false)
+      })
   }
 
   const label = (issue: AuditIssue) => t(`issues.${issue}`)
@@ -127,14 +142,14 @@ export function LibraryAudit() {
             variant="outline"
             size="sm"
             onClick={onRescan}
-            disabled={computing}
+            disabled={scanning}
           >
-            <IconRefresh className={computing ? "animate-spin" : undefined} />
-            {computing ? t("rescanning") : t("rescan")}
+            <IconRefresh className={scanning ? "animate-spin" : undefined} />
+            {scanning ? t("rescanning") : t("rescan")}
           </Button>
         </div>
       </div>
-      {computing && data && data.total > 0 ? (
+      {scanning && data && data.total > 0 ? (
         <div className="border-primary/30 bg-primary/5 text-primary -mt-4 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
           <IconRefresh className="animate-spin" size={16} />
           {t("scanningBanner")}

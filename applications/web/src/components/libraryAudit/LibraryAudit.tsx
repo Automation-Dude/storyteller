@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   Group,
+  Loader,
   SimpleGrid,
   Skeleton,
   Stack,
@@ -15,7 +16,7 @@ import {
   Title,
 } from "@mantine/core"
 import { IconRefresh, IconWand } from "@tabler/icons-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import {
   type AuditBook,
@@ -87,11 +88,39 @@ export function LibraryAudit() {
 
   const ready = data?.status === "ready"
   const computing = !ready
+  // A rescan the user just started. Driven by the click, not the server status,
+  // because a warm recompute can finish between polls, so the "computing"
+  // window is never observed and the button would look dead.
+  const [rescanning, setRescanning] = useState(false)
+  const rescanBaseline = useRef<string | null>(null)
+  const scanning = rescanning || computing
 
-  // Poll only while the background pass is running; stop once it is ready.
+  // Poll while a rescan we started is in flight or the server is still working.
   useEffect(() => {
-    setPollInterval(data && data.status !== "ready" ? 2000 : 0)
-  }, [data])
+    setPollInterval(rescanning || (data && data.status !== "ready") ? 1500 : 0)
+  }, [rescanning, data])
+
+  // Clear the local flag once a genuinely new scan timestamp lands.
+  useEffect(() => {
+    if (
+      rescanning &&
+      ready &&
+      data.computedAt &&
+      data.computedAt !== rescanBaseline.current
+    ) {
+      setRescanning(false)
+    }
+  }, [rescanning, ready, data])
+
+  const onRescan = () => {
+    rescanBaseline.current = data?.computedAt ?? null
+    setRescanning(true)
+    rescan()
+      .unwrap()
+      .catch(() => {
+        setRescanning(false)
+      })
+  }
 
   return (
     <Stack gap="lg">
@@ -126,16 +155,28 @@ export function LibraryAudit() {
             leftSection={
               <IconRefresh
                 size={16}
-                className={computing ? "animate-spin" : undefined}
+                className={scanning ? "animate-spin" : undefined}
               />
             }
-            onClick={() => void rescan()}
-            disabled={computing}
+            onClick={onRescan}
+            disabled={scanning}
           >
-            {computing ? "Scanning..." : "Rescan"}
+            {scanning ? "Scanning..." : "Rescan"}
           </Button>
         </Group>
       </Group>
+
+      {scanning ? (
+        <Alert
+          color="blue"
+          icon={<Loader size={16} />}
+          title="Scanning your library"
+        >
+          {computing && data && data.total > 0
+            ? `Checking every book's cover and metadata, ${data.scanned} of ${data.total} so far. Results fill in as they go.`
+            : "Checking every book for missing covers, titles, authors and series. This updates as it goes."}
+        </Alert>
+      ) : null}
 
       {isError ? (
         <Alert color="red" title="Couldn't load the audit">
@@ -153,12 +194,6 @@ export function LibraryAudit() {
         </Stack>
       ) : (
         <>
-          {computing ? (
-            <Alert color="blue" variant="light" title="Scanning">
-              Checking every book&apos;s cover and metadata, {data.scanned} of{" "}
-              {data.total} so far. Results fill in as it goes.
-            </Alert>
-          ) : null}
           <SummaryCards data={data} />
           {data.books.length === 0 ? (
             ready ? (
