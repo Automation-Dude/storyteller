@@ -72,6 +72,7 @@ function baseDeps(
     fetchEditionSeries: async () => null,
     fetchWorkSeries: async () => null,
     hasCover: async () => false,
+    narratorNames: async () => new Set<string>(),
     ...over,
   }
 }
@@ -790,6 +791,75 @@ void describe("author repair", () => {
     )
     assert.ok(res)
     assert.deepStrictEqual(res.choice.authors, ["Bernard Cornwell"])
+    assert.strictEqual(res.sources.authors, "openlibrary")
+  })
+})
+
+void describe("wrong-population guards", () => {
+  void it("never fills a narrator-only name as the author", async () => {
+    const book = fakeBook({
+      title: "Sharpe's Devil",
+      authors: [],
+      language: "en",
+      description: "Long enough description so authors are the only problem.",
+      series: [{ name: "Sharpe" }],
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          // The tags credit only the narrator, with no telltale prefix.
+          readLocal: async () => ({ authors: ["William Gaminara"] }),
+          narratorNames: async () => new Set(["william gaminara"]),
+          search: async () => [
+            candidate({
+              title: "Sharpe's Devil",
+              authors: ["Bernard Cornwell"],
+              score: 0.9,
+            }),
+          ],
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.deepStrictEqual(
+      res.choice.authors,
+      ["Bernard Cornwell"],
+      "the catalogue's author wins; the narrator is never proposed",
+    )
+    assert.strictEqual(res.sources.authors, "openlibrary")
+  })
+
+  void it("adopts the catalogue ordering for a reordered author name", async () => {
+    const book = fakeBook({
+      title: "The Bourne Legacy",
+      authors: ["Ludlum Robert"],
+      language: "en",
+      description: null,
+    })
+    const res = await resolveBook(
+      BOOK_UUID,
+      undefined,
+      baseDeps(
+        {
+          readLocal: async () => ({}),
+          search: async () => [
+            candidate({
+              title: "The Bourne Legacy",
+              authors: ["Robert Ludlum"],
+              score: 0.9,
+            }),
+          ],
+          fetchDescription: async () =>
+            "Jason Bourne returns in a continuation long enough to keep.",
+        },
+        book,
+      ),
+    )
+    assert.ok(res)
+    assert.deepStrictEqual(res.choice.authors, ["Robert Ludlum"])
     assert.strictEqual(res.sources.authors, "openlibrary")
   })
 })

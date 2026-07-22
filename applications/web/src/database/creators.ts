@@ -78,8 +78,61 @@ export async function getAuthorCreatorsWithCounts() {
   return rows.map((row) => ({
     uuid: row.uuid,
     name: row.name,
-    bookCount: Number(row.bookCount),
+    bookCount: row.bookCount,
   }))
+}
+
+/**
+ * The existing creator whose name is the same person as `name` under spelling
+ * normalization ("J.K. Rowling" finds "J. K. Rowling"), so a repair reuses
+ * the library's canonical spelling instead of re-creating a variant the
+ * cluster merge just eliminated. Exact matches win; returns the input name
+ * when nobody matches.
+ */
+export async function resolveCanonicalCreatorName(
+  name: string,
+): Promise<{ name: string; fileAs: string | null }> {
+  const exact = await db
+    .selectFrom("creator")
+    .select(["name", "fileAs"])
+    .where("name", "=", name)
+    .executeTakeFirst()
+  if (exact) return exact
+  const key = name.toLowerCase().replace(/[^a-z]/g, "")
+  if (!key) return { name, fileAs: null }
+  const rows = await db
+    .selectFrom("creator")
+    .select(["name", "fileAs"])
+    .execute()
+  const match = rows.find(
+    (row) => row.name.toLowerCase().replace(/[^a-z]/g, "") === key,
+  )
+  return match ?? { name, fileAs: null }
+}
+
+/**
+ * Every name credited anywhere in the library as a narrator, lowercased.
+ * A proposed AUTHOR matching one of these is most likely a narration credit
+ * that lost its prefix; writing it as the author is how narrators ended up
+ * crowned on real books.
+ */
+export async function getNarratorNames(): Promise<Set<string>> {
+  const rows = await db
+    .selectFrom("creator")
+    .innerJoin("bookToCreator", "bookToCreator.creatorUuid", "creator.uuid")
+    .where("bookToCreator.role", "=", "nrt")
+    // Someone credited as an author anywhere narrates their own books;
+    // never treat them as narrator-only.
+    .where("creator.uuid", "not in", (eb) =>
+      eb
+        .selectFrom("bookToCreator")
+        .select("bookToCreator.creatorUuid")
+        .where("bookToCreator.role", "=", "aut"),
+    )
+    .select("creator.name")
+    .distinct()
+    .execute()
+  return new Set(rows.map((row) => row.name.toLowerCase()))
 }
 
 /** The books credited to any of the given creators as author. */

@@ -15,6 +15,7 @@ import {
 import { isAudioFile, isJunkFile } from "@/audio"
 import { titleIsBad } from "@/database/auditLibrary"
 import { type BookWithRelations, getBook } from "@/database/books"
+import { getNarratorNames } from "@/database/creators"
 import { isEpubVersionError } from "@/epub"
 import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
@@ -192,6 +193,19 @@ export type ResolveDeps = {
     workKey: string,
   ) => Promise<{ name: string; position: number | null } | null>
   hasCover: (book: BookWithRelations) => Promise<boolean>
+  /** Names credited only as narrators anywhere in the library, lowercased.
+   * A bare narrator name in tags or paths must never be filled as an
+   * author; that is how narrators ended up crowned on real books. */
+  narratorNames: () => Promise<Set<string>>
+}
+
+// One narrator lookup serves a whole batched scan; the set changes rarely.
+let narratorCache: { at: number; names: Set<string> } | null = null
+async function cachedNarratorNames(): Promise<Set<string>> {
+  if (!narratorCache || Date.now() - narratorCache.at > 60_000) {
+    narratorCache = { at: Date.now(), names: await getNarratorNames() }
+  }
+  return narratorCache.names
 }
 
 const defaultDeps: ResolveDeps = {
@@ -208,6 +222,7 @@ const defaultDeps: ResolveDeps = {
       (await getExtractedCover(book, "ebook")) ??
         (await getExtractedCover(book, "audiobook")),
     ),
+  narratorNames: cachedNarratorNames,
 }
 
 export async function resolveBook(
@@ -259,6 +274,12 @@ export async function resolveBook(
   const pathAuthors = paths.flatMap((p) => p.authors)
   const pathTitles = paths.flatMap((p) => p.titles)
   const pathYears = paths.flatMap((p) => p.years)
+  // Narrator-only names must never be filled as authors, whatever tag or
+  // path they came from; the catalogue's own author lists are exempt.
+  const narrators = need.authors
+    ? await deps.narratorNames()
+    : new Set<string>()
+  const notNarrator = (name: string) => !narrators.has(name.toLowerCase())
   if (
     need.title &&
     local.title &&
@@ -277,6 +298,7 @@ export async function resolveBook(
       .map((name) => cleanAuthorName(name))
       .filter((name, index, all) => name && all.indexOf(name) === index)
       .filter((name) => !authorNameIsBad(name))
+      .filter(notNarrator)
     if (usable.length) {
       resolution.choice.authors = usable
       resolution.sources.authors = "file"
@@ -310,6 +332,7 @@ export async function resolveBook(
       // A collection name riding along a real author ("Dan Simmons; Top 100
       // Sci-Fi Books") is dropped, not kept for company.
       .filter((name, _, all) => !authorNameIsBad(name) || all.length === 1)
+      .filter(notNarrator)
     if (
       cleaned.length &&
       !cleaned.every(authorNameIsBad) &&
@@ -325,7 +348,9 @@ export async function resolveBook(
     // The library tree itself names the author ("books/Sarah J Maas/...");
     // deterministic to read, safe to propose, and the catalogue can still
     // improve the spelling on a confident match.
-    const [pathAuthor] = pathAuthors.filter((name) => !authorNameIsBad(name))
+    const [pathAuthor] = pathAuthors
+      .filter((name) => !authorNameIsBad(name))
+      .filter(notNarrator)
     if (pathAuthor) {
       resolution.choice.authors = [pathAuthor]
       resolution.sources.authors = "derived"
@@ -498,7 +523,15 @@ export async function resolveBook(
             stored.toLowerCase(),
             matched.toLowerCase(),
           )
-          if (distance > 0 && distance <= 2) {
+          // The same name parts in a different order ("Ludlum Robert") is
+          // the match's author with the ordering lost; the catalogue's
+          // ordering wins under the same trust rule as a typo.
+          const tokensOf = (name: string) =>
+            name.toLowerCase().split(/\s+/).sort().join(" ")
+          const reordered =
+            stored.toLowerCase() !== matched.toLowerCase() &&
+            tokensOf(stored) === tokensOf(matched)
+          if ((distance > 0 && distance <= 2) || reordered) {
             resolution.choice.authors = [matched]
             resolution.sources.authors = "openlibrary"
           }

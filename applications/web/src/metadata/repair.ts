@@ -4,12 +4,14 @@ import { persistCover } from "@/assets/covers"
 import { invalidateAuditCover } from "@/database/auditLibrary"
 import { type CreatorRelation, getBook, updateBook } from "@/database/books"
 import { backupDatabase } from "@/database/connection"
+import { resolveCanonicalCreatorName } from "@/database/creators"
 import { DATA_DIR } from "@/directories"
 import { imageStats } from "@/images"
 import { logger } from "@/logging"
 import { type UUID } from "@/uuid"
 
 import { fetchOpenLibraryDescription } from "./openLibrary"
+import { seriesNamesMatch } from "./titleCleaning"
 
 /**
  * Apply the repairs a person accepts to a book, and the supporting bits the
@@ -154,23 +156,46 @@ export async function applyRepair(
         uuid: creator.uuid,
         role: creator.role,
       }))
-    const authors: CreatorRelation[] = choice.authors.map((name) => ({
-      name,
-      fileAs: name,
-      role: "aut",
-    }))
-    creators = [...kept, ...authors]
+    const authors: CreatorRelation[] = []
+    for (const name of choice.authors) {
+      // Reuse the library's canonical spelling, so a repair cannot re-create
+      // a variant creator ("J.K. Rowling") the cluster merge just eliminated.
+      const canonical = await resolveCanonicalCreatorName(name)
+      authors.push({
+        name: canonical.name,
+        fileAs: canonical.fileAs ?? canonical.name,
+        role: "aut",
+      })
+    }
+    // Two proposals canonicalizing to one person must not become two links.
+    const seen = new Set<string>()
+    creators = [...kept, ...authors].filter((creator) => {
+      const key = `${creator.name.toLowerCase()}|${creator.role}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   }
 
   // updateBook creates a series that does not exist yet and links the book,
-  // so a repair can both invent "Cradle" on first use and file book 8 into it.
-  const series = choice.series?.name.trim()
+  // so a repair can both invent "Cradle" on first use and file book 8 into
+  // it. It also replaces ALL series links, so the book's other series are
+  // carried through rather than silently dropped.
+  const chosenSeries = choice.series
+  const series = chosenSeries?.name.trim()
     ? [
+        ...book.series
+          .filter((s) => !seriesNamesMatch(s.name, chosenSeries.name))
+          .map((s) => ({
+            name: s.name,
+            featured: s.featured,
+            ...(s.position != null && { position: s.position }),
+          })),
         {
-          name: choice.series.name.trim(),
+          name: chosenSeries.name.trim(),
           featured: true,
-          ...(choice.series.position != null && {
-            position: choice.series.position,
+          ...(chosenSeries.position != null && {
+            position: chosenSeries.position,
           }),
         },
       ]

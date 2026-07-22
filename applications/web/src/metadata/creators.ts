@@ -124,13 +124,21 @@ export async function mergeCluster(
         fileAs: c.fileAs || c.name,
         role: c.role || "oth",
       }))
+    // A book holding TWO variants of the same person maps them both to the
+    // canonical name; without this a merge wrote the same author link twice.
+    const deduped = [...others, ...authors].filter(
+      (creator, index, all) =>
+        all.findIndex(
+          (x) =>
+            x.name.toLowerCase() === creator.name.toLowerCase() &&
+            x.role === creator.role,
+        ) === index,
+    )
     try {
-      await updateBook(book.uuid, null, { creators: [...others, ...authors] })
+      await updateBook(book.uuid, null, { creators: deduped })
       moved++
     } catch (error) {
-      logger.warn(
-        `creator merge failed for ${book.uuid}: ${String(error)}`,
-      )
+      logger.warn(`creator merge failed for ${book.uuid}: ${String(error)}`)
     }
   }
   return moved

@@ -194,7 +194,8 @@ function dedupeByWork(
   const best = new Map<string, OpenLibraryCandidate>()
   for (const candidate of candidates) {
     const prev = best.get(candidate.workKey)
-    if (!prev || candidate.score > prev.score) best.set(candidate.workKey, candidate)
+    if (!prev || candidate.score > prev.score)
+      best.set(candidate.workKey, candidate)
   }
   return [...best.values()]
 }
@@ -229,25 +230,76 @@ export async function fetchOpenLibraryCover(
 }
 
 /**
+ * Publisher imprints and collections that masquerade as series on editions.
+ * "Spectra" or "SF Masterworks" is stamped on every book the imprint prints,
+ * so it wins any edition vote while being no series at all; writing one as a
+ * series is exactly the wrong-data class the audit exists to prevent.
+ */
+const IMPRINT_NAMES = new Set([
+  "spectra",
+  "orbit",
+  "tor",
+  "del rey",
+  "gollancz",
+  "vintage",
+  "bantam",
+  "ace",
+  "roc",
+  "daw",
+  "baen",
+  "penguin",
+  "puffin",
+  "corgi",
+  "voyager",
+  "harper voyager",
+])
+
+const IMPRINT_PATTERN =
+  /\b(masterworks|classics|essentials|omnibus|anthology|selection|library binding|book club)\b/i
+
+/** True when a "series" name is really a publisher imprint or collection. */
+export function isImprintName(name: string): boolean {
+  return (
+    IMPRINT_NAMES.has(name.trim().toLowerCase()) || IMPRINT_PATTERN.test(name)
+  )
+}
+
+/**
  * Pick a series name and number out of an edition's loose series string
  * ("Wheel of Time (9)", "The Camel Club #3", "Cradle ; bk. 8").
+ *
+ * Editions often carry a COMPOUND claim ("The Riftwar Saga (#4); Riftwar
+ * Cycle (#3)"); taking it verbatim mangled real series names into garbage
+ * rows, so only the first claim is read. A semicolon directly before a
+ * number ("Cradle ; bk. 8") is a separator inside one claim and stays.
  */
 export function parseSeriesString(
   raw: string | undefined,
 ): { name: string; position: number | null } | null {
-  const value = raw?.trim()
+  let value = raw?.trim()
   if (!value) return null
+  const semicolon = value.indexOf(";")
+  if (semicolon > 0) {
+    const rest = value.slice(semicolon + 1).trim()
+    // A number right after the semicolon is this claim's own position marker
+    // ("Cradle ; bk. 8"); anything else starts a second claim to drop.
+    if (!/^(?:bk\.?|book|vol\.?|volume|#|no\.?|\d)/i.test(rest)) {
+      value = value.slice(0, semicolon).trim()
+    }
+  }
   const match =
     /^(.*?)\s*(?:[(;#,]|bk\.?|book|vol\.?|volume)\s*(\d+(?:\.\d+)?)\s*\)?\s*$/i.exec(
       value,
     )
   const name = (match?.[1] ?? value)
-    .replace(/[\s\-–—:,;#]+$/, "")
+    .replace(/[\s\-–—:,;#(]+$/, "")
     // "Discworld series" and "Discworld" are the same series; the suffix only
-    // splits the vote and hides the numbered form.
-    .replace(/\s+(series|saga|cycle)$/i, "")
+    // splits the vote and hides the numbered form. "Saga" and "Cycle" stay:
+    // they are usually part of the official name ("The Riftwar Saga").
+    .replace(/\s+(series|novels?)$/i, "")
     .trim()
   if (name.length < 3) return null
+  if (isImprintName(name)) return null
   const position = match?.[2] ? Number.parseFloat(match[2]) : null
   return { name, position: Number.isFinite(position) ? position : null }
 }
