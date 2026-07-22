@@ -50,34 +50,47 @@ Requires: Rust toolchain, plus the regular web build prerequisites.
 
 Bumping the `version` in `applications/tauri/package.json` on `main` makes
 the `bump-versions` job tag `tauri-v<version>`, which triggers
-`.gitlab/ci/publish-tauri.yml` on a GitLab SaaS macOS runner. The version in
-`tauri.conf.json` points at `../package.json`, so the package.json bump is the
-only one needed. No GitLab Release is created — artifacts go to the generic
-package registry under `storyteller-tauri/<version>/`, and for stable
-versions the job also refreshes
-`storyteller-tauri/latest/latest.json`, the feed the in-app updater polls.
-Prerelease versions (`-alpha.N`, `-beta.N`, …) publish artifacts but do not
-touch `latest.json`, so they never reach existing users.
+`.gitlab/ci/publish-tauri.yml`: a macOS job (SaaS Apple Silicon runner,
+produces the dmg) and a Linux job (SaaS amd64 runner, produces deb, rpm and
+AppImage). The version in `tauri.conf.json` points at `../package.json`, so
+the package.json bump is the only one needed. No GitLab Release is created —
+artifacts go to the generic package registry under
+`storyteller-tauri/<version>/`.
 
-The updater (tauri-plugin-updater) checks that feed on every release-build
-launch and via Server → Check for Updates…; updates download the signed
-`.app.tar.gz` and restart the app. Update bundles are signed with a minisign
-key: the public key is in `tauri.conf.json`, the private key must be provided
-to CI as masked variables:
+Download URLs (public, no auth):
 
-- `TAURI_SIGNING_PRIVATE_KEY` — contents of the private key file
+```
+https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri/<version>/Storyteller-Server-<version>-aarch64.dmg
+https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri/<version>/Storyteller-Server-<version>-amd64.deb
+https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri/<version>/Storyteller-Server-<version>-x86_64.rpm
+https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri/<version>/Storyteller-Server-<version>-amd64.AppImage
+```
+
+### Auto-updates (currently disabled)
+
+The auto-update path is written but switched off until the signing key is set
+up in CI: the updater plugin and its startup/menu checks are commented out in
+`src-tauri/src/main.rs` (search for "auto-update disabled"), and the CI steps
+that build, sign and publish the updater bundle plus the
+`storyteller-tauri/latest/latest.json` feed are commented out in
+`.gitlab/ci/publish-tauri.yml`.
+
+When enabled, the updater (tauri-plugin-updater) checks the feed on every
+release-build launch and via Server → Check for Updates…; updates download the
+signed `.app.tar.gz` and restart the app. Stable versions advance
+`latest.json`, prereleases (`-alpha.N`, `-beta.N`, …) publish artifacts but
+never touch it. Update bundles are signed with a minisign key: the public key
+is in `tauri.conf.json`, the private key must be provided to CI as masked
+variables:
+
+- `TAURI_SIGNING_PRIVATE_KEY` — contents of the private key file (the
+  `_PATH` variant is not honored by the bundler)
 - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — its password (empty if none)
 
 Losing the private key means shipped apps can never accept another update
 (the pubkey would have to change, requiring a manual reinstall). Local builds
 don't need the key — updater artifacts are only produced in CI via
 `--config '{"bundle":{"createUpdaterArtifacts":true}}'`.
-
-Download URLs (public, no auth):
-
-```
-https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri/<version>/Storyteller-Server-<version>-aarch64.dmg
-```
 
 ## Dev mode
 

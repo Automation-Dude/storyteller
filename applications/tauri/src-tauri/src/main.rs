@@ -40,7 +40,11 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        // auto-update disabled until TAURI_SIGNING_PRIVATE_KEY is set in CI
+        // (see .gitlab/ci/publish-tauri.yml). to re-enable, uncomment this,
+        // the check-updates menu item and handler, the startup check, and
+        // check_for_updates below
+        // .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ServerState {
             child: Mutex::new(None),
             shutting_down: Mutex::new(false),
@@ -137,8 +141,9 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             )?,
             &PredefinedMenuItem::separator(app)?,
             &MenuItem::with_id(app, "restore-db", "Restore Database…", true, None::<&str>)?,
-            &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, "check-updates", "Check for Updates…", true, None::<&str>)?,
+            // auto-update disabled, see the updater plugin comment in main()
+            // &PredefinedMenuItem::separator(app)?,
+            // &MenuItem::with_id(app, "check-updates", "Check for Updates…", true, None::<&str>)?,
         ],
     )?;
     menu.append(&server)?;
@@ -177,10 +182,10 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
                 let handle = app.clone();
                 std::thread::spawn(move || restore_database_flow(handle));
             }
-            "check-updates" => {
-                let handle = app.clone();
-                std::thread::spawn(move || check_for_updates(handle, true));
-            }
+            // "check-updates" => {
+            //     let handle = app.clone();
+            //     std::thread::spawn(move || check_for_updates(handle, true));
+            // }
             _ => {}
         }
     });
@@ -487,17 +492,19 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
     navigate(app, &url)?;
 
     // quiet update check once the app is usable; release builds only so dev
-    // runs never fetch or prompt
-    if !cfg!(debug_assertions) {
-        let handle = app.clone();
-        std::thread::spawn(move || check_for_updates(handle, false));
-    }
+    // runs never fetch or prompt. disabled with the updater plugin, see main()
+    // if !cfg!(debug_assertions) {
+    //     let handle = app.clone();
+    //     std::thread::spawn(move || check_for_updates(handle, false));
+    // }
     Ok(())
 }
 
 /// checks the updater endpoint; when `interactive` (menu item) it also
 /// reports "up to date" and errors, the startup check stays silent unless an
 /// update exists. blocking dialogs, so must run off the main thread.
+/// currently unused, auto-update is disabled (see the plugin comment in main)
+#[allow(dead_code)]
 fn check_for_updates(app: tauri::AppHandle, interactive: bool) {
     use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
     use tauri_plugin_updater::UpdaterExt;

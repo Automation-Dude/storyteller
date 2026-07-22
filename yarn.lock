@@ -15233,16 +15233,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storyteller-platform/desktop@workspace:applications/desktop":
-  version: 0.0.0-use.local
-  resolution: "@storyteller-platform/desktop@workspace:applications/desktop"
-  dependencies:
-    "@tauri-apps/cli": "npm:^2.5.0"
-    "@types/node": "npm:^24.0.0"
-    tsx: "npm:^4.7.2"
-  languageName: unknown
-  linkType: soft
-
 "@storyteller-platform/docs@workspace:applications/docs":
   version: 0.0.0-use.local
   resolution: "@storyteller-platform/docs@workspace:applications/docs"
@@ -15640,6 +15630,16 @@ __metadata:
     eslint: "npm:^8.0.0"
     tsup: "npm:^8.5.0"
     typescript: "npm:^5.9.2"
+  languageName: unknown
+  linkType: soft
+
+"@storyteller-platform/tauri@workspace:applications/tauri":
+  version: 0.0.0-use.local
+  resolution: "@storyteller-platform/tauri@workspace:applications/tauri"
+  dependencies:
+    "@tauri-apps/cli": "npm:^2.5.0"
+    "@types/node": "npm:^24.0.0"
+    tsx: "npm:^4.7.2"
   languageName: unknown
   linkType: soft
 
