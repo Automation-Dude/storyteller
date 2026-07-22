@@ -42,7 +42,7 @@
 
 publish-tauri-macos:
   extends: .publish-tauri
-  tags: [saas-macos-medium-m1]
+  tags: [saas-macos-large-m2pro]
   image: macos-26-xcode-26
   script:
     - export VERSION="${CI_COMMIT_TAG#tauri-}"
