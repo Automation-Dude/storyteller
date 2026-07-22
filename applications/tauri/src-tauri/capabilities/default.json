@@ -11,6 +11,15 @@
     "core:window:allow-close",
     "core:window:allow-minimize",
     "core:window:allow-toggle-maximize",
-    "core:window:allow-start-dragging"
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-fullscreen",
+    "os:allow-os-type",
+    "os:allow-platform",
+    "dialog:default",
+    "os:allow-locale",
+    "os:default",
+    "opener:default",
+    "window-state:default",
+    "fs:default"
   ]
 }

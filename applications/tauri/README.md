@@ -126,21 +126,33 @@ A pinned port that is already taken is a startup error, not a silent fallback.
 ```
 
 It is passed to the server as `STORYTELLER_ASSETS_DIR` and defaults to
-`data/assets` inside the app data dir. Changing it later does not move
-existing files; move the folder yourself while the app is closed, then use
-Settings → Data & backups → Rewrite paths to fix absolute paths stored in the
-database.
+`data/assets` inside the app data dir. After first boot it can be changed via
+Server → Change Media Folder… (restarts the server) or by editing
+`tauri.json` directly. Changing it does not move existing files; move the
+folder contents yourself, then use Settings → Data & backups → Rewrite paths
+to fix absolute paths stored in the database.
 
 ## Title bar
 
-On macOS the window uses a transparent native title bar
-(`titleBarStyle: "Transparent"`, hidden title) whose color is the `NSWindow`
-background. The web app drives it: `tauri-titlebar-sync.tsx` (v3 layout)
-resolves the `--sidebar` CSS variable and calls the `set_titlebar_color` command
-via `@tauri-apps/api`, re-syncing on theme switches. IPC for the locally served
-app is granted by the `remote` block in `capabilities/default.json`
-(`http://127.0.0.1:*`). Windows/Linux keep their native chrome for now (Windows
-could use `DWMWA_CAPTION_COLOR` later).
+On macOS the window uses `titleBarStyle: "Overlay"` (hidden title): the native
+traffic lights float over the web content, and the shell strips fullscreen
+from the window's collection behavior so the green button zooms/maximizes.
+The web app reserves an in-flow titlebar strip for it: the v3 layout sets
+`data-tauri` / `data-window-controls` on `<html>` (SSR from the UA token,
+plus a pre-paint inline script for platforms without it), which flips the
+`--titlebar-h` CSS variable from `0px` to a real height. The strip is a drag
+region split across the sidebar (customize/pin buttons next to the lights)
+and the content area (back/forward nav); page headers start below it, so
+nothing collides with window controls on any platform. Windows/Linux keep
+their native chrome for now — going frameless there later only needs
+`decorations: false` plus a `WindowControls` cluster in the strip's right
+corner (see the anchor in `titlebar-strip.tsx`).
+
+The window background color is still driven by `tauri-titlebar-sync.tsx` (v3
+layout), which resolves the `--sidebar` CSS variable and calls the
+`set_titlebar_color` command via `@tauri-apps/api`, re-syncing on theme
+switches. IPC for the locally served app is granted by the `remote` block in
+`capabilities/default.json` (`http://127.0.0.1:*`).
 
 ## Navigation
 

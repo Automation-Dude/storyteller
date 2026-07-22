@@ -6,12 +6,12 @@ use std::{
     net::{TcpListener, TcpStream},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    sync::{mpsc, Mutex},
+    sync::{Mutex, mpsc},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::{anyhow, Context, Result};
-use tauri::{path::BaseDirectory, Emitter, Manager, RunEvent};
+use anyhow::{Context, Result, anyhow};
+use tauri::{Emitter, Manager, RunEvent, path::BaseDirectory};
 
 enum BootChoice {
     Fresh,
@@ -39,7 +39,10 @@ fn main() {
                 let _ = window.set_focus();
             }
         }))
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         // auto-update disabled until TAURI_SIGNING_PRIVATE_KEY is set in CI
         // (see .gitlab/ci/publish-tauri.yml). to re-enable, uncomment this,
         // the check-updates menu item and handler, the startup check, and
@@ -68,6 +71,8 @@ fn main() {
             // match the splash background until the web app takes over
             if let Some(window) = app.get_webview_window("main") {
                 set_window_background(&window, 0.078, 0.063, 0.051);
+                prefer_zoom_over_fullscreen(&window);
+
                 // remember the splash so a database restore can show boot
                 // progress again
                 if let Ok(url) = window.url() {
@@ -84,6 +89,37 @@ fn main() {
                 let handle = app.handle().clone();
                 std::thread::spawn(move || boot(handle));
             }
+
+            // let win_builder =
+            //     tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::default())
+            //         .hidden_title(true)
+            //         .title_bar_style(tauri::TitleBarStyle::Overlay)
+            //         .decorations(true);
+            // .inner_size(800.0, 600.0);
+
+            // // set transparent title bar only when building for macOS
+            // #[cfg(target_os = "macos")]
+            // let win_builder = win_builder.title_bar_style(tauri::TitleBarStyle::Transparent);
+
+            // let window =
+            // win_builder.build().unwrap();
+
+            // // set background color only when building for macOS
+            // #[cfg(target_os = "macos")]
+            // {
+            //     use objc2_app_kit::{NSColor, NSWindow};
+
+            //     let ns_window_ptr = window.ns_window().unwrap() as *mut NSWindow;
+            //     let ns_window = unsafe { &*ns_window_ptr };
+            //     let bg_color = NSColor::colorWithRed_green_blue_alpha(
+            //         50.0 / 255.0,
+            //         158.0 / 255.0,
+            //         163.5 / 255.0,
+            //         1.0,
+            //     );
+            //     ns_window.setBackgroundColor(Some(&bg_color));
+            // }
+
             Ok(())
         })
         .build(tauri::generate_context!())
@@ -141,6 +177,13 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             )?,
             &PredefinedMenuItem::separator(app)?,
             &MenuItem::with_id(app, "restore-db", "Restore Database…", true, None::<&str>)?,
+            &MenuItem::with_id(
+                app,
+                "change-assets-dir",
+                "Change Media Folder…",
+                true,
+                None::<&str>,
+            )?,
             // auto-update disabled, see the updater plugin comment in main()
             // &PredefinedMenuItem::separator(app)?,
             // &MenuItem::with_id(app, "check-updates", "Check for Updates…", true, None::<&str>)?,
@@ -181,6 +224,10 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
                 // blocking native dialogs must stay off the main thread
                 let handle = app.clone();
                 std::thread::spawn(move || restore_database_flow(handle));
+            }
+            "change-assets-dir" => {
+                let handle = app.clone();
+                std::thread::spawn(move || change_assets_dir_flow(handle));
             }
             // "check-updates" => {
             //     let handle = app.clone();
@@ -334,12 +381,10 @@ async fn choose_assets_dir(app: tauri::AppHandle, reset: bool) -> Result<Option<
     use tauri_plugin_dialog::DialogExt;
     let picked = app.dialog().file().blocking_pick_folder();
     let Some(path) = picked.and_then(|folder| folder.into_path().ok()) else {
-        return Ok(configured_assets_dir(&app_data)
-            .map(|path| path.display().to_string()));
+        return Ok(configured_assets_dir(&app_data).map(|path| path.display().to_string()));
     };
 
-    fs::create_dir_all(&path)
-        .map_err(|err| format!("that folder isn't writable: {err}"))?;
+    fs::create_dir_all(&path).map_err(|err| format!("that folder isn't writable: {err}"))?;
 
     let mut config = read_tauri_config(&app_data);
     if let Some(object) = config.as_object_mut() {
@@ -353,12 +398,114 @@ async fn choose_assets_dir(app: tauri::AppHandle, reset: bool) -> Result<Option<
     Ok(Some(path.display().to_string()))
 }
 
+/// menu flow for moving the library's media folder after first boot: pick a
+/// folder, store it in tauri.json, restart the server against it. files are
+/// not moved — the dialog tells the user to move them and rewrite paths
+fn change_assets_dir_flow(app: tauri::AppHandle) {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+
+    let current = app
+        .path()
+        .app_data_dir()
+        .ok()
+        .and_then(|app_data| configured_assets_dir(&app_data))
+        .map(|path| path.display().to_string())
+        .unwrap_or_else(|| "inside the app data folder (default)".to_string());
+    let confirmed = app
+        .dialog()
+        .message(format!(
+            "Choose a new folder for library-managed media files (synced books, audio, covers). \
+             The server restarts to apply it.\n\nCurrent location: {current}\n\nExisting files \
+             are not moved automatically — move the current folder's contents into the new one \
+             yourself, then use Settings → Data & backups → Rewrite paths if books stop resolving.",
+        ))
+        .title("Change Media Folder")
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Choose Folder…".to_string(),
+            "Cancel".to_string(),
+        ))
+        .blocking_show();
+    if !confirmed {
+        return;
+    }
+
+    let Some(picked) = app.dialog().file().blocking_pick_folder() else {
+        return;
+    };
+    let Ok(path) = picked.into_path() else {
+        return;
+    };
+
+    if let Err(err) = change_assets_dir(&app, &path) {
+        emit_status(&app, "error", &format!("{err:#}"));
+    }
+}
+
+fn change_assets_dir(app: &tauri::AppHandle, path: &Path) -> Result<()> {
+    let app_data = app.path().app_data_dir().context("no app data directory")?;
+    fs::create_dir_all(path).with_context(|| format!("{} isn't writable", path.display()))?;
+
+    let mut config = read_tauri_config(&app_data);
+    if let Some(object) = config.as_object_mut() {
+        object.insert(
+            "assetsDir".to_string(),
+            serde_json::json!(path.display().to_string()),
+        );
+    }
+    write_tauri_config(&app_data, &config)?;
+
+    // back to the splash so the user sees restart progress
+    let splash = app
+        .state::<ServerState>()
+        .splash_url
+        .lock()
+        .unwrap()
+        .clone();
+    if let (Some(window), Some(url)) = (app.get_webview_window("main"), splash) {
+        let _ = window.navigate(url);
+    }
+
+    emit_status(app, "starting", "Stopping the server…");
+    let state = app.state::<ServerState>();
+    stop_server(state.inner());
+    *state.shutting_down.lock().unwrap() = false;
+    *state.server_url.lock().unwrap() = None;
+
+    let handle = app.clone();
+    std::thread::spawn(move || boot(handle));
+    Ok(())
+}
+
 /// lets the splash show the current tauri.json settings (assets folder)
 #[tauri::command]
 fn get_tauri_config(app: tauri::AppHandle) -> serde_json::Value {
     match app.path().app_data_dir() {
         Ok(app_data) => read_tauri_config(&app_data),
         Err(_) => serde_json::json!({}),
+    }
+}
+
+/// the native green traffic light enters fullscreen by default; removing
+/// fullscreen from the window's collection behavior makes it zoom (maximize)
+/// instead. tradeoff: native fullscreen (Ctrl+Cmd+F) is unavailable
+fn prefer_zoom_over_fullscreen(window: &tauri::WebviewWindow) {
+    #[cfg(target_os = "macos")]
+    {
+        let Ok(ns_window_ptr) = window.ns_window() else {
+            return;
+        };
+        let ns_window_ptr = ns_window_ptr as usize;
+        let _ = window.run_on_main_thread(move || {
+            use objc2_app_kit::{NSWindow, NSWindowCollectionBehavior};
+            unsafe {
+                let ns_window = &*(ns_window_ptr as *const NSWindow);
+                ns_window.setCollectionBehavior(NSWindowCollectionBehavior::FullScreenNone);
+            }
+        });
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window;
     }
 }
 
@@ -1002,7 +1149,12 @@ fn restore_database(app: &tauri::AppHandle, src: &Path) -> Result<()> {
     let data_dir = app_data.join("data");
 
     // back to the splash so the user sees restart progress
-    let splash = app.state::<ServerState>().splash_url.lock().unwrap().clone();
+    let splash = app
+        .state::<ServerState>()
+        .splash_url
+        .lock()
+        .unwrap()
+        .clone();
     if let (Some(window), Some(url)) = (app.get_webview_window("main"), splash) {
         let _ = window.navigate(url);
     }
@@ -1022,8 +1174,12 @@ fn restore_database(app: &tauri::AppHandle, src: &Path) -> Result<()> {
             .map(|d| d.as_secs())
             .unwrap_or(0);
         let backup = backups.join(format!("pre-restore-{stamp}.db"));
-        fs::rename(&current, &backup)
-            .with_context(|| format!("failed to back up the current database to {}", backup.display()))?;
+        fs::rename(&current, &backup).with_context(|| {
+            format!(
+                "failed to back up the current database to {}",
+                backup.display()
+            )
+        })?;
     }
 
     install_database(&data_dir, src)?;

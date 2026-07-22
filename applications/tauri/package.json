@@ -15,5 +15,11 @@
     "@tauri-apps/cli": "^2.5.0",
     "@types/node": "^24.0.0",
     "tsx": "^4.7.2"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
+    "@tauri-apps/plugin-os": "^2.3.2",
+    "tauri-controls": "^0.4.0"
   }
 }

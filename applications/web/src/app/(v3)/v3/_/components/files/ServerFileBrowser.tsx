@@ -1,8 +1,9 @@
 "use client"
 
+import { open } from "@tauri-apps/plugin-dialog"
 import { matchSorter } from "match-sorter"
 import { lookup } from "mime-types"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -17,6 +18,8 @@ import {
 } from "@/actions/listDirectoryAction"
 import * as icon from "@/icons"
 import { formatBytes } from "@/strings"
+
+import { useIsTauri } from "../../hooks/use-is-tauri"
 
 function dirname(path: string) {
   const segments = path.split("/")
@@ -124,7 +127,7 @@ export type ServerFileBrowserProps =
   | ServerFileBrowserMultiProps
   | ServerFileBrowserSingleProps
 
-export function ServerFileBrowser(props: ServerFileBrowserProps) {
+export function ServerFileBrowserWeb(props: ServerFileBrowserProps) {
   const {
     accept,
     fileFilter,
@@ -448,5 +451,161 @@ export function ServerFileBrowser(props: ServerFileBrowserProps) {
         )}
       </div>
     </div>
+  )
+}
+
+const MIME_WILDCARD_EXTENSIONS: Record<string, string[]> = {
+  "audio/*": [
+    "mp3",
+    "aac",
+    "mp4",
+    "m4a",
+    "m4b",
+    "opus",
+    "ogg",
+    "oga",
+    "wav",
+    "flac",
+    "weba",
+  ],
+  "video/*": ["mp4", "m4v", "webm"],
+  "image/*": ["jpg", "jpeg", "png", "gif", "webp", "svg"],
+}
+
+function acceptToTauriFilters(
+  accept: string | undefined,
+): { name: string; extensions: string[] }[] | undefined {
+  if (!accept) return undefined
+
+  const extensions: string[] = []
+
+  for (const raw of accept.split(",")) {
+    const token = raw.trim()
+    if (!token) continue
+
+    if (token.startsWith(".")) {
+      extensions.push(token.slice(1))
+      continue
+    }
+
+    const wildcard = MIME_WILDCARD_EXTENSIONS[token]
+    if (wildcard) {
+      extensions.push(...wildcard)
+      continue
+    }
+
+    // specific mime like "application/epub+zip" -- best-effort extension lookup
+    const ext = token.split("/")[1]?.replace(/\+.*$/, "")
+    if (ext) {
+      extensions.push(ext)
+    }
+  }
+
+  if (extensions.length === 0) return undefined
+
+  return [{ name: "Files", extensions }]
+}
+
+export function ServerFileBrowserTauri(
+  props: ServerFileBrowserProps & {
+    variant?: React.ComponentProps<typeof Button>["variant"]
+    size?: React.ComponentProps<typeof Button>["size"]
+    children?: React.ReactNode
+  },
+) {
+  const {
+    accept,
+    directoriesOnly,
+    startPath,
+    className,
+    variant = "ghost",
+    size = "sm",
+    children,
+    ...rest
+  } = props
+
+  return (
+    <Button
+      variant={variant}
+      size={size}
+      className={className}
+      onClick={async () => {
+        const filters = acceptToTauriFilters(accept)
+
+        const result = await open({
+          directory: directoriesOnly,
+          defaultPath: startPath,
+          fileAccessMode: "scoped",
+          multiple: rest.multiple,
+          filters,
+        })
+
+        if (!result) return
+
+        if (rest.multiple) {
+          const paths: string[] = Array.isArray(result) ? result : [result]
+
+          rest.onChange(
+            paths.map((p) => ({
+              path: p,
+              name: p.split("/").pop() ?? p,
+              isDirectory: false as const,
+              size: 0,
+              updatedAt: new Date().toISOString(),
+            })),
+          )
+        } else {
+          const selected = Array.isArray(result)
+            ? (result[0] as string | undefined)
+            : result
+
+          if (selected) rest.onSelect(selected)
+        }
+      }}
+    >
+      {children ?? (
+        <>
+          <icon.Folder className="h-3.5 w-3.5" /> Open in file explorer
+        </>
+      )}
+    </Button>
+  )
+}
+
+export async function openTauriFileDialog(options: {
+  directory?: boolean
+  defaultPath?: string
+  multiple?: boolean
+  accept?: string
+  filters?: { name: string; extensions: string[] }[]
+}): Promise<string | string[] | null> {
+  const filters = options.filters ?? acceptToTauriFilters(options.accept)
+
+  if (options.multiple) {
+    return await open({
+      directory: options.directory,
+      defaultPath: options.defaultPath,
+      fileAccessMode: "scoped",
+      multiple: true,
+      filters,
+    })
+  }
+
+  return await open({
+    directory: options.directory,
+    defaultPath: options.defaultPath,
+    fileAccessMode: "scoped",
+    multiple: false,
+    filters,
+  })
+}
+
+export function ServerFileBrowser(props: ServerFileBrowserProps) {
+  const isTauri = useIsTauri()
+
+  return isTauri ? (
+    <ServerFileBrowserTauri {...props} />
+  ) : (
+    <ServerFileBrowserWeb {...props} />
   )
 }

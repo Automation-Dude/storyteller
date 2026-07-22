@@ -19,9 +19,10 @@ import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
+import { useIsTauri } from "@/app/(v3)/v3/_/hooks/use-is-tauri"
 import { type HomeSectionWithDetails } from "@/database/shelves"
-import * as icon from "@/icons"
 import { usePermissions } from "@/hooks/usePermissions"
+import * as icon from "@/icons"
 import {
   useGetUserSettingsQuery,
   useSetUserSettingRawMutation,
@@ -37,6 +38,7 @@ export function GetStartedSection({
   section: HomeSectionWithDetails
 }) {
   const t = useTranslation("HomePage")
+  const isTauri = useIsTauri()
   const permissions = usePermissions()
   const canCreate = !!permissions?.bookCreate
   const canUpdateSettings = !!permissions?.settingsUpdate
@@ -83,28 +85,28 @@ export function GetStartedSection({
       </CardHeader>
 
       <CardContent className="flex flex-wrap gap-2">
-        {canCreate && (
-          <>
-            <Button
-              variant="default"
-              onClick={() => {
-                setUploadOpen(true)
-              }}
-            >
-              <icon.FileUpload className="mr-2 size-4" />
-              {t("getStarted.uploadBook")}
-            </Button>
+        {canCreate && !isTauri && (
+          <Button
+            variant="default"
+            onClick={() => {
+              setUploadOpen(true)
+            }}
+          >
+            <icon.FileUpload className="mr-2 size-4" />
+            {t("getStarted.uploadBook")}
+          </Button>
+        )}
 
-            <Button
-              variant="outline"
-              onClick={() => {
-                setImportOpen(true)
-              }}
-            >
-              <icon.FileImport className="mr-2 size-4" />
-              {t("getStarted.importBook")}
-            </Button>
-          </>
+        {canCreate && (
+          <Button
+            variant={isTauri ? "default" : "outline"}
+            onClick={() => {
+              setImportOpen(true)
+            }}
+          >
+            <icon.FileImport className="mr-2 size-4" />
+            {t("getStarted.importBook")}
+          </Button>
         )}
 
         <Button
