@@ -25,6 +25,7 @@ export const SIDEBAR_BUILTINS = [
   { key: "ratings", group: "library" },
   { key: "statuses", group: "library" },
   { key: "formats", group: "library" },
+  { key: "identifiers", group: "library" },
 ] as const satisfies readonly SidebarBuiltin[]
 
 export type SidebarBuiltinKey = (typeof SIDEBAR_BUILTINS)[number]["key"]

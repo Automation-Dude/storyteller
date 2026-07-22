@@ -15383,7 +15383,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storyteller-platform/mapping@npm:^0.1.3, @storyteller-platform/mapping@workspace:*, @storyteller-platform/mapping@workspace:libraries/mapping":
+"@storyteller-platform/mapping@npm:^0.1.3":
+  version: 0.1.3
+  resolution: "@storyteller-platform/mapping@npm:0.1.3"
+  checksum: 10c0/36382666484e42eaaaab016a88f25cb12fb10927a3e7a393b5d800ed693728f856b3cbf1583a96b388417f34b7530aa9f9789c03d71d98289cf7526520ae0a36
+  languageName: node
+  linkType: hard
+
+"@storyteller-platform/mapping@workspace:*, @storyteller-platform/mapping@workspace:libraries/mapping":
   version: 0.0.0-use.local
   resolution: "@storyteller-platform/mapping@workspace:libraries/mapping"
   dependencies:

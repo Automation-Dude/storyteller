@@ -20,6 +20,7 @@ const V3_ROUTES = [
   "/shelves",
   "/formats",
   "/quality",
+  "/identifiers",
   "/not-found",
 ]
 

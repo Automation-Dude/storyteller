@@ -29,6 +29,7 @@ export type LibraryEntityType =
   | "collection"
   | "status"
   | "shelf"
+  | "identifier"
 
 export type LibrarySectionDef = {
   /* the section identifier, used to fetch its facet list from the server. */
@@ -147,6 +148,21 @@ export const librarySections = {
     }),
     noneFilter: emptyFilter("status"),
     pinItem: (item) => !!item.kind && isWellKnownStatus(item.kind),
+  },
+  identifiers: {
+    key: "identifiers" as const,
+    entityType: "identifier" as const,
+    toShelfFilter: (itemKey: string): ShelfFilterNode => ({
+      type: "condition",
+      field: "identifierName",
+      operator: "is",
+      value: itemKey,
+    }),
+    noneFilter: emptyFilter("identifierName"),
+    sort: {
+      field: "identifierValue",
+      direction: "asc",
+    },
   },
   publicationYears: {
     key: "publicationYears" as const,

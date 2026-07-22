@@ -188,7 +188,7 @@ export async function cleanShelfFiltersForDeletedEntity(
 type EB = ExpressionBuilder<DB, "book">
 type FilterExpression = ExpressionWrapper<DB, "book", SqlBool>
 
-// a book is visible to a user if 
+// a book is visible to a user if
 // - it is in no collection
 // - it is in a public collection
 // - it is in a collection the user belongs to
@@ -603,6 +603,56 @@ function buildIsEmptyExpression(
 
     case "format":
       return formatPredicate(eb, "no-media")
+    case "identifierName":
+      return eb.not(
+        eb.exists(
+          eb
+            .selectFrom("identifier")
+            .select(sql.lit(1).as("one"))
+            .innerJoin("book", "book.uuid", "identifier.bookUuid")
+            .where((eb) =>
+              eb.or([
+                eb("identifier.bookUuid", "=", eb.ref("book.uuid")),
+                eb(
+                  "identifier.audiobookUuid",
+                  "=",
+                  eb.ref("book.audiobookUuid"),
+                ),
+                eb(
+                  "identifier.readaloudUuid",
+                  "=",
+                  eb.ref("book.readaloudUuid"),
+                ),
+                eb("identifier.ebookUuid", "=", eb.ref("book.ebookUuid")),
+              ]),
+            ),
+        ),
+      )
+    case "identifierValue":
+      return eb.not(
+        eb.exists(
+          eb
+            .selectFrom("identifier")
+            .select(sql.lit(1).as("one"))
+            .innerJoin("book", "book.uuid", "identifier.bookUuid")
+            .where((eb) =>
+              eb.or([
+                eb("identifier.bookUuid", "=", eb.ref("book.uuid")),
+                eb(
+                  "identifier.audiobookUuid",
+                  "=",
+                  eb.ref("book.audiobookUuid"),
+                ),
+                eb(
+                  "identifier.readaloudUuid",
+                  "=",
+                  eb.ref("book.readaloudUuid"),
+                ),
+                eb("identifier.ebookUuid", "=", eb.ref("book.ebookUuid")),
+              ]),
+            ),
+        ),
+      )
     default: {
       const _exhaustive: never = field
       return eb.lit(true) as FilterExpression

@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic"
 export const GET = withHasPermission("bookList")(async (request) => {
   const section = request.nextUrl.searchParams.get("section")
 
+  console.log("section", section)
   if (!section || !isFacetSection(section)) {
     return NextResponse.json({ error: "Invalid section" }, { status: 400 })
   }

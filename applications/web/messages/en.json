@@ -249,6 +249,11 @@
     }
   },
   "LibraryPage": {
+    "Identifier": {
+      "plain": "Identifier",
+      "by": "By Identifier",
+      "none": "(no identifier)"
+    },
     "emptyStateSub": "Select an item in the sidebar to see its books",
     "allItems": "All",
     "Shelves": {

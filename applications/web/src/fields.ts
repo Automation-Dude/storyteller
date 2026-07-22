@@ -29,6 +29,7 @@ export type FacetSource =
   | "creators"
   // distinct fields are "facets" from a book column, such as language or transcription engine
   // we don't want to show all possible values
+  | "identifiers"
   | "distinct"
 
 export type FieldScale = {
@@ -378,6 +379,26 @@ export const FIELD_REGISTRY = {
     token: "author",
     labelKey: "creators",
     group: "creators",
+    type: "array",
+  },
+  identifierName: {
+    control: "facet",
+    sortable: false,
+    quick: false,
+    source: "identifiers",
+    token: "identifier",
+    labelKey: "identifiers",
+    group: "relations",
+    type: "array",
+  },
+  identifierValue: {
+    control: "facet",
+    sortable: false,
+    quick: false,
+    source: "identifiers",
+    token: "identifier",
+    labelKey: "identifiers",
+    group: "relations",
     type: "array",
   },
 

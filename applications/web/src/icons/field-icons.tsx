@@ -54,6 +54,8 @@ const FIELD_ICONS: Record<FieldIconKey, FieldIconDef> = {
   alignedByStorytellerVersion: { base: icon.Stack },
   lastRead: { base: icon.Eye },
   seriesPosition: { base: icon.ListNumbers },
+  identifierName: { base: icon.Link },
+  identifierValue: { base: icon.Link },
 }
 
 export type { FieldIconKey }

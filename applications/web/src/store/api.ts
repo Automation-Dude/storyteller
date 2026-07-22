@@ -1010,6 +1010,7 @@ export const api = createApi({
         "UserRatings",
         "UserShelves",
         "Sidebar",
+        "Identifiers",
       ],
     }),
     listStatuses: build.query<Status[], void>({

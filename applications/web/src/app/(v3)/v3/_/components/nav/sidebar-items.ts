@@ -20,6 +20,7 @@ type LibraryLabelKey =
   | "Rating.plain"
   | "Status.plain"
   | "Formats.plain"
+  | "Identifier.plain"
 
 type BuiltinMetaBase = {
   icon: StyledIcon
@@ -39,7 +40,7 @@ export type BuiltinSidebarItem = BuiltinMeta & {
   group: SidebarGroup
 }
 
-const BUILTIN_META: Record<SidebarBuiltinKey, BuiltinMeta> = {
+const BUILTIN_META = {
   home: {
     icon: icon.Home,
     href: "/",
@@ -122,7 +123,14 @@ const BUILTIN_META: Record<SidebarBuiltinKey, BuiltinMeta> = {
     labelNs: "LibraryPage",
     labelKey: "Formats.plain",
   },
-}
+  identifiers: {
+    icon: icon.Link,
+    href: "/identifiers",
+    countKey: "identifiers",
+    labelNs: "LibraryPage",
+    labelKey: "Identifier.plain",
+  },
+} as const satisfies Record<SidebarBuiltinKey, BuiltinMeta>
 
 export const BUILTIN_SIDEBAR_ITEMS: BuiltinSidebarItem[] = SIDEBAR_BUILTINS.map(
   (b) => ({

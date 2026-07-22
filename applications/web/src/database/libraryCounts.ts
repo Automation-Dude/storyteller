@@ -39,6 +39,7 @@ export const FACET_SECTIONS = [
   "formats",
   "grades",
   "shelves",
+  "identifiers",
 ] as const
 
 export type FacetSection = (typeof FACET_SECTIONS)[number]
@@ -388,6 +389,24 @@ async function ratingFacets(userId: UUID): Promise<FacetValue[]> {
   }))
 }
 
+async function identifierFacets(userId: UUID): Promise<FacetValue[]> {
+  return visibleBooks(userId)
+    .innerJoin("identifier", "identifier.bookUuid", "book.uuid")
+    .innerJoin(
+      "identifierType",
+      "identifierType.uuid",
+      "identifier.identifierTypeUuid",
+    )
+    .select((eb) => [
+      "identifier.uuid as key",
+      "identifierType.name as name",
+      "identifier.value as value",
+      eb.fn.count<number>("book.uuid").distinct().as("bookCount"),
+    ])
+    .groupBy(["identifierType.name"])
+    .execute()
+}
+
 // one count per canonical format value. the values overlap (a fully synced
 // book has an ebook, an audiobook and a readaloud), so counts don't sum to
 // the library total; the semantics live in formatPredicate.
@@ -548,6 +567,43 @@ async function countSectionNone(
             eb("book.publicationDate", "is", null),
             eb("book.publicationDate", "=", ""),
           ])
+
+        case "identifiers":
+          return eb.not(
+            eb.exists(
+              eb
+                .selectFrom("identifier")
+                .select(sql.lit(1).as("one"))
+                .innerJoin("book", "book.uuid", "identifier.bookUuid")
+                .leftJoin(
+                  "audiobook",
+                  "audiobook.uuid",
+                  "identifier.audiobookUuid",
+                )
+                .leftJoin(
+                  "readaloud",
+                  "readaloud.uuid",
+                  "identifier.readaloudUuid",
+                )
+                .leftJoin("ebook", "ebook.uuid", "identifier.ebookUuid")
+                .where((eb) =>
+                  eb.or([
+                    eb("identifier.bookUuid", "=", eb.ref("book.uuid")),
+                    eb(
+                      "identifier.audiobookUuid",
+                      "=",
+                      eb.ref("audiobook.uuid"),
+                    ),
+                    eb(
+                      "identifier.readaloudUuid",
+                      "=",
+                      eb.ref("readaloud.uuid"),
+                    ),
+                    eb("identifier.ebookUuid", "=", eb.ref("ebook.uuid")),
+                  ]),
+                ),
+            ),
+          )
         case "formats":
         case "grades":
         case "shelves":
@@ -605,5 +661,7 @@ function getSectionFacetList(
       return gradeFacets(userId)
     case "shelves":
       return shelfFacets(userId)
+    case "identifiers":
+      return identifierFacets(userId)
   }
 }

@@ -88,6 +88,7 @@ function FormatFileRow({
       ? book.duration ?? ("duration" in fmt ? fmt.duration : null)
       : null
   const fileSize = formatFileSize(fmt.fileSize ?? null)
+  const identifiers = fmt.identifiers ?? []
 
   return (
     <div className="flex items-start gap-2">
@@ -125,6 +126,35 @@ function FormatFileRow({
           {duration != null && <span>{formatTimeHuman(duration)}</span>}
           {!!fileSize && <span>{fileSize}</span>}
         </div>
+        {identifiers.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {identifiers.map((identifier) => (
+              <div
+                key={identifier.id}
+                className="flex items-center justify-between gap-1"
+              >
+                <span className="text-xs font-medium">{identifier.name}</span>
+                <span className="text-xs">
+                  {identifier.urlTemplate ? (
+                    <a
+                      href={identifier.urlTemplate.replace(
+                        "{value}",
+                        identifier.value,
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {" "}
+                      {identifier.value}
+                    </a>
+                  ) : (
+                    identifier.value
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {canEdit && (
