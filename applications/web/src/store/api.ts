@@ -31,6 +31,7 @@ import {
   type SeriesRelation,
   type UserBookRatingRelation,
 } from "@/database/books"
+import { type BackupInfo } from "@/backups"
 import { type ChangelogEntry } from "@/database/changelog"
 import { type CollectionWithRelations } from "@/database/collections"
 import { type AddCreatorInput, type Creator } from "@/database/creators"
@@ -48,6 +49,10 @@ import {
   type FacetValue,
   type LibraryCounts,
 } from "@/database/libraryCounts"
+import {
+  type RewritePreview,
+  type RewriteResult,
+} from "@/database/pathRewrite"
 import { type Position } from "@/database/positions"
 import {
   type RatingDimensionScores,
@@ -137,6 +142,8 @@ export const api = createApi({
     "Settings",
     "Identifiers",
     "BookIdentifiers",
+    "Backups",
+    "PathsStatus",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -2066,6 +2073,68 @@ export const api = createApi({
       }),
     }),
 
+    // database backups
+    getBackups: build.query<{ backups: BackupInfo[] }, void>({
+      query: () => "/backups",
+      providesTags: ["Backups"],
+    }),
+
+    createBackup: build.mutation<{ name: string }, void>({
+      query: () => ({
+        url: "/backups",
+        method: "POST",
+      }),
+      invalidatesTags: ["Backups"],
+    }),
+
+    deleteBackup: build.mutation<{ ok: boolean }, { name: string }>({
+      query: ({ name }) => ({
+        url: `/backups/${encodeURIComponent(name)}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Backups"],
+    }),
+
+    // stored file paths
+    getPathsStatus: build.query<
+      { anchor: string | null; currentDataDir: string },
+      void
+    >({
+      query: () => "/paths",
+      providesTags: ["PathsStatus"],
+    }),
+
+    previewPathRewrite: build.mutation<
+      { preview: RewritePreview },
+      { from: string; to: string }
+    >({
+      query: (body) => ({
+        url: "/paths/rewrite",
+        method: "POST",
+        body: { ...body, dryRun: true },
+      }),
+    }),
+
+    applyPathRewrite: build.mutation<
+      { result: RewriteResult },
+      { from: string; to: string }
+    >({
+      query: (body) => ({
+        url: "/paths/rewrite",
+        method: "POST",
+        body: { ...body, dryRun: false },
+      }),
+      invalidatesTags: ["PathsStatus", "Books"],
+    }),
+
+    acknowledgePaths: build.mutation<{ ok: boolean }, void>({
+      query: () => ({
+        url: "/paths/acknowledge",
+        method: "POST",
+      }),
+      invalidatesTags: ["PathsStatus"],
+    }),
+
     // processing jobs queue
     getJobs: build.query<
       PublicJob[],
@@ -2327,6 +2396,13 @@ export const {
   useGetLogLevelQuery,
   useSetLogLevelMutation,
   useClearLogsMutation,
+  useGetBackupsQuery,
+  useCreateBackupMutation,
+  useDeleteBackupMutation,
+  useGetPathsStatusQuery,
+  usePreviewPathRewriteMutation,
+  useApplyPathRewriteMutation,
+  useAcknowledgePathsMutation,
   useListIdentifierTypesQuery,
   useCreateIdentifierTypeMutation,
   useUpdateIdentifierTypeMutation,

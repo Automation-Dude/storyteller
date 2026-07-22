@@ -32,6 +32,7 @@ import {
   extractCorrectedTimeline,
   parseWhisperCppOutput,
 } from "../utilities/WhisperTimeline.ts"
+import { writeFile } from "node:fs/promises"
 
 export type InputPreference = "file"
 export const inputPreference: InputPreference = "file"
@@ -154,6 +155,11 @@ export async function recognize(
       }),
     )
 
+    await writeFile(
+      path.join(".", "transcription.json"),
+      JSON.stringify(transcription, null, 2),
+    )
+    console.log("transcription", transcription)
     const rawSegments = parseWhisperCppOutput(transcription.transcription)
 
     // calculate split boundaries in order to correct weird timestamps
@@ -170,6 +176,10 @@ export async function recognize(
       .map((s) => s.text)
       .join("")
       .trim()
+    await writeFile(
+      path.join(".", "timeline.json"),
+      JSON.stringify(timeline, null, 2),
+    )
 
     return {
       transcript,

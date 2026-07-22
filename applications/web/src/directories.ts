@@ -10,7 +10,7 @@ export const SNAPSHOT_DIR =
   env.STORYTELLER_SNAPSHOT_DIR ||
   join(DATA_DIR, ".autoimport", "watcher-snapshots")
 
-export const ASSETS_DIR = join(DATA_DIR, "assets")
+export const ASSETS_DIR = env.STORYTELLER_ASSETS_DIR || join(DATA_DIR, "assets")
 
 export const UPLOADS_DIR = join(DATA_DIR, "uploads")
 

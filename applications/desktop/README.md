@@ -1,4 +1,4 @@
-# Storyteller Desktop
+# Storyteller Server (desktop app)
 
 A Tauri shell that bundles a Node runtime plus the Next.js standalone server and
 serves the regular Storyteller web app from `http://127.0.0.1:<port>` in a
@@ -72,6 +72,19 @@ data dir:
 
 A pinned port that is already taken is a startup error, not a silent fallback.
 
+`desktop.json` also stores the media folder chosen on the first-boot screen
+(where library-managed files — synced books, audio, covers — are written):
+
+```json
+{ "assetsDir": "/Volumes/Big Disk/Storyteller Media" }
+```
+
+It is passed to the server as `STORYTELLER_ASSETS_DIR` and defaults to
+`data/assets` inside the app data dir. Changing it later does not move
+existing files; move the folder yourself while the app is closed, then use
+Settings → Data & backups → Rewrite paths to fix absolute paths stored in the
+database.
+
 ## Title bar
 
 On macOS the window uses a transparent native title bar
@@ -88,6 +101,25 @@ could use `DWMWA_CAPTION_COLOR` later).
 The webview has no browser chrome; the History menu provides Back
 (`Cmd/Ctrl+[`), Forward (`Cmd/Ctrl+]`), Reload (`Cmd/Ctrl+R`), and Go to Library
 (`Cmd/Ctrl+Shift+H`) so you can always get out of a dead end.
+
+## Server menu
+
+- **Show Server Logs** (`Cmd/Ctrl+Shift+L`) opens `server.log` in the OS
+  default viewer; the splash also has a live "Show logs" tail during boot.
+- **Restore Database…** stops the server, backs the current database up to
+  `data/backups/pre-restore-<stamp>.db`, swaps in a picked `.db` file
+  (header-validated), and boots again. First boot offers the same choice
+  ("Start fresh" / "Use an existing database…") before the server ever touches
+  a database. After a restore the web app detects the moved data dir and
+  offers the path-rewrite tool (Settings → Data & backups).
+
+## Desktop detection
+
+The shell sets `STORYTELLER_DESKTOP=1` on the spawned server, and the splash
+reports the webview's default user agent so the shell can append
+`StorytellerDesktop/<version>` (macOS `customUserAgent`; the browser part is
+kept because the reader sniffs `AppleWebKit`). The web app checks either via
+`src/isDesktopApp.ts`.
 
 ## Windows notes
 

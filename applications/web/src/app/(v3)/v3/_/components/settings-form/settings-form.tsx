@@ -47,6 +47,7 @@ import { AuthTab } from "./auth-tab"
 import { ChangelogTab } from "./changelog-tab"
 import { EmailTab } from "./email-tab"
 import { LibraryTab } from "./library-tab"
+import { BackupsTab } from "./backups-tab"
 import { LogsTab } from "./logs-tab"
 import { OpdsTab } from "./opds-tab"
 import { ProcessingTab } from "./processing-tab"
@@ -240,9 +241,13 @@ export function SettingsForm({
   })
   const { handleSubmit, formState } = form
   const errorCount = Object.keys(formState.errors).length
+  // formState is a lazy proxy: dirtyFields must be read during render to be
+  // tracked at all, otherwise the read inside onSubmit always sees the stale
+  // initial (empty) object and saves silently no-op
+  const { dirtyFields } = formState
 
   const onSubmit = async (data: z.output<typeof SettingsSchema>) => {
-    const changed = Object.keys(formState.dirtyFields) as (keyof Settings)[]
+    const changed = Object.keys(dirtyFields) as (keyof Settings)[]
     const payload = Object.fromEntries(
       changed.map((key) => [key, data[key]]),
     ) as Settings
@@ -325,6 +330,11 @@ export function SettingsForm({
       },
       { value: "logs", label: t("tabs.logs.title"), icon: icon.FileText },
       { value: "queue", label: "Queue", icon: icon.ListNumbers },
+      {
+        value: "backups",
+        label: t("tabs.backups.title"),
+        icon: icon.Database,
+      },
     ],
     [t, hasUsers],
   )
@@ -428,6 +438,7 @@ export function SettingsForm({
       )}
       {activeTab === "logs" && <LogsTab />}
       {activeTab === "queue" && <QueueTab />}
+      {activeTab === "backups" && <BackupsTab />}
     </>
   )
 

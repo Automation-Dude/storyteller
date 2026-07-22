@@ -50,6 +50,16 @@ export async function register() {
   }
 
   try {
+    const { ensureDataDirAnchor } = await import("./database/pathRewrite")
+    await ensureDataDirAnchor()
+    const { getBackupScheduler } = await import("./backupScheduler")
+    await getBackupScheduler().refresh()
+  } catch (err) {
+    logger.error("Failed to initiate backup scheduler")
+    logger.error(err)
+  }
+
+  try {
     if (env.STORYTELLER_SYNC_CHANGELOG) {
       await syncChangelog()
     }

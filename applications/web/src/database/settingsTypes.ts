@@ -212,6 +212,13 @@ export const SettingsSchema = z.object({
   opdsFormat: OpdsFormatSchema.nullable(),
   // Scanning settings
   scanCronExpression: z.string().nullable(),
+  // Backup settings; optional so setting rows written before these keys
+  // existed still validate in the settings form resolver
+  backupCronExpression: z.string().nullable().optional(),
+  backupRetentionCount: z.number().nullable().optional(),
+  // data dir the library's absolute paths were last written against; a
+  // mismatch at startup means the database moved (see pathRewrite.ts)
+  dataDirAnchor: z.string().nullable().optional(),
   metadataFieldOverrides: MetadataFieldOverridesSchema,
   // EPUB 2 import settings
   epub2ImportStrategy: Epub2ImportStrategySchema,

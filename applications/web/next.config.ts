@@ -4,6 +4,7 @@ import { resolve } from "node:path"
 import createNextIntlPlugin from "next-intl/plugin"
 
 import { locales } from "./src/i18n/locales"
+import { V3_ROOTS } from "./src/v3Routes"
 
 const pkg = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
@@ -29,6 +30,12 @@ const withNextIntl = createNextIntlPlugin({
   // },
 })
 
+// opting into the old ui sets this cookie; every v3 rewrite is skipped while
+// it is present so the v2 pages resolve from the filesystem instead
+const unlessV2Cookie = [
+  { type: "cookie" as const, key: "frontend-version", value: "v2" },
+]
+
 const nextConfig: import("next").NextConfig = {
   redirects: async () => [
     {
@@ -37,6 +44,27 @@ const nextConfig: import("next").NextConfig = {
       permanent: true,
     },
   ],
+  // serve the v3 app at clean urls. path rewrites must live here rather than
+  // in src/proxy.ts — see src/v3Routes.ts for why middleware rewrites break
+  // when the server binds 127.0.0.1 behind a tls proxy
+  rewrites: async () => ({
+    beforeFiles: [
+      { source: "/", missing: unlessV2Cookie, destination: "/v3" },
+      ...V3_ROOTS.filter((root) => root !== "books").map((root) => ({
+        source: `/${root}/:path*`,
+        missing: unlessV2Cookie,
+        destination: `/v3/${root}/:path*`,
+      })),
+      { source: "/books", missing: unlessV2Cookie, destination: "/v3/books" },
+      // the reader route is not ported to v3 yet, so /books/:uuid/read falls
+      // through to the v2 page while everything else under /books rewrites
+      {
+        source: "/books/:path((?![^/]+/read$).+)",
+        missing: unlessV2Cookie,
+        destination: "/v3/books/:path",
+      },
+    ],
+  }),
   env: {
     NEXT_PUBLIC_APP_VERSION: pkg["version"] as string,
   },

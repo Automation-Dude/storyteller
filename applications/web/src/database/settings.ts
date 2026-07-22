@@ -221,6 +221,8 @@ export async function getSettings(): Promise<Settings> {
     ...dbDesttings,
     smtpSsl: dbDesttings.smtpSsl ?? true,
     smtpRejectUnauthorized: dbDesttings.smtpRejectUnauthorized ?? true,
+    backupCronExpression: dbDesttings.backupCronExpression ?? null,
+    backupRetentionCount: dbDesttings.backupRetentionCount ?? null,
   }
 
   return { ...result, ...configSettings }
@@ -232,6 +234,9 @@ export async function updateSettings(settings: Settings) {
 
   for (const [settingName, value] of Object.entries(settings)) {
     if (lockedKeys.has(settingName as keyof Settings)) continue
+    // internal, only written by pathRewrite acknowledge/apply — a stale form
+    // submission must not revert it
+    if (settingName === "dataDirAnchor") continue
 
     const unchanged =
       JSON.stringify(existingSettings[settingName as keyof Settings]) ===
@@ -252,6 +257,8 @@ export async function updateSettings(settings: Settings) {
   }
 
   await getScheduler().refresh()
+  const { getBackupScheduler } = await import("@/backupScheduler")
+  await getBackupScheduler().refresh()
 }
 
 // admin-set default preferences. stored as a single JSON row; absent means "{}"

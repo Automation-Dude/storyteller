@@ -6,20 +6,29 @@ use std::{
     net::{TcpListener, TcpStream},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    sync::Mutex,
-    time::{Duration, Instant},
+    sync::{mpsc, Mutex},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use anyhow::{anyhow, Context, Result};
 use tauri::{path::BaseDirectory, Emitter, Manager, RunEvent};
 
+enum BootChoice {
+    Fresh,
+    Restore(PathBuf),
+}
+
 struct ServerState {
     child: Mutex<Option<Child>>,
     shutting_down: Mutex<bool>,
     server_url: Mutex<Option<String>>,
+    log_path: Mutex<Option<PathBuf>>,
+    boot_choice: Mutex<Option<mpsc::Sender<BootChoice>>>,
+    splash_url: Mutex<Option<tauri::Url>>,
 }
 
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
+const UA_TOKEN: &str = "StorytellerDesktop";
 
 fn main() {
     tauri::Builder::default()
@@ -30,18 +39,35 @@ fn main() {
                 let _ = window.set_focus();
             }
         }))
+        .plugin(tauri_plugin_dialog::init())
         .manage(ServerState {
             child: Mutex::new(None),
             shutting_down: Mutex::new(false),
             server_url: Mutex::new(None),
+            log_path: Mutex::new(None),
+            boot_choice: Mutex::new(None),
+            splash_url: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![set_titlebar_color])
+        .invoke_handler(tauri::generate_handler![
+            set_titlebar_color,
+            report_user_agent,
+            read_server_log,
+            show_server_log,
+            choose_database,
+            choose_assets_dir,
+            get_desktop_config
+        ])
         .setup(|app| {
             setup_menu(app.handle())?;
 
             // match the splash background until the web app takes over
             if let Some(window) = app.get_webview_window("main") {
                 set_window_background(&window, 0.078, 0.063, 0.051);
+                // remember the splash so a database restore can show boot
+                // progress again
+                if let Ok(url) = window.url() {
+                    *app.state::<ServerState>().splash_url.lock().unwrap() = Some(url);
+                }
             }
 
             // in dev the window points straight at the next dev server
@@ -96,6 +122,23 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
         ],
     )?;
     menu.append(&history)?;
+    let server = Submenu::with_items(
+        app,
+        "Server",
+        true,
+        &[
+            &MenuItem::with_id(
+                app,
+                "show-logs",
+                "Show Server Logs",
+                true,
+                Some("CmdOrCtrl+Shift+L"),
+            )?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(app, "restore-db", "Restore Database…", true, None::<&str>)?,
+        ],
+    )?;
+    menu.append(&server)?;
     app.set_menu(menu)?;
 
     app.on_menu_event(|app, event| {
@@ -123,6 +166,14 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
                     let _ = navigate(app, &url);
                 }
             }
+            "show-logs" => {
+                open_server_log(app);
+            }
+            "restore-db" => {
+                // blocking native dialogs must stay off the main thread
+                let handle = app.clone();
+                std::thread::spawn(move || restore_database_flow(handle));
+            }
             _ => {}
         }
     });
@@ -135,6 +186,168 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
 #[tauri::command]
 fn set_titlebar_color(window: tauri::WebviewWindow, red: f64, green: f64, blue: f64) {
     set_window_background(&window, red, green, blue);
+}
+
+/// the splash reports the webview's default user agent on load; we append an
+/// identification token and keep the browser part intact — the web reader
+/// sniffs AppleWebKit, so replacing the whole string would break it
+#[tauri::command]
+fn report_user_agent(app: tauri::AppHandle, user_agent: String) {
+    if user_agent.contains(UA_TOKEN) {
+        return;
+    }
+    let version = app.package_info().version.to_string();
+    let tagged = format!("{user_agent} {UA_TOKEN}/{version}");
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    #[cfg(target_os = "macos")]
+    {
+        let _ = window.with_webview(move |webview| unsafe {
+            use objc2_foundation::NSString;
+            use objc2_web_kit::WKWebView;
+            let wk: *mut WKWebView = webview.inner().cast();
+            (*wk).setCustomUserAgent(Some(&NSString::from_str(&tagged)));
+        });
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        // windows/linux keep the default ua for now; the web app can still
+        // detect the shell via window.__TAURI__
+        let _ = (window, tagged);
+    }
+}
+
+/// last `lines` lines of the server log, for the splash's live log view
+#[tauri::command]
+fn read_server_log(app: tauri::AppHandle, lines: Option<usize>) -> String {
+    let log_path = app.state::<ServerState>().log_path.lock().unwrap().clone();
+    let Some(log_path) = log_path else {
+        return String::new();
+    };
+    tail_log(&log_path, lines.unwrap_or(200))
+}
+
+#[tauri::command]
+fn show_server_log(app: tauri::AppHandle) {
+    open_server_log(&app);
+}
+
+/// splash "start fresh" / "use an existing database" buttons on first boot
+#[tauri::command]
+fn choose_database(app: tauri::AppHandle, mode: String) {
+    let sender = app
+        .state::<ServerState>()
+        .boot_choice
+        .lock()
+        .unwrap()
+        .clone();
+    let Some(sender) = sender else {
+        return;
+    };
+
+    if mode == "fresh" {
+        let _ = sender.send(BootChoice::Fresh);
+        return;
+    }
+
+    use tauri_plugin_dialog::DialogExt;
+    let handle = app.clone();
+    app.dialog()
+        .file()
+        .add_filter("SQLite database", &["db", "sqlite", "sqlite3"])
+        .pick_file(move |picked| {
+            let Some(path) = picked.and_then(|file| file.into_path().ok()) else {
+                return;
+            };
+            if !is_sqlite_file(&path) {
+                emit_boot(
+                    &handle,
+                    "choice",
+                    "That file doesn't look like a SQLite database — pick a Storyteller database (.db) file.",
+                    None,
+                    None,
+                );
+                return;
+            }
+            let _ = sender.send(BootChoice::Restore(path));
+        });
+}
+
+fn desktop_config_path(app_data: &Path) -> PathBuf {
+    app_data.join("desktop.json")
+}
+
+fn read_desktop_config(app_data: &Path) -> serde_json::Value {
+    fs::read_to_string(desktop_config_path(app_data))
+        .ok()
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_else(|| serde_json::json!({}))
+}
+
+fn write_desktop_config(app_data: &Path, config: &serde_json::Value) -> Result<()> {
+    fs::create_dir_all(app_data)?;
+    fs::write(
+        desktop_config_path(app_data),
+        serde_json::to_string_pretty(config)?,
+    )?;
+    Ok(())
+}
+
+fn configured_assets_dir(app_data: &Path) -> Option<PathBuf> {
+    read_desktop_config(app_data)
+        .get("assetsDir")
+        .and_then(|value| value.as_str())
+        .map(PathBuf::from)
+}
+
+/// splash "choose folder" button for where library-managed media files live;
+/// stored in desktop.json so it survives restarts, cleared with reset
+#[tauri::command]
+async fn choose_assets_dir(app: tauri::AppHandle, reset: bool) -> Result<Option<String>, String> {
+    let app_data = app
+        .path()
+        .app_data_dir()
+        .map_err(|err| format!("no app data directory: {err}"))?;
+
+    if reset {
+        let mut config = read_desktop_config(&app_data);
+        if let Some(object) = config.as_object_mut() {
+            object.remove("assetsDir");
+        }
+        write_desktop_config(&app_data, &config).map_err(|err| format!("{err:#}"))?;
+        return Ok(None);
+    }
+
+    use tauri_plugin_dialog::DialogExt;
+    let picked = app.dialog().file().blocking_pick_folder();
+    let Some(path) = picked.and_then(|folder| folder.into_path().ok()) else {
+        return Ok(configured_assets_dir(&app_data)
+            .map(|path| path.display().to_string()));
+    };
+
+    fs::create_dir_all(&path)
+        .map_err(|err| format!("that folder isn't writable: {err}"))?;
+
+    let mut config = read_desktop_config(&app_data);
+    if let Some(object) = config.as_object_mut() {
+        object.insert(
+            "assetsDir".to_string(),
+            serde_json::json!(path.display().to_string()),
+        );
+    }
+    write_desktop_config(&app_data, &config).map_err(|err| format!("{err:#}"))?;
+
+    Ok(Some(path.display().to_string()))
+}
+
+/// lets the splash show the current desktop.json settings (assets folder)
+#[tauri::command]
+fn get_desktop_config(app: tauri::AppHandle) -> serde_json::Value {
+    match app.path().app_data_dir() {
+        Ok(app_data) => read_desktop_config(&app_data),
+        Err(_) => serde_json::json!({}),
+    }
 }
 
 /// with titleBarStyle Transparent the macOS title bar shows the NSWindow
@@ -178,20 +391,47 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
     let data_dir = app_data.join("data");
     fs::create_dir_all(&data_dir)?;
 
+    let log_path = app_data.join("server.log");
+    *app.state::<ServerState>().log_path.lock().unwrap() = Some(log_path.clone());
+
     emit_status(app, "extracting", "Preparing application files…");
     let runtime_dir = ensure_runtime(app, &app_data)?;
 
     let secret_file = ensure_secret(&app_data)?;
 
+    // fresh library: let the user drop in an existing database before the
+    // server (and its migrations) ever touch one
+    if !data_dir.join("storyteller.db").exists() {
+        let (sender, receiver) = mpsc::channel();
+        *app.state::<ServerState>().boot_choice.lock().unwrap() = Some(sender);
+        emit_status(app, "choice", "Set up your library");
+        let choice = receiver
+            .recv()
+            .context("setup choice channel closed unexpectedly")?;
+        *app.state::<ServerState>().boot_choice.lock().unwrap() = None;
+        match choice {
+            BootChoice::Fresh => {}
+            BootChoice::Restore(path) => {
+                install_database(&data_dir, &path)?;
+            }
+        }
+    }
+
     let port = resolve_port(&app_data)?;
     let readium_port = pick_port(8757);
 
-    emit_status(app, "starting", "Starting Storyteller…");
-    let log_path = app_data.join("server.log");
+    let assets_dir = configured_assets_dir(&app_data);
+    if let Some(dir) = &assets_dir {
+        fs::create_dir_all(dir)
+            .with_context(|| format!("cannot create the media folder {}", dir.display()))?;
+    }
+
+    emit_status(app, "starting", "Starting Storyteller Server…");
     spawn_server(
         app,
         &runtime_dir,
         &data_dir,
+        assets_dir.as_deref(),
         &secret_file,
         &log_path,
         port,
@@ -199,6 +439,7 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
     )?;
 
     let deadline = Instant::now() + HEALTH_TIMEOUT;
+    let mut last_detail = String::new();
     loop {
         if http_ok(port, "/api/health") {
             break;
@@ -206,7 +447,7 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
         if let Some(status) = server_exit_status(app) {
             return Err(anyhow!(
                 "the server exited unexpectedly ({status})\n\n{}",
-                log_tail(&log_path)
+                tail_log(&log_path, 30)
             ));
         }
         if Instant::now() >= deadline {
@@ -214,8 +455,22 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
             return Err(anyhow!(
                 "the server did not become healthy within {}s\n\n{}",
                 HEALTH_TIMEOUT.as_secs(),
-                log_tail(&log_path)
+                tail_log(&log_path, 30)
             ));
+        }
+        // surface what the server is doing (first boot runs migrations that
+        // can take a while) instead of a silent spinner
+        if let Some(line) = last_log_line(&log_path) {
+            if line != last_detail {
+                emit_boot(
+                    app,
+                    "starting",
+                    "Starting Storyteller Server…",
+                    None,
+                    Some(&line),
+                );
+                last_detail = line;
+            }
         }
         std::thread::sleep(Duration::from_millis(300));
     }
@@ -272,10 +527,24 @@ fn resolve_port(app_data: &Path) -> Result<u16> {
 }
 
 fn emit_status(app: &tauri::AppHandle, state: &str, message: &str) {
-    let _ = app.emit(
-        "boot-status",
-        serde_json::json!({ "state": state, "message": message }),
-    );
+    emit_boot(app, state, message, None, None);
+}
+
+fn emit_boot(
+    app: &tauri::AppHandle,
+    state: &str,
+    message: &str,
+    progress: Option<f64>,
+    detail: Option<&str>,
+) {
+    let mut payload = serde_json::json!({ "state": state, "message": message });
+    if let Some(progress) = progress {
+        payload["progress"] = serde_json::json!(progress);
+    }
+    if let Some(detail) = detail {
+        payload["detail"] = serde_json::json!(detail);
+    }
+    let _ = app.emit("boot-status", payload);
 }
 
 fn navigate(app: &tauri::AppHandle, url: &str) -> Result<()> {
@@ -285,6 +554,34 @@ fn navigate(app: &tauri::AppHandle, url: &str) -> Result<()> {
     let parsed = url.parse().context("invalid server url")?;
     window.navigate(parsed).context("navigation failed")?;
     Ok(())
+}
+
+/// counts compressed bytes as they stream out of the tarball so the splash
+/// can show extraction progress
+struct ProgressReader<'a, R: Read> {
+    inner: R,
+    app: &'a tauri::AppHandle,
+    read: u64,
+    total: u64,
+    last_emit: Instant,
+}
+
+impl<R: Read> Read for ProgressReader<'_, R> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let n = self.inner.read(buf)?;
+        self.read += n as u64;
+        if self.total > 0 && self.last_emit.elapsed() >= Duration::from_millis(150) {
+            self.last_emit = Instant::now();
+            emit_boot(
+                self.app,
+                "extracting",
+                "Preparing application files…",
+                Some(self.read as f64 / self.total as f64),
+                None,
+            );
+        }
+        Ok(n)
+    }
 }
 
 /// extract the bundled runtime tarball into app_data/runtime/<id> once per
@@ -312,8 +609,16 @@ fn ensure_runtime(app: &tauri::AppHandle, app_data: &Path) -> Result<PathBuf> {
             fs::remove_dir_all(&tmp)?;
         }
         fs::create_dir_all(&tmp)?;
+        let total = fs::metadata(&tarball).map(|m| m.len()).unwrap_or(0);
         let file = fs::File::open(&tarball).context("bundled runtime tarball missing")?;
-        let decoder = flate2::read::GzDecoder::new(std::io::BufReader::new(file));
+        let progress = ProgressReader {
+            inner: std::io::BufReader::new(file),
+            app,
+            read: 0,
+            total,
+            last_emit: Instant::now(),
+        };
+        let decoder = flate2::read::GzDecoder::new(progress);
         let mut archive = tar::Archive::new(decoder);
         archive.set_preserve_permissions(true);
         for entry in archive.entries().context("runtime extraction failed")? {
@@ -380,6 +685,7 @@ fn spawn_server(
     app: &tauri::AppHandle,
     runtime_dir: &Path,
     data_dir: &Path,
+    assets_dir: Option<&Path>,
     secret_file: &Path,
     log_path: &Path,
     port: u16,
@@ -441,8 +747,10 @@ fn spawn_server(
         .env("READIUM_PORT", readium_port.to_string())
         .env("STORYTELLER_DATA_DIR", data_dir)
         .env("STORYTELLER_SECRET_KEY_FILE", secret_file)
+        .envs(assets_dir.map(|dir| ("STORYTELLER_ASSETS_DIR", dir)))
         .env("STORYTELLER_WORKER", "worker.mjs")
         .env("STORYTELLER_FILE_WRITE_WORKER", "fileWriteWorker.mjs")
+        .env("STORYTELLER_DESKTOP", "1")
         .env(
             "ERROR_ALIGN_NATIVE_BINDING",
             web_dir
@@ -533,6 +841,126 @@ fn stop_server(state: &ServerState) {
     }
 }
 
+fn is_sqlite_file(path: &Path) -> bool {
+    let Ok(mut file) = fs::File::open(path) else {
+        return false;
+    };
+    let mut header = [0u8; 16];
+    if file.read_exact(&mut header).is_err() {
+        return false;
+    }
+    &header == b"SQLite format 3\0"
+}
+
+/// put `src` in place as the library database; stale WAL/SHM files from the
+/// previous database must not survive the swap
+fn install_database(data_dir: &Path, src: &Path) -> Result<()> {
+    let db_file = data_dir.join("storyteller.db");
+    for suffix in ["-wal", "-shm"] {
+        let _ = fs::remove_file(data_dir.join(format!("storyteller.db{suffix}")));
+    }
+    fs::copy(src, &db_file)
+        .with_context(|| format!("failed to copy {} into the library", src.display()))?;
+    Ok(())
+}
+
+/// menu-driven database restore: confirm, pick a file, back up the current
+/// database, swap, and boot the server again
+fn restore_database_flow(app: tauri::AppHandle) {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+
+    let confirmed = app
+        .dialog()
+        .message(
+            "Storyteller Server will restart using the database file you select. \
+             The current database is backed up into the library's backups folder first.",
+        )
+        .title("Restore Database")
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Choose File…".to_string(),
+            "Cancel".to_string(),
+        ))
+        .blocking_show();
+    if !confirmed {
+        return;
+    }
+
+    let Some(picked) = app
+        .dialog()
+        .file()
+        .add_filter("SQLite database", &["db", "sqlite", "sqlite3"])
+        .blocking_pick_file()
+    else {
+        return;
+    };
+    let Ok(path) = picked.into_path() else {
+        return;
+    };
+    if !is_sqlite_file(&path) {
+        app.dialog()
+            .message("That file doesn't look like a SQLite database.")
+            .title("Restore Database")
+            .blocking_show();
+        return;
+    }
+
+    if let Err(err) = restore_database(&app, &path) {
+        emit_status(&app, "error", &format!("{err:#}"));
+    }
+}
+
+fn restore_database(app: &tauri::AppHandle, src: &Path) -> Result<()> {
+    let app_data = app.path().app_data_dir().context("no app data directory")?;
+    let data_dir = app_data.join("data");
+
+    // back to the splash so the user sees restart progress
+    let splash = app.state::<ServerState>().splash_url.lock().unwrap().clone();
+    if let (Some(window), Some(url)) = (app.get_webview_window("main"), splash) {
+        let _ = window.navigate(url);
+    }
+
+    emit_status(app, "starting", "Stopping the server…");
+    let state = app.state::<ServerState>();
+    stop_server(state.inner());
+    *state.shutting_down.lock().unwrap() = false;
+    *state.server_url.lock().unwrap() = None;
+
+    let current = data_dir.join("storyteller.db");
+    if current.exists() {
+        let backups = data_dir.join("backups");
+        fs::create_dir_all(&backups)?;
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let backup = backups.join(format!("pre-restore-{stamp}.db"));
+        fs::rename(&current, &backup)
+            .with_context(|| format!("failed to back up the current database to {}", backup.display()))?;
+    }
+
+    install_database(&data_dir, src)?;
+
+    let handle = app.clone();
+    std::thread::spawn(move || boot(handle));
+    Ok(())
+}
+
+fn open_server_log(app: &tauri::AppHandle) {
+    let log_path = app.state::<ServerState>().log_path.lock().unwrap().clone();
+    let Some(log_path) = log_path else {
+        return;
+    };
+    #[cfg(target_os = "macos")]
+    let _ = Command::new("open").arg(&log_path).spawn();
+    #[cfg(target_os = "linux")]
+    let _ = Command::new("xdg-open").arg(&log_path).spawn();
+    #[cfg(windows)]
+    let _ = Command::new("cmd")
+        .args(["/C", "start", ""])
+        .arg(&log_path)
+        .spawn();
+}
+
 /// minimal http health probe; avoids pulling in an http client crate
 fn http_ok(port: u16, path: &str) -> bool {
     let addr = match format!("127.0.0.1:{port}").parse() {
@@ -555,15 +983,20 @@ fn http_ok(port: u16, path: &str) -> bool {
     String::from_utf8_lossy(&buf[..n]).contains(" 200 ")
 }
 
-fn log_tail(log_path: &Path) -> String {
+fn tail_log(log_path: &Path, lines: usize) -> String {
     let Ok(content) = fs::read_to_string(log_path) else {
         return format!("(no server log at {})", log_path.display());
     };
-    let tail: Vec<&str> = content.lines().rev().take(30).collect();
+    let tail: Vec<&str> = content.lines().rev().take(lines).collect();
     let tail: Vec<&str> = tail.into_iter().rev().collect();
-    format!(
-        "Last log lines ({}):\n{}",
-        log_path.display(),
-        tail.join("\n")
-    )
+    tail.join("\n")
+}
+
+fn last_log_line(log_path: &Path) -> Option<String> {
+    let content = fs::read_to_string(log_path).ok()?;
+    content
+        .lines()
+        .rev()
+        .find(|line| !line.trim().is_empty())
+        .map(|line| line.to_string())
 }
