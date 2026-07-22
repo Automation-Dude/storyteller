@@ -546,6 +546,23 @@ export async function resolveBook(
     }
   }
 
+  // One line per resolution so a live scan can actually be watched on the
+  // server: what the book resolved to, from where, and how sure. Without
+  // this the pipeline only ever spoke up on failure, and a "poor yield"
+  // complaint could not be investigated against production at all.
+  logger.info({
+    msg: "repair resolved",
+    book: resolution.currentTitle,
+    confidence: resolution.confidence,
+    filled:
+      Object.entries(resolution.sources)
+        .map(([field, source]) => `${field}:${source}`)
+        .join(",") || "nothing",
+    best: resolution.best
+      ? `${resolution.best.title} / ${resolution.best.authors.join("; ")} [${resolution.best.score.toFixed(2)}]`
+      : null,
+  })
+
   return resolution
 }
 
