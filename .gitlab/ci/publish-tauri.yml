@@ -62,6 +62,8 @@ publish-tauri-macos:
     - yarn fetch-binaries
     - yarn assemble-runtime
     - yarn tauri build
+    - export TAURI_SIGNING_PRIVATE_KEY=${TAURI_SIGNING_PRIVATE_KEY}
+    - export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=${TAURI_SIGNING_PRIVATE_KEY_PASSWORD}
     # updater build instead of the plain one above (requires the signing key):
     - yarn tauri build --config '{"bundle":{"createUpdaterArtifacts":true}}'
     - cd "$CI_PROJECT_DIR"
