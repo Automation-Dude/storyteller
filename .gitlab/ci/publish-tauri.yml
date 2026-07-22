@@ -1,0 +1,94 @@
+# Tauri app (Storyteller Server) publish job
+# Triggered on tauri-* tags (e.g. tauri-v2.15.0), which bump-versions
+# creates automatically when applications/tauri/package.json changes on main.
+#
+# Deliberately low-key: no GitLab Release is created. Artifacts go to the
+# generic package registry:
+#   .../packages/generic/storyteller-tauri/<version>/  — dmg + updater bundle
+#   .../packages/generic/storyteller-tauri/latest/latest.json — updater feed
+# The tauri updater in the app polls latest.json (see applications/tauri
+# README, "Auto-updates"). latest.json is only advanced for stable versions,
+# so prerelease tags produce installable artifacts without pushing an update
+# to existing users.
+#
+# Required CI/CD variables (Settings → CI/CD → Variables, masked):
+#   TAURI_SIGNING_PRIVATE_KEY          — contents of the updater signing key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — its password (empty string if none)
+
+publish-tauri-macos:
+  stage: publish
+  tags: [saas-macos-medium-m1]
+  image: macos-15-xcode-16
+  rules:
+    - if:
+        '$CI_COMMIT_TAG =~
+        /^tauri-v?\d+\.\d+\.\d+(?:-(?:alpha|beta|rc|experimental|dev|test|preview)(?:\.\d+)?)?$/'
+  variables:
+    CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  cache:
+    key:
+      files:
+        - applications/tauri/src-tauri/Cargo.lock
+    paths:
+      - .cargo/registry
+      - applications/tauri/src-tauri/target
+  script:
+    - export VERSION="${CI_COMMIT_TAG#tauri-}"
+    - export VERSION="${VERSION#v}"
+    # the tag must match the version baked into the app (package.json feeds
+    # tauri.conf.json); a mismatch would publish an update the updater can
+    # never resolve
+    - PKG_VERSION=$(node -p "require('./applications/tauri/package.json').version")
+    - |
+      if [ "$VERSION" != "$PKG_VERSION" ]; then
+        echo "tag says $VERSION but applications/tauri/package.json says $PKG_VERSION"
+        exit 1
+      fi
+    # toolchain: the macOS images ship node + homebrew, rust comes via rustup
+    - command -v cargo || (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable)
+    - export PATH="$HOME/.cargo/bin:$PATH"
+    - corepack enable
+    - yarn install --immutable
+    - cd applications/tauri
+    - yarn fetch-binaries
+    - yarn assemble-runtime
+    # updater artifacts (.app.tar.gz + .sig) only in CI so local builds don't
+    # require the signing key
+    - yarn tauri build --config '{"bundle":{"createUpdaterArtifacts":true}}'
+    - cd "$CI_PROJECT_DIR"
+    # collect + rename to url-safe names
+    - BUNDLE=applications/tauri/src-tauri/target/release/bundle
+    - cp "$BUNDLE/dmg/Storyteller Server_${VERSION}_aarch64.dmg" "Storyteller-Server-${VERSION}-aarch64.dmg"
+    - cp "$BUNDLE/macos/Storyteller Server.app.tar.gz" "Storyteller-Server-${VERSION}-aarch64.app.tar.gz"
+    - cp "$BUNDLE/macos/Storyteller Server.app.tar.gz.sig" "Storyteller-Server-${VERSION}-aarch64.app.tar.gz.sig"
+    # publish to the generic package registry (no release object)
+    - export PKG_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/storyteller-tauri"
+    - 'curl --fail -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "Storyteller-Server-${VERSION}-aarch64.dmg" "$PKG_URL/$VERSION/Storyteller-Server-${VERSION}-aarch64.dmg"'
+    - 'curl --fail -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "Storyteller-Server-${VERSION}-aarch64.app.tar.gz" "$PKG_URL/$VERSION/Storyteller-Server-${VERSION}-aarch64.app.tar.gz"'
+    - 'curl --fail -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "Storyteller-Server-${VERSION}-aarch64.app.tar.gz.sig" "$PKG_URL/$VERSION/Storyteller-Server-${VERSION}-aarch64.app.tar.gz.sig"'
+    # advance the updater feed for stable versions only; re-uploads to the
+    # same path are fine (generic registry serves the newest file)
+    - |
+      if echo "$VERSION" | grep -qvE '\-(alpha|beta|rc|experimental|dev|test|preview)'; then
+        node -e "
+          const fs = require('fs')
+          fs.writeFileSync('latest.json', JSON.stringify({
+            version: process.env.VERSION,
+            pub_date: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+            platforms: {
+              'darwin-aarch64': {
+                signature: fs.readFileSync('Storyteller-Server-' + process.env.VERSION + '-aarch64.app.tar.gz.sig', 'utf8').trim(),
+                url: process.env.PKG_URL + '/' + process.env.VERSION + '/Storyteller-Server-' + process.env.VERSION + '-aarch64.app.tar.gz',
+              },
+            },
+          }, null, 2))
+        "
+        cat latest.json
+        curl --fail -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file latest.json "$PKG_URL/latest/latest.json"
+      else
+        echo "prerelease $VERSION — not advancing latest.json"
+      fi
+  after_script:
+    # target/ grows unboundedly with the bundle output inside it; drop the
+    # bundles from the cache, keep the compiled deps
+    - rm -rf applications/tauri/src-tauri/target/release/bundle

@@ -6,7 +6,7 @@ import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
 import { NuqsAdapter } from "nuqs/adapters/next"
 
-import { DesktopTitlebarSync } from "@v3/_/components/desktop-titlebar-sync"
+import { TauriTitlebarSync } from "@v3/_/components/tauri-titlebar-sync"
 import { ThemeProvider } from "@v3/_/components/theme-provider"
 import { Toaster } from "@v3/_/components/ui/sonner"
 import { VersionProvider } from "@v3/_/components/version-context"
@@ -116,7 +116,7 @@ export default async function RootLayout({
                     <NuqsAdapter>
                       {children}
                       <Toaster />
-                      <DesktopTitlebarSync />
+                      <TauriTitlebarSync />
                     </NuqsAdapter>
                   </ThemeProvider>
                 </PiPProvider>

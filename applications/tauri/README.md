@@ -1,4 +1,4 @@
-# Storyteller Server (desktop app)
+# Storyteller Server (tauri app)
 
 A Tauri shell that bundles a Node runtime plus the Next.js standalone server and
 serves the regular Storyteller web app from `http://127.0.0.1:<port>` in a
@@ -25,13 +25,13 @@ native window. The runtime layout mirrors the Docker runner stage and
   Apple Silicon) on first transcription, same as always.
 
 Server logs land in the app data dir as `server.log`
-(`~/Library/Application Support/dev.storyteller-platform.desktop/` on macOS).
+(`~/Library/Application Support/dev.storyteller-platform.tauri/` on macOS).
 Library data lives in `data/` next to it.
 
 ## Building
 
 ```sh
-yarn workspace @storyteller-platform/desktop build
+yarn workspace @storyteller-platform/tauri build
 ```
 
 That runs fetch-binaries + assemble-runtime (including the full web build) and
@@ -40,30 +40,63 @@ then `tauri build`. Artifacts land in `src-tauri/target/release/bundle/`.
 After changing only the shell, skip the web rebuild:
 
 ```sh
-yarn workspace @storyteller-platform/desktop assemble-runtime --skip-build
-yarn workspace @storyteller-platform/desktop build:app-only
+yarn workspace @storyteller-platform/tauri assemble-runtime --skip-build
+yarn workspace @storyteller-platform/tauri build:app-only
 ```
 
 Requires: Rust toolchain, plus the regular web build prerequisites.
 
+## Releasing (CI) and auto-updates
+
+Bumping the `version` in `applications/tauri/package.json` on `main` makes
+the `bump-versions` job tag `tauri-v<version>`, which triggers
+`.gitlab/ci/publish-tauri.yml` on a GitLab SaaS macOS runner. The version in
+`tauri.conf.json` points at `../package.json`, so the package.json bump is the
+only one needed. No GitLab Release is created — artifacts go to the generic
+package registry under `storyteller-tauri/<version>/`, and for stable
+versions the job also refreshes
+`storyteller-tauri/latest/latest.json`, the feed the in-app updater polls.
+Prerelease versions (`-alpha.N`, `-beta.N`, …) publish artifacts but do not
+touch `latest.json`, so they never reach existing users.
+
+The updater (tauri-plugin-updater) checks that feed on every release-build
+launch and via Server → Check for Updates…; updates download the signed
+`.app.tar.gz` and restart the app. Update bundles are signed with a minisign
+key: the public key is in `tauri.conf.json`, the private key must be provided
+to CI as masked variables:
+
+- `TAURI_SIGNING_PRIVATE_KEY` — contents of the private key file
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — its password (empty if none)
+
+Losing the private key means shipped apps can never accept another update
+(the pubkey would have to change, requiring a manual reinstall). Local builds
+don't need the key — updater artifacts are only produced in CI via
+`--config '{"bundle":{"createUpdaterArtifacts":true}}'`.
+
+Download URLs (public, no auth):
+
+```
+https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri/<version>/Storyteller-Server-<version>-aarch64.dmg
+```
+
 ## Dev mode
 
-`yarn workspace @storyteller-platform/desktop dev` opens the window against the
+`yarn workspace @storyteller-platform/tauri dev` opens the window against the
 next dev server on `localhost:8001` — start `yarn dev:web` first. The boot flow
-(extract/spawn) is skipped in debug builds; set `STORYTELLER_DESKTOP_BOOT=1` to
+(extract/spawn) is skipped in debug builds; set `STORYTELLER_TAURI_BOOT=1` to
 exercise it.
 
 Useful env overrides for the shell:
 
-- `STORYTELLER_DESKTOP_SERVER_URL` — attach to an already-running server instead
+- `STORYTELLER_TAURI_SERVER_URL` — attach to an already-running server instead
   of spawning one.
-- `STORYTELLER_DESKTOP_RUNTIME_DIR` — use a pre-extracted runtime tree.
-- `STORYTELLER_DESKTOP_PORT` — pin the server port.
+- `STORYTELLER_TAURI_RUNTIME_DIR` — use a pre-extracted runtime tree.
+- `STORYTELLER_TAURI_PORT` — pin the server port.
 
 ## Configuration
 
 The server port defaults to 8756 (falling back to a random free port). To pin
-it, either set `STORYTELLER_DESKTOP_PORT` or create `desktop.json` in the app
+it, either set `STORYTELLER_TAURI_PORT` or create `tauri.json` in the app
 data dir:
 
 ```json
@@ -72,7 +105,7 @@ data dir:
 
 A pinned port that is already taken is a startup error, not a silent fallback.
 
-`desktop.json` also stores the media folder chosen on the first-boot screen
+`tauri.json` also stores the media folder chosen on the first-boot screen
 (where library-managed files — synced books, audio, covers — are written):
 
 ```json
@@ -89,7 +122,7 @@ database.
 
 On macOS the window uses a transparent native title bar
 (`titleBarStyle: "Transparent"`, hidden title) whose color is the `NSWindow`
-background. The web app drives it: `desktop-titlebar-sync.tsx` (v3 layout)
+background. The web app drives it: `tauri-titlebar-sync.tsx` (v3 layout)
 resolves the `--sidebar` CSS variable and calls the `set_titlebar_color` command
 via `@tauri-apps/api`, re-syncing on theme switches. IPC for the locally served
 app is granted by the `remote` block in `capabilities/default.json`
@@ -113,13 +146,13 @@ The webview has no browser chrome; the History menu provides Back
   a database. After a restore the web app detects the moved data dir and
   offers the path-rewrite tool (Settings → Data & backups).
 
-## Desktop detection
+## Tauri detection
 
-The shell sets `STORYTELLER_DESKTOP=1` on the spawned server, and the splash
+The shell sets `STORYTELLER_TAURI=1` on the spawned server, and the splash
 reports the webview's default user agent so the shell can append
-`StorytellerDesktop/<version>` (macOS `customUserAgent`; the browser part is
+`StorytellerTauri/<version>` (macOS `customUserAgent`; the browser part is
 kept because the reader sniffs `AppleWebKit`). The web app checks either via
-`src/isDesktopApp.ts`.
+`src/isTauriApp.ts`.
 
 ## Windows notes
 
@@ -149,7 +182,7 @@ export APPLE_PASSWORD="app-specific-password"   # appleid.apple.com → app pass
 export APPLE_TEAM_ID="TEAMID"
 # ...or an App Store Connect API key instead:
 # export APPLE_API_ISSUER=... APPLE_API_KEY=... APPLE_API_KEY_PATH=...
-yarn workspace @storyteller-platform/desktop build
+yarn workspace @storyteller-platform/tauri build
 ```
 
 ## Not yet done

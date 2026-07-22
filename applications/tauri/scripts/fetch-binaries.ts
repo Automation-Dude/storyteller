@@ -27,9 +27,9 @@ import {
 } from "./targets.ts"
 
 const here = dirname(fileURLToPath(import.meta.url))
-const desktopRoot = resolve(here, "..")
-const cacheDir = join(desktopRoot, ".cache", "downloads")
-const binariesDir = join(desktopRoot, "src-tauri", "binaries")
+const tauriRoot = resolve(here, "..")
+const cacheDir = join(tauriRoot, ".cache", "downloads")
+const binariesDir = join(tauriRoot, "src-tauri", "binaries")
 
 async function download(url: string, dest: string): Promise<void> {
   if (existsSync(dest)) {

@@ -11,7 +11,7 @@ import * as icon from "@/icons"
 /**
  * shown to admins when the database's stored file paths were written against a
  * different data dir than the server is currently using (e.g. after dropping a
- * database into the desktop app). links to the rewrite tool with the old and
+ * database into the tauri app). links to the rewrite tool with the old and
  * new prefixes prefilled; hiding it here only lasts for the session — the tab
  * has the permanent "paths are fine" dismissal.
  */

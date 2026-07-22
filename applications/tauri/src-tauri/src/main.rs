@@ -28,7 +28,7 @@ struct ServerState {
 }
 
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
-const UA_TOKEN: &str = "StorytellerDesktop";
+const UA_TOKEN: &str = "StorytellerTauri";
 
 fn main() {
     tauri::Builder::default()
@@ -40,6 +40,7 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ServerState {
             child: Mutex::new(None),
             shutting_down: Mutex::new(false),
@@ -55,7 +56,7 @@ fn main() {
             show_server_log,
             choose_database,
             choose_assets_dir,
-            get_desktop_config
+            get_tauri_config
         ])
         .setup(|app| {
             setup_menu(app.handle())?;
@@ -71,10 +72,10 @@ fn main() {
             }
 
             // in dev the window points straight at the next dev server
-            // (build.devUrl); set STORYTELLER_DESKTOP_BOOT=1 to exercise the
+            // (build.devUrl); set STORYTELLER_TAURI_BOOT=1 to exercise the
             // full boot flow from a debug build
             let dev_skip =
-                cfg!(debug_assertions) && std::env::var("STORYTELLER_DESKTOP_BOOT").is_err();
+                cfg!(debug_assertions) && std::env::var("STORYTELLER_TAURI_BOOT").is_err();
             if !dev_skip {
                 let handle = app.handle().clone();
                 std::thread::spawn(move || boot(handle));
@@ -136,6 +137,8 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             )?,
             &PredefinedMenuItem::separator(app)?,
             &MenuItem::with_id(app, "restore-db", "Restore Database…", true, None::<&str>)?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(app, "check-updates", "Check for Updates…", true, None::<&str>)?,
         ],
     )?;
     menu.append(&server)?;
@@ -173,6 +176,10 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
                 // blocking native dialogs must stay off the main thread
                 let handle = app.clone();
                 std::thread::spawn(move || restore_database_flow(handle));
+            }
+            "check-updates" => {
+                let handle = app.clone();
+                std::thread::spawn(move || check_for_updates(handle, true));
             }
             _ => {}
         }
@@ -274,35 +281,35 @@ fn choose_database(app: tauri::AppHandle, mode: String) {
         });
 }
 
-fn desktop_config_path(app_data: &Path) -> PathBuf {
-    app_data.join("desktop.json")
+fn tauri_config_path(app_data: &Path) -> PathBuf {
+    app_data.join("tauri.json")
 }
 
-fn read_desktop_config(app_data: &Path) -> serde_json::Value {
-    fs::read_to_string(desktop_config_path(app_data))
+fn read_tauri_config(app_data: &Path) -> serde_json::Value {
+    fs::read_to_string(tauri_config_path(app_data))
         .ok()
         .and_then(|raw| serde_json::from_str(&raw).ok())
         .unwrap_or_else(|| serde_json::json!({}))
 }
 
-fn write_desktop_config(app_data: &Path, config: &serde_json::Value) -> Result<()> {
+fn write_tauri_config(app_data: &Path, config: &serde_json::Value) -> Result<()> {
     fs::create_dir_all(app_data)?;
     fs::write(
-        desktop_config_path(app_data),
+        tauri_config_path(app_data),
         serde_json::to_string_pretty(config)?,
     )?;
     Ok(())
 }
 
 fn configured_assets_dir(app_data: &Path) -> Option<PathBuf> {
-    read_desktop_config(app_data)
+    read_tauri_config(app_data)
         .get("assetsDir")
         .and_then(|value| value.as_str())
         .map(PathBuf::from)
 }
 
 /// splash "choose folder" button for where library-managed media files live;
-/// stored in desktop.json so it survives restarts, cleared with reset
+/// stored in tauri.json so it survives restarts, cleared with reset
 #[tauri::command]
 async fn choose_assets_dir(app: tauri::AppHandle, reset: bool) -> Result<Option<String>, String> {
     let app_data = app
@@ -311,11 +318,11 @@ async fn choose_assets_dir(app: tauri::AppHandle, reset: bool) -> Result<Option<
         .map_err(|err| format!("no app data directory: {err}"))?;
 
     if reset {
-        let mut config = read_desktop_config(&app_data);
+        let mut config = read_tauri_config(&app_data);
         if let Some(object) = config.as_object_mut() {
             object.remove("assetsDir");
         }
-        write_desktop_config(&app_data, &config).map_err(|err| format!("{err:#}"))?;
+        write_tauri_config(&app_data, &config).map_err(|err| format!("{err:#}"))?;
         return Ok(None);
     }
 
@@ -329,23 +336,23 @@ async fn choose_assets_dir(app: tauri::AppHandle, reset: bool) -> Result<Option<
     fs::create_dir_all(&path)
         .map_err(|err| format!("that folder isn't writable: {err}"))?;
 
-    let mut config = read_desktop_config(&app_data);
+    let mut config = read_tauri_config(&app_data);
     if let Some(object) = config.as_object_mut() {
         object.insert(
             "assetsDir".to_string(),
             serde_json::json!(path.display().to_string()),
         );
     }
-    write_desktop_config(&app_data, &config).map_err(|err| format!("{err:#}"))?;
+    write_tauri_config(&app_data, &config).map_err(|err| format!("{err:#}"))?;
 
     Ok(Some(path.display().to_string()))
 }
 
-/// lets the splash show the current desktop.json settings (assets folder)
+/// lets the splash show the current tauri.json settings (assets folder)
 #[tauri::command]
-fn get_desktop_config(app: tauri::AppHandle) -> serde_json::Value {
+fn get_tauri_config(app: tauri::AppHandle) -> serde_json::Value {
     match app.path().app_data_dir() {
-        Ok(app_data) => read_desktop_config(&app_data),
+        Ok(app_data) => read_tauri_config(&app_data),
         Err(_) => serde_json::json!({}),
     }
 }
@@ -382,7 +389,7 @@ fn boot(app: tauri::AppHandle) {
 
 fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
     // attach to an externally managed server instead of spawning one
-    if let Ok(url) = std::env::var("STORYTELLER_DESKTOP_SERVER_URL") {
+    if let Ok(url) = std::env::var("STORYTELLER_TAURI_SERVER_URL") {
         *app.state::<ServerState>().server_url.lock().unwrap() = Some(url.clone());
         return navigate(app, &url);
     }
@@ -477,20 +484,94 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
 
     let url = format!("http://127.0.0.1:{port}");
     *app.state::<ServerState>().server_url.lock().unwrap() = Some(url.clone());
-    navigate(app, &url)
+    navigate(app, &url)?;
+
+    // quiet update check once the app is usable; release builds only so dev
+    // runs never fetch or prompt
+    if !cfg!(debug_assertions) {
+        let handle = app.clone();
+        std::thread::spawn(move || check_for_updates(handle, false));
+    }
+    Ok(())
 }
 
-/// port preference order: STORYTELLER_DESKTOP_PORT env, then "port" in
-/// app_data/desktop.json, then 8756 with an ephemeral fallback. a pinned port
+/// checks the updater endpoint; when `interactive` (menu item) it also
+/// reports "up to date" and errors, the startup check stays silent unless an
+/// update exists. blocking dialogs, so must run off the main thread.
+fn check_for_updates(app: tauri::AppHandle, interactive: bool) {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
+    use tauri_plugin_updater::UpdaterExt;
+
+    let Ok(updater) = app.updater() else {
+        return;
+    };
+    let update = match tauri::async_runtime::block_on(updater.check()) {
+        Ok(Some(update)) => update,
+        Ok(None) => {
+            if interactive {
+                app.dialog()
+                    .message(format!(
+                        "Storyteller Server {} is up to date.",
+                        app.package_info().version
+                    ))
+                    .title("No Updates Available")
+                    .blocking_show();
+            }
+            return;
+        }
+        Err(err) => {
+            if interactive {
+                app.dialog()
+                    .message(format!("Could not check for updates: {err}"))
+                    .title("Update Check Failed")
+                    .blocking_show();
+            }
+            return;
+        }
+    };
+
+    let install = app
+        .dialog()
+        .message(format!(
+            "Storyteller Server {} is available (you have {}).\n\nThe download happens in the background; the app restarts once it is ready.",
+            update.version, update.current_version
+        ))
+        .title("Update Available")
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "Install and Restart".to_string(),
+            "Later".to_string(),
+        ))
+        .blocking_show();
+    if !install {
+        return;
+    }
+
+    match tauri::async_runtime::block_on(update.download_and_install(|_, _| {}, || {})) {
+        Ok(()) => {
+            // the running server would hold the port on relaunch otherwise
+            stop_server(app.state::<ServerState>().inner());
+            app.restart();
+        }
+        Err(err) => {
+            app.dialog()
+                .message(format!("The update could not be installed: {err}"))
+                .title("Update Failed")
+                .blocking_show();
+        }
+    }
+}
+
+/// port preference order: STORYTELLER_TAURI_PORT env, then "port" in
+/// app_data/tauri.json, then 8756 with an ephemeral fallback. a pinned port
 /// that is already taken is a hard error rather than a silent fallback.
 fn resolve_port(app_data: &Path) -> Result<u16> {
-    let config_path = app_data.join("desktop.json");
-    let pinned = match std::env::var("STORYTELLER_DESKTOP_PORT") {
+    let config_path = app_data.join("tauri.json");
+    let pinned = match std::env::var("STORYTELLER_TAURI_PORT") {
         Ok(value) => Some((
             value
                 .parse::<u16>()
-                .context("STORYTELLER_DESKTOP_PORT is not a valid port")?,
-            "STORYTELLER_DESKTOP_PORT".to_string(),
+                .context("STORYTELLER_TAURI_PORT is not a valid port")?,
+            "STORYTELLER_TAURI_PORT".to_string(),
         )),
         Err(_) => match fs::read_to_string(&config_path) {
             Ok(raw) => {
@@ -587,7 +668,7 @@ impl<R: Read> Read for ProgressReader<'_, R> {
 /// extract the bundled runtime tarball into app_data/runtime/<id> once per
 /// build; the id is a hash of the tarball produced by assemble-runtime.ts
 fn ensure_runtime(app: &tauri::AppHandle, app_data: &Path) -> Result<PathBuf> {
-    if let Ok(dir) = std::env::var("STORYTELLER_DESKTOP_RUNTIME_DIR") {
+    if let Ok(dir) = std::env::var("STORYTELLER_TAURI_RUNTIME_DIR") {
         return Ok(PathBuf::from(dir));
     }
 
@@ -750,7 +831,7 @@ fn spawn_server(
         .envs(assets_dir.map(|dir| ("STORYTELLER_ASSETS_DIR", dir)))
         .env("STORYTELLER_WORKER", "worker.mjs")
         .env("STORYTELLER_FILE_WRITE_WORKER", "fileWriteWorker.mjs")
-        .env("STORYTELLER_DESKTOP", "1")
+        .env("STORYTELLER_TAURI", "1")
         .env(
             "ERROR_ALIGN_NATIVE_BINDING",
             web_dir

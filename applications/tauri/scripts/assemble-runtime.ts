@@ -29,11 +29,11 @@ import { fileURLToPath } from "node:url"
 import { getTarget, hostTriple } from "./targets.ts"
 
 const here = dirname(fileURLToPath(import.meta.url))
-const desktopRoot = resolve(here, "..")
-const repoRoot = resolve(desktopRoot, "..", "..")
+const tauriRoot = resolve(here, "..")
+const repoRoot = resolve(tauriRoot, "..", "..")
 const webRoot = join(repoRoot, "applications", "web")
-const stagingDir = join(desktopRoot, ".staging", "runtime")
-const resourcesDir = join(desktopRoot, "src-tauri", "resources")
+const stagingDir = join(tauriRoot, ".staging", "runtime")
+const resourcesDir = join(tauriRoot, "src-tauri", "resources")
 
 const args = process.argv.slice(2)
 const targetIdx = args.indexOf("--target")
@@ -80,7 +80,7 @@ if (!skipBuild) {
   ]
     .map((name) => join(webRoot, name))
     .filter((path) => existsSync(path))
-  for (const path of envFiles) renameSync(path, `${path}.desktop-build-backup`)
+  for (const path of envFiles) renameSync(path, `${path}.tauri-build-backup`)
   try {
     run(
       "yarn workspaces foreach -Rpt --from @storyteller-platform/web --exclude @storyteller-platform/eslint run build",
@@ -88,7 +88,7 @@ if (!skipBuild) {
     )
   } finally {
     for (const path of envFiles) {
-      renameSync(`${path}.desktop-build-backup`, path)
+      renameSync(`${path}.tauri-build-backup`, path)
     }
   }
 }

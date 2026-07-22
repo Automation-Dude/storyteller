@@ -19,9 +19,9 @@ function resolveCssColor(value: string) {
   return { red: red / 255, green: green / 255, blue: blue / 255 }
 }
 
-// inside the desktop app, keep the native title bar the same color as the
+// inside the tauri app, keep the native title bar the same color as the
 // sidebar, following theme switches. no-op in a regular browser.
-export function DesktopTitlebarSync() {
+export function TauriTitlebarSync() {
   useEffect(() => {
     let observer: MutationObserver | null = null
     let cancelled = false

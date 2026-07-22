@@ -228,7 +228,7 @@
       const logView = document.getElementById("log-view")
       const logLines = document.getElementById("log-lines")
 
-      // identify the desktop shell to the web app without losing the
+      // identify the tauri shell to the web app without losing the
       // browser part of the user agent
       void invoke?.("report_user_agent", { userAgent: navigator.userAgent })
 
@@ -300,7 +300,7 @@
         choice.classList.toggle("visible", payload.state === "choice")
         if (payload.state === "choice" && !assetsDirLoaded) {
           assetsDirLoaded = true
-          void invoke?.("get_desktop_config").then((config) =>
+          void invoke?.("get_tauri_config").then((config) =>
             showAssetsDir(config?.assetsDir ?? null),
           )
         }

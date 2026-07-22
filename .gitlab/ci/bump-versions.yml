@@ -45,6 +45,10 @@ bump-versions:
     - PACKAGE_VERSION=$(node -p -e "require('./package.json').version")
     - ../../scripts/if-version-change.sh git tag okmain-v${PACKAGE_VERSION}
     - git push --tags
+    - cd ../../applications/tauri
+    - PACKAGE_VERSION=$(node -p -e "require('./package.json').version")
+    - ../../scripts/if-version-change.sh git tag tauri-v${PACKAGE_VERSION}
+    - git push --tags
 
 pages:
   image: node:24-alpine

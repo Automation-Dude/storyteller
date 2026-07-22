@@ -1,5 +1,5 @@
 {
-  "name": "@storyteller-platform/desktop",
+  "name": "@storyteller-platform/tauri",
   "version": "2.14.13",
   "private": true,
   "type": "module",

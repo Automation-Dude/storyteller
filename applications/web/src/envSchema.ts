@@ -153,11 +153,11 @@ export const internalServerEnvVars = {
     .boolean()
     .optional()
     .describe("Whether the container is running in a development environment."),
-  STORYTELLER_DESKTOP: z
+  STORYTELLER_TAURI: z
     .stringbool()
     .default(false)
     .describe(
-      "Set by the desktop app shell when it spawns the bundled server.",
+      "Set by the tauri shell when it spawns the bundled server.",
     ),
   STORYTELLER_ROOT_PATH: z
     .string()

@@ -6,7 +6,7 @@
 // middleware NextResponse.rewrite carries an absolute url whose origin the
 // router compares against the server's own configured hostname. NextURL
 // normalizes loopback ips to "localhost" while the comparison side keeps the
-// hostname verbatim, so any server bound to 127.0.0.1 (the desktop app) turns
+// hostname verbatim, so any server bound to 127.0.0.1 (the tauri app) turns
 // every rewrite into an "external" self-proxy — which breaks outright behind a
 // tls-terminating proxy like tailscale serve (x-forwarded-proto https makes it
 // fetch https from its own plain-http port). config rewrites are plain path
