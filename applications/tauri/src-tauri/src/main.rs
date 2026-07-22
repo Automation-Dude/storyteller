@@ -184,9 +184,14 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
                 true,
                 None::<&str>,
             )?,
-            // auto-update disabled, see the updater plugin comment in main()
-            // &PredefinedMenuItem::separator(app)?,
-            // &MenuItem::with_id(app, "check-updates", "Check for Updates…", true, None::<&str>)?,
+            &PredefinedMenuItem::separator(app)?,
+            &MenuItem::with_id(
+                app,
+                "check-updates",
+                "Check for Updates…",
+                true,
+                None::<&str>,
+            )?,
         ],
     )?;
     menu.append(&server)?;
@@ -229,10 +234,10 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
                 let handle = app.clone();
                 std::thread::spawn(move || change_assets_dir_flow(handle));
             }
-            // "check-updates" => {
-            //     let handle = app.clone();
-            //     std::thread::spawn(move || check_for_updates(handle, true));
-            // }
+            "check-updates" => {
+                let handle = app.clone();
+                std::thread::spawn(move || check_for_updates(handle, true));
+            }
             _ => {}
         }
     });
