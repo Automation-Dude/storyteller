@@ -40,7 +40,11 @@ import {
   TabsTrigger,
 } from "@v3/_/components/ui/tabs"
 
-import { ServerFileBrowser } from "@/app/(v3)/v3/_/components/files/ServerFileBrowser"
+import {
+  ServerFileBrowser,
+  ServerFileBrowserWeb,
+  openTauriFileDialog,
+} from "@/app/(v3)/v3/_/components/files/ServerFileBrowser"
 import {
   Combobox,
   ComboboxChip,
@@ -92,6 +96,8 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
+import { useIsTauri } from "../../hooks/use-is-tauri"
+
 import { SettingsFormField, useSettingsForm } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"
 
@@ -108,6 +114,7 @@ export function LibraryTab() {
 
 function LibrarySection() {
   const t = useTranslation("SettingsPage.tabs.library.sections.library")
+  const isTauri = useIsTauri()
 
   return (
     <SettingsSection tab="library" section="library">
@@ -130,19 +137,22 @@ function LibrarySection() {
               />
             )}
           />
-          <SettingsFormField
-            name="webUrl"
-            label={t("webUrl")}
-            render={(field, fieldState, isLocked) => (
-              <Input
-                id="webUrl"
-                disabled={isLocked}
-                placeholder="https://<your-domain>.com"
-                {...field}
-                aria-invalid={fieldState.invalid}
-              />
-            )}
-          />
+
+          {!isTauri && (
+            <SettingsFormField
+              name="webUrl"
+              label={t("webUrl")}
+              render={(field, fieldState, isLocked) => (
+                <Input
+                  id="webUrl"
+                  disabled={isLocked}
+                  placeholder="https://<your-domain>.com"
+                  {...field}
+                  aria-invalid={fieldState.invalid}
+                />
+              )}
+            />
+          )}
         </CardContent>
       </Card>
     </SettingsSection>
@@ -210,6 +220,19 @@ function DefaultStatusSection() {
   )
 }
 
+async function openTauriFolderDialog(
+  startPath: string | undefined,
+  onSave: (path: string) => void,
+) {
+  const result = await openTauriFileDialog({
+    directory: true,
+    defaultPath: startPath,
+  })
+
+  const selected = Array.isArray(result) ? result[0] : result
+  if (selected) onSave(selected)
+}
+
 function ServerFileBrowserModal({
   open,
   onOpenChange,
@@ -230,7 +253,7 @@ function ServerFileBrowserModal({
           <DialogTitle>{c("actions.selectFolder")}</DialogTitle>
         </DialogHeader>
 
-        <ServerFileBrowser
+        <ServerFileBrowserWeb
           directoriesOnly
           autoFocus
           startPath={startPath}
@@ -283,6 +306,7 @@ function WatchRuleCard({
 }) {
   const [updateRule] = useUpdateImportRuleMutation()
   const [browseOpen, setBrowseOpen] = useState(false)
+  const isTauri = useIsTauri()
 
   const isConfig = rule.source === "config"
   const t = useTranslation("SettingsPage.tabs.library.sections.autoImport")
@@ -297,6 +321,15 @@ function WatchRuleCard({
     if (!result.ok) return
 
     void updateRule({ uuid: rule.uuid, path: newPath })
+  }
+
+  function handlePathClick() {
+    if (isTauri) {
+      void openTauriFolderDialog(rule.path, handlePathSave)
+      return
+    }
+
+    setBrowseOpen(true)
   }
 
   return (
@@ -323,9 +356,7 @@ function WatchRuleCard({
               type="button"
               className="text-foreground hover:text-foreground block max-w-full truncate text-left text-xs underline-offset-2 hover:underline"
               title={rule.path}
-              onClick={() => {
-                setBrowseOpen(true)
-              }}
+              onClick={handlePathClick}
             >
               {rule.path}
             </button>
@@ -430,7 +461,7 @@ function WatchRuleCard({
         </Button>
       )}
 
-      {browseOpen && (
+      {browseOpen && !isTauri && (
         <ServerFileBrowserModal
           open={browseOpen}
           onOpenChange={setBrowseOpen}

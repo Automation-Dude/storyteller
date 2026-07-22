@@ -1,5 +1,6 @@
 "use client"
-// import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import { revealItemInDir } from "@tauri-apps/plugin-opener"
 import { type ComponentType, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -16,8 +17,10 @@ import {
 
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
+import { openTauriFileDialog } from "@/app/(v3)/v3/_/components/files/ServerFileBrowser"
 import { ConfirmDialog } from "@/app/(v3)/v3/_/components/ui/confirm-dialog"
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
+import { useIsTauri } from "@/app/(v3)/v3/_/hooks/use-is-tauri"
 import {
   useCommon,
   useTranslation,
@@ -25,12 +28,36 @@ import {
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
+import { defaultMetadataFieldOverrides } from "@/database/settingsTypes"
 import { usePermission } from "@/hooks/usePermission"
 import * as icon from "@/icons"
-import { useRemoveBookAssetMutation } from "@/store/api"
+import {
+  useRemoveBookAssetMutation,
+  useReplaceBookAssetMutation,
+} from "@/store/api"
 import { formatFileSize } from "@/utils/formatFileSize"
 
 import { CollapsibleSection } from "./CollapsibleSection"
+
+const EBOOK_FILTERS = [{ name: "Ebooks", extensions: ["epub"] }]
+const AUDIO_FILTERS = [
+  {
+    name: "Audio files",
+    extensions: [
+      "mp3",
+      "aac",
+      "mp4",
+      "m4a",
+      "m4b",
+      "opus",
+      "ogg",
+      "oga",
+      "wav",
+      "flac",
+      "zip",
+    ],
+  },
+]
 
 type Format = "ebook" | "audiobook" | "readaloud"
 
@@ -44,6 +71,8 @@ function FormatFileRow({
   book,
   format,
   canRemove,
+  isTauri,
+  onReplace,
   onReplaceServer,
   onReplaceUpload,
   onRemove,
@@ -51,6 +80,8 @@ function FormatFileRow({
   book: BookWithRelations
   format: Format
   canRemove: boolean
+  isTauri: boolean
+  onReplace: () => void
   onReplaceServer: () => void
   onReplaceUpload: () => void
   onRemove: () => void
@@ -157,39 +188,68 @@ function FormatFileRow({
         )}
       </div>
 
+      {isTauri && filepath && (
+        <TooltipButton
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground mt-0.5 shrink-0"
+          tooltip="Show in file manager"
+          aria-label={`Show ${format} file in file manager`}
+          onClick={() => {
+            void revealItemInDir(filepath)
+          }}
+        >
+          <icon.ExternalLink className="h-3.5 w-3.5" />
+        </TooltipButton>
+      )}
+
       {canEdit && (
         <div className="flex shrink-0 items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <TooltipButton
-                  variant="ghost"
-                  size="icon-sm"
-                  tooltip={c.plain("actions.replace")}
-                  className="text-muted-foreground font-thin"
-                  aria-label={`Replace ${format} file`}
+          {isTauri ? (
+            <TooltipButton
+              variant="ghost"
+              size="icon-sm"
+              tooltip={c.plain("actions.replace")}
+              className="text-muted-foreground font-thin"
+              aria-label={`Replace ${format} file`}
+              onClick={onReplace}
+            >
+              <icon.Replace className="h-3.5 w-3.5 stroke-[1.5]" />
+            </TooltipButton>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <TooltipButton
+                    variant="ghost"
+                    size="icon-sm"
+                    tooltip={c.plain("actions.replace")}
+                    className="text-muted-foreground font-thin"
+                    aria-label={`Replace ${format} file`}
+                  >
+                    <icon.Replace className="h-3.5 w-3.5 stroke-[1.5]" />
+                  </TooltipButton>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-fit">
+                <DropdownMenuItem
+                  onClick={onReplaceServer}
+                  className="whitespace-nowrap"
                 >
-                  <icon.Replace className="h-3.5 w-3.5 stroke-[1.5]" />
-                </TooltipButton>
-              }
-            />
-            <DropdownMenuContent align="end" className="w-fit">
-              <DropdownMenuItem
-                onClick={onReplaceServer}
-                className="whitespace-nowrap"
-              >
-                <icon.Server className="mr-2 h-4 w-4" />
-                {c("actions.import")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={onReplaceUpload}
-                className="whitespace-nowrap"
-              >
-                <icon.Upload className="mr-2 h-4 w-4" />
-                {c("actions.upload")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <icon.Server className="mr-2 h-4 w-4" />
+                  {c("actions.import")}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={onReplaceUpload}
+                  className="whitespace-nowrap"
+                >
+                  <icon.Upload className="mr-2 h-4 w-4" />
+                  {c("actions.upload")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {canRemove && (
             <Button
@@ -208,6 +268,26 @@ function FormatFileRow({
   )
 }
 
+function filtersForFormat(format: Format) {
+  return format === "audiobook" ? AUDIO_FILTERS : EBOOK_FILTERS
+}
+
+function siblingDir(book: BookWithRelations, format: Format): string {
+  const others: Format[] = (
+    ["ebook", "audiobook", "readaloud"] as const
+  ).filter((f) => f !== format)
+
+  for (const f of others) {
+    const filepath = book[f]?.filepath
+    if (!filepath) continue
+
+    const i = filepath.lastIndexOf("/")
+    return i === -1 ? "" : filepath.slice(0, i + 1)
+  }
+
+  return ""
+}
+
 export function FileSection({
   book,
   assetsDir,
@@ -218,8 +298,10 @@ export function FileSection({
   className?: string
 }) {
   const canEdit = usePermission("bookUpdate")
+  const isTauri = useIsTauri()
   const t = useTranslation("BookDetailsPage")
   const [removeAsset, { isLoading: isRemoving }] = useRemoveBookAssetMutation()
+  const [replaceAsset] = useReplaceBookAssetMutation()
 
   const FORMAT_LABELS: Record<Format, string> = {
     ebook: t("fileInformation.ebook"),
@@ -244,6 +326,36 @@ export function FileSection({
     if (!removeTarget) return
     await removeAsset({ uuid: book.uuid, format: removeTarget }).unwrap()
     setRemoveTarget(null)
+  }
+
+  async function handleTauriReplace(format: Format) {
+    const currentPath = book[format]?.filepath ?? siblingDir(book, format)
+    const isDirectory = format === "audiobook"
+
+    const result = await openTauriFileDialog({
+      directory: isDirectory,
+      defaultPath: currentPath || undefined,
+      filters: isDirectory ? undefined : filtersForFormat(format),
+    })
+
+    if (!result) return
+
+    const path = Array.isArray(result) ? result[0] : result
+    if (!path) return
+
+    // for audiobooks, use the directory of the selected file
+    let finalPath = path
+    if (format === "audiobook" && !isDirectory) {
+      finalPath = path.replace(/(\/|\\)[^/\\]*?$/, "$1")
+    }
+
+    await replaceAsset({
+      uuid: book.uuid,
+      format,
+      path: finalPath,
+      importMode: "reference",
+      metadataFieldOverrides: defaultMetadataFieldOverrides("merge"),
+    }).unwrap()
   }
 
   const assetFolder =
@@ -277,6 +389,21 @@ export function FileSection({
             <DropdownMenuContent align="end" className="w-fit">
               {missingFormats.map((f, i) => {
                 const FormatIcon = FORMAT_ICONS[f]
+
+                if (isTauri) {
+                  return (
+                    <DropdownMenuItem
+                      key={f}
+                      onClick={() => {
+                        void handleTauriReplace(f)
+                      }}
+                    >
+                      <FormatIcon className="mr-2 h-4 w-4" />
+                      {FORMAT_LABELS[f]}
+                    </DropdownMenuItem>
+                  )
+                }
+
                 return (
                   <DropdownMenuGroup key={f}>
                     {i > 0 && <DropdownMenuSeparator />}
@@ -284,6 +411,7 @@ export function FileSection({
                       <FormatIcon className="h-3 w-3" />
                       {FORMAT_LABELS[f]}
                     </DropdownMenuLabel>
+
                     <DropdownMenuItem
                       onClick={() => {
                         setFileDialog({ format: f, mode: "server" })
@@ -292,6 +420,7 @@ export function FileSection({
                       <icon.Server className="mr-2 h-4 w-4" />
                       {t("fileInformation.importFromServer")}
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={() => {
                         setFileDialog({ format: f, mode: "upload" })
@@ -315,6 +444,10 @@ export function FileSection({
             book={book}
             format={format}
             canRemove={canRemove}
+            isTauri={isTauri}
+            onReplace={() => {
+              void handleTauriReplace(format)
+            }}
             onReplaceServer={() => {
               setFileDialog({ format, mode: "server" })
             }}
@@ -329,9 +462,26 @@ export function FileSection({
 
         {canEdit && assetFolder && (
           <div className="flex flex-col gap-0.5 text-xs">
-            <span className="text-muted-foreground font-sans text-xs uppercase">
-              {t("fileInformation.assetFolder")}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-muted-foreground font-sans text-xs uppercase">
+                {t("fileInformation.assetFolder")}
+              </span>
+
+              {isTauri && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground -my-1 h-5 w-5"
+                  aria-label="Show asset folder in file manager"
+                  onClick={() => {
+                    void revealItemInDir(assetFolder)
+                  }}
+                >
+                  <icon.ExternalLink className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+
             <code className="font-mono break-all">{assetFolder}</code>
           </div>
         )}

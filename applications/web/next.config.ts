@@ -4,6 +4,7 @@ import { resolve } from "node:path"
 import createNextIntlPlugin from "next-intl/plugin"
 
 import { locales } from "./src/i18n/locales"
+import { V3_ROOTS } from "./src/v3Routes"
 
 const pkg = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
@@ -29,6 +30,12 @@ const withNextIntl = createNextIntlPlugin({
   // },
 })
 
+// opting into the old ui sets this cookie; every v3 rewrite is skipped while
+// it is present so the v2 pages resolve from the filesystem instead
+const unlessV2Cookie = [
+  { type: "cookie" as const, key: "frontend-version", value: "v2" },
+]
+
 const nextConfig: import("next").NextConfig = {
   redirects: async () => [
     {
@@ -37,6 +44,22 @@ const nextConfig: import("next").NextConfig = {
       permanent: true,
     },
   ],
+  rewrites: () => ({
+    beforeFiles: [
+      { source: "/", missing: unlessV2Cookie, destination: "/v3" },
+      ...V3_ROOTS.filter((root) => root !== "books").map((root) => ({
+        source: `/${root}/:path*`,
+        missing: unlessV2Cookie,
+        destination: `/v3/${root}/:path*`,
+      })),
+      { source: "/books", missing: unlessV2Cookie, destination: "/v3/books" },
+      {
+        source: "/books/:path((?![^/]+/read$).+)",
+        missing: unlessV2Cookie,
+        destination: "/v3/books/:path",
+      },
+    ],
+  }),
   env: {
     NEXT_PUBLIC_APP_VERSION: pkg["version"] as string,
   },
@@ -65,6 +88,10 @@ const nextConfig: import("next").NextConfig = {
   ],
   output: "standalone",
   outputFileTracingRoot: resolve(new URL(import.meta.url).pathname, "../../.."),
+  // test fixtures otherwise get traced into the standalone output (~740 MB)
+  outputFileTracingExcludes: {
+    "*": ["./applications/web/src/__fixtures__/**"],
+  },
   reactCompiler: true,
   productionBrowserSourceMaps: true,
   experimental: {

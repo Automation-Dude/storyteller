@@ -58,6 +58,8 @@ const DEFAULT_SETTINGS: Settings = {
   opdsPageSize: null,
   opdsFormat: null,
   scanCronExpression: null,
+  backupCronExpression: null,
+  backupRetentionCount: null,
   importMode: "reference",
   epub2ImportStrategy: "backup-and-convert",
   epub2BackupSuffix: "_epub2",

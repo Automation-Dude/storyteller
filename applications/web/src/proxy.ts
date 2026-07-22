@@ -1,46 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-const V3_ROUTES = [
-  "/",
-  "/books",
-  "/series",
-  "/authors",
-  "/narrators",
-  "/translators",
-  "/tags",
-  "/publication-years",
-  "/ratings",
-  "/statuses",
-  "/collections",
-  "/settings",
-  "/login",
-  "/init",
-  "/preferences",
-  "/collections",
-  "/shelves",
-  "/formats",
-  "/quality",
-  "/identifiers",
-  "/not-found",
-]
+import { hasV3Route } from "./v3Routes"
 
-// routes that have no v3 page yet and must fall through to v2 even though they
-// live under a v3-owned prefix like /books. the read route is not ported yet;
-// let it resolve to the v2 page (full page load) instead of rewriting to a
-// nonexistent /v3/books/[uuid]/read.
-const V2_ONLY_PATTERNS = [/^\/books\/[^/]+\/read$/]
-
-function hasV3Route(pathname: string): boolean {
-  if (V2_ONLY_PATTERNS.some((pattern) => pattern.test(pathname))) return false
-
-  if (V3_ROUTES.includes(pathname)) return true
-
-  // match dynamic segments like /books/[uuid]
-  return V3_ROUTES.some(
-    (route) => route !== "/" && pathname.startsWith(route + "/"),
-  )
-}
-
+// the actual v2 -> v3 rewrites are config rewrites in next.config.ts (see
+// src/v3Routes.ts for why they cannot live here). this proxy only stamps
+// x-v3-rewritten on requests those rewrites will match, so server components
+// can tell a rewritten /settings apart from a direct /v3/settings when
+// building redirect targets.
+// this is all fucking stupid and ill be glad to be done with it.
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -51,13 +18,10 @@ export function proxy(request: NextRequest) {
 
   if (wantsV2 || !hasV3Route(pathname)) return NextResponse.next()
 
-  const url = request.nextUrl.clone()
-  url.pathname = `/v3${pathname}`
-
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-v3-rewritten", "1")
 
-  return NextResponse.rewrite(url, {
+  return NextResponse.next({
     request: { headers: requestHeaders },
   })
 }

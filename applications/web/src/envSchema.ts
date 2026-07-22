@@ -41,6 +41,12 @@ export const documentedServerEnvVars = {
     .describe(
       "Directory where the watcher stores its parcel-watcher snapshots. | `STORYTELLER_DATA_DIR/.autoimport/watcher-snapshots`",
     ),
+  STORYTELLER_ASSETS_DIR: z
+    .string()
+    .optional()
+    .describe(
+      "Directory where Storyteller stores its library-managed files (synced books, audio, covers). | `STORYTELLER_DATA_DIR/assets`",
+    ),
   STORYTELLER_DB_FILENAME: z
     .string()
     .default("storyteller.db")
@@ -147,6 +153,12 @@ export const internalServerEnvVars = {
     .boolean()
     .optional()
     .describe("Whether the container is running in a development environment."),
+  STORYTELLER_TAURI: z
+    .stringbool()
+    .default(false)
+    .describe(
+      "Set by the tauri shell when it spawns the bundled server.",
+    ),
   STORYTELLER_ROOT_PATH: z
     .string()
     .default(() => process.cwd())

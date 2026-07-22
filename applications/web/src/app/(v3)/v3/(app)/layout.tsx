@@ -2,6 +2,7 @@ import { cookies } from "next/headers"
 
 import { AnnouncementModal } from "@v3/_/components/announcements/announcement-modal"
 import { AppSidebar } from "@v3/_/components/app-sidebar"
+import { PathMismatchBanner } from "@v3/_/components/path-mismatch-banner"
 import { FloatingBookPanelProvider } from "@v3/_/components/books/FloatingBookPanel"
 import { ProcessingToast } from "@v3/_/components/processing/ProcessingToast"
 import { SidebarInset, SidebarProvider } from "@v3/_/components/ui/sidebar"
@@ -10,7 +11,9 @@ import { EscapeCascadeProvider } from "@v3/_/hooks/use-escape-cascade"
 
 import { assertAuthenticatedUser } from "@/auth/auth"
 import { getPendingAnnouncements } from "@/database/announcements"
+import { getDataDirAnchor } from "@/database/pathRewrite"
 import { getPreferenceDefaults } from "@/database/settings"
+import { DATA_DIR } from "@/directories"
 import { ensureSidebarDefaults, getSidebarGroups } from "@/database/sidebar"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
@@ -29,12 +32,16 @@ export default async function AppLayout({
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
   await ensureSidebarDefaults(user.id)
 
-  const [sidebarGroups, preferenceDefaults, pendingAnnouncements] =
+  const [sidebarGroups, preferenceDefaults, pendingAnnouncements, pathAnchor] =
     await Promise.all([
       getSidebarGroups(user.id),
       getPreferenceDefaults(),
       getPendingAnnouncements(user.id),
+      user.permissions.settingsUpdate ? getDataDirAnchor() : null,
     ])
+
+  const pathMismatch =
+    pathAnchor !== null && pathAnchor !== DATA_DIR ? pathAnchor : null
 
   const preferences = resolveUserPreferences(
     await getUserSettings(user.id),
@@ -75,6 +82,12 @@ export default async function AppLayout({
         <EscapeCascadeProvider>
           <FloatingBookPanelProvider>
             <SidebarInset className="overflow-x-hidden">
+              {pathMismatch !== null && (
+                <PathMismatchBanner
+                  anchor={pathMismatch}
+                  currentDataDir={DATA_DIR}
+                />
+              )}
               {children}
             </SidebarInset>
           </FloatingBookPanelProvider>
