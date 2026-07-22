@@ -56,9 +56,16 @@ publish-tauri-macos:
         echo "tag says $VERSION but applications/tauri/package.json says $PKG_VERSION"
         exit 1
       fi
-    # toolchain: the macOS images ship node + homebrew, rust comes via rustup
+    # the macos images ship node 22, the build needs node 24 (the align build
+    # OOMs its worker under 22); version matches the sidecar in targets.ts
+    - curl -fsSL "https://nodejs.org/dist/v24.18.0/node-v24.18.0-darwin-arm64.tar.gz" | tar -xz -C "$HOME"
+    - export PATH="$HOME/node-v24.18.0-darwin-arm64/bin:$PATH"
+    - node --version
+    # rust comes via rustup; rustup honors CARGO_HOME, so cargo lands in
+    # $CARGO_HOME/bin, not ~/.cargo/bin
     - command -v cargo || (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable)
-    - export PATH="$HOME/.cargo/bin:$PATH"
+    - export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+    - cargo --version
     - corepack enable
     - yarn install --immutable
     - cd applications/tauri
@@ -130,8 +137,10 @@ publish-tauri-linux:
       build-essential cmake python3 libsqlite3-dev sqlite3
       wget curl unzip xz-utils git-lfs
     - git lfs install --local && git lfs pull
+    # rustup honors CARGO_HOME, so cargo lands in $CARGO_HOME/bin
     - command -v cargo || (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable)
-    - export PATH="$HOME/.cargo/bin:$PATH"
+    - export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+    - cargo --version
     - corepack enable
     - yarn install --immutable
     - cd applications/tauri
