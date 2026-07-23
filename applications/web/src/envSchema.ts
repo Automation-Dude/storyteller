@@ -156,9 +156,7 @@ export const internalServerEnvVars = {
   STORYTELLER_TAURI: z
     .stringbool()
     .default(false)
-    .describe(
-      "Set by the tauri shell when it spawns the bundled server.",
-    ),
+    .describe("Set by the tauri shell when it spawns the bundled server."),
   STORYTELLER_ROOT_PATH: z
     .string()
     .default(() => process.cwd())

@@ -29,13 +29,16 @@ export const GET = withHasPermission<Params>("settingsUpdate")(async (
     return NextResponse.json({ error: "Backup not found" }, { status: 404 })
   }
 
-  return new Response(Readable.toWeb(createReadStream(path)) as ReadableStream, {
-    headers: {
-      "Content-Type": "application/vnd.sqlite3",
-      "Content-Length": String(size),
-      "Content-Disposition": contentDisposition(name, { type: "attachment" }),
+  return new Response(
+    Readable.toWeb(createReadStream(path)) as ReadableStream,
+    {
+      headers: {
+        "Content-Type": "application/vnd.sqlite3",
+        "Content-Length": String(size),
+        "Content-Disposition": contentDisposition(name, { type: "attachment" }),
+      },
     },
-  })
+  )
 })
 
 export const DELETE = withHasPermission<Params>("settingsUpdate")(async (

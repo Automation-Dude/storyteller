@@ -27,10 +27,7 @@ import { DescriptionSection } from "./sections/DescriptionSection"
 import { DetailsSection } from "./sections/DetailsSection"
 import { FileSection } from "./sections/FileSection"
 import { HeroSection } from "./sections/HeroSection"
-import {
-  CollectionsSection,
-  TagsSection,
-} from "./sections/RelationSections"
+import { CollectionsSection, TagsSection } from "./sections/RelationSections"
 import { ReviewSection } from "./sections/ReviewSection"
 
 const DynamicAlignmentReport = dynamic(
@@ -199,7 +196,7 @@ function BookDetailsContentInner({
         )}
         <BookEditBar />
 
-        <div className="@container-size scroll-y @container/book h-full flex-1">
+        <div className="scroll-y @container/book @container-size h-full flex-1">
           {/* this is some fucked up structure but its necessary in order to get full width background
         for full page view
          */}

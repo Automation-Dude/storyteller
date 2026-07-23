@@ -17,7 +17,9 @@ export const GET = withHasPermission("settingsUpdate")(async () => {
     path = await snapshotToTempFile()
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to snapshot database: ${err instanceof Error ? err.message : String(err)}` },
+      {
+        error: `Failed to snapshot database: ${err instanceof Error ? err.message : String(err)}`,
+      },
       { status: 500 },
     )
   }

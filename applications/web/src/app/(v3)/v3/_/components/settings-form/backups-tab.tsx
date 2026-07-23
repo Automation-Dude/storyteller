@@ -363,7 +363,7 @@ function RewriteSection() {
       </CardHeader>
       <CardContent className="space-y-4">
         {anchorMismatch && (
-          <div className="border-amber-500/40 bg-amber-500/10 space-y-2 rounded-md border p-3 text-sm">
+          <div className="space-y-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
             <p>
               {t("anchorMismatch", {
                 anchor: pathsStatus.anchor ?? "",

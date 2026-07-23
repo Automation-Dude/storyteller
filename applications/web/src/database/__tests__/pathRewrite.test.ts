@@ -63,14 +63,11 @@ void describe("path rewrite", () => {
         `SELECT filepath FROM ebook UNION ALL SELECT filepath FROM readaloud ORDER BY filepath`,
       )
       .all() as { filepath: string }[]
-    assert.deepStrictEqual(
-      paths.map((row) => row.filepath).sort(),
-      [
-        "/elsewhere/b.epub",
-        "/new/data/assets/a/text/a.epub",
-        "/new/data/assets/c/aligned/c.epub",
-      ],
-    )
+    assert.deepStrictEqual(paths.map((row) => row.filepath).sort(), [
+      "/elsewhere/b.epub",
+      "/new/data/assets/a/text/a.epub",
+      "/new/data/assets/c/aligned/c.epub",
+    ])
   })
 
   void it("treats LIKE wildcards in the prefix literally", async () => {

@@ -5,10 +5,7 @@ import { getTranslations } from "next-intl/server"
 import { withPageAuth } from "@v3/_/server/page-auth-wrapper"
 
 import { getFacetItemName } from "@/database/facetItemName"
-import {
-  FACET_SECTION_REGISTRY,
-  FACET_SECTION_SLUGS,
-} from "@/facet-sections"
+import { FACET_SECTION_REGISTRY, FACET_SECTION_SLUGS } from "@/facet-sections"
 
 import { SectionPageClient } from "./sectionPageClient"
 

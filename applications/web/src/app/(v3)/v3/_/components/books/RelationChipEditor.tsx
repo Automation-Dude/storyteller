@@ -74,7 +74,7 @@ const RelationChip = ({
           }}
           // inline (not absolute) so it never overlaps the label or shifts
           // layout on hover; dimmed at rest, solid when the chip is hovered.
-          className="text-muted-foreground/50 hover:text-foreground -mr-0.5 ml-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full transition-colors group-hover/badge:text-muted-foreground"
+          className="text-muted-foreground/50 hover:text-foreground group-hover/badge:text-muted-foreground -mr-0.5 ml-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full transition-colors"
         >
           <icon.Close className="size-3" />
         </button>

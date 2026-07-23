@@ -458,7 +458,9 @@ const userRating: FieldSqlImpl = {
 const review: FieldSqlImpl = {
   isEmpty: (eb, ctx) =>
     eb.not(
-      eb.exists(ratingBase(eb, ctx).where("userBookRating.review", "is not", null)),
+      eb.exists(
+        ratingBase(eb, ctx).where("userBookRating.review", "is not", null),
+      ),
     ),
   compare: (eb, operator, value, ctx) => {
     const base = ratingBase(eb, ctx)
@@ -539,7 +541,9 @@ const readingPosition: FieldSqlImpl = {
       case "is":
         return eb.exists(base.where(progressionExpr, "=", Number(value)))
       case "isNot":
-        return eb.not(eb.exists(base.where(progressionExpr, "=", Number(value))))
+        return eb.not(
+          eb.exists(base.where(progressionExpr, "=", Number(value))),
+        )
       case "greaterThan":
         return eb.exists(base.where(progressionExpr, ">", Number(value)))
       case "lessThan":
@@ -619,9 +623,7 @@ function relationImpl<QB extends Expression<unknown>>(cfg: {
 
         case "includesAll":
           return eb.and(
-            uuids.map((uuid) =>
-              eb.exists(cfg.single(cfg.base(eb, ctx), uuid)),
-            ),
+            uuids.map((uuid) => eb.exists(cfg.single(cfg.base(eb, ctx), uuid))),
           )
 
         case "excludes":
@@ -1039,9 +1041,7 @@ export const FIELD_SQL = {
   description: stringColumn("book.description"),
   language: stringColumn("book.language"),
   alignedWith: stringColumn("book.alignedWith"),
-  alignedByStorytellerVersion: stringColumn(
-    "book.alignedByStorytellerVersion",
-  ),
+  alignedByStorytellerVersion: stringColumn("book.alignedByStorytellerVersion"),
 
   publicationDate: dateColumn("book.publicationDate"),
   createdAt: dateColumn("book.createdAt"),

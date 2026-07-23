@@ -102,10 +102,7 @@ export function RelationFormField<
     form.setValue(name, fn(current) as never, { shouldDirty: true })
   }
 
-  const applied = useMemo(
-    () => new Set(values.map(entryId)),
-    [values, entryId],
-  )
+  const applied = useMemo(() => new Set(values.map(entryId)), [values, entryId])
   const chips = useMemo(
     () => values.map((entry) => ({ ...toChip(entry), uuid: entryId(entry) })),
     [values, toChip, entryId],

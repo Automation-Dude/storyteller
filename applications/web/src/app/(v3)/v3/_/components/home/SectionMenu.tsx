@@ -18,7 +18,10 @@ import {
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
-import { type HomeSectionWithDetails, type ShelfWithBooks } from "@/database/shelves"
+import {
+  type HomeSectionWithDetails,
+  type ShelfWithBooks,
+} from "@/database/shelves"
 import * as icon from "@/icons"
 import {
   useDeleteUserShelfMutation,
@@ -51,7 +54,7 @@ export function SectionMenu({
   const [editorOpen, setEditorOpen] = useState(false)
 
   const editingShelf: ShelfWithBooks | null = isCustom
-    ? (userShelves.find((s) => s.uuid === section.shelfUuid) ?? null)
+    ? userShelves.find((s) => s.uuid === section.shelfUuid) ?? null
     : null
 
   const deleteAction = useConfirmAction({

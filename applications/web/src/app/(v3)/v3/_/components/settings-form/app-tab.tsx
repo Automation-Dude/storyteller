@@ -120,9 +120,7 @@ export function AppTab() {
                   <Field orientation="horizontal">
                     <FieldContent>
                       <FieldTitle>{option.label}</FieldTitle>
-                      <FieldDescription>
-                        {option.description}
-                      </FieldDescription>
+                      <FieldDescription>{option.description}</FieldDescription>
                     </FieldContent>
                     <RadioGroupItem
                       value={option.value}

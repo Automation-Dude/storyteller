@@ -151,7 +151,10 @@ const DISTINCT_COUNTS = {
       .executeTakeFirst()
     return row?.count ?? 0
   },
-} as const satisfies Record<BadgeFacetSection, (userId: UUID) => Promise<number>>
+} as const satisfies Record<
+  BadgeFacetSection,
+  (userId: UUID) => Promise<number>
+>
 
 export async function getLibraryCounts(userId: UUID): Promise<LibraryCounts> {
   const booksP = visibleBooks(userId)

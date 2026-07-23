@@ -15,7 +15,9 @@ export const POST = withHasPermission("settingsUpdate")(async () => {
     return NextResponse.json({ name }, { status: 201 })
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to create backup: ${err instanceof Error ? err.message : String(err)}` },
+      {
+        error: `Failed to create backup: ${err instanceof Error ? err.message : String(err)}`,
+      },
       { status: 500 },
     )
   }

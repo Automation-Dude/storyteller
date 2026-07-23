@@ -28,7 +28,7 @@ export function PathMismatchBanner({
   if (hidden) return null
 
   return (
-    <div className="border-amber-500/40 bg-amber-500/10 flex items-start gap-3 border-b px-4 py-2 text-sm">
+    <div className="flex items-start gap-3 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm">
       <icon.AlertTriangle
         aria-hidden
         className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
