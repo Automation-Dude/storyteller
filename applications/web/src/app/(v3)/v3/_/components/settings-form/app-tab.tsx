@@ -104,11 +104,10 @@ export function AppTab() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <RadioGroup
-              value={channel ?? undefined}
+              value={channel ?? "stable"}
               onValueChange={(value) => {
                 if (isChannel(value)) void changeChannel(value)
               }}
-              disabled={!channel}
               className="max-w-sm"
             >
               {channelOptions.map((option) => (
