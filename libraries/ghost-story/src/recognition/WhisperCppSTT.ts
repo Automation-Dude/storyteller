@@ -32,7 +32,6 @@ import {
   extractCorrectedTimeline,
   parseWhisperCppOutput,
 } from "../utilities/WhisperTimeline.ts"
-import { writeFile } from "node:fs/promises"
 
 export type InputPreference = "file"
 export const inputPreference: InputPreference = "file"
