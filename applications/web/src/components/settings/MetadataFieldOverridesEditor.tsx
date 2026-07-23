@@ -21,6 +21,7 @@ const FIELD_LABELS: Record<MetadataField, string> = {
   creators: "Other creators",
   series: "Series",
   tags: "Tags",
+  identifiers: "Identifiers",
 }
 
 const MODE_OPTIONS: { value: MetadataFieldMode; label: string }[] = [
@@ -39,7 +40,7 @@ function getUniformMode(
 }
 
 export function MetadataFieldOverridesEditor({
-  value,
+  value: storedValue,
   onChange,
   title = "Metadata read behavior",
   description,
@@ -50,6 +51,8 @@ export function MetadataFieldOverridesEditor({
   description?: string
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
+  // overrides stored before a field existed (e.g. identifiers) lack its key
+  const value = { ...defaultMetadataFieldOverrides("merge"), ...storedValue }
   const uniformMode = getUniformMode(value)
 
   return (

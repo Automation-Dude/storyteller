@@ -11,14 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@v3/_/components/ui/card"
-import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@v3/_/components/ui/select"
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from "@v3/_/components/ui/field"
+import { RadioGroup, RadioGroupItem } from "@v3/_/components/ui/radio-group"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { SettingsSection } from "./shared"
@@ -103,38 +103,36 @@ export function AppTab() {
             )}
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Field>
-              <FieldLabel htmlFor="update-channel">
-                {t("channelLabel")}
-              </FieldLabel>
-              <Select
-                items={channelOptions}
-                value={channel ?? undefined}
-                onValueChange={(value) => {
-                  if (isChannel(value)) void changeChannel(value)
-                }}
-                disabled={!channel}
-              >
-                <SelectTrigger id="update-channel" className="w-64">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {channelOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {channel && (
-                <FieldDescription>
-                  {
-                    channelOptions.find((option) => option.value === channel)
-                      ?.description
-                  }
-                </FieldDescription>
-              )}
-            </Field>
+            <RadioGroup
+              value={channel ?? undefined}
+              onValueChange={(value) => {
+                if (isChannel(value)) void changeChannel(value)
+              }}
+              disabled={!channel}
+              className="max-w-sm"
+            >
+              {channelOptions.map((option) => (
+                <FieldLabel
+                  key={option.value}
+                  htmlFor={`channel-${option.value}`}
+                  className="has-data-checked:border-primary"
+                >
+                  <Field orientation="horizontal">
+                    <FieldContent>
+                      <FieldTitle>{option.label}</FieldTitle>
+                      <FieldDescription>
+                        {option.description}
+                      </FieldDescription>
+                    </FieldContent>
+                    <RadioGroupItem
+                      value={option.value}
+                      id={`channel-${option.value}`}
+                    />
+                  </Field>
+                </FieldLabel>
+              ))}
+            </RadioGroup>
+
             <div>
               <Button
                 variant="outline"

@@ -140,6 +140,9 @@ export type IdentifierFormat = "ebook" | "audiobook" | "readaloud"
 export type ExtractedIdentifiers = {
   format: IdentifierFormat
   entries: { scheme: string; value: string }[]
+  // when set the format's existing identifiers are dropped first (the
+  // "always" metadata override); the default unions like list merges do
+  replace?: boolean
 }
 
 /**
@@ -148,8 +151,9 @@ export type ExtractedIdentifiers = {
 export async function linkExtractedIdentifiers(
   tr: Kysely<DB>,
   bookUuid: UUID,
-  { format, entries }: ExtractedIdentifiers,
+  { format, entries, replace }: ExtractedIdentifiers,
 ) {
+  // an empty extraction never wipes existing identifiers, even on replace
   if (!entries.length) return
 
   const formatRow = await tr
@@ -164,6 +168,14 @@ export async function linkExtractedIdentifiers(
 
   const formatUuid = formatRow.uuid
   const formatColumn = `${format}Uuid` as const
+
+  if (replace) {
+    await tr
+      .deleteFrom("identifier")
+      .where("bookUuid", "=", bookUuid)
+      .where((eb) => eb(formatColumn, "=", formatUuid))
+      .execute()
+  }
 
   for (const { scheme, value } of entries) {
     const type = await resolveIdentifierType(tr, scheme)
@@ -188,6 +200,84 @@ export async function linkExtractedIdentifiers(
       })
       .execute()
   }
+}
+
+/**
+ * Reassigns all identifiers of the source types to the target type, then
+ * deletes the source types. Identifiers that would duplicate one the target
+ * type already carries (same book, value, and format links) are dropped.
+ */
+export async function mergeIdentifierTypes(
+  targetUuid: UUID,
+  sourceUuids: UUID[],
+) {
+  if (!sourceUuids.length) return
+
+  await db.transaction().execute(async (tr) => {
+    const rowKey = (row: {
+      bookUuid: UUID
+      value: string
+      ebookUuid: UUID | null
+      audiobookUuid: UUID | null
+      readaloudUuid: UUID | null
+    }) =>
+      [
+        row.bookUuid,
+        row.value,
+        row.ebookUuid ?? "",
+        row.audiobookUuid ?? "",
+        row.readaloudUuid ?? "",
+      ].join("|")
+
+    const targetRows = await tr
+      .selectFrom("identifier")
+      .select([
+        "bookUuid",
+        "value",
+        "ebookUuid",
+        "audiobookUuid",
+        "readaloudUuid",
+      ])
+      .where("identifierTypeUuid", "=", targetUuid)
+      .execute()
+    const existing = new Set(targetRows.map(rowKey))
+
+    const sourceRows = await tr
+      .selectFrom("identifier")
+      .select([
+        "uuid",
+        "bookUuid",
+        "value",
+        "ebookUuid",
+        "audiobookUuid",
+        "readaloudUuid",
+      ])
+      .where("identifierTypeUuid", "in", sourceUuids)
+      .execute()
+
+    const toMove: UUID[] = []
+    for (const row of sourceRows) {
+      const key = rowKey(row)
+      if (existing.has(key)) continue
+      existing.add(key)
+      toMove.push(row.uuid)
+    }
+
+    if (toMove.length) {
+      await tr
+        .updateTable("identifier")
+        .set({ identifierTypeUuid: targetUuid })
+        .where("uuid", "in", toMove)
+        .execute()
+    }
+
+    // remaining identifiers on the source types are duplicates; the cascade
+    // on identifier_type_uuid removes them with their types
+    await tr
+      .deleteFrom("identifierType")
+      .where("uuid", "in", sourceUuids)
+      .execute()
+  })
 }
 
 export async function deleteIdentifier(uuid: UUID) {

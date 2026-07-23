@@ -82,6 +82,7 @@ export function LibrarySidebar({
   onHoverItem,
   entityType,
   toShelfFilter,
+  isItemLocked,
 }: {
   title: string
   items: FacetValue[]
@@ -98,6 +99,7 @@ export function LibrarySidebar({
   onHoverItem?: (key: string, controller?: BookFiltersController) => void
   entityType?: LibraryEntityType | undefined
   toShelfFilter?: ((itemKey: string) => ShelfFilterNode) | undefined
+  isItemLocked?: ((item: FacetValue) => boolean) | undefined
 }) {
   const t = useTranslation("LibraryPage")
   const tEntity = useTranslation("EntityActions")
@@ -320,6 +322,7 @@ export function LibrarySidebar({
           itemSelection={itemSelection}
           onOpenItemMenu={handleOpenItemMenu}
           menuTarget={menuTarget}
+          isItemLocked={isItemLocked}
         />
 
         <DropdownMenu open={menuOpen} onOpenChange={handleMenuOpen}>
@@ -328,7 +331,7 @@ export function LibrarySidebar({
             className="min-w-40"
             anchor={menuAnchor}
           >
-            {entityType && menuTarget && (
+            {entityType && menuTarget && !isItemLocked?.(menuTarget) && (
               <DropdownMenuItem
                 closeOnClick={false}
                 onClick={() => {
@@ -355,6 +358,7 @@ export function LibrarySidebar({
 
             {entityType &&
               menuTarget &&
+              !isItemLocked?.(menuTarget) &&
               !(
                 entityType === "status" &&
                 menuTarget.kind &&
@@ -406,6 +410,7 @@ export function LibrarySidebar({
           onStopSelecting={itemSelection.stopSelecting}
           onEdit={handleEditItem}
           toShelfFilter={toShelfFilter}
+          isItemLocked={isItemLocked}
         />
       )}
     </div>
@@ -423,6 +428,7 @@ function SidebarItemList({
   itemSelection,
   onOpenItemMenu,
   menuTarget,
+  isItemLocked,
 }: {
   items: FacetValue[]
   selectedKey: string | null
@@ -434,6 +440,7 @@ function SidebarItemList({
   itemSelection?: ReturnType<typeof useItemSelection>
   onOpenItemMenu?: (item: FacetValue, anchor: HTMLElement) => void
   menuTarget?: FacetValue | null
+  isItemLocked?: ((item: FacetValue) => boolean) | undefined
 }) {
   const isSelecting = itemSelection?.isSelecting ?? false
   const canSelect = !!entityType && !!itemSelection
@@ -571,6 +578,7 @@ function SidebarItemList({
                 isActive={item.key === selectedKey}
                 isChecked={itemSelection?.isSelected(item.key) ?? false}
                 isSelecting={isSelecting}
+                isLocked={isItemLocked?.(item) ?? false}
                 canSelect={canSelect && item.key !== NONE_KEY}
                 hasRowActions={hasRowActions && item.key !== NONE_KEY}
                 onItemClick={handleRowClick}
@@ -594,6 +602,7 @@ function SidebarRow({
   isActive,
   isChecked,
   isSelecting,
+  isLocked,
   canSelect,
   hasRowActions,
   isMenuTarget,
@@ -608,6 +617,7 @@ function SidebarRow({
   isActive: boolean
   isChecked: boolean
   isSelecting: boolean
+  isLocked: boolean
   canSelect: boolean
   hasRowActions: boolean
   isMenuTarget: boolean
@@ -674,7 +684,7 @@ function SidebarRow({
         ) : null}
         <span className="min-w-0 truncate">{item.name}</span>
 
-        {item.kind && isWellKnownStatus(item.kind) && (
+        {(isLocked || (item.kind && isWellKnownStatus(item.kind))) && (
           <icon.Lock className="text-muted-foreground/60 size-3 shrink-0" />
         )}
       </V3Link>

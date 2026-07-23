@@ -76,6 +76,7 @@ const DEFAULT_SETTINGS: Settings = {
     creators: "merge",
     series: "merge",
     tags: "merge",
+    identifiers: "merge",
   },
 }
 

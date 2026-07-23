@@ -1,7 +1,7 @@
 "use client"
 
 import { revealItemInDir } from "@tauri-apps/plugin-opener"
-import { type ComponentType, useState } from "react"
+import { type ComponentType, useMemo, useState } from "react"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 
+import { EditIdentifiersDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/EditIdentifiersDialog"
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
 import { openTauriFileDialog } from "@/app/(v3)/v3/_/components/files/ServerFileBrowser"
@@ -28,6 +29,11 @@ import {
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
 import { formatTimeHuman } from "@/components/reader/preferenceItems/formatTime"
 import { type BookWithRelations } from "@/database/books"
+import {
+  getCoreIdentifier,
+  renderIdentifierUrl,
+} from "@/database/identifierKinds"
+import { type IdentifierKind } from "@/database/identifiers"
 import { defaultMetadataFieldOverrides } from "@/database/settingsTypes"
 import { usePermission } from "@/hooks/usePermission"
 import * as icon from "@/icons"
@@ -67,6 +73,71 @@ const FORMAT_ICONS: Record<Format, ComponentType<{ className?: string }>> = {
   readaloud: IconReadaloud,
 }
 
+function IdentifierChip({
+  label,
+  value,
+  href,
+  copyLabel,
+  copiedLabel,
+}: {
+  label: string
+  value: string
+  href: string | null
+  copyLabel: string
+  copiedLabel: string
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const valueClasses =
+    "flex min-w-0 items-center gap-1 px-1.5 py-0.5 font-mono text-[11px]/[1.7]"
+
+  return (
+    <span className="group/chip border-border/70 bg-muted/30 inline-flex max-w-full items-stretch overflow-hidden rounded-md border text-xs">
+      <span className="text-muted-foreground border-border/70 bg-muted/50 flex items-center border-r px-1.5 font-sans text-[9px] tracking-wide uppercase">
+        {label}
+      </span>
+
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={value}
+          className={`${valueClasses} text-foreground/90 hover:text-foreground decoration-muted-foreground/50 underline-offset-2 hover:underline`}
+        >
+          <span className="truncate">{value}</span>
+          <icon.ExternalLink className="size-2.5 shrink-0 opacity-40 transition-opacity group-hover/chip:opacity-80" />
+        </a>
+      ) : (
+        <span title={value} className={`${valueClasses} text-foreground/90`}>
+          <span className="truncate">{value}</span>
+        </span>
+      )}
+
+      <button
+        type="button"
+        aria-label={copied ? copiedLabel : copyLabel}
+        title={copied ? copiedLabel : copyLabel}
+        onClick={() => {
+          void navigator.clipboard.writeText(value).then(() => {
+            setCopied(true)
+            setTimeout(() => {
+              setCopied(false)
+            }, 1500)
+          })
+        }}
+        className="border-border/50 text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 flex items-center border-l px-1 transition-colors"
+      >
+        {copied ? (
+          <icon.Check className="size-2.5" />
+        ) : (
+          <icon.Copy className="size-2.5" />
+        )}
+      </button>
+    </span>
+  )
+}
+
 function FormatFileRow({
   book,
   format,
@@ -94,6 +165,28 @@ function FormatFileRow({
   const tLabels = useTranslation("Labels")
   const c = useCommon()
 
+  const [editingIdentifiers, setEditingIdentifiers] = useState(false)
+
+  // some identifier urls derive from a sibling identifier (a hardcover
+  // edition needs the book slug), so collect one value per kind book-wide
+  const siblingValues = useMemo(() => {
+    const map = new Map<IdentifierKind, string>()
+    const groups = [
+      book.identifiers,
+      book.ebook?.identifiers,
+      book.audiobook?.identifiers,
+      book.readaloud?.identifiers,
+    ]
+    for (const group of groups) {
+      for (const identifier of group ?? []) {
+        if (identifier.kind && !map.has(identifier.kind)) {
+          map.set(identifier.kind, identifier.value)
+        }
+      }
+    }
+    return map
+  }, [book])
+
   if (!fmt) return null
 
   const Icon = FORMAT_ICONS[format]
@@ -119,7 +212,7 @@ function FormatFileRow({
       ? book.duration ?? ("duration" in fmt ? fmt.duration : null)
       : null
   const fileSize = formatFileSize(fmt.fileSize ?? null)
-  const identifiers = fmt.identifiers ?? []
+  const identifiers = fmt.identifiers
 
   return (
     <div className="flex items-start gap-2">
@@ -157,36 +250,67 @@ function FormatFileRow({
           {duration != null && <span>{formatTimeHuman(duration)}</span>}
           {!!fileSize && <span>{fileSize}</span>}
         </div>
-        {identifiers.length > 0 && (
-          <div className="flex flex-col gap-1">
+        {(identifiers.length > 0 || canEdit) && (
+          <div className="mt-1.5 flex flex-wrap items-stretch gap-1">
             {identifiers.map((identifier) => (
-              <div
-                key={identifier.uuid}
-                className="flex items-center justify-between gap-1"
-              >
-                <span className="text-xs font-medium">{identifier.name}</span>
-                <span className="text-xs">
-                  {identifier.urlTemplate ? (
-                    <a
-                      href={identifier.urlTemplate.replace(
-                        "{value}",
-                        identifier.value,
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {" "}
-                      {identifier.value}
-                    </a>
-                  ) : (
-                    identifier.value
-                  )}
-                </span>
-              </div>
+              <IdentifierChip
+                key={`${identifier.uuid}-${identifier.value}`}
+                label={
+                  getCoreIdentifier(identifier.kind)?.displayName ??
+                  identifier.name
+                }
+                value={identifier.value}
+                href={renderIdentifierUrl(
+                  identifier,
+                  identifier.value,
+                  siblingValues,
+                )}
+                copyLabel={t.plain("identifiers.copyValue")}
+                copiedLabel={t.plain("identifiers.copied")}
+              />
             ))}
+
+            {canEdit &&
+              (identifiers.length > 0 ? (
+                <TooltipButton
+                  variant="ghost"
+                  size="icon-sm"
+                  tooltip={t.plain("identifiers.edit")}
+                  aria-label={t.plain("identifiers.edit")}
+                  className="text-muted-foreground/60 hover:text-foreground h-auto w-6 self-stretch"
+                  onClick={() => {
+                    setEditingIdentifiers(true)
+                  }}
+                >
+                  <icon.Edit className="size-3 stroke-[1.5]" />
+                </TooltipButton>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingIdentifiers(true)
+                  }}
+                  className="border-border/70 text-muted-foreground/70 hover:text-foreground hover:border-border inline-flex items-center gap-1 rounded-md border border-dashed px-1.5 py-0.5 font-sans text-[10px] tracking-wide uppercase transition-colors"
+                >
+                  <icon.Plus className="size-2.5" />
+                  {t("identifiers.add")}
+                </button>
+              ))}
           </div>
         )}
       </div>
+
+      {editingIdentifiers && (
+        <EditIdentifiersDialog
+          book={book}
+          format={format}
+          formatLabel={FORMAT_LABELS[format]}
+          open
+          onOpenChange={(next) => {
+            if (!next) setEditingIdentifiers(false)
+          }}
+        />
+      )}
 
       {isTauri && filepath && (
         <TooltipButton

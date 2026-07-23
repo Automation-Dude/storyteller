@@ -37,6 +37,7 @@ export const METADATA_FIELDS = [
   "creators",
   "series",
   "tags",
+  "identifiers",
 ] as const
 
 export type MetadataField = (typeof METADATA_FIELDS)[number]
@@ -44,10 +45,15 @@ export type MetadataField = (typeof METADATA_FIELDS)[number]
 export const MetadataFieldModeSchema = z.enum(["skip", "merge", "always"])
 export type MetadataFieldMode = z.infer<typeof MetadataFieldModeSchema>
 
+// each field defaults to merge so overrides stored before a field existed
+// (e.g. identifiers) still validate
 export const MetadataFieldOverridesSchema = z.object(
   Object.fromEntries(
-    METADATA_FIELDS.map((field) => [field, MetadataFieldModeSchema]),
-  ) as { [K in MetadataField]: typeof MetadataFieldModeSchema },
+    METADATA_FIELDS.map((field) => [
+      field,
+      MetadataFieldModeSchema.default("merge"),
+    ]),
+  ) as { [K in MetadataField]: z.ZodDefault<typeof MetadataFieldModeSchema> },
 )
 export type MetadataFieldOverrides = z.infer<
   typeof MetadataFieldOverridesSchema

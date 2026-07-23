@@ -191,6 +191,18 @@ export function useBookActionItems({
       books.some((b) => b.ebook)
     )
   }, [books, mode])
+  console.log("books", books)
+  console.log("mode", mode)
+  console.log("books.length", books.length)
+  console.log(
+    "books.some((b) => b.audiobook)",
+    books.some((b) => b.audiobook),
+  )
+  console.log(
+    "books.some((b) => b.ebook)",
+    books.some((b) => b.ebook),
+  )
+  console.log("canMerge", canMerge)
 
   const handleMerge = useCallback(async () => {
     if (!canMerge) return

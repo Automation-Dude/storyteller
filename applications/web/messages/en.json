@@ -890,9 +890,9 @@
             "channelStable": "Stable",
             "channelStableDescription": "Only stable releases. Preview versions are never installed automatically.",
             "channelBeta": "Beta",
-            "channelBetaDescription": "Beta and release-candidate versions, plus every stable release. Switching back to Stable never downgrades — updates simply resume once a newer stable version is out.",
+            "channelBetaDescription": "Beta and release-candidate versions, plus every stable release. Switching back to Stable will not downgrade you, you will need to manually install the latest stable version.",
             "channelEdge": "Latest",
-            "channelEdgeDescription": "Every release, including alpha and experimental builds.",
+            "channelEdgeDescription": "Every release, including alpha and experimental builds. Switching back to Stable or Beta will not downgrade you, you will need to manually install the latest stable or beta version.",
             "channelSaveFailed": "Could not save the update channel",
             "checkNow": "Check for Updates…"
           }

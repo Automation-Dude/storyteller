@@ -12166,6 +12166,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storyteller-platform/tauri@workspace:applications/tauri"
   dependencies:
+    "@storyteller-platform/web": "workspace:*"
     "@tauri-apps/api": "npm:^2.11.1"
     "@tauri-apps/cli": "npm:^2.5.0"
     "@tauri-apps/plugin-fs": "npm:^2.5.1"
@@ -12201,7 +12202,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storyteller-platform/web@workspace:^, @storyteller-platform/web@workspace:applications/web":
+"@storyteller-platform/web@workspace:*, @storyteller-platform/web@workspace:^, @storyteller-platform/web@workspace:applications/web":
   version: 0.0.0-use.local
   resolution: "@storyteller-platform/web@workspace:applications/web"
   dependencies:

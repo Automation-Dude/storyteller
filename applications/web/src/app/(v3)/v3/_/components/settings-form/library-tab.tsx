@@ -77,6 +77,7 @@ import {
   type MetadataField,
   type MetadataFieldMode,
   type MetadataFieldOverrides,
+  MetadataFieldOverridesSchema,
   defaultMetadataFieldOverrides,
 } from "@/database/settingsTypes"
 import { statusDisplayLabel } from "@/database/statusKinds"
@@ -1370,6 +1371,7 @@ const FIELD_LABEL_KEYS = {
   creators: "fieldCreators",
   series: "fieldSeries",
   tags: "fieldTags",
+  identifiers: "fieldIdentifiers",
 } as const satisfies Record<MetadataField, string>
 
 const MODE_OPTIONS = [
@@ -1436,13 +1438,16 @@ function PerFieldOverridesEditor({
 }
 
 export function MetadataFieldOverridesEditor({
-  value,
+  value: storedValue,
   onChange,
 }: {
   value: MetadataFieldOverrides
   onChange: (overrides: MetadataFieldOverrides) => void
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
+  // overrides stored before a field existed (e.g. identifiers) lack its key;
+  // parsing re-applies the per-field merge default
+  const value = MetadataFieldOverridesSchema.parse(storedValue)
   const uniformMode = getUniformMode(value)
   const t = useTranslation("Labels.metadata")
   const items = MODE_OPTIONS.map(({ value, labelKey }) => ({

@@ -282,6 +282,7 @@ export function LibraryPage({
       entityType={section.entityType}
       item={selectedFacet}
       toShelfFilter={section.toShelfFilter}
+      isItemLocked={section.isItemLocked}
       onDeleted={() => {
         void setSelectedItem(null)
       }}
@@ -303,6 +304,7 @@ export function LibraryPage({
       onHoverItem={handleHoverItem}
       entityType={section.entityType}
       toShelfFilter={section.toShelfFilter}
+      isItemLocked={section.isItemLocked}
     />
   )
 

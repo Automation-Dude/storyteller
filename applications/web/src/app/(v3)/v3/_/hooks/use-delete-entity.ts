@@ -7,6 +7,7 @@ import { type LibraryEntityType } from "@v3/_/components/library/library-section
 import {
   useDeleteCollectionMutation,
   useDeleteCreatorMutation,
+  useDeleteIdentifierTypeMutation,
   useDeleteSeriesMutation,
   useDeleteStatusMutation,
   useDeleteTagMutation,
@@ -19,6 +20,7 @@ export function useDeleteEntity(entityType?: LibraryEntityType) {
   const [deleteSeries] = useDeleteSeriesMutation()
   const [deleteCollection] = useDeleteCollectionMutation()
   const [deleteStatusMut] = useDeleteStatusMutation()
+  const [deleteIdentifierType] = useDeleteIdentifierTypeMutation()
 
   return useCallback(
     async (uuid: UUID) => {
@@ -33,6 +35,8 @@ export function useDeleteEntity(entityType?: LibraryEntityType) {
           return deleteCollection({ uuid }).unwrap()
         case "status":
           return deleteStatusMut({ uuid }).unwrap()
+        case "identifier":
+          return deleteIdentifierType({ uuid }).unwrap()
       }
     },
     [
@@ -42,6 +46,7 @@ export function useDeleteEntity(entityType?: LibraryEntityType) {
       deleteSeries,
       deleteCollection,
       deleteStatusMut,
+      deleteIdentifierType,
     ],
   )
 }

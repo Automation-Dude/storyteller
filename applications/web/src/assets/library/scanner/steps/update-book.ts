@@ -123,13 +123,20 @@ export const reconcileMetadataStep = defineStep(
 
     const formatRelation = buildFormatRelation(input, current)
 
+    // overrides stored before this field existed leave it undefined, which
+    // falls through to merge behavior below
+    const identifiersMode = overrides.identifiers
+
     await updateBook(input.bookUuid, metadataUpdate, {
       ...relationUpdate,
       ...formatRelation,
-      extractedIdentifiers: {
-        format: input.format,
-        entries: input.extractedIdentifiers,
-      },
+      ...(identifiersMode !== "skip" && {
+        extractedIdentifiers: {
+          format: input.format,
+          entries: input.extractedIdentifiers,
+          replace: identifiersMode === "always",
+        },
+      }),
     } as BookRelationsUpdate)
 
     const updated = await getBook(input.bookUuid)

@@ -1727,8 +1727,12 @@ export const api = createApi({
         method: "PUT",
         body: update,
       }),
+      // book details render identifier type names/url templates, so refetch
+      // books alongside the type list
       invalidatesTags: (_result, _error, { uuid }) => [
         { type: "Identifiers", id: uuid },
+        "Identifiers",
+        "Books",
       ],
     }),
     deleteIdentifierType: build.mutation<void, { uuid: UUID }>({
@@ -1736,7 +1740,18 @@ export const api = createApi({
         url: `/identifiers/${uuid}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Identifiers"],
+      invalidatesTags: ["Identifiers", "Books"],
+    }),
+    mergeIdentifierTypes: build.mutation<
+      void,
+      { targetUuid: UUID; sourceUuids: UUID[] }
+    >({
+      query: (body) => ({
+        url: "/identifiers/merge",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Identifiers", "Books"],
     }),
     listBookIdentifiers: build.query<Identifier[], { bookUuid: UUID }>({
       query: ({ bookUuid }) => `/books/${bookUuid}/identifiers`,
@@ -1757,8 +1772,13 @@ export const api = createApi({
         method: "PUT",
         body: { identifiers },
       }),
+      // "Books" (broad) so the list and the book details panel refetch the
+      // per-format identifier arrays they render
       invalidatesTags: (_result, _error, { bookUuid }) => [
         { type: "BookIdentifiers", id: bookUuid },
+        { type: "Books", id: bookUuid },
+        "Books",
+        "Identifiers",
       ],
     }),
 
@@ -2405,6 +2425,7 @@ export const {
   useCreateIdentifierTypeMutation,
   useUpdateIdentifierTypeMutation,
   useDeleteIdentifierTypeMutation,
+  useMergeIdentifierTypesMutation,
   useListBookIdentifiersQuery,
   useUpdateBookIdentifiersMutation,
 } = api

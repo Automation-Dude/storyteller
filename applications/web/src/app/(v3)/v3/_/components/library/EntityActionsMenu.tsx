@@ -35,11 +35,13 @@ export function EntityActionsMenu({
   entityType,
   item,
   toShelfFilter,
+  isItemLocked,
   onDeleted,
 }: {
   entityType?: LibraryEntityType | undefined
   item: FacetValue | null
   toShelfFilter?: ((itemKey: string) => ShelfFilterNode) | undefined
+  isItemLocked?: ((item: FacetValue) => boolean) | undefined
   onDeleted?: (() => void) | undefined
 }) {
   const t = useTranslation("LibraryPage")
@@ -76,6 +78,7 @@ export function EntityActionsMenu({
 
   const isCoreStatus =
     entityType === "status" && !!item.kind && isWellKnownStatus(item.kind)
+  const isLocked = isItemLocked?.(item) ?? false
 
   return (
     <>
@@ -89,7 +92,7 @@ export function EntityActionsMenu({
         />
 
         <DropdownMenuContent align="end" className="min-w-40">
-          {entityType && (
+          {entityType && !isLocked && (
             <DropdownMenuItem
               onClick={() => {
                 setEditDialogOpen(true)
@@ -112,7 +115,7 @@ export function EntityActionsMenu({
             </DropdownMenuItem>
           )}
 
-          {entityType && !isCoreStatus && (
+          {entityType && !isCoreStatus && !isLocked && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem

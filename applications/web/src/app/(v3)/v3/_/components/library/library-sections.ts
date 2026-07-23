@@ -21,7 +21,7 @@ export type FacetValue = {
   // present for entities that carry an icon/color (tags, collections)
   icon?: string | null
   color?: string | null
-  // kind for statuses, to prevent editing well-known ones
+  // kind for statuses and identifier types, to prevent editing built-in ones
   kind?: string
 }
 
@@ -49,6 +49,9 @@ export type LibrarySectionDef = {
   allFilter?: ShelfFilterNode
   /* when present, the sidebar supports edit/delete/merge for this entity type */
   entityType?: LibraryEntityType
+  /* built-in facet values (core identifier kinds) that can't be edited,
+  deleted, or merged away; they show a lock in the sidebar */
+  isItemLocked?: (item: FacetValue) => boolean
   /* replaces the alphabetical "name" ordering in the sidebar when facet names
   have a domain order (grades sort by rank, not by text) */
   compareItems?: (a: FacetValue, b: FacetValue) => number
@@ -168,6 +171,7 @@ export const librarySections = {
   // to books carrying any identifier of that type
   identifiers: {
     key: "identifiers" as const,
+    entityType: "identifier" as const,
     toShelfFilter: (itemKey: string): ShelfFilterNode => ({
       type: "condition",
       field: "identifiers",
@@ -175,6 +179,9 @@ export const librarySections = {
       qualifier: itemKey,
     }),
     noneFilter: sectionNoneFilter("identifiers"),
+    // core kinds (asin, isbn-13, ...) are code-defined; renaming or merging
+    // them away would break scheme resolution on the next scan
+    isItemLocked: (item) => !!item.kind,
   },
   publicationYears: {
     key: "publicationYears" as const,

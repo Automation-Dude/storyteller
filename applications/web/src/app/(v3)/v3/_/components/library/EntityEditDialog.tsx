@@ -1,6 +1,7 @@
 "use client"
 
 import { EditCreatorDialog } from "@v3/_/components/library/EditCreatorDialog"
+import { EditIdentifierTypeDialog } from "@v3/_/components/library/EditIdentifierTypeDialog"
 import { EditStatusDialog } from "@v3/_/components/library/EditStatusDialog"
 import { EditTagDialog } from "@v3/_/components/library/EditTagDialog"
 import {
@@ -65,6 +66,16 @@ export function EntityEditDialog({
         open={open}
         onOpenChange={onOpenChange}
         status={item ? { uuid: item.key, name: item.name } : null}
+      />
+    )
+  }
+
+  if (entityType === "identifier") {
+    return (
+      <EditIdentifierTypeDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        identifierType={item ? { uuid: item.key, name: item.name } : null}
       />
     )
   }

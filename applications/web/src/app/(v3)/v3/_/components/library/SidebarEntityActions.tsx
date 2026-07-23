@@ -30,10 +30,12 @@ import { type ShelfFilterNode } from "@/shelves"
 import {
   useDeleteCollectionMutation,
   useDeleteCreatorMutation,
+  useDeleteIdentifierTypeMutation,
   useDeleteSeriesMutation,
   useDeleteTagMutation,
   useMergeCollectionsMutation,
   useMergeCreatorsMutation,
+  useMergeIdentifierTypesMutation,
   useMergeSeriesMutation,
   useMergeTagsMutation,
 } from "@/store/api"
@@ -45,7 +47,8 @@ type SidebarEntityActionsProps = {
   allItems: FacetValue[]
   onStopSelecting: () => void
   onEdit?: (item: FacetValue) => void
-  toShelfFilter?: (itemKey: string) => ShelfFilterNode
+  toShelfFilter?: ((itemKey: string) => ShelfFilterNode) | undefined
+  isItemLocked?: ((item: FacetValue) => boolean) | undefined
 }
 
 function useEntityMutations(entityType: LibraryEntityType) {
@@ -53,11 +56,13 @@ function useEntityMutations(entityType: LibraryEntityType) {
   const [deleteCreator] = useDeleteCreatorMutation()
   const [deleteSeries] = useDeleteSeriesMutation()
   const [deleteCollection] = useDeleteCollectionMutation()
+  const [deleteIdentifierType] = useDeleteIdentifierTypeMutation()
 
   const [mergeTags] = useMergeTagsMutation()
   const [mergeCreators] = useMergeCreatorsMutation()
   const [mergeSeriesM] = useMergeSeriesMutation()
   const [mergeCollections] = useMergeCollectionsMutation()
+  const [mergeIdentifierTypes] = useMergeIdentifierTypesMutation()
 
   const deleteEntity = useCallback(
     async (uuid: UUID) => {
@@ -70,9 +75,18 @@ function useEntityMutations(entityType: LibraryEntityType) {
           return deleteSeries({ uuid }).unwrap()
         case "collection":
           return deleteCollection({ uuid }).unwrap()
+        case "identifier":
+          return deleteIdentifierType({ uuid }).unwrap()
       }
     },
-    [entityType, deleteTag, deleteCreator, deleteSeries, deleteCollection],
+    [
+      entityType,
+      deleteTag,
+      deleteCreator,
+      deleteSeries,
+      deleteCollection,
+      deleteIdentifierType,
+    ],
   )
 
   const mergeEntities = useCallback(
@@ -86,9 +100,18 @@ function useEntityMutations(entityType: LibraryEntityType) {
           return mergeSeriesM({ targetUuid, sourceUuids }).unwrap()
         case "collection":
           return mergeCollections({ targetUuid, sourceUuids }).unwrap()
+        case "identifier":
+          return mergeIdentifierTypes({ targetUuid, sourceUuids }).unwrap()
       }
     },
-    [entityType, mergeTags, mergeCreators, mergeSeriesM, mergeCollections],
+    [
+      entityType,
+      mergeTags,
+      mergeCreators,
+      mergeSeriesM,
+      mergeCollections,
+      mergeIdentifierTypes,
+    ],
   )
 
   return { deleteEntity, mergeEntities }
@@ -101,6 +124,7 @@ export function SidebarEntityActions({
   onStopSelecting,
   onEdit,
   toShelfFilter,
+  isItemLocked,
 }: SidebarEntityActionsProps) {
   const t = useTranslation("EntityActions")
   const c = useCommon()
@@ -115,6 +139,19 @@ export function SidebarEntityActions({
 
   const count = selectedItems.size
   const singleSelected = count === 1 ? selectedItemObjects[0] : undefined
+
+  // locked items (built-in identifier kinds) can only ever be a merge target,
+  // never a merge source, and never deleted
+  const lockedSelected = isItemLocked
+    ? selectedItemObjects.filter((item) => isItemLocked(item))
+    : []
+  const canDeleteSelection = lockedSelected.length === 0
+  const mergeTargets =
+    lockedSelected.length === 0
+      ? selectedItemObjects
+      : lockedSelected.length === 1
+        ? lockedSelected
+        : []
 
   // merge state
   const [mergeTarget, setMergeTarget] = useState<FacetValue | null>(null)
@@ -217,7 +254,7 @@ export function SidebarEntityActions({
           />
 
           <DropdownMenuContent align="end" className="w-fit">
-            {onEdit && singleSelected && (
+            {onEdit && singleSelected && !isItemLocked?.(singleSelected) && (
               <DropdownMenuItem
                 onClick={() => {
                   onEdit(singleSelected)
@@ -228,7 +265,7 @@ export function SidebarEntityActions({
               </DropdownMenuItem>
             )}
 
-            {count >= 2 && (
+            {count >= 2 && mergeTargets.length > 0 && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <icon.GitMerge className="mr-2 h-4 w-4" />
@@ -236,7 +273,7 @@ export function SidebarEntityActions({
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                  {selectedItemObjects.map((item) => (
+                  {mergeTargets.map((item) => (
                     <DropdownMenuItem
                       key={item.key}
                       onClick={(event) => {
@@ -261,20 +298,23 @@ export function SidebarEntityActions({
               </DropdownMenuItem>
             )}
 
-            {(onEdit && singleSelected) || count >= 2 || toShelfFilter ? (
+            {((onEdit && singleSelected) || count >= 2 || toShelfFilter) &&
+            canDeleteSelection ? (
               <DropdownMenuSeparator />
             ) : null}
 
-            <DropdownMenuItem
-              onClick={(event) => {
-                deleteAction.confirm(event)
-              }}
-              disabled={isDeleting}
-              className="text-destructive focus:text-destructive"
-            >
-              <icon.Trash className="mr-2 h-4 w-4" />
-              {isDeleting ? c("states.deleting") : c("actions.delete")}
-            </DropdownMenuItem>
+            {canDeleteSelection && (
+              <DropdownMenuItem
+                onClick={(event) => {
+                  deleteAction.confirm(event)
+                }}
+                disabled={isDeleting}
+                className="text-destructive focus:text-destructive"
+              >
+                <icon.Trash className="mr-2 h-4 w-4" />
+                {isDeleting ? c("states.deleting") : c("actions.delete")}
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
