@@ -48,12 +48,12 @@ Requires: Rust toolchain, plus the regular web build prerequisites.
 
 ## Releasing (CI) and auto-updates
 
-Bumping the `version` in `applications/tauri/package.json` on `main` makes
-the `bump-versions` job tag `tauri-v<version>`, which triggers
-`.gitlab/ci/publish-tauri.yml`: a macOS job (SaaS Apple Silicon runner,
-produces the dmg) and a Linux job (SaaS amd64 runner, produces deb, rpm and
-AppImage). The version in `tauri.conf.json` points at `../package.json`, so
-the package.json bump is the only one needed. No GitLab Release is created —
+Bumping the `version` in `applications/tauri/package.json` on `main` makes the
+`bump-versions` job tag `tauri-v<version>`, which triggers
+`.gitlab/ci/publish-tauri.yml`: a macOS job (SaaS Apple Silicon runner, produces
+the dmg) and a Linux job (SaaS amd64 runner, produces deb, rpm and AppImage).
+The version in `tauri.conf.json` points at `../package.json`, so the
+package.json bump is the only one needed. No GitLab Release is created —
 artifacts go to the generic package registry under
 `storyteller-tauri/<version>/`.
 
@@ -68,8 +68,8 @@ https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri/<
 
 ### Auto-updates (currently disabled)
 
-The auto-update path is written but switched off until the signing key is set
-up in CI: the updater plugin and its startup/menu checks are commented out in
+The auto-update path is written but switched off until the signing key is set up
+in CI: the updater plugin and its startup/menu checks are commented out in
 `src-tauri/src/main.rs` (search for "auto-update disabled"), and the CI steps
 that build, sign and publish the updater bundle plus the
 `storyteller-tauri/latest/latest.json` feed are commented out in
@@ -77,19 +77,18 @@ that build, sign and publish the updater bundle plus the
 
 When enabled, the updater (tauri-plugin-updater) checks the feed on every
 release-build launch and via Server → Check for Updates…; updates download the
-signed `.app.tar.gz` and restart the app. Stable versions advance
-`latest.json`, prereleases (`-alpha.N`, `-beta.N`, …) publish artifacts but
-never touch it. Update bundles are signed with a minisign key: the public key
-is in `tauri.conf.json`, the private key must be provided to CI as masked
-variables:
+signed `.app.tar.gz` and restart the app. Stable versions advance `latest.json`,
+prereleases (`-alpha.N`, `-beta.N`, …) publish artifacts but never touch it.
+Update bundles are signed with a minisign key: the public key is in
+`tauri.conf.json`, the private key must be provided to CI as masked variables:
 
-- `TAURI_SIGNING_PRIVATE_KEY` — contents of the private key file (the
-  `_PATH` variant is not honored by the bundler)
+- `TAURI_SIGNING_PRIVATE_KEY` — contents of the private key file (the `_PATH`
+  variant is not honored by the bundler)
 - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — its password (empty if none)
 
-Losing the private key means shipped apps can never accept another update
-(the pubkey would have to change, requiring a manual reinstall). Local builds
-don't need the key — updater artifacts are only produced in CI via
+Losing the private key means shipped apps can never accept another update (the
+pubkey would have to change, requiring a manual reinstall). Local builds don't
+need the key — updater artifacts are only produced in CI via
 `--config '{"bundle":{"createUpdaterArtifacts":true}}'`.
 
 ## Dev mode
@@ -109,8 +108,8 @@ Useful env overrides for the shell:
 ## Configuration
 
 The server port defaults to 8756 (falling back to a random free port). To pin
-it, either set `STORYTELLER_TAURI_PORT` or create `tauri.json` in the app
-data dir:
+it, either set `STORYTELLER_TAURI_PORT` or create `tauri.json` in the app data
+dir:
 
 ```json
 { "port": 12345 }
@@ -118,8 +117,8 @@ data dir:
 
 A pinned port that is already taken is a startup error, not a silent fallback.
 
-`tauri.json` also stores the media folder chosen on the first-boot screen
-(where library-managed files — synced books, audio, covers — are written):
+`tauri.json` also stores the media folder chosen on the first-boot screen (where
+library-managed files — synced books, audio, covers — are written):
 
 ```json
 { "assetsDir": "/Volumes/Big Disk/Storyteller Media" }
@@ -127,26 +126,25 @@ A pinned port that is already taken is a startup error, not a silent fallback.
 
 It is passed to the server as `STORYTELLER_ASSETS_DIR` and defaults to
 `data/assets` inside the app data dir. After first boot it can be changed via
-Server → Change Media Folder… (restarts the server) or by editing
-`tauri.json` directly. Changing it does not move existing files; move the
-folder contents yourself, then use Settings → Data & backups → Rewrite paths
-to fix absolute paths stored in the database.
+Server → Change Media Folder… (restarts the server) or by editing `tauri.json`
+directly. Changing it does not move existing files; move the folder contents
+yourself, then use Settings → Data & backups → Rewrite paths to fix absolute
+paths stored in the database.
 
 ## Title bar
 
 On macOS the window uses `titleBarStyle: "Overlay"` (hidden title): the native
-traffic lights float over the web content, and the shell strips fullscreen
-from the window's collection behavior so the green button zooms/maximizes.
-The web app reserves an in-flow titlebar strip for it: the v3 layout sets
-`data-tauri` / `data-window-controls` on `<html>` (SSR from the UA token,
-plus a pre-paint inline script for platforms without it), which flips the
-`--titlebar-h` CSS variable from `0px` to a real height. The strip is a drag
-region split across the sidebar (customize/pin buttons next to the lights)
-and the content area (back/forward nav); page headers start below it, so
-nothing collides with window controls on any platform. Windows/Linux keep
-their native chrome for now — going frameless there later only needs
-`decorations: false` plus a `WindowControls` cluster in the strip's right
-corner (see the anchor in `titlebar-strip.tsx`).
+traffic lights float over the web content, and the shell strips fullscreen from
+the window's collection behavior so the green button zooms/maximizes. The web
+app reserves an in-flow titlebar strip for it: the v3 layout sets `data-tauri` /
+`data-window-controls` on `<html>` (SSR from the UA token, plus a pre-paint
+inline script for platforms without it), which flips the `--titlebar-h` CSS
+variable from `0px` to a real height. The strip is a drag region split across
+the sidebar (customize/pin buttons next to the lights) and the content area
+(back/forward nav); page headers start below it, so nothing collides with window
+controls on any platform. Windows/Linux keep their native chrome for now — going
+frameless there later only needs `decorations: false` plus a `WindowControls`
+cluster in the strip's right corner (see the anchor in `titlebar-strip.tsx`).
 
 The window background color is still driven by `tauri-titlebar-sync.tsx` (v3
 layout), which resolves the `--sidebar` CSS variable and calls the
@@ -162,21 +160,21 @@ The webview has no browser chrome; the History menu provides Back
 
 ## Server menu
 
-- **Show Server Logs** (`Cmd/Ctrl+Shift+L`) opens `server.log` in the OS
-  default viewer; the splash also has a live "Show logs" tail during boot.
+- **Show Server Logs** (`Cmd/Ctrl+Shift+L`) opens `server.log` in the OS default
+  viewer; the splash also has a live "Show logs" tail during boot.
 - **Restore Database…** stops the server, backs the current database up to
   `data/backups/pre-restore-<stamp>.db`, swaps in a picked `.db` file
-  (header-validated), and boots again. First boot offers the same choice
-  ("Start fresh" / "Use an existing database…") before the server ever touches
-  a database. After a restore the web app detects the moved data dir and
-  offers the path-rewrite tool (Settings → Data & backups).
+  (header-validated), and boots again. First boot offers the same choice ("Start
+  fresh" / "Use an existing database…") before the server ever touches a
+  database. After a restore the web app detects the moved data dir and offers
+  the path-rewrite tool (Settings → Data & backups).
 
 ## Tauri detection
 
 The shell sets `STORYTELLER_TAURI=1` on the spawned server, and the splash
 reports the webview's default user agent so the shell can append
-`StorytellerTauri/<version>` (macOS `customUserAgent`; the browser part is
-kept because the reader sniffs `AppleWebKit`). The web app checks either via
+`StorytellerTauri/<version>` (macOS `customUserAgent`; the browser part is kept
+because the reader sniffs `AppleWebKit`). The web app checks either via
 `src/isTauriApp.ts`.
 
 ## Windows notes
@@ -191,9 +189,9 @@ kept because the reader sniffs `AppleWebKit`). The web app checks either via
 Unsigned builds only run on the machine that built them — on any other Mac the
 quarantined download is rejected as "damaged". Recipients can bypass it with
 `xattr -cr /Applications/Storyteller.app`, but the real fix is Developer ID
-signing + notarization, which requires an Apple Developer Program membership
-and a "Developer ID Application" certificate (an "Apple Development"
-certificate is not valid for distribution).
+signing + notarization, which requires an Apple Developer Program membership and
+a "Developer ID Application" certificate (an "Apple Development" certificate is
+not valid for distribution).
 
 With the certificate in the keychain, `tauri build` signs and notarizes
 automatically when these env vars are set — no config changes needed
