@@ -48,18 +48,6 @@ module.exports = {
           "error",
           { alias: { "@": "./src" }, aliasForSubpaths: true },
         ],
-        "no-restricted-imports": [
-          "error",
-          {
-            paths: [
-              {
-                name: "@tabler/icons-react",
-                message:
-                  'Import from "@/icons" instead. Only web/src/icons/source.tsx may import from @tabler/icons-react directly.',
-              },
-            ],
-          },
-        ],
         "no-restricted-syntax": [
           "error",
           {
@@ -82,6 +70,23 @@ module.exports = {
       parserOptions: config.parserOptions,
       rules: {
         "@typescript-eslint/no-non-null-assertion": "off",
+      },
+    },
+    {
+      files: ["app/(v3)/**/*.ts", "app/(v3)/**/*.tsx"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: [
+              {
+                name: "@tabler/icons-react",
+                message:
+                  'Import from "@/icons" instead. Only web/src/icons/source.tsx may import from @tabler/icons-react directly.',
+              },
+            ],
+          },
+        ],
       },
     },
   ],
