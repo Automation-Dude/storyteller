@@ -78,11 +78,11 @@ fn main() {
                 }
             }
 
-            // in dev the window points straight at the next dev server
-            // (build.devUrl); set STORYTELLER_TAURI_BOOT=1 to exercise the
-            // full boot flow from a debug build
-            let dev_skip =
-                cfg!(debug_assertions) && std::env::var("STORYTELLER_TAURI_BOOT").is_err();
+            // in `tauri dev` the window points straight at the next dev
+            // server (build.devUrl), so nothing to boot; bundled builds —
+            // including `tauri build --debug` — run the full boot flow.
+            // set STORYTELLER_TAURI_BOOT=1 to force booting in dev
+            let dev_skip = tauri::is_dev() && std::env::var("STORYTELLER_TAURI_BOOT").is_err();
             if !dev_skip {
                 let handle = app.handle().clone();
                 std::thread::spawn(move || boot(handle));

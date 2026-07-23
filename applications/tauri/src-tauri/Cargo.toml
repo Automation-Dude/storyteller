@@ -9,7 +9,7 @@ edition = "2024"
 tauri-build = { version = "2", features = ["config-json5"] }
 
 [dependencies]
-tauri = { version = "2", features = ["config-json5"] }
+tauri = { version = "2", features = ["config-json5", "devtools"] }
 tauri-plugin-single-instance = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"

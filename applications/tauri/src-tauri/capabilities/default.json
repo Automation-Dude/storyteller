@@ -20,6 +20,15 @@
     "os:default",
     "opener:default",
     "window-state:default",
-    "fs:default"
+    "fs:default",
+    "allow-set-titlebar-color",
+    "allow-report-user-agent",
+    "allow-read-server-log",
+    "allow-show-server-log",
+    "allow-choose-database",
+    "allow-choose-assets-dir",
+    "allow-get-tauri-config",
+    "allow-set-update-channel",
+    "allow-check-for-updates-now"
   ]
 }

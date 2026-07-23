@@ -58,7 +58,8 @@ export function AppTab() {
     try {
       const { invoke } = await import("@tauri-apps/api/core")
       await invoke("set_update_channel", { channel: next })
-    } catch {
+    } catch (error) {
+      console.error("set_update_channel failed", error)
       setChannel(previous)
       toast.error(t("channelSaveFailed"))
     }
