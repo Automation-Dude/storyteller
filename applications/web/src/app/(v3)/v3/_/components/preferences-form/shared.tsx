@@ -7,12 +7,12 @@ import { type z } from "zod"
 import { Button } from "@v3/_/components/ui/button"
 import { cn } from "@v3/_/lib/utils"
 
-import { type UserPreferencesSchema } from "@/database/userPreferencesTypes"
+import { type UserPreferencesFormSchema } from "@/database/userPreferencesTypes"
 
 import { type Tab } from "./tabs"
 
 export type PreferencesFormType = UseFormReturn<
-  z.infer<typeof UserPreferencesSchema>
+  z.infer<typeof UserPreferencesFormSchema>
 >
 
 export type IsMatch = (tab: Tab, section: string) => boolean
@@ -59,7 +59,7 @@ export function SegmentedControl<T extends string>({
   onChange,
   options,
 }: {
-  value: T
+  value: T | null
   onChange: (value: T) => void
   options: ReadonlyArray<{ value: T; label: string }>
 }) {

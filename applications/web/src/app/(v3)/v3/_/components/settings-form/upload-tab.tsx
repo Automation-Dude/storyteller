@@ -63,9 +63,13 @@ export function UploadTab({
                 checked={maxUploadChunkSizeValue !== null}
                 onCheckedChange={(checked) => {
                   if (checked) {
-                    form.setValue("maxUploadChunkSize", 100_000_000)
+                    form.setValue("maxUploadChunkSize", 100_000_000, {
+                      shouldDirty: true,
+                    })
                   } else {
-                    form.setValue("maxUploadChunkSize", null)
+                    form.setValue("maxUploadChunkSize", null, {
+                      shouldDirty: true,
+                    })
                   }
                 }}
               />

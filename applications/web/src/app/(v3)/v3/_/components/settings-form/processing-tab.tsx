@@ -19,11 +19,14 @@ import {
 } from "@v3/_/components/ui/collapsible"
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldError,
   FieldLabel,
+  FieldTitle,
 } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
+import { RadioGroup, RadioGroupItem } from "@v3/_/components/ui/radio-group"
 import {
   Select,
   SelectContent,
@@ -34,6 +37,12 @@ import {
   SelectValue,
 } from "@v3/_/components/ui/select"
 import { Switch } from "@v3/_/components/ui/switch"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@v3/_/components/ui/tabs"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
@@ -117,6 +126,16 @@ function SettingsCard({
   )
 }
 
+const engineSettingsComponents = {
+  "whisper.cpp": WhisperSettings,
+  "whisper-server": WhisperServerSettings,
+  "google-cloud": GoogleCloudSettings,
+  "microsoft-azure": AzureSettings,
+  "amazon-transcribe": AmazonSettings,
+  "openai-cloud": OpenAiSettings,
+  deepgram: DeepgramSettings,
+}
+
 // the transcription/audio/parallelization settings, reused both in the settings
 // tab and the per-run "process with options" dialog. excludes the readaloud
 // location/cache controls, which are library-level rather than per-run.
@@ -140,15 +159,70 @@ export function ProcessingSettingsFields({
   })
   const codec = useWatch({ control: form.control, name: "codec" })
 
-  const transcriptionEngineOptions = [
-    { value: "whisper.cpp", label: tt("whisperCpp") },
-    { value: "whisper-server", label: tt("whisperServer") },
-    { value: "google-cloud", label: tt("googleCloud") },
-    { value: "microsoft-azure", label: tt("microsoftAzure") },
-    { value: "amazon-transcribe", label: tt("amazonTranscribe") },
-    { value: "openai-cloud", label: tt("openaiCloud") },
-    { value: "deepgram", label: tt("deepgram") },
+  const engineCategories = [
+    {
+      key: "local",
+      label: tt("tabLocal"),
+      engines: [
+        {
+          value: "whisper.cpp" as const,
+          label: tt("whisperCpp"),
+          description: tt("whisperCppDescription"),
+        },
+      ],
+    },
+    {
+      key: "remote",
+      label: tt("tabRemote"),
+      engines: [
+        {
+          value: "whisper-server" as const,
+          label: tt("whisperServer"),
+          description: tt("whisperServerDescription"),
+        },
+      ],
+    },
+    {
+      key: "thirdParty",
+      label: tt("tabThirdParty"),
+      engines: [
+        {
+          value: "openai-cloud" as const,
+          label: tt("openaiCloud"),
+          description: tt("openaiCloudDescription"),
+        },
+        {
+          value: "deepgram" as const,
+          label: tt("deepgram"),
+          description: tt("deepgramDescription"),
+        },
+        {
+          value: "google-cloud" as const,
+          label: tt("googleCloud"),
+          description: tt("googleCloudDescription"),
+        },
+        {
+          value: "microsoft-azure" as const,
+          label: tt("microsoftAzure"),
+          description: tt("microsoftAzureDescription"),
+        },
+        {
+          value: "amazon-transcribe" as const,
+          label: tt("amazonTranscribe"),
+          description: tt("amazonTranscribeDescription"),
+        },
+      ],
+    },
   ]
+
+  const engineCategoryOf = (engine: string | null | undefined) =>
+    engineCategories.find((category) =>
+      category.engines.some((e) => e.value === engine),
+    )?.key ?? "local"
+
+  const [engineTab, setEngineTab] = useState(() =>
+    engineCategoryOf(transcriptionEngine),
+  )
 
   const trackLengths = [
     { value: 0.75, label: ta("maxTrackLength45") },
@@ -194,43 +268,75 @@ export function ProcessingSettingsFields({
           <SettingsFormField
             name="transcriptionEngine"
             label={tt("engine")}
-            render={(field, fieldState, isLocked) => (
-              <Select
-                disabled={isLocked}
-                aria-invalid={fieldState.invalid}
-                items={transcriptionEngineOptions}
-                value={field.value}
-                onValueChange={field.onChange}
+            render={(field, _fieldState, isLocked) => (
+              <Tabs
+                value={engineTab}
+                onValueChange={(value) => {
+                  if (typeof value === "string") setEngineTab(value)
+                }}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {transcriptionEngineOptions.map(({ value, label }) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
+                <TabsList className="w-full">
+                  {engineCategories.map((category) => (
+                    <TabsTrigger key={category.key} value={category.key}>
+                      {category.label}
+                      {engineCategoryOf(field.value) === category.key && (
+                        <span className="bg-primary size-1.5 shrink-0 rounded-full" />
+                      )}
+                    </TabsTrigger>
                   ))}
-                </SelectContent>
-              </Select>
+                </TabsList>
+                {engineCategories.map((category) => (
+                  <TabsContent key={category.key} value={category.key}>
+                    <RadioGroup
+                      value={field.value}
+                      onValueChange={(value) => {
+                        if (typeof value === "string") field.onChange(value)
+                      }}
+                      disabled={isLocked}
+                    >
+                      {category.engines.map((engine) => {
+                        const selected = field.value === engine.value
+                        const EngineSettings =
+                          engineSettingsComponents[engine.value]
+                        return (
+                          <div
+                            key={engine.value}
+                            className={cn(
+                              "overflow-hidden rounded-md border",
+                              selected && "border-primary",
+                            )}
+                          >
+                            <FieldLabel
+                              htmlFor={`engine-${engine.value}`}
+                              className="has-[>[data-slot=field]]:rounded-none has-[>[data-slot=field]]:border-0"
+                            >
+                              <Field orientation="horizontal">
+                                <FieldContent>
+                                  <FieldTitle>{engine.label}</FieldTitle>
+                                  <FieldDescription>
+                                    {engine.description}
+                                  </FieldDescription>
+                                </FieldContent>
+                                <RadioGroupItem
+                                  value={engine.value}
+                                  id={`engine-${engine.value}`}
+                                />
+                              </Field>
+                            </FieldLabel>
+                            {selected && (
+                              <div className="space-y-4 border-t p-3">
+                                <EngineSettings />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </RadioGroup>
+                  </TabsContent>
+                ))}
+              </Tabs>
             )}
           />
-
-          {transcriptionEngine === "whisper.cpp" && <WhisperSettings />}
-
-          {transcriptionEngine === "whisper-server" && (
-            <WhisperServerSettings />
-          )}
-
-          {transcriptionEngine === "google-cloud" && <GoogleCloudSettings />}
-
-          {transcriptionEngine === "microsoft-azure" && <AzureSettings />}
-
-          {transcriptionEngine === "amazon-transcribe" && <AmazonSettings />}
-
-          {transcriptionEngine === "openai-cloud" && <OpenAiSettings />}
-
-          {transcriptionEngine === "deepgram" && <DeepgramSettings />}
         </SettingsCard>
       </SettingsSection>
 
@@ -567,9 +673,6 @@ function WhisperServerSettings() {
 
   return (
     <>
-      <p className="text-muted-foreground text-sm">
-        {t("whisperServerDescription")}
-      </p>
       <SettingsFormField
         name="whisperServerUrl"
         label={t("whisperServerUrl")}
@@ -890,16 +993,24 @@ function ReadaloudSection() {
                   field.onChange(value)
                   switch (value) {
                     case "SUFFIX":
-                      form.setValue("readaloudLocation", " (readaloud)")
+                      form.setValue("readaloudLocation", " (readaloud)", {
+                        shouldDirty: true,
+                      })
                       break
                     case "SIBLING_FOLDER":
-                      form.setValue("readaloudLocation", "readaloud")
+                      form.setValue("readaloudLocation", "readaloud", {
+                        shouldDirty: true,
+                      })
                       break
                     case "CUSTOM_FOLDER":
-                      form.setValue("readaloudLocation", "/readalouds")
+                      form.setValue("readaloudLocation", "/readalouds", {
+                        shouldDirty: true,
+                      })
                       break
                     case "INTERNAL":
-                      form.setValue("readaloudLocation", "")
+                      form.setValue("readaloudLocation", "", {
+                        shouldDirty: true,
+                      })
                       break
                   }
                 }}

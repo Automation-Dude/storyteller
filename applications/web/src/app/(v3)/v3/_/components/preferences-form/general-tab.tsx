@@ -21,7 +21,7 @@ import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { locales } from "@/i18n/locales"
 
-import { SettingLabel } from "./library-defaults"
+import { SettingLabel, useLibraryDefaultValue } from "./library-defaults"
 import { type PreferencesFormType, PreferencesSection } from "./shared"
 
 const localeOptions = Object.entries(locales).map(([key, locale]) => ({
@@ -31,12 +31,7 @@ const localeOptions = Object.entries(locales).map(([key, locale]) => ({
 
 export function GeneralTab({ form }: { form: PreferencesFormType }) {
   const t = useTranslation("PreferencesPage.tabs.general.sections")
-
-  const readingModeOptions = [
-    { value: "readaloud", label: t("reading.modes.readaloud") },
-    { value: "audiobook", label: t("reading.modes.audiobook") },
-    { value: "epub", label: t("reading.modes.epub") },
-  ]
+  const localeDefault = useLibraryDefaultValue("locale")
 
   return (
     <div className="space-y-6">
@@ -58,7 +53,7 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
                   <FieldDescription>{t("language.hint")}</FieldDescription>
                   <Select
                     items={localeOptions}
-                    value={field.value ?? ""}
+                    value={field.value ?? localeDefault ?? ""}
                     onValueChange={(value) => {
                       field.onChange(value || null)
                     }}
@@ -68,47 +63,6 @@ export function GeneralTab({ form }: { form: PreferencesFormType }) {
                     </SelectTrigger>
                     <SelectContent>
                       {localeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
-            />
-          </CardContent>
-        </Card>
-      </PreferencesSection>
-
-      <PreferencesSection tab="general" section="reading">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("reading.title")}</CardTitle>
-            <CardDescription>{t("reading.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Controller
-              name="defaultReadingMode"
-              control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <SettingLabel field="defaultReadingMode">
-                    {t("reading.label")}
-                  </SettingLabel>
-                  <FieldDescription>{t("reading.hint")}</FieldDescription>
-                  <Select
-                    items={readingModeOptions}
-                    value={field.value ?? ""}
-                    onValueChange={(value) => {
-                      field.onChange(value || null)
-                    }}
-                  >
-                    <SelectTrigger className="w-60">
-                      <SelectValue placeholder={t("reading.automatic")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {readingModeOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>

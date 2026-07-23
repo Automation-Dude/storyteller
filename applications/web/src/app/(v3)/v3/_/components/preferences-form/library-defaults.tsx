@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from "react"
-import { type Control, useWatch } from "react-hook-form"
+import { useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
 import { FieldLabel } from "@v3/_/components/ui/field"
@@ -19,18 +19,20 @@ import {
 import { useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
+import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import {
-  type OrgDefaultKey as LibraryDefaultKey,
+  type LibraryDefaultKey as LibraryDefaultKey,
   type PreferenceDefaults,
   type UserPreferences,
+  defaultUserPreferences,
 } from "@/database/userPreferencesTypes"
 import * as icon from "@/icons"
 import { useUpdatePreferenceDefaultsMutation } from "@/store/api"
 
-import { TooltipButton } from "../ui/tooltip-button"
+import { type PreferencesFormType } from "./shared"
 
 type LibraryDefaultsContextValue = {
-  control: Control<UserPreferences>
+  form: PreferencesFormType
   canManage: boolean
   locked: boolean
   savedDefaults: PreferenceDefaults
@@ -41,13 +43,13 @@ const LibraryDefaultsContext =
   createContext<LibraryDefaultsContextValue | null>(null)
 
 export function LibraryDefaultsProvider({
-  control,
+  form,
   canManage,
   locked,
   defaults,
   children,
 }: {
-  control: Control<UserPreferences>
+  form: PreferencesFormType
   canManage: boolean
   locked: boolean
   defaults: PreferenceDefaults
@@ -57,8 +59,8 @@ export function LibraryDefaultsProvider({
     useState<PreferenceDefaults>(defaults)
 
   const value = useMemo<LibraryDefaultsContextValue>(
-    () => ({ control, canManage, locked, savedDefaults, setSavedDefaults }),
-    [control, canManage, locked, savedDefaults],
+    () => ({ form, canManage, locked, savedDefaults, setSavedDefaults }),
+    [form, canManage, locked, savedDefaults],
   )
 
   return (
@@ -75,11 +77,58 @@ export function useLibraryDefaultValue<K extends LibraryDefaultKey>(
   return ctx?.savedDefaults[field] ?? null
 }
 
+export function useResolvedDefault<K extends LibraryDefaultKey>(
+  field: K,
+): UserPreferences[K] {
+  const ctx = useContext(LibraryDefaultsContext)
+  return (ctx?.savedDefaults[field] ??
+    defaultUserPreferences[field]) as UserPreferences[K]
+}
+
+function displayable(value: unknown): value is string | number | boolean {
+  return (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  )
+}
+
+function RestoreDefault({ field }: { field: LibraryDefaultKey }) {
+  const ctx = useContext(LibraryDefaultsContext)
+  const t = useTranslation("PreferencesPage.libraryDefault")
+  const value = useWatch({ control: ctx?.form.control, name: field })
+
+  if (!ctx || value == null) return null
+
+  const resolved = ctx.savedDefaults[field] ?? defaultUserPreferences[field]
+  if (JSON.stringify(value) === JSON.stringify(resolved ?? null)) return null
+
+  const tooltip = displayable(resolved)
+    ? t("restoreDefaultValue", { value: String(resolved) })
+    : t("restoreDefault")
+
+  return (
+    <TooltipButton
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={() => {
+        ctx.form.setValue(field, null, { shouldDirty: true })
+      }}
+      className="text-muted-foreground h-6 shrink-0 gap-1.5 px-1.5 text-xs font-normal"
+      tooltip={tooltip}
+      aria-label={tooltip}
+    >
+      <icon.History className="size-3.5" />
+    </TooltipButton>
+  )
+}
+
 export function LibraryDefault({ field }: { field: LibraryDefaultKey }) {
   const ctx = useContext(LibraryDefaultsContext)
   const t = useTranslation("PreferencesPage.libraryDefault")
   const [update, { isLoading }] = useUpdatePreferenceDefaultsMutation()
-  const value = useWatch({ control: ctx?.control, name: field })
+  const value = useWatch({ control: ctx?.form.control, name: field })
 
   if (!ctx || !ctx.canManage) return null
 
@@ -100,11 +149,12 @@ export function LibraryDefault({ field }: { field: LibraryDefaultKey }) {
   }
 
   const saved = ctx.savedDefaults[field]
+  const hasSaved = saved !== undefined
   const isCurrent =
-    JSON.stringify(saved ?? null) === JSON.stringify(value ?? null)
+    value != null && JSON.stringify(saved ?? null) === JSON.stringify(value)
 
-  const onClick = async () => {
-    if (isCurrent || isLoading) return
+  const setAsDefault = async () => {
+    if (value == null || isCurrent || isLoading) return
     try {
       const merged = await update({ [field]: value }).unwrap()
       ctx.setSavedDefaults(merged)
@@ -114,26 +164,63 @@ export function LibraryDefault({ field }: { field: LibraryDefaultKey }) {
     }
   }
 
+  const clearDefault = async () => {
+    if (!hasSaved || isLoading) return
+    try {
+      const merged = await update({ [field]: null }).unwrap()
+      ctx.setSavedDefaults(merged)
+      toast.success(t("cleared"))
+    } catch {
+      toast.error(t("failed"))
+    }
+  }
+
+  const setTooltip = isCurrent
+    ? displayable(saved)
+      ? t("isDefaultValue", { value: String(saved) })
+      : t("isDefault")
+    : t("setAsDefault")
+
   return (
-    <TooltipButton
-      type="button"
-      variant="ghost"
-      size="sm"
-      disabled={isLoading || isCurrent}
-      onClick={onClick}
-      className={cn(
-        "text-muted-foreground h-6 shrink-0 gap-1.5 px-1.5 text-xs font-normal",
-        isCurrent && "opacity-70",
+    <>
+      <TooltipButton
+        type="button"
+        variant="ghost"
+        size="sm"
+        disabled={isLoading || isCurrent || value == null}
+        onClick={() => void setAsDefault()}
+        className={cn(
+          "text-muted-foreground h-6 shrink-0 gap-1.5 px-1.5 text-xs font-normal",
+          isCurrent && "opacity-70",
+        )}
+        tooltip={setTooltip}
+        aria-label={setTooltip}
+      >
+        {isCurrent ? (
+          <icon.Check className="size-3.5" />
+        ) : (
+          <icon.LibraryDefault className="size-3.5" />
+        )}
+      </TooltipButton>
+      {hasSaved && (
+        <TooltipButton
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={isLoading}
+          onClick={() => void clearDefault()}
+          className="text-muted-foreground h-6 shrink-0 gap-1.5 px-1.5 text-xs font-normal"
+          tooltip={
+            displayable(saved)
+              ? t("clearDefaultValue", { value: String(saved) })
+              : t("clearDefault")
+          }
+          aria-label={t("clearDefault")}
+        >
+          <icon.Close className="size-3.5" />
+        </TooltipButton>
       )}
-      tooltip={isCurrent ? t("isDefault") : t("setAsDefault")}
-      aria-label={isCurrent ? t("isDefault") : t("setAsDefault")}
-    >
-      {isCurrent ? (
-        <icon.Check className="size-3.5" />
-      ) : (
-        <icon.Settings className="size-3.5" />
-      )}
-    </TooltipButton>
+    </>
   )
 }
 
@@ -154,7 +241,12 @@ export function SettingLabel({
       )}
     >
       <FieldLabel>{children}</FieldLabel>
-      {field ? <LibraryDefault field={field} /> : null}
+      {field ? (
+        <div className="flex items-center gap-0.5">
+          <RestoreDefault field={field} />
+          <LibraryDefault field={field} />
+        </div>
+      ) : null}
     </div>
   )
 }

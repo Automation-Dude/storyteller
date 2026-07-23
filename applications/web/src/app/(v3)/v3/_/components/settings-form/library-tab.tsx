@@ -1628,9 +1628,12 @@ function ScanControlsSection() {
                   form.setValue(
                     "scanCronExpression",
                     minutesToCronExpression(1440),
+                    { shouldDirty: true },
                   )
                 } else {
-                  form.setValue("scanCronExpression", null)
+                  form.setValue("scanCronExpression", null, {
+                    shouldDirty: true,
+                  })
                 }
               }}
             />
@@ -1661,6 +1664,7 @@ function ScanControlsSection() {
                           form.setValue(
                             "scanCronExpression",
                             minutesToCronExpression(minutes),
+                            { shouldDirty: true },
                           )
                         }
                       }}
@@ -1732,7 +1736,9 @@ function ScanControlsSection() {
             <MetadataFieldOverridesEditor
               value={currentOverrides}
               onChange={(updated) => {
-                form.setValue("metadataFieldOverrides", updated)
+                form.setValue("metadataFieldOverrides", updated, {
+                  shouldDirty: true,
+                })
               }}
             />
           </div>

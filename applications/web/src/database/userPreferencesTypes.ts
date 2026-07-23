@@ -36,7 +36,6 @@ export type BookOpenTarget = (typeof BookOpenTargets)[number]
 
 export const UserPreferencesSchema = z.object({
   locale: z.string().nullable(),
-  defaultReadingMode: z.enum(["readaloud", "audiobook", "epub"]).nullable(),
   defaultView: z.enum(ViewKinds),
   colorMode: z.enum(ColorModes),
   colorIntensity: z.number().min(0).max(1),
@@ -45,6 +44,7 @@ export const UserPreferencesSchema = z.object({
   doubleCoverAlignment: z.enum(DoubleCoverAlignments),
   bookDetailDisplay: z.enum(BookDetailDisplays),
   bookDetail3dView: z.number().int().min(0).nullable(),
+  bookDetail3dViewAudio: z.number().int().min(0).nullable(),
   ratingIcon: z.enum(RatingIcons),
   bookOpenTarget: z.enum(BookOpenTargets),
   accentColor: z
@@ -63,31 +63,51 @@ export const NEUTRAL_COLOR_STRENGTH = 0.65
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>
 
-// preferences an admin may set as an org-wide default. a user's own value (when
-// set) always wins; unset/inherit falls through to these.
-//
-// the defaultable set is derived from UserPreferencesSchema minus the excludes
-// below, so a new preference is covered automatically and the two never drift.
-// exclude a key only when its null already carries a per-user meaning that
-// would collide with the null-means-inherit rule in resolveUserPreferences.
-export const NON_ORG_DEFAULT_KEYS = {
+export const UserPreferencesFormSchema = UserPreferencesSchema.extend({
+  defaultView: UserPreferencesSchema.shape.defaultView.nullable(),
+  colorMode: UserPreferencesSchema.shape.colorMode.nullable(),
+  colorIntensity: UserPreferencesSchema.shape.colorIntensity.nullable(),
+  gridCoverDisplay: UserPreferencesSchema.shape.gridCoverDisplay.nullable(),
+  gridCardSize: UserPreferencesSchema.shape.gridCardSize.nullable(),
+  doubleCoverAlignment:
+    UserPreferencesSchema.shape.doubleCoverAlignment.nullable(),
+  bookDetailDisplay: UserPreferencesSchema.shape.bookDetailDisplay.nullable(),
+  ratingIcon: UserPreferencesSchema.shape.ratingIcon.nullable(),
+  bookOpenTarget: UserPreferencesSchema.shape.bookOpenTarget.nullable(),
+  ratingDimensions: UserPreferencesSchema.shape.ratingDimensions.nullable(),
+  layoutAnimations: UserPreferencesSchema.shape.layoutAnimations.nullable(),
+  animatePanelOpen: UserPreferencesSchema.shape.animatePanelOpen.nullable(),
+})
+
+export type UserPreferencesForm = z.infer<typeof UserPreferencesFormSchema>
+
+export const NON_LIBRARY_DEFAULT_KEYS = {
   defaultStatusUuid: true, // null already means "use library default"
 } as const satisfies Partial<Record<keyof UserPreferences, true>>
 
-export const PreferenceDefaultsSchema =
-  UserPreferencesSchema.omit(NON_ORG_DEFAULT_KEYS).partial()
+export const PreferenceDefaultsSchema = UserPreferencesSchema.omit(
+  NON_LIBRARY_DEFAULT_KEYS,
+).partial()
 
 export type PreferenceDefaults = z.infer<typeof PreferenceDefaultsSchema>
 
-export type OrgDefaultKey = keyof PreferenceDefaults
+export type LibraryDefaultKey = keyof PreferenceDefaults
 
-export const ORG_DEFAULT_KEYS = Object.keys(
+// wire shape for updating library defaults: null clears the default for that key
+export const PreferenceDefaultsUpdateSchema = UserPreferencesFormSchema.omit(
+  NON_LIBRARY_DEFAULT_KEYS,
+).partial()
+
+export type PreferenceDefaultsUpdate = z.infer<
+  typeof PreferenceDefaultsUpdateSchema
+>
+
+export const LIBRARY_DEFAULT_KEYS = Object.keys(
   PreferenceDefaultsSchema.shape,
-) as OrgDefaultKey[]
+) as LibraryDefaultKey[]
 
 export const defaultUserPreferences: UserPreferences = {
   locale: null,
-  defaultReadingMode: null,
   defaultView: "grid",
   colorMode: "full",
   colorIntensity: NEUTRAL_COLOR_STRENGTH,
@@ -96,6 +116,7 @@ export const defaultUserPreferences: UserPreferences = {
   doubleCoverAlignment: "auto",
   bookDetailDisplay: "3d",
   bookDetail3dView: null,
+  bookDetail3dViewAudio: null,
   ratingIcon: "star",
   bookOpenTarget: "panel",
   accentColor: null,
@@ -110,7 +131,7 @@ const LEGACY_COLOR_MODES: Record<string, ColorMode> = {
   subdued: "minimal",
 }
 
-const ORG_DEFAULT_KEY_SET = new Set<string>(ORG_DEFAULT_KEYS)
+const LIBRARY_DEFAULT_KEY_SET = new Set<string>(LIBRARY_DEFAULT_KEYS)
 
 export function resolveUserPreferences(
   raw: Record<string, unknown> | undefined | null,
@@ -136,8 +157,28 @@ export function resolveUserPreferences(
     const result = UserPreferencesSchema.shape[key].safeParse(migrated[key])
     if (!result.success) continue
 
-    if (ORG_DEFAULT_KEY_SET.has(key) && result.data == null) continue
+    if (LIBRARY_DEFAULT_KEY_SET.has(key) && result.data == null) continue
     resolved[key] = result.data as never
   }
   return resolved
+}
+
+export function formUserPreferences(
+  raw: Record<string, unknown> | undefined | null,
+): UserPreferencesForm {
+  const migrated: Record<string, unknown> = { ...(raw ?? {}) }
+
+  if (typeof migrated["colorMode"] === "string") {
+    migrated["colorMode"] =
+      LEGACY_COLOR_MODES[migrated["colorMode"]] ?? migrated["colorMode"]
+  }
+
+  const result = {} as Record<keyof UserPreferencesForm, unknown>
+  for (const key of Object.keys(
+    UserPreferencesFormSchema.shape,
+  ) as (keyof UserPreferencesForm)[]) {
+    const parsed = UserPreferencesFormSchema.shape[key].safeParse(migrated[key])
+    result[key] = parsed.success ? parsed.data : null
+  }
+  return result as UserPreferencesForm
 }

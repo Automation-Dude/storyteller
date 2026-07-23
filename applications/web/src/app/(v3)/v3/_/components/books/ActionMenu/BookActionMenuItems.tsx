@@ -3,10 +3,20 @@
 import { Fragment, type ReactNode, useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
+import { Button } from "@v3/_/components/ui/button"
 import {
   ConfirmDialog,
   useConfirmAction,
 } from "@v3/_/components/ui/confirm-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@v3/_/components/ui/dialog"
+import { RadioGroup, RadioGroupItem } from "@v3/_/components/ui/radio-group"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useProcessingRun } from "@/app/(v3)/v3/_/components/books/BookDetails/useProcessingRun"
@@ -31,11 +41,13 @@ import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
 import {
   useAddBooksToCollectionsMutation,
+  useBulkRelocateToInternalMutation,
   useClearBooksCacheMutation,
   useDeleteBooksMutation,
   useGetCurrentUserQuery,
   useMergeBooksMutation,
   useProcessBookMutation,
+  useRelocateToInternalMutation,
   useScanBooksMutation,
   useUpgradeBookEpubMutation,
 } from "@/store/api"
@@ -132,6 +144,8 @@ export function useBookActionItems({
   const [upgradeEpub] = useUpgradeBookEpubMutation()
   const [deleteBooks, { isLoading: isDeleting }] = useDeleteBooksMutation()
   const [mergeBooks, { isLoading: isMerging }] = useMergeBooksMutation()
+  const [relocateToInternal] = useRelocateToInternalMutation()
+  const [bulkRelocateToInternal] = useBulkRelocateToInternalMutation()
 
   const processingRun = useProcessingRun(
     mode === "single" ? books[0] : undefined,
@@ -183,6 +197,33 @@ export function useBookActionItems({
     toast.success(t("upgradeStarted"))
   }, [upgradeEpub, epubBooks, t])
 
+  const [relocateOpen, setRelocateOpen] = useState(false)
+  const [relocateMode, setRelocateMode] = useState<
+    "copy" | "move" | "hardlink"
+  >("copy")
+  const [isRelocating, setIsRelocating] = useState(false)
+
+  const handleRelocateToInternal = useCallback(async () => {
+    setIsRelocating(true)
+    try {
+      if (books.length === 1 && books[0]) {
+        await relocateToInternal({ uuid: books[0].uuid, mode: relocateMode }).unwrap()
+      } else {
+        await bulkRelocateToInternal({ bookUuids, mode: relocateMode }).unwrap()
+      }
+
+      toast.success(t("relocateToInternalSuccess"))
+      setRelocateOpen(false)
+    } catch (error) {
+      console.error(error)
+      toast.error(t("relocateToInternalFailed"), {
+        description: (error as Error).message,
+      })
+    } finally {
+      setIsRelocating(false)
+    }
+  }, [books, bookUuids, relocateMode, relocateToInternal, bulkRelocateToInternal, t])
+
   const canMerge = useMemo(() => {
     return (
       mode === "bulk" &&
@@ -191,18 +232,6 @@ export function useBookActionItems({
       books.some((b) => b.ebook)
     )
   }, [books, mode])
-  console.log("books", books)
-  console.log("mode", mode)
-  console.log("books.length", books.length)
-  console.log(
-    "books.some((b) => b.audiobook)",
-    books.some((b) => b.audiobook),
-  )
-  console.log(
-    "books.some((b) => b.ebook)",
-    books.some((b) => b.ebook),
-  )
-  console.log("canMerge", canMerge)
 
   const handleMerge = useCallback(async () => {
     if (!canMerge) return
@@ -543,6 +572,17 @@ export function useBookActionItems({
     }
   }
 
+  if (canUpdate) {
+    entries.push({
+      key: "relocateToInternal",
+      label: t.plain("relocateToInternal"),
+      icon: <icon.Download className="size-4" />,
+      onSelect: () => {
+        setRelocateOpen(true)
+      },
+    })
+  }
+
   if (canProcess) {
     entries.push({
       key: "scan",
@@ -587,6 +627,65 @@ export function useBookActionItems({
       <ConfirmDialog {...processAction.dialogProps} />
       <ConfirmDialog {...upgradeAction.dialogProps} />
       <ConfirmDialog {...mergeAction.dialogProps} isLoading={isMerging} />
+
+      <Dialog open={relocateOpen} onOpenChange={setRelocateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t("relocateToInternalTitle", { count })}
+            </DialogTitle>
+            <DialogDescription>
+              {t("relocateToInternalDescription")}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <p className="text-sm font-medium">
+              {t("relocateModeLabel")}
+            </p>
+
+            <RadioGroup
+              value={relocateMode}
+              onValueChange={(v) =>
+                setRelocateMode(v as "copy" | "move" | "hardlink")
+              }
+              className="gap-2"
+            >
+              <label className="flex items-center gap-2 text-sm">
+                <RadioGroupItem value="copy" />
+                {t("relocateModeCopy")}
+              </label>
+
+              <label className="flex items-center gap-2 text-sm">
+                <RadioGroupItem value="move" />
+                {t("relocateModeMove")}
+              </label>
+
+              <label className="flex items-center gap-2 text-sm">
+                <RadioGroupItem value="hardlink" />
+                {t("relocateModeHardlink")}
+              </label>
+            </RadioGroup>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRelocateOpen(false)}
+              disabled={isRelocating}
+            >
+              {c("actions.cancel")}
+            </Button>
+
+            <Button
+              onClick={() => void handleRelocateToInternal()}
+              disabled={isRelocating}
+            >
+              {isRelocating ? c("states.loading") : c("actions.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {canCreateCollection && (
         <CreateCollectionDialog

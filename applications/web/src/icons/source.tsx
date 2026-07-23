@@ -149,6 +149,7 @@ import {
   IconVolume,
   IconVolumeOff,
   IconX,
+  IconHomeCog,
 } from "@tabler/icons-react"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"
@@ -354,3 +355,4 @@ export const Sun = /*#__PURE__*/ styled(IconSun)
 export const LightMode = /*#__PURE__*/ styled(IconSun)
 export const System = /*#__PURE__*/ styled(IconDeviceLaptop)
 export const Star = /*#__PURE__*/ styled(IconStar)
+export const LibraryDefault = /*#__PURE__*/ styled(IconHomeCog)

@@ -17,6 +17,7 @@ import {
 import {
   type PreferenceDefaults,
   PreferenceDefaultsSchema,
+  type PreferenceDefaultsUpdate,
 } from "./userPreferencesTypes"
 
 export function formatTranscriptionEngineDetails(settings: Settings) {
@@ -290,8 +291,14 @@ export function isPreferenceDefaultsLocked(): boolean {
   return getConfigLockedKeys().has("preferenceDefaults")
 }
 
-export async function setPreferenceDefaults(update: PreferenceDefaults) {
-  const merged = { ...(await getPreferenceDefaults()), ...update }
+export async function setPreferenceDefaults(update: PreferenceDefaultsUpdate) {
+  const current = await getPreferenceDefaults()
+  // a null update clears that default so users fall back to the built-in value
+  const merged = Object.fromEntries(
+    Object.entries({ ...current, ...update }).filter(
+      ([, entry]) => entry != null,
+    ),
+  ) as PreferenceDefaults
   const value = JSON.stringify(merged)
 
   await db

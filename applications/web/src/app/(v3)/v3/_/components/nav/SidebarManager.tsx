@@ -348,7 +348,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
       groups: [
         ...prev.groups,
         {
-          id: `new:${crypto.randomUUID()}`,
+          id: `new:${nanoi()}`,
           name: t("newSection"),
           kind: null,
           items: [],

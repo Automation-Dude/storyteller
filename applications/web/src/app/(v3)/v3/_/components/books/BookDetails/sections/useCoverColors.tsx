@@ -6,11 +6,17 @@ import { type JsColor } from "@storyteller-platform/okmain"
 
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 
-import { type BookWithRelations } from "@/database/books"
+import {
+  Audiobook,
+  Ebook,
+  Readaloud,
+  type BookWithRelations,
+} from "@/database/books"
 import {
   type ColorMode,
   NEUTRAL_COLOR_STRENGTH,
 } from "@/database/userPreferencesTypes"
+import { Author } from "next/dist/lib/metadata/types/metadata-types"
 
 export type CoverColor = {
   rgb: { r: number; g: number; b: number }
@@ -76,7 +82,7 @@ const FALLBACK_COLORS: CoverColors = {
 }
 
 function resolveColors(
-  bookOrColors: BookWithRelations | JsColor[],
+  bookOrColors: CoverColorsBook | JsColor[],
   type?: CoverType,
 ): JsColor[] {
   if (Array.isArray(bookOrColors)) return bookOrColors
@@ -91,13 +97,20 @@ function resolveColors(
   )
 }
 
+export type CoverColorsBook = {
+  coverColorsOverride: JsColor[] | null
+  readaloud: Pick<Readaloud, "coverColors" | "status"> | null
+  ebook: Pick<Ebook, "coverColors" | "updatedAt"> | null
+  audiobook: Pick<Audiobook, "coverColors" | "updatedAt"> | null
+}
+
 export function useCoverColors(colors: JsColor[]): CoverColors
 export function useCoverColors(
-  book: BookWithRelations | undefined,
+  book: CoverColorsBook | undefined,
   options?: { type?: CoverType },
 ): CoverColors
 export function useCoverColors(
-  bookOrColors: BookWithRelations | JsColor[] | undefined,
+  bookOrColors: CoverColorsBook | JsColor[] | undefined,
   options?: { type?: CoverType },
 ): CoverColors {
   const type = options?.type

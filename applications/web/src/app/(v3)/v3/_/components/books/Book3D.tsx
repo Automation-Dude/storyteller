@@ -16,7 +16,12 @@ import { useFormatDuration } from "@v3/_/lib/formatters"
 import { fitSpine } from "@v3/_/lib/spineFit"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
-import { type BookWithRelations } from "@/database/books"
+import {
+  Audiobook,
+  Ebook,
+  Readaloud,
+  type BookWithRelations,
+} from "@/database/books"
 import * as icon from "@/icons"
 import { getCoverUrl } from "@/store/api"
 
@@ -26,6 +31,9 @@ import {
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
+import { Author } from "next/dist/lib/metadata/types/metadata-types"
+import { UUID } from "@/uuid"
+import { JsColor } from "@storyteller-platform/okmain"
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 2
@@ -59,11 +67,15 @@ const SPINE_FONT_SANS = "ui-sans-serif, system-ui, sans-serif"
 
 export type SpineInfo = "title" | "pages" | "duration"
 
-const VIEWS = [
-  { y: 0, x: 0 }, // cover
-  { y: -30, x: 0 }, // spine
-  { y: 26, x: 8 }, // fore-edge / pages
-  { y: 180, x: 0 }, // back
+// which physical rendition a slab represents: the paper book or the cd case
+export type Book3DFormat = "ebook" | "audiobook"
+
+export const VIEWS = [
+  { y: 0, x: 0, key: "cover" },
+  { y: -30, x: 0, key: "pages" },
+  { y: 26, x: 8, key: "spine" },
+  { y: 180, x: 0, key: "back" },
+  { y: 24, x: 0, key: "hover" },
 ] as const
 
 const SPRING = { stiffness: 140, damping: 18, mass: 0.6 }
@@ -75,13 +87,13 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
-function publicationYear(book: BookWithRelations): number | null {
+function publicationYear(book: Book3DBook): number | null {
   if (!book.publicationDate) return null
   const year = new Date(book.publicationDate).getFullYear()
   return Number.isFinite(year) ? year : null
 }
 
-function paperMetric(book: BookWithRelations): { value: number; max: number } {
+function paperMetric(book: Book3DBook): { value: number; max: number } {
   const pages = bookPageCount(book)
   if (pages) return { value: pages, max: PAGES_MAX }
 
@@ -94,10 +106,7 @@ function paperMetric(book: BookWithRelations): { value: number; max: number } {
   return { value: 0.45 * PAGES_MAX, max: PAGES_MAX } // unknown → middling
 }
 
-export function getBookThickness(
-  book: BookWithRelations,
-  width: number,
-): number {
+export function getBookThickness(book: Book3DBook, width: number): number {
   const metric = paperMetric(book)
   const norm = clamp(metric.value / metric.max, 0, 1)
   return Math.round(
@@ -106,7 +115,7 @@ export function getBookThickness(
 }
 
 // how many discs an audiobook holds, for the cd-case depth + the visible stack
-function discCount(book: BookWithRelations): number {
+function discCount(book: Book3DBook): number {
   const total = bookDuration(book)
   if (!total) return 1
   return clamp(Math.ceil(total / 3600 / HOURS_PER_DISC), 1, MAX_DISCS)
@@ -167,7 +176,7 @@ function DiscStack({
 }
 
 function spineLabel(
-  book: BookWithRelations,
+  book: Book3DBook,
   info: SpineInfo,
   formatDuration: (seconds: number) => string,
 ): { left: string; right: string } {
@@ -191,7 +200,7 @@ function CoverFace({
   width,
   height,
 }: {
-  book: BookWithRelations
+  book: Book3DBook
   audio: boolean
   width: number
   height: number
@@ -223,7 +232,7 @@ function DescriptionBack({
   primary,
   width,
 }: {
-  book: BookWithRelations
+  book: Book3DBook
   primary: CoverColor
   width: number
 }) {
@@ -278,7 +287,7 @@ function DescriptionBack({
 }
 
 type SlabProps = {
-  book: BookWithRelations
+  book: Book3DBook
   width: number
   height: number
   thickness: number
@@ -644,26 +653,35 @@ function Slab({
   )
 }
 
+function SlabActions({ children }: { children: ReactNode }) {
+  return (
+    <div className="absolute inset-x-0 -bottom-2 z-30 flex translate-y-full justify-center opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+      {children}
+    </div>
+  )
+}
+
 function SingleBookStage({
   book,
   width,
   spine,
-  initialView,
+  initialViews,
   onViewChange,
+  slabActions,
 }: {
-  book: BookWithRelations
+  book: Book3DBook
   width: number
   spine: SpineInfo
-  initialView?: number
-  onViewChange?: (view: number) => void
+  initialViews?: Partial<Record<Book3DFormat, number>>
+  onViewChange?: (view: number, format: Book3DFormat) => void
+  slabActions?: (format: Book3DFormat) => ReactNode
 }) {
   const colors = useCoverColors(book)
-  // the back/spine follow the ebook's own cover, not the resolved primary (which
-  // may be an override or the audiobook cover). falls back to primary when there
-  // are no ebook colors (e.g. audiobook-only).
+  // the back/spine follow the ebook's own cover, not the resolved primary
   const ebookColors = useCoverColors(book, { type: "ebook" })
   const bodyColor = ebookColors.hasColors ? ebookColors.primary : colors.primary
   const audiobookOnly = !!book.audiobook && !book.ebook
+  const format: Book3DFormat = audiobookOnly ? "audiobook" : "ebook"
 
   const height = audiobookOnly ? width : Math.round(width * 1.5)
   const discs = audiobookOnly ? discCount(book) : 0
@@ -671,30 +689,35 @@ function SingleBookStage({
     ? cdThickness(discs, width)
     : getBookThickness(book, width)
 
+  const actions = slabActions?.(format)
+
   return (
-    <Slab
-      book={book}
-      width={width}
-      height={height}
-      thickness={thickness}
-      primary={colors.primary}
-      accent={colors.accent}
-      back={bodyColor}
-      edge={audiobookOnly ? "plastic" : "paper"}
-      spine={spine}
-      interactive
-      discs={discs}
-      initialView={initialView}
-      onViewChange={onViewChange}
-      front={
-        <CoverFace
-          book={book}
-          audio={audiobookOnly}
-          width={width}
-          height={height}
-        />
-      }
-    />
+    <div className="relative">
+      <Slab
+        book={book}
+        width={width}
+        height={height}
+        thickness={thickness}
+        primary={colors.primary}
+        accent={colors.accent}
+        back={bodyColor}
+        edge={audiobookOnly ? "plastic" : "paper"}
+        spine={spine}
+        interactive
+        discs={discs}
+        initialView={initialViews?.[format]}
+        onViewChange={(view) => onViewChange?.(view, format)}
+        front={
+          <CoverFace
+            book={book}
+            audio={audiobookOnly}
+            width={width}
+            height={height}
+          />
+        }
+      />
+      {actions && <SlabActions>{actions}</SlabActions>}
+    </div>
   )
 }
 
@@ -702,37 +725,42 @@ function DualStage({
   book,
   width,
   spine,
-  initialView,
+  initialViews,
   onViewChange,
+  slabActions,
 }: {
-  book: BookWithRelations
+  book: Book3DBook
   width: number
   spine: SpineInfo
-  initialView?: number
-  onViewChange?: (view: number) => void
+  initialViews?: Partial<Record<Book3DFormat, number>>
+  onViewChange?: (view: number, format: Book3DFormat) => void
+  slabActions?: (format: Book3DFormat) => ReactNode
 }) {
   const ebookColors = useCoverColors(book, { type: "ebook" })
   const audioColors = useCoverColors(book, { type: "audiobook" })
-  const [active, setActive] = useState<"ebook" | "audiobook">("ebook")
 
   const w = Math.round(width * 0.78)
   const ebookThickness = getBookThickness(book, w)
   const discs = discCount(book)
   const audioThickness = cdThickness(discs, w)
 
-  const slabWrap = (id: "ebook" | "audiobook", node: ReactNode) => (
-    <motion.div
-      className="origin-center"
-      style={{ zIndex: active === id ? 20 : 10 }}
-      animate={{
-        scale: active === id ? 1 : 0.82,
-        opacity: active === id ? 1 : 0.65,
-      }}
-      transition={{ type: "spring", stiffness: 200, damping: 24 }}
-    >
-      {node}
-    </motion.div>
-  )
+  const slabWrap = (id: Book3DFormat, node: ReactNode) => {
+    const actions = slabActions?.(id)
+    return (
+      <motion.div
+        className="relative origin-center"
+        style={{ zIndex: 20 }}
+        animate={{
+          scale: 1,
+          opacity: 1,
+        }}
+        transition={{ type: "spring", stiffness: 200, damping: 24 }}
+      >
+        {node}
+        {actions && <SlabActions>{actions}</SlabActions>}
+      </motion.div>
+    )
+  }
 
   return (
     <div className="flex items-center justify-center gap-3">
@@ -747,12 +775,9 @@ function DualStage({
           accent={ebookColors.accent}
           edge="paper"
           spine={spine}
-          interactive={active === "ebook"}
-          initialView={initialView}
-          onViewChange={onViewChange}
-          onActivate={() => {
-            setActive("ebook")
-          }}
+          interactive={true}
+          initialView={initialViews?.ebook}
+          onViewChange={(view) => onViewChange?.(view, "ebook")}
           front={
             <CoverFace
               book={book}
@@ -775,13 +800,10 @@ function DualStage({
           accent={audioColors.accent}
           edge="plastic"
           spine={spine}
-          interactive={active === "audiobook"}
+          interactive={true}
           discs={discs}
-          initialView={initialView}
-          onViewChange={onViewChange}
-          onActivate={() => {
-            setActive("audiobook")
-          }}
+          initialView={initialViews?.audiobook}
+          onViewChange={(view) => onViewChange?.(view, "audiobook")}
           front={<CoverFace book={book} audio width={w} height={w} />}
         />,
       )}
@@ -793,23 +815,26 @@ function BookStage({
   book,
   width,
   spine,
-  initialView,
+  initialViews,
   onViewChange,
+  slabActions,
 }: {
-  book: BookWithRelations
+  book: Book3DBook
   width: number
   spine: SpineInfo
-  initialView?: number
-  onViewChange?: (view: number) => void
+  initialViews?: Partial<Record<Book3DFormat, number>>
+  onViewChange?: (view: number, format: Book3DFormat) => void
+  slabActions?: (format: Book3DFormat) => ReactNode
 }) {
-  if (isDualFormat(book)) {
+  if (isDualFormat(book as BookWithRelations)) {
     return (
       <DualStage
         book={book}
         width={width}
         spine={spine}
-        initialView={initialView}
+        initialViews={initialViews}
         onViewChange={onViewChange}
+        slabActions={slabActions}
       />
     )
   }
@@ -818,33 +843,60 @@ function BookStage({
       book={book}
       width={width}
       spine={spine}
-      initialView={initialView}
+      initialViews={initialViews}
       onViewChange={onViewChange}
+      slabActions={slabActions}
     />
   )
+}
+
+export type Book3DBook = {
+  uuid: UUID
+  title: string
+  description: string | null
+  coverColorsOverride: JsColor[] | null
+  authors: Author[]
+  pageCount: number | null
+  duration: number | null
+  readaloud: Pick<
+    Readaloud,
+    | "coverColors"
+    | "status"
+    | "coverBlurhash"
+    | "pageCount"
+    | "duration"
+    | "fileSize"
+  > | null
+  ebook: Pick<
+    Ebook,
+    "coverColors" | "coverBlurhash" | "pageCount" | "fileSize" | "updatedAt"
+  > | null
+  audiobook: Pick<
+    Audiobook,
+    "coverColors" | "coverBlurhash" | "duration" | "fileSize" | "updatedAt"
+  > | null
+  updatedAt: string
+  publicationDate: string | null
 }
 
 export function Book3D({
   book,
   width,
   spine = "title",
-  initialView,
+  initialViews,
   onViewChange,
   actions,
+  slabActions,
 }: {
-  book: BookWithRelations
+  book: Book3DBook
   width: number
   spine?: SpineInfo
-  /** preset view index the book starts rotated to (see VIEWS) */
-  initialView?: number
-  /** fires with the new preset index each time the book is tapped to rotate */
-  onViewChange?: (view: number) => void
-  /**
-   * buttons rendered in a reveal-on-hover stack at the top-right. the caller
-   * decides what shows up (e.g. fullscreen via `BookFullscreenButton`, edit,
-   * ...); with no actions there's no stack at all.
-   */
+  /** preset view index each rendition starts rotated to (see VIEWS) */
+  initialViews?: Partial<Record<Book3DFormat, number>>
+  /** fires with the new preset index each time a book is tapped to rotate */
+  onViewChange?: (view: number, format: Book3DFormat) => void
   actions?: ReactNode
+  slabActions?: (format: Book3DFormat) => ReactNode
 }) {
   return (
     <div className="group relative w-fit shrink-0 select-none">
@@ -852,8 +904,9 @@ export function Book3D({
         book={book}
         width={width}
         spine={spine}
-        initialView={initialView}
+        initialViews={initialViews}
         onViewChange={onViewChange}
+        slabActions={slabActions}
       />
 
       {actions && (
@@ -867,7 +920,6 @@ export function Book3D({
 
 /**
  * Fullscreen toggle for a book, made to be dropped into `Book3D`'s `actions`.
- * Owns its own dialog so the fullscreen concern stays out of `Book3D` itself.
  */
 export function BookFullscreenButton({
   book,

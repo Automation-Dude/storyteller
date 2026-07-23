@@ -14,7 +14,7 @@ import {
   getPreferenceDefaults,
   getSettings,
 } from "@/database/settings"
-import { resolveUserPreferences } from "@/database/userPreferencesTypes"
+import { formUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
 import { getAccounts } from "@/database/users"
 import { env } from "@/env"
@@ -78,11 +78,10 @@ export default withPageAuth<{ params: Promise<Record<string, unknown>> }>([])(
         getPreferenceDefaults(),
       ])
 
-    const preferences = {
-      ...resolveUserPreferences(rawPreferences, prefDefaults),
-      accentColor:
-        (rawPreferences["accentColor"] as string | null | undefined) ?? null,
-    }
+    // seed the form with the user's own stored values only (null = inherit),
+    // so the dirty baseline matches what's persisted rather than the resolved
+    // org defaults — see formUserPreferences
+    const preferences = formUserPreferences(rawPreferences)
 
     const preferenceDefaultsLocked =
       getConfigLockedKeys().has("preferenceDefaults")

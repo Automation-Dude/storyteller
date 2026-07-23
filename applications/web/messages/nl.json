@@ -703,13 +703,22 @@
             "title": "Transcriptie Instellingen",
             "description": "Stel in hoe <em>Storyteller</em> audioboeken naar tekst transcribeert. Standaard wordt transcriptie lokaal uitgevoerd met whisper.cpp. Je kunt ook betaalde externe diensten gebruiken.",
             "engine": "Transcriptie-engine",
-            "whisperCpp": "whisper.cpp (lokaal)",
-            "whisperServer": "whisper.cpp (server)",
+            "tabLocal": "Op dit apparaat",
+            "tabRemote": "Op een ander apparaat",
+            "tabThirdParty": "Externe diensten",
+            "whisperCpp": "Whisper (whisper.cpp)",
+            "whisperCppDescription": "Draait direct op de server waarop Storyteller draait. Geen extra installatie en niets verlaat deze machine; de snelheid hangt af van de hardware.",
+            "whisperServer": "Storyteller-server (Ghost Story)",
             "googleCloud": "Google Cloud",
+            "googleCloudDescription": "Google Cloud Speech-to-Text. Betaalde cloud-API; vereist een API key.",
             "microsoftAzure": "Azure Cognitive Services",
+            "microsoftAzureDescription": "Azure AI spraakherkenning. Betaalde cloud-API; vereist een subscription key en serviceregio.",
             "amazonTranscribe": "Amazon Transcribe",
+            "amazonTranscribeDescription": "AWS-transcriptie via een S3 bucket. Betaalde cloud-API; vereist AWS-inloggegevens.",
             "openaiCloud": "OpenAI Cloud Platform",
+            "openaiCloudDescription": "De gehoste transcriptie-API van OpenAI. Werkt ook met elk OpenAI-compatibel endpoint via een aangepaste base URL.",
             "deepgram": "Deepgram Speech to Text",
+            "deepgramDescription": "De gehoste speech-to-text-API van Deepgram. Betaalde cloud-API; vereist een API key.",
             "whisperBuildCpu": "CPU",
             "whisperBuildCublas126": "cuBLAS 12.6 (NVIDIA GPU)",
             "whisperBuildCublas130": "cuBLAS 13.0 (NVIDIA GPU)",
@@ -731,7 +740,7 @@
             "whisperServerUrlDescription": "bijv. http://192.168.1.19:8080",
             "whisperServerApiKey": "API key",
             "whisperServerApiKeyDescription": "Alleen nodig als je server een API key vereist.",
-            "whisperServerDescription": "Gebruik een externe, zelf-gehoste whisper.cpp server voor transcriptie. Handig als je een krachtige machine hebt om transcriptie te offloaden.",
+            "whisperServerDescription": "Offload transcriptie naar een Ghost Story-server op een andere, snellere machine. Elke whisper.cpp-compatibele server werkt ook.",
             "apiKey": "API key *",
             "subscriptionKey": "Subscription key *",
             "serviceRegion": "Serviceregio *",
@@ -989,8 +998,14 @@
     "libraryDefault": {
       "setAsDefault": "Als standaard voor iedereen instellen",
       "isDefault": "Huidige standaard",
+      "isDefaultValue": "Huidige standaard ({value})",
       "saved": "Opgeslagen als standaard voor alle gebruikers",
+      "cleared": "Standaard voor alle gebruikers verwijderd",
       "failed": "Kon de standaard niet opslaan",
+      "clearDefault": "Standaard voor iedereen verwijderen",
+      "clearDefaultValue": "Standaard voor iedereen verwijderen ({value})",
+      "restoreDefault": "Standaard herstellen",
+      "restoreDefaultValue": "Standaard herstellen ({value})",
       "locked": "Ingesteld in config",
       "lockedHint": "Deze standaard wordt beheerd door het serverconfiguratiebestand en kan hier niet worden gewijzigd."
     },
@@ -1030,18 +1045,6 @@
             "label": "Taal",
             "hint": "Deze instelling wordt gesynchroniseerd tussen al je apparaten.",
             "systemDefault": "Systeemstandaard"
-          },
-          "reading": {
-            "title": "Standaard leesmodus",
-            "description": "Kies wat er gebeurt als je een boek opent dat meerdere modi ondersteunt.",
-            "label": "Voorkeursmodus",
-            "hint": "Wanneer een boek je voorkeursmodus ondersteunt, wordt het automatisch in die modus geopend.",
-            "automatic": "Automatisch",
-            "modes": {
-              "readaloud": "Voorlezen (gesynchroniseerd audio + tekst)",
-              "audiobook": "Audioboek",
-              "epub": "E-book"
-            }
           },
           "view": {
             "title": "Standaardweergave",
@@ -1135,7 +1138,7 @@
             "title": "Detailsweergave",
             "description": "Hoe een boek op de detailpagina wordt getoond.",
             "display": {
-              "label": "Weergave",
+              "label": "Boekweergave",
               "hint": "De platte cover valt terug op je rastercoverkeuze.",
               "options": {
                 "3d": "3D-boek",
@@ -1143,13 +1146,16 @@
               }
             },
             "view": {
-              "label": "Standaardpositie",
-              "hint": "De hoek waarin het 3D-boek begint.",
+              "hint": "De hoek waarin het 3D-boek begint. Klik op een boek om die te veranderen.",
+              "ebookLabel": "E-book",
+              "audiobookLabel": "Audioboek",
+              "cycle": "Beginpositie wijzigen",
               "options": {
                 "cover": "Cover",
                 "spine": "Rug",
                 "pages": "Pagina's",
-                "back": "Achterkant"
+                "back": "Achterkant",
+                "hover": "Hover"
               }
             }
           },
@@ -1170,7 +1176,8 @@
             "hint": "Elk boek kan per as 0-5 scoren; het gemiddelde wordt de beoordeling.",
             "add": "Dimensie toevoegen",
             "placeholder": "Naam van dimensie",
-            "remove": "Dimensie verwijderen"
+            "remove": "Dimensie verwijderen",
+            "customize": "Aanpassen"
           },
           "ratings": {
             "title": "Beoordelingen en recensies",

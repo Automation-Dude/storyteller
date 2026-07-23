@@ -37,8 +37,8 @@ import {
 } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   type PreferenceDefaults,
-  type UserPreferences,
-  UserPreferencesSchema,
+  type UserPreferencesForm,
+  UserPreferencesFormSchema,
 } from "@/database/userPreferencesTypes"
 import { usePermission } from "@/hooks/usePermission"
 import * as icon from "@/icons"
@@ -70,7 +70,7 @@ export function PreferencesForm({
   preferenceDefaultsLocked,
 }: {
   user: User
-  preferences: UserPreferences
+  preferences: UserPreferencesForm
   sectionKeywords: SectionKeywords
   linkedAccounts: Array<{ provider: string; providerAccountId: string }>
   providers: Array<{ id: string; name: string }>
@@ -84,21 +84,23 @@ export function PreferencesForm({
   const isMobile = useIsMobile()
 
   const form = useForm({
-    resolver: zodResolver(UserPreferencesSchema),
+    resolver: zodResolver(UserPreferencesFormSchema),
     defaultValues: preferences,
   })
 
   const [updateSettings, { isLoading: isSaving }] =
     useUpdateUserSettingsMutation()
 
-  const onSubmit = async (data: z.output<typeof UserPreferencesSchema>) => {
-    // only persist fields the user actually changed, so untouched preferences
-    // stay absent and keep inheriting the org default (see resolveUserPreferences)
+  const onSubmit = async (data: z.output<typeof UserPreferencesFormSchema>) => {
+    // only persist fields the user actually changed. the baseline is the raw
+    // stored values (null = inherit), so dirty means "differs from what's
+    // stored" — explicit values persist even when equal to the org default,
+    // and a restored (null) field persists the inherit
     const dirty = form.formState.dirtyFields
-    const changed = Object.keys(dirty) as (keyof UserPreferences)[]
+    const changed = Object.keys(dirty) as (keyof UserPreferencesForm)[]
     const payload = Object.fromEntries(
       changed.map((key) => [key, data[key]]),
-    ) as Partial<UserPreferences>
+    ) as Partial<UserPreferencesForm>
 
     try {
       if (changed.length > 0) {
@@ -217,7 +219,7 @@ export function PreferencesForm({
 
   const tabContent = (
     <LibraryDefaultsProvider
-      control={form.control}
+      form={form}
       canManage={canUpdateSettings ?? false}
       locked={preferenceDefaultsLocked}
       defaults={preferenceDefaults}

@@ -18,7 +18,11 @@ import { ColorModes } from "@/database/userPreferencesTypes"
 
 import { AccentColorPicker } from "./accent-color-picker"
 import { ColorfulnessPreview } from "./colorfulness-preview"
-import { SettingLabel, useLibraryDefaultValue } from "./library-defaults"
+import {
+  SettingLabel,
+  useLibraryDefaultValue,
+  useResolvedDefault,
+} from "./library-defaults"
 import {
   type PreferencesFormType,
   PreferencesSection,
@@ -33,13 +37,17 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
     label: t(`colorfulness.levels.${key}`),
   }))
 
-  const colorMode = useWatch({ control: form.control, name: "colorMode" })
-  const colorIntensity = useWatch({
-    control: form.control,
-    name: "colorIntensity",
-  })
-
   const accentDefault = useLibraryDefaultValue("accentColor")
+  const colorModeDefault = useResolvedDefault("colorMode")
+  const colorIntensityDefault = useResolvedDefault("colorIntensity")
+  const layoutAnimationsDefault = useResolvedDefault("layoutAnimations")
+  const animatePanelOpenDefault = useResolvedDefault("animatePanelOpen")
+
+  const colorMode =
+    useWatch({ control: form.control, name: "colorMode" }) ?? colorModeDefault
+  const colorIntensity =
+    useWatch({ control: form.control, name: "colorIntensity" }) ??
+    colorIntensityDefault
 
   return (
     <div className="space-y-6">
@@ -92,7 +100,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
                   </SettingLabel>
                   <FieldDescription>{t("colorfulness.hint")}</FieldDescription>
                   <SegmentedControl
-                    value={field.value}
+                    value={field.value ?? colorModeDefault}
                     onChange={(value) => {
                       field.onChange(value)
                     }}
@@ -119,7 +127,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
                     max={1}
                     step={0.05}
                     disabled={colorMode === "minimal"}
-                    value={field.value}
+                    value={field.value ?? colorIntensityDefault}
                     onValueChange={(value) => {
                       field.onChange(Array.isArray(value) ? value[0] : value)
                     }}
@@ -152,7 +160,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
                     <FieldDescription>{t("motion.hint")}</FieldDescription>
                   </div>
                   <Switch
-                    checked={field.value}
+                    checked={field.value ?? layoutAnimationsDefault}
                     onCheckedChange={field.onChange}
                   />
                 </Field>
@@ -170,7 +178,7 @@ export function AppearanceTab({ form }: { form: PreferencesFormType }) {
                     <FieldDescription>{t("motion.panelHint")}</FieldDescription>
                   </div>
                   <Switch
-                    checked={field.value}
+                    checked={field.value ?? animatePanelOpenDefault}
                     onCheckedChange={field.onChange}
                   />
                 </Field>

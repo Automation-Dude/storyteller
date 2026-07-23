@@ -424,7 +424,16 @@
     "mergeTitle": "Merge {target1} + {target2}?",
     "mergeSuccess": "Books merged successfully",
     "mergeFailed": "Failed to merge books",
-    "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone."
+    "mergeDescription": "The other selected books are merged into this one and then deleted. This cannot be undone.",
+    "relocateToInternal": "Relocate to internal storage",
+    "relocateToInternalTitle": "Relocate {count, number} book(s) to internal storage?",
+    "relocateToInternalDescription": "Transfers external reference-mode files into the library's internal asset directory. An ignore rule is added for the original location so the scanner won't re-import it.",
+    "relocateToInternalSuccess": "Files relocated to internal storage",
+    "relocateToInternalFailed": "Failed to relocate files",
+    "relocateModeCopy": "Copy (keep originals)",
+    "relocateModeMove": "Move (delete originals)",
+    "relocateModeHardlink": "Hard link (share disk blocks)",
+    "relocateModeLabel": "Transfer mode"
   },
   "ShelfPage": {
     "breadcrumb": "Shelves",
@@ -732,13 +741,22 @@
             "title": "Transcription Settings",
             "description": "Configure how Storyteller transcribes audiobook narration to text. By default, transcription runs locally using whisper.cpp. You can also use paid third-party services.",
             "engine": "Transcription engine",
-            "whisperCpp": "whisper.cpp (local)",
-            "whisperServer": "whisper.cpp (remote)",
+            "tabLocal": "On this device",
+            "tabRemote": "On another device",
+            "tabThirdParty": "Third-party services",
+            "whisperCpp": "Whisper (whisper.cpp)",
+            "whisperCppDescription": "Runs directly on the server hosting Storyteller. No extra setup and nothing leaves this machine; speed depends on its hardware.",
+            "whisperServer": "Storyteller server (Ghost Story)",
             "googleCloud": "Google Cloud",
+            "googleCloudDescription": "Google Cloud Speech-to-Text. Paid cloud API; requires an API key.",
             "microsoftAzure": "Azure Cognitive Services",
+            "microsoftAzureDescription": "Azure AI speech recognition. Paid cloud API; requires a subscription key and service region.",
             "amazonTranscribe": "Amazon Transcribe",
+            "amazonTranscribeDescription": "AWS transcription via an S3 bucket. Paid cloud API; requires AWS credentials.",
             "openaiCloud": "OpenAI Cloud Platform",
+            "openaiCloudDescription": "OpenAI's hosted transcription API. Also works with any OpenAI-compatible endpoint via a custom base URL.",
             "deepgram": "Deepgram Speech to Text",
+            "deepgramDescription": "Deepgram's hosted speech-to-text API. Paid cloud API; requires an API key.",
             "whisperBuild": "Whisper build",
             "whisperBuildCpu": "CPU",
             "whisperBuildCublas126": "cuBLAS 12.6 (NVIDIA GPU)",
@@ -761,7 +779,7 @@
             "whisperServerUrlDescription": "e.g. http://192.168.1.19:8080 for the local whisper.cpp server.",
             "whisperServerApiKey": "API key",
             "whisperServerApiKeyDescription": "Only necessary if your server requires an API key.",
-            "whisperServerDescription": "Use a remote, self-hosted whisper.cpp server for transcription. Useful if you have a powerful machine to offload transcription to.",
+            "whisperServerDescription": "Offload transcription to a Ghost Story server running on another, faster machine. Any whisper.cpp-compatible server works too.",
             "apiKey": "API key *",
             "subscriptionKey": "Subscription key *",
             "serviceRegion": "Service region *",
@@ -863,9 +881,9 @@
         "sections": {
           "opds": {
             "title": "OPDS Settings",
-            "description": "Configure the OPDS feed for your library. OPDS is a standard for publishing e-book catalogs.",
+            "description": "Configure the OPDS feed for your library. OPDS is a standard for publishing ebook catalogs.",
             "enabled": "Enable OPDS",
-            "enabledDescription": "Enable the OPDS feed for your library. This allows compatible e-book readers to browse your library and download books. You can access the OPDS feed at {url}.",
+            "enabledDescription": "Enable the OPDS feed for your library. This allows compatible ebook readers to browse your library and download books. You can access the OPDS feed at {url}.",
             "pageSize": "Page size",
             "pageSizeDescription": "The number of books per page in the OPDS feed. Default is 25.",
             "format": "Preferred ebook",
@@ -1022,8 +1040,14 @@
     "libraryDefault": {
       "setAsDefault": "Set as default for everyone",
       "isDefault": "Current default",
+      "isDefaultValue": "Current default ({value})",
       "saved": "Saved as the default for all users",
+      "cleared": "Removed the default for all users",
       "failed": "Couldn't save the default",
+      "clearDefault": "Remove the default for everyone",
+      "clearDefaultValue": "Remove the default for everyone ({value})",
+      "restoreDefault": "Restore default",
+      "restoreDefaultValue": "Restore default ({value})",
       "locked": "Set in config",
       "lockedHint": "This default is managed by the server config file and can't be changed here."
     },
@@ -1062,18 +1086,6 @@
             "label": "Language",
             "hint": "This setting syncs across all your devices.",
             "systemDefault": "System default"
-          },
-          "reading": {
-            "title": "Default reading mode",
-            "description": "Choose what happens when you open a book that supports multiple modes.",
-            "label": "Preferred mode",
-            "hint": "When a book supports your preferred mode, it will open in that mode automatically.",
-            "automatic": "Automatic",
-            "modes": {
-              "readaloud": "Read-aloud (synced audio + text)",
-              "audiobook": "Audiobook",
-              "epub": "E-book"
-            }
           },
           "view": {
             "title": "Default view",
@@ -1131,10 +1143,10 @@
             "title": "Grid display",
             "description": "How books are shown in the library grid.",
             "coverLabel": "Cover display",
-            "coverHint": "Both shows the e-book and audiobook covers when a book has them.",
+            "coverHint": "Both shows the ebook and audiobook covers when a book has them.",
             "coverOptions": {
               "auto": "Both covers",
-              "ebook": "E-book only",
+              "ebook": "Ebook only",
               "audiobook": "Audiobook only"
             },
             "alignmentLabel": "Double cover style",
@@ -1167,7 +1179,7 @@
             "title": "Details display",
             "description": "How a book is shown on its details page.",
             "display": {
-              "label": "Display",
+              "label": "Book display",
               "hint": "The flat cover falls back to your grid cover choice.",
               "options": {
                 "3d": "3D book",
@@ -1175,13 +1187,14 @@
               }
             },
             "view": {
-              "label": "Default position",
-              "hint": "The angle the 3D book starts at.",
+              "hint": "The angle the 3D book starts at. Click a book to change it.",
+              "label": "View",
               "options": {
                 "cover": "Cover",
                 "spine": "Spine",
                 "pages": "Pages",
-                "back": "Back"
+                "back": "Back",
+                "hover": "Hover"
               }
             }
           },
@@ -1202,7 +1215,8 @@
             "hint": "Each book can be scored 0-5 on every axis; the average becomes its rating.",
             "add": "Add dimension",
             "placeholder": "Dimension name",
-            "remove": "Remove dimension"
+            "remove": "Remove dimension",
+            "customize": "Customize"
           },
           "ratings": {
             "title": "Ratings and Reviews",
@@ -1380,7 +1394,15 @@
       "ebook": "Ebook file",
       "audiobook": "Audiobook file",
       "title": "Files",
-      "assetFolder": "Asset folder"
+      "assetFolder": "Asset folder",
+      "editAssetFolder": "Edit asset folder",
+      "editAssetFolderDescription": "Change the name of this book's internal asset directory. Files will be moved to the new location.",
+      "assetFolderLabel": "Folder name",
+      "conflictOwnedByOther": "This folder name is already used by \"{title}\".",
+      "conflictFilesExist": "The target folder already has files. Choose which to keep for each format.",
+      "keepCurrent": "Keep current",
+      "keepTarget": "Keep from target folder",
+      "assetFolderUpdated": "Asset folder updated"
     },
     "alignment": {
       "title": "Alignment",

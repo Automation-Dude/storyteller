@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import {
   Book3D,
+  type Book3DFormat,
   BookFullscreenButton,
   type SpineInfo,
 } from "@v3/_/components/books/Book3D"
@@ -137,10 +138,20 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   const t = useTranslation("BookDetailsPage")
   const coverWidth = compact ? 150 : 176
 
-  const { bookDetailDisplay, gridCoverDisplay, bookDetail3dView } =
-    useUserPreferences()
+  const {
+    bookDetailDisplay,
+    gridCoverDisplay,
+    bookDetail3dView,
+    bookDetail3dViewAudio,
+  } = useUserPreferences()
   const [setUserSetting] = useSetUserSettingMutation()
-  const [currentView, setCurrentView] = useState(bookDetail3dView ?? 0)
+
+  // each rendition (paper book / cd case) has its own default position
+  const defaultViews: Record<Book3DFormat, number> = {
+    ebook: bookDetail3dView ?? 0,
+    audiobook: bookDetail3dViewAudio ?? 0,
+  }
+  const [currentViews, setCurrentViews] = useState(defaultViews)
 
   const canSetEbookCover = !!book.ebook || !!book.readaloud
   const canSetAudioCover = !!book.audiobook || !!book.readaloud
@@ -148,11 +159,12 @@ export function CoverEditor({ compact }: { compact: boolean }) {
   const textCover = useWatch({ control: form.control, name: "textCover" })
   const audioCover = useWatch({ control: form.control, name: "audioCover" })
 
-  const handleSaveDefaultView = async () => {
+  const handleSaveDefaultView = async (format: Book3DFormat) => {
     try {
       await setUserSetting({
-        name: "bookDetail3dView",
-        value: currentView,
+        name:
+          format === "audiobook" ? "bookDetail3dViewAudio" : "bookDetail3dView",
+        value: currentViews[format],
       }).unwrap()
       toast.success(t("cover.savedDefaultPosition"))
     } catch {
@@ -200,26 +212,29 @@ export function CoverEditor({ compact }: { compact: boolean }) {
         book={book}
         width={coverWidth}
         spine={SPINE_INFO}
-        initialView={bookDetail3dView ?? 0}
-        onViewChange={setCurrentView}
+        initialViews={defaultViews}
+        onViewChange={(view, format) => {
+          setCurrentViews((views) => ({ ...views, [format]: view }))
+        }}
+        slabActions={(format) =>
+          currentViews[format] !== defaultViews[format] ? (
+            <TooltipButton
+              variant="secondary"
+              size="icon-sm"
+              onClick={() => {
+                void handleSaveDefaultView(format)
+              }}
+              aria-label={t("cover.setDefaultPosition")}
+              tooltip={t("cover.setDefaultPosition")}
+              className="tint-surface bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
+            >
+              <icon.Pin className="size-4" />
+            </TooltipButton>
+          ) : null
+        }
         actions={
           <>
             {editAction}
-
-            {currentView !== (bookDetail3dView ?? 0) && (
-              <TooltipButton
-                variant="secondary"
-                size="icon-sm"
-                onClick={() => {
-                  void handleSaveDefaultView()
-                }}
-                aria-label={t("cover.setDefaultPosition")}
-                tooltip={t("cover.setDefaultPosition")}
-                className="tint-surface bg-background/85 text-foreground/70 hover:text-foreground rounded-full p-1.5"
-              >
-                <icon.Pin className="size-4" />
-              </TooltipButton>
-            )}
 
             <BookFullscreenButton
               book={book}

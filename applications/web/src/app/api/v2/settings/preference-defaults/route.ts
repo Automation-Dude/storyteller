@@ -5,7 +5,7 @@ import {
   isPreferenceDefaultsLocked,
   setPreferenceDefaults,
 } from "@/database/settings"
-import { PreferenceDefaultsSchema } from "@/database/userPreferencesTypes"
+import { PreferenceDefaultsUpdateSchema } from "@/database/userPreferencesTypes"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +22,7 @@ export const PUT = withHasPermission("settingsUpdate")(async (request) => {
 
   const body: unknown = await request.json()
 
-  const parsed = PreferenceDefaultsSchema.safeParse(body)
+  const parsed = PreferenceDefaultsUpdateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid preference defaults" },
