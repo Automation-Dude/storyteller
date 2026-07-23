@@ -994,6 +994,28 @@ fn spawn_server(
         ));
     }
 
+    // i have no fucking clue what this does
+    // claude:
+    // a process whose executable lives inside the .app bundle inherits the
+    // bundle's LaunchServices identity as a Foreground app, so when next.js
+    // sets its process title (libuv checks the process in with LS to set the
+    // display name) a second, forever-bouncing dock icon appears. spawned
+    // from a copy outside the bundle the same check-in registers as
+    // background-only and stays out of the dock.
+    #[cfg(target_os = "macos")]
+    let node = {
+        let relocated = runtime_dir.join("node");
+        let stale = match (fs::metadata(&relocated), fs::metadata(&node)) {
+            (Ok(copied), Ok(bundled)) => copied.len() != bundled.len(),
+            _ => true,
+        };
+        if stale {
+            fs::copy(&node, &relocated)
+                .context("failed to stage node sidecar outside the app bundle")?;
+        }
+        relocated
+    };
+
     let web_dir = runtime_dir.join("applications").join("web");
 
     // sidecar dir first so the server finds readium/ffmpeg/ffprobe
