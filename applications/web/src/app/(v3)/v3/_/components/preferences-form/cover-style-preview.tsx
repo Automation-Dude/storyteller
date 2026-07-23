@@ -95,40 +95,6 @@ export function FlatDetailPreview() {
 
 export const VIEW_COUNT = VIEWS.length
 
-const PAGE_EDGE =
-  "repeating-linear-gradient(to bottom, #f8f5ec, #f8f5ec 2px, #e2ddcc 3px)"
-
-type FaceColors = {
-  front: string
-  back: string
-  spine: string
-  edge: string
-  cap: string
-  radius: string
-  backRadius: string
-}
-
-const FACE_COLORS: Record<"ebook" | "audiobook", FaceColors> = {
-  ebook: {
-    front: ebookGradient,
-    back: "#1e40af",
-    spine: "#1e3a8a",
-    edge: PAGE_EDGE,
-    cap: "#f3efe2",
-    radius: "2px 6px 6px 2px",
-    backRadius: "6px 2px 2px 6px",
-  },
-  audiobook: {
-    front: audioGradient,
-    back: "#5b21b6",
-    spine: "#4c1d95",
-    edge: "#a78bfa",
-    cap: "#4c1d95",
-    radius: "4px",
-    backRadius: "4px",
-  },
-}
-
 export function Book3DPositionPreview({
   ebookView,
   audiobookView,
