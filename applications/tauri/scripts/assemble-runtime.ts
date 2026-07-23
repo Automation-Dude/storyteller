@@ -259,6 +259,35 @@ for (const link of [...findSymlinks(stagingDir)]) {
 
 mkdirSync(join(webStaging, ".next", "cache"), { recursive: true })
 
+// force resign everything for notarization
+if (target.platform === "darwin") {
+  function* findFiles(dir: string): Generator<string> {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name)
+      if (entry.isSymbolicLink()) continue
+      if (entry.isDirectory()) yield* findFiles(path)
+      else if (entry.isFile()) yield path
+    }
+  }
+  const nativeBinaries = [...findFiles(stagingDir)].filter(
+    (path) => path.endsWith(".node") || path.endsWith(".dylib"),
+  )
+  const identity = process.env.APPLE_SIGNING_IDENTITY
+  if (identity) {
+    console.log(`codesigning ${nativeBinaries.length} native binaries`)
+    for (const path of nativeBinaries) {
+      execSync(
+        `codesign --force --sign ${JSON.stringify(identity)} --options runtime --timestamp ${JSON.stringify(path)}`,
+        { stdio: "inherit" },
+      )
+    }
+  } else {
+    console.log(
+      `APPLE_SIGNING_IDENTITY unset, leaving ${nativeBinaries.length} native binaries unsigned (fine for local dev, notarization would reject them)`,
+    )
+  }
+}
+
 console.log("compressing runtime tree (this takes a minute)")
 mkdirSync(resourcesDir, { recursive: true })
 const tarball = join(resourcesDir, "runtime.tar.gz")
