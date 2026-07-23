@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@v3/_/components/ui/dropdown-menu"
 
+import { EditAssetDirDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/EditAssetDirDialog"
 import { EditIdentifiersDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/EditIdentifiersDialog"
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
@@ -438,6 +439,7 @@ export function FileSection({
     mode: "server" | "upload"
   } | null>(null)
   const [removeTarget, setRemoveTarget] = useState<Format | null>(null)
+  const [editingAssetDir, setEditingAssetDir] = useState(false)
 
   const allFormats = ["readaloud", "ebook", "audiobook"] as const
   const presentFormats = allFormats.filter((f) => book[f])
@@ -586,24 +588,38 @@ export function FileSection({
 
         {canEdit && assetFolder && (
           <div className="flex flex-col gap-0.5 text-xs">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-1">
               <span className="text-muted-foreground font-sans text-xs uppercase">
                 {t("fileInformation.assetFolder")}
               </span>
 
-              {isTauri && (
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   className="text-muted-foreground -my-1 h-5 w-5"
-                  aria-label="Show asset folder in file manager"
+                  aria-label={t.plain("fileInformation.editAssetFolder")}
                   onClick={() => {
-                    void revealItemInDir(assetFolder)
+                    setEditingAssetDir(true)
                   }}
                 >
-                  <icon.ExternalLink className="h-3 w-3" />
+                  <icon.Edit className="h-3 w-3" />
                 </Button>
-              )}
+
+                {isTauri && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted-foreground -my-1 h-5 w-5"
+                    aria-label="Show asset folder in file manager"
+                    onClick={() => {
+                      void revealItemInDir(assetFolder)
+                    }}
+                  >
+                    <icon.ExternalLink className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <code className="font-mono break-all">{assetFolder}</code>
@@ -651,6 +667,16 @@ export function FileSection({
         cancelLabel="Cancel"
         variant="destructive"
       />
+
+      {editingAssetDir && (
+        <EditAssetDirDialog
+          book={book}
+          open
+          onOpenChange={(next) => {
+            if (!next) setEditingAssetDir(false)
+          }}
+        />
+      )}
     </CollapsibleSection>
   )
 }

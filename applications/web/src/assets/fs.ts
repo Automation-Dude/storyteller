@@ -199,6 +199,301 @@ export async function renameBookAssets(
   return updated
 }
 
+export type AssetDirConflict = {
+  kind: "owned_by_another_book"
+  ownerUuid: UUID
+  ownerTitle: string
+} | {
+  kind: "files_exist_on_disk"
+  existingFiles: {
+    ebook?: string
+    audiobook?: string
+    readaloud?: string
+  }
+}
+
+export type ConflictResolution = {
+  ebook?: "current" | "target"
+  audiobook?: "current" | "target"
+  readaloud?: "current" | "target"
+}
+
+/**
+ * explicitly change a book's asset directory. unlike renameBookAssets (which
+ * runs automatically on title change), this is user-initiated and includes
+ * conflict detection + resolution for pre-existing files in the target folder.
+ */
+export async function changeBookAssetDir(
+  book: BookWithRelations,
+  newAssetDir: string,
+  resolution?: ConflictResolution,
+): Promise<{ book: BookWithRelations } | { conflict: AssetDirConflict }> {
+  if (newAssetDir === book.assetDir) {
+    return { book }
+  }
+
+  const collision = await db
+    .selectFrom("book")
+    .select(["uuid", "title"])
+    .where("assetDir", "=", newAssetDir)
+    .where("uuid", "!=", book.uuid)
+    .executeTakeFirst()
+
+  if (collision) {
+    return {
+      conflict: {
+        kind: "owned_by_another_book",
+        ownerUuid: collision.uuid,
+        ownerTitle: collision.title,
+      },
+    }
+  }
+
+  const targetDir = join(ASSETS_DIR, newAssetDir)
+  const targetExists = await exist(targetDir)
+
+  if (targetExists && !resolution) {
+    const existingFiles = await scanFolderFormats(targetDir)
+
+    if (existingFiles.ebook || existingFiles.audiobook || existingFiles.readaloud) {
+      return {
+        conflict: {
+          kind: "files_exist_on_disk",
+          existingFiles,
+        },
+      }
+    }
+  }
+
+  const oldDir = getInternalBookDirectory(book)
+  const oldDirExists = await exist(oldDir)
+
+  // if the target exists and we have resolution, handle the merge
+  if (targetExists && resolution) {
+    await mergeIntoTarget(book, oldDir, targetDir, resolution)
+  } else if (oldDirExists) {
+    suppressPrefix(oldDir)
+    suppressPrefix(targetDir)
+    try {
+      await move(oldDir, targetDir)
+    } finally {
+      unsuppressPrefix(oldDir)
+      unsuppressPrefix(targetDir)
+    }
+  } else {
+    await mkdir(targetDir, { recursive: true })
+  }
+
+  let updated = await updateBook(book.uuid, { assetDir: newAssetDir })
+
+  // rewrite internal filepaths that pointed to the old directory
+  updated = await rewriteInternalPaths(book, updated)
+
+  return { book: updated }
+}
+
+async function mergeIntoTarget(
+  book: BookWithRelations,
+  oldDir: string,
+  targetDir: string,
+  resolution: ConflictResolution,
+) {
+  const oldDirExists = await exist(oldDir)
+  if (!oldDirExists) return
+
+  suppressPrefix(oldDir)
+  suppressPrefix(targetDir)
+
+  try {
+    // for formats where we keep "current", move our files over (overwriting target)
+    // for formats where we keep "target", leave target files in place
+    const entries = await readdir(oldDir, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const src = join(oldDir, entry.name)
+      const dest = join(targetDir, entry.name)
+
+      const shouldSkip = shouldSkipForResolution(entry.name, oldDir, resolution)
+      if (shouldSkip) continue
+
+      if (entry.isDirectory()) {
+        await cp(src, dest, { recursive: true, force: true })
+      } else {
+        await cp(src, dest, { force: true })
+      }
+    }
+
+    await rm(oldDir, { recursive: true, force: true })
+  } finally {
+    unsuppressPrefix(oldDir)
+    unsuppressPrefix(targetDir)
+  }
+}
+
+function shouldSkipForResolution(
+  name: string,
+  _oldDir: string,
+  resolution: ConflictResolution,
+): boolean {
+  // if resolution says "target" for a format, skip copying our version of that format's subdirectory
+  if (name === "text" && resolution.ebook === "target") return true
+  if (name === "audio" && resolution.audiobook === "target") return true
+  if (name === "aligned" && resolution.readaloud === "target") return true
+
+  return false
+}
+
+async function rewriteInternalPaths(
+  before: BookWithRelations,
+  after: BookWithRelations,
+): Promise<BookWithRelations> {
+  const oldDir = join(ASSETS_DIR, before.assetDir)
+  const newDir = getInternalBookDirectory(after)
+
+  const relations: Parameters<typeof updateBook>[2] = {}
+
+  if (before.ebook?.filepath && pathBelongsTo(oldDir, before.ebook.filepath)) {
+    const relative = before.ebook.filepath.slice(oldDir.length)
+    relations.ebook = { filepath: join(newDir, relative) }
+  }
+
+  if (before.audiobook?.filepath && pathBelongsTo(oldDir, before.audiobook.filepath)) {
+    const relative = before.audiobook.filepath.slice(oldDir.length)
+    relations.audiobook = { filepath: join(newDir, relative) }
+  }
+
+  if (before.readaloud?.filepath && pathBelongsTo(oldDir, before.readaloud.filepath)) {
+    const relative = before.readaloud.filepath.slice(oldDir.length)
+    relations.readaloud = {
+      filepath: join(newDir, relative),
+      currentStage: before.readaloud.currentStage ?? "SPLIT_TRACKS",
+    }
+  }
+
+  if (Object.keys(relations).length === 0) return after
+
+  return await updateBook(after.uuid, null, relations)
+}
+
+async function scanFolderFormats(folder: string): Promise<{
+  ebook?: string
+  audiobook?: string
+  readaloud?: string
+}> {
+  const result: { ebook?: string; audiobook?: string; readaloud?: string } = {}
+
+  const textDir = join(folder, "text")
+  const audioDir = join(folder, "audio")
+  const alignedDir = join(folder, "aligned")
+
+  if (await exist(textDir)) {
+    try {
+      const entries = await readdir(textDir)
+      const epub = entries.find((e) => e.endsWith(".epub"))
+      if (epub) result.ebook = join(textDir, epub)
+    } catch { /* empty */ }
+  }
+
+  if (await exist(audioDir)) {
+    try {
+      const entries = await readdir(audioDir)
+      const hasAudio = entries.some((e) => isAudioFile(e))
+      if (hasAudio) result.audiobook = audioDir
+    } catch { /* empty */ }
+  }
+
+  if (await exist(alignedDir)) {
+    try {
+      const entries = await readdir(alignedDir)
+      const epub = entries.find((e) => e.endsWith(".epub"))
+      if (epub) result.readaloud = join(alignedDir, epub)
+    } catch { /* empty */ }
+  }
+
+  return result
+}
+
+export type RelocateMode = "copy" | "move" | "hardlink"
+
+/**
+ * relocate reference-mode (external) files into the book's internal asset directory.
+ * after relocating, adds an ignore import rule for each original path so the
+ * scanner won't try to re-import the now-empty source location.
+ */
+export async function relocateToInternal(
+  book: BookWithRelations,
+  mode: RelocateMode = "copy",
+): Promise<BookWithRelations> {
+  const { addIgnoreRule } = await import("@/database/importRules")
+
+  const reserved = await reserveBookDirectory(book)
+  const relations: Parameters<typeof updateBook>[2] = {}
+  const originalPaths: string[] = []
+
+  if (reserved.ebook?.filepath && !pathBelongsTo(ASSETS_DIR, reserved.ebook.filepath)) {
+    const src = reserved.ebook.filepath
+    const dest = getInternalEpubFilepath(reserved)
+    await mkdir(dirname(dest), { recursive: true })
+    await transferFile(src, dest, mode)
+    relations.ebook = { filepath: dest }
+    originalPaths.push(src)
+  }
+
+  if (reserved.audiobook?.filepath && !pathBelongsTo(ASSETS_DIR, reserved.audiobook.filepath)) {
+    const src = reserved.audiobook.filepath
+    const dest = getInternalAudioDirectory(reserved)
+    await mkdir(dest, { recursive: true })
+
+    const entries = await readdir(src)
+    for (const entry of entries) {
+      if (isAudioFile(entry) || entry.endsWith(".zip")) {
+        await transferFile(join(src, entry), join(dest, entry), mode)
+      }
+    }
+
+    if (mode === "move") {
+      await rm(src, { recursive: true, force: true })
+    }
+
+    relations.audiobook = { filepath: dest }
+    originalPaths.push(src)
+  }
+
+  if (reserved.readaloud?.filepath && !pathBelongsTo(ASSETS_DIR, reserved.readaloud.filepath)) {
+    const src = reserved.readaloud.filepath
+    const dest = getInternalReadaloudFilepath(reserved)
+    await mkdir(dirname(dest), { recursive: true })
+    await transferFile(src, dest, mode)
+    relations.readaloud = {
+      filepath: dest,
+      currentStage: reserved.readaloud.currentStage ?? "SPLIT_TRACKS",
+    }
+    originalPaths.push(src)
+  }
+
+  if (Object.keys(relations).length === 0) return reserved
+
+  for (const path of originalPaths) {
+    await addIgnoreRule(path, { source: "import-relocate", bookUuid: reserved.uuid })
+  }
+
+  return await updateBook(reserved.uuid, null, relations)
+}
+
+async function transferFile(src: string, dest: string, mode: RelocateMode) {
+  switch (mode) {
+    case "move":
+      await move(src, dest)
+      break
+    case "hardlink":
+      await copyWithHardlink(src, dest)
+      break
+    case "copy":
+      await copyWithReflink(src, dest)
+      break
+  }
+}
+
 /**
  * Only called after merge, makes sure that the merged books' media files are moved into the target book's own folder if they are asset_dir files
  */

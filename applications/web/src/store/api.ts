@@ -79,7 +79,9 @@ import { type Status } from "@/database/statuses"
 import { type AddTagInput, type Tag } from "@/database/tags"
 import {
   type PreferenceDefaults,
+  type PreferenceDefaultsUpdate,
   type UserPreferences,
+  type UserPreferencesForm,
 } from "@/database/userPreferencesTypes"
 import { type UserBookRating } from "@/database/userRatings"
 import { type UserPermissionSet } from "@/database/users"
@@ -232,7 +234,7 @@ export const api = createApi({
     }),
     updatePreferenceDefaults: build.mutation<
       PreferenceDefaults,
-      PreferenceDefaults
+      PreferenceDefaultsUpdate
     >({
       query: (body) => ({
         url: "/settings/preference-defaults",
@@ -390,6 +392,44 @@ export const api = createApi({
         url: `/books/${uuid}/replace-asset`,
         method: "DELETE",
         params: { format },
+      }),
+    }),
+    updateBookAssetDir: build.mutation<
+      BookWithRelations,
+      {
+        uuid: UUID
+        assetDir: string
+        conflictResolution?: {
+          ebook?: "current" | "target"
+          audiobook?: "current" | "target"
+          readaloud?: "current" | "target"
+        }
+      }
+    >({
+      query: ({ uuid, ...body }) => ({
+        url: `/books/${uuid}/asset-dir`,
+        method: "PUT",
+        body,
+      }),
+    }),
+    relocateToInternal: build.mutation<
+      BookWithRelations,
+      { uuid: UUID; mode?: "copy" | "move" | "hardlink" }
+    >({
+      query: ({ uuid, mode }) => ({
+        url: `/books/${uuid}/relocate-to-internal`,
+        method: "POST",
+        body: { mode },
+      }),
+    }),
+    bulkRelocateToInternal: build.mutation<
+      BookWithRelations[],
+      { bookUuids: UUID[]; mode?: "copy" | "move" | "hardlink" }
+    >({
+      query: (body) => ({
+        url: `/books/relocate-to-internal`,
+        method: "POST",
+        body,
       }),
     }),
     getImportRules: build.query<ImportRuleWithCollections[], void>({
@@ -1667,7 +1707,7 @@ export const api = createApi({
       query: () => "/user/settings",
       providesTags: ["UserSettings"],
     }),
-    updateUserSettings: build.mutation<void, Partial<UserPreferences>>({
+    updateUserSettings: build.mutation<void, Partial<UserPreferencesForm>>({
       query: (body) => ({
         url: "/user/settings",
         method: "PUT",
@@ -2300,6 +2340,9 @@ export const {
   useDeleteBooksMutation,
   useReplaceBookAssetMutation,
   useRemoveBookAssetMutation,
+  useUpdateBookAssetDirMutation,
+  useRelocateToInternalMutation,
+  useBulkRelocateToInternalMutation,
   useGetPositionQuery,
   useGetBookQuery,
   useUpdatePositionMutation,
