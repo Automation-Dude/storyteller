@@ -34,7 +34,11 @@ publish-tauri-macos:
   extends: .publish-tauri
   # need big boi bc the small one runs oom
   tags: [saas-macos-large-m2pro]
-  image: macos-26-xcode-26
+  # not macos-26: its image has a codesign/p12 regression (signing fails with
+  # "unable to build chain to self-signed root" / errSecInternalComponent,
+  # see github.com/actions/runner-images/issues/13884 for the same breakage);
+  # the align jobs sign fine on the older image
+  image: macos-15-xcode-16
   variables:
     KEYCHAIN_NAME: "build-$CI_JOB_ID.keychain"
     KEYCHAIN_PASSWORD: "temp-keychain-password"
@@ -47,6 +51,9 @@ publish-tauri-macos:
       list-keychains -d user | tr -d '"')
     - security set-keychain-settings -lut 21600 "$KEYCHAIN_NAME"
     - security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+    # codesign resolves the cert chain via the default keychain, not just the
+    # search list
+    - security default-keychain -d user -s "$KEYCHAIN_NAME"
     - echo "$APPLE_CERTIFICATE_P12" | base64 --decode > certificate.p12
     - security import certificate.p12 -k "$KEYCHAIN_NAME" -P
       "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
@@ -56,10 +63,17 @@ publish-tauri-macos:
     - 'security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k
       "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"'
     - security find-identity -v -p codesigning "$KEYCHAIN_NAME"
+    # best-effort chain diagnostics: verify-cert reproduces codesign's chain
+    # building and names the missing cert if it fails
+    - |
+      openssl x509 -inform der -in developer_id_cert_authority.cer -noout -subject -issuer -enddate || true
+      openssl pkcs12 -in certificate.p12 -clcerts -nokeys -passin pass:"$APPLE_CERTIFICATE_PASSWORD" -out leaf.pem 2>/dev/null || true
+      openssl x509 -in leaf.pem -noout -subject -issuer -enddate || true
+      security verify-cert -c leaf.pem -p codeSign || true
   # overrides the base after_script, so repeat the bundle cleanup
   after_script:
     - security delete-keychain "$KEYCHAIN_NAME" || true
-    - rm -f certificate.p12
+    - rm -f certificate.p12 leaf.pem
     - rm -rf applications/tauri/src-tauri/target/release/bundle
   script:
     - export VERSION="${CI_COMMIT_TAG#tauri-}"
