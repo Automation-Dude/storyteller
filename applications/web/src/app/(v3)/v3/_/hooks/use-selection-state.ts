@@ -4,24 +4,27 @@ import { useCallback, useMemo, useState } from "react"
 
 import { type UUID } from "@/uuid"
 
-export type SelectionState = {
-  selected: Set<UUID>
-  lastSelectedId: UUID | null
-  toggle: (id: UUID) => void
-  selectRange: (targetId: UUID, orderedIds: UUID[]) => void
-  selectAll: (ids: UUID[]) => void
+// not per se uuids!
+export type SelectionState<T extends string = UUID> = {
+  selected: Set<T>
+  lastSelectedId: T | null
+  toggle: (id: T) => void
+  selectRange: (targetId: T, orderedIds: T[]) => void
+  selectAll: (ids: T[]) => void
   selectNone: () => void
-  invert: (allIds: UUID[]) => void
-  isSelected: (id: UUID) => boolean
+  invert: (allIds: T[]) => void
+  isSelected: (id: T) => boolean
   // clear both the selection and the anchor
   reset: () => void
 }
 
-export function useSelectionState(): SelectionState {
-  const [selected, setSelected] = useState<Set<UUID>>(new Set())
-  const [lastSelectedId, setLastSelectedId] = useState<UUID | null>(null)
+export function useSelectionState<
+  T extends string = UUID,
+>(): SelectionState<T> {
+  const [selected, setSelected] = useState<Set<T>>(new Set())
+  const [lastSelectedId, setLastSelectedId] = useState<T | null>(null)
 
-  const toggle = useCallback((id: UUID) => {
+  const toggle = useCallback((id: T) => {
     setLastSelectedId(id)
     setSelected((prev) => {
       const next = new Set(prev)
@@ -35,7 +38,7 @@ export function useSelectionState(): SelectionState {
   }, [])
 
   const selectRange = useCallback(
-    (targetId: UUID, orderedIds: UUID[]) => {
+    (targetId: T, orderedIds: T[]) => {
       const anchorId = lastSelectedId
 
       if (!anchorId) {
@@ -76,7 +79,7 @@ export function useSelectionState(): SelectionState {
     [lastSelectedId],
   )
 
-  const selectAll = useCallback((ids: UUID[]) => {
+  const selectAll = useCallback((ids: T[]) => {
     setSelected(new Set(ids))
   }, [])
 
@@ -84,11 +87,11 @@ export function useSelectionState(): SelectionState {
     setSelected(new Set())
   }, [])
 
-  const invert = useCallback((allIds: UUID[]) => {
+  const invert = useCallback((allIds: T[]) => {
     setSelected((prev) => new Set(allIds.filter((id) => !prev.has(id))))
   }, [])
 
-  const isSelected = useCallback((id: UUID) => selected.has(id), [selected])
+  const isSelected = useCallback((id: T) => selected.has(id), [selected])
 
   const reset = useCallback(() => {
     setSelected(new Set())

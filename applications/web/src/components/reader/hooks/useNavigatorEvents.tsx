@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-useless-default-assignment */
 import { type FrameManager } from "@readium/navigator"
 import {
   createContext,
@@ -74,7 +75,7 @@ export const NavigatorEventsProvider = ({
   const registerClickHandler = useCallback(
     (
       handler: (event: MouseEvent | TouchEvent) => boolean | undefined,
-      priority: number,
+      priority = 100,
     ) => {
       setRegisteredHandlers((prev) => ({
         ...prev,
@@ -86,7 +87,7 @@ export const NavigatorEventsProvider = ({
     [],
   )
   const registerMouseMoveHandler = useCallback(
-    (handler: NavigatorMouseMoveHandler, priority: number) => {
+    (handler: NavigatorMouseMoveHandler, priority = 100) => {
       setRegisteredHandlers((prev) => ({
         ...prev,
         mouseMove: [...prev.mouseMove, { handler, priority }].sort(

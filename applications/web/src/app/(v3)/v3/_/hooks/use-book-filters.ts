@@ -124,7 +124,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     ? defaultSorts[currentPage ?? ""] ??
       options.defaultSort ??
       defaultSortDefault
-    : undefined
+    : defaultSortDefault
 
   const [userFilter, setUserFilterRaw] = useQueryState("f", filterParser)
   const [searchQueryParam, setSearchQueryParam] = useQueryState(

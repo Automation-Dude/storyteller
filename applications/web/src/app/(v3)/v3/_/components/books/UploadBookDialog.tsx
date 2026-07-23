@@ -43,7 +43,7 @@ export function UploadBookDialog({
 }) {
   const t = useTranslation("UploadDialog")
   const c = useCommon()
-  const bookUuidRef = useRef(uuidv4())
+  const bookUuidRef = useRef<UUID>(uuidv4() as UUID)
 
   function buildMeta(file: UppyFileType) {
     file.meta["bookUuid"] = bookUuidRef.current
@@ -66,7 +66,7 @@ export function UploadBookDialog({
 
   function handleComplete() {
     const uuid = bookUuidRef.current
-    bookUuidRef.current = uuidv4()
+    bookUuidRef.current = uuidv4() as UUID
     onBookCreated?.(uuid)
   }
 
@@ -75,7 +75,7 @@ export function UploadBookDialog({
       open={open}
       onOpenChange={(next) => {
         if (!next) {
-          bookUuidRef.current = uuidv4()
+          bookUuidRef.current = uuidv4() as UUID
         }
         onOpenChange(next)
       }}

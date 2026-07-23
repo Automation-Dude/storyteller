@@ -711,7 +711,8 @@ function SidebarRow({
             checked={isChecked}
             onSelectRange={onSelectRange}
             onToggle={onToggle}
-            uuid={item.key}
+            // yeah yeah
+            uuid={item.key as UUID}
             isSelecting={isSelecting}
             className={cn(
               "group-focus-within:block! group-focus-within:opacity-100! group-hover/item:block! group-hover/item:opacity-100!",

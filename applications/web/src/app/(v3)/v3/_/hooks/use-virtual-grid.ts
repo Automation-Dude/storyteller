@@ -315,7 +315,7 @@ export function useVirtualGrid(options: UseVirtualGridOptions): VirtualGrid {
 
   // recompute the visible window from the current scroll + metrics.
   const updateRange = useCallback(
-    (growOnly) => {
+    (growOnly?: boolean) => {
       const scroller = scrollElRef.current
       if (!scroller) return undefined
       const g = geometryRef.current

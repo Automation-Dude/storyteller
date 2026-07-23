@@ -19,7 +19,7 @@ export type ItemSelectionState = {
 // picked", and stopSelecting just clears. shares its reducer core with book
 // selection so shift-range behaves identically.
 export function useItemSelection(): ItemSelectionState {
-  const selection = useSelectionState()
+  const selection = useSelectionState<string>()
 
   const isSelecting = selection.selected.size > 0
 

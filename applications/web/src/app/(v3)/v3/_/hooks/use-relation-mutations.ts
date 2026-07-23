@@ -120,11 +120,20 @@ export function useRelationEditActions(
       // column values are read-only filter options -> not editable here
       case "creators":
       case "distinct":
+      case "identifiers":
         return {
           add: () => {},
           remove: () => {},
           singleSelect: false,
         }
+      default: {
+        const _exhaustive: never = source
+        return {
+          add: () => {},
+          remove: () => {},
+          singleSelect: false,
+        }
+      }
     }
   }, [
     source,
