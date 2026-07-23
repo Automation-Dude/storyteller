@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useState } from "react"
+import { v4 as uuidv4 } from "uuid"
 
 import { ShelfEditor } from "@v3/_/components/shelves/ShelfEditor"
 import { Button } from "@v3/_/components/ui/button"
@@ -348,7 +349,7 @@ export function SidebarManager({ groups, onClose }: SidebarManagerProps) {
       groups: [
         ...prev.groups,
         {
-          id: `new:${nanoi()}`,
+          id: `new:${uuidv4()}`,
           name: t("newSection"),
           kind: null,
           items: [],

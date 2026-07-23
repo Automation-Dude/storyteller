@@ -58,7 +58,7 @@ export function EditAssetDirDialog({
   const [updateAssetDir, { isLoading }] = useUpdateBookAssetDirMutation()
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: React.SubmitEvent) => {
       e.preventDefault()
 
       const trimmed = value.trim()
@@ -81,7 +81,10 @@ export function EditAssetDirDialog({
         setConflict(null)
         onOpenChange(false)
       } catch (err: unknown) {
-        const error = err as { status?: number; data?: { conflict?: ConflictInfo } }
+        const error = err as {
+          status?: number
+          data?: { conflict?: ConflictInfo }
+        }
 
         if (error.status === 409 && error.data?.conflict) {
           setConflict(error.data.conflict)
@@ -94,10 +97,14 @@ export function EditAssetDirDialog({
               defaults.ebook = book.ebook?.missing ? "target" : "current"
             }
             if (existing.audiobook) {
-              defaults.audiobook = book.audiobook?.missing ? "target" : "current"
+              defaults.audiobook = book.audiobook?.missing
+                ? "target"
+                : "current"
             }
             if (existing.readaloud) {
-              defaults.readaloud = book.readaloud?.missing ? "target" : "current"
+              defaults.readaloud = book.readaloud?.missing
+                ? "target"
+                : "current"
             }
 
             setResolution(defaults)
@@ -125,9 +132,7 @@ export function EditAssetDirDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={(e) => void handleSubmit(e)}>
           <DialogHeader>
-            <DialogTitle>
-              {t("fileInformation.editAssetFolder")}
-            </DialogTitle>
+            <DialogTitle>{t("fileInformation.editAssetFolder")}</DialogTitle>
             <DialogDescription>
               {t("fileInformation.editAssetFolderDescription")}
             </DialogDescription>
@@ -135,10 +140,7 @@ export function EditAssetDirDialog({
 
           <div className="mt-4 space-y-4">
             <div className="space-y-2">
-              <label
-                htmlFor="asset-dir-input"
-                className="text-sm font-medium"
-              >
+              <label htmlFor="asset-dir-input" className="text-sm font-medium">
                 {t("fileInformation.assetFolderLabel")}
               </label>
 
@@ -171,9 +173,9 @@ export function EditAssetDirDialog({
                   <FormatResolutionPicker
                     format="ebook"
                     value={resolution.ebook ?? "current"}
-                    onChange={(v) =>
+                    onChange={(v) => {
                       setResolution((r) => ({ ...r, ebook: v }))
-                    }
+                    }}
                     keepCurrentLabel={t.plain("fileInformation.keepCurrent")}
                     keepTargetLabel={t.plain("fileInformation.keepTarget")}
                   />
@@ -183,9 +185,9 @@ export function EditAssetDirDialog({
                   <FormatResolutionPicker
                     format="audiobook"
                     value={resolution.audiobook ?? "current"}
-                    onChange={(v) =>
+                    onChange={(v) => {
                       setResolution((r) => ({ ...r, audiobook: v }))
-                    }
+                    }}
                     keepCurrentLabel={t.plain("fileInformation.keepCurrent")}
                     keepTargetLabel={t.plain("fileInformation.keepTarget")}
                   />
@@ -195,9 +197,9 @@ export function EditAssetDirDialog({
                   <FormatResolutionPicker
                     format="readaloud"
                     value={resolution.readaloud ?? "current"}
-                    onChange={(v) =>
+                    onChange={(v) => {
                       setResolution((r) => ({ ...r, readaloud: v }))
-                    }
+                    }}
                     keepCurrentLabel={t.plain("fileInformation.keepCurrent")}
                     keepTargetLabel={t.plain("fileInformation.keepTarget")}
                   />
@@ -210,7 +212,9 @@ export function EditAssetDirDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleOpenChange(false)}
+              onClick={() => {
+                handleOpenChange(false)
+              }}
               disabled={isLoading}
             >
               {c("actions.cancel")}
@@ -221,7 +225,7 @@ export function EditAssetDirDialog({
               disabled={
                 isLoading ||
                 !value.trim() ||
-                (conflict?.kind === "owned_by_another_book")
+                conflict?.kind === "owned_by_another_book"
               }
             >
               {isLoading ? c("states.saving") : c("actions.save")}
@@ -254,13 +258,15 @@ function FormatResolutionPicker({
 
   return (
     <div className="rounded-md border p-3">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wide">
+      <p className="mb-2 text-xs font-medium tracking-wide uppercase">
         {FORMAT_LABELS[format]}
       </p>
 
       <RadioGroup
         value={value}
-        onValueChange={(v) => onChange(v as "current" | "target")}
+        onValueChange={(v) => {
+          onChange(v as "current" | "target")
+        }}
         className="gap-2"
       >
         <label className="flex items-center gap-2 text-sm">

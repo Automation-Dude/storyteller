@@ -85,7 +85,7 @@ export const POST = withHasPermission("bookCreate")(async (request) => {
   const {
     paths,
     collection,
-    importMode = "reference",
+    importMode,
     epub2Strategy = "auto",
   } = (await request.json()) as {
     paths: string[]

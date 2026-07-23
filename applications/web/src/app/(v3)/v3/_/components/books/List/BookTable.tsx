@@ -2,7 +2,7 @@
 
 import { Popover } from "@base-ui/react/popover"
 import {
-  Cell,
+  type Cell,
   type ColumnDef,
   type ColumnSizingState,
   type Header,
@@ -29,6 +29,8 @@ import {
   findScrollParent,
   useBookActionMenu,
 } from "@/app/(v3)/v3/_/components/books/ActionMenu/useBookActionMenu"
+import { useCoverScope } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
+import { Cover } from "@/app/(v3)/v3/_/components/books/Cover"
 import {
   MissingBadge,
   hasMissingMedia,
@@ -61,11 +63,10 @@ import {
   selectTableColumnWidths,
   uiSettingsSlice,
 } from "@/store/slices/uiSettingsSlice"
+import { type UUID } from "@/uuid"
 
-import { Cover } from "../Cover"
+
 import { ColumnValue, columnWidths } from "./BookListColumns"
-import { useCoverScope } from "../BookDetails/sections/CoverScope"
-import { UUID } from "@/uuid"
 
 type BookTableProps = {
   books: BookWithRelations[]

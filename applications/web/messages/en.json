@@ -504,7 +504,8 @@
       "isAnyOf": "is any of",
       "isNoneOf": "is none of",
       "isEmpty": "is empty",
-      "isNotEmpty": "is not empty"
+      "isNotEmpty": "is not empty",
+      "count": "Count"
     },
     "numericPlaceholders": {
       "rating": "Rating...",

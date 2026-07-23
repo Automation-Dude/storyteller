@@ -74,7 +74,7 @@ export const NavigatorEventsProvider = ({
   const registerClickHandler = useCallback(
     (
       handler: (event: MouseEvent | TouchEvent) => boolean | undefined,
-      priority: number = 100,
+      priority: number,
     ) => {
       setRegisteredHandlers((prev) => ({
         ...prev,
@@ -86,7 +86,7 @@ export const NavigatorEventsProvider = ({
     [],
   )
   const registerMouseMoveHandler = useCallback(
-    (handler: NavigatorMouseMoveHandler, priority: number = 100) => {
+    (handler: NavigatorMouseMoveHandler, priority: number) => {
       setRegisteredHandlers((prev) => ({
         ...prev,
         mouseMove: [...prev.mouseMove, { handler, priority }].sort(

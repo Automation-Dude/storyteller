@@ -39,7 +39,7 @@ export function UploadBookDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
   collection?: UUID
-  onBookCreated?: (bookUuid: string) => void
+  onBookCreated?: (bookUuid: UUID) => void
 }) {
   const t = useTranslation("UploadDialog")
   const c = useCommon()

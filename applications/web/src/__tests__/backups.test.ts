@@ -1,6 +1,5 @@
 import assert from "node:assert"
-import { mkdirSync, rmSync, utimesSync, writeFileSync } from "node:fs"
-import { existsSync } from "node:fs"
+import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync  } from "node:fs"
 import { join } from "node:path"
 import { beforeEach, describe, it } from "node:test"
 

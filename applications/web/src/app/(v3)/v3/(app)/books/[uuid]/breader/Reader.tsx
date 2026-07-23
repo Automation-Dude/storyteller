@@ -1,17 +1,16 @@
 /* eslint-disable no-console */
 "use client"
 
-import { BookWithRelations } from "@/database/books"
-import { createCacheBustingFetch } from "@/utils/cacheBustingFetch"
 import { AudioNavigator } from "@readium/new-navigator"
-import { Manifest } from "@readium/new-shared"
-import { HttpFetcher } from "@readium/new-shared"
-import { Publication } from "@readium/new-shared"
+import { HttpFetcher, Manifest, Publication } from "@readium/new-shared"
 import { useEffect, useMemo, useState } from "react"
+
+import { type BookWithRelations } from "@/database/books"
+import { createCacheBustingFetch } from "@/utils/cacheBustingFetch"
 
 export function Reader({ book }: { book: BookWithRelations }) {
   const publication = usePublication(book)
-  const navigator = useMemo(() => {
+  const _navigator = useMemo(() => {
     if (!publication) return null
     console.log("publication", publication)
     return new AudioNavigator(
@@ -77,17 +76,18 @@ export function Reader({ book }: { book: BookWithRelations }) {
 }
 
 const usePublication = (book: BookWithRelations) => {
-  const [manifest, setManifest] = useState<Manifest>(null)
+  const [manifest, setManifest] = useState<Manifest | null>(null)
 
   useEffect(() => {
     const fetchManifest = async () => {
       const manifesti = await fetch(
         `/api/v2/books/${book.uuid}/listen/manifest.json`,
       )
-      const manifest = await manifesti.json()
+      const manifest = await manifesti.json() as Manifest
       console.log("manifest", manifest)
+      // @ts-expect-error - manifest is readonly
       delete manifest.links
-      setManifest(Manifest.deserialize(manifest))
+      setManifest(Manifest.deserialize(manifest) ?? null)
     }
     void fetchManifest()
   }, [book.uuid])

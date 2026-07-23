@@ -90,7 +90,6 @@ export function LibraryPage({
   const { data: facets, isLoading: facetsLoading } = useGetSectionFacetsQuery({
     section: section.key,
   })
-  console.log(facets)
 
   const [selectedItem, setSelectedItem] = useQueryState("item", parseAsString)
   const { setSelectedBookUuid } = useBookInSidePanel()

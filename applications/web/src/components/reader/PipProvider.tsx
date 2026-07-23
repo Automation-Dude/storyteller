@@ -52,7 +52,7 @@ export function PiPProvider({ children }: PiPProviderProps) {
     async (
       width: number,
       height: number,
-      disallowReturnToOpener: boolean = false,
+      disallowReturnToOpener: boolean,
     ) => {
       // We don't want to allow multiple requests.
       if (pipWindow != null || !isSupported || !isDesired) {

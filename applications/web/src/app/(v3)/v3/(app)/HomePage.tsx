@@ -1,12 +1,11 @@
 "use client"
 
-import { SiteHeader } from "../_/components/site-header"
+import { SiteHeader } from "@/app/(v3)/v3/_/components/site-header"
 import {
   PageContent,
-  PageHeader,
   PageLayout,
   PageMain,
-} from "../_/components/ui/page-layout"
+} from "@/app/(v3)/v3/_/components/ui/page-layout"
 
 import { HomeSections, HomeSectionsActions } from "./HomeSections"
 

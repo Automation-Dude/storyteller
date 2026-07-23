@@ -1,8 +1,8 @@
 import { Popover } from "@base-ui/react/popover"
 import { Fragment, memo, useCallback } from "react"
 
-import { BookCover } from "@/app/(v3)/v3/_/components/books/BookCover"
 import { useCoverScope } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
+import { Cover } from "@/app/(v3)/v3/_/components/books/Cover"
 import {
   CreatorsLine,
   SecondaryText,
@@ -32,7 +32,7 @@ import {
   selectShowProcessingBadge,
   selectShowReadaloudBadge,
 } from "@/store/slices/uiSettingsSlice"
-import { Cover } from "../Cover"
+import { type UUID } from "@/uuid"
 
 function isCreatorField(
   field: DisplayField,
@@ -55,11 +55,15 @@ type BookListItemProps = {
   active?: boolean
   isSelecting?: boolean
   isBookSelected?: boolean
-  onToggleSelection?: (uuid: string) => void
-  onSelectRange?: (uuid: string) => void
+  onToggleSelection?: (uuid: UUID) => void
+  onSelectRange?: (uuid: UUID) => void
   onOpenMenu?: (book: BookWithRelations, anchor: HTMLElement) => void
   isMenuOpen?: boolean
-  onClick?: (book: BookWithRelations) => void
+  onClick?: (
+    book: BookWithRelations,
+    isSelecting: boolean,
+    isBookSelected: boolean,
+  ) => void
   // the list layout's selected fields, rendered below the title
   displayFields?: DisplayField[]
   displayContext?: SortContext
@@ -119,9 +123,9 @@ export const BookListItem = memo(function BookListItem(
         return
       }
 
-      onClick?.(book)
+      onClick?.(book, isSelecting, isBookSelected)
     },
-    [book, onClick, onSelectRange],
+    [book, onClick, onSelectRange, isSelecting, isBookSelected],
   )
 
   // the creator rows render as their own (linked) lines; every other selected
@@ -158,7 +162,7 @@ export const BookListItem = memo(function BookListItem(
           ? undefined
           : (e) => {
               if ((e.key === "Enter" || e.key === " ") && onClick) {
-                onClick(book)
+                onClick(book, isSelecting, isBookSelected)
               }
             }
       }

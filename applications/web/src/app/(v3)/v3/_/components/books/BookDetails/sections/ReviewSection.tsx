@@ -1,5 +1,6 @@
 "use client"
 
+import { useTheme } from "next-themes"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
@@ -27,7 +28,6 @@ import {
 
 import { CollapsibleSection } from "./CollapsibleSection"
 import { ensureContrast, useCoverColors } from "./useCoverColors"
-import { useTheme } from "next-themes"
 
 function InlineRatingNumber({
   value,

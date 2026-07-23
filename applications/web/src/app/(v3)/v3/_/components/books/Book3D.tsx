@@ -1,7 +1,10 @@
 "use client"
 
 import { type PanInfo, motion, useSpring } from "motion/react"
+import { type Author } from "next/dist/lib/metadata/types/metadata-types"
 import { type ReactNode, useMemo, useRef, useState } from "react"
+
+import { type JsColor } from "@storyteller-platform/okmain"
 
 import { Button } from "@v3/_/components/ui/button"
 import {
@@ -17,13 +20,14 @@ import { fitSpine } from "@v3/_/lib/spineFit"
 
 import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import {
-  Audiobook,
-  Ebook,
-  Readaloud,
+  type Audiobook,
   type BookWithRelations,
+  type Ebook,
+  type Readaloud,
 } from "@/database/books"
 import * as icon from "@/icons"
 import { getCoverUrl } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 import { isDualFormat } from "./BookCover"
 import {
@@ -31,9 +35,7 @@ import {
   useCoverColors,
 } from "./BookDetails/sections/useCoverColors"
 import { CoverImage } from "./CoverImage"
-import { Author } from "next/dist/lib/metadata/types/metadata-types"
-import { UUID } from "@/uuid"
-import { JsColor } from "@storyteller-platform/okmain"
+
 
 const DPR =
   typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 2

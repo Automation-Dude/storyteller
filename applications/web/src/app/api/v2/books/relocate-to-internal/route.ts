@@ -9,7 +9,7 @@ import { type UUID } from "@/uuid"
 export const dynamic = "force-dynamic"
 
 const BodySchema = z.object({
-  bookUuids: z.array(z.string().uuid()).min(1),
+  bookUuids: z.array(z.uuid()).min(1),
   mode: z.enum(["copy", "move", "hardlink"]).optional(),
 })
 

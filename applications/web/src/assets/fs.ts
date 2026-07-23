@@ -199,18 +199,20 @@ export async function renameBookAssets(
   return updated
 }
 
-export type AssetDirConflict = {
-  kind: "owned_by_another_book"
-  ownerUuid: UUID
-  ownerTitle: string
-} | {
-  kind: "files_exist_on_disk"
-  existingFiles: {
-    ebook?: string
-    audiobook?: string
-    readaloud?: string
-  }
-}
+export type AssetDirConflict =
+  | {
+      kind: "owned_by_another_book"
+      ownerUuid: UUID
+      ownerTitle: string
+    }
+  | {
+      kind: "files_exist_on_disk"
+      existingFiles: {
+        ebook?: string
+        audiobook?: string
+        readaloud?: string
+      }
+    }
 
 export type ConflictResolution = {
   ebook?: "current" | "target"
@@ -222,6 +224,8 @@ export type ConflictResolution = {
  * explicitly change a book's asset directory. unlike renameBookAssets (which
  * runs automatically on title change), this is user-initiated and includes
  * conflict detection + resolution for pre-existing files in the target folder.
+ *
+ * maybe should also do that for the other one
  */
 export async function changeBookAssetDir(
   book: BookWithRelations,
@@ -255,7 +259,11 @@ export async function changeBookAssetDir(
   if (targetExists && !resolution) {
     const existingFiles = await scanFolderFormats(targetDir)
 
-    if (existingFiles.ebook || existingFiles.audiobook || existingFiles.readaloud) {
+    if (
+      existingFiles.ebook ||
+      existingFiles.audiobook ||
+      existingFiles.readaloud
+    ) {
       return {
         conflict: {
           kind: "files_exist_on_disk",
@@ -270,7 +278,7 @@ export async function changeBookAssetDir(
 
   // if the target exists and we have resolution, handle the merge
   if (targetExists && resolution) {
-    await mergeIntoTarget(book, oldDir, targetDir, resolution)
+    await mergeIntoTarget(oldDir, targetDir, resolution)
   } else if (oldDirExists) {
     suppressPrefix(oldDir)
     suppressPrefix(targetDir)
@@ -293,7 +301,6 @@ export async function changeBookAssetDir(
 }
 
 async function mergeIntoTarget(
-  book: BookWithRelations,
   oldDir: string,
   targetDir: string,
   resolution: ConflictResolution,
@@ -357,16 +364,22 @@ async function rewriteInternalPaths(
     relations.ebook = { filepath: join(newDir, relative) }
   }
 
-  if (before.audiobook?.filepath && pathBelongsTo(oldDir, before.audiobook.filepath)) {
+  if (
+    before.audiobook?.filepath &&
+    pathBelongsTo(oldDir, before.audiobook.filepath)
+  ) {
     const relative = before.audiobook.filepath.slice(oldDir.length)
     relations.audiobook = { filepath: join(newDir, relative) }
   }
 
-  if (before.readaloud?.filepath && pathBelongsTo(oldDir, before.readaloud.filepath)) {
+  if (
+    before.readaloud?.filepath &&
+    pathBelongsTo(oldDir, before.readaloud.filepath)
+  ) {
     const relative = before.readaloud.filepath.slice(oldDir.length)
     relations.readaloud = {
       filepath: join(newDir, relative),
-      currentStage: before.readaloud.currentStage ?? "SPLIT_TRACKS",
+      currentStage: before.readaloud.currentStage,
     }
   }
 
@@ -391,7 +404,9 @@ async function scanFolderFormats(folder: string): Promise<{
       const entries = await readdir(textDir)
       const epub = entries.find((e) => e.endsWith(".epub"))
       if (epub) result.ebook = join(textDir, epub)
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }
 
   if (await exist(audioDir)) {
@@ -399,7 +414,9 @@ async function scanFolderFormats(folder: string): Promise<{
       const entries = await readdir(audioDir)
       const hasAudio = entries.some((e) => isAudioFile(e))
       if (hasAudio) result.audiobook = audioDir
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }
 
   if (await exist(alignedDir)) {
@@ -407,7 +424,9 @@ async function scanFolderFormats(folder: string): Promise<{
       const entries = await readdir(alignedDir)
       const epub = entries.find((e) => e.endsWith(".epub"))
       if (epub) result.readaloud = join(alignedDir, epub)
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }
 
   return result
@@ -430,7 +449,10 @@ export async function relocateToInternal(
   const relations: Parameters<typeof updateBook>[2] = {}
   const originalPaths: string[] = []
 
-  if (reserved.ebook?.filepath && !pathBelongsTo(ASSETS_DIR, reserved.ebook.filepath)) {
+  if (
+    reserved.ebook?.filepath &&
+    !pathBelongsTo(ASSETS_DIR, reserved.ebook.filepath)
+  ) {
     const src = reserved.ebook.filepath
     const dest = getInternalEpubFilepath(reserved)
     await mkdir(dirname(dest), { recursive: true })
@@ -439,7 +461,10 @@ export async function relocateToInternal(
     originalPaths.push(src)
   }
 
-  if (reserved.audiobook?.filepath && !pathBelongsTo(ASSETS_DIR, reserved.audiobook.filepath)) {
+  if (
+    reserved.audiobook?.filepath &&
+    !pathBelongsTo(ASSETS_DIR, reserved.audiobook.filepath)
+  ) {
     const src = reserved.audiobook.filepath
     const dest = getInternalAudioDirectory(reserved)
     await mkdir(dest, { recursive: true })
@@ -459,14 +484,17 @@ export async function relocateToInternal(
     originalPaths.push(src)
   }
 
-  if (reserved.readaloud?.filepath && !pathBelongsTo(ASSETS_DIR, reserved.readaloud.filepath)) {
+  if (
+    reserved.readaloud?.filepath &&
+    !pathBelongsTo(ASSETS_DIR, reserved.readaloud.filepath)
+  ) {
     const src = reserved.readaloud.filepath
     const dest = getInternalReadaloudFilepath(reserved)
     await mkdir(dirname(dest), { recursive: true })
     await transferFile(src, dest, mode)
     relations.readaloud = {
       filepath: dest,
-      currentStage: reserved.readaloud.currentStage ?? "SPLIT_TRACKS",
+      currentStage: reserved.readaloud.currentStage,
     }
     originalPaths.push(src)
   }
@@ -474,7 +502,10 @@ export async function relocateToInternal(
   if (Object.keys(relations).length === 0) return reserved
 
   for (const path of originalPaths) {
-    await addIgnoreRule(path, { source: "import-relocate", bookUuid: reserved.uuid })
+    await addIgnoreRule(path, {
+      source: "import-relocate",
+      bookUuid: reserved.uuid,
+    })
   }
 
   return await updateBook(reserved.uuid, null, relations)

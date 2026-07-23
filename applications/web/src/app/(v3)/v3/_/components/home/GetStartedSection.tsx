@@ -18,8 +18,8 @@ import {
 import { V3Link } from "@v3/_/components/v3-link"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
-import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import { useIsTauri } from "@/app/(v3)/v3/_/hooks/use-is-tauri"
+import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import { type HomeSectionWithDetails } from "@/database/shelves"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"

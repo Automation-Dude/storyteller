@@ -346,7 +346,8 @@ export function BookGrid({
                     : c.plain("actions.select")
                 }
                 onSelect={() => {
-                  menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
+                  if (!menu.menuBook) return
+                  menu.toggleSelection?.(menu.menuBook.uuid)
                 }}
               >
                 {menu.menuBookIsSelected

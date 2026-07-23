@@ -16,10 +16,10 @@ import {
   type DirectoryFileEntry,
   listDirectoryAction,
 } from "@/actions/listDirectoryAction"
+import { useIsTauri } from "@/app/(v3)/v3/_/hooks/use-is-tauri"
 import * as icon from "@/icons"
 import { formatBytes } from "@/strings"
 
-import { useIsTauri } from "../../hooks/use-is-tauri"
 
 function dirname(path: string) {
   const segments = path.split("/")

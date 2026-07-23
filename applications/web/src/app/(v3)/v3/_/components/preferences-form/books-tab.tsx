@@ -51,8 +51,6 @@ import {
   SegmentedControl,
 } from "./shared"
 
-// order must match VIEWS in Book3D.tsx — the stored value is the index
-const VIEW_KEYS = ["cover", "spine", "pages", "back", "hover"] as const
 const USE_LIBRARY_DEFAULT = "__library_default__"
 
 export function BooksTab({ form }: { form: PreferencesFormType }) {
@@ -86,7 +84,6 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
   const gridCoverDisplayDefault = useResolvedDefault("gridCoverDisplay")
   const doubleCoverAlignmentDefault = useResolvedDefault("doubleCoverAlignment")
   const bookDetailDisplayDefault = useResolvedDefault("bookDetailDisplay")
-  const bookDetail3dViewDefault = useResolvedDefault("bookDetail3dView")
   const ratingIconDefault = useResolvedDefault("ratingIcon")
   const bookOpenTargetDefault = useResolvedDefault("bookOpenTarget")
   const ratingDimensionsDefault = useResolvedDefault("ratingDimensions")
@@ -420,7 +417,6 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
 
 function BookDetail3DPreview({ form }: { form: PreferencesFormType }) {
   const t = useTranslation("PreferencesPage.tabs.books.sections.detail")
-  const bookDetail3dViewDefault = useResolvedDefault("bookDetail3dView")
   const ebookView = useWatch({
     control: form.control,
     name: "bookDetail3dView",
@@ -429,6 +425,10 @@ function BookDetail3DPreview({ form }: { form: PreferencesFormType }) {
     control: form.control,
     name: "bookDetail3dViewAudio",
   })
+
+  const ebookViewDefault = useResolvedDefault("bookDetail3dView")
+  const audiobookViewDefault = useResolvedDefault("bookDetail3dViewAudio")
+
   return (
     <Field>
       <FieldDescription>{t("view.hint")}</FieldDescription>
@@ -438,8 +438,8 @@ function BookDetail3DPreview({ form }: { form: PreferencesFormType }) {
             {t("view.label")}
           </SettingLabel>
           <Book3DPositionPreview
-            ebookView={ebookView ?? 0}
-            audiobookView={audiobookView ?? 0}
+            ebookView={ebookView ?? ebookViewDefault ?? 0}
+            audiobookView={audiobookView ?? audiobookViewDefault ?? 0}
             onViewChange={(view, format) => {
               if (format === "ebook") {
                 form.setValue("bookDetail3dView", view)

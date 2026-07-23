@@ -20,15 +20,16 @@ function resolveCssColor(value: string) {
 }
 
 // inside the tauri app, keep the native title bar the same color as the
-// sidebar, following theme switches. no-op in a regular browser.
+// sidebar, following theme switches
 export function TauriTitlebarSync() {
   useEffect(() => {
     let observer: MutationObserver | null = null
     let cancelled = false
+    const isCancelled = () => cancelled
 
     void (async () => {
       const { isTauri, invoke } = await import("@tauri-apps/api/core")
-      if (!isTauri() || cancelled) return
+      if (!isTauri() || isCancelled()) return
 
       const sync = () => {
         const styles = getComputedStyle(document.documentElement)

@@ -10,7 +10,6 @@ import {
   FilterableMenuItem,
   FilterableMenuSeparator,
 } from "@v3/_/components/ui/filterable-menu"
-import { useGridNavigation } from "@v3/_/hooks/use-grid-navigation"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { cn } from "@v3/_/lib/utils"
 
@@ -22,9 +21,7 @@ import {
 import { SelectionBullet } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
 import {
   BOOK_COLLECTION_ID,
-  BOOK_DETAIL_PANEL_ID,
   type BookNavModel,
-  bookItemDomId,
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { type BookWithRelations } from "@/database/books"
 import * as icon from "@/icons"
@@ -71,7 +68,7 @@ export function BookList({
   displayFields = ["authors"],
   displayContext,
   showThumbnail = true,
-  navModel = "commit",
+  // navModel = "commit",
   ...props
 }: BookListProps) {
   const t = useTranslation("BookList")
@@ -142,54 +139,50 @@ export function BookList({
     fetchNextPage,
   ])
 
-  // keyboard navigation: focus stays on the list container, up/down move a
-  // cursor, the active row is surfaced via aria-activedescendant. only wired
-  // when the list is interactive.
-  const navEnabled = !!onBookClick
+  // const openBookAt = useCallback(
+  //   (index: number) => {
+  //     const book = books[index]
+  //     if (book) onBookClick(book, false, false)
+  //   },
+  //   [books, onBookClick],
+  // )
 
-  const openBookAt = useCallback(
-    (index: number) => {
-      const book = books[index]
-      if (book) onBookClick?.(book)
-    },
-    [books, onBookClick],
-  )
+  // const focusDetailPanel = useCallback(() => {
+  //   requestAnimationFrame(() => {
+  //     document.getElementById(BOOK_DETAIL_PANEL_ID)?.focus()
+  //   })
+  // }, [])
 
-  const focusDetailPanel = useCallback(() => {
-    requestAnimationFrame(() => {
-      document.getElementById(BOOK_DETAIL_PANEL_ID)?.focus()
-    })
-  }, [])
+  // const navEnabled = !!onBookClick
+  // const nav = useGridNavigation({
+  //   itemCount: books.length,
+  //   columns: 1,
+  //   enabled: navEnabled,
+  //   getItemId: (index) => {
+  //     const book = books[index]
+  //     return book ? bookItemDomId(book.uuid) : undefined
+  //   },
+  //   scrollToIndex: (index) => {
+  //     rowVirtualizer.scrollToIndex(index, { align: "auto" })
+  //   },
+  //   initialIndex: () => {
+  //     const i = books.findIndex((b) => b.uuid === selectedBookUuid)
+  //     return i >= 0 ? i : 0
+  //   },
+  //   onActiveChange:
+  //     navModel === "preview"
+  //       ? (index) => {
+  //           openBookAt(index)
+  //         }
+  //       : undefined,
+  //   onActivate: (index) => {
+  //     openBookAt(index)
+  //     focusDetailPanel()
+  //   },
+  // })
 
-  const nav = useGridNavigation({
-    itemCount: books.length,
-    columns: 1,
-    enabled: navEnabled,
-    getItemId: (index) => {
-      const book = books[index]
-      return book ? bookItemDomId(book.uuid) : undefined
-    },
-    scrollToIndex: (index) => {
-      rowVirtualizer.scrollToIndex(index, { align: "auto" })
-    },
-    initialIndex: () => {
-      const i = books.findIndex((b) => b.uuid === selectedBookUuid)
-      return i >= 0 ? i : 0
-    },
-    onActiveChange:
-      navModel === "preview"
-        ? (index) => {
-            openBookAt(index)
-          }
-        : undefined,
-    onActivate: (index) => {
-      openBookAt(index)
-      focusDetailPanel()
-    },
-  })
-
-  const activeUuid =
-    nav.activeIndex !== null ? books[nav.activeIndex]?.uuid ?? null : null
+  // const activeUuid =
+  //   nav.activeIndex !== null ? books[nav.activeIndex]?.uuid ?? null : null
 
   if (!isLoading && books.length === 0) {
     return (
@@ -225,7 +218,7 @@ export function BookList({
           ref={containerRef}
           id={BOOK_COLLECTION_ID}
           aria-label="Books"
-          {...(navEnabled ? nav.containerProps : {})}
+          // {...(navEnabled ? nav.containerProps : {})}
           className={cn(
             "animate-in fade-in-0 relative w-full py-4 transition-opacity duration-300 outline-none",
             showMuted && "opacity-60",
@@ -248,8 +241,8 @@ export function BookList({
                   book={book}
                   muted={showMuted}
                   handle={menu.handle}
-                  keyboardNav={navEnabled}
-                  active={navEnabled && book.uuid === activeUuid}
+                  // keyboardNav={navEnabled}
+                  // active={navEnabled && book.uuid === activeUuid}
                   selected={book.uuid === selectedBookUuid}
                   isSelecting={menu.isSelecting}
                   isBookSelected={
@@ -299,7 +292,8 @@ export function BookList({
                     : c.plain("actions.select")
                 }
                 onSelect={() => {
-                  menu.toggleSelection?.(menu.menuBook?.uuid ?? "")
+                  if (!menu.menuBook) return
+                  menu.toggleSelection?.(menu.menuBook.uuid)
                 }}
               >
                 {menu.menuBookIsSelected

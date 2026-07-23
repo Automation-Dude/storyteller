@@ -797,7 +797,6 @@ function ConditionEditor({
 
   const handleOperatorChange = (operator: ShelfFilterOperator) => {
     if (countOperators.some((op) => op === operator)) {
-      console.log("count operator", operator)
       onChange({
         ...condition,
         aggregate: "count",
@@ -921,7 +920,9 @@ function ConditionEditor({
             ))}
             {isCountable && (
               <FilterableMenuGroup>
-                <FilterableMenuLabel>{t.plain("count")}</FilterableMenuLabel>
+                <FilterableMenuLabel>
+                  {t.plain("operators.count")}
+                </FilterableMenuLabel>
                 {countOperators.map((op) => (
                   <FilterableMenuItem
                     key={op}

@@ -647,7 +647,7 @@ export function useBookActionItems({
             <RadioGroup
               value={relocateMode}
               onValueChange={(v) =>
-                setRelocateMode(v as "copy" | "move" | "hardlink")
+                { setRelocateMode(v as "copy" | "move" | "hardlink"); }
               }
               className="gap-2"
             >
@@ -671,7 +671,7 @@ export function useBookActionItems({
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setRelocateOpen(false)}
+              onClick={() => { setRelocateOpen(false); }}
               disabled={isRelocating}
             >
               {c("actions.cancel")}

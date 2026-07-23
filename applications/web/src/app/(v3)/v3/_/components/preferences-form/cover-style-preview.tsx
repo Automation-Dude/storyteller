@@ -2,14 +2,13 @@
 
 import { cn } from "@v3/_/lib/utils"
 
+import { Book3D, VIEWS } from "@/app/(v3)/v3/_/components/books/Book3D"
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import {
   type DoubleCoverAlignment,
   type GridCoverDisplay,
 } from "@/database/userPreferencesTypes"
-import { Book3D, VIEWS } from "../books/Book3D"
-import { useTranslation } from "../../hooks/use-translation"
-import { BookWithRelations } from "@/database/books"
-import { UUID } from "@/uuid"
+import { type UUID } from "@/uuid"
 
 const ebookGradient = "linear-gradient(150deg, #2563eb, #60a5fa)"
 const audioGradient = "linear-gradient(150deg, #7c3aed, #c084fc)"

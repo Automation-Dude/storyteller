@@ -110,7 +110,7 @@ export function BookDoubleCover({
     ab.style.zIndex = String(STATES.idle.audiobook.z)
     eb.style.transform = tx(STATES.idle.ebook)
     eb.style.zIndex = String(STATES.idle.ebook.z)
-  }, [])
+  }, [STATES])
 
   const transitionTo = useCallback((target: CoverState) => {
     const ab = audiobookRef.current

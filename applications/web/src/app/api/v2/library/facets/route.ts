@@ -8,13 +8,12 @@ export const dynamic = "force-dynamic"
 /**
  * @summary Library section facet list
  * @desc 'The facet list (series, authors, tags, ...) plus per-facet book counts
- * for a single library section, computed in SQL so the sidebar never loads the
- * whole catalog. Pass the section via the `section` query param.'
+ * for a single library section
+ * Pass the section via the `section` query param.'
  */
 export const GET = withHasPermission("bookList")(async (request) => {
   const section = request.nextUrl.searchParams.get("section")
 
-  console.log("section", section)
   if (!section || !isFacetSection(section)) {
     return NextResponse.json({ error: "Invalid section" }, { status: 400 })
   }

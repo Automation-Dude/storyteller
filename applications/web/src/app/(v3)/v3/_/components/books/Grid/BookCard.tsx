@@ -8,6 +8,7 @@ import { cn } from "@v3/_/lib/utils"
 
 import { useCoverScope } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/CoverScope"
 import { Cover, isDual } from "@/app/(v3)/v3/_/components/books/Cover"
+import { MissingBadge, hasMissingMedia } from "@/app/(v3)/v3/_/components/books/MissingBadge"
 import { ProcessingIndicator } from "@/app/(v3)/v3/_/components/books/ProcessingIndicator"
 import {
   ProgressDisplayBar,
@@ -35,7 +36,7 @@ import {
   selectShowReadaloudBadge,
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
-import { hasMissingMedia, MissingBadge } from "../MissingBadge"
+
 
 type BookCardProps = {
   book: BookWithRelations

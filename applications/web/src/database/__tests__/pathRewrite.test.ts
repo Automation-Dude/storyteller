@@ -34,7 +34,7 @@ void describe("path rewrite", () => {
     assert.strictEqual(byTable["readaloud"]?.matchCount, 0)
     assert.strictEqual(byTable["importRule"]?.matchCount, 1)
     assert.strictEqual(
-      byTable["ebook"]?.samples[0]?.after,
+      byTable["ebook"].samples[0]?.after,
       "/new/data/assets/a/text/a.epub",
     )
 

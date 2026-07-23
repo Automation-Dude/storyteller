@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 
+import { parseGetBooksOptions } from "@/app/api/v2/books/parseBookQuery"
 import { withHasPermission } from "@/auth/auth"
 import { countBooks } from "@/database/books"
 
-import { parseGetBooksOptions } from "../parseBookQuery"
 
 export const dynamic = "force-dynamic"
 

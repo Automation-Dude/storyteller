@@ -11,7 +11,6 @@ import { TooltipButton } from "@/app/(v3)/v3/_/components/ui/tooltip-button"
 import * as icon from "@/icons"
 
 import { useBookForm } from "./BookFormProvider"
-import { KbdGroup, KeyboardShortcut } from "../../ui/kbd"
 
 export function BookEditBar() {
   const {

@@ -22,8 +22,8 @@ import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import * as icon from "@/icons"
-import { useAppDispatch } from "@/store/appState"
 import { api } from "@/store/api"
+import { useAppDispatch } from "@/store/appState"
 
 export function NavUser({
   user,

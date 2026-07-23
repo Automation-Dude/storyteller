@@ -75,6 +75,7 @@ import {
   IconHighlight,
   IconHistory,
   IconHome,
+  IconHomeCog,
   IconInfoCircle,
   IconKey,
   IconLanguage,
@@ -149,7 +150,6 @@ import {
   IconVolume,
   IconVolumeOff,
   IconX,
-  IconHomeCog,
 } from "@tabler/icons-react"
 
 import { IconReadaloud } from "@/components/icons/IconReadaloud"

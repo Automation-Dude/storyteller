@@ -37,7 +37,7 @@ const unlessV2Cookie = [
 ]
 
 const nextConfig: import("next").NextConfig = {
-  redirects: async () => [
+  redirects: () => [
     {
       source: "/opds",
       destination: "/opds/v1",

@@ -56,6 +56,7 @@ import {
   ComboboxList,
   ComboboxValue,
 } from "@/app/(v3)/v3/_/components/ui/combobox"
+import { useIsTauri } from "@/app/(v3)/v3/_/hooks/use-is-tauri"
 import {
   useCommon,
   useTranslation,
@@ -97,7 +98,6 @@ import {
 } from "@/store/api"
 import { type UUID } from "@/uuid"
 
-import { useIsTauri } from "../../hooks/use-is-tauri"
 
 import { SettingsFormField, useSettingsForm } from "./SettingsFormProvider"
 import { SettingsSection } from "./shared"

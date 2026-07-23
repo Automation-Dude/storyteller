@@ -7,16 +7,15 @@ import { type JsColor } from "@storyteller-platform/okmain"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 
 import {
-  Audiobook,
-  Ebook,
-  Readaloud,
+  type Audiobook,
   type BookWithRelations,
+  type Ebook,
+  type Readaloud,
 } from "@/database/books"
 import {
   type ColorMode,
   NEUTRAL_COLOR_STRENGTH,
 } from "@/database/userPreferencesTypes"
-import { Author } from "next/dist/lib/metadata/types/metadata-types"
 
 export type CoverColor = {
   rgb: { r: number; g: number; b: number }

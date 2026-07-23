@@ -1,7 +1,9 @@
+import { notFound } from "next/navigation"
+
 import { withPageAuth } from "@/app/(v3)/v3/_/server/page-auth-wrapper"
 import { getBook } from "@/database/books"
-import { UUID } from "@/uuid"
-import { notFound } from "next/navigation"
+import { type UUID } from "@/uuid"
+
 import { Reader } from "./Reader"
 
 export type BookReaderPageProps = {

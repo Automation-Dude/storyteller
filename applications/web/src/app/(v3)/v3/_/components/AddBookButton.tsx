@@ -10,6 +10,7 @@ import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import * as icon from "@/icons"
 import { isTauriApp } from "@/isTauriApp"
 import { useCreateBookMutation } from "@/store/api"
+import { type UUID } from "@/uuid"
 
 import { ImportBookDialog } from "./books/ImportBookDialog"
 import { UploadBookDialog } from "./books/UploadBookDialog"
@@ -57,7 +58,7 @@ export function AddBookButton(props: ButtonProps) {
 
   const [createBook] = useCreateBookMutation()
 
-  function handleBookCreated(bookUuid: string) {
+  function handleBookCreated(bookUuid: UUID) {
     void setSelectedBookUuid(bookUuid)
   }
 

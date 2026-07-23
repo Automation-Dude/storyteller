@@ -1,5 +1,6 @@
 "use client"
 
+import { useTheme } from "next-themes"
 import { useMemo } from "react"
 
 import { type BookWithRelations } from "@/database/books"
@@ -11,7 +12,6 @@ import {
   useColorPreferences,
   useCoverColors,
 } from "./useCoverColors"
-import { useTheme } from "next-themes"
 
 function channels(color: CoverColor): string {
   const { r, g, b } = color.rgb

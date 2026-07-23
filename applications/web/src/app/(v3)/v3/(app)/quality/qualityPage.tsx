@@ -7,9 +7,9 @@ import {
   librarySections,
 } from "@v3/_/components/library/library-sections"
 
+import { useTranslation } from "@/app/(v3)/v3/_/hooks/use-translation"
 import { type DisplayField } from "@/sort"
 
-import { useTranslation } from "../../_/hooks/use-translation"
 
 // the quality page's list/table layout shows only the alignment metrics as
 // columns, regardless of the global listDisplayFields preference.

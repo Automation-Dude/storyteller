@@ -19,7 +19,7 @@ export type RelationMembership = Map<string, number>
 function bookRelationUuids(
   book: BookWithRelations,
   source: RelationSource,
-): string[] {
+): UUID[] {
   switch (source) {
     case "tags":
       return book.tags.map((t) => t.uuid)
@@ -37,9 +37,16 @@ function bookRelationUuids(
       return book.creators.filter((c) => c.role === "trl").map((c) => c.uuid)
     case "creators":
       return book.creators.filter((c) => c.role !== "trl").map((c) => c.uuid)
+
     // distinct column values are filter-only options; books hold no relation
     case "distinct":
       return []
+    case "identifiers":
+      return []
+    default: {
+      const _exhaustive: never = source
+      return []
+    }
   }
 }
 
