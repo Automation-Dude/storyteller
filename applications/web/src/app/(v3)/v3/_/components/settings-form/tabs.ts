@@ -18,7 +18,11 @@ export const adminTabs = [
 ] as const
 export type AdminTab = (typeof adminTabs)[number]
 
-export const tabs = [...settingsFormTabs, ...adminTabs] as const
+// tauri shell settings, only shown inside the desktop app
+export const desktopTabs = ["app"] as const
+export type DesktopTab = (typeof desktopTabs)[number]
+
+export const tabs = [...settingsFormTabs, ...desktopTabs, ...adminTabs] as const
 
 export type Tab = (typeof tabs)[number]
 

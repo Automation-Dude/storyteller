@@ -365,8 +365,14 @@
       "series": "{count, plural, one {series} other {series}}",
       "collection": "{count, plural, one {collection} other {collections}}",
       "status": "{count, plural, one {status} other {statuses}}",
-      "shelf": "{count, plural, one {shelf} other {shelves}}"
-    }
+      "shelf": "{count, plural, one {shelf} other {shelves}}",
+      "identifier": "{count, plural, one {identifier} other {identifiers}}"
+    },
+    "editIdentifier": "Edit Identifier",
+    "editIdentifierDescription": "Update the identifier name and link template.",
+    "identifierName": "Identifier name",
+    "identifierUrlTemplate": "Link template",
+    "identifierUrlTemplateHint": "Used to link identifier values to a website. '{value}' is replaced with the identifier's value."
   },
   "SelectionToolbar": {
     "selectAll": "Select all",
@@ -874,6 +880,24 @@
           }
         }
       },
+      "app": {
+        "title": "App",
+        "sections": {
+          "updates": {
+            "title": "Updates",
+            "description": "Storyteller Server app {version}",
+            "channelLabel": "Update channel",
+            "channelStable": "Stable",
+            "channelStableDescription": "Only stable releases. Preview versions are never installed automatically.",
+            "channelBeta": "Beta",
+            "channelBetaDescription": "Beta and release-candidate versions, plus every stable release. Switching back to Stable never downgrades — updates simply resume once a newer stable version is out.",
+            "channelEdge": "Latest",
+            "channelEdgeDescription": "Every release, including alpha and experimental builds.",
+            "channelSaveFailed": "Could not save the update channel",
+            "checkNow": "Check for Updates…"
+          }
+        }
+      },
       "changelog": {
         "title": "Changelog"
       },
@@ -1373,6 +1397,21 @@
       "estimatedRemaining": "{duration} left",
       "transcriptionEngine": "Transcription engine",
       "storytellerVersion": "Storyteller version"
+    },
+    "identifiers": {
+      "title": "Identifiers",
+      "edit": "Edit identifiers",
+      "editDescription": "Manage the identifiers attached to the {format}.",
+      "type": "Type",
+      "value": "Value",
+      "add": "Add identifier",
+      "newType": "New type…",
+      "newTypeName": "New type name",
+      "invalidValue": "Doesn't look like a valid {name}",
+      "empty": "No identifiers",
+      "copied": "Copied",
+      "copyValue": "Copy value",
+      "openLink": "Open link"
     }
   },
   "Common": {
@@ -1468,7 +1507,7 @@
         "identifiers": "Identifiers",
         "format": "Format",
         "review": "My Review",
-                "search": "Search (any field)",
+        "search": "Search (any field)",
         "narrators": "Narrators",
         "translators": "Translators",
         "alignment": "Alignment"
@@ -1583,7 +1622,8 @@
       "modeAlways": "Always override",
       "modeCustom": "Custom",
       "showAdvancedOverrides": "Show per-field settings",
-      "showSimpleOverrides": "Use a single setting for all fields"
+      "showSimpleOverrides": "Use a single setting for all fields",
+      "fieldIdentifiers": "Identifiers"
     },
     "create": {
       "withInput": "Create {input}"

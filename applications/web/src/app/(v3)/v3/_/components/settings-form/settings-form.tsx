@@ -44,11 +44,12 @@ import {
   type SettingsFormForm,
   SettingsFormProvider,
 } from "./SettingsFormProvider"
+import { AppTab } from "./app-tab"
 import { AuthTab } from "./auth-tab"
+import { BackupsTab } from "./backups-tab"
 import { ChangelogTab } from "./changelog-tab"
 import { EmailTab } from "./email-tab"
 import { LibraryTab } from "./library-tab"
-import { BackupsTab } from "./backups-tab"
 import { LogsTab } from "./logs-tab"
 import { OpdsTab } from "./opds-tab"
 import { ProcessingTab } from "./processing-tab"
@@ -56,10 +57,12 @@ import { QueueTab } from "./queue-tab"
 import { type IsMatch, SearchContext } from "./shared"
 import {
   type AdminTab,
+  type DesktopTab,
   type SectionKeywords,
   type SettingsFormTab,
   type Tab,
   adminTabs,
+  desktopTabs,
   settingsFormTabs,
 } from "./tabs"
 import { UploadTab } from "./upload-tab"
@@ -321,6 +324,11 @@ export function SettingsForm({
         },
         { value: "email", label: t("tabs.email.title"), icon: icon.Mail },
         { value: "opds", label: t("tabs.opds.title"), icon: icon.Rss },
+        isTauri && {
+          value: "app" as Tab,
+          label: t("tabs.app.title"),
+          icon: icon.System,
+        },
         hasUsers && {
           value: "users" as Tab,
           label: t("tabs.users.title"),
@@ -436,6 +444,7 @@ export function SettingsForm({
       )}
       {activeTab === "email" && <EmailTab />}
       {activeTab === "opds" && <OpdsTab />}
+      {activeTab === "app" && <AppTab />}
       {activeTab === "changelog" && (
         <ChangelogTab currentVersion={currentVersion} />
       )}
@@ -628,8 +637,10 @@ function SettingsSidebar({
 }) {
   const t = useTranslation("SettingsPage")
 
-  const settingsTabs = tabs.filter((tab) =>
-    settingsFormTabs.includes(tab.value as SettingsFormTab),
+  const settingsTabs = tabs.filter(
+    (tab) =>
+      settingsFormTabs.includes(tab.value as SettingsFormTab) ||
+      desktopTabs.includes(tab.value as DesktopTab),
   )
   const administrationTabs = tabs.filter((tab) =>
     adminTabs.includes(tab.value as AdminTab),

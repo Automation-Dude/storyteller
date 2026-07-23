@@ -1,0 +1,152 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
+
+import { Button } from "@v3/_/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@v3/_/components/ui/card"
+import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@v3/_/components/ui/select"
+import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import { SettingsSection } from "./shared"
+
+const CHANNELS = ["stable", "beta", "edge"] as const
+type Channel = (typeof CHANNELS)[number]
+
+function isChannel(value: unknown): value is Channel {
+  return CHANNELS.includes(value as Channel)
+}
+
+/** desktop-shell settings; talks to the tauri process, not the server */
+export function AppTab() {
+  const t = useTranslation("SettingsPage.tabs.app.sections.updates")
+  const [channel, setChannel] = useState<Channel | null>(null)
+  const [version, setVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    void (async () => {
+      const [{ invoke }, { getVersion }] = await Promise.all([
+        import("@tauri-apps/api/core"),
+        import("@tauri-apps/api/app"),
+      ])
+      const [config, appVersion] = await Promise.all([
+        invoke<Record<string, unknown>>("get_tauri_config"),
+        getVersion(),
+      ])
+      const configured = config["updateChannel"]
+      setChannel(isChannel(configured) ? configured : "stable")
+      setVersion(appVersion)
+    })()
+  }, [])
+
+  const changeChannel = async (next: Channel) => {
+    const previous = channel
+    setChannel(next)
+    try {
+      const { invoke } = await import("@tauri-apps/api/core")
+      await invoke("set_update_channel", { channel: next })
+    } catch {
+      setChannel(previous)
+      toast.error(t("channelSaveFailed"))
+    }
+  }
+
+  // progress and results stay in native dialogs
+  const checkForUpdates = async () => {
+    const { invoke } = await import("@tauri-apps/api/core")
+    await invoke("check_for_updates_now")
+  }
+
+  const channelOptions: {
+    value: Channel
+    label: string
+    description: string
+  }[] = [
+    {
+      value: "stable",
+      label: t("channelStable"),
+      description: t("channelStableDescription"),
+    },
+    {
+      value: "beta",
+      label: t("channelBeta"),
+      description: t("channelBetaDescription"),
+    },
+    {
+      value: "edge",
+      label: t("channelEdge"),
+      description: t("channelEdgeDescription"),
+    },
+  ]
+
+  return (
+    <div className="flex flex-col gap-6">
+      <SettingsSection tab="app" section="updates">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("title")}</CardTitle>
+            {version && (
+              <CardDescription>{t("description", { version })}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <Field>
+              <FieldLabel htmlFor="update-channel">
+                {t("channelLabel")}
+              </FieldLabel>
+              <Select
+                items={channelOptions}
+                value={channel ?? undefined}
+                onValueChange={(value) => {
+                  if (isChannel(value)) void changeChannel(value)
+                }}
+                disabled={!channel}
+              >
+                <SelectTrigger id="update-channel" className="w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {channelOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {channel && (
+                <FieldDescription>
+                  {
+                    channelOptions.find((option) => option.value === channel)
+                      ?.description
+                  }
+                </FieldDescription>
+              )}
+            </Field>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void checkForUpdates()}
+              >
+                {t("checkNow")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </SettingsSection>
+    </div>
+  )
+}

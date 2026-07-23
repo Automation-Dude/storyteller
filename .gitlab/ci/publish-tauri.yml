@@ -1,15 +1,12 @@
-# AUTO-UPDATE IS CURRENTLY DISABLED (no signing key in CI yet). The commented
-# blocks below build + upload the signed updater bundle and advance the
-# .../storyteller-tauri/latest/latest.json feed. To re-enable:
-#   1. add CI/CD variables (Settings → CI/CD → Variables, masked):
-#        TAURI_SIGNING_PRIVATE_KEY          — CONTENTS of the signing key
-#                                             (the _PATH variant is ignored)
-#        TAURI_SIGNING_PRIVATE_KEY_PASSWORD — its password (omit if none)
-#   2. uncomment the updater blocks in the macos job below
-#   3. re-enable the updater plugin in applications/tauri/src-tauri/src/main.rs
-#      (search for "auto-update disabled")
-# latest.json is only advanced for stable versions, so prerelease tags produce
-# installable artifacts without pushing an update to existing users.
+# Builds, signs, notarizes and publishes the tauri app, then advances the
+# per-channel updater feeds (.../storyteller-tauri/<feed>/latest.json where
+# <feed> is latest, latest-beta or latest-edge — see
+# applications/tauri/scripts/advance-update-feed.mjs for the channel rules).
+# Required CI/CD variables (all protected, so tauri-v* must stay a protected
+# tag prefix): TAURI_SIGNING_PRIVATE_KEY(_PASSWORD) for updater signatures,
+# APPLE_CERTIFICATE_P12 / APPLE_CERTIFICATE_PASSWORD / APPLE_CA /
+# APPLE_SIGNING_IDENTITY for codesigning, and APPLE_ID / APPLE_APP_PASSWORD /
+# APPLE_TEAM_ID for notarization.
 
 .publish-tauri:
   stage: publish
@@ -109,12 +106,13 @@ publish-tauri-macos:
     - cd applications/tauri
     - yarn fetch-binaries
     - yarn assemble-runtime
-    - yarn tauri build
     # set-but-empty password means "no password", unset would make tauri
     # prompt interactively and hang the job
     - export
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD-}"
-    # updater build instead of the plain one above (requires the signing key):
+    # tauri's notarization wants APPLE_PASSWORD, the gitlab variable is named
+    # APPLE_APP_PASSWORD (it is an app-specific password for APPLE_ID)
+    - export APPLE_PASSWORD="${APPLE_APP_PASSWORD}"
     - yarn tauri build --config '{"bundle":{"createUpdaterArtifacts":true}}'
     - cd "$CI_PROJECT_DIR"
     # collect + rename to url-safe names
@@ -137,28 +135,14 @@ publish-tauri-macos:
     - 'curl --fail -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file
       "Storyteller-Server-${VERSION}-aarch64.app.tar.gz.sig"
       "$PKG_URL/$VERSION/Storyteller-Server-${VERSION}-aarch64.app.tar.gz.sig"'
-    # advance the updater feed for stable versions only; re-uploads to the
-    # same path are fine (generic registry serves the newest file)
-    - |
-      if echo "$VERSION" | grep -qvE '\-(alpha|beta|rc|experimental|dev|test|preview)'; then
-        node -e "
-          const fs = require('fs')
-          fs.writeFileSync('latest.json', JSON.stringify({
-            version: process.env.VERSION,
-            pub_date: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
-            platforms: {
-              'darwin-aarch64': {
-                signature: fs.readFileSync('Storyteller-Server-' + process.env.VERSION + '-aarch64.app.tar.gz.sig', 'utf8').trim(),
-                url: process.env.PKG_URL + '/' + process.env.VERSION + '/Storyteller-Server-' + process.env.VERSION + '-aarch64.app.tar.gz',
-              },
-            },
-          }, null, 2))
-        "
-        cat latest.json
-        curl --fail -H "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file latest.json "$PKG_URL/latest/latest.json"
-      else
-        echo "prerelease $VERSION — not advancing latest.json"
-      fi
+    # advance the per-channel updater feeds; stable versions move all three,
+    # beta/rc move latest-beta + latest-edge, other prereleases only
+    # latest-edge, and a feed never moves backwards
+    - export PLATFORM="darwin-aarch64"
+    - export SIG_FILE="Storyteller-Server-${VERSION}-aarch64.app.tar.gz.sig"
+    - export
+      ARTIFACT_URL="$PKG_URL/$VERSION/Storyteller-Server-${VERSION}-aarch64.app.tar.gz"
+    - node applications/tauri/scripts/advance-update-feed.mjs
 
 publish-tauri-linux:
   extends: .publish-tauri

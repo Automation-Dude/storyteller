@@ -340,8 +340,14 @@
       "series": "{count, plural, one {serie} other {series}}",
       "collection": "{count, plural, one {verzameling} other {verzamelingen}}",
       "status": "{count, plural, one {status} other {statussen}}",
-      "shelf": "{count, plural, one {boekenplank} other {boekenplanken}}"
-    }
+      "shelf": "{count, plural, one {boekenplank} other {boekenplanken}}",
+      "identifier": "{count, plural, one {identifier} other {identifiers}}"
+    },
+    "editIdentifier": "Identifier bewerken",
+    "editIdentifierDescription": "Pas de naam en linksjabloon van deze identifier aan.",
+    "identifierName": "Naam",
+    "identifierUrlTemplate": "Linksjabloon",
+    "identifierUrlTemplateHint": "Wordt gebruikt om identifiers naar een website te linken. '{value}' wordt vervangen door de waarde van de identifier."
   },
   "SelectionToolbar": {
     "selectAll": "Alles selecteren",
@@ -839,6 +845,24 @@
             "urlsDescription": "Storyteller ondersteunt zowel OPDS 1.2 als OPDS 2.0. Richt je reader op een van de onderstaande URL's. OPDS 1.2 wordt het breedst ondersteund. OPDS 2.0 is het nieuwere op JSON gebaseerde formaat.",
             "urlV1": "OPDS 1.2",
             "urlV2": "OPDS 2.0"
+          }
+        }
+      },
+      "app": {
+        "title": "App",
+        "sections": {
+          "updates": {
+            "title": "Updates",
+            "description": "Storyteller Server-app {version}",
+            "channelLabel": "Updatekanaal",
+            "channelStable": "Stabiel",
+            "channelStableDescription": "Alleen stabiele versies. Testversies worden nooit automatisch geïnstalleerd.",
+            "channelBeta": "Bèta",
+            "channelBetaDescription": "Bèta- en release-candidateversies, plus elke stabiele versie. Terugschakelen naar Stabiel downgradet nooit — updates gaan gewoon verder zodra er een nieuwere stabiele versie is.",
+            "channelEdge": "Nieuwste",
+            "channelEdgeDescription": "Elke release, inclusief alpha- en experimentele builds.",
+            "channelSaveFailed": "Kon het updatekanaal niet opslaan",
+            "checkNow": "Zoeken naar updates…"
           }
         }
       },
@@ -1342,6 +1366,21 @@
       "estimatedRemaining": "{duration} resterend",
       "transcriptionEngine": "Transcriptie engine",
       "storytellerVersion": "<em>Storyteller</em> versie"
+    },
+    "identifiers": {
+      "title": "Identifiers",
+      "edit": "Identifiers bewerken",
+      "editDescription": "Beheer de identifiers van het {format}.",
+      "type": "Type",
+      "value": "Waarde",
+      "add": "Identifier toevoegen",
+      "newType": "Nieuw type…",
+      "newTypeName": "Naam nieuw type",
+      "invalidValue": "Lijkt geen geldige {name}",
+      "empty": "Geen identifiers",
+      "copied": "Gekopieerd",
+      "copyValue": "Waarde kopiëren",
+      "openLink": "Link openen"
     }
   },
   "Labels": {
@@ -1382,7 +1421,8 @@
       "modeAlways": "Altijd overschrijven",
       "modeCustom": "Aangepast",
       "showAdvancedOverrides": "Toon instellingen per veld",
-      "showSimpleOverrides": "Gebruik een enkele instelling voor alle velden"
+      "showSimpleOverrides": "Gebruik een enkele instelling voor alle velden",
+      "fieldIdentifiers": "Identifiers"
     },
     "create": {
       "withInput": "Maak {input} aan"
@@ -1537,7 +1577,7 @@
         "identifiers": "Identificatiecodes",
         "format": "Formaat",
         "review": "Mijn recensie",
-                "search": "Zoek (alle velden)",
+        "search": "Zoek (alle velden)",
         "alignment": "Synchronisatie"
       },
       "short": {

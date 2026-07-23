@@ -43,11 +43,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        // auto-update disabled until TAURI_SIGNING_PRIVATE_KEY is set in CI
-        // (see .gitlab/ci/publish-tauri.yml). to re-enable, uncomment this,
-        // the check-updates menu item and handler, the startup check, and
-        // check_for_updates below
-        // .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ServerState {
             child: Mutex::new(None),
             shutting_down: Mutex::new(false),
@@ -63,7 +59,9 @@ fn main() {
             show_server_log,
             choose_database,
             choose_assets_dir,
-            get_tauri_config
+            get_tauri_config,
+            set_update_channel,
+            check_for_updates_now
         ])
         .setup(|app| {
             setup_menu(app.handle())?;
@@ -184,14 +182,6 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
                 true,
                 None::<&str>,
             )?,
-            &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(
-                app,
-                "check-updates",
-                "Check for Updates…",
-                true,
-                None::<&str>,
-            )?,
         ],
     )?;
     menu.append(&server)?;
@@ -233,10 +223,6 @@ fn setup_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             "change-assets-dir" => {
                 let handle = app.clone();
                 std::thread::spawn(move || change_assets_dir_flow(handle));
-            }
-            "check-updates" => {
-                let handle = app.clone();
-                std::thread::spawn(move || check_for_updates(handle, true));
             }
             _ => {}
         }
@@ -644,24 +630,89 @@ fn boot_inner(app: &tauri::AppHandle) -> Result<()> {
     navigate(app, &url)?;
 
     // quiet update check once the app is usable; release builds only so dev
-    // runs never fetch or prompt. disabled with the updater plugin, see main()
-    // if !cfg!(debug_assertions) {
-    //     let handle = app.clone();
-    //     std::thread::spawn(move || check_for_updates(handle, false));
-    // }
+    // runs never fetch or prompt
+    if !cfg!(debug_assertions) {
+        let handle = app.clone();
+        std::thread::spawn(move || check_for_updates(handle, false));
+    }
     Ok(())
 }
 
-/// checks the updater endpoint; when `interactive` (menu item) it also
-/// reports "up to date" and errors, the startup check stays silent unless an
-/// update exists. blocking dialogs, so must run off the main thread.
-/// currently unused, auto-update is disabled (see the plugin comment in main)
-#[allow(dead_code)]
+const UPDATE_FEED_BASE: &str =
+    "https://gitlab.com/api/v4/projects/67994333/packages/generic/storyteller-tauri";
+const UPDATE_CHANNELS: [&str; 3] = ["stable", "beta", "edge"];
+
+/// which update feed this install follows; stored in tauri.json by the web
+/// settings UI, unknown values fall back to stable
+fn update_channel(app_data: &Path) -> String {
+    let channel = read_tauri_config(app_data)
+        .get("updateChannel")
+        .and_then(|value| value.as_str())
+        .unwrap_or("stable")
+        .to_string();
+    if UPDATE_CHANNELS.contains(&channel.as_str()) {
+        channel
+    } else {
+        "stable".to_string()
+    }
+}
+
+fn update_feed_slot(channel: &str) -> &'static str {
+    match channel {
+        "beta" => "latest-beta",
+        "edge" => "latest-edge",
+        _ => "latest",
+    }
+}
+
+#[tauri::command]
+fn set_update_channel(app: tauri::AppHandle, channel: String) -> Result<(), String> {
+    if !UPDATE_CHANNELS.contains(&channel.as_str()) {
+        return Err(format!("unknown update channel \"{channel}\""));
+    }
+    let app_data = app
+        .path()
+        .app_data_dir()
+        .map_err(|err| format!("no app data directory: {err}"))?;
+    let mut config = read_tauri_config(&app_data);
+    if let Some(object) = config.as_object_mut() {
+        object.insert("updateChannel".to_string(), serde_json::json!(channel));
+    }
+    write_tauri_config(&app_data, &config).map_err(|err| format!("{err:#}"))?;
+    Ok(())
+}
+
+/// settings UI "check for updates" button; progress and results stay in
+/// native dialogs
+#[tauri::command]
+fn check_for_updates_now(app: tauri::AppHandle) {
+    std::thread::spawn(move || check_for_updates(app, true));
+}
+
+/// checks the channel's updater feed; when `interactive` (settings button) it
+/// also reports "up to date" and errors, the startup check stays silent
+/// unless an update exists. blocking dialogs, so must run off the main thread
 fn check_for_updates(app: tauri::AppHandle, interactive: bool) {
     use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
     use tauri_plugin_updater::UpdaterExt;
 
-    let Ok(updater) = app.updater() else {
+    let updater = (|| {
+        let app_data = app.path().app_data_dir().ok()?;
+        let slot = update_feed_slot(&update_channel(&app_data));
+        let endpoint = tauri::Url::parse(&format!("{UPDATE_FEED_BASE}/{slot}/latest.json")).ok()?;
+        app.updater_builder()
+            .endpoints(vec![endpoint])
+            .ok()?
+            .build()
+            .ok()
+    })();
+    let Some(updater) = updater else {
+        if interactive {
+            app.dialog()
+                .message("Could not check for updates: the updater is unavailable.")
+                .title("Update Check Failed")
+                .blocking_show();
+        }
         return;
     };
     let update = match tauri::async_runtime::block_on(updater.check()) {

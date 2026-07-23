@@ -12,6 +12,7 @@
     "tauri": "tauri"
   },
   "devDependencies": {
+    "@storyteller-platform/web": "workspace:*",
     "@tauri-apps/cli": "^2.5.0",
     "@types/node": "^24.0.0",
     "tsx": "^4.7.2"
