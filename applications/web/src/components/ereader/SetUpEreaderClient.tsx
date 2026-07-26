@@ -156,13 +156,21 @@ export function SetUpEreaderClient({
         <Alert color="green" title="The e-reader is ready">
           <Stack gap="xs">
             <Text>
-              You can unplug the {device?.model ?? "e-reader"} now.
+              The {device?.model ?? "e-reader"} is configured.
               {who ? ` It is set up for ${who}.` : ""}
             </Text>
             <List type="ordered" size="sm">
               <List.Item>
-                The books appear in its own library, over Wi-Fi. Nothing to open
-                or install.
+                <b>
+                  On the {device?.model ?? "e-reader"} itself, tap
+                  &ldquo;Disconnect&rdquo;, then restart it
+                </b>{" "}
+                (hold the power button until it turns off, then power it back
+                on). It only starts using your library after a restart.
+              </List.Item>
+              <List.Item>
+                Connect it to Wi-Fi and sync. The books appear in its own
+                library, with nothing to open or install.
               </List.Item>
               <List.Item>
                 Tap a book to download it, and read as normal.
