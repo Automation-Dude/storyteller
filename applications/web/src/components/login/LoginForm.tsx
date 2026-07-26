@@ -46,18 +46,18 @@ export function LoginForm({
   return (
     <>
       {searchParams.get("reset") === "success" && (
-        <p className="bg-opacity-10 rounded-sm border-2 border-green-800 bg-green-800 p-4 text-green-800">
+        <p className="rounded-sm border-2 border-green-800 bg-green-800/10 p-4 text-green-800">
           Your password has been reset. Please log in.
         </p>
       )}
       {errorState === "bad-creds" && (
-        <p className="bg-opacity-10 rounded-sm border-2 border-red-800 bg-red-800 p-4 text-red-800">
-          Invalid username or password
+        <p className="rounded-sm border-2 border-red-800 bg-red-800/10 p-4 text-red-800">
+          That username/email or password is incorrect. Please try again.
         </p>
       )}
       {errorState === "failed" && (
-        <p className="bg-opacity-10 rounded-sm border-2 border-red-800 bg-red-800 p-4 text-red-800">
-          Failed to login. Check server logs for details.
+        <p className="rounded-sm border-2 border-red-800 bg-red-800/10 p-4 text-red-800">
+          Something went wrong signing in. Please try again in a moment.
         </p>
       )}
 
