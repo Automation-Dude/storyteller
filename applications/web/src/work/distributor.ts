@@ -26,6 +26,7 @@ import { env } from "@/env"
 import { logger } from "@/logging"
 import type { UUID } from "@/uuid"
 
+import { canAlign } from "./alignmentStatus"
 import { STAGE_ORDER } from "./stages"
 import type processBook from "./worker"
 
@@ -103,6 +104,26 @@ export async function startProcessing(bookUuid: UUID, restart: RestartMode) {
   try {
     const position = await getNextQueuePosition()
     book = await getBookOrThrow(bookUuid)
+
+    if (!canAlign(book)) {
+      // The HTTP route already rejects this, but startup recovery
+      // (instrumentation.ts) re-enqueues whatever was QUEUED without checking.
+      // A book that lost its audiobook after being queued would otherwise crash
+      // the worker at SPLIT_TRACKS (book.audiobook!.filepath) and be retried on
+      // every boot. Clear the stale state and stop instead.
+      logger.warn(
+        `Not processing "${book.title}" (${bookUuid}): a readaloud needs both an ebook and an audiobook present. Clearing stale queue state.`,
+      )
+      await updateBook(bookUuid, null, {
+        readaloud: {
+          status: "ERROR",
+          currentStage: book.readaloud?.currentStage ?? "SPLIT_TRACKS",
+          queuePosition: null,
+          restartPending: null,
+        },
+      })
+      return
+    }
 
     effectiveRestart = clampRestart(restart, book)
     const startStage = getStartStage(effectiveRestart, book)

@@ -47,6 +47,10 @@ export function BookStatus({ bookUuid }: Props) {
   if (!book) return null
 
   const aligned = !!book.readaloud?.filepath
+  // Same precondition as canAlign in work/alignmentStatus: a format only counts
+  // if it is present and not flagged missing on disk.
+  const hasEbook = !!book.ebook && !book.ebook.missing
+  const hasAudiobook = !!book.audiobook && !book.audiobook.missing
 
   const userFriendlyTaskType =
     book.readaloud?.currentStage &&
@@ -59,11 +63,7 @@ export function BookStatus({ bookUuid }: Props) {
       <Group justify="space-between" wrap="nowrap" align="center">
         <BookOptions aligned={aligned} book={book} />
 
-        {book.readaloud ||
-        (book.ebook &&
-          !book.ebook.missing &&
-          book.audiobook &&
-          !book.audiobook.missing) ? (
+        {book.readaloud || (hasEbook && hasAudiobook) ? (
           <Stack justify="space-between" className="grow">
             {book.readaloud?.status ? (
               book.readaloud.status === "QUEUED" ? (
@@ -96,6 +96,18 @@ export function BookStatus({ bookUuid }: Props) {
               <Text>Unprocessed</Text>
             )}
           </Stack>
+        ) : permissions.bookProcess ? (
+          // The book has no readaloud and is missing a source format, so it
+          // cannot be aligned yet (mirrors canAlign in work/alignmentStatus).
+          // Say which format is missing instead of showing nothing, so it is
+          // clear why there is no "Create readaloud" button and what to add.
+          <Text size="sm" c="dimmed" className="grow self-center">
+            {!hasEbook && !hasAudiobook
+              ? "Add an ebook and an audiobook to create a read-aloud."
+              : !hasAudiobook
+                ? "Add an audiobook (the + button above) to create a read-aloud."
+                : "Add an ebook (the + button above) to create a read-aloud."}
+          </Text>
         ) : (
           <Box />
         )}
