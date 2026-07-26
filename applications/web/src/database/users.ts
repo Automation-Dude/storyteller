@@ -65,9 +65,14 @@ export async function getUserByUsernameOrEmail(
       ).as("permissions"),
     ])
     .where((eb) =>
+      // Match case-insensitively on both sides. Stored emails (and some
+      // usernames) can contain uppercase letters, and comparing them against a
+      // lowercased input under SQLite's default case-sensitive collation locked
+      // those users out of login. Lowering the column too fixes that; usernames
+      // are already stored lowercase, so lower() is a no-op for them.
       eb.or([
-        eb("username", "=", usernameOrEmail.toLowerCase()),
-        eb("email", "=", usernameOrEmail.toLowerCase()),
+        eb(eb.fn("lower", ["username"]), "=", usernameOrEmail.toLowerCase()),
+        eb(eb.fn("lower", ["email"]), "=", usernameOrEmail.toLowerCase()),
       ]),
     )
     .executeTakeFirst()
