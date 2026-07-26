@@ -133,8 +133,15 @@ function CoverSlot({
 }
 
 export function CoverEditor({ compact }: { compact: boolean }) {
-  const { book, form, canEdit, isEditing, editingCovers, setEditingCovers } =
-    useBookForm()
+  const {
+    book,
+    form,
+    canEdit,
+    editingField,
+    isEditing,
+    editingCovers,
+    setEditingCovers,
+  } = useBookForm()
   const t = useTranslation("BookDetailsPage")
   const coverWidth = compact ? 150 : 176
 
@@ -172,7 +179,13 @@ export function CoverEditor({ compact }: { compact: boolean }) {
     }
   }
 
-  if (!isEditing && !editingCovers) {
+  const editing =
+    editingField === "textCover" ||
+    editingField === "audioCover" ||
+    editingCovers ||
+    isEditing
+
+  if (!editing) {
     const editAction = canEdit && (
       <TooltipButton
         variant="secondary"
@@ -259,6 +272,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
     audio: true,
     updatedAt: book.audiobook?.updatedAt ?? book.updatedAt,
   })
+  const { setValue } = form
 
   return (
     <div className="flex shrink-0 flex-col items-center gap-4">
@@ -271,7 +285,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
             width={coverWidth}
             square={false}
             onFileChange={(file) => {
-              form.setValue("textCover", file)
+              setValue("textCover", file, { shouldDirty: true })
             }}
           />
         )}
@@ -284,7 +298,7 @@ export function CoverEditor({ compact }: { compact: boolean }) {
             width={coverWidth}
             square
             onFileChange={(file) => {
-              form.setValue("audioCover", file)
+              setValue("audioCover", file, { shouldDirty: true })
             }}
           />
         )}

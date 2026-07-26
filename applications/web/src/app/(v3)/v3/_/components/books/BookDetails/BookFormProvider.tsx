@@ -10,7 +10,12 @@ import {
   useMemo,
   useState,
 } from "react"
-import { type FieldPath, type UseFormReturn, useForm } from "react-hook-form"
+import {
+  type FieldPath,
+  type UseFormReturn,
+  useForm,
+  useFormState,
+} from "react-hook-form"
 import { toast } from "sonner"
 
 import { useTranslation } from "@v3/_/hooks/use-translation"
@@ -121,8 +126,8 @@ export function BookFormProvider({
     defaultValues: bookToFormValues(book),
   })
 
-  // sync in server changes without clobbering what the user is mid-editing:
-  // an SSE-driven refetch while a field is dirty must not wipe staged edits.
+  const { isDirty } = useFormState({ control: form.control })
+
   useEffect(() => {
     form.reset(bookToFormValues(book), { keepDirtyValues: true })
   }, [book, form])
@@ -174,7 +179,8 @@ export function BookFormProvider({
   )
 
   const submitForm = useCallback(async (): Promise<boolean> => {
-    if (!form.formState.isDirty) {
+    console.log("submitForm", isDirty)
+    if (!isDirty) {
       return true
     }
 
@@ -184,7 +190,7 @@ export function BookFormProvider({
     })()
 
     return success
-  }, [form, submitFormValues])
+  }, [form, submitFormValues, isDirty])
 
   const setEditingField = useCallback(
     (name: FieldPath<BookFormValues> | null) => {
@@ -254,6 +260,7 @@ export function BookFormProvider({
 
   const saveAndClose = useCallback(async (): Promise<boolean> => {
     const ok = await submitForm()
+    console.log("saveAndClose", ok)
     if (ok) {
       setEditingFieldState(null)
       setEditingCoversState(false)
