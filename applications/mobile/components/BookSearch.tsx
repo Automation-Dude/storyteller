@@ -1,10 +1,10 @@
 import { type TriggerRef } from "@rn-primitives/dropdown-menu"
 import { Link } from "expo-router"
-import { useMemo, useRef, useState } from "react"
+import { useRef, useState } from "react"
+import { useWindowDimensions } from "react-native"
 import { FlatList } from "react-native-gesture-handler"
 
-import { type BookWithRelations } from "@/database/books"
-import { useListBooksQuery } from "@/store/localApi"
+import { useBookSearch } from "@/hooks/useBookSearch"
 
 import { BookThumbnailImage } from "./BookThumbnail"
 import { Group } from "./ui/Group"
@@ -18,132 +18,18 @@ import {
 import { Input } from "./ui/input"
 import { Text } from "./ui/text"
 
-const EMPTY_BOOKS: BookWithRelations[] = []
+// The dropdown is a quick jump-to, not the full results view; anything past
+// this many matches is reachable through the "See all results" screen.
+const MAX_DROPDOWN_RESULTS = 8
 
 export function BookSearch() {
   const triggerRef = useRef<TriggerRef | null>(null)
   const [query, setQuery] = useState("")
 
-  const { data: books = EMPTY_BOOKS } = useListBooksQuery()
+  const filteredBooks = useBookSearch(query)
 
   const [width, setWidth] = useState(0)
-
-  const filteredBooks = useMemo(() => {
-    const terms = query
-      .split(/\s+/)
-      .map((t) =>
-        t.toLocaleLowerCase().replaceAll(/[.,/#!$%^&*;:{}=\-_`~()'"]/g, ""),
-      )
-      .filter((term) => !!term)
-
-    return books
-      .map((book) => {
-        const titleScores = terms.map((term) =>
-          book.title
-            .toLocaleLowerCase()
-            .split(/\s+/)
-            .filter((t) => !!t)
-            .map((t) => t.replaceAll(/[.,/#!$%^&*;:{}=\-_`~()'"]/g, ""))
-            .reduce(
-              (acc, t) =>
-                t === term
-                  ? acc + 1
-                  : t.includes(term)
-                    ? acc + term.length / t.length
-                    : acc,
-              0,
-            ),
-        )
-
-        const titleScore =
-          !titleScores.length || titleScores.includes(0)
-            ? 0
-            : titleScores.reduce((acc, s) => acc + s)
-
-        const authorsScores = terms.map((term) =>
-          book.authors.reduce(
-            (acc, a) =>
-              a.name
-                .toLocaleLowerCase()
-                .split(/\s+/)
-                .filter((term) => !!term)
-                .reduce(
-                  (acc, t) =>
-                    t === term
-                      ? acc + 1
-                      : t.includes(term)
-                        ? acc + term.length / t.length
-                        : acc,
-                  0,
-                ) + acc,
-            0,
-          ),
-        )
-
-        const authorsScore =
-          !authorsScores.length || authorsScores.includes(0)
-            ? 0
-            : authorsScores.reduce((acc, s) => acc + s)
-
-        const seriesScores = terms.map((term) =>
-          book.series.reduce(
-            (acc, s) =>
-              s.name
-                .toLocaleLowerCase()
-                .split(/\s+/)
-                .filter((term) => !!term)
-                .reduce(
-                  (acc, t) =>
-                    t === term
-                      ? acc + 1
-                      : t.includes(term)
-                        ? acc + term.length / t.length
-                        : acc,
-                  0,
-                ) + acc,
-            0,
-          ),
-        )
-
-        const seriesScore =
-          !seriesScores.length || seriesScores.includes(0)
-            ? 0
-            : seriesScores.reduce((acc, s) => acc + s)
-
-        const tagsScores = terms.map((term) =>
-          book.tags.reduce(
-            (acc, a) =>
-              a.name
-                .toLocaleLowerCase()
-                .split(/\s+/)
-                .filter((term) => !!term)
-                .reduce(
-                  (acc, t) =>
-                    t === term
-                      ? acc + 1
-                      : t.includes(term)
-                        ? acc + term.length / t.length
-                        : acc,
-                  0,
-                ) + acc,
-            0,
-          ),
-        )
-
-        const tagsScore =
-          !tagsScores.length || tagsScores.includes(0)
-            ? 0
-            : tagsScores.reduce((acc, s) => acc + s)
-
-        return [
-          book,
-          titleScore + authorsScore + seriesScore * 0.75 + tagsScore * 0.5,
-        ] as const
-      })
-      .filter(([_, score]) => score > 0)
-      .sort(([_a, a], [_b, b]) => b - a)
-      .map(([book]) => book)
-  }, [books, query])
+  const { height: windowHeight } = useWindowDimensions()
 
   return (
     <DropdownMenu className="grow">
@@ -182,7 +68,11 @@ export function BookSearch() {
       >
         {query && !!filteredBooks.length && (
           <FlatList
-            data={filteredBooks}
+            data={filteredBooks.slice(0, MAX_DROPDOWN_RESULTS)}
+            // Without a bounded height the list grows to its intrinsic size,
+            // pushes the dropdown past the top of the screen, and cannot
+            // scroll. Bounding it keeps every row reachable.
+            style={{ maxHeight: windowHeight * 0.45 }}
             renderItem={({ item: book }) => (
               <DropdownMenuItem asChild>
                 <Link
@@ -211,6 +101,27 @@ export function BookSearch() {
               </DropdownMenuItem>
             )}
           ></FlatList>
+        )}
+        {query && filteredBooks.length > MAX_DROPDOWN_RESULTS && (
+          <DropdownMenuItem asChild>
+            <Link
+              className="active:bg-secondary"
+              href={{
+                pathname: "/search",
+                params: { query },
+              }}
+              onPress={() => {
+                triggerRef.current?.close()
+                setQuery("")
+              }}
+            >
+              <Group className="justify-center py-1" style={{ width }}>
+                <Text className="text-sm font-semibold">
+                  See all {filteredBooks.length} results
+                </Text>
+              </Group>
+            </Link>
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>
