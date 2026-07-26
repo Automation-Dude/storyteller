@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  IconArrowBackUp,
   IconBook2,
   IconBook,
   IconClipboardCheck,
@@ -218,6 +219,26 @@ export function AppSidebar({
       title: t("documentation"),
       url: "https://storyteller-platform.gitlab.io/storyteller/",
       icon: IconHelpCircle,
+    },
+    {
+      // Cross-UI jump to the classic (v2) interface. A plain anchor to the real
+      // root ("/") is deliberate: V3Link would rewrite "/" to "/v3", and a hard
+      // navigation cleanly hands off between the two very different app shells
+      // (v3 sidebar/Tailwind vs. v2 Mantine).
+      custom: (
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            size="sm"
+            render={
+              <a href="/">
+                <IconArrowBackUp />
+                <span>Classic UI (v2)</span>
+              </a>
+            }
+          />
+        </SidebarMenuItem>
+      ),
+      key: "classic-v2",
     },
   ]
 

@@ -13,7 +13,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core"
-import { useDisclosure, useMediaQuery } from "@mantine/hooks"
+import { useDisclosure } from "@mantine/hooks"
 import {
   IconBook2,
   IconBooks,
@@ -25,6 +25,7 @@ import {
   IconMoon,
   IconPlus,
   IconSettings,
+  IconSparkles,
   IconSun,
   IconUser,
   IconUsers,
@@ -80,11 +81,6 @@ export function StorytellerAppShell({
   }, [dispatch, initialCurrentUser])
 
   const [opened, { close, toggle }] = useDisclosure(false)
-  // Drive the navbar width off matchMedia rather than a Mantine responsive
-  // width object: the object width did not apply on iOS Safari, so the phone
-  // drawer opened unusably narrow. undefined (SSR/first paint) falls back to
-  // the desktop rail, which is fine because the phone drawer starts collapsed.
-  const isMobileWidth = useMediaQuery("(max-width: 47.99em)")
   const [
     isCreateCollectionOpen,
     { close: closeCreateCollection, open: openCreateCollection },
@@ -138,13 +134,16 @@ export function StorytellerAppShell({
         withBorder={false}
         padding="md"
         navbar={{
-          // 240 on a phone so the burger opens a readable drawer; 40 from sm up
-          // for the icon rail that expands on hover. A plain number per
-          // breakpoint (not a responsive object) is what actually applies on
-          // iOS Safari.
-          width: isMobileWidth ? 240 : 40,
+          // Responsive width instead of a JS media query. Below `sm` the navbar
+          // is a full-height slide-in drawer (Mantine renders it full-width on
+          // mobile); from `sm` up it is the 40px icon rail that expands on
+          // hover. Driving the width off a useMediaQuery value raced with SSR
+          // hydration (undefined on first paint) and could leave the portrait
+          // drawer stuck closed on WebKit / iOS Safari; a responsive object has
+          // no such timing dependency.
+          width: { base: 240, sm: 40 },
           breakpoint: "sm",
-          collapsed: { mobile: !opened },
+          collapsed: { mobile: !opened, desktop: false },
         }}
       >
         <AppShell.Navbar>
@@ -292,6 +291,18 @@ export function StorytellerAppShell({
                 leftSection={<IconClipboardCheck />}
                 label="Library audit"
                 active={pathname === "/library-audit"}
+              />
+            ) : null}
+            {permissions?.settingsUpdate ? (
+              // Cross-UI jump to the new (v3) interface. A plain anchor (not
+              // NextLink) forces a hard navigation, cleanly handing off from the
+              // v2 Mantine shell to the v3 sidebar shell.
+              <NavLink
+                onClick={close}
+                component="a"
+                href="/v3"
+                leftSection={<IconSparkles />}
+                label="New UI (v3)"
               />
             ) : null}
             <NavLink
