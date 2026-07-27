@@ -11,7 +11,16 @@ import { quotePath } from "./shell"
 
 const execPromise = promisify(exec)
 
-export const COVER_IMAGE_FILE_EXTENSIONS = [".jpeg", ".jpg", ".png", ".svg"]
+export const COVER_IMAGE_FILE_EXTENSIONS = [
+  ".jpeg",
+  ".jpg",
+  ".png",
+  ".svg",
+  // A GIF cover is recognised so a book whose only cover is a GIF is not
+  // treated as having no cover. optimizeImage re-encodes it when a cover is
+  // resized for a reader.
+  ".gif",
+]
 export const MP3_FILE_EXTENSIONS = [".mp3"]
 export const MPEG4_FILE_EXTENSIONS = [".mp4", ".m4a", ".m4b"]
 export const AAC_FILE_EXTENSIONS = [".aac"]
