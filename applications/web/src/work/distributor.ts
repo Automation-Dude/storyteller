@@ -488,8 +488,15 @@ function getStartStage(
   restart: RestartMode,
   book: BookWithRelations,
 ): Readaloud["currentStage"] {
-  if (restart === "full") return "SPLIT_TRACKS"
+  // An ebook-only book starts by generating its audiobook; everything else
+  // starts at track splitting. (Whether generation is actually enabled is
+  // enforced at enqueue time in the process route.)
+  const hasEbook = !!book.ebook && !book.ebook.missing
+  const hasAudiobook = !!book.audiobook && !book.audiobook.missing
+  const firstStage: Readaloud["currentStage"] =
+    hasEbook && !hasAudiobook ? "GENERATE_AUDIO" : "SPLIT_TRACKS"
+  if (restart === "full") return firstStage
   if (restart === "transcription") return "TRANSCRIBE_CHAPTERS"
   if (restart === "sync") return "SYNC_CHAPTERS"
-  return book.readaloud?.currentStage ?? "SPLIT_TRACKS"
+  return book.readaloud?.currentStage ?? firstStage
 }

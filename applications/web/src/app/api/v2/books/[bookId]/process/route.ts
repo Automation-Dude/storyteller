@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { withHasPermission } from "@/auth/auth"
 import { getBook, getBookUuid } from "@/database/books"
 import { db } from "@/database/connection"
+import { getSettings } from "@/database/settings"
 import { env } from "@/env"
 import {
   type RestartMode,
@@ -105,11 +106,17 @@ export const POST = withHasPermission<Params>("bookProcess")(async (
   const ebookMissing = !book.ebook || book.ebook.missing
   const audiobookMissing = !book.audiobook || book.audiobook.missing
 
-  if (ebookMissing || audiobookMissing) {
+  // An ebook with no audiobook can still be processed when narration generation
+  // is enabled: the GENERATE_AUDIO stage synthesises the audiobook first, then
+  // the usual split, transcribe, and align stages produce the readaloud.
+  const settings = await getSettings()
+  const generatable = !ebookMissing && audiobookMissing && !!settings.ttsEngine
+
+  if ((ebookMissing || audiobookMissing) && !generatable) {
     return NextResponse.json(
       {
         message:
-          "Cannot process book: both ebook and audiobook must be present and not missing.",
+          "Cannot process book: it needs an ebook and an audiobook, or an ebook plus narration generation enabled in Settings.",
       },
       { status: 409 },
     )

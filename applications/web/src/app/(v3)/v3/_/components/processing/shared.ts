@@ -1,6 +1,7 @@
 import { type PublicJob } from "@/database/jobs"
 
 export const STAGE_SEQUENCE = [
+  "GENERATE_AUDIO",
   "SPLIT_TRACKS",
   "TRANSCRIBE_CHAPTERS",
   "SYNC_CHAPTERS",
@@ -9,6 +10,7 @@ export const STAGE_SEQUENCE = [
 export type Stage = (typeof STAGE_SEQUENCE)[number]
 
 export const STAGE_LABELS: Record<Stage, string> = {
+  GENERATE_AUDIO: "Generating narration",
   SPLIT_TRACKS: "Pre-processing audio",
   TRANSCRIBE_CHAPTERS: "Transcribing tracks",
   SYNC_CHAPTERS: "Aligning chapters",

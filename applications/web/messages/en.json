@@ -1801,6 +1801,7 @@
     "estimatedTime": "Estimated time: {duration}",
     "noEstimateHistory": "Not enough history to estimate",
     "stage": {
+      "GENERATE_AUDIO": "Generating narration",
       "SPLIT_TRACKS": "Pre-processing audio",
       "TRANSCRIBE_CHAPTERS": "Transcribing tracks",
       "SYNC_CHAPTERS": "Aligning chapters"

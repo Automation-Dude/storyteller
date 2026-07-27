@@ -11,6 +11,9 @@ import {
 } from "@readium/shared"
 import { camelCase } from "change-case"
 import { enumerate } from "itertools"
+// smil-clockvalue ships no type declarations; see the note in errorAlign/native.ts.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import clockvalue from "smil-clockvalue"
 
 import { lookupAudioMime } from "@storyteller-platform/audiobook"

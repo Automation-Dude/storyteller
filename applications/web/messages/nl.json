@@ -1683,6 +1683,7 @@
     "estimatedTime": "Geschatte tijd: {duration}",
     "noEstimateHistory": "Niet genoeg geschiedenis om te schatten",
     "stage": {
+      "GENERATE_AUDIO": "Narratie genereren",
       "SPLIT_TRACKS": "Audio voorbereiden",
       "TRANSCRIBE_CHAPTERS": "Tracks transcriberen",
       "SYNC_CHAPTERS": "Hoofdstukken synchroniseren"
