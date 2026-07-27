@@ -61,6 +61,8 @@ const DEFAULT_SETTINGS: Settings = {
   opdsEnabled: null,
   opdsPageSize: null,
   opdsFormat: null,
+  koreaderSyncEnabled: null,
+  koreaderSyncAllowRegistration: null,
   scanCronExpression: null,
   backupCronExpression: null,
   backupRetentionCount: null,
