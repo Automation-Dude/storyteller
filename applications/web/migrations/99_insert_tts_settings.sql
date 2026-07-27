@@ -4,7 +4,7 @@ INSERT INTO
   settings (name, value)
 SELECT
   'ttsEngine',
-  null
+  'null'
 WHERE
   NOT EXISTS (
     SELECT
