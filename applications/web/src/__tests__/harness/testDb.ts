@@ -58,6 +58,7 @@ const DEFAULT_SETTINGS: Settings = {
   readaloudLocationType: "INTERNAL",
   readaloudLocation: "",
   maxUploadChunkSize: null,
+  koboSyncEnabled: null,
   opdsEnabled: null,
   opdsPageSize: null,
   opdsFormat: null,

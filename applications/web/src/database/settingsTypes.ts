@@ -240,6 +240,8 @@ export const SettingsSchema = z.object({
   // protocol, which Storyteller implements at /kosync.
   koreaderSyncEnabled: z.boolean().nullable(),
   koreaderSyncAllowRegistration: z.boolean().nullable(),
+  // Kobo sync settings
+  koboSyncEnabled: z.boolean().nullable(),
   // Scanning settings
   scanCronExpression: z.string().nullable(),
   // Backup settings; optional so setting rows written before these keys

@@ -46,6 +46,7 @@ import {
   IconCopy,
   IconDatabase,
   IconDeviceLaptop,
+  IconDeviceTablet,
   IconDots,
   IconDotsCircleHorizontal,
   IconDotsVertical,
@@ -171,6 +172,7 @@ export const EditOff = /*#__PURE__*/ styled(IconEditOff)
 export const Pencil = /*#__PURE__*/ styled(IconPencil)
 export const Search = /*#__PURE__*/ styled(IconSearch)
 export const Filter = /*#__PURE__*/ styled(IconFilter2)
+export const DeviceTablet = /*#__PURE__*/ styled(IconDeviceTablet)
 export const Download = /*#__PURE__*/ styled(IconDownload)
 export const Upload = /*#__PURE__*/ styled(IconUpload)
 export const Reload = /*#__PURE__*/ styled(IconReload)

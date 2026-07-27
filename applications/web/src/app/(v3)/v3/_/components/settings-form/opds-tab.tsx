@@ -37,6 +37,7 @@ import { SettingsSection, safeUrl } from "./shared"
 export function OpdsTab() {
   const { form, lockedSettings } = useSettingsForm()
   const t = useTranslation("SettingsPage.tabs.opds.sections.opds")
+  const tKobo = useTranslation("SettingsPage.tabs.opds.sections.kobo")
   const opdsEnabled = useWatch({ control: form.control, name: "opdsEnabled" })
   const webUrl = useWatch({ control: form.control, name: "webUrl" })
 
@@ -161,6 +162,47 @@ export function OpdsTab() {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+      </SettingsSection>
+
+      <SettingsSection tab="opds" section="kobo">
+        <Card>
+          <CardHeader>
+            <CardTitle>{tKobo("title")}</CardTitle>
+            <CardDescription>{tKobo("description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Controller
+              name="koboSyncEnabled"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field
+                  orientation="horizontal"
+                  data-invalid={fieldState.invalid}
+                  data-disabled={lockedSettings.has("koboSyncEnabled")}
+                >
+                  <Switch
+                    id="koboSyncEnabled"
+                    disabled={lockedSettings.has("koboSyncEnabled")}
+                    checked={field.value ?? false}
+                    onCheckedChange={field.onChange}
+                  />
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="koboSyncEnabled">
+                      {tKobo("enabled")}
+                      {lockedSettings.has("koboSyncEnabled") && <LockTooltip />}
+                    </FieldLabel>
+                    <FieldDescription>
+                      {tKobo("enabledDescription")}
+                    </FieldDescription>
+                  </div>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
           </CardContent>
         </Card>
       </SettingsSection>

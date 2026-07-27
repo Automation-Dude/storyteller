@@ -9,7 +9,12 @@ import {
 
 export type SidebarGroup = SidebarBuiltinGroup
 
-type AppSidebarLabelKey = "home" | "books" | "alignmentQuality" | "libraryAudit"
+type AppSidebarLabelKey =
+  | "home"
+  | "books"
+  | "alignmentQuality"
+  | "libraryAudit"
+  | "setUpEreader"
 type LibraryLabelKey =
   | "Series.plain"
   | "Authors.plain"
@@ -67,6 +72,12 @@ const BUILTIN_META = {
     permission: "settingsUpdate",
     labelNs: "AppSidebar",
     labelKey: "libraryAudit",
+  },
+  "set-up-ereader": {
+    icon: icon.DeviceTablet,
+    href: "/set-up-ereader",
+    labelNs: "AppSidebar",
+    labelKey: "setUpEreader",
   },
   series: {
     icon: icon.List,

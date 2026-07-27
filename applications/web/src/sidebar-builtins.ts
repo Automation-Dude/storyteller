@@ -17,6 +17,7 @@ export const SIDEBAR_BUILTINS = [
   { key: "books", group: "main" },
   { key: "alignment-quality", group: "main" },
   { key: "library-audit", group: "main" },
+  { key: "set-up-ereader", group: "main" },
   { key: "series", group: "library" },
   { key: "authors", group: "library" },
   { key: "narrators", group: "library" },

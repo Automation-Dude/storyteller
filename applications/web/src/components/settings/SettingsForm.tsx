@@ -1180,6 +1180,7 @@ export function SettingsForm({
     readaloudLocation: settings.readaloudLocation,
     maxUploadChunkSize:
       maxUploadChunkSize?.maxUploadChunkSize ?? settings.maxUploadChunkSize,
+    koboSyncEnabled: settings.koboSyncEnabled,
     opdsEnabled: settings.opdsEnabled,
     opdsPageSize: settings.opdsPageSize,
     opdsFormat: settings.opdsFormat,
