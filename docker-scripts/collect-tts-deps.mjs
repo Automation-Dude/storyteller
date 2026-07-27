@@ -13,7 +13,7 @@
 // dependencies and installed optionalDependencies are both followed: the latter
 // is how sharp's platform-specific native binary (@img/sharp-<platform>) is
 // captured. Anything not installed for the build platform is simply skipped.
-import { cpSync, existsSync, readFileSync } from "node:fs"
+import { cpSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 
 const root = join(process.cwd(), "node_modules")
@@ -65,6 +65,33 @@ function walk(name, fromDir) {
 }
 
 walk("kokoro-js", process.cwd())
+
+// onnxruntime-node ships native binaries for every OS and architecture, plus
+// large GPU execution-provider libraries (CUDA and TensorRT, together roughly a
+// gigabyte). We only ever run the build platform, on CPU (the TTS model runs on
+// CPU), so drop everything else to keep the image small.
+const napi = join(dest, "onnxruntime-node", "bin", "napi-v3")
+if (existsSync(napi)) {
+  for (const os of readdirSync(napi)) {
+    if (os !== "linux") {
+      rmSync(join(napi, os), { recursive: true, force: true })
+      continue
+    }
+    const osDir = join(napi, os)
+    for (const arch of readdirSync(osDir)) {
+      if (arch !== process.arch) {
+        rmSync(join(osDir, arch), { recursive: true, force: true })
+        continue
+      }
+      for (const gpuProvider of [
+        "libonnxruntime_providers_cuda.so",
+        "libonnxruntime_providers_tensorrt.so",
+      ]) {
+        rmSync(join(osDir, arch, gpuProvider), { force: true })
+      }
+    }
+  }
+}
 
 console.log(`Staged ${staged.size} TTS runtime packages into ${dest}`)
 if (missing.size) {

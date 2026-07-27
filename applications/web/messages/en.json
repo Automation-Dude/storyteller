@@ -797,6 +797,24 @@
             "deepgramModel": "Model name",
             "deepgramModelDescription": "Can be any model the server supports, like nova-3, nova-2, nova, enhanced, base or whisper. Defaults to nova-3."
           },
+          "tts": {
+            "title": "Narration (text-to-speech)",
+            "description": "Generate narration for a book that has an ebook but no audiobook, using a local text-to-speech voice, then align it into a readaloud. This runs entirely on your server, with no API keys or paid services. Leave off to only make readalouds from books that already have an audiobook.",
+            "engine": "Narration engine",
+            "engineOff": "Off (do not generate narration)",
+            "engineKokoro": "Kokoro (local, best quality)",
+            "enginePiper": "Piper (local, fast)",
+            "piperComing": "Piper support is coming. For now, use the Kokoro engine.",
+            "voice": "Voice",
+            "voiceDescription": "The narrator voice. Prefixes: af and am are US female and male, bf and bm are UK female and male.",
+            "speed": "Speed",
+            "speedDescription": "Narration speed. 1 is natural; lower is slower.",
+            "format": "Audiobook format",
+            "formatDescription": "m4b is a single chaptered audiobook file; mp3 and m4a write one file per chapter.",
+            "formatM4b": "m4b (chaptered audiobook)",
+            "formatMp3": "mp3 (one file per chapter)",
+            "formatM4a": "m4a (one file per chapter)"
+          },
           "parallelization": {
             "title": "Parallelization Settings",
             "description": "Audio transcoding is single-threaded, and Whisper has diminishing returns on multi-core processing for a single file. Since Storyteller splits input audio into multiple tracks, it can run transcoding and transcription in parallel.",
