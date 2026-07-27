@@ -322,6 +322,39 @@ export interface Job {
   uuid: Generated<import("@/uuid").UUID>
 }
 
+export interface KoreaderDocument {
+  bookUuid: string
+  createdAt: Generated<string>
+  document: string
+  ebookUuid: string | null
+  readaloudUuid: string | null
+  updatedAt: Generated<string>
+  uuid: Generated<string>
+}
+
+export interface KoreaderProgress {
+  bookUuid: string | null
+  createdAt: Generated<string>
+  device: string | null
+  deviceId: string | null
+  document: string
+  koreaderUserUuid: string
+  percentage: number
+  progress: string
+  timestamp: number
+  updatedAt: Generated<string>
+  uuid: Generated<string>
+}
+
+export interface KoreaderUser {
+  authKey: string
+  createdAt: Generated<string>
+  updatedAt: Generated<string>
+  userId: string
+  username: string
+  uuid: Generated<string>
+}
+
 export interface Migration {
   createdAt: Generated<string>
   hash: string
@@ -581,6 +614,9 @@ export interface DB {
   importRule: ImportRule
   importRuleToCollection: ImportRuleToCollection
   job: Job
+  koreaderDocument: KoreaderDocument
+  koreaderProgress: KoreaderProgress
+  koreaderUser: KoreaderUser
   migration: Migration
   position: Position
   readaloud: Readaloud
