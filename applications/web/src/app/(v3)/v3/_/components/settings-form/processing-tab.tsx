@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { KOKORO_VOICES } from "@storyteller-platform/ghost-story/constants"
 
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
+import { useVoiceSample } from "@/components/settings/useVoiceSample"
 import { usePermissions } from "@/hooks/usePermissions"
 import { useClearBooksCacheMutation } from "@/store/api"
 
@@ -200,9 +201,9 @@ export function ProcessingTab() {
                   aria-invalid={fieldState.invalid}
                   items={ttsEngineOptions}
                   value={field.value ?? "off"}
-                  onValueChange={(value) =>
-                    { field.onChange(value === "off" ? null : value); }
-                  }
+                  onValueChange={(value) => {
+                    field.onChange(value === "off" ? null : value)
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -425,6 +426,30 @@ type TtsTranslationFn = ReturnType<
   typeof useTranslations<"SettingsPage.tabs.processing.sections.tts">
 >
 
+function VoiceSampleButton({
+  voice,
+  label,
+  playingLabel,
+}: {
+  voice: string
+  label: string
+  playingLabel: string
+}) {
+  const { playing, play } = useVoiceSample()
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={playing}
+      onClick={() => {
+        play(voice)
+      }}
+    >
+      {playing ? playingLabel : label}
+    </Button>
+  )
+}
+
 function KokoroSettings({ t }: { t: TtsTranslationFn }) {
   const voiceOptions = KOKORO_VOICES.map((voice) => ({
     value: voice,
@@ -443,24 +468,33 @@ function KokoroSettings({ t }: { t: TtsTranslationFn }) {
         label={t("voice")}
         description={t("voiceDescription")}
         render={(field, fieldState, isLocked) => (
-          <Select
-            disabled={isLocked}
-            aria-invalid={fieldState.invalid}
-            items={voiceOptions}
-            value={field.value ?? "af_heart"}
-            onValueChange={field.onChange}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {voiceOptions.map(({ value, label }) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <Select
+                disabled={isLocked}
+                aria-invalid={fieldState.invalid}
+                items={voiceOptions}
+                value={field.value ?? "af_heart"}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {voiceOptions.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <VoiceSampleButton
+              voice={field.value ?? "af_heart"}
+              label={t("playSample")}
+              playingLabel={t("playing")}
+            />
+          </div>
         )}
       />
       <SettingsFormField
