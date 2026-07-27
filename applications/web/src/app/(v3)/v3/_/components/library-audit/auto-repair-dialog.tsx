@@ -1,12 +1,7 @@
 "use client"
 
-import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-
-import { type AuditBook } from "@/database/auditLibrary"
-import { type RepairProposal } from "@/metadata/repair"
-import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -20,6 +15,11 @@ import {
   DialogTitle,
 } from "@v3/_/components/ui/dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
+import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import { type AuditBook } from "@/database/auditLibrary"
+import { type RepairProposal } from "@/metadata/repair"
+import { useApplyRepairsMutation, useSuggestRepairsMutation } from "@/store/api"
 
 const BATCH = 25
 const COVER_ISSUES = new Set(["NO-COVER", "BLANK-COVER", "TINY-COVER"])
@@ -68,7 +68,7 @@ export function AutoRepairDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const t = useTranslations("LibraryAuditPage")
+  const t = useTranslation("LibraryAuditPage")
   const [suggest] = useSuggestRepairsMutation()
   const [applyRepairs, apply] = useApplyRepairsMutation()
 

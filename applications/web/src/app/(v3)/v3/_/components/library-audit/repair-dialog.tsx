@@ -1,17 +1,8 @@
 "use client"
 
 import { IconExternalLink, IconSearch } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
-
-import { type AuditBook, type AuditIssue } from "@/database/auditLibrary"
-import { type OpenLibraryCandidate } from "@/metadata/openLibrary"
-import {
-  useApplyRepairsMutation,
-  useLazySearchMetadataQuery,
-  useSuggestRepairsMutation,
-} from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -27,6 +18,15 @@ import { Input } from "@v3/_/components/ui/input"
 import { Label } from "@v3/_/components/ui/label"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { Textarea } from "@v3/_/components/ui/textarea"
+import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import { type AuditBook, type AuditIssue } from "@/database/auditLibrary"
+import { type OpenLibraryCandidate } from "@/metadata/openLibrary"
+import {
+  useApplyRepairsMutation,
+  useLazySearchMetadataQuery,
+  useSuggestRepairsMutation,
+} from "@/store/api"
 
 const COVER_ISSUES: AuditIssue[] = ["NO-COVER", "BLANK-COVER", "TINY-COVER"]
 
@@ -56,7 +56,7 @@ export function RepairDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const t = useTranslations("LibraryAuditPage")
+  const t = useTranslation("LibraryAuditPage")
 
   const [suggest, suggestion] = useSuggestRepairsMutation()
   const [applyRepairs, apply] = useApplyRepairsMutation()
@@ -292,7 +292,7 @@ function CoverPreview({
 }: {
   bookUuid: string
   proposedUrl: string
-  t: ReturnType<typeof useTranslations>
+  t: ReturnType<typeof useTranslation<"LibraryAuditPage">>
 }) {
   return (
     <div className="flex gap-3">
@@ -341,7 +341,7 @@ function ManualSearch({
   searching: boolean
   candidates: OpenLibraryCandidate[]
   onUse: (candidate: OpenLibraryCandidate) => void
-  t: ReturnType<typeof useTranslations>
+  t: ReturnType<typeof useTranslation<"LibraryAuditPage">>
 }) {
   return (
     <div className="mt-2 flex flex-col gap-2 border-t pt-3">

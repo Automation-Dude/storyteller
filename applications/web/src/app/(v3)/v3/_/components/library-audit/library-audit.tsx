@@ -1,15 +1,7 @@
 "use client"
 
 import { IconRefresh, IconWand } from "@tabler/icons-react"
-import { useTranslations } from "next-intl"
 import { useState } from "react"
-
-import {
-  type AuditBook,
-  type AuditIssue,
-  type LibraryAudit as AuditData,
-} from "@/database/auditLibrary"
-import { useGetLibraryAuditQuery } from "@/store/api"
 
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
@@ -21,6 +13,14 @@ import {
   CardTitle,
 } from "@v3/_/components/ui/card"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
+import { useTranslation } from "@v3/_/hooks/use-translation"
+
+import {
+  type AuditBook,
+  type AuditIssue,
+  type LibraryAudit as AuditData,
+} from "@/database/auditLibrary"
+import { useGetLibraryAuditQuery } from "@/store/api"
 
 import { AutoRepairDialog } from "./auto-repair-dialog"
 import { RepairDialog } from "./repair-dialog"
@@ -47,7 +47,7 @@ const ISSUE_ORDER: {
 const VARIANT_OF = new Map(ISSUE_ORDER.map((i) => [i.issue, i.variant]))
 
 export function LibraryAudit() {
-  const t = useTranslations("LibraryAuditPage")
+  const t = useTranslation("LibraryAuditPage")
   const { data, isFetching, isError, refetch } = useGetLibraryAuditQuery()
 
   const [repairing, setRepairing] = useState<AuditBook | null>(null)
@@ -159,7 +159,7 @@ function SummaryCards({
   data: AuditData
   label: (issue: AuditIssue) => string
 }) {
-  const t = useTranslations("LibraryAuditPage")
+  const t = useTranslation("LibraryAuditPage")
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       <Card className="bg-muted/40">
@@ -195,7 +195,7 @@ function FlaggedTable({
 }: {
   data: AuditData
   label: (issue: AuditIssue) => string
-  t: ReturnType<typeof useTranslations>
+  t: ReturnType<typeof useTranslation<"LibraryAuditPage">>
   onRepair: (book: AuditBook) => void
 }) {
   // Sort the most-broken books to the top: they are the ones worth fixing first.

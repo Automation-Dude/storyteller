@@ -2,10 +2,10 @@ import { type Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 
-import { nextAuth } from "@/auth/auth"
-
 import { LibraryAudit } from "@v3/_/components/library-audit/library-audit"
 import { SiteHeader } from "@v3/_/components/site-header"
+
+import { nextAuth } from "@/auth/auth"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("LibraryAuditPage")
