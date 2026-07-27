@@ -767,6 +767,8 @@
             "piperComing": "Ondersteuning voor Piper komt eraan. Gebruik voorlopig de Kokoro-engine.",
             "voice": "Stem",
             "voiceDescription": "De verteller-stem. Voorvoegsels: af en am zijn Amerikaans vrouwelijk en mannelijk, bf en bm zijn Brits vrouwelijk en mannelijk.",
+            "playSample": "Voorbeeld afspelen",
+            "playing": "Bezig met afspelen...",
             "speed": "Snelheid",
             "speedDescription": "Vertellingssnelheid. 1 is natuurlijk; lager is langzamer.",
             "format": "Audioboekformaat",

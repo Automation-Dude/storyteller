@@ -68,6 +68,7 @@ import { type UUID } from "@/uuid"
 
 import { AuthProviderInput } from "./AuthProviderInput"
 import { MetadataFieldOverridesEditor } from "./MetadataFieldOverridesEditor"
+import { useVoiceSample } from "./useVoiceSample"
 
 interface Props {
   settings: Settings
@@ -1200,6 +1201,7 @@ export function SettingsForm({
   })
 
   const state = form.values
+  const voiceSample = useVoiceSample()
   const canDisablePassword = state.authProviders.some(
     (p) =>
       p.kind === "custom" &&
@@ -2130,14 +2132,14 @@ export function SettingsForm({
         <NativeSelect
           label="Narration engine"
           value={state.ttsEngine ?? ""}
-          onChange={(event) =>
-            { form.setFieldValue(
+          onChange={(event) => {
+            form.setFieldValue(
               "ttsEngine",
               event.currentTarget.value === ""
                 ? null
                 : (event.currentTarget.value as "kokoro" | "piper"),
-            ); }
-          }
+            )
+          }}
           disabled={isLocked("ttsEngine")}
         >
           <option value="">Off (do not generate narration)</option>
@@ -2157,6 +2159,15 @@ export function SettingsForm({
                 </option>
               ))}
             </NativeSelect>
+            <Button
+              variant="light"
+              size="xs"
+              className="self-start"
+              loading={voiceSample.playing}
+              onClick={() => { voiceSample.play(state.ttsVoice ?? "af_heart"); }}
+            >
+              Play sample
+            </Button>
             <NumberInput
               label="Speed"
               description="Narration speed. 1 is natural; lower is slower."

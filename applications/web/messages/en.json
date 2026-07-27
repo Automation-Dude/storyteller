@@ -807,6 +807,8 @@
             "piperComing": "Piper support is coming. For now, use the Kokoro engine.",
             "voice": "Voice",
             "voiceDescription": "The narrator voice. Prefixes: af and am are US female and male, bf and bm are UK female and male.",
+            "playSample": "Play sample",
+            "playing": "Playing...",
             "speed": "Speed",
             "speedDescription": "Narration speed. 1 is natural; lower is slower.",
             "format": "Audiobook format",
