@@ -6,6 +6,24 @@ export {
   recognize,
 } from "./api/Recognition.ts"
 export {
+  type SynthesisOptions,
+  type SynthesisResult,
+  synthesisEngines,
+  synthesize,
+} from "./api/Synthesis.ts"
+export {
+  type KokoroDtype,
+  type KokoroOptions,
+  type KokoroSynthesisResult,
+  chunkText as chunkKokoroText,
+  synthesize as synthesizeKokoro,
+} from "./synthesis/KokoroTTS.ts"
+export {
+  type PiperOptions,
+  type PiperSynthesisResult,
+  synthesize as synthesizePiper,
+} from "./synthesis/PiperTTS.ts"
+export {
   type AudioFormat,
   type AudioFormatInfo,
   type AudioSource,

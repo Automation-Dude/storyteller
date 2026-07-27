@@ -1,0 +1,5 @@
+releases:
+  "@storyteller-platform/align": patch
+  "@storyteller-platform/docs": patch
+  "@storyteller-platform/ghost-story": minor
+  "@storyteller-platform/web": minor

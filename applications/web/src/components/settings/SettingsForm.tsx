@@ -36,6 +36,8 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 
+import { KOKORO_VOICES } from "@storyteller-platform/ghost-story/constants"
+
 import type { Settings } from "@/apiModels"
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 import {
@@ -66,6 +68,7 @@ import { type UUID } from "@/uuid"
 
 import { AuthProviderInput } from "./AuthProviderInput"
 import { MetadataFieldOverridesEditor } from "./MetadataFieldOverridesEditor"
+import { useVoiceSample } from "./useVoiceSample"
 
 interface Props {
   settings: Settings
@@ -1145,6 +1148,10 @@ export function SettingsForm({
     transcriptionEngine: settings.transcriptionEngine ?? "whisper.cpp",
     whisperModel: settings.whisperModel ?? "tiny",
     whisperThreads: settings.whisperThreads,
+    ttsEngine: settings.ttsEngine,
+    ttsVoice: settings.ttsVoice ?? "af_heart",
+    ttsSpeed: settings.ttsSpeed ?? 1,
+    ttsFormat: settings.ttsFormat ?? "m4b",
     // whisperModelOverrides: settings.whisperModelOverrides,
     autoDetectLanguage: settings.autoDetectLanguage,
     whisperCpuFallback: settings.whisperCpuFallback,
@@ -1194,6 +1201,7 @@ export function SettingsForm({
   })
 
   const state = form.values
+  const voiceSample = useVoiceSample()
   const canDisablePassword = state.authProviders.some(
     (p) =>
       p.kind === "custom" &&
@@ -2106,6 +2114,85 @@ export function SettingsForm({
               disabled={isLocked("deepgramModel")}
             />
           </>
+        )}
+      </Fieldset>
+      <Fieldset legend="Narration (text-to-speech)">
+        <Box className="mb-3 text-sm opacity-70">
+          <p>
+            Storyteller can generate narration for a book that has an ebook but
+            no audiobook, using a local text-to-speech voice, and then align it
+            into a readaloud. This runs entirely on your server, with no API
+            keys or paid services.
+          </p>
+          <p>
+            Leave this off to keep the current behaviour, where readalouds are
+            only made from books that already have an audiobook.
+          </p>
+        </Box>
+        <NativeSelect
+          label="Narration engine"
+          value={state.ttsEngine ?? ""}
+          onChange={(event) => {
+            form.setFieldValue(
+              "ttsEngine",
+              event.currentTarget.value === ""
+                ? null
+                : (event.currentTarget.value as "kokoro" | "piper"),
+            )
+          }}
+          disabled={isLocked("ttsEngine")}
+        >
+          <option value="">Off (do not generate narration)</option>
+          <option value="kokoro">Kokoro (local, best quality)</option>
+          <option value="piper">Piper (local, fast)</option>
+        </NativeSelect>
+        {state.ttsEngine === "kokoro" && (
+          <Stack className="mt-2">
+            <NativeSelect
+              label="Voice"
+              {...form.getInputProps("ttsVoice")}
+              disabled={isLocked("ttsVoice")}
+            >
+              {KOKORO_VOICES.map((voice) => (
+                <option key={voice} value={voice}>
+                  {voice}
+                </option>
+              ))}
+            </NativeSelect>
+            <Button
+              variant="light"
+              size="xs"
+              className="self-start"
+              loading={voiceSample.playing}
+              onClick={() => { voiceSample.play(state.ttsVoice ?? "af_heart"); }}
+            >
+              Play sample
+            </Button>
+            <NumberInput
+              label="Speed"
+              description="Narration speed. 1 is natural; lower is slower."
+              min={0.5}
+              max={2}
+              step={0.1}
+              {...form.getInputProps("ttsSpeed")}
+              disabled={isLocked("ttsSpeed")}
+            />
+            <NativeSelect
+              label="Audiobook format"
+              description="m4b is a single chaptered audiobook file; mp3 and m4a write one file per chapter."
+              {...form.getInputProps("ttsFormat")}
+              disabled={isLocked("ttsFormat")}
+            >
+              <option value="m4b">m4b (chaptered audiobook)</option>
+              <option value="mp3">mp3 (one file per chapter)</option>
+              <option value="m4a">m4a (one file per chapter)</option>
+            </NativeSelect>
+          </Stack>
+        )}
+        {state.ttsEngine === "piper" && (
+          <Text className="mt-2 text-sm opacity-70">
+            Piper support is coming. For now, use the Kokoro engine.
+          </Text>
         )}
       </Fieldset>
       <Fieldset legend="Parellelization settings">

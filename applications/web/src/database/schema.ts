@@ -313,7 +313,12 @@ export interface Job {
   position: Generated<number>
   progress: Generated<number>
   restart: import("@/work/distributor").RestartMode | null
-  stage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS" | null
+  stage:
+    | "GENERATE_AUDIO"
+    | "SPLIT_TRACKS"
+    | "TRANSCRIBE_CHAPTERS"
+    | "SYNC_CHAPTERS"
+    | null
   startedAt: string | null
   stats: ColumnType<import("@/work/jobStats").JobStats, string, string> | null
   status: Generated<import("@/database/jobs").JobStatus>
@@ -355,7 +360,11 @@ export interface Readaloud {
       >
     | null
   createdAt: Generated<string>
-  currentStage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS"
+  currentStage:
+    | "GENERATE_AUDIO"
+    | "SPLIT_TRACKS"
+    | "TRANSCRIBE_CHAPTERS"
+    | "SYNC_CHAPTERS"
   duration: number | null
   filepath: string | null
   fileSize: number | null

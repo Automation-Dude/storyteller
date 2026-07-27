@@ -757,6 +757,26 @@
             "deepgramModel": "Modelnaam",
             "deepgramModelDescription": "Kan elk model zijn dat de server ondersteunt, zoals nova-3, nova-2, nova, enhanced, base of whisper. Standaard is nova-3."
           },
+          "tts": {
+            "title": "Vertelling (tekst-naar-spraak)",
+            "description": "Genereer vertelling voor een boek dat wel een e-book maar geen audioboek heeft, met een lokale tekst-naar-spraakstem, en lijn het vervolgens uit tot een voorleesversie. Dit draait volledig op je server, zonder API-sleutels of betaalde diensten. Laat uit staan om alleen voorleesversies te maken van boeken die al een audioboek hebben.",
+            "engine": "Vertellingsengine",
+            "engineOff": "Uit (geen vertelling genereren)",
+            "engineKokoro": "Kokoro (lokaal, beste kwaliteit)",
+            "enginePiper": "Piper (lokaal, snel)",
+            "piperComing": "Ondersteuning voor Piper komt eraan. Gebruik voorlopig de Kokoro-engine.",
+            "voice": "Stem",
+            "voiceDescription": "De verteller-stem. Voorvoegsels: af en am zijn Amerikaans vrouwelijk en mannelijk, bf en bm zijn Brits vrouwelijk en mannelijk.",
+            "playSample": "Voorbeeld afspelen",
+            "playing": "Bezig met afspelen...",
+            "speed": "Snelheid",
+            "speedDescription": "Vertellingssnelheid. 1 is natuurlijk; lager is langzamer.",
+            "format": "Audioboekformaat",
+            "formatDescription": "m4b is één audioboekbestand met hoofdstukken; mp3 en m4a schrijven één bestand per hoofdstuk.",
+            "formatM4b": "m4b (audioboek met hoofdstukken)",
+            "formatMp3": "mp3 (één bestand per hoofdstuk)",
+            "formatM4a": "m4a (één bestand per hoofdstuk)"
+          },
           "parallelization": {
             "title": "Parallellisatie Instellingen",
             "description": "Audio-transcodering is single-threaded, en meer cores toevoegen levert steeds minder op voor het verwerken van één audio-track. Omdat <em>Storyteller</em> audio in meerdere tracks splitst, kan het transcodering en transcriptie parallel uitvoeren.",
@@ -1683,6 +1703,7 @@
     "estimatedTime": "Geschatte tijd: {duration}",
     "noEstimateHistory": "Niet genoeg geschiedenis om te schatten",
     "stage": {
+      "GENERATE_AUDIO": "Narratie genereren",
       "SPLIT_TRACKS": "Audio voorbereiden",
       "TRANSCRIBE_CHAPTERS": "Tracks transcriberen",
       "SYNC_CHAPTERS": "Hoofdstukken synchroniseren"

@@ -1,9 +1,11 @@
 import { z } from "zod"
 
 import {
+  KOKORO_VOICES,
   LANGUAGES,
   RECOGNITION_ENGINES,
   type RecognitionEngine,
+  TTS_ENGINES,
   WHISPER_MODELS,
 } from "@storyteller-platform/ghost-story/constants"
 
@@ -15,6 +17,16 @@ export type TranscriptionEngine = RecognitionEngine
 
 export const WhisperModelSchema = z.enum(WHISPER_MODELS)
 export type WhisperModel = z.infer<typeof WhisperModelSchema>
+
+// Text-to-speech (narration generation). Both engines are local and free.
+export const TtsEngineSchema = z.enum(TTS_ENGINES)
+export type TtsEngine = z.infer<typeof TtsEngineSchema>
+
+export const TtsFormatSchema = z.enum(["m4b", "mp3", "m4a"])
+export type TtsFormat = z.infer<typeof TtsFormatSchema>
+
+export const KokoroVoiceSchema = z.enum(KOKORO_VOICES)
+export type KokoroVoice = z.infer<typeof KokoroVoiceSchema>
 
 export const WhisperCpuFallbackSchema = z.enum(["blas", "cpu"]).nullable()
 export type WhisperCpuFallback = z.infer<typeof WhisperCpuFallbackSchema>
@@ -204,6 +216,13 @@ export const SettingsSchema = z.object({
   // Parallelization settings
   parallelTranscodes: z.number(),
   parallelTranscribes: z.number(),
+
+  // Narration generation (text-to-speech). When ttsEngine is set, a book with
+  // an ebook but no audiobook can generate one and become a readaloud.
+  ttsEngine: TtsEngineSchema.nullable(),
+  ttsVoice: z.string().nullable(),
+  ttsSpeed: z.number().nullable(),
+  ttsFormat: TtsFormatSchema.nullable(),
   // Auth settings
   authProviders: z.array(AuthProviderSchema),
   disablePasswordLogin: z.boolean(),

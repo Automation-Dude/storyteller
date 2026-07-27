@@ -8,6 +8,7 @@ import {
   align,
   markup,
   processAudiobook,
+  synthesize,
   transcribe,
 } from "@storyteller-platform/align"
 import { Epub } from "@storyteller-platform/epub"
@@ -21,6 +22,7 @@ import { deleteProcessed, deleteTranscriptions } from "@/assets/fs"
 import { writeMetadataToEpub } from "@/assets/metadata"
 import {
   getAlignmentReportFilepath,
+  getInternalAudioDirectory,
   getProcessedAudioFilepath,
   getReadaloudFilepath,
   getTranscriptionsFilepath,
@@ -46,7 +48,12 @@ import type { RestartMode } from "./distributor"
 import { type JobStats, buildJobStats } from "./jobStats"
 import type { RunConfig } from "./runConfig"
 
-const STAGES = ["SPLIT_TRACKS", "TRANSCRIBE_CHAPTERS", "SYNC_CHAPTERS"] as const
+const STAGES = [
+  "GENERATE_AUDIO",
+  "SPLIT_TRACKS",
+  "TRANSCRIBE_CHAPTERS",
+  "SYNC_CHAPTERS",
+] as const
 
 if (process.env["DEBUG_WORKER"] === "true") {
   void import("node:inspector").then(({ default: inspector }) =>
@@ -158,6 +165,41 @@ export default async function processBook({
     }
 
     try {
+      if (stage === "GENERATE_AUDIO") {
+        // Only ebook-only books reach this stage. Generate a narration
+        // audiobook with the configured local TTS engine and save it as the
+        // book's audiobook, then fall through the normal split/transcribe/align
+        // pipeline exactly as a human-narrated audiobook would.
+        if (!book.audiobook) {
+          const settings = await getSettings()
+          if (!settings.ttsEngine) {
+            throw new Error(
+              "This book has no audiobook and narration generation is turned off in Settings.",
+            )
+          }
+          logger.info("Generating narration...")
+          const audioDirectory = getInternalAudioDirectory(book)
+          await processTiming.timeAsync("generate_audio", () =>
+            synthesize(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              book.ebook!.filepath,
+              audioDirectory,
+              {
+                engine: settings.ttsEngine,
+                voice: settings.ttsVoice,
+                speed: settings.ttsSpeed,
+                format: settings.ttsFormat,
+                onProgress,
+                logger,
+              },
+            ),
+          )
+          book = await updateBook(null, {
+            audiobook: { filepath: audioDirectory },
+          })
+        }
+      }
+
       if (stage === "SPLIT_TRACKS") {
         // clean stale files from previous runs to prevent mismatches
         // shame not to reuse stuff, but too easy to produce bugs if we do

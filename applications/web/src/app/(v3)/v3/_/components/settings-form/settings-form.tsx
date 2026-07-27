@@ -241,6 +241,10 @@ export function SettingsForm({
       openAiModelName: settings.openAiModelName ?? "",
       deepgramApiKey: settings.deepgramApiKey ?? "",
       deepgramModel: settings.deepgramModel ?? "nova-3",
+      ttsEngine: settings.ttsEngine ?? null,
+      ttsVoice: settings.ttsVoice ?? "af_heart",
+      ttsSpeed: settings.ttsSpeed ?? 1,
+      ttsFormat: settings.ttsFormat ?? "m4b",
       disablePasswordLogin: settings.disablePasswordLogin,
     },
   })
