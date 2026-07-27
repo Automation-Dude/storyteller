@@ -81,6 +81,51 @@ export const RECOGNITION_ENGINES = [
 ] as const
 export type RecognitionEngine = (typeof RECOGNITION_ENGINES)[number]
 
+// Speech synthesis (text-to-speech). Both shipped engines run fully locally
+// with no API keys or network calls at inference time; the interface can carry
+// cloud engines, but none are bundled.
+export const TTS_ENGINES = ["kokoro", "piper"] as const
+export type SynthesisEngine = (typeof TTS_ENGINES)[number]
+
+export const KOKORO_MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX"
+export const KOKORO_MODEL_VERSION = "1.0.0"
+
+// Kokoro v1.0 English voices. Prefix encodes region + gender: af/am =
+// American female/male, bf/bm = British female/male.
+export const KOKORO_VOICES = [
+  "af_heart",
+  "af_alloy",
+  "af_aoede",
+  "af_bella",
+  "af_jessica",
+  "af_kore",
+  "af_nicole",
+  "af_nova",
+  "af_river",
+  "af_sarah",
+  "af_sky",
+  "am_adam",
+  "am_echo",
+  "am_eric",
+  "am_fenrir",
+  "am_liam",
+  "am_michael",
+  "am_onyx",
+  "am_puck",
+  "am_santa",
+  "bf_alice",
+  "bf_emma",
+  "bf_isabella",
+  "bf_lily",
+  "bm_daniel",
+  "bm_fable",
+  "bm_george",
+  "bm_lewis",
+] as const
+export type KokoroVoice = (typeof KOKORO_VOICES)[number]
+
+export const DEFAULT_KOKORO_VOICE: KokoroVoice = "af_heart"
+
 export const MODEL_SIZES: Record<WhisperModel | "silero-vad", number> = {
   tiny: 77691713,
   "tiny-q5_1": 32152673,

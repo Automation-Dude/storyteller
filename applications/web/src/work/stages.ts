@@ -1,7 +1,8 @@
 import { type Readaloud } from "@/database/schema"
 
 export const STAGE_ORDER: Record<Readaloud["currentStage"], number> = {
-  SPLIT_TRACKS: 0,
-  TRANSCRIBE_CHAPTERS: 1,
-  SYNC_CHAPTERS: 2,
+  GENERATE_AUDIO: 0,
+  SPLIT_TRACKS: 1,
+  TRANSCRIBE_CHAPTERS: 2,
+  SYNC_CHAPTERS: 3,
 }

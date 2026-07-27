@@ -324,7 +324,11 @@ export interface Position {
 export interface Readaloud {
   bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
-  currentStage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS"
+  currentStage:
+    | "GENERATE_AUDIO"
+    | "SPLIT_TRACKS"
+    | "TRANSCRIBE_CHAPTERS"
+    | "SYNC_CHAPTERS"
   duration: number | null
   filepath: string | null
   fileSize: number | null

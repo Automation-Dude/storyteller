@@ -26,7 +26,7 @@ import { env } from "@/env"
 import { logger } from "@/logging"
 import type { UUID } from "@/uuid"
 
-import { canAlign } from "./alignmentStatus"
+import { canAlign, canGenerateAudio } from "./alignmentStatus"
 import { STAGE_ORDER } from "./stages"
 import type processBook from "./worker"
 
@@ -105,14 +105,17 @@ export async function startProcessing(bookUuid: UUID, restart: RestartMode) {
     const position = await getNextQueuePosition()
     book = await getBookOrThrow(bookUuid)
 
-    if (!canAlign(book)) {
-      // The HTTP route already rejects this, but startup recovery
-      // (instrumentation.ts) re-enqueues whatever was QUEUED without checking.
-      // A book that lost its audiobook after being queued would otherwise crash
-      // the worker at SPLIT_TRACKS (book.audiobook!.filepath) and be retried on
-      // every boot. Clear the stale state and stop instead.
+    // A book is processable if it can be aligned (ebook + audiobook), or if it
+    // has an ebook and no audiobook but narration generation is enabled (it will
+    // generate the audiobook first). The HTTP route enforces the same rule; this
+    // guard also protects startup recovery (instrumentation.ts), which
+    // re-enqueues whatever was QUEUED without checking.
+    const settings = await getSettings()
+    const generatable = canGenerateAudio(book) && !!settings.ttsEngine
+
+    if (!canAlign(book) && !generatable) {
       logger.warn(
-        `Not processing "${book.title}" (${bookUuid}): a readaloud needs both an ebook and an audiobook present. Clearing stale queue state.`,
+        `Not processing "${book.title}" (${bookUuid}): a readaloud needs an ebook and an audiobook, or an ebook plus narration generation enabled. Clearing stale queue state.`,
       )
       await updateBook(bookUuid, null, {
         readaloud: {
@@ -313,8 +316,13 @@ function getStartStage(
   restart: RestartMode,
   book: BookWithRelations,
 ): Readaloud["currentStage"] {
-  if (restart === "full") return "SPLIT_TRACKS"
+  // An ebook-only book starts by generating its audiobook; everything else
+  // starts at track splitting.
+  const firstStage: Readaloud["currentStage"] = canGenerateAudio(book)
+    ? "GENERATE_AUDIO"
+    : "SPLIT_TRACKS"
+  if (restart === "full") return firstStage
   if (restart === "transcription") return "TRANSCRIBE_CHAPTERS"
   if (restart === "sync") return "SYNC_CHAPTERS"
-  return book.readaloud?.currentStage ?? "SPLIT_TRACKS"
+  return book.readaloud?.currentStage ?? firstStage
 }

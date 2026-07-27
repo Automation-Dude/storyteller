@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 import { withHasPermission } from "@/auth/auth"
 import { getBook, getBookUuid } from "@/database/books"
 import { db } from "@/database/connection"
+import { getSettings } from "@/database/settings"
 import { env } from "@/env"
-import { canAlign } from "@/work/alignmentStatus"
+import { canAlign, canGenerateAudio } from "@/work/alignmentStatus"
 import {
   type RestartMode,
   cancelProcessing,
@@ -102,11 +103,14 @@ export const POST = withHasPermission<Params>("bookProcess")(async (
     )
   }
 
-  if (!canAlign(book)) {
+  const settings = await getSettings()
+  const generatable = canGenerateAudio(book) && !!settings.ttsEngine
+
+  if (!canAlign(book) && !generatable) {
     return NextResponse.json(
       {
         message:
-          "Cannot process book: both ebook and audiobook must be present and not missing.",
+          "Cannot process book: it needs an ebook and an audiobook, or an ebook plus narration generation enabled in Settings.",
       },
       { status: 409 },
     )

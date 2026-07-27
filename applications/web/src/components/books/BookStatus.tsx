@@ -20,6 +20,7 @@ type Props = {
 }
 
 export const ProcessingTaskTypes = {
+  GENERATE_AUDIO: "Generating narration",
   SYNC_CHAPTERS: "Synchronizing chapters",
   SPLIT_TRACKS: "Pre-processing audio",
   TRANSCRIBE_CHAPTERS: "Transcribing tracks",

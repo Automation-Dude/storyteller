@@ -1,5 +1,11 @@
 import { resolve } from "node:path"
 
+// node-gyp-build ships no type declarations. Under nodenext an ambient
+// `declare module` is ignored once the package resolves to its untyped .js, and
+// consumers that pull this source in do not load align's ambient decls, so the
+// import is suppressed here where it travels with the source.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import requireBinding from "node-gyp-build"
 
 import { Path } from "./beamSearch.ts"

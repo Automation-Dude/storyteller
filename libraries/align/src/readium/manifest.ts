@@ -14,6 +14,9 @@ import {
   Subject,
   Subjects,
 } from "@readium/shared"
+// smil-clockvalue ships no type declarations; see the note in errorAlign/native.ts.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import clockvalue from "smil-clockvalue"
 
 import type {

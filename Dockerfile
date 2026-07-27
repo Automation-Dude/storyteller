@@ -44,6 +44,12 @@ ENV SQLITE_NATIVE_BINDING=/app/node_modules/better-sqlite3/build/Release/better_
 
 RUN yarn workspaces foreach -Rpt --from @storyteller-platform/web --exclude @storyteller-platform/eslint run build
 
+# Stage the kokoro-js (local text-to-speech) runtime dependency closure. These
+# packages are external to the esbuilt worker and loaded from disk at runtime, so
+# next.js never traces them into the standalone output; collect them here for the
+# runner to place alongside the worker (mirrors the @parcel/kuromoji copies).
+RUN node docker-scripts/collect-tts-deps.mjs /app/tts-deps/node_modules
+
 # Pre-install whisper.cpp binary and default model in builder stage
 ARG TARGETARCH
 ARG WHISPER_VARIANT
@@ -69,7 +75,9 @@ FROM registry.gitlab.com/storyteller-platform/storyteller/storyteller-base:${BAS
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg gosu \
+# libgomp1 is the OpenMP runtime onnxruntime-node (the kokoro-js TTS backend)
+# links against on linux.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg gosu libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN  (userdel -r ubuntu || true) \
@@ -114,6 +122,13 @@ COPY --from=builder /app/node_modules/@parcel ./.next/standalone/node_modules/@p
 # require.resolve("kuromoji") at runtime to locate its dict/ directory, so the
 # package must exist on disk in a location reachable from web/work-dist/.
 COPY --from=builder /app/node_modules/kuromoji ./.next/standalone/node_modules/kuromoji
+
+# kokoro-js (local text-to-speech) runtime closure: onnxruntime-node + sharp +
+# transformers.js are marked external to the worker bundle and loaded from disk,
+# and next.js does not trace them into the standalone output. Placed in the
+# worker's own node_modules so its resolution is isolated from the server's
+# traced modules and cannot clash with their versions.
+COPY --from=builder /app/tts-deps/node_modules ./.next/standalone/applications/web/work-dist/node_modules
 
 # Copy pre-installed whisper binaries and models from builder
 COPY --from=builder --chown=storyteller:storyteller /root/.local/share/ghost-story /home/storyteller/.local/share/ghost-story

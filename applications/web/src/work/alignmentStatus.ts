@@ -37,6 +37,19 @@ export function canAlign(book: BookWithRelations): boolean {
 }
 
 /**
+ * Whether this book could have narration generated: it has a usable ebook but no
+ * audiobook. Whether generation is actually allowed also depends on a TTS engine
+ * being configured, which the caller checks against settings (this helper is
+ * book-only so it can live alongside canAlign).
+ */
+export function canGenerateAudio(book: BookWithRelations): boolean {
+  const hasEbook = !!book.ebook && !book.ebook.missing
+  const hasAudiobook = !!book.audiobook && !book.audiobook.missing
+
+  return hasEbook && !hasAudiobook
+}
+
+/**
  * Whether a readaloud has actually been produced for this book.
  *
  * A readaloud row can exist without a file: it is created when processing
