@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Controller, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
+import { KOKORO_VOICES } from "@storyteller-platform/ghost-story/constants"
+
 import { MP3_CBR_BITRATE_OPTIONS } from "@/assets/audio/mp3Bitrates"
 import { usePermissions } from "@/hooks/usePermissions"
 import { useClearBooksCacheMutation } from "@/store/api"
@@ -60,12 +62,14 @@ export function ProcessingTab() {
   )
   const ta = useTranslations("SettingsPage.tabs.processing.sections.audio")
   const tr = useTranslations("SettingsPage.tabs.processing.sections.readaloud")
+  const tts = useTranslations("SettingsPage.tabs.processing.sections.tts")
 
   const transcriptionEngine = useWatch({
     control: form.control,
     name: "transcriptionEngine",
   })
   const codec = useWatch({ control: form.control, name: "codec" })
+  const ttsEngine = useWatch({ control: form.control, name: "ttsEngine" })
 
   const transcriptionEngineOptions = [
     { value: "whisper.cpp", label: tt("whisperCpp") },
@@ -107,6 +111,12 @@ export function ProcessingTab() {
       value,
       label: `${kbps} kb/s`,
     })),
+  ]
+
+  const ttsEngineOptions = [
+    { value: "off", label: tts("engineOff") },
+    { value: "kokoro", label: tts("engineKokoro") },
+    { value: "piper", label: tts("enginePiper") },
   ]
 
   return (
@@ -170,6 +180,49 @@ export function ProcessingTab() {
             )}
 
             {transcriptionEngine === "deepgram" && <DeepgramSettings t={tt} />}
+          </CardContent>
+        </Card>
+      </SettingsSection>
+
+      <SettingsSection tab="processing" section="tts">
+        <Card>
+          <CardHeader>
+            <CardTitle>{tts("title")}</CardTitle>
+            <CardDescription>{tts("description")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <SettingsFormField
+              name="ttsEngine"
+              label={tts("engine")}
+              render={(field, fieldState, isLocked) => (
+                <Select
+                  disabled={isLocked}
+                  aria-invalid={fieldState.invalid}
+                  items={ttsEngineOptions}
+                  value={field.value ?? "off"}
+                  onValueChange={(value) =>
+                    { field.onChange(value === "off" ? null : value); }
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ttsEngineOptions.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+
+            {ttsEngine === "kokoro" && <KokoroSettings t={tts} />}
+
+            {ttsEngine === "piper" && (
+              <FieldDescription>{tts("piperComing")}</FieldDescription>
+            )}
           </CardContent>
         </Card>
       </SettingsSection>
@@ -367,6 +420,97 @@ export function ProcessingTab() {
 type TranslationFn = ReturnType<
   typeof useTranslations<"SettingsPage.tabs.processing.sections.transcription">
 >
+
+type TtsTranslationFn = ReturnType<
+  typeof useTranslations<"SettingsPage.tabs.processing.sections.tts">
+>
+
+function KokoroSettings({ t }: { t: TtsTranslationFn }) {
+  const voiceOptions = KOKORO_VOICES.map((voice) => ({
+    value: voice,
+    label: voice,
+  }))
+  const formatOptions = [
+    { value: "m4b", label: t("formatM4b") },
+    { value: "mp3", label: t("formatMp3") },
+    { value: "m4a", label: t("formatM4a") },
+  ]
+
+  return (
+    <>
+      <SettingsFormField
+        name="ttsVoice"
+        label={t("voice")}
+        description={t("voiceDescription")}
+        render={(field, fieldState, isLocked) => (
+          <Select
+            disabled={isLocked}
+            aria-invalid={fieldState.invalid}
+            items={voiceOptions}
+            value={field.value ?? "af_heart"}
+            onValueChange={field.onChange}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {voiceOptions.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      />
+      <SettingsFormField
+        name="ttsSpeed"
+        label={t("speed")}
+        description={t("speedDescription")}
+        render={(field, fieldState, isLocked) => (
+          <Input
+            type="number"
+            min={0.5}
+            max={2}
+            step={0.1}
+            disabled={isLocked}
+            {...field}
+            value={field.value ?? 1}
+            onChange={(event) => {
+              field.onChange(parseFloat(event.target.value) || 1)
+            }}
+            aria-invalid={fieldState.invalid}
+          />
+        )}
+      />
+      <SettingsFormField
+        name="ttsFormat"
+        label={t("format")}
+        description={t("formatDescription")}
+        render={(field, fieldState, isLocked) => (
+          <Select
+            disabled={isLocked}
+            aria-invalid={fieldState.invalid}
+            items={formatOptions}
+            value={field.value ?? "m4b"}
+            onValueChange={field.onChange}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {formatOptions.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      />
+    </>
+  )
+}
 
 function WhisperSettings({ t }: { t: TranslationFn }) {
   const whisperModelOptions = [
