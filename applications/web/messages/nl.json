@@ -1314,7 +1314,7 @@
     "setupError": "Kon de bibliotheek niet instellen. Vraag je Storyteller-beheerder om Kobo-synchronisatie in te schakelen.",
     "confirmError": "De instelling kon niet bevestigen dat de e-reader is geconfigureerd. Er is niets gewijzigd; probeer het opnieuw.",
     "doneTitle": "De e-reader is klaar",
-    "doneUnplug": "Je kunt de {model} nu loskoppelen.",
+    "doneUnplug": "Koppel de {model} los en start hem daarna opnieuw op: houd de aan/uitknop ingedrukt tot hij uitgaat en zet hem weer aan. Hij toont je bibliotheek pas na een herstart.",
     "theEreader": "e-reader",
     "doneFor": "Ingesteld voor {who}.",
     "doneStep1": "De boeken verschijnen in de eigen bibliotheek, via wifi. Niets te openen of te installeren.",

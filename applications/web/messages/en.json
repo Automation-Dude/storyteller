@@ -1329,7 +1329,7 @@
     "setupError": "Could not set up the library. Ask your Storyteller admin to enable Kobo sync.",
     "confirmError": "Setup could not confirm the e-reader was configured. It has not been changed; please try again.",
     "doneTitle": "The e-reader is ready",
-    "doneUnplug": "You can unplug the {model} now.",
+    "doneUnplug": "Unplug the {model}, then restart it: hold the power button until it turns off, then power it back on. It only starts showing your library after a restart.",
     "theEreader": "e-reader",
     "doneFor": "It is set up for {who}.",
     "doneStep1": "The books appear in its own library, over Wi-Fi. Nothing to open or install.",
